@@ -21,7 +21,7 @@ PLOT_DIR.mkdir(exist_ok=True, parents=True)
 sys.path.append(str(BASE_DIR))
 from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 from src.signatures import extract_all_signatures
-from combat.pycombat import pycombat
+from pycombat import Combat
 
 def main():
     print("==================================================")
@@ -47,8 +47,8 @@ def main():
     y_all = pd.concat([y_liu, y_hugo, y_riaz], axis=0)
     batches = (['liu'] * len(sig_liu)) + (['hugo'] * len(sig_hugo)) + (['riaz'] * len(sig_riaz))
     
-    sig_corrected_t = pycombat(sig_all.T, batches)
-    sig_corrected = sig_corrected_t.T
+    sig_corrected_arr = Combat().fit_transform(sig_all.values, batches)
+    sig_corrected = pd.DataFrame(sig_corrected_arr, index=sig_all.index, columns=sig_all.columns)
     
     print(f"Corrected signatures matrix shape: {sig_corrected.shape}")
     
@@ -107,8 +107,9 @@ def main():
     print(f"Saved Clustermap to {clustermap_path}")
     
     # Copy to artifacts directory
-    dest_path = Path("C:/Users/Amanda/.gemini/antigravity/brain/4bb83474-71a7-4da3-beda-f3ee3b7eba05/signature_clustermap.png")
+    dest_path = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/signature_clustermap.png")
     import shutil
+    dest_path.parent.mkdir(exist_ok=True, parents=True)
     shutil.copy(clustermap_path, dest_path)
     print("Copied Clustermap to artifacts directory.")
     

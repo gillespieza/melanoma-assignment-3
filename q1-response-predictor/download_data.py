@@ -75,21 +75,51 @@ def ensure_liu_dataset():
 
 def ensure_tcga_dataset():
     """
-    Downloads raw TCGA-SKCM baseline dataset from cBioPortal REST API.
+    Downloads raw TCGA-SKCM baseline dataset from cBioPortal REST API
+    and extracts longitudinal treatment timeline files from cBioPortal DataHub.
 
     @return None
     """
-    tcga_raw_clin = DATA_DIR / "raw" / TCGA_STUDY_ID / "clinical.csv"
-    tcga_raw_expr = DATA_DIR / "raw" / TCGA_STUDY_ID / "rnaseq.csv"
+    raw_tcga_dir = DATA_DIR / "raw" / TCGA_STUDY_ID
+    tcga_raw_clin = raw_tcga_dir / "clinical.csv"
+    tcga_raw_expr = raw_tcga_dir / "rnaseq.csv"
     
-    if tcga_raw_clin.exists() and tcga_raw_expr.exists() and tcga_raw_clin.stat().st_size > 0 and tcga_raw_expr.stat().st_size > 0:
-        print(f"TCGA-SKCM raw baseline dataset ({TCGA_STUDY_ID}) already exists.")
-        return
-        
-    try:
-        download_raw_tcga_skcm(DATA_DIR, TCGA_STUDY_ID)
-    except Exception as e:
-        print(f"Error downloading raw TCGA-SKCM dataset ({TCGA_STUDY_ID}): {e}")
+    # 1. Fetch clinical.csv and rnaseq.csv if missing
+    if not (tcga_raw_clin.exists() and tcga_raw_expr.exists() and tcga_raw_clin.stat().st_size > 0 and tcga_raw_expr.stat().st_size > 0):
+        try:
+            download_raw_tcga_skcm(DATA_DIR, TCGA_STUDY_ID)
+        except Exception as e:
+            print(f"Error downloading raw TCGA-SKCM dataset ({TCGA_STUDY_ID}): {e}")
+
+    # 2. Fetch data_timeline_treatment.txt and data_timeline_status.txt if missing
+    targets = ["data_timeline_treatment.txt", "data_timeline_status.txt"]
+    missing_targets = [t for t in targets if not (raw_tcga_dir / t).exists() or (raw_tcga_dir / t).stat().st_size == 0]
+
+    if missing_targets:
+        print(f"Retrieving missing timeline files {missing_targets} from cBioPortal DataHub...")
+        url = f"https://datahub.assets.cbioportal.org/{TCGA_STUDY_ID}.tar.gz"
+        try:
+            extracted = {}
+            with requests.get(url, stream=True, timeout=120) as r:
+                r.raise_for_status()
+                with tarfile.open(fileobj=r.raw, mode="r|gz") as tar:
+                    for member in tar:
+                        name = Path(member.name).name
+                        if name in missing_targets:
+                            print(f"  Found timeline file: {member.name} ({member.size} bytes)")
+                            f = tar.extractfile(member)
+                            if f:
+                                content = f.read()
+                                out_path = raw_tcga_dir / name
+                                out_path.write_bytes(content)
+                                print(f"  Extracted and saved {name} to {out_path}")
+                                extracted[name] = out_path
+                        if len(extracted) == len(missing_targets):
+                            break
+        except Exception as e:
+            print(f"Error streaming clinical timeline files from {url}: {e}")
+    else:
+        print("TCGA-SKCM timeline treatment files already exist.")
 
 
 def main():
