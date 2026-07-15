@@ -5,6 +5,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer
 from lifelines import CoxPHFitter
+from statsmodels.stats.multitest import multipletests
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -136,6 +137,16 @@ def main():
             continue
 
     df_cph = pd.DataFrame(cph_records)
+    
+    # Drop records with NaN p-values to prevent breaking BH correction
+    df_cph = df_cph.dropna(subset=['p-value'])
+    
+    # Apply Benjamini-Hochberg (BH) multiple testing correction
+    if not df_cph.empty:
+        rejected, p_adjusted, _, _ = multipletests(df_cph['p-value'], alpha=0.05, method='fdr_bh')
+        df_cph['FDR (BH-adjusted p-value)'] = p_adjusted
+        df_cph['Significant (FDR < 0.05)'] = rejected
+
     # Sort by p-value
     df_cph = df_cph.sort_values(by='p-value', ascending=True)
     print(df_cph.head(15).to_string(index=False))
