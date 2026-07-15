@@ -111,8 +111,9 @@ def main():
     print(f"Saved TMB survival plot to {save_path}")
     
     # Copy to artifacts directory
-    dest_path = Path("C:/Users/Amanda/.gemini/antigravity/brain/4bb83474-71a7-4da3-beda-f3ee3b7eba05/survival_tcga_tmb.png")
+    dest_path = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/survival_tcga_tmb.png")
     import shutil
+    dest_path.parent.mkdir(exist_ok=True, parents=True)
     shutil.copy(save_path, dest_path)
     print("Copied survival_tcga_tmb.png to artifacts directory.")
     print("==================================================")

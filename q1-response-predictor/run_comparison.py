@@ -9,7 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.metrics import roc_auc_score
-from combat.pycombat import pycombat
+from pycombat import Combat
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
@@ -144,8 +144,8 @@ def main():
     print("Correcting Batch Effects on raw genes for comparison (ComBat)...")
     print("==================================================")
     expr_all = pd.concat([expr_liu, expr_hugo, expr_riaz], axis=0)
-    expr_corrected_t = pycombat(expr_all.T, batches)
-    expr_corrected = expr_corrected_t.T
+    expr_corrected_arr = Combat().fit_transform(expr_all.values, batches)
+    expr_corrected = pd.DataFrame(expr_corrected_arr, index=expr_all.index, columns=expr_all.columns)
     
     expr_corrected_liu = expr_corrected.iloc[:len(expr_liu)]
     expr_corrected_hugo = expr_corrected.iloc[len(expr_liu):len(expr_liu)+len(expr_hugo)]
@@ -171,8 +171,8 @@ def main():
     sig_raw_riaz = extract_all_signatures(expr_riaz)
     
     sig_all = pd.concat([sig_raw_liu, sig_raw_hugo, sig_raw_riaz], axis=0)
-    sig_corrected_t = pycombat(sig_all.T, batches)
-    sig_corrected = sig_corrected_t.T
+    sig_corrected_arr = Combat().fit_transform(sig_all.values, batches)
+    sig_corrected = pd.DataFrame(sig_corrected_arr, index=sig_all.index, columns=sig_all.columns)
     
     sig_corrected_liu = sig_corrected.iloc[:len(expr_liu)]
     sig_corrected_hugo = sig_corrected.iloc[len(expr_liu):len(expr_liu)+len(expr_hugo)]

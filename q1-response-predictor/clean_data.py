@@ -230,14 +230,88 @@ def clean_tcga_skcm() -> None:
     raw_clin_df = pd.read_csv(raw_dir / TCGA_CLIN_FILE)
     cleaned_clin_df = clean_clinical_df(raw_clin_df)
 
+    # Parse and Merge Treatment Timeline Data if available
+    timeline_file = raw_dir / "data_timeline_treatment.txt"
+    if timeline_file.exists():
+        print("  Found treatment timeline data. Parsing and aggregating features...")
+        df_treat = pd.read_csv(timeline_file, sep="\t")
+        df_treat["PATIENT_ID"] = df_treat["PATIENT_ID"].astype(str).str.strip().str.upper()
+
+        # Aggregate unique treatment types and agents
+        treatment_types_series = df_treat.groupby("PATIENT_ID")["TREATMENT_TYPE"].apply(
+            lambda x: ", ".join(sorted(set(x.dropna())))
+        )
+        agents_series = df_treat.groupby("PATIENT_ID")["AGENT"].apply(
+            lambda x: ", ".join(sorted(set(x.dropna())))
+        )
+
+        unique_patients = df_treat["PATIENT_ID"].unique()
+        treat_features = pd.DataFrame(index=unique_patients)
+        treat_features["TREATMENT_TYPES"] = treatment_types_series
+        treat_features["TREATMENT_AGENTS"] = agents_series
+
+        # Pivot treatment types (e.g. Radiation Therapy, Chemotherapy, Immunotherapy)
+        unique_types = df_treat["TREATMENT_TYPE"].dropna().unique()
+        for t_type in unique_types:
+            col_name = f"TX_TYPE_{t_type.replace(' ', '_').upper()}"
+            patients_with_type = df_treat[df_treat["TREATMENT_TYPE"] == t_type]["PATIENT_ID"].unique()
+            treat_features[col_name] = 0
+            treat_features.loc[patients_with_type, col_name] = 1
+
+        # Pivot key drugs/agents
+        key_agents = {
+            "TX_AGENT_IPILIMUMAB": ["Ipilimumab"],
+            "TX_AGENT_PEMBROLIZUMAB": ["Pembrolizumab"],
+            "TX_AGENT_NIVOLUMAB": ["Nivolumab"],
+            "TX_AGENT_VEMURAFENIB": ["Vemurafenib"],
+            "TX_AGENT_DABRAFENIB": ["Dabrafenib"],
+            "TX_AGENT_TRAMETINIB": ["Trametinib"],
+            "TX_AGENT_DACARBAZINE": ["Dacarbazine"],
+            "TX_AGENT_TEMOZOLOMIDE": ["Temozolomide"],
+            "TX_AGENT_INTERFERON": ["Interferon Alfa", "Interferon Nos", "Interferon"]
+        }
+
+        for feat_name, agents_list in key_agents.items():
+            matching_rows = df_treat[df_treat["AGENT"].astype(str).str.upper().apply(
+                lambda val: any(agent.upper() in val for agent in agents_list)
+            )]
+            patients_with_agent = matching_rows["PATIENT_ID"].unique()
+            treat_features[feat_name] = 0
+            treat_features.loc[patients_with_agent, feat_name] = 1
+
+        treat_features = treat_features.reset_index().rename(columns={"index": "PATIENT_ID"})
+        cleaned_clin_df = pd.merge(cleaned_clin_df, treat_features, on="PATIENT_ID", how="left")
+
+        # Fill NaNs for patients who did not receive clinical treatments
+        cleaned_clin_df["TREATMENT_TYPES"] = cleaned_clin_df["TREATMENT_TYPES"].fillna("None")
+        cleaned_clin_df["TREATMENT_AGENTS"] = cleaned_clin_df["TREATMENT_AGENTS"].fillna("None")
+        for col in cleaned_clin_df.columns:
+            if col.startswith("TX_TYPE_") or col.startswith("TX_AGENT_"):
+                cleaned_clin_df[col] = cleaned_clin_df[col].fillna(0).astype(int)
+
     # Clean RNA-seq
     raw_rnaseq_df = pd.read_csv(raw_dir / TCGA_EXPR_FILE)
     cleaned_rnaseq_df = clean_rnaseq_df(raw_rnaseq_df)
 
+    # Drop constant, redundant, and administrative columns
+    cols_to_drop = [
+        "CANCER_TYPE", "CANCER_TYPE_DETAILED", "ONCOTREE_CODE", "CANCER_TYPE_ACRONYM",
+        "SUBTYPE", "TUMOR_TYPE", "SOMATIC_STATUS", "DAYS_TO_INITIAL_PATHOLOGIC_DIAGNOSIS",
+        "INFORMED_CONSENT_VERIFIED", "DAYS_TO_BIRTH", "OTHER_PATIENT_ID", "TISSUE_SOURCE_SITE_CODE",
+        "TISSUE_RETROSPECTIVE_COLLECTION_INDICATOR", "FORM_COMPLETION_DATE", "AJCC_STAGING_EDITION",
+        "SAMPLE_COUNT", "TISSUE_PROSPECTIVE_COLLECTION_INDICATOR", "IN_PANCANPATHWAYS_FREEZE"
+    ]
+    cleaned_clin_df = cleaned_clin_df.drop(columns=[c for c in cols_to_drop if c in cleaned_clin_df.columns])
+
+    # Reorder so PATIENT_ID is the first column
+    if "PATIENT_ID" in cleaned_clin_df.columns:
+        cols = ["PATIENT_ID"] + [c for c in cleaned_clin_df.columns if c != "PATIENT_ID"]
+        cleaned_clin_df = cleaned_clin_df[cols]
+
     # Save cleaned
     cleaned_clin_df.to_csv(proc_dir / "clinical_cleaned.csv", index=False)
     cleaned_rnaseq_df.to_csv(proc_dir / "rnaseq_cleaned.csv", index=False)
-    print(f"  TCGA-SKCM: Cleaned {len(cleaned_clin_df)} samples.")
+    print(f"  TCGA-SKCM: Cleaned {len(cleaned_clin_df)} samples. Integrated and tidied treatment data fields (PATIENT_ID is first).")
 
 
 def main() -> None:

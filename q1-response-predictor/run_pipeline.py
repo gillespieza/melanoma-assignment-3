@@ -334,7 +334,9 @@ def main():
         
         # Copy TCGA plot to artifacts directory
         import shutil
-        shutil.copy(PLOT_DIR / "survival_tcga_lr.png", Path("C:/Users/Amanda/.gemini/antigravity/brain/4bb83474-71a7-4da3-beda-f3ee3b7eba05/survival_tcga_lr.png"))
+        dest_path = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/survival_tcga_lr.png")
+        dest_path.parent.mkdir(exist_ok=True, parents=True)
+        shutil.copy(PLOT_DIR / "survival_tcga_lr.png", dest_path)
         print("Copied survival_tcga_lr.png to artifacts directory.")
         
     except Exception as e:

@@ -22,7 +22,7 @@ PLOT_DIR.mkdir(exist_ok=True, parents=True)
 sys.path.append(str(BASE_DIR))
 from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 from src.signatures import extract_all_signatures
-from combat.pycombat import pycombat
+from pycombat import Combat
 
 def main():
     print("==================================================")
@@ -48,8 +48,8 @@ def main():
     y_all = pd.concat([y_liu, y_hugo, y_riaz], axis=0)
     batches = (['liu'] * len(sig_liu)) + (['hugo'] * len(sig_hugo)) + (['riaz'] * len(sig_riaz))
     
-    sig_corrected_t = pycombat(sig_all.T, batches)
-    sig_corrected = sig_corrected_t.T
+    sig_corrected_arr = Combat().fit_transform(sig_all.values, batches)
+    sig_corrected = pd.DataFrame(sig_corrected_arr, index=sig_all.index, columns=sig_all.columns)
     
     print(f"Corrected signatures matrix shape: {sig_corrected.shape}")
     
@@ -68,8 +68,9 @@ def main():
     print(f"Saved correlation heatmap to {corr_path}")
     
     # Copy to artifacts
-    dest_corr = Path("C:/Users/Amanda/.gemini/antigravity/brain/4bb83474-71a7-4da3-beda-f3ee3b7eba05/signature_correlation_heatmap.png")
+    dest_corr = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/signature_correlation_heatmap.png")
     import shutil
+    dest_corr.parent.mkdir(exist_ok=True, parents=True)
     shutil.copy(corr_path, dest_corr)
     
     print("\n==================================================")
@@ -105,7 +106,8 @@ def main():
     print(f"Saved violin plots to {violin_path}")
     
     # Copy to artifacts
-    dest_violin = Path("C:/Users/Amanda/.gemini/antigravity/brain/4bb83474-71a7-4da3-beda-f3ee3b7eba05/signature_violins_by_response.png")
+    dest_violin = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/signature_violins_by_response.png")
+    dest_violin.parent.mkdir(exist_ok=True, parents=True)
     shutil.copy(violin_path, dest_violin)
 
     print("\n==================================================")
@@ -187,7 +189,8 @@ def main():
     print(f"\nSaved Forest Plot to {forest_path}")
     
     # Copy to artifacts
-    dest_forest = Path("C:/Users/Amanda/.gemini/antigravity/brain/4bb83474-71a7-4da3-beda-f3ee3b7eba05/forest_plot_odds_ratios.png")
+    dest_forest = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/forest_plot_odds_ratios.png")
+    dest_forest.parent.mkdir(exist_ok=True, parents=True)
     shutil.copy(forest_path, dest_forest)
     
     print("Copied all plots to artifacts directory.")
