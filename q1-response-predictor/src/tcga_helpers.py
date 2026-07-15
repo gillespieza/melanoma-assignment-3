@@ -254,6 +254,15 @@ def clean_clinical_df(raw_df: pd.DataFrame) -> pd.DataFrame:
         )
         df = df[~invalid_mask]
 
+    # Parse PFS and DSS if present
+    if "PFS_STATUS" in df.columns and "PFS_MONTHS" in df.columns:
+        df["PFS_STATUS"] = df["PFS_STATUS"].apply(parse_survival_status)
+        df["PFS_MONTHS"] = pd.to_numeric(df["PFS_MONTHS"], errors="coerce")
+
+    if "DSS_STATUS" in df.columns and "DSS_MONTHS" in df.columns:
+        df["DSS_STATUS"] = df["DSS_STATUS"].apply(parse_survival_status)
+        df["DSS_MONTHS"] = pd.to_numeric(df["DSS_MONTHS"], errors="coerce")
+
     return df
 
 def build_molecular_df(records: List[dict]) -> pd.DataFrame:
