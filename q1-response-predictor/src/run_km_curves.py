@@ -49,7 +49,7 @@ def main():
 
     # Color palettes
     palette_2 = ["#1f77b4", "#ff7f0e"]
-    palette_multi = ["#2ca02c", "#d62728", "#9467bd", "#7f7f7f"] # green, red, purple, gray
+    palette_multi = ["#d62728", "#9467bd", "#7f7f7f", "#17becf", "#ff7f0e"] # red, purple, gray, cyan, orange
 
     # Helper function to plot KM
     def plot_km(df, group_col, title, filename, palette, labels=None, split_median=False):
@@ -163,7 +163,8 @@ def main():
     # 1. Targeted (any) -> Targeted
     # 2. Immunotherapy (any but no targeted) -> Immunotherapy
     # 3. Chemotherapy (any but no immunotherapy and no targeted) -> Chemotherapy
-    # 4. None -> None
+    # 4. Radiation Therapy (any but no chemo/immuno/targeted) -> Radiation Therapy
+    # 5. None -> None
     def map_therapy_groups(row):
         if row['TX_TYPE_TARGETED_MOLECULAR_THERAPY'] == 1:
             return 'Targeted Therapy'
@@ -171,8 +172,10 @@ def main():
             return 'Immunotherapy'
         elif row['TX_TYPE_CHEMOTHERAPY'] == 1:
             return 'Chemotherapy'
+        elif row['TX_TYPE_RADIATION_THERAPY'] == 1:
+            return 'Radiation Therapy'
         else:
-            return 'None (No Systemic Therapy)'
+            return 'None (Observation/Surgery Only)'
             
     df['THERAPY_GROUP'] = df.apply(map_therapy_groups, axis=1)
     
