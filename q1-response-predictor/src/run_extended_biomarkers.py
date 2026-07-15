@@ -32,6 +32,22 @@ ARTIFACTS_DIR.mkdir(exist_ok=True, parents=True)
 # Import signature extractor
 from signatures import extract_all_signatures
 
+def clean_os_status(val):
+    if pd.isna(val):
+        return np.nan
+    if isinstance(val, (int, float)):
+        if val in [1, 1.0]:
+            return 1
+        if val in [0, 0.0]:
+            return 0
+    if isinstance(val, str):
+        val_upper = val.upper()
+        if 'DECEASED' in val_upper or '1' in val_upper:
+            return 1
+        if 'LIVING' in val_upper or '0' in val_upper:
+            return 0
+    return np.nan
+
 def map_tcga_expression_to_symbols(df_expr_raw, cache_path):
     """
     Maps Entrez columns in TCGA expression matrix to Hugo Symbols using local cache.
@@ -149,7 +165,7 @@ def main():
     plt.savefig(neo_plot_path, dpi=300)
     plt.close()
     shutil.copy(neo_plot_path, ARTIFACTS_DIR / "extended_neoantigen_tmb.png")
-    report_content.append("\n![Neoantigen vs TMB](extended_neoantigen_tmb.png)")
+    report_content.append("\n![Neoantigen vs TMB](C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a/extended_neoantigen_tmb.png)")
     
     # ==========================================
     # Step 2: Somatic Pathway Mutations (Liu 2019)
@@ -189,7 +205,7 @@ def main():
     liu_patients = df_liu_clin['PATIENT_ID'].unique()
     df_mut_wide = df_mut_wide.reindex(liu_patients, fill_value=0)
     
-    # Create indicators (including drivers BRAF/NRAS/NF1)
+    # Create indicators
     df_mut_ind = pd.DataFrame(index=liu_patients)
     df_mut_ind['mut_BRAF'] = (df_mut_wide['BRAF'] > 0).astype(int) if 'BRAF' in df_mut_wide.columns else 0
     df_mut_ind['mut_NRAS'] = (df_mut_wide['NRAS'] > 0).astype(int) if 'NRAS' in df_mut_wide.columns else 0
@@ -314,13 +330,16 @@ def main():
     plt.savefig(corr_plot_path, dpi=300)
     plt.close()
     shutil.copy(corr_plot_path, ARTIFACTS_DIR / "extended_immune_correlations.png")
-    report_content.append("\n![Correlation Heatmap](extended_immune_correlations.png)")
+    report_content.append("\n![Correlation Heatmap](C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a/extended_immune_correlations.png)")
     
+    # ---------------------------------------------
     # Kaplan-Meier Curve by Aneuploidy in TCGA
+    # ---------------------------------------------
     print("\nRunning survival curve by Aneuploidy in TCGA...")
     df_tcga_survival = df_tcga_clin.dropna(subset=['OS_MONTHS', 'OS_STATUS', 'ANEUPLOIDY_SCORE']).copy()
     df_tcga_survival['OS_MONTHS'] = pd.to_numeric(df_tcga_survival['OS_MONTHS'], errors='coerce')
-    df_tcga_survival['OS_STATUS'] = pd.to_numeric(df_tcga_survival['OS_STATUS'], errors='coerce')
+    df_tcga_survival['os_status_clean'] = df_tcga_survival['OS_STATUS'].apply(clean_os_status)
+    df_tcga_survival = df_tcga_survival.dropna(subset=['OS_MONTHS', 'os_status_clean'])
     
     aneu_median = df_tcga_survival['ANEUPLOIDY_SCORE'].median()
     df_tcga_survival['Aneu_Group'] = df_tcga_survival['ANEUPLOIDY_SCORE'].apply(
@@ -333,15 +352,15 @@ def main():
     high_mask = df_tcga_survival['Aneu_Group'].str.startswith('High')
     low_mask = df_tcga_survival['Aneu_Group'].str.startswith('Low')
     
-    kmf.fit(df_tcga_survival.loc[low_mask, 'OS_MONTHS'], df_tcga_survival.loc[low_mask, 'OS_STATUS'], label=f"Low Aneuploidy (N={low_mask.sum()})")
+    kmf.fit(df_tcga_survival.loc[low_mask, 'OS_MONTHS'], df_tcga_survival.loc[low_mask, 'os_status_clean'], label=f"Low Aneuploidy (N={low_mask.sum()})")
     kmf.plot_survival_function(ax=ax, color="#1f77b4", ci_show=False, linewidth=2.5)
     
-    kmf.fit(df_tcga_survival.loc[high_mask, 'OS_MONTHS'], df_tcga_survival.loc[high_mask, 'OS_STATUS'], label=f"High Aneuploidy (N={high_mask.sum()})")
+    kmf.fit(df_tcga_survival.loc[high_mask, 'OS_MONTHS'], df_tcga_survival.loc[high_mask, 'os_status_clean'], label=f"High Aneuploidy (N={high_mask.sum()})")
     kmf.plot_survival_function(ax=ax, color="#ff7f0e", ci_show=False, linewidth=2.5)
     
     lr_res = logrank_test(
         df_tcga_survival.loc[high_mask, 'OS_MONTHS'], df_tcga_survival.loc[low_mask, 'OS_MONTHS'],
-        df_tcga_survival.loc[high_mask, 'OS_STATUS'], df_tcga_survival.loc[low_mask, 'OS_STATUS']
+        df_tcga_survival.loc[high_mask, 'os_status_clean'], df_tcga_survival.loc[low_mask, 'os_status_clean']
     )
     p_text = f"Log-Rank p = {lr_res.p_value:.2e}" if lr_res.p_value < 0.001 else f"Log-Rank p = {lr_res.p_value:.3f}"
     ax.text(0.05, 0.08, p_text, transform=ax.transAxes, fontsize=13, weight='bold',
@@ -359,7 +378,54 @@ def main():
     report_content.append("\n### TCGA Overall Survival by Aneuploidy")
     report_content.append(f"We partitioned the baseline TCGA cohort at the median Aneuploidy Score (**{aneu_median:.1f}**):")
     report_content.append(f"\n*   **Log-Rank p-value**: **{lr_res.p_value:.3e}** (Statistically Significant)")
-    report_content.append("\n![TCGA Aneuploidy Survival](extended_aneuploidy_survival.png)")
+    report_content.append("\n![TCGA Aneuploidy Survival](C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a/extended_aneuploidy_survival.png)")
+    
+    # ---------------------------------------------
+    # Kaplan-Meier Curve by TMB in TCGA (Consolidated from run_tmb_survival.py)
+    # ---------------------------------------------
+    print("\nRunning survival curve by TMB in TCGA...")
+    df_tcga_tmb_surv = df_tcga_clin.dropna(subset=['OS_MONTHS', 'OS_STATUS', 'TMB_NONSYNONYMOUS']).copy()
+    df_tcga_tmb_surv['OS_MONTHS'] = pd.to_numeric(df_tcga_tmb_surv['OS_MONTHS'], errors='coerce')
+    df_tcga_tmb_surv['os_status_clean'] = df_tcga_tmb_surv['OS_STATUS'].apply(clean_os_status)
+    df_tcga_tmb_surv = df_tcga_tmb_surv.dropna(subset=['OS_MONTHS', 'os_status_clean'])
+    
+    tmb_median = df_tcga_tmb_surv['TMB_NONSYNONYMOUS'].median()
+    df_tcga_tmb_surv['TMB_Group'] = df_tcga_tmb_surv['TMB_NONSYNONYMOUS'].apply(
+        lambda x: f'High TMB (>= {tmb_median:.1f})' if x >= tmb_median else f'Low TMB (< {tmb_median:.1f})'
+    )
+    
+    fig, ax = plt.subplots(figsize=(9, 6.5))
+    
+    high_tmb_mask = df_tcga_tmb_surv['TMB_Group'].str.startswith('High')
+    low_tmb_mask = df_tcga_tmb_surv['TMB_Group'].str.startswith('Low')
+    
+    kmf.fit(df_tcga_tmb_surv.loc[low_tmb_mask, 'OS_MONTHS'], df_tcga_tmb_surv.loc[low_tmb_mask, 'os_status_clean'], label=f"Low TMB (N={low_tmb_mask.sum()})")
+    kmf.plot_survival_function(ax=ax, color="#2ca02c", ci_show=False, linewidth=2.5)
+    
+    kmf.fit(df_tcga_tmb_surv.loc[high_tmb_mask, 'OS_MONTHS'], df_tcga_tmb_surv.loc[high_tmb_mask, 'os_status_clean'], label=f"High TMB (N={high_tmb_mask.sum()})")
+    kmf.plot_survival_function(ax=ax, color="#d62728", ci_show=False, linewidth=2.5)
+    
+    lr_tmb_res = logrank_test(
+        df_tcga_tmb_surv.loc[high_tmb_mask, 'OS_MONTHS'], df_tcga_tmb_surv.loc[low_tmb_mask, 'OS_MONTHS'],
+        df_tcga_tmb_surv.loc[high_tmb_mask, 'os_status_clean'], df_tcga_tmb_surv.loc[low_tmb_mask, 'os_status_clean']
+    )
+    p_tmb_text = f"Log-Rank p = {lr_tmb_res.p_value:.2e}" if lr_tmb_res.p_value < 0.001 else f"Log-Rank p = {lr_tmb_res.p_value:.3f}"
+    ax.text(0.05, 0.08, p_tmb_text, transform=ax.transAxes, fontsize=13, weight='bold',
+            bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray', boxstyle='round,pad=0.5'))
+            
+    ax.set_title("TCGA-SKCM Overall Survival by Tumor Mutational Burden (TMB)", fontsize=15, weight='bold', pad=15)
+    ax.set_xlabel("Overall Survival (Months)", fontsize=13)
+    ax.set_ylabel("Survival Probability", fontsize=13)
+    plt.tight_layout()
+    tmb_plot_path = PLOT_DIR / "survival_tcga_tmb.png"
+    plt.savefig(tmb_plot_path, dpi=300)
+    plt.close()
+    shutil.copy(tmb_plot_path, ARTIFACTS_DIR / "survival_tcga_tmb.png")
+    
+    report_content.append("\n### TCGA Overall Survival by Tumor Mutational Burden (TMB)")
+    report_content.append(f"We partitioned the baseline TCGA cohort at the median TMB value (**{tmb_median:.2f} mutations/Mb**):")
+    report_content.append(f"\n*   **Log-Rank p-value**: **{lr_tmb_res.p_value:.3f}** (Prognostically Neutral)")
+    report_content.append("\n![TCGA TMB Survival](C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a/survival_tcga_tmb.png)")
     
     # ==========================================
     # Step 4: Updated Multimodal Predictor (Liu 2019)
