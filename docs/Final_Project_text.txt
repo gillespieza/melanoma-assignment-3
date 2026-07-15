@@ -1,0 +1,11 @@
+--- PAGE 1 ---
+Final Project: Build a story!Questions to address in the project(at least 3 should be answered):1. Can you build a predictor of patient response, which works across different datasets? You can play with a compromise between data availability and data completeness.2. Can you build a predictor of cell viability with respect to the drug treatments which are now standard of care? Does it in any way correlate with p.1?3. Are there any ODE models that are useful?4. Can you suggest potential new drug targets using LINCS data? Or based on DepMap data? Or both?5. Can you try to suggest which type of treatment should be used when multiple options are available (e.g. chemotherapy vs immunotherapy)6. You own creativity.
+0. Pick a cancer, not a specific dataset!
+--- PAGE 2 ---
+Final Project: Build a story!1. I suggest 4 to 6 persons per group2. I give you 2 weeks for self-organization3. Anyone who is not in the group after 2 weeks will be assigned by lecturer4. If author contribution statement is added in the final presentation, I will grade according to the contribution, if not, everyone in the group will receive equal score.
+--- PAGE 3 ---
+Problem based learning guide for the group work
+
+--- PAGE 4 ---
+Roles of individuals in the group
+•Chairperson•Scribe•Reader•Timekeeper
