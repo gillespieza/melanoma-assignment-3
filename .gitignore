@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Exclude all data folders (raw and processed) from tracking
+data/

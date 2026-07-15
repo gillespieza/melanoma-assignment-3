@@ -1,0 +1,10 @@
+- [x] Refactor src/tcga_helpers.py (download_raw_tcga_skcm)
+- [x] Refactor download_data.py (only download raw files, setup directories)
+- [x] Create clean_data.py (implement clinical/expression cleaning for all 4 studies)
+- [x] Refactor src/data_loaders.py (load preprocessed CSVs directly)
+- [x] Verify execution:
+  - [x] Verify script compilation
+  - [x] Run download_data.py
+  - [x] Run clean_data.py
+  - [x] Run run_pipeline.py
+  - [x] Run run_tmb_survival.py
