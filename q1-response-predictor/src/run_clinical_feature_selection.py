@@ -28,7 +28,8 @@ def main():
     # 1. Define targets and identifiers to exclude
     target_cols = ['OS_STATUS', 'OS_MONTHS', 'PFS_STATUS', 'PFS_MONTHS', 'DSS_STATUS', 'DSS_MONTHS']
     id_cols = ['PATIENT_ID', 'SAMPLE_ID']
-    exclude_cols = target_cols + id_cols + ['TREATMENT_TYPES', 'TREATMENT_AGENTS']
+    recommended_exclusions = ['DAYS_LAST_FOLLOWUP', 'PERSON_NEOPLASM_CANCER_STATUS', 'NEW_TUMOR_EVENT_AFTER_INITIAL_TREATMENT']
+    exclude_cols = target_cols + id_cols + ['TREATMENT_TYPES', 'TREATMENT_AGENTS'] + recommended_exclusions
 
     # 2. Filter out columns with too many missing values (>50% missing)
     missing_pct = df.isna().mean()
