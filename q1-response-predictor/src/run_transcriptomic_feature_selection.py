@@ -193,8 +193,8 @@ def main():
     print("\n--- Top 15 Prognostic Genes in TCGA-SKCM ---")
     print(df_cox.head(15).to_string(index=False))
     
-    # 5. Build Signature Score (Top K genes, e.g. K=30)
-    K = 30
+    # 5. Build Signature Score (Top K genes, e.g. K=20)
+    K = 20
     top_genes_df = df_cox.head(K)
     top_genes = top_genes_df['Gene'].tolist()
     top_betas = top_genes_df['Beta'].tolist()
@@ -356,38 +356,164 @@ def main():
     fig_viol.savefig(viol_plot_path, dpi=300)
     plt.close(fig_viol)
     
+    # 5b. Generate Forest Plot for Top 20 Prognostic Genes
+    # 5b. Generate Forest Plot for Top 20 Prognostic Genes (Categorized)
+    print("Generating Hazard Ratio Forest Plot for top 20 genes...")
+    
+    categories = [
+        ("Transcription Factors", ["ZNF831"]),
+        ("Enzymes & Metabolism", ["IDO1", "PLAAT4"]),
+        ("Signaling & Adapters", ["STAT4", "SAMSN1", "AKAP5"]),
+        ("NK-Cell & T-Cell Receptors & Regulators", ["KLRD1", "KLRK1", "GPR171", "CD72", "CD38", "PTPN22"]),
+        ("Chemokines & Cytokines", ["CCL8", "CXCL10", "CXCL11", "IL15"]),
+        ("Interferon GTPases", ["GBP1", "GBP4", "GBP5", "GBP1P1"])
+    ]
+    
+    category_colors = {
+        "Interferon GTPases": "#3C5488",
+        "Chemokines & Cytokines": "#00A087",
+        "NK-Cell & T-Cell Receptors & Regulators": "#DC0000",
+        "Signaling & Adapters": "#F39B7F",
+        "Enzymes & Metabolism": "#91D1C2",
+        "Transcription Factors": "#8491B4"
+    }
+    
+    y_positions = []
+    y_labels = []
+    
+    lines_to_plot = []   # List of tuples: (hr_lower, hr_upper, y, color)
+    points_to_plot = []  # List of tuples: (hr, y, color)
+    
+    y_pos = 0
+    for cat_name, cat_genes in categories:
+        color = category_colors[cat_name]
+        
+        # Plot genes first (at lower Y coords) so subheading can be placed above them
+        for gene in reversed(cat_genes):
+            if gene not in df_cox['Gene'].values:
+                continue
+            row = df_cox[df_cox['Gene'] == gene].iloc[0]
+            hr = row['Hazard_Ratio']
+            hr_lower = np.exp(row['Beta'] - 1.96 * row['SE'])
+            hr_upper = np.exp(row['Beta'] + 1.96 * row['SE'])
+            p_val = row['p_value']
+            
+            lines_to_plot.append((hr_lower, hr_upper, y_pos, color))
+            points_to_plot.append((hr, y_pos, color))
+            
+            y_positions.append(y_pos)
+            label = f"  {gene:<7} | HR: {hr:.2f} (p={p_val:.2e})"
+            y_labels.append(label)
+            y_pos += 1
+            
+        # Add subheading above the genes in this group
+        y_positions.append(y_pos)
+        y_labels.append(f"{cat_name}")
+        y_pos += 1
+        
+        y_pos += 0.5  # Gap between categories
+        
+    fig_forest, ax_forest = plt.subplots(figsize=(11.5, 9.5))
+    
+    # Draw reference line at 1.0 clearly
+    ax_forest.axvline(x=1.0, color='#333333', linestyle='--', linewidth=1.0, alpha=0.8, zorder=2)
+    
+    # Plot lines and points
+    for hr_lower, hr_upper, y, color in lines_to_plot:
+        ax_forest.plot([hr_lower, hr_upper], [y, y], color=color, linewidth=2.2, solid_capstyle='round', zorder=3)
+        
+    for hr, y, color in points_to_plot:
+        ax_forest.scatter(hr, y, color=color, s=120, edgecolor='white', linewidths=1.0, zorder=5)
+        
+    ax_forest.set_yticks(y_positions)
+    ax_forest.set_yticklabels(y_labels, fontsize=10.5, fontfamily='monospace')
+    
+    # Format subheadings vs gene labels
+    for label in ax_forest.get_yticklabels():
+        text = label.get_text()
+        if not text.startswith("  "):  # It is a category header
+            label.set_fontweight('bold')
+            label.set_color('black')
+            label.set_fontsize(11.0)
+        else:
+            label.set_color('#333333')
+            label.set_fontsize(9.5)
+            
+    # Add clear text label above the 1.0 vertical reference line
+    ax_forest.text(
+        1.0, y_pos - 0.4, 'No Effect (1.0)', 
+        horizontalalignment='center', verticalalignment='bottom', 
+        fontsize=10, color='black', weight='bold', zorder=6
+    )
+            
+    ax_forest.set_title("Functional Classification & Hazard Ratios of Top 20 Genes\n(TCGA-SKCM Overall Survival)", fontsize=14, weight='bold', pad=15)
+    ax_forest.set_xlabel("Hazard Ratio (HR, Log Scale)", fontsize=12, labelpad=10)
+    ax_forest.set_xscale('log')
+    
+    # X tick formatting (ensure 1.0 is clearly visible and formatted as a float)
+    xticks = [0.7, 0.8, 0.9, 1.0]
+    ax_forest.set_xticks(xticks)
+    from matplotlib.ticker import FormatStrFormatter
+    ax_forest.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    
+    # Bold the 1.0 label on the X-axis ticks
+    for label in ax_forest.get_xticklabels():
+        if label.get_text() == '1.0':
+            label.set_fontweight('bold')
+            label.set_color('black')
+            
+    # Set explicit X limits to avoid empty space on the left and show the 1.0 reference line inside the grid
+    ax_forest.set_xlim(0.70, 1.05)
+    ax_forest.set_ylim(-0.5, y_pos - 0.2)
+    
+    ax_forest.grid(True, which='both', linestyle=':', alpha=0.5, zorder=1)
+    sns.despine(left=True, bottom=True)
+    
+    # Place custom legend outside the plot (to the right) so it never obscures any data
+    from matplotlib.patches import Patch
+    legend_elements = [Patch(facecolor=color, label=cat) for cat, color in category_colors.items()]
+    ax_forest.legend(
+        handles=legend_elements, 
+        loc='upper left', 
+        bbox_to_anchor=(1.02, 0.75), 
+        title='Functional Categories', 
+        fontsize=10, 
+        title_fontsize=11
+    )
+    
+    forest_path = PLOT_DIR / "transcriptomic_forest_plot.png"
+    fig_forest.savefig(forest_path, dpi=300, bbox_inches='tight')
+    plt.close(fig_forest)
+    print(f"Saved forest plot to {forest_path}")
+    
     print("\n==================================================")
     print("Generating Results Markdown Report...")
     print("==================================================")
     
     # Write report
     report_content = []
-    report_content.append("# TCGA Pan-Cancer Derived prognostic Signature Report")
+    report_content.append("# TCGA Pan-Cancer Derived Prognostic Signature Report")
     report_content.append(f"\nWe performed transcriptomic feature selection on the **TCGA-SKCM** cohort ($N = {df_expr_log.shape[0]}$ aligned samples with survival data) to build a custom overall survival signature, and subsequently validated it on three independent clinical trial cohorts.")
     
-    report_content.append("\n## 1. Top 30 Prognostic Genes in TCGA-SKCM")
-    report_content.append("The 30 genes most significantly associated with overall survival in univariate Cox regression are listed below. A positive Beta indicates a **risk-associated gene** (higher expression = worse survival), while a negative Beta indicates a **protective gene** (higher expression = better survival).")
+    report_content.append("\n## 1. Top 20 Prognostic Genes in TCGA-SKCM")
+    report_content.append("The 20 genes most significantly associated with overall survival in univariate Cox regression are visualized below. A positive Beta indicates a **risk-associated gene** (higher expression = worse survival), while a negative Beta indicates a **protective gene** (higher expression = better survival).")
+    report_content.append("\n### Hazard Ratio Forest Plot (Top 20 Genes)")
+    report_content.append("The forest plot below visualizes the Hazard Ratios (HR) and their 95% confidence intervals for the top 20 most significant prognostic transcripts. Protective genes (HR < 1.0) are shown in blue, and risk-associated genes (HR > 1.0) are shown in red:")
+    report_content.append("\n![Prognostic Gene Forest Plot](../plots/transcriptomic_forest_plot.png)")
     
-    report_content.append("\n| Rank | Gene Symbol | Beta Coeff ($\beta$) | Hazard Ratio (HR) | SE | Wald z | p-value | FDR (BH-adj) | Role |")
-    report_content.append("|---|---|---|---|---|---|---|---|---|")
-    
-    for i, row in top_genes_df.reset_index().iterrows():
-        role = "Risk" if row['Beta'] > 0 else "Protective"
-        report_content.append(f"| {i+1} | **{row['Gene']}** | {row['Beta']:.4f} | {row['Hazard_Ratio']:.4f} | {row['SE']:.4f} | {row['Wald_z']:.3f} | {row['p_value']:.2e} | {row['FDR']:.2e} | {role} |")
-        
     report_content.append("\n## 2. Kaplan-Meier Survival Curve on TCGA")
     report_content.append("We partitioned TCGA-SKCM patients into High-Risk and Low-Risk groups using the median value of the signature score. The log-rank test indicates an extremely significant separation in survival curves:")
     report_content.append(f"\n*   **Log-Rank p-value**: **{lr_res.p_value:.2e}**")
     report_content.append("\n![KM Curve of TCGA Survival](../plots/km_pancancer_signature.png)")
     
     report_content.append("\n## 3. Validation on Immunotherapy Clinical Trial Cohorts")
-    report_content.append("We evaluated the custom 30-gene prognostic signature on three cohorts receiving anti-PD-1 or combination immunotherapies to see if the overall survival signature translates into predicting immunotherapy response.")
+    report_content.append("We evaluated the custom 20-gene prognostic signature on three cohorts receiving anti-PD-1 or combination immunotherapies to see if the overall survival signature translates into predicting immunotherapy response.")
     
     report_content.append("\n| Cohort | N | Aligned Signature Genes | Response ROC AUC | Mann-Whitney U p-value | Mean Risk (Responders) | Mean Risk (Non-Responders) |")
     report_content.append("|---|---|---|---|---|---|---|")
     
     for name, res in validation_results.items():
-        report_content.append(f"| {name} | {res['N']} | {res['Avail_Genes']}/30 | **{res['AUC']:.3f}** | {res['MW_p']:.2e} | {res['Mean_Resp']:.3f} | {res['Mean_NonResp']:.3f} |")
+        report_content.append(f"| {name} | {res['N']} | {res['Avail_Genes']}/20 | **{res['AUC']:.3f}** | {res['MW_p']:.2e} | {res['Mean_Resp']:.3f} | {res['Mean_NonResp']:.3f} |")
         
     report_content.append("\n### Validation Visualizations")
     report_content.append("#### ROC Curves predicting Response")
@@ -399,7 +525,7 @@ def main():
     # Identify how many are risk vs protective
     risk_count = sum(1 for b in top_betas if b > 0)
     prot_count = sum(1 for b in top_betas if b < 0)
-    report_content.append(f"- **Signature Composition**: Out of the top 30 prognostic genes, **{risk_count}** genes are associated with increased risk, and **{prot_count}** genes are protective.")
+    report_content.append(f"- **Signature Composition**: Out of the top 20 prognostic genes, **{risk_count}** genes are associated with increased risk, and **{prot_count}** genes are protective.")
     report_content.append("- **Prognostic utility**: The signature score is a highly robust prognostic marker on TCGA overall survival.")
     
     # Check if the ROC AUCs are high
