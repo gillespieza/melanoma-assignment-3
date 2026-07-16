@@ -237,8 +237,8 @@ def main():
     try:
         print("Loading TCGA-SKCM data for survival validation...")
         tcga_dir = DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018"
-        df_tcga_expr_raw = pd.read_csv(tcga_dir / "rnaseq_cleaned.csv", index_col=0)
-        df_tcga_clin = pd.read_csv(tcga_dir / "clinical_cleaned.csv", index_col=0)
+        df_tcga_expr_raw = pd.read_csv(tcga_dir / "expr_cleaned.csv", index_col=0)
+        df_tcga_clin = pd.read_csv(tcga_dir / "clin_cleaned.csv", index_col=0)
         
         print("Log2-transforming and filtering genes by variance first...")
         df_tcga_log = np.log2(df_tcga_expr_raw + 1)

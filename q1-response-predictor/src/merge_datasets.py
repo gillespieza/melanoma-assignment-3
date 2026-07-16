@@ -14,8 +14,8 @@ MERGED_DIR.mkdir(exist_ok=True, parents=True)
 def load_tcga():
     print("Loading TCGA-SKCM...")
     tcga_dir = PROCESSED_DIR / "skcm_tcga_pan_can_atlas_2018"
-    df_expr_raw = pd.read_csv(tcga_dir / "rnaseq_cleaned.csv")
-    df_clin = pd.read_csv(tcga_dir / "clinical_cleaned.csv")
+    df_expr_raw = pd.read_csv(tcga_dir / "expr_cleaned.csv")
+    df_clin = pd.read_csv(tcga_dir / "clin_cleaned.csv")
     
     # Map Entrez to Hugo Symbols
     cache_file = tcga_dir / "entrez_to_symbol_cache.json"

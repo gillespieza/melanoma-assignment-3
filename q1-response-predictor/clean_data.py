@@ -16,7 +16,7 @@ RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 
 # Study IDs
-LIU_STUDY_ID = "mel_dfci_2019"
+LIU_STUDY_ID = "mel_iatlas_liu_2019"
 HUGO_STUDY_ID = "mel_iatlas_hugo_ucla_2016"
 RIAZ_STUDY_ID = "mel_iatlas_riaz_nivolumab_2017"
 TCGA_STUDY_ID = "skcm_tcga_pan_can_atlas_2018"
@@ -100,17 +100,30 @@ def clean_liu_2019() -> None:
     if not all((raw_dir / f).exists() for f in [CLIN_PATIENT_FILE, CLIN_SAMPLE_FILE, EXPR_FILE]):
         raise FileNotFoundError(f"Missing raw input files in {raw_dir}. Please run download_data.py first.")
 
-    print("Cleaning Liu 2019 (mel_dfci_2019)...")
+    print("Cleaning Liu 2019 (mel_iatlas_liu_2019)...")
 
     # Load raw clinical data
     df_patient = pd.read_csv(raw_dir / CLIN_PATIENT_FILE, sep="\t", skiprows=4)
     df_sample = pd.read_csv(raw_dir / CLIN_SAMPLE_FILE, sep="\t", skiprows=4)
-    df_clin = pd.merge(df_sample, df_patient, on="PATIENT_ID")
-    
-    # Map Response (CR/PR = 1, PD = 0)
-    df_clin['response'] = df_clin['BR'].map(RESPONSE_MAP)
+    df_clin = clean_clinical_df(pd.merge(df_sample, df_patient, on="PATIENT_ID"))
+
+    # Map response using iAtlas column
+    df_clin['response'] = df_clin['RESPONSE'].map(RESPONSE_MAP)
     df_clin = df_clin.dropna(subset=['response'])
     df_clin = df_clin.set_index("SAMPLE_ID")
+
+    # Standardize clinical metadata columns
+    df_clin['patient_id'] = df_clin['PATIENT_ID']
+    df_clin['os_months'] = df_clin['OS_MONTHS']
+    df_clin['os_status'] = df_clin['OS_STATUS'].map({"1:DECEASED": 1, "0:LIVING": 0})
+    df_clin['age (yrs)'] = df_clin['AGE_AT_DIAGNOSIS']
+    df_clin['gender'] = df_clin['SEX']
+
+    # Append mutation status (BRAF, NRAS, NF1) from MAF
+    df_mut = parse_maf_mutations(raw_dir, sample_ids=df_clin.index.tolist())
+    df_clin = df_clin.join(df_mut, how="left")
+    for col in ["mut_BRAF", "mut_NRAS", "mut_NF1"]:
+        df_clin[col] = df_clin[col].fillna(0).astype(int)
 
     # Load raw expression (TPM)
     df_expr = parse_cbioportal_expression(raw_dir / EXPR_FILE).T
@@ -148,22 +161,22 @@ def clean_hugo_2016() -> None:
 
     print(f"Cleaning Hugo 2016 ({HUGO_STUDY_ID})...")
 
-    # --- Clinical ---
+    # Load raw clinical data
     df_patient = pd.read_csv(raw_dir / CLIN_PATIENT_FILE, sep="\t", skiprows=4)
     df_sample = pd.read_csv(raw_dir / CLIN_SAMPLE_FILE, sep="\t", skiprows=4)
-    df_clin = pd.merge(df_sample, df_patient, on="PATIENT_ID")
-
-    # Map response: CR/PR -> 1, PD -> 0, others -> NaN
-    df_clin["response"] = df_clin["RESPONSE"].map(RESPONSE_MAP)
-    df_clin = df_clin.dropna(subset=["response"])
+    df_clin = clean_clinical_df(pd.merge(df_sample, df_patient, on="PATIENT_ID"))
+    
+    # Map Response using iAtlas column
+    df_clin['response'] = df_clin['RESPONSE'].map(RESPONSE_MAP)
+    df_clin = df_clin.dropna(subset=['response'])
     df_clin = df_clin.set_index("SAMPLE_ID")
 
-    # Standardise columns for downstream compatibility
-    df_clin["patient_id"] = df_clin["PATIENT_ID"]
-    df_clin["os_months"] = df_clin["OS_MONTHS"]
-    df_clin["os_status"] = df_clin["OS_STATUS"].map({"1:DECEASED": 1, "0:LIVING": 0})
-    df_clin["age (yrs)"] = df_clin["AGE_AT_DIAGNOSIS"]
-    df_clin["gender"] = df_clin["SEX"]
+    # Standardize clinical metadata columns for downstream compatibility
+    df_clin['patient_id'] = df_clin['PATIENT_ID']
+    df_clin['os_months'] = df_clin['OS_MONTHS']
+    df_clin['os_status'] = df_clin['OS_STATUS'].map({"1:DECEASED": 1, "0:LIVING": 0})
+    df_clin['age (yrs)'] = df_clin['AGE_AT_DIAGNOSIS']
+    df_clin['gender'] = df_clin['SEX']
 
     # Append mutation status (BRAF, NRAS, NF1) from MAF
     df_mut = parse_maf_mutations(raw_dir, sample_ids=df_clin.index.tolist())
@@ -367,7 +380,8 @@ def clean_tcga_skcm() -> None:
 
     # Save cleaned
     cleaned_clin_df.to_csv(proc_dir / "clinical_cleaned.csv", index=False)
-    cleaned_rnaseq_df.to_csv(proc_dir / "rnaseq_cleaned.csv", index=False)
+    cleaned_clin_df.to_csv(proc_dir / "clin_cleaned.csv", index=False)
+    cleaned_rnaseq_df.to_csv(proc_dir / "expr_cleaned.csv", index=False)
     print(f"  TCGA-SKCM: Cleaned {len(cleaned_clin_df)} samples. Integrated and tidied treatment data fields (PATIENT_ID is first).")
 
 

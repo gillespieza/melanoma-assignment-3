@@ -15,7 +15,7 @@ RIAZ_DIR = RAW_DIR / "riaz_2017"
 TCGA_DIR = RAW_DIR / "skcm_tcga_pan_can_atlas_2018"
 
 # Study IDs on cBioPortal
-LIU_STUDY_ID = "mel_dfci_2019"
+LIU_STUDY_ID = "mel_iatlas_liu_2019"
 HUGO_STUDY_ID = "mel_iatlas_hugo_ucla_2016"
 RIAZ_STUDY_ID = "mel_iatlas_riaz_nivolumab_2017"
 TCGA_STUDY_ID = "skcm_tcga_pan_can_atlas_2018"
@@ -44,6 +44,14 @@ def download_and_extract_cbioportal_dataset(study_id: str, target_dir: Path) -> 
     if patient_file.exists() and patient_file.stat().st_size > 0:
         print(f"Dataset {study_id} already exists in {target_dir.name} and is non-empty.")
         return
+    # If target directory exists (possibly from a previous incomplete download), remove it to avoid file lock issues
+    if target_dir.exists():
+        try:
+            shutil.rmtree(target_dir, ignore_errors=False)
+            print(f"Removed existing directory {target_dir} to ensure a clean extraction.")
+        except Exception as e:
+            print(f"Failed to remove existing directory {target_dir}: {e}")
+            raise
 
     tar_path = RAW_DIR / f"{study_id}.tar.gz"
     url = f"https://datahub.assets.cbioportal.org/{study_id}.tar.gz"
