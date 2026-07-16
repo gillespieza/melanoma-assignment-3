@@ -40,6 +40,20 @@ RESPONSE_MAP = {
 }
 
 
+def parse_cbioportal_expression(expr_file_path: Path) -> pd.DataFrame:
+    """
+    Loads a raw cBioPortal expression file, handles Entrez_Gene_Id dropping,
+    averages duplicates by Hugo_Symbol, and returns the gene x sample dataframe.
+    """
+    df_expr = pd.read_csv(expr_file_path, sep="\t")
+    df_expr = df_expr.dropna(subset=["Hugo_Symbol"])
+    df_expr = df_expr.set_index("Hugo_Symbol")
+    if "Entrez_Gene_Id" in df_expr.columns:
+        df_expr = df_expr.drop(columns=["Entrez_Gene_Id"])
+    df_expr = df_expr.groupby(df_expr.index).mean()
+    return df_expr
+
+
 def parse_maf_mutations(raw_dir: Path, sample_ids: Optional[list] = None) -> pd.DataFrame:
     """
     Parses BRAF, NRAS, NF1 binary mutation status from a cBioPortal MAF file.
@@ -99,14 +113,7 @@ def clean_liu_2019() -> None:
     df_clin = df_clin.set_index("SAMPLE_ID")
 
     # Load raw expression (TPM)
-    df_expr = pd.read_csv(raw_dir / EXPR_FILE, sep="\t")
-    df_expr = df_expr.dropna(subset=["Hugo_Symbol"])
-    df_expr = df_expr.set_index("Hugo_Symbol")
-    if "Entrez_Gene_Id" in df_expr.columns:
-        df_expr = df_expr.drop(columns=["Entrez_Gene_Id"])
-
-    df_expr = df_expr.groupby(df_expr.index).mean()
-    df_expr = df_expr.T
+    df_expr = parse_cbioportal_expression(raw_dir / EXPR_FILE).T
 
     # Align samples
     df_expr, df_clin = align_expression_and_clinical(df_expr, df_clin)
@@ -165,13 +172,7 @@ def clean_hugo_2016() -> None:
         df_clin[col] = df_clin[col].fillna(0).astype(int)
 
     # --- Expression (TPM, Hugo symbols) ---
-    df_expr = pd.read_csv(raw_dir / EXPR_FILE, sep="\t")
-    df_expr = df_expr.dropna(subset=["Hugo_Symbol"])
-    df_expr = df_expr.set_index("Hugo_Symbol")
-    if "Entrez_Gene_Id" in df_expr.columns:
-        df_expr = df_expr.drop(columns=["Entrez_Gene_Id"])
-    df_expr = df_expr.groupby(df_expr.index).mean()
-    df_expr = df_expr.T
+    df_expr = parse_cbioportal_expression(raw_dir / EXPR_FILE).T
 
     # Align samples
     df_expr, df_clin = align_expression_and_clinical(df_expr, df_clin)
@@ -238,16 +239,10 @@ def clean_riaz_2017() -> None:
     df_clin["mut_NF1"] = df_clin["patient_id"].map(df_mut["mut_NF1"].to_dict()).fillna(0).astype(int)
 
     # --- Expression (TPM, Hugo symbols) ---
-    df_expr = pd.read_csv(raw_dir / EXPR_FILE, sep="\t")
-    df_expr = df_expr.dropna(subset=["Hugo_Symbol"])
-    df_expr = df_expr.set_index("Hugo_Symbol")
-    if "Entrez_Gene_Id" in df_expr.columns:
-        df_expr = df_expr.drop(columns=["Entrez_Gene_Id"])
-    df_expr = df_expr.groupby(df_expr.index).mean()
+    df_expr = parse_cbioportal_expression(raw_dir / EXPR_FILE)
     # Filter expression columns to pre-treatment samples only
     pre_cols = [c for c in df_expr.columns if c.endswith("_pre")]
-    df_expr = df_expr[pre_cols]
-    df_expr = df_expr.T
+    df_expr = df_expr[pre_cols].T
 
     # Align samples
     df_expr, df_clin = align_expression_and_clinical(df_expr, df_clin)

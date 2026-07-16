@@ -1,6 +1,4 @@
-import tarfile
 import shutil
-import requests
 from pathlib import Path
 
 # Import utility helpers
