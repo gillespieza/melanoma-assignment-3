@@ -13,6 +13,7 @@ from src.signatures import extract_all_signatures
 from src.models import run_loco_cv
 from src.evaluation import plot_roc_curves, plot_pr_curves, run_survival_analysis
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
@@ -158,7 +159,7 @@ def main():
     
     signature_cols = sig_corrected.columns.tolist()
     
-    for model_type in ["lr", "rf", "xgb"]:
+    for model_type in ["lr", "rf", "xgb", "svm", "elasticnet"]:
         print(f"\nTraining and testing model: {model_type.upper()}")
         loco_results = run_loco_cv(cohort_dfs, signature_cols, model_type=model_type)
         
@@ -325,11 +326,17 @@ def main():
         # Train model on all clinical trials pooled
         X_train_full = sig_corrected
         y_train_full = pd.concat([y_liu, y_hugo, y_riaz], axis=0)
+        
+        # Scale features
+        scaler_full = StandardScaler()
+        X_train_full_scaled = scaler_full.fit_transform(X_train_full)
+        sig_tcga_corrected_scaled = scaler_full.transform(sig_tcga_corrected)
+        
         final_model = LogisticRegression(max_iter=1000, C=1.0)
-        final_model.fit(X_train_full, y_train_full)
+        final_model.fit(X_train_full_scaled, y_train_full)
         
         # Predict on TCGA
-        tcga_pred = final_model.predict_proba(sig_tcga_corrected)[:, 1]
+        tcga_pred = final_model.predict_proba(sig_tcga_corrected_scaled)[:, 1]
         
         # Clean TCGA survival columns
         df_tcga_clin_clean = df_tcga_clin.copy()
@@ -372,7 +379,7 @@ def main():
     comb_features = signature_cols + ['mut_BRAF', 'mut_NRAS', 'mut_NF1']
     
     print("\nTraining combined Expression + Mutation model (LOCO between Liu and Hugo):")
-    for model_type in ["lr", "rf", "xgb"]:
+    for model_type in ["lr", "rf", "xgb", "svm", "elasticnet"]:
         print(f"\nCombined Model: {model_type.upper()}")
         loco_results_comb = run_loco_cv(cohort_dfs_comb, comb_features, model_type=model_type)
         metrics_rows = []
@@ -398,23 +405,41 @@ def main():
     
     import pickle
     from sklearn.ensemble import RandomForestClassifier
+    from sklearn.svm import SVC
     
     # Train final models on all pooled clinical trial data
     X_train_final = sig_corrected
     y_train_final = pd.concat([y_liu, y_hugo, y_riaz], axis=0)
     
+    # Standard scale features
+    scaler_final = StandardScaler()
+    X_train_final_scaled = scaler_final.fit_transform(X_train_final)
+    X_train_final_scaled = pd.DataFrame(X_train_final_scaled, columns=X_train_final.columns, index=X_train_final.index)
+    
     rf_final = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5)
-    rf_final.fit(X_train_final, y_train_final)
+    rf_final.fit(X_train_final_scaled, y_train_final)
     
     lr_final = LogisticRegression(max_iter=1000, C=1.0)
-    lr_final.fit(X_train_final, y_train_final)
+    lr_final.fit(X_train_final_scaled, y_train_final)
+    
+    svm_final = SVC(probability=True, random_state=42, C=1.0)
+    svm_final.fit(X_train_final_scaled, y_train_final)
+    
+    elasticnet_final = LogisticRegression(penalty='elasticnet', solver='saga', l1_ratio=0.5, C=1.0, random_state=42, max_iter=2000)
+    elasticnet_final.fit(X_train_final_scaled, y_train_final)
     
     with open(models_dir / "final_rf_model.pkl", "wb") as f:
         pickle.dump(rf_final, f)
     with open(models_dir / "final_lr_model.pkl", "wb") as f:
         pickle.dump(lr_final, f)
+    with open(models_dir / "final_svm_model.pkl", "wb") as f:
+        pickle.dump(svm_final, f)
+    with open(models_dir / "final_elasticnet_model.pkl", "wb") as f:
+        pickle.dump(elasticnet_final, f)
+    with open(models_dir / "final_scaler.pkl", "wb") as f:
+        pickle.dump(scaler_final, f)
         
-    print(f"Saved final Random Forest and Logistic Regression models to {models_dir}/")
+    print(f"Saved final Random Forest, Logistic Regression, SVM, ElasticNet models and scaler to {models_dir}/")
 
     print("\n==================================================")
     print("Done! All analysis runs completed successfully.")

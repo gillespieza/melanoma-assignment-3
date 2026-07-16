@@ -3,6 +3,8 @@ import pandas as pd
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
 import xgboost as xgb
 
@@ -54,6 +56,34 @@ def tune_xgboost(X_train, y_train):
     grid.fit(X_train, y_train)
     return grid.best_estimator_
 
+def tune_svc(X_train, y_train):
+    """
+    Tuning Support Vector Classifier (SVC) using Grid Search.
+    """
+    param_grid = {
+        'C': [0.01, 0.1, 1.0, 10.0],
+        'kernel': ['linear', 'rbf']
+    }
+    svc = SVC(probability=True, random_state=42)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    grid = GridSearchCV(svc, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
+    grid.fit(X_train, y_train)
+    return grid.best_estimator_
+
+def tune_elasticnet(X_train, y_train):
+    """
+    Tuning ElasticNet (Logistic Regression with elasticnet penalty) using Grid Search.
+    """
+    param_grid = {
+        'C': [0.001, 0.01, 0.1, 1.0, 10.0],
+        'l1_ratio': [0.1, 0.3, 0.5, 0.7, 0.9]
+    }
+    lr = LogisticRegression(penalty='elasticnet', solver='saga', random_state=42, max_iter=2000)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    grid = GridSearchCV(lr, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
+    grid.fit(X_train, y_train)
+    return grid.best_estimator_
+
 def get_model(model_type, X_train, y_train):
     """
     Tunes and returns the requested model.
@@ -64,6 +94,10 @@ def get_model(model_type, X_train, y_train):
         return tune_random_forest(X_train, y_train)
     elif model_type == "xgb":
         return tune_xgboost(X_train, y_train)
+    elif model_type == "svm":
+        return tune_svc(X_train, y_train)
+    elif model_type == "elasticnet":
+        return tune_elasticnet(X_train, y_train)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
@@ -111,11 +145,18 @@ def run_loco_cv(cohort_dfs, feature_cols, model_type="lr"):
         X_test, y_test = cohort_dfs[test_cohort]
         X_test = X_test[feature_cols]
         
-        # Tune and train model on combined training data
-        model = get_model(model_type, X_train, y_train)
+        # Scale features
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_train_scaled = pd.DataFrame(X_train_scaled, columns=feature_cols, index=X_train.index)
+        X_test_scaled = scaler.transform(X_test)
+        X_test_scaled = pd.DataFrame(X_test_scaled, columns=feature_cols, index=X_test.index)
         
-        # Predict on test cohort
-        y_pred_prob = model.predict_proba(X_test)[:, 1]
+        # Tune and train model on scaled training data
+        model = get_model(model_type, X_train_scaled, y_train)
+        
+        # Predict on scaled test cohort
+        y_pred_prob = model.predict_proba(X_test_scaled)[:, 1]
         
         # Evaluate
         metrics = evaluate_predictions(y_test, y_pred_prob)
@@ -124,7 +165,8 @@ def run_loco_cv(cohort_dfs, feature_cols, model_type="lr"):
             'y_true': y_test.values,
             'y_pred_prob': y_pred_prob,
             'metrics': metrics,
-            'model': model
+            'model': model,
+            'scaler': scaler
         }
         
     return results
