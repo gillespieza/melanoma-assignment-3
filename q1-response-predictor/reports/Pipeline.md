@@ -7,7 +7,7 @@ This report documents the workflow and operations implemented in `download_data.
 ## 1. Data Acquisition (`download_data.py`)
 
 The data acquisition script standardizes the raw input files by downloading official, curated datasets from the **cBioPortal DataHub**. It processes four cohorts:
-1. **Liu 2019** (`mel_dfci_2019`)
+1. **Liu 2019** (`mel_iatlas_liu_2019`)
 2. **Hugo 2016** (`mel_iatlas_hugo_ucla_2016`)
 3. **Riaz 2017** (`mel_iatlas_riaz_nivolumab_2017`)
 4. **TCGA-SKCM** (`skcm_tcga_pan_can_atlas_2018`)
@@ -38,8 +38,8 @@ The data cleaning pipeline transforms raw inputs into normalized expression matr
 
 #### A. Liu 2019 (`clean_liu_2019`)
 * Merges patient and sample clinical sheets.
-* Maps best response (`BR`) to binary target variable `response` (CR/PR $\rightarrow 1$, PD $\rightarrow 0$).
-* Log2-transforms TPM expression matrix ($\log_2(\text{TPM} + 1)$) and aligns samples.
+* Maps response (`RESPONSE`) to binary target variable `response` (CR/PR → 1, PD → 0) and standardises clinical metadata (patient_id, os_months, os_status, age, gender).
+* Log2‑transforms TPM expression matrix (log2(TPM + 1)) and aligns samples.
 
 #### B. Hugo 2016 (`clean_hugo_2016`)
 * Merges sample and patient clinical sheets.

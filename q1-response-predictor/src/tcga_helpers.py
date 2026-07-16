@@ -232,6 +232,47 @@ def build_clinical_df(sample_records: List[dict], patient_records: List[dict]) -
     return sample_wide
 
 def clean_clinical_df(raw_df: pd.DataFrame) -> pd.DataFrame:
+    """Apply deduplication and survival data cleaning."""
+    df = raw_df.copy()
+    df["SAMPLE_ID"] = df["SAMPLE_ID"].apply(standardise_sample_id)
+    df = df[df["SAMPLE_ID"] != ""]
+    df = df.drop_duplicates(subset=["SAMPLE_ID"])
+    if "PATIENT_ID" in df.columns:
+        df = df.drop_duplicates(subset=["PATIENT_ID"])
+    if "OS_STATUS" in df.columns and "OS_MONTHS" in df.columns:
+        df["OS_STATUS"] = df["OS_STATUS"].apply(parse_survival_status)
+        df["OS_MONTHS"] = pd.to_numeric(df["OS_MONTHS"], errors="coerce")
+        invalid_mask = (
+            df["OS_MONTHS"].isna() |
+            (df["OS_MONTHS"] <= 0) |
+            df["OS_STATUS"].isna()
+        )
+        df = df[~invalid_mask]
+    if "PFS_STATUS" in df.columns and "PFS_MONTHS" in df.columns:
+        df["PFS_STATUS"] = df["PFS_STATUS"].apply(parse_survival_status)
+        df["PFS_MONTHS"] = pd.to_numeric(df["PFS_MONTHS"], errors="coerce")
+    if "DSS_STATUS" in df.columns and "DSS_MONTHS" in df.columns:
+        df["DSS_STATUS"] = df["DSS_STATUS"].apply(parse_survival_status)
+        df["DSS_MONTHS"] = pd.to_numeric(df["DSS_MONTHS"], errors="coerce")
+    # ---- New admin‑column filter ------------------------------------------------
+    def _is_admin(col: str) -> bool:
+        # Remove columns that are duplicates or cBioPortal administrative metadata
+        admin_suffixes = ("_PATIENT", "_SAMPLE")
+        if col.endswith(admin_suffixes):
+            return True
+        # Common admin columns that are not used in modeling
+        unwanted = {"BIRTH_YEAR", "CANCER_TYPE_DETAILED", "PROTOCOL_SUBMIT_DATE"}
+        if col in unwanted:
+            return True
+        # Keep identifier columns (only one copy)
+        if col in {"PATIENT_ID", "SAMPLE_ID"}:
+            # If there are multiple versions we will keep the base name only
+            return False
+        return False
+    # Drop admin columns identified above
+    cols_to_drop = [c for c in df.columns if _is_admin(c)]
+    df = df.drop(columns=cols_to_drop, errors="ignore")
+    return df
     """
     Apply deduplication and survival data cleaning.
     """
