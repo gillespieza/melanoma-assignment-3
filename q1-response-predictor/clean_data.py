@@ -115,9 +115,11 @@ def clean_liu_2019() -> None:
     # Standardize clinical metadata columns
     df_clin['patient_id'] = df_clin['PATIENT_ID']
     df_clin['os_months'] = df_clin['OS_MONTHS']
-    df_clin['os_status'] = df_clin['OS_STATUS'].map({"1:DECEASED": 1, "0:LIVING": 0})
-    df_clin['age (yrs)'] = df_clin['AGE_AT_DIAGNOSIS']
-    df_clin['gender'] = df_clin['SEX']
+    df_clin['os_status'] = df_clin['OS_STATUS']
+    if 'AGE_AT_DIAGNOSIS' in df_clin.columns:
+        df_clin['age (yrs)'] = df_clin['AGE_AT_DIAGNOSIS']
+    if 'SEX' in df_clin.columns:
+        df_clin['gender'] = df_clin['SEX']
 
     # Append mutation status (BRAF, NRAS, NF1) from MAF
     df_mut = parse_maf_mutations(raw_dir, sample_ids=df_clin.index.tolist())
@@ -174,9 +176,11 @@ def clean_hugo_2016() -> None:
     # Standardize clinical metadata columns for downstream compatibility
     df_clin['patient_id'] = df_clin['PATIENT_ID']
     df_clin['os_months'] = df_clin['OS_MONTHS']
-    df_clin['os_status'] = df_clin['OS_STATUS'].map({"1:DECEASED": 1, "0:LIVING": 0})
-    df_clin['age (yrs)'] = df_clin['AGE_AT_DIAGNOSIS']
-    df_clin['gender'] = df_clin['SEX']
+    df_clin['os_status'] = df_clin['OS_STATUS']
+    if 'AGE_AT_DIAGNOSIS' in df_clin.columns:
+        df_clin['age (yrs)'] = df_clin['AGE_AT_DIAGNOSIS']
+    if 'SEX' in df_clin.columns:
+        df_clin['gender'] = df_clin['SEX']
 
     # Append mutation status (BRAF, NRAS, NF1) from MAF
     df_mut = parse_maf_mutations(raw_dir, sample_ids=df_clin.index.tolist())
@@ -224,11 +228,10 @@ def clean_riaz_2017() -> None:
     # --- Clinical ---
     df_patient = pd.read_csv(raw_dir / CLIN_PATIENT_FILE, sep="\t", skiprows=4)
     df_sample = pd.read_csv(raw_dir / CLIN_SAMPLE_FILE, sep="\t", skiprows=4)
-    df_clin = pd.merge(df_sample, df_patient, on="PATIENT_ID")
+    df_clin = clean_clinical_df(pd.merge(df_sample, df_patient, on="PATIENT_ID"))
 
     # Filter to pre-treatment baseline biopsies only
-    df_clin = df_clin[df_sample["SAMPLE_ID"].str.endswith("_pre").reindex(df_clin.index, fill_value=False) |
-                      df_clin["SAMPLE_ID"].str.endswith("_pre")]
+    df_clin = df_clin[df_clin["SAMPLE_ID"].str.endswith("_pre")]
 
     # Map response: CR/PR -> 1, PD -> 0, others -> NaN
     df_clin["response"] = df_clin["RESPONSE"].map(RESPONSE_MAP)
@@ -238,9 +241,11 @@ def clean_riaz_2017() -> None:
     # Standardise columns for downstream compatibility
     df_clin["patient_id"] = df_clin["PATIENT_ID"]
     df_clin["os_months"] = df_clin["OS_MONTHS"]
-    df_clin["os_status"] = df_clin["OS_STATUS"].map({"1:DECEASED": 1, "0:LIVING": 0})
-    df_clin["age"] = df_clin["AGE_AT_DIAGNOSIS"]
-    df_clin["sex"] = df_clin["SEX"]
+    df_clin["os_status"] = df_clin["OS_STATUS"]
+    if "AGE_AT_DIAGNOSIS" in df_clin.columns:
+        df_clin["age"] = df_clin["AGE_AT_DIAGNOSIS"]
+    if "SEX" in df_clin.columns:
+        df_clin["sex"] = df_clin["SEX"]
 
     # Append mutation status (BRAF, NRAS, NF1) from MAF
     # Note: Riaz MAF sample IDs match the PATIENT_ID, not the SAMPLE_ID (_pre/_on suffix)

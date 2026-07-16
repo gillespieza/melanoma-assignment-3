@@ -104,6 +104,10 @@ def run_survival_analysis(df_clin, y_pred_prob, time_col='os_months', status_col
         low_prob = df[df['y_pred_prob'] < threshold]
         print(f"Using median probability threshold: {threshold:.3f}")
         
+    if len(high_prob) == 0 or len(low_prob) == 0:
+        print("Cannot split cohort into high and low probability groups (constant predictions). Skipping survival analysis.")
+        return None
+        
     # Fit KM curves
     kmf_high = KaplanMeierFitter()
     kmf_low = KaplanMeierFitter()
