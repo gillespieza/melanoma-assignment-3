@@ -58,8 +58,15 @@ def main():
         aggfunc='count'
     ).fillna(0).astype(int)
     
-    # Select target genes
-    target_genes = ['BRAF', 'NRAS', 'NF1', 'CDKN2A', 'PTEN', 'JAK1', 'JAK2', 'B2M', 'TAP1', 'TAP2']
+    # Select target genes (10 drivers + 20 signature genes)
+    driver_genes = ['BRAF', 'NRAS', 'NF1', 'CDKN2A', 'PTEN', 'JAK1', 'JAK2', 'B2M', 'TAP1', 'TAP2']
+    signature_genes = [
+        'GBP4', 'CCL8', 'GBP5', 'KLRD1', 'PLAAT4', 'GPR171', 'IDO1', 
+        'CXCL11', 'CXCL10', 'PTPN22', 'GBP1', 'CD72', 'STAT4', 'IL15', 
+        'AKAP5', 'SAMSN1', 'GBP1P1', 'ZNF831', 'KLRK1', 'CD38'
+    ]
+    target_genes = driver_genes + signature_genes
+    
     # Ensure all target genes are in the columns
     for g in target_genes:
         if g not in df_mut_wide.columns:
@@ -105,10 +112,10 @@ def main():
     # ==========================================
     sns.set_theme(style="white")
     
-    fig = plt.figure(figsize=(15, 12))
+    fig = plt.figure(figsize=(15, 18))
     # GridSpec layout: 
     # Row 0: TMB barplot (height ratio = 2)
-    # Row 1: Central mutation grid & right frequencies (height ratio = 6)
+    # Row 1: Central mutation grid & right frequencies (height ratio = 14)
     # Row 2: Space / Margin (height ratio = 0.2)
     # Row 3: Response track (height ratio = 0.4)
     # Row 4: CNA track (height ratio = 0.4)
@@ -117,7 +124,7 @@ def main():
     gs = gridspec.GridSpec(
         nrows=6, ncols=2, 
         width_ratios=[12, 2], 
-        height_ratios=[2, 6, 0.2, 0.4, 0.4, 0.4],
+        height_ratios=[2, 14, 0.2, 0.4, 0.4, 0.4],
         wspace=0.08, hspace=0.12
     )
     
@@ -147,7 +154,21 @@ def main():
         linewidths=0.5, linecolor='white', ax=ax_mut, 
         yticklabels=target_genes, xticklabels=False
     )
-    ax_mut.set_yticklabels(target_genes, rotation=0, fontsize=12, weight='bold')
+    
+    # Format driver vs signature gene labels
+    for label in ax_mut.get_yticklabels():
+        gene_name = label.get_text()
+        if gene_name in signature_genes:
+            label.set_color('#3C5488')  # NPG Blue for signature genes
+            label.set_fontsize(10.0)
+            label.set_fontweight('bold')
+        else:
+            label.set_color('black')    # Black for driver genes
+            label.set_fontsize(11.0)
+            label.set_fontweight('bold')
+            
+    # Draw a solid horizontal black line separating the driver panel from the signature panel
+    ax_mut.axhline(y=len(driver_genes), color='black', linewidth=2.0, linestyle='-', zorder=10)
     
     # C. Right Subplot: Gene Frequencies (Percentage Barplot)
     ax_freq = fig.add_subplot(gs[1, 1])
@@ -163,7 +184,10 @@ def main():
     
     # Add percentage labels to the bar plot
     for i, freq in enumerate(gene_freqs):
-        ax_freq.text(freq + 1, i, f"{freq:.1f}%", va='center', fontsize=10, weight='bold')
+        ax_freq.text(freq + 1, i, f"{freq:.1f}%", va='center', fontsize=8.5, weight='bold')
+        
+    # Draw horizontal separator in frequencies plot to match the central grid
+    ax_freq.axhline(y=len(driver_genes) - 0.5, color='black', linewidth=1.5, linestyle='-', zorder=10)
         
     # D. Bottom Track 1: Response Status
     ax_resp = fig.add_subplot(gs[3, 0])

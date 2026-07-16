@@ -33,6 +33,11 @@ We evaluated somatic mutations in three biological pathways that dictate tumor i
 | **IFN-gamma Signaling** | **9.7%** (`JAK1`: 5.8%, `JAK2`: 3.9%, `STAT1`: 0.0%) |
 | **Survival & Proliferation Drivers** | **23.3%** (`PTEN`: 6.8%, `CDKN2A`: 14.6%, `PIK3CA`: 4.9%) |
 
+### Co-Mutation & Clinical Landscape (Liu 2019)
+The co-mutation landscape (oncoplot) below displays the somatic mutation profiles of individual patients ($N=103$ aligned samples) across both standard driver/resistance genes (black labels) and our top 20 prognostic signature genes (blue labels). Patients are stratified by Tumor Mutational Burden (TMB), fraction genome altered (CNA Prop), gender, and clinical response to immunotherapy:
+
+![Co-Mutation Landscape of Liu 2019](../plots/comut_landscape_liu_2019.png)
+
 ## 3. Aneuploidy, Copy-Number Alterations, & TMB vs. Immune Infiltration
 We evaluated how copy-number burden (aneuploidy score / fraction genome altered) and mutational burden (TMB) correlate with continuous immune signatures. Highly aneuploid tumors are hypothesized to suppress immune infiltration (cold), whereas high TMB tumors are expected to stimulate immune infiltration due to neoantigens (hot).
 
