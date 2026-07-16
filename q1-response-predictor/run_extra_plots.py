@@ -67,11 +67,7 @@ def main():
     plt.close()
     print(f"Saved correlation heatmap to {corr_path}")
     
-    # Copy to artifacts
-    dest_corr = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/signature_correlation_heatmap.png")
-    import shutil
-    dest_corr.parent.mkdir(exist_ok=True, parents=True)
-    shutil.copy(corr_path, dest_corr)
+
     
     print("\n==================================================")
     print("Phase 3: Generating Univariate Violins stratified by Response...")
@@ -105,10 +101,7 @@ def main():
     plt.close()
     print(f"Saved violin plots to {violin_path}")
     
-    # Copy to artifacts
-    dest_violin = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/signature_violins_by_response.png")
-    dest_violin.parent.mkdir(exist_ok=True, parents=True)
-    shutil.copy(violin_path, dest_violin)
+
 
     print("\n==================================================")
     print("Phase 4: Generating Forest Plot of Odds Ratios...")
@@ -188,12 +181,6 @@ def main():
     plt.close()
     print(f"\nSaved Forest Plot to {forest_path}")
     
-    # Copy to artifacts
-    dest_forest = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/forest_plot_odds_ratios.png")
-    dest_forest.parent.mkdir(exist_ok=True, parents=True)
-    shutil.copy(forest_path, dest_forest)
-    
-    print("Copied all plots to artifacts directory.")
     print("==================================================")
 
 if __name__ == "__main__":

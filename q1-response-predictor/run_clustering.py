@@ -106,12 +106,7 @@ def main():
     plt.close()
     print(f"Saved Clustermap to {clustermap_path}")
     
-    # Copy to artifacts directory
-    dest_path = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/signature_clustermap.png")
-    import shutil
-    dest_path.parent.mkdir(exist_ok=True, parents=True)
-    shutil.copy(clustermap_path, dest_path)
-    print("Copied Clustermap to artifacts directory.")
+
     
     print("\n==================================================")
     print("Phase 3: Association of Clusters with Response...")
