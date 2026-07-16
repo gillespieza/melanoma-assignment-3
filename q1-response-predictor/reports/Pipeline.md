@@ -59,6 +59,29 @@ The data cleaning pipeline transforms raw inputs into normalized expression matr
 * **Timeline Treatment Integration**: Checks for the existence of `data_timeline_treatment.txt` to parse and aggregate prior clinical treatments (e.g. pivoting key agents like Ipilimumab, Nivolumab, Pembrolizumab, Vemurafenib, Dabrafenib, Trametinib, and Interferon into binary flag columns).
 * Filters out redundant and administrative clinical columns.
 
+### Cohort Attrition (Samples Lost at Each Step)
+
+The following table summarizes the number of samples/patients retained and lost at each phase of the cleaning pipeline:
+
+| Cohort | Step | Starting N | Action / Filter | Lost | Retained N |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Liu 2019** | 1 | 122 | Raw patient-sample merge | - | 122 |
+| | 2 | 122 | Response filter (keep CR/PR/PD; drop SD/MR/NaN) | 18 | 104 |
+| | 3 | 104 | Expression matrix sample alignment | 0 | 104 |
+| **Hugo 2016** | 1 | 27 | Raw patient-sample merge | - | 27 |
+| | 2 | 27 | Quality check: drop duplicate PATIENT_ID & invalid OS | 1 | 26 |
+| | 3 | 26 | Response filter (keep CR/PR/PD; drop SD/MR/NaN) | 0 | 26 |
+| | 4 | 26 | Expression matrix sample alignment | 0 | 26 |
+| **Riaz 2017** | 1 | 107 | Raw patient-sample merge (64 patients) | - | 107 |
+| | 2 | 107 | Quality check: drop duplicate PATIENT_ID & invalid OS | 43 | 64 |
+| | 3 | 64 | Select pre-treatment baseline samples (`_pre`) | 30 | 34 |
+| | 4 | 34 | Response filter (keep CR/PR/PD; drop SD/MR/NaN) | 14 | 20 |
+| | 5 | 20 | Expression matrix sample alignment | 0 | 20 |
+| **TCGA-SKCM** | 1 | 448 | Raw patient-sample merge (442 patients) | - | 448 |
+| | 2 | 448 | Quality check: drop duplicate PATIENT_ID (keep first sample per patient) | 6 | 442 |
+| | 3 | 442 | Quality check: drop invalid OS months/status | 16 | 426 |
+| | 4 | 426 | Final clinical cohort size | 0 | 426 |
+
 ---
 
 ## 3. Outputs Generated

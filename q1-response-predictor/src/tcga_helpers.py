@@ -163,9 +163,11 @@ def standardise_sample_id(sample_id: Any) -> str:
     """
     if pd.isna(sample_id) or sample_id is None:
         return ""
-    s = str(sample_id).strip().replace(".", "-").upper()
-    if s.startswith("TCGA-") and len(s) > 15:
-        return s[:15]
+    s = str(sample_id).strip().replace(".", "-")
+    if s.upper().startswith("TCGA-"):
+        s = s.upper()
+        if len(s) > 15:
+            return s[:15]
     return s
 
 def parse_survival_status(val: Any) -> Optional[float]:
@@ -272,38 +274,6 @@ def clean_clinical_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     # Drop admin columns identified above
     cols_to_drop = [c for c in df.columns if _is_admin(c)]
     df = df.drop(columns=cols_to_drop, errors="ignore")
-    return df
-    """
-    Apply deduplication and survival data cleaning.
-    """
-    df = raw_df.copy()
-    df["SAMPLE_ID"] = df["SAMPLE_ID"].apply(standardise_sample_id)
-    df = df[df["SAMPLE_ID"] != ""]
-    df = df.drop_duplicates(subset=["SAMPLE_ID"])
-
-    if "PATIENT_ID" in df.columns:
-        df = df.drop_duplicates(subset=["PATIENT_ID"])
-
-    if "OS_STATUS" in df.columns and "OS_MONTHS" in df.columns:
-        df["OS_STATUS"] = df["OS_STATUS"].apply(parse_survival_status)
-        df["OS_MONTHS"] = pd.to_numeric(df["OS_MONTHS"], errors="coerce")
-
-        invalid_mask = (
-            df["OS_MONTHS"].isna() |
-            (df["OS_MONTHS"] <= 0) |
-            df["OS_STATUS"].isna()
-        )
-        df = df[~invalid_mask]
-
-    # Parse PFS and DSS if present
-    if "PFS_STATUS" in df.columns and "PFS_MONTHS" in df.columns:
-        df["PFS_STATUS"] = df["PFS_STATUS"].apply(parse_survival_status)
-        df["PFS_MONTHS"] = pd.to_numeric(df["PFS_MONTHS"], errors="coerce")
-
-    if "DSS_STATUS" in df.columns and "DSS_MONTHS" in df.columns:
-        df["DSS_STATUS"] = df["DSS_STATUS"].apply(parse_survival_status)
-        df["DSS_MONTHS"] = pd.to_numeric(df["DSS_MONTHS"], errors="coerce")
-
     return df
 
 def build_molecular_df(records: List[dict]) -> pd.DataFrame:
