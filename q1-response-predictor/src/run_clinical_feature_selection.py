@@ -12,7 +12,7 @@ import seaborn as sns
 # Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
-CLINICAL_FILE = DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/clinical_cleaned.csv"
+CLINICAL_FILE = DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/clin_cleaned.csv"
 REPORTS_DIR = BASE_DIR / "reports"
 REPORTS_DIR.mkdir(exist_ok=True, parents=True)
 PLOTS_DIR = BASE_DIR / "plots"

@@ -103,8 +103,44 @@ The following table summarizes the number of samples/patients retained and lost 
 
 ---
 
-## 3. Outputs Generated
+## 3. Clinical & Genomic Characterisation Pipeline
 
-For each cohort, `clean_data.py` writes output to `data/processed/{cohort_name}/`:
-* **Expression Matrix**: Log2-transformed expression values with genes as columns and samples as rows (`expr_cleaned.csv` or `rnaseq_cleaned.csv`).
-* **Clinical Metadata**: Standardised patient/sample data with mapped response, mutations, and demographics (`clin_cleaned.csv` or `clinical_cleaned.csv`).
+Once the clean datasets are generated, the characterisation scripts analyze clinical and genomic variables across trials (Liu, Hugo, Riaz) and the TCGA reference cohort.
+
+### 3.1. Clinical Characterisation
+*   **`run_response_distribution.py`**: Reads processed clinical data and generates stacked bar charts showing percentage response rates (CR/PR vs. PD) across studies, saved to `plots/clinical/response_proportions.png`.
+*   **`run_waffle_chart.py`**: Draws waffle charts representing absolute sample sizes and response status (1 block = 1 patient), saved to `plots/clinical/waffle_cohorts.png`.
+*   **`run_response_km_curves.py`**: Evaluates overall survival stratified by response (Responder vs. Non-Responder) in trials, generating Kaplan-Meier curves and Log-Rank tests saved to `plots/clinical/survival_by_response.png`.
+*   **`run_forest_plot.py`**: Fits univariate logistic regression models for response across demographics and driver mutations. Generates a standardized forest plot (grey/red/blue color scheme) saved to `plots/clinical/forest_plot_odds_ratios.png`.
+
+### 3.2. Genomic Characterisation
+*   **`run_genomic_characterisation.py`**: Evaluates baseline genomic properties of TCGA and trials:
+    *   Generates a comparison of driver mutations (*BRAF*, *NRAS*, *NF1*, and Triple-WT) saved to `plots/genomic/mutation_frequencies.png`.
+    *   Plots pre-treatment TMB distributions (trial boxplots by response, TCGA log-normal histogram) saved to `plots/genomic/tmb_distribution.png`.
+    *   Plots a Spearman correlation matrix of somatic mutation and neoantigen loads in Liu 2019 saved to `plots/genomic/biomarker_correlation_heatmap.png`.
+    *   Generates Kaplan-Meier curves for TCGA overall survival by driver mutation subtype and TMB median-split saved to `plots/genomic/km_genomic_features.png`.
+*   **`run_merged_comut_plot.py`**: Aggregates clinical records and somatic mutations across the three trial studies to generate a pooled, sorted oncoplot ($N=150$) showing driver/resistance gene states aligned with TMB, Response, Cohort source, and Sex. Saved to `plots/genomic/comut_landscape_merged.png`.
+*   **`src/run_extended_biomarkers.py`**: Evaluates advanced genomic biomarkers:
+    *   Correlates total predicted neoantigens with TMB in the pooled trials, generating a regression plot saved to `plots/extended_neoantigen_tmb.png`.
+    *   Correlates copy-number alterations (Aneuploidy Score in TCGA) and TMB against 5 continuous transcriptomic immune signatures in TCGA and pooled trials, saving the correlation matrix heatmap to `plots/extended_immune_correlations.png`.
+    *   Computes Kaplan-Meier survival curves in TCGA stratified by Aneuploidy Score, saved to `plots/extended_aneuploidy_survival.png`.
+    *   Trains 5-fold cross-validated classifiers (Logistic Regression, Random Forest) on the pooled trial cohort ($N=150$) to evaluate the predictive benefit of signatures, driver mutations, TMB, and pathway mutations.
+
+---
+
+## 4. Outputs Generated
+
+The pipeline outputs processed data, figures, and reports to their respective directories:
+
+### Data Outputs (`data/processed/{study_name}/`)
+*   **`expr_cleaned.csv`**: Normalized and log2-transformed expression values (genes as columns, samples as rows).
+*   **`clin_cleaned.csv`**: Cleaned, standardized clinical metadata (patient demographic fields, survival timeline, response status, and driver mutation flags).
+
+### Visualisation Outputs (`plots/`)
+*   **Clinical Characterisation**: Waffle charts, response rates, survival by response, and standardized univariate forest plots in `plots/clinical/`.
+*   **Genomic Characterisation**: Mutation landscapes, TMB distributions, correlation heatmaps, merged Co-Mutation oncoplots, and TCGA survival curves in `plots/genomic/` and `plots/`.
+
+### Reporting Outputs (`reports/`)
+*   **`cohort_characteristics_clinical.md`**: Baseline report detailing clinical patient demographics, treatment histories, response distributions, survival curves, and forest plots.
+*   **`cohort_characteristics_genomic.md`**: Baseline report detailing driver mutations, pathway mutations, TMB, neoantigens, immune signature correlations, Aneuploidy overall survival curves, and the merged CoMut oncoplot.
+*   **`extended_biomarkers_report.md`**: Evaluation report of advanced biomarkers and 5-fold cross-validated response predictors on the pooled trials.

@@ -131,6 +131,10 @@ def clean_iatlas_cohort(
     # Append mutation status (BRAF, NRAS, NF1) from MAF
     if mut_by_patient:
         df_mut = parse_maf_mutations(raw_dir)
+        # Convert index from sample barcode (e.g., Pt3_pre) to patient ID (e.g., Pt3)
+        df_mut.index = df_mut.index.map(lambda x: x.split("_")[0] if isinstance(x, str) else x)
+        # Aggregate by patient, taking max (1 if mutated in any sample, 0 otherwise)
+        df_mut = df_mut.groupby(df_mut.index).max()
         for col in ["mut_BRAF", "mut_NRAS", "mut_NF1"]:
             df_clin[col] = df_clin["patient_id"].map(df_mut[col].to_dict()).fillna(0).astype(int)
     else:
@@ -320,7 +324,6 @@ def clean_tcga_skcm() -> None:
         cleaned_clin_df = cleaned_clin_df[cols]
 
     # Save cleaned
-    cleaned_clin_df.to_csv(proc_dir / "clinical_cleaned.csv", index=False)
     cleaned_clin_df.to_csv(proc_dir / "clin_cleaned.csv", index=False)
     cleaned_rnaseq_df.to_csv(proc_dir / "expr_cleaned.csv", index=False)
     print(f"  TCGA-SKCM: Cleaned {len(cleaned_clin_df)} samples. Integrated and tidied treatment data fields (PATIENT_ID is first).")

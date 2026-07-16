@@ -12,7 +12,7 @@ from lifelines.statistics import multivariate_logrank_test
 # Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
-CLINICAL_FILE = DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/clinical_cleaned.csv"
+CLINICAL_FILE = DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/clin_cleaned.csv"
 PLOTS_DIR = BASE_DIR / "plots"
 REPORTS_DIR = BASE_DIR / "reports"
 REPORTS_DIR.mkdir(exist_ok=True, parents=True)

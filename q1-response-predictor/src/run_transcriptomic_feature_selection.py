@@ -97,8 +97,8 @@ def main():
     
     # 1. Load datasets
     tcga_dir = DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018"
-    expr_path = tcga_dir / "rnaseq_cleaned.csv"
-    clin_path = tcga_dir / "clinical_cleaned.csv"
+    expr_path = tcga_dir / "expr_cleaned.csv"
+    clin_path = tcga_dir / "clin_cleaned.csv"
     
     if not (expr_path.exists() and clin_path.exists()):
         print(f"Error: Missing cleaned TCGA PanCan files in {tcga_dir}")
