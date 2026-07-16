@@ -1,0 +1,117 @@
+import pandas as pd
+from typing import Tuple, Optional, Any
+
+def standardise_sample_id(sample_id: Any) -> str:
+    """
+    Standardise TCGA sample barcodes to a uniform 15-character hyphenated format.
+    """
+    if pd.isna(sample_id) or sample_id is None:
+        return ""
+    s = str(sample_id).strip().replace(".", "-")
+    if s.upper().startswith("TCGA-"):
+        s = s.upper()
+        if len(s) > 15:
+            return s[:15]
+    return s
+
+
+def parse_survival_status(val: Any) -> Optional[float]:
+    """
+    Map clinical survival status to a binary 0.0 (alive) or 1.0 (deceased).
+    """
+    if pd.isna(val) or val is None:
+        return None
+    val_str = str(val).strip().upper()
+    if val_str.startswith("1:") or val_str == "1":
+        return 1.0
+    if val_str.startswith("0:") or val_str == "0":
+        return 0.0
+    if any(word in val_str for word in ["DECEASED", "DEAD WITH TUMOR", "RECURRED", "PROGRESSION"]):
+        return 1.0
+    if any(word in val_str for word in ["LIVING", "ALIVE OR DEAD TUMOR FREE", "DISEASEFREE", "CENSORED"]):
+        return 0.0
+    return None
+
+
+def clean_clinical_df(raw_df: pd.DataFrame) -> pd.DataFrame:
+    """Apply deduplication and survival data cleaning."""
+    df = raw_df.copy()
+    df["SAMPLE_ID"] = df["SAMPLE_ID"].apply(standardise_sample_id)
+    df = df[df["SAMPLE_ID"] != ""]
+    df = df.drop_duplicates(subset=["SAMPLE_ID"])
+    if "PATIENT_ID" in df.columns:
+        df = df.drop_duplicates(subset=["PATIENT_ID"])
+    if "OS_STATUS" in df.columns and "OS_MONTHS" in df.columns:
+        df["OS_STATUS"] = df["OS_STATUS"].apply(parse_survival_status)
+        df["OS_MONTHS"] = pd.to_numeric(df["OS_MONTHS"], errors="coerce")
+        invalid_mask = (
+            df["OS_MONTHS"].isna() |
+            (df["OS_MONTHS"] <= 0) |
+            df["OS_STATUS"].isna()
+        )
+        df = df[~invalid_mask]
+    if "PFS_STATUS" in df.columns and "PFS_MONTHS" in df.columns:
+        df["PFS_STATUS"] = df["PFS_STATUS"].apply(parse_survival_status)
+        df["PFS_MONTHS"] = pd.to_numeric(df["PFS_MONTHS"], errors="coerce")
+    if "DSS_STATUS" in df.columns and "DSS_MONTHS" in df.columns:
+        df["DSS_STATUS"] = df["DSS_STATUS"].apply(parse_survival_status)
+        df["DSS_MONTHS"] = pd.to_numeric(df["DSS_MONTHS"], errors="coerce")
+    
+    # ---- Admin‑column filter ------------------------------------------------
+    def _is_admin(col: str) -> bool:
+        # Remove columns that are duplicates or cBioPortal administrative metadata
+        admin_suffixes = ("_PATIENT", "_SAMPLE")
+        if col.endswith(admin_suffixes):
+            return True
+        # Common admin columns that are not used in modeling
+        unwanted = {"BIRTH_YEAR", "CANCER_TYPE_DETAILED", "PROTOCOL_SUBMIT_DATE"}
+        if col in unwanted:
+            return True
+        # Keep identifier columns (only one copy)
+        if col in {"PATIENT_ID", "SAMPLE_ID"}:
+            return False
+        return False
+
+    cols_to_drop = [c for c in df.columns if _is_admin(c)]
+    df = df.drop(columns=cols_to_drop, errors="ignore")
+    return df
+
+
+def clean_rnaseq_df(rnaseq_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Deduplicate RNA-seq sample records and remove genes with missing values.
+    """
+    if rnaseq_df.empty or "SAMPLE_ID" not in rnaseq_df.columns:
+        return rnaseq_df
+
+    df = rnaseq_df.copy()
+    df["SAMPLE_ID"] = df["SAMPLE_ID"].apply(standardise_sample_id)
+    df = df[df["SAMPLE_ID"] != ""]
+
+    df["PATIENT_ID"] = df["SAMPLE_ID"].apply(
+        lambda x: "-".join(x.split("-")[:3]) if isinstance(x, str) and x.startswith("TCGA-") else x
+    )
+    df = df.drop_duplicates(subset=["PATIENT_ID"])
+    df = df.drop(columns=["PATIENT_ID"])
+
+    gene_cols = [c for c in df.columns if c != "SAMPLE_ID"]
+    missing_counts = df[gene_cols].isna().sum()
+    cols_with_nans = missing_counts[missing_counts > 0].index.tolist()
+    if cols_with_nans:
+        df = df.drop(columns=cols_with_nans)
+
+    return df
+
+
+def align_expression_and_clinical(df_expr: pd.DataFrame, df_clin: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Aligns sample IDs between the expression matrix and clinical DataFrame.
+
+    @param pd.DataFrame df_expr Expression DataFrame (samples as rows).
+    @param pd.DataFrame df_clin Clinical DataFrame (samples as index).
+    @return Tuple[pd.DataFrame, pd.DataFrame] Aligned expression and clinical DataFrames.
+    """
+    common_samples = df_expr.index.intersection(df_clin.index)
+    df_expr = df_expr.loc[common_samples]
+    df_clin = df_clin.loc[common_samples]
+    return df_expr, df_clin

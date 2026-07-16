@@ -1,6 +1,5 @@
 import time
 import requests
-import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import List, Any, Optional
@@ -156,37 +155,6 @@ def get_molecular_data(molecular_profile_id: str, sample_ids: list[str]) -> list
 
     return all_records
 
-# Cleaners and builders (from loaders.py)
-def standardise_sample_id(sample_id: Any) -> str:
-    """
-    Standardise TCGA sample barcodes to a uniform 15-character hyphenated format.
-    """
-    if pd.isna(sample_id) or sample_id is None:
-        return ""
-    s = str(sample_id).strip().replace(".", "-")
-    if s.upper().startswith("TCGA-"):
-        s = s.upper()
-        if len(s) > 15:
-            return s[:15]
-    return s
-
-def parse_survival_status(val: Any) -> Optional[float]:
-    """
-    Map clinical survival status to a binary 0.0 (alive) or 1.0 (deceased).
-    """
-    if pd.isna(val) or val is None:
-        return None
-    val_str = str(val).strip().upper()
-    if val_str.startswith("1:") or val_str == "1":
-        return 1.0
-    if val_str.startswith("0:") or val_str == "0":
-        return 0.0
-    if any(word in val_str for word in ["DECEASED", "DEAD WITH TUMOR", "RECURRED", "PROGRESSION"]):
-        return 1.0
-    if any(word in val_str for word in ["LIVING", "ALIVE OR DEAD TUMOR FREE", "DISEASEFREE", "CENSORED"]):
-        return 0.0
-    return None
-
 def build_clinical_df(sample_records: List[dict], patient_records: List[dict]) -> pd.DataFrame:
     """
     Pivot long-format clinical API records into a wide table.
@@ -233,49 +201,6 @@ def build_clinical_df(sample_records: List[dict], patient_records: List[dict]) -
 
     return sample_wide
 
-def clean_clinical_df(raw_df: pd.DataFrame) -> pd.DataFrame:
-    """Apply deduplication and survival data cleaning."""
-    df = raw_df.copy()
-    df["SAMPLE_ID"] = df["SAMPLE_ID"].apply(standardise_sample_id)
-    df = df[df["SAMPLE_ID"] != ""]
-    df = df.drop_duplicates(subset=["SAMPLE_ID"])
-    if "PATIENT_ID" in df.columns:
-        df = df.drop_duplicates(subset=["PATIENT_ID"])
-    if "OS_STATUS" in df.columns and "OS_MONTHS" in df.columns:
-        df["OS_STATUS"] = df["OS_STATUS"].apply(parse_survival_status)
-        df["OS_MONTHS"] = pd.to_numeric(df["OS_MONTHS"], errors="coerce")
-        invalid_mask = (
-            df["OS_MONTHS"].isna() |
-            (df["OS_MONTHS"] <= 0) |
-            df["OS_STATUS"].isna()
-        )
-        df = df[~invalid_mask]
-    if "PFS_STATUS" in df.columns and "PFS_MONTHS" in df.columns:
-        df["PFS_STATUS"] = df["PFS_STATUS"].apply(parse_survival_status)
-        df["PFS_MONTHS"] = pd.to_numeric(df["PFS_MONTHS"], errors="coerce")
-    if "DSS_STATUS" in df.columns and "DSS_MONTHS" in df.columns:
-        df["DSS_STATUS"] = df["DSS_STATUS"].apply(parse_survival_status)
-        df["DSS_MONTHS"] = pd.to_numeric(df["DSS_MONTHS"], errors="coerce")
-    # ---- New admin‑column filter ------------------------------------------------
-    def _is_admin(col: str) -> bool:
-        # Remove columns that are duplicates or cBioPortal administrative metadata
-        admin_suffixes = ("_PATIENT", "_SAMPLE")
-        if col.endswith(admin_suffixes):
-            return True
-        # Common admin columns that are not used in modeling
-        unwanted = {"BIRTH_YEAR", "CANCER_TYPE_DETAILED", "PROTOCOL_SUBMIT_DATE"}
-        if col in unwanted:
-            return True
-        # Keep identifier columns (only one copy)
-        if col in {"PATIENT_ID", "SAMPLE_ID"}:
-            # If there are multiple versions we will keep the base name only
-            return False
-        return False
-    # Drop admin columns identified above
-    cols_to_drop = [c for c in df.columns if _is_admin(c)]
-    df = df.drop(columns=cols_to_drop, errors="ignore")
-    return df
-
 def build_molecular_df(records: List[dict]) -> pd.DataFrame:
     """
     Pivot molecular data API records into a wide samples x genes matrix.
@@ -304,31 +229,6 @@ def build_molecular_df(records: List[dict]) -> pd.DataFrame:
     wide_df.columns.name = None
 
     return wide_df
-
-def clean_rnaseq_df(rnaseq_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Deduplicate RNA-seq sample records and remove genes with missing values.
-    """
-    if rnaseq_df.empty or "SAMPLE_ID" not in rnaseq_df.columns:
-        return rnaseq_df
-
-    df = rnaseq_df.copy()
-    df["SAMPLE_ID"] = df["SAMPLE_ID"].apply(standardise_sample_id)
-    df = df[df["SAMPLE_ID"] != ""]
-
-    df["PATIENT_ID"] = df["SAMPLE_ID"].apply(
-        lambda x: "-".join(x.split("-")[:3]) if isinstance(x, str) and x.startswith("TCGA-") else x
-    )
-    df = df.drop_duplicates(subset=["PATIENT_ID"])
-    df = df.drop(columns=["PATIENT_ID"])
-
-    gene_cols = [c for c in df.columns if c != "SAMPLE_ID"]
-    missing_counts = df[gene_cols].isna().sum()
-    cols_with_nans = missing_counts[missing_counts > 0].index.tolist()
-    if cols_with_nans:
-        df = df.drop(columns=cols_with_nans)
-
-    return df
 
 def download_raw_tcga_skcm(output_dir: Path, study_id: str = "skcm_tcga_pan_can_atlas_2018"):
     """

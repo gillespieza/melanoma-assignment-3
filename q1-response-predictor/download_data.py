@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 # Import utility helpers
-from src.utils import download_file, extract_tar_gz
+from src.utils.io import download_file, extract_tar_gz
 
 # Base directories
 BASE_DIR = Path(__file__).resolve().parent
@@ -52,6 +52,7 @@ def download_and_extract_cbioportal_dataset(study_id: str, target_dir: Path) -> 
         except Exception as e:
             print(f"Failed to remove existing directory {target_dir}: {e}")
             raise
+    target_dir.mkdir(exist_ok=True, parents=True)
 
     tar_path = RAW_DIR / f"{study_id}.tar.gz"
     url = f"https://datahub.assets.cbioportal.org/{study_id}.tar.gz"
