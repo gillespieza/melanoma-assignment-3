@@ -1,12 +1,13 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from typing import Optional
 
 # Import TCGA cleaning functions
 from src.tcga_helpers import clean_clinical_df, clean_rnaseq_df
 
 # Import utility helpers
-from src.utils import parse_geo_metadata, get_gene_symbol_mapping, align_expression_and_clinical
+from src.utils import align_expression_and_clinical
 
 # Base directories
 BASE_DIR = Path(__file__).resolve().parent
@@ -16,24 +17,60 @@ PROCESSED_DIR = DATA_DIR / "processed"
 
 # Study IDs
 LIU_STUDY_ID = "mel_dfci_2019"
-HUGO_STUDY_ID = "GSE78220"
-RIAZ_STUDY_ID = "GSE91061"
+HUGO_STUDY_ID = "mel_iatlas_hugo_ucla_2016"
+RIAZ_STUDY_ID = "mel_iatlas_riaz_nivolumab_2017"
 TCGA_STUDY_ID = "skcm_tcga_pan_can_atlas_2018"
 
-# Raw input filenames
-LIU_PATIENT_FILE = "data_clinical_patient.txt"
-LIU_SAMPLE_FILE = "data_clinical_sample.txt"
-LIU_EXPR_FILE = "data_mrna_seq_tpm.txt"
+# Shared cBioPortal raw filenames
+CLIN_PATIENT_FILE = "data_clinical_patient.txt"
+CLIN_SAMPLE_FILE = "data_clinical_sample.txt"
+EXPR_FILE = "data_mrna_seq_tpm.txt"
+MUT_FILE = "data_mutations.txt"
 
-HUGO_META_FILE = "GSE78220_series_matrix.txt"
-HUGO_EXPR_FILE = "GSE78220_PatientFPKM.xlsx"
-
-RIAZ_META_FILE = "GSE91061_series_matrix.txt"
-RIAZ_EXPR_FILE = "GSE91061_BMS038109Sample.hg19KnownGene.fpkm.csv"
-
-TCGA_PATIENT_FILE = "data_clinical_patient.txt"
-TCGA_SAMPLE_FILE = "data_clinical_sample.txt"
+# TCGA uses RSEM counts, not TPM
 TCGA_EXPR_FILE = "data_mrna_seq_v2_rsem.txt"
+
+# Standard response mapping for all iAtlas / cBioPortal cohorts
+RESPONSE_MAP = {
+    "Complete Response": 1,
+    "Partial Response": 1,
+    "Progressive Disease": 0,
+    "Stable Disease": np.nan,
+    "Mixed Response": np.nan,
+}
+
+
+def parse_maf_mutations(raw_dir: Path, sample_ids: Optional[list] = None) -> pd.DataFrame:
+    """
+    Parses BRAF, NRAS, NF1 binary mutation status from a cBioPortal MAF file.
+
+    @param Path raw_dir Directory containing data_mutations.txt.
+    @param list sample_ids Optional list of sample IDs to restrict to.
+    @return pd.DataFrame DataFrame indexed by SAMPLE_ID with columns mut_BRAF, mut_NRAS, mut_NF1.
+    """
+    mut_path = raw_dir / MUT_FILE
+    if not mut_path.exists():
+        return pd.DataFrame(columns=["mut_BRAF", "mut_NRAS", "mut_NF1"])
+
+    df_mut = pd.read_csv(mut_path, sep="\t", comment="#", low_memory=False)
+    df_mut = df_mut[df_mut["Hugo_Symbol"].isin(["BRAF", "NRAS", "NF1"])]
+    if sample_ids is not None:
+        df_mut = df_mut[df_mut["Tumor_Sample_Barcode"].isin(sample_ids)]
+
+    # Any non-synonymous mutation = mutated
+    non_syn = ["Missense_Mutation", "Nonsense_Mutation", "Frame_Shift_Del",
+               "Frame_Shift_Ins", "In_Frame_Del", "In_Frame_Ins",
+               "Splice_Site", "Nonstop_Mutation", "Translation_Start_Site"]
+    df_mut = df_mut[df_mut["Variant_Classification"].isin(non_syn)]
+
+    pivoted = df_mut.groupby(["Tumor_Sample_Barcode", "Hugo_Symbol"]).size().unstack(fill_value=0)
+    for gene in ["BRAF", "NRAS", "NF1"]:
+        if gene not in pivoted.columns:
+            pivoted[gene] = 0
+    pivoted = (pivoted[["BRAF", "NRAS", "NF1"]] > 0).astype(int)
+    pivoted.columns = ["mut_BRAF", "mut_NRAS", "mut_NF1"]
+    pivoted.index.name = None
+    return pivoted
 
 
 def clean_liu_2019() -> None:
@@ -46,30 +83,23 @@ def clean_liu_2019() -> None:
     proc_dir = PROCESSED_DIR / "liu_2019"
     proc_dir.mkdir(parents=True, exist_ok=True)
 
-    if not all((raw_dir / f).exists() for f in [LIU_PATIENT_FILE, LIU_SAMPLE_FILE, LIU_EXPR_FILE]):
+    if not all((raw_dir / f).exists() for f in [CLIN_PATIENT_FILE, CLIN_SAMPLE_FILE, EXPR_FILE]):
         raise FileNotFoundError(f"Missing raw input files in {raw_dir}. Please run download_data.py first.")
 
     print("Cleaning Liu 2019 (mel_dfci_2019)...")
 
     # Load raw clinical data
-    df_patient = pd.read_csv(raw_dir / LIU_PATIENT_FILE, sep="\t", skiprows=4)
-    df_sample = pd.read_csv(raw_dir / LIU_SAMPLE_FILE, sep="\t", skiprows=4)
+    df_patient = pd.read_csv(raw_dir / CLIN_PATIENT_FILE, sep="\t", skiprows=4)
+    df_sample = pd.read_csv(raw_dir / CLIN_SAMPLE_FILE, sep="\t", skiprows=4)
     df_clin = pd.merge(df_sample, df_patient, on="PATIENT_ID")
     
     # Map Response (CR/PR = 1, PD = 0)
-    response_map = {
-        "Complete Response": 1,
-        "Partial Response": 1,
-        "Progressive Disease": 0,
-        "Stable Disease": np.nan,
-        "Mixed Response": np.nan
-    }
-    df_clin['response'] = df_clin['BR'].map(response_map)
+    df_clin['response'] = df_clin['BR'].map(RESPONSE_MAP)
     df_clin = df_clin.dropna(subset=['response'])
     df_clin = df_clin.set_index("SAMPLE_ID")
 
     # Load raw expression (TPM)
-    df_expr = pd.read_csv(raw_dir / LIU_EXPR_FILE, sep="\t")
+    df_expr = pd.read_csv(raw_dir / EXPR_FILE, sep="\t")
     df_expr = df_expr.dropna(subset=["Hugo_Symbol"])
     df_expr = df_expr.set_index("Hugo_Symbol")
     if "Entrez_Gene_Id" in df_expr.columns:
@@ -92,7 +122,12 @@ def clean_liu_2019() -> None:
 
 def clean_hugo_2016() -> None:
     """
-    Cleans raw Hugo 2016 datasets and writes processed matrices to the processed folder.
+    Cleans Hugo 2016 (mel_iatlas_hugo_ucla_2016) cBioPortal datasets and writes
+    processed matrices to the processed folder.
+
+    Clinical source: data_clinical_patient.txt + data_clinical_sample.txt
+    Expression source: data_mrna_seq_tpm.txt (Hugo gene symbols, TPM)
+    Mutations source: data_mutations.txt (MAF format)
 
     @return None
     """
@@ -100,61 +135,65 @@ def clean_hugo_2016() -> None:
     proc_dir = PROCESSED_DIR / "hugo_2016"
     proc_dir.mkdir(parents=True, exist_ok=True)
 
-    if not all((raw_dir / f).exists() for f in [HUGO_META_FILE, HUGO_EXPR_FILE]):
+    required = [CLIN_PATIENT_FILE, CLIN_SAMPLE_FILE, EXPR_FILE]
+    if not all((raw_dir / f).exists() for f in required):
         raise FileNotFoundError(f"Missing raw input files in {raw_dir}. Please run download_data.py first.")
 
-    print("Cleaning Hugo 2016 (GSE78220)...")
+    print(f"Cleaning Hugo 2016 ({HUGO_STUDY_ID})...")
 
-    # Load metadata
-    df_meta = parse_geo_metadata(raw_dir / HUGO_META_FILE)
-    response_col = [c for c in df_meta.columns if 'response' in c][0]
-    patient_col = [c for c in df_meta.columns if 'patient' in c][0]
-    os_col = [c for c in df_meta.columns if 'survival' in c][0]
-    status_col = [c for c in df_meta.columns if 'vital' in c][0]
+    # --- Clinical ---
+    df_patient = pd.read_csv(raw_dir / CLIN_PATIENT_FILE, sep="\t", skiprows=4)
+    df_sample = pd.read_csv(raw_dir / CLIN_SAMPLE_FILE, sep="\t", skiprows=4)
+    df_clin = pd.merge(df_sample, df_patient, on="PATIENT_ID")
 
-    # Normalise clinical columns
-    response_map = {
-        "Progressive Disease": 0,
-        "Partial Response": 1,
-        "Complete Response": 1,
-        "Stable Disease": np.nan
-    }
-    df_meta['response'] = df_meta[response_col].map(response_map)
-    df_meta = df_meta.dropna(subset=['response'])
-    df_meta['patient_id'] = df_meta[patient_col]
-    df_meta['os_days'] = pd.to_numeric(df_meta[os_col], errors='coerce')
-    df_meta['os_status'] = df_meta[status_col].map({"Dead": 1, "Alive": 0})
+    # Map response: CR/PR -> 1, PD -> 0, others -> NaN
+    df_clin["response"] = df_clin["RESPONSE"].map(RESPONSE_MAP)
+    df_clin = df_clin.dropna(subset=["response"])
+    df_clin = df_clin.set_index("SAMPLE_ID")
 
-    # Load expression Excel
-    df_expr = pd.read_excel(raw_dir / HUGO_EXPR_FILE)
-    df_expr = df_expr.rename(columns={df_expr.columns[0]: "Gene"})
-    df_expr = df_expr.dropna(subset=["Gene"])
-    df_expr = df_expr.set_index("Gene")
-    df_expr.columns = [c.split('.')[0] for c in df_expr.columns]
+    # Standardise columns for downstream compatibility
+    df_clin["patient_id"] = df_clin["PATIENT_ID"]
+    df_clin["os_months"] = df_clin["OS_MONTHS"]
+    df_clin["os_status"] = df_clin["OS_STATUS"].map({"1:DECEASED": 1, "0:LIVING": 0})
+    df_clin["age (yrs)"] = df_clin["AGE_AT_DIAGNOSIS"]
+    df_clin["gender"] = df_clin["SEX"]
 
-    pat_to_gsm = {row['patient_id']: gsm for gsm, row in df_meta.iterrows()}
-    valid_cols = [c for c in df_expr.columns if c in pat_to_gsm]
-    df_expr = df_expr[valid_cols]
-    df_expr = df_expr.rename(columns=pat_to_gsm)
+    # Append mutation status (BRAF, NRAS, NF1) from MAF
+    df_mut = parse_maf_mutations(raw_dir, sample_ids=df_clin.index.tolist())
+    df_clin = df_clin.join(df_mut, how="left")
+    for col in ["mut_BRAF", "mut_NRAS", "mut_NF1"]:
+        df_clin[col] = df_clin[col].fillna(0).astype(int)
 
+    # --- Expression (TPM, Hugo symbols) ---
+    df_expr = pd.read_csv(raw_dir / EXPR_FILE, sep="\t")
+    df_expr = df_expr.dropna(subset=["Hugo_Symbol"])
+    df_expr = df_expr.set_index("Hugo_Symbol")
+    if "Entrez_Gene_Id" in df_expr.columns:
+        df_expr = df_expr.drop(columns=["Entrez_Gene_Id"])
     df_expr = df_expr.groupby(df_expr.index).mean()
     df_expr = df_expr.T
 
-    # Align
-    df_expr, df_meta = align_expression_and_clinical(df_expr, df_meta)
+    # Align samples
+    df_expr, df_clin = align_expression_and_clinical(df_expr, df_clin)
 
     # Log-transform
     df_expr = np.log2(df_expr + 1)
 
     # Save cleaned
     df_expr.to_csv(proc_dir / "expr_cleaned.csv")
-    df_meta.to_csv(proc_dir / "clin_cleaned.csv")
-    print(f"  Hugo 2016: Cleaned {len(df_meta)} samples.")
+    df_clin.to_csv(proc_dir / "clin_cleaned.csv")
+    print(f"  Hugo 2016: Cleaned {len(df_clin)} samples, {df_expr.shape[1]} genes.")
 
 
 def clean_riaz_2017() -> None:
     """
-    Cleans raw Riaz 2017 datasets and writes processed matrices to the processed folder.
+    Cleans Riaz 2017 (mel_iatlas_riaz_nivolumab_2017) cBioPortal datasets and writes
+    processed matrices to the processed folder.
+
+    Filters to pre-treatment baseline samples only (SAMPLE_ID ending in '_pre').
+    Clinical source: data_clinical_patient.txt + data_clinical_sample.txt
+    Expression source: data_mrna_seq_tpm.txt (Hugo gene symbols, TPM)
+    Mutations source: data_mutations.txt (MAF format)
 
     @return None
     """
@@ -162,54 +201,64 @@ def clean_riaz_2017() -> None:
     proc_dir = PROCESSED_DIR / "riaz_2017"
     proc_dir.mkdir(parents=True, exist_ok=True)
 
-    if not all((raw_dir / f).exists() for f in [RIAZ_META_FILE, RIAZ_EXPR_FILE]):
+    required = [CLIN_PATIENT_FILE, CLIN_SAMPLE_FILE, EXPR_FILE]
+    if not all((raw_dir / f).exists() for f in required):
         raise FileNotFoundError(f"Missing raw input files in {raw_dir}. Please run download_data.py first.")
 
-    print("Cleaning Riaz 2017 (GSE91061)...")
+    print(f"Cleaning Riaz 2017 ({RIAZ_STUDY_ID})...")
 
-    # Load metadata
-    df_meta = parse_geo_metadata(raw_dir / RIAZ_META_FILE)
-    visit_col = [c for c in df_meta.columns if 'visit' in c][0]
-    response_col = [c for c in df_meta.columns if 'response' in c][0]
+    # --- Clinical ---
+    df_patient = pd.read_csv(raw_dir / CLIN_PATIENT_FILE, sep="\t", skiprows=4)
+    df_sample = pd.read_csv(raw_dir / CLIN_SAMPLE_FILE, sep="\t", skiprows=4)
+    df_clin = pd.merge(df_sample, df_patient, on="PATIENT_ID")
 
-    # Pre-treatment only
-    df_meta = df_meta[df_meta[visit_col] == "Pre"]
+    # Filter to pre-treatment baseline biopsies only
+    df_clin = df_clin[df_sample["SAMPLE_ID"].str.endswith("_pre").reindex(df_clin.index, fill_value=False) |
+                      df_clin["SAMPLE_ID"].str.endswith("_pre")]
 
-    response_map = {
-        "PD": 0, "PRCR": 1, "PR": 1, "CR": 1,
-        "SD": np.nan, "UNK": np.nan
-    }
-    df_meta['response'] = df_meta[response_col].map(response_map)
-    df_meta = df_meta.dropna(subset=['response'])
+    # Map response: CR/PR -> 1, PD -> 0, others -> NaN
+    df_clin["response"] = df_clin["RESPONSE"].map(RESPONSE_MAP)
+    df_clin = df_clin.dropna(subset=["response"])
+    df_clin = df_clin.set_index("SAMPLE_ID")
 
-    # Load expression FPKM
-    df_expr_raw = pd.read_csv(raw_dir / RIAZ_EXPR_FILE, index_col=0)
-    df_expr_raw.index = df_expr_raw.index.astype(str)
+    # Standardise columns for downstream compatibility
+    df_clin["patient_id"] = df_clin["PATIENT_ID"]
+    df_clin["os_months"] = df_clin["OS_MONTHS"]
+    df_clin["os_status"] = df_clin["OS_STATUS"].map({"1:DECEASED": 1, "0:LIVING": 0})
+    df_clin["age"] = df_clin["AGE_AT_DIAGNOSIS"]
+    df_clin["sex"] = df_clin["SEX"]
 
-    # Entrez symbol mapping
-    mapping = get_gene_symbol_mapping(df_expr_raw.index.tolist())
-    df_expr_raw.index = df_expr_raw.index.map(mapping)
+    # Append mutation status (BRAF, NRAS, NF1) from MAF
+    # Note: Riaz MAF sample IDs match the PATIENT_ID, not the SAMPLE_ID (_pre/_on suffix)
+    # Map by PATIENT_ID to join onto the sample-level clinical df
+    df_mut = parse_maf_mutations(raw_dir)
+    pat_mut = df_clin["patient_id"].map(df_mut["mut_BRAF"].to_dict()).fillna(0).astype(int)
+    df_clin["mut_BRAF"] = pat_mut
+    df_clin["mut_NRAS"] = df_clin["patient_id"].map(df_mut["mut_NRAS"].to_dict()).fillna(0).astype(int)
+    df_clin["mut_NF1"] = df_clin["patient_id"].map(df_mut["mut_NF1"].to_dict()).fillna(0).astype(int)
 
-    df_expr_raw = df_expr_raw.loc[df_expr_raw.index.dropna()]
-    df_expr_raw = df_expr_raw.groupby(df_expr_raw.index).mean()
+    # --- Expression (TPM, Hugo symbols) ---
+    df_expr = pd.read_csv(raw_dir / EXPR_FILE, sep="\t")
+    df_expr = df_expr.dropna(subset=["Hugo_Symbol"])
+    df_expr = df_expr.set_index("Hugo_Symbol")
+    if "Entrez_Gene_Id" in df_expr.columns:
+        df_expr = df_expr.drop(columns=["Entrez_Gene_Id"])
+    df_expr = df_expr.groupby(df_expr.index).mean()
+    # Filter expression columns to pre-treatment samples only
+    pre_cols = [c for c in df_expr.columns if c.endswith("_pre")]
+    df_expr = df_expr[pre_cols]
+    df_expr = df_expr.T
 
-    title_to_gsm = {row['title']: gsm for gsm, row in df_meta.iterrows()}
-    valid_cols = [c for c in df_expr_raw.columns if c in title_to_gsm]
-    df_expr_raw = df_expr_raw[valid_cols]
-    df_expr_raw = df_expr_raw.rename(columns=title_to_gsm)
-
-    df_expr = df_expr_raw.T
-
-    # Align
-    df_expr, df_meta = align_expression_and_clinical(df_expr, df_meta)
+    # Align samples
+    df_expr, df_clin = align_expression_and_clinical(df_expr, df_clin)
 
     # Log-transform
     df_expr = np.log2(df_expr + 1)
 
     # Save cleaned
     df_expr.to_csv(proc_dir / "expr_cleaned.csv")
-    df_meta.to_csv(proc_dir / "clin_cleaned.csv")
-    print(f"  Riaz 2017: Cleaned {len(df_meta)} samples.")
+    df_clin.to_csv(proc_dir / "clin_cleaned.csv")
+    print(f"  Riaz 2017: Cleaned {len(df_clin)} samples, {df_expr.shape[1]} genes.")
 
 
 def clean_tcga_skcm() -> None:
@@ -222,14 +271,14 @@ def clean_tcga_skcm() -> None:
     proc_dir = PROCESSED_DIR / TCGA_STUDY_ID
     proc_dir.mkdir(parents=True, exist_ok=True)
 
-    if not all((raw_dir / f).exists() for f in [TCGA_PATIENT_FILE, TCGA_SAMPLE_FILE, TCGA_EXPR_FILE]):
+    if not all((raw_dir / f).exists() for f in [CLIN_PATIENT_FILE, CLIN_SAMPLE_FILE, TCGA_EXPR_FILE]):
         raise FileNotFoundError(f"Missing raw input files in {raw_dir}. Please run download_data.py first.")
 
     print(f"Cleaning TCGA-SKCM ({TCGA_STUDY_ID})...")
 
     # Clean Clinical
-    df_patient = pd.read_csv(raw_dir / TCGA_PATIENT_FILE, sep="\t", skiprows=4)
-    df_sample = pd.read_csv(raw_dir / TCGA_SAMPLE_FILE, sep="\t", skiprows=4)
+    df_patient = pd.read_csv(raw_dir / CLIN_PATIENT_FILE, sep="\t", skiprows=4)
+    df_sample = pd.read_csv(raw_dir / CLIN_SAMPLE_FILE, sep="\t", skiprows=4)
     df_clin = pd.merge(df_sample, df_patient, on="PATIENT_ID")
     cleaned_clin_df = clean_clinical_df(df_clin)
 

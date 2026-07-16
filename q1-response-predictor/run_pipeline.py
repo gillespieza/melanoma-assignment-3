@@ -22,20 +22,13 @@ PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
 def parse_hugo_mutations(df_meta):
     """
-    Parses BRAF, NRAS, NF1 mutation status from Hugo 2016 metadata.
+    Returns BRAF, NRAS, NF1 mutation status from Hugo 2016 clinical metadata.
+    Columns mut_BRAF, mut_NRAS, mut_NF1 are pre-parsed by clean_data.py from the MAF file.
     """
     df = df_meta.copy()
-    
-    # helper to check if a gene has mutation
-    def is_mutated(val):
-        if pd.isna(val) or val == "" or str(val).lower() in ["wt", "wildtype", "wild-type", "n/a", "nan"]:
-            return 0
-        return 1
-
-    df['mut_BRAF'] = df['braf'].apply(is_mutated) if 'braf' in df.columns else 0
-    df['mut_NRAS'] = df['nras'].apply(is_mutated) if 'nras' in df.columns else 0
-    df['mut_NF1'] = df['nf1'].apply(is_mutated) if 'nf1' in df.columns else 0
-    
+    for col in ['mut_BRAF', 'mut_NRAS', 'mut_NF1']:
+        if col not in df.columns:
+            df[col] = 0
     return df[['mut_BRAF', 'mut_NRAS', 'mut_NF1']]
 
 def parse_liu_mutations(data_dir, patient_ids):
@@ -215,7 +208,7 @@ def main():
     hugo_pred = loco_lr['Hugo 2016']['y_pred_prob']
     p_hugo = run_survival_analysis(
         clin_hugo.loc[sig_hugo.index], hugo_pred, 
-        time_col='os_days', status_col='os_status', 
+        time_col='os_months', status_col='os_status', 
         save_path=PLOT_DIR / "survival_hugo_lr.png"
     )
     print(f"Hugo 2016 Overall Survival difference p-value: {p_hugo:.3e}" if p_hugo else "Hugo 2016: No survival data")
@@ -231,15 +224,14 @@ def main():
     )
     print(f"Liu 2019 Overall Survival difference p-value: {p_liu:.3e}" if p_liu else "Liu 2019: No survival data")
 
-    # 3. Riaz 2017 has survival? Let's check columns
+    # 3. Riaz 2017 survival
     riaz_pred = loco_lr['Riaz 2017']['y_pred_prob']
     p_riaz = run_survival_analysis(
         clin_riaz.loc[sig_riaz.index], riaz_pred, 
-        time_col='overall survival (days)', status_col='vital status', 
+        time_col='os_months', status_col='os_status', 
         save_path=PLOT_DIR / "survival_riaz_lr.png"
     )
-    if p_riaz:
-        print(f"Riaz 2017 Overall Survival difference p-value: {p_riaz:.3e}")
+    print(f"Riaz 2017 Overall Survival difference p-value: {p_riaz:.3e}" if p_riaz else "Riaz 2017: No survival data")
 
     # 4. TCGA-SKCM survival validation
     try:
