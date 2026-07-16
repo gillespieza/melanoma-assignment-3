@@ -31,8 +31,9 @@ HUGO_EXPR_FILE = "GSE78220_PatientFPKM.xlsx"
 RIAZ_META_FILE = "GSE91061_series_matrix.txt"
 RIAZ_EXPR_FILE = "GSE91061_BMS038109Sample.hg19KnownGene.fpkm.csv"
 
-TCGA_CLIN_FILE = "clinical.csv"
-TCGA_EXPR_FILE = "rnaseq.csv"
+TCGA_PATIENT_FILE = "data_clinical_patient.txt"
+TCGA_SAMPLE_FILE = "data_clinical_sample.txt"
+TCGA_EXPR_FILE = "data_mrna_seq_v2_rsem.txt"
 
 
 def clean_liu_2019() -> None:
@@ -221,14 +222,16 @@ def clean_tcga_skcm() -> None:
     proc_dir = PROCESSED_DIR / TCGA_STUDY_ID
     proc_dir.mkdir(parents=True, exist_ok=True)
 
-    if not all((raw_dir / f).exists() for f in [TCGA_CLIN_FILE, TCGA_EXPR_FILE]):
+    if not all((raw_dir / f).exists() for f in [TCGA_PATIENT_FILE, TCGA_SAMPLE_FILE, TCGA_EXPR_FILE]):
         raise FileNotFoundError(f"Missing raw input files in {raw_dir}. Please run download_data.py first.")
 
     print(f"Cleaning TCGA-SKCM ({TCGA_STUDY_ID})...")
 
     # Clean Clinical
-    raw_clin_df = pd.read_csv(raw_dir / TCGA_CLIN_FILE)
-    cleaned_clin_df = clean_clinical_df(raw_clin_df)
+    df_patient = pd.read_csv(raw_dir / TCGA_PATIENT_FILE, sep="\t", skiprows=4)
+    df_sample = pd.read_csv(raw_dir / TCGA_SAMPLE_FILE, sep="\t", skiprows=4)
+    df_clin = pd.merge(df_sample, df_patient, on="PATIENT_ID")
+    cleaned_clin_df = clean_clinical_df(df_clin)
 
     # Parse and Merge Treatment Timeline Data if available
     timeline_file = raw_dir / "data_timeline_treatment.txt"
@@ -290,8 +293,18 @@ def clean_tcga_skcm() -> None:
                 cleaned_clin_df[col] = cleaned_clin_df[col].fillna(0).astype(int)
 
     # Clean RNA-seq
-    raw_rnaseq_df = pd.read_csv(raw_dir / TCGA_EXPR_FILE)
-    cleaned_rnaseq_df = clean_rnaseq_df(raw_rnaseq_df)
+    df_expr = pd.read_csv(raw_dir / TCGA_EXPR_FILE, sep="\t")
+    df_expr = df_expr.dropna(subset=["Entrez_Gene_Id"])
+    df_expr["Entrez_Gene_Id"] = df_expr["Entrez_Gene_Id"].astype(int).astype(str)
+    df_expr = df_expr.set_index("Entrez_Gene_Id")
+    if "Hugo_Symbol" in df_expr.columns:
+        df_expr = df_expr.drop(columns=["Hugo_Symbol"])
+    df_expr = df_expr.groupby(df_expr.index).mean()
+    df_expr = df_expr.T
+    df_expr.index.name = "SAMPLE_ID"
+    df_expr = df_expr.reset_index()
+    
+    cleaned_rnaseq_df = clean_rnaseq_df(df_expr)
 
     # Drop constant, redundant, and administrative columns
     cols_to_drop = [
