@@ -1,9 +1,7 @@
 import gzip
 import requests
 import tarfile
-import pandas as pd
 from pathlib import Path
-from typing import List, Tuple
 
 def download_file(url: str, dest_path: Path) -> None:
     """
@@ -78,18 +76,3 @@ def download_if_missing(url: str, dest_path: Path) -> None:
         return
         
     download_file(url, dest_path)
-
-
-
-def align_expression_and_clinical(df_expr: pd.DataFrame, df_clin: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Aligns sample IDs between the expression matrix and clinical DataFrame.
-
-    @param pd.DataFrame df_expr Expression DataFrame (samples as rows).
-    @param pd.DataFrame df_clin Clinical DataFrame (samples as index).
-    @return Tuple[pd.DataFrame, pd.DataFrame] Aligned expression and clinical DataFrames.
-    """
-    common_samples = df_expr.index.intersection(df_clin.index)
-    df_expr = df_expr.loc[common_samples]
-    df_clin = df_clin.loc[common_samples]
-    return df_expr, df_clin

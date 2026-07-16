@@ -4,6 +4,25 @@ This report documents the workflow and operations implemented in `download_data.
 
 ---
 
+## Codebase Architecture & Helper Modules
+
+To maintain a clean and modular architecture, helper functions are organised under the `src/utils/` package directory:
+
+* **`src/utils/io.py`**: Handles low-level file I/O operations including:
+  * File downloading with streaming (`download_file`).
+  * Gzip extraction and decompression (`extract_tar_gz`, `download_and_decompress_gzip`).
+  * Conditional download checks (`download_if_missing`).
+* **`src/utils/preprocessing.py`**: Coordinates data cleaning, normalisation, and sample alignment, including:
+  * TCGA sample ID standardization (`standardise_sample_id`).
+  * Survival status mapping (`parse_survival_status`).
+  * Clinical metadata filtering (`clean_clinical_df`).
+  * RNA-seq sample/gene filtering (`clean_rnaseq_df`).
+  * Sample alignment between clinical and expression matrices (`align_expression_and_clinical`).
+* **`src/utils/cbioportal_api.py`**: Wraps the cBioPortal REST API v2 client and provides functions to programmatically query study metadata, molecular profiles, sample lists, and download raw datasets (`download_raw_tcga_skcm`).
+
+---
+
+
 ## 1. Data Acquisition (`download_data.py`)
 
 The data acquisition script standardizes the raw input files by downloading official, curated datasets from the **cBioPortal DataHub**. It processes four cohorts:
