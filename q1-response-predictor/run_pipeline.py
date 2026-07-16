@@ -244,52 +244,70 @@ def main():
     # 4. TCGA-SKCM survival validation
     try:
         print("Loading TCGA-SKCM data for survival validation...")
-        # Load from the local data directory
         tcga_dir = DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018"
         df_tcga_expr_raw = pd.read_csv(tcga_dir / "rnaseq_cleaned.csv", index_col=0)
         df_tcga_clin = pd.read_csv(tcga_dir / "clinical_cleaned.csv", index_col=0)
+        
+        print("Log2-transforming and filtering genes by variance first...")
+        df_tcga_log = np.log2(df_tcga_expr_raw + 1)
+        variances = df_tcga_log.var()
+        # Keep top 15% high-variance genes (approx 3000 genes)
+        var_cutoff = variances.quantile(0.85)
+        high_var_entrez = variances[variances >= var_cutoff].index.tolist()
+        df_tcga_expr_filtered = df_tcga_log[high_var_entrez]
+        print(f"Kept {len(high_var_entrez)} high-variance genes out of {df_tcga_expr_raw.shape[1]}")
         
         print("Mapping TCGA Entrez IDs to Hugo Symbols...")
         import urllib.request
         import json
         
-        entrez_ids = df_tcga_expr_raw.columns.tolist()
+        cache_file = tcga_dir / "entrez_to_symbol_cache.json"
         entrez_mapping = {}
-        chunk_size = 1000
-        for i in range(0, len(entrez_ids), chunk_size):
-            chunk = entrez_ids[i:i+chunk_size]
-            url = 'https://mygene.info/v3/query'
-            q_str = ','.join(chunk)
-            data = f'q={q_str}&scopes=entrezgene&fields=symbol&species=human'.encode('utf-8')
-            req = urllib.request.Request(
-                url, 
-                data=data, 
-                headers={'Content-Type': 'application/x-www-form-urlencoded'}
-            )
-            try:
-                with urllib.request.urlopen(req) as response:
-                    res = json.loads(response.read().decode('utf-8'))
-                    for item in res:
-                        q = item.get('query')
-                        sym = item.get('symbol')
-                        if q and sym:
-                            entrez_mapping[q] = sym
-            except Exception as e:
-                print(f"Error mapping Entrez chunk {i}: {e}")
+        
+        if cache_file.exists():
+            print(f"Loading mapping cache from: {cache_file}")
+            with open(cache_file, "r") as f:
+                entrez_mapping = json.load(f)
+        else:
+            print("Mapping high-variance Entrez IDs via MyGene.info API...")
+            chunk_size = 1000
+            for i in range(0, len(high_var_entrez), chunk_size):
+                chunk = [str(x) for x in high_var_entrez[i:i+chunk_size]]
+                url = 'https://mygene.info/v3/query'
+                q_str = ','.join(chunk)
+                data = f'q={q_str}&scopes=entrezgene&fields=symbol&species=human'.encode('utf-8')
+                req = urllib.request.Request(
+                    url, 
+                    data=data, 
+                    headers={'Content-Type': 'application/x-www-form-urlencoded'}
+                )
+                try:
+                    with urllib.request.urlopen(req, timeout=30) as response:
+                        res = json.loads(response.read().decode('utf-8'))
+                        for item in res:
+                            q = item.get('query')
+                            sym = item.get('symbol')
+                            if q and sym:
+                                entrez_mapping[q] = sym
+                except Exception as e:
+                    print(f"Error mapping Entrez chunk {i}: {e}")
+            
+            # Save cache
+            print(f"Saving mapping cache to: {cache_file}")
+            with open(cache_file, "w") as f:
+                json.dump(entrez_mapping, f)
                 
-        # Rename columns to symbols and take the average of duplicates
-        mapped_columns = [entrez_mapping.get(str(col), col) for col in df_tcga_expr_raw.columns]
-        df_tcga_expr_raw.columns = mapped_columns
-        df_tcga_expr_raw = df_tcga_expr_raw.T
-        df_tcga_expr_raw = df_tcga_expr_raw.loc[df_tcga_expr_raw.index.dropna()]
-        df_tcga_expr_raw = df_tcga_expr_raw.groupby(df_tcga_expr_raw.index).mean().T
+        # Rename columns to symbols and take the average of duplicates (using non-deprecated groupby)
+        mapped_columns = [entrez_mapping.get(str(col), str(col)) for col in df_tcga_expr_filtered.columns]
+        df_tcga_expr_filtered.columns = mapped_columns
+        df_tcga_expr_mapped = df_tcga_expr_filtered.T.groupby(level=0).mean().T
         
         # Keep common genes
-        tcga_common_genes = df_tcga_expr_raw.columns.intersection(common_genes)
-        df_tcga_expr = df_tcga_expr_raw[tcga_common_genes]
+        tcga_common_genes = df_tcga_expr_mapped.columns.intersection(common_genes)
+        df_tcga_expr = df_tcga_expr_mapped[tcga_common_genes]
         df_tcga_expr = df_tcga_expr.reindex(columns=common_genes, fill_value=0)
         
-        # Compute signatures
+        # Compute signatures (correctly log-transformed)
         sig_tcga = extract_all_signatures(df_tcga_expr)
         
         # Standardise sample IDs to 12-char patient IDs to align expression and clinical
@@ -331,13 +349,6 @@ def main():
             save_path=PLOT_DIR / "survival_tcga_lr.png"
         )
         print(f"TCGA-SKCM Overall Survival difference p-value: {p_tcga:.3e}" if p_tcga else "TCGA-SKCM: No survival data")
-        
-        # Copy TCGA plot to artifacts directory
-        import shutil
-        dest_path = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/survival_tcga_lr.png")
-        dest_path.parent.mkdir(exist_ok=True, parents=True)
-        shutil.copy(PLOT_DIR / "survival_tcga_lr.png", dest_path)
-        print("Copied survival_tcga_lr.png to artifacts directory.")
         
     except Exception as e:
         print(f"Skipping TCGA survival validation: {e}")

@@ -11,7 +11,9 @@ from statsmodels.stats.multitest import multipletests
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 CLINICAL_FILE = DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/clinical_cleaned.csv"
-OUTPUT_FILE = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/clinical_feature_selection_results.md")
+REPORTS_DIR = BASE_DIR / "reports"
+REPORTS_DIR.mkdir(exist_ok=True, parents=True)
+OUTPUT_FILE = REPORTS_DIR / "clinical_feature_selection_results.md"
 
 def main():
     print("==================================================")

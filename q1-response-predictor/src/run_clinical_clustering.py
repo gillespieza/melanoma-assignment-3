@@ -14,7 +14,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 CLINICAL_FILE = DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/clinical_cleaned.csv"
 PLOTS_DIR = BASE_DIR / "plots"
-ARTIFACTS_DIR = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4")
+REPORTS_DIR = BASE_DIR / "reports"
+REPORTS_DIR.mkdir(exist_ok=True, parents=True)
 
 def main():
     print("==================================================")
@@ -31,7 +32,6 @@ def main():
 
     # Set up plots directory
     PLOTS_DIR.mkdir(exist_ok=True, parents=True)
-    ARTIFACTS_DIR.mkdir(exist_ok=True, parents=True)
 
     # 1. Select key variables for clustering
     # We choose representative features across demographics, genomics, hypoxia, and treatment
@@ -139,12 +139,11 @@ def main():
     # Save plots
     plot_filename = 'km_clinical_clusters.png'
     plt.savefig(PLOTS_DIR / plot_filename, dpi=300)
-    plt.savefig(ARTIFACTS_DIR / plot_filename, dpi=300)
     plt.close()
     print(f"\nSaved KM plot to {plot_filename} (p = {p_val:.2e})")
 
     # 5. Generate Markdown Report
-    output_report = ARTIFACTS_DIR / "clinical_clustering_results.md"
+    output_report = REPORTS_DIR / "clinical_clustering_results.md"
     print(f"Writing clustering report to {output_report}...")
     
     with open(output_report, "w") as f:
@@ -180,7 +179,7 @@ def main():
         f.write("## Kaplan-Meier Survival Analysis\n")
         f.write(f"The unsupervised patient clusters show a highly statistically significant separation in overall survival duration (Log-Rank p-value = **\\({p_val:.2e}\\)**).\n\n")
         
-        f.write("![KM Survival of Clinical Clusters](C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4/km_clinical_clusters.png)\n")
+        f.write("![KM Survival of Clinical Clusters](../plots/km_clinical_clusters.png)\n")
         
     print("Done! Clinical clustering workflow completed.")
 

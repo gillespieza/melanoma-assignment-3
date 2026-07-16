@@ -11,7 +11,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 CLINICAL_FILE = DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/clinical_cleaned.csv"
 PLOTS_DIR = BASE_DIR / "plots"
-ARTIFACTS_DIR = Path("C:/Users/Amanda/.gemini/antigravity/brain/e6c3d6ea-eb67-4476-900c-c884ea6fb7d4")
 
 def main():
     print("==================================================")
@@ -28,7 +27,6 @@ def main():
 
     # Set up plots directory
     PLOTS_DIR.mkdir(exist_ok=True, parents=True)
-    ARTIFACTS_DIR.mkdir(exist_ok=True, parents=True)
 
     # Clean survival data
     df = df.dropna(subset=['OS_MONTHS', 'OS_STATUS'])
@@ -109,10 +107,8 @@ def main():
         
         # Save plots
         plot_path = PLOTS_DIR / filename
-        artifact_path = ARTIFACTS_DIR / filename
         
         plt.savefig(plot_path, dpi=300)
-        plt.savefig(artifact_path, dpi=300)
         plt.close()
         print(f"  Saved plot: {filename} (p = {p_val:.2e})")
 

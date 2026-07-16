@@ -21,10 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
-
-# Active Artifacts directory for current conversation
-ARTIFACTS_DIR = Path("C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a")
-ARTIFACTS_DIR.mkdir(exist_ok=True, parents=True)
+REPORTS_DIR = BASE_DIR / "reports"
+REPORTS_DIR.mkdir(exist_ok=True, parents=True)
 
 def map_entrez_to_symbols(entrez_ids, cache_path=None):
     """
@@ -235,9 +233,7 @@ def main():
     plt.close()
     print(f"Saved TCGA KM survival curve to {km_plot_path}")
     
-    # Copy plot to active artifacts
-    import shutil
-    shutil.copy(km_plot_path, ARTIFACTS_DIR / "km_pancancer_signature.png")
+
     
     # 7. Cross-Dataset Validation on Immunotherapy Trial Cohorts (Liu, Hugo, Riaz)
     print("\n==================================================")
@@ -338,7 +334,6 @@ def main():
     roc_plot_path = PLOT_DIR / "pancancer_signature_trial_validation.png"
     fig_roc.savefig(roc_plot_path, dpi=300)
     plt.close(fig_roc)
-    shutil.copy(roc_plot_path, ARTIFACTS_DIR / "pancancer_signature_trial_validation.png")
     
     # Finalize Violins plot
     fig_viol.suptitle("Signature Risk Score Stratified by Immunotherapy Response", fontsize=15, weight='bold', y=0.98)
@@ -346,7 +341,6 @@ def main():
     viol_plot_path = PLOT_DIR / "pancancer_signature_violins.png"
     fig_viol.savefig(viol_plot_path, dpi=300)
     plt.close(fig_viol)
-    shutil.copy(viol_plot_path, ARTIFACTS_DIR / "pancancer_signature_violins.png")
     
     print("\n==================================================")
     print("Generating Results Markdown Report...")
@@ -370,7 +364,7 @@ def main():
     report_content.append("\n## 2. Kaplan-Meier Survival Curve on TCGA")
     report_content.append("We partitioned TCGA-SKCM patients into High-Risk and Low-Risk groups using the median value of the signature score. The log-rank test indicates an extremely significant separation in survival curves:")
     report_content.append(f"\n*   **Log-Rank p-value**: **{lr_res.p_value:.2e}**")
-    report_content.append("\n![KM Curve of TCGA Survival](C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a/km_pancancer_signature.png)")
+    report_content.append("\n![KM Curve of TCGA Survival](../plots/km_pancancer_signature.png)")
     
     report_content.append("\n## 3. Validation on Immunotherapy Clinical Trial Cohorts")
     report_content.append("We evaluated the custom 30-gene prognostic signature on three cohorts receiving anti-PD-1 or combination immunotherapies to see if the overall survival signature translates into predicting immunotherapy response.")
@@ -383,9 +377,9 @@ def main():
         
     report_content.append("\n### Validation Visualizations")
     report_content.append("#### ROC Curves predicting Response")
-    report_content.append("![ROC Curves for Response](C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a/pancancer_signature_trial_validation.png)")
+    report_content.append("![ROC Curves for Response](../plots/pancancer_signature_trial_validation.png)")
     report_content.append("\n#### Signature Risk Score Stratified by Responders vs. Non-Responders")
-    report_content.append("![Signature Violin Plots](C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a/pancancer_signature_violins.png)")
+    report_content.append("![Signature Violin Plots](../plots/pancancer_signature_violins.png)")
     
     report_content.append("\n## 4. Biological Interpretation & Discussion")
     # Identify how many are risk vs protective
@@ -399,7 +393,7 @@ def main():
     report_content.append(f"- **Predictive utility (Immunotherapy)**: The validation shows performance of **({auc_summary})** across the trials. Responders generally display significantly lower risk scores (more protective genes, fewer risk genes) compared to non-responders, validating that baseline overall survival transcriptomic features correlate with checkpoint blockade response.")
     
     # Save the report markdown
-    report_path = ARTIFACTS_DIR / "transcriptomic_feature_selection_results.md"
+    report_path = REPORTS_DIR / "transcriptomic_feature_selection_results.md"
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(report_content))
         
