@@ -24,10 +24,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
-
-# Active Artifacts directory for current conversation
-ARTIFACTS_DIR = Path("C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a")
-ARTIFACTS_DIR.mkdir(exist_ok=True, parents=True)
+REPORTS_DIR = BASE_DIR / "reports"
+REPORTS_DIR.mkdir(exist_ok=True, parents=True)
 
 # Import signature extractor
 from signatures import extract_all_signatures
@@ -164,8 +162,7 @@ def main():
     neo_plot_path = PLOT_DIR / "extended_neoantigen_tmb.png"
     plt.savefig(neo_plot_path, dpi=300)
     plt.close()
-    shutil.copy(neo_plot_path, ARTIFACTS_DIR / "extended_neoantigen_tmb.png")
-    report_content.append("\n![Neoantigen vs TMB](C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a/extended_neoantigen_tmb.png)")
+    report_content.append("\n![Neoantigen vs TMB](../plots/extended_neoantigen_tmb.png)")
     
     # ==========================================
     # Step 2: Somatic Pathway Mutations (Liu 2019)
@@ -329,8 +326,7 @@ def main():
     corr_plot_path = PLOT_DIR / "extended_immune_correlations.png"
     plt.savefig(corr_plot_path, dpi=300)
     plt.close()
-    shutil.copy(corr_plot_path, ARTIFACTS_DIR / "extended_immune_correlations.png")
-    report_content.append("\n![Correlation Heatmap](C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a/extended_immune_correlations.png)")
+    report_content.append("\n![Correlation Heatmap](../plots/extended_immune_correlations.png)")
     
     # ---------------------------------------------
     # Kaplan-Meier Curve by Aneuploidy in TCGA
@@ -373,12 +369,11 @@ def main():
     aneu_plot_path = PLOT_DIR / "extended_aneuploidy_survival.png"
     plt.savefig(aneu_plot_path, dpi=300)
     plt.close()
-    shutil.copy(aneu_plot_path, ARTIFACTS_DIR / "extended_aneuploidy_survival.png")
     
     report_content.append("\n### TCGA Overall Survival by Aneuploidy")
     report_content.append(f"We partitioned the baseline TCGA cohort at the median Aneuploidy Score (**{aneu_median:.1f}**):")
     report_content.append(f"\n*   **Log-Rank p-value**: **{lr_res.p_value:.3e}** (Statistically Significant)")
-    report_content.append("\n![TCGA Aneuploidy Survival](C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a/extended_aneuploidy_survival.png)")
+    report_content.append("\n![TCGA Aneuploidy Survival](../plots/extended_aneuploidy_survival.png)")
     
     # ---------------------------------------------
     # Kaplan-Meier Curve by TMB in TCGA (Consolidated from run_tmb_survival.py)
@@ -420,12 +415,11 @@ def main():
     tmb_plot_path = PLOT_DIR / "survival_tcga_tmb.png"
     plt.savefig(tmb_plot_path, dpi=300)
     plt.close()
-    shutil.copy(tmb_plot_path, ARTIFACTS_DIR / "survival_tcga_tmb.png")
     
     report_content.append("\n### TCGA Overall Survival by Tumor Mutational Burden (TMB)")
     report_content.append(f"We partitioned the baseline TCGA cohort at the median TMB value (**{tmb_median:.2f} mutations/Mb**):")
     report_content.append(f"\n*   **Log-Rank p-value**: **{lr_tmb_res.p_value:.3f}** (Prognostically Neutral)")
-    report_content.append("\n![TCGA TMB Survival](C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a/survival_tcga_tmb.png)")
+    report_content.append("\n![TCGA TMB Survival](../plots/survival_tcga_tmb.png)")
     
     # ==========================================
     # Step 4: Updated Multimodal Predictor (Liu 2019)
@@ -508,7 +502,7 @@ def main():
     report_content.append("2.  **Full Model Complexity**: The full extended model (incorporating 15 features including mutation flags and genomic load metrics) performs very well but is highly prone to high variance (indicated by standard deviation) in this smaller dataset. Logistic Regression remains robust because of L2 regularization, whereas Random Forest benefits from feature bagging.")
     
     # Save the report markdown
-    report_path = ARTIFACTS_DIR / "extended_biomarkers_report.md"
+    report_path = REPORTS_DIR / "extended_biomarkers_report.md"
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(report_content))
         

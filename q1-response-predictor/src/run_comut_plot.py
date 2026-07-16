@@ -18,9 +18,7 @@ DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
-# Active Artifacts directory for current conversation
-ARTIFACTS_DIR = Path("C:/Users/Amanda/.gemini/antigravity/brain/1fa1902e-1db0-4ffb-a701-539d9692435a")
-ARTIFACTS_DIR.mkdir(exist_ok=True, parents=True)
+
 
 def main():
     print("==================================================")
@@ -226,11 +224,7 @@ def main():
     plt.savefig(comut_path, bbox_inches='tight', dpi=300)
     plt.close()
     
-    # Copy to artifacts
-    shutil.copy(comut_path, ARTIFACTS_DIR / "comut_landscape_liu_2019.png")
-    
     print(f"Saved CoMut plot to {comut_path}")
-    print("Copied to conversation artifacts folder.")
     print("==================================================")
 
 if __name__ == "__main__":
