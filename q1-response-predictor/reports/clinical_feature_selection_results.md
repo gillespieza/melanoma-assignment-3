@@ -1,3 +1,14 @@
+---
+title:
+aliases: 
+tags: 
+created: 2026-07-16 13:17
+cssclasses: wide
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-07-16 13:36
+---
+
 # Clinical Feature Selection Report
 
 This report documents the results of feature selection run on the cleaned clinical dataset of the **TCGA-SKCM** cohort.
@@ -12,33 +23,33 @@ This report documents the results of feature selection run on the cleaned clinic
 ## Method 1: Random Forest Classifier Importance
 A Random Forest classifier was trained to predict **Overall Survival status (OS_STATUS)** using all clinical variables. Features are ranked by their Gini importance.
 
-|   Rank | Feature                                                           |   Importance |
-|-------:|:------------------------------------------------------------------|-------------:|
-|      1 | FRACTION_GENOME_ALTERED                                           |   0.0616953  |
-|      2 | WEIGHT                                                            |   0.0563574  |
-|      3 | ANEUPLOIDY_SCORE                                                  |   0.0427784  |
-|      4 | TMB_NONSYNONYMOUS                                                 |   0.0420252  |
-|      5 | TISSUE_SOURCE_SITE_Essen                                          |   0.0415495  |
-|      6 | MUTATION_COUNT                                                    |   0.0373189  |
-|      7 | AGE                                                               |   0.0347512  |
-|      8 | BUFFA_HYPOXIA_SCORE                                               |   0.034703   |
-|      9 | RAGNUM_HYPOXIA_SCORE                                              |   0.0343393  |
-|     10 | TISSUE_SOURCE_SITE_University of Pittsburgh                       |   0.0317222  |
-|     11 | WINTER_HYPOXIA_SCORE                                              |   0.0247732  |
-|     12 | TISSUE_SOURCE_SITE_Cureline                                       |   0.0223551  |
-|     13 | TX_TYPE_RADIATION_THERAPY_1                                       |   0.0218194  |
-|     14 | TX_TYPE_CHEMOTHERAPY_1                                            |   0.0183633  |
-|     15 | RADIATION_THERAPY_Yes                                             |   0.0172165  |
-|     16 | TISSUE_SOURCE_SITE_Asterand                                       |   0.0168849  |
-|     17 | TISSUE_SOURCE_SITE_Norfolk and Norwich Hospital                   |   0.0144578  |
-|     18 | TUMOR_TISSUE_SITE_Distant Metastasis|Trunk                        |   0.0114078  |
-|     19 | SEX_Male                                                          |   0.0113179  |
-|     20 | TISSUE_SOURCE_SITE_Roswell                                        |   0.0107368  |
-|     21 | TX_AGENT_DACARBAZINE_1                                            |   0.0105622  |
-|     22 | TX_AGENT_INTERFERON_1                                             |   0.00989421 |
-|     23 | TX_TYPE_IMMUNOTHERAPY_1                                           |   0.00982211 |
-|     24 | TUMOR_TISSUE_SITE_Regional Cutaneous or Subcutaneous Tissue|Trunk |   0.00875523 |
-|     25 | TUMOR_TISSUE_SITE_Extremities|Primary                             |   0.00868499 |
+| Rank | Feature                                                     | Importance |            |
+| ----:|:----------------------------------------------------------- | ----------:| ---------- |
+|    1 | FRACTION_GENOME_ALTERED                                     |  0.0616953 |            |
+|    2 | WEIGHT                                                      |  0.0563574 |            |
+|    3 | ANEUPLOIDY_SCORE                                            |  0.0427784 |            |
+|    4 | TMB_NONSYNONYMOUS                                           |  0.0420252 |            |
+|    5 | TISSUE_SOURCE_SITE_Essen                                    |  0.0415495 |            |
+|    6 | MUTATION_COUNT                                              |  0.0373189 |            |
+|    7 | AGE                                                         |  0.0347512 |            |
+|    8 | BUFFA_HYPOXIA_SCORE                                         |   0.034703 |            |
+|    9 | RAGNUM_HYPOXIA_SCORE                                        |  0.0343393 |            |
+|   10 | TISSUE_SOURCE_SITE_University of Pittsburgh                 |  0.0317222 |            |
+|   11 | WINTER_HYPOXIA_SCORE                                        |  0.0247732 |            |
+|   12 | TISSUE_SOURCE_SITE_Cureline                                 |  0.0223551 |            |
+|   13 | TX_TYPE_RADIATION_THERAPY_1                                 |  0.0218194 |            |
+|   14 | TX_TYPE_CHEMOTHERAPY_1                                      |  0.0183633 |            |
+|   15 | RADIATION_THERAPY_Yes                                       |  0.0172165 |            |
+|   16 | TISSUE_SOURCE_SITE_Asterand                                 |  0.0168849 |            |
+|   17 | TISSUE_SOURCE_SITE_Norfolk and Norwich Hospital             |  0.0144578 |            |
+|   18 | TUMOR_TISSUE_SITE_Distant Metastasis                        |      Trunk | 0.0114078  |
+|   19 | SEX_Male                                                    |  0.0113179 |            |
+|   20 | TISSUE_SOURCE_SITE_Roswell                                  |  0.0107368 |            |
+|   21 | TX_AGENT_DACARBAZINE_1                                      |  0.0105622 |            |
+|   22 | TX_AGENT_INTERFERON_1                                       | 0.00989421 |            |
+|   23 | TX_TYPE_IMMUNOTHERAPY_1                                     | 0.00982211 |            |
+|   24 | TUMOR_TISSUE_SITE_Regional Cutaneous or Subcutaneous Tissue |      Trunk | 0.00875523 |
+|   25 | TUMOR_TISSUE_SITE_Extremities                               |    Primary | 0.00868499 |
 
 ## Method 2: Cox Proportional Hazards Regression (Univariate)
 Univariate Cox Proportional Hazards models were fitted to assess the association of each individual feature with overall survival time (`OS_MONTHS`) and survival status (`OS_STATUS`). Features are sorted by statistical significance (lowest p-value).

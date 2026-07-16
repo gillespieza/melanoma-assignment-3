@@ -67,6 +67,29 @@ def map_entrez_to_symbols(entrez_ids, cache_path=None):
             
     return entrez_mapping
 
+def fit_single_cox(gene, expression_values, survival_months, survival_status):
+    import pandas as pd
+    from lifelines import CoxPHFitter
+    gene_data = pd.DataFrame({
+        'gene_expr': expression_values,
+        'OS_MONTHS': survival_months,
+        'OS_STATUS': survival_status
+    })
+    cph = CoxPHFitter()
+    try:
+        cph.fit(gene_data, duration_col='OS_MONTHS', event_col='OS_STATUS')
+        summary = cph.summary.loc['gene_expr']
+        return {
+            'Gene': gene,
+            'Beta': summary['coef'],
+            'Hazard_Ratio': summary['exp(coef)'],
+            'SE': summary['se(coef)'],
+            'Wald_z': summary['z'],
+            'p_value': summary['p']
+        }
+    except Exception:
+        return None
+
 def main():
     print("==================================================")
     print("Transcriptomic Feature Selection: TCGA Pan-Cancer")
@@ -128,45 +151,36 @@ def main():
     filtered_genes = gene_vars[(gene_vars >= var_cutoff) & (gene_means >= 1.0)].index.tolist()
     print(f"Filtered gene space from {df_expr_log.shape[1]} down to {len(filtered_genes)} genes.")
     
-    # 3. Univariate Cox Proportional Hazards Regression
-    print("Running univariate Cox regression for each filtered gene...")
+    # 3. Univariate Cox Proportional Hazards Regression (Parallelized)
+    print("Running univariate Cox regression for each filtered gene in parallel...")
+    from concurrent.futures import ProcessPoolExecutor
+    import multiprocessing
+    
+    survival_df = df_clin_survival[['OS_MONTHS', 'OS_STATUS']].copy()
     cox_results = []
     
-    # Prepare survival data columns
-    survival_df = df_clin_survival[['OS_MONTHS', 'OS_STATUS']].copy()
+    max_workers = min(multiprocessing.cpu_count(), 8)
+    print(f"Using {max_workers} parallel workers...")
     
-    total_genes = len(filtered_genes)
-    for idx, gene in enumerate(filtered_genes):
-        if idx % 500 == 0:
-            print(f"  Processed {idx}/{total_genes} genes...")
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = []
+        for gene in filtered_genes:
+            futures.append(executor.submit(
+                fit_single_cox, 
+                gene, 
+                df_expr_log[gene].values, 
+                survival_df['OS_MONTHS'].values, 
+                survival_df['OS_STATUS'].values
+            ))
             
-        # Prepare single gene data
-        gene_data = df_expr_log[gene].to_frame().join(survival_df)
-        
-        cph = CoxPHFitter()
-        try:
-            # Fit univariate CoxPH
-            cph.fit(gene_data, duration_col='OS_MONTHS', event_col='OS_STATUS')
-            summary = cph.summary.loc[gene]
-            
-            coef = summary['coef']
-            hr = summary['exp(coef)']
-            se = summary['se(coef)']
-            z = summary['z']
-            p = summary['p']
-            
-            cox_results.append({
-                'Gene': gene,
-                'Beta': coef,
-                'Hazard_Ratio': hr,
-                'SE': se,
-                'Wald_z': z,
-                'p_value': p
-            })
-        except Exception:
-            # Skip genes where convergence fails
-            continue
-            
+        total_genes = len(futures)
+        for idx, fut in enumerate(futures):
+            if idx > 0 and idx % 500 == 0:
+                print(f"  Processed {idx}/{total_genes} genes...")
+            res = fut.result()
+            if res is not None:
+                cox_results.append(res)
+                
     df_cox = pd.DataFrame(cox_results)
     print(f"Successfully fit univariate Cox models for {len(df_cox)} genes.")
     
