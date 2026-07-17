@@ -217,6 +217,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+
 # Data folders: ignore everything, then whitelist documentation
 data/**
 !data/**/
@@ -224,3 +225,6 @@ data/**
 
 # Agent stuff
 .agents
+
+.DS_Store
+*.bak
