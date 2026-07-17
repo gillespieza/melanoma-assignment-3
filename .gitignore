@@ -219,3 +219,6 @@ __marimo__/
 
 # Exclude all data folders (raw and processed) from tracking
 data/
+
+.DS_Store
+*.bak
