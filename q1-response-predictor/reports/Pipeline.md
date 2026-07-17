@@ -1,6 +1,6 @@
-# Data Acquisition and Cleaning Pipeline
+# Data Acquisition, Cleaning, and Merging Pipeline
 
-This report documents the workflow and operations implemented in `download_data.py` and `clean_data.py` to fetch, extract, and clean datasets for the melanoma immunotherapy response predictor.
+This report documents the workflow and operations implemented in `download_data.py`, `clean_data.py`, and `src/merge_datasets.py` to fetch, extract, clean, and merge datasets for the melanoma immunotherapy response predictor.
 
 ---
 
@@ -58,7 +58,7 @@ The data cleaning pipeline transforms raw inputs into normalized expression matr
 #### A. Liu 2019 (`clean_liu_2019`)
 * Merges patient and sample clinical sheets.
 * Maps response (`RESPONSE`) to binary target variable `response` (CR/PR → 1, PD → 0) and standardises clinical metadata (patient_id, os_months, os_status, age, gender).
-* Log2‑transforms TPM expression matrix (log2(TPM + 1)) and aligns samples.
+* Log2‑transforms TPM expression matrix (log2(TPM + 1)) and aligns samples.
 
 #### B. Hugo 2016 (`clean_hugo_2016`)
 * Merges sample and patient clinical sheets.
@@ -103,17 +103,57 @@ The following table summarizes the number of samples/patients retained and lost 
 
 ---
 
-## 3. Clinical & Genomic Characterisation Pipeline
+## 3. Dataset Merging (`src/merge_datasets.py`)
+
+After cleaning, the merge script combines all four cohorts into unified expression and clinical matrices. It produces **two** merged variants, each batch-corrected independently:
+
+### 3a. Full Merge (`data/processed/merged/full/`)
+* Concatenates **all** samples from TCGA-SKCM, Liu 2019, Hugo 2016, and Riaz 2017.
+* Includes all treatment backgrounds (immunotherapy, chemotherapy, radiation, targeted therapy, and untreated TCGA patients).
+* Suitable for pan-cohort analyses such as survival modelling and general biomarker discovery.
+
+### 3b. Immunotherapy-Only Merge (`data/processed/merged/immunotherapy/`)
+* Includes **all** samples from the three immunotherapy trial cohorts (Liu 2019, Hugo 2016, Riaz 2017), which exclusively enrolled patients on anti-PD-1 therapy.
+* Additionally includes the subset of TCGA-SKCM patients flagged as having received immunotherapy (`TX_TYPE_IMMUNOTHERAPY == 1`).
+* Suitable for immunotherapy-specific response prediction and immune biomarker analyses.
+
+### Shared Merging Workflow
+Both variants follow the same processing steps:
+
+1. **Gene Feature Alignment**: Intersects gene symbols across all four cleaned expression matrices, retaining only genes present in every cohort.
+2. **Concatenation**: Row-wise concatenation of the selected expression and harmonised clinical dataframes.
+3. **Zero-Variance Gene Removal**: Drops any genes with zero variance across the merged cohort to prevent division-by-zero errors during batch correction.
+4. **pyCombat Batch Correction**: Applies parametric empirical Bayes batch-effect correction (ComBat) using the cohort label as the batch variable. The batch map is built dynamically from the cohorts present in each merge variant.
+5. **Output**: Saves `expr_merged.csv` (batch-corrected expression) and `clin_merged.csv` (harmonised clinical metadata) to the respective output directory.
+
+### Harmonised Clinical Columns
+Each sample in the merged clinical metadata includes the following standardised fields:
+
+| Column | Description |
+| :--- | :--- |
+| `patient_id` | Original patient identifier |
+| `cohort` | Source dataset (TCGA, Liu_2019, Hugo_2016, Riaz_2017) |
+| `os_months` | Overall survival in months |
+| `os_status` | Overall survival status (1 = deceased, 0 = living) |
+| `response` | Binary immunotherapy response (1 = CR/PR, 0 = PD; NaN for TCGA non-trial patients) |
+| `age` | Age at diagnosis (where available) |
+| `sex` | Sex (Male/Female/N/A) |
+| `specimen_type` | Biopsy type (Primary/Metastatic/N/A) |
+| `immunotherapy` | Whether the patient received immunotherapy (1 = yes, 0 = no) |
+
+---
+
+## 4. Clinical & Genomic Characterisation Pipeline
 
 Once the clean datasets are generated, the characterisation scripts analyze clinical and genomic variables across trials (Liu, Hugo, Riaz) and the TCGA reference cohort.
 
-### 3.1. Clinical Characterisation
+### 4.1. Clinical Characterisation
 *   **`run_response_distribution.py`**: Reads processed clinical data and generates stacked bar charts showing percentage response rates (CR/PR vs. PD) across studies, saved to `plots/clinical/response_proportions.png`.
 *   **`run_waffle_chart.py`**: Draws waffle charts representing absolute sample sizes and response status (1 block = 1 patient), saved to `plots/clinical/waffle_cohorts.png`.
 *   **`run_response_km_curves.py`**: Evaluates overall survival stratified by response (Responder vs. Non-Responder) in trials, generating Kaplan-Meier curves and Log-Rank tests saved to `plots/clinical/survival_by_response.png`.
 *   **`run_forest_plot.py`**: Fits univariate logistic regression models for response across demographics and driver mutations. Generates a standardized forest plot (grey/red/blue color scheme) saved to `plots/clinical/forest_plot_odds_ratios.png`.
 
-### 3.2. Genomic Characterisation
+### 4.2. Genomic Characterisation
 *   **`run_genomic_characterisation.py`**: Evaluates baseline genomic properties of TCGA and trials:
     *   Generates a comparison of driver mutations (*BRAF*, *NRAS*, *NF1*, and Triple-WT) saved to `plots/genomic/mutation_frequencies.png`.
     *   Plots pre-treatment TMB distributions (trial boxplots by response, TCGA log-normal histogram) saved to `plots/genomic/tmb_distribution.png`.
@@ -128,13 +168,19 @@ Once the clean datasets are generated, the characterisation scripts analyze clin
 
 ---
 
-## 4. Outputs Generated
+## 5. Outputs Generated
 
 The pipeline outputs processed data, figures, and reports to their respective directories:
 
 ### Data Outputs (`data/processed/{study_name}/`)
 *   **`expr_cleaned.csv`**: Normalized and log2-transformed expression values (genes as columns, samples as rows).
 *   **`clin_cleaned.csv`**: Cleaned, standardized clinical metadata (patient demographic fields, survival timeline, response status, and driver mutation flags).
+
+### Merged Data Outputs (`data/processed/merged/`)
+*   **`full/expr_merged.csv`**: Batch-corrected expression matrix for the full merged cohort (all 4 datasets).
+*   **`full/clin_merged.csv`**: Harmonised clinical metadata for the full merged cohort.
+*   **`immunotherapy/expr_merged.csv`**: Batch-corrected expression matrix for immunotherapy-treated patients only.
+*   **`immunotherapy/clin_merged.csv`**: Harmonised clinical metadata for immunotherapy-treated patients only.
 
 ### Visualisation Outputs (`plots/`)
 *   **Clinical Characterisation**: Waffle charts, response rates, survival by response, and standardized univariate forest plots in `plots/clinical/`.

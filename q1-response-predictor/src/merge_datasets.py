@@ -9,7 +9,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 PROCESSED_DIR = DATA_DIR / "processed"
 MERGED_DIR = PROCESSED_DIR / "merged"
-MERGED_DIR.mkdir(exist_ok=True, parents=True)
+
+# Subdirectories for the two merge variants
+FULL_DIR = MERGED_DIR / "full"
+IMMUNO_DIR = MERGED_DIR / "immunotherapy"
+
+for d in [FULL_DIR, IMMUNO_DIR]:
+    d.mkdir(exist_ok=True, parents=True)
 
 def load_tcga():
     print("Loading TCGA-SKCM...")
@@ -36,24 +42,32 @@ def load_tcga():
     
     # Extract clinical details
     df_clin_harm = pd.DataFrame(index=df_clin.index)
-    df_clin_harm["patient_id"] = df_clin["PATIENT_ID"]
-    df_clin_harm["cohort"] = "TCGA"
-    df_clin_harm["os_months"] = df_clin["OS_MONTHS"]
-    df_clin_harm["os_status"] = df_clin["OS_STATUS"].astype(float)
-    df_clin_harm["response"] = np.nan
-    df_clin_harm["age"] = df_clin["AGE"]
+    df_clin_harm["PATIENT_ID"] = df_clin["PATIENT_ID"]
+    df_clin_harm["COHORT"] = "TCGA"
+    df_clin_harm["OS_MONTHS"] = df_clin["OS_MONTHS"]
+    df_clin_harm["OS_STATUS"] = df_clin["OS_STATUS"].astype(float)
+    df_clin_harm["RESPONSE"] = np.nan
+    df_clin_harm["RESPONSE_BINARY"] = np.nan
+    df_clin_harm["AGE"] = df_clin["AGE"]
     
     # Sex: standardise values
-    df_clin_harm["sex"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female"}).fillna("N/A")
-    df_clin_harm["specimen_type"] = df_clin["SAMPLE_TYPE"].map({"Primary": "Primary", "Metastatic": "Metastatic"}).fillna("N/A")
+    df_clin_harm["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female"}).fillna("N/A")
+    df_clin_harm["SPECIMEN_TYPE"] = df_clin["SAMPLE_TYPE"].map({"Primary": "Primary", "Metastatic": "Metastatic"}).fillna("N/A")
+    
+    # Carry forward the immunotherapy flag so we can filter later
+    if "TX_TYPE_IMMUNOTHERAPY" in df_clin.columns:
+        df_clin_harm["IMMUNOTHERAPY"] = df_clin["TX_TYPE_IMMUNOTHERAPY"].astype(int)
+    else:
+        df_clin_harm["IMMUNOTHERAPY"] = 0
     
     return df_expr_log, df_clin_harm
+
 
 def load_liu():
     print("Loading Liu 2019...")
     liu_dir = PROCESSED_DIR / "liu_2019"
     df_expr = pd.read_csv(liu_dir / "expr_cleaned.csv", index_col=0)
-    df_clin = pd.read_csv(liu_dir / "clin_cleaned.csv", index_col=0)
+    df_clin = pd.read_csv(liu_dir / "clin_cleaned.csv", index_col="SAMPLE_ID")
     
     # Align IDs
     common_ids = list(set(df_expr.index) & set(df_clin.index))
@@ -61,67 +75,148 @@ def load_liu():
     df_clin = df_clin.loc[common_ids]
     
     df_clin_harm = pd.DataFrame(index=df_clin.index)
-    df_clin_harm["patient_id"] = df_clin["PATIENT_ID"]
-    df_clin_harm["cohort"] = "Liu_2019"
-    df_clin_harm["os_months"] = df_clin["OS_MONTHS"]
+    df_clin_harm["PATIENT_ID"] = df_clin["PATIENT_ID"]
+    df_clin_harm["COHORT"] = "Liu_2019"
+    df_clin_harm["OS_MONTHS"] = df_clin["OS_MONTHS"]
     
     # Map status '1:DECEASED' -> 1, '0:LIVING' -> 0
-    df_clin_harm["os_status"] = df_clin["OS_STATUS"].map({"1:DECEASED": 1.0, "0:LIVING": 0.0})
-    df_clin_harm["response"] = df_clin["response"].astype(float)
-    df_clin_harm["age"] = np.nan  # Not available
-    df_clin_harm["sex"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female"}).fillna("N/A")
+    df_clin_harm["OS_STATUS"] = df_clin["OS_STATUS"].map({"1:DECEASED": 1.0, "0:LIVING": 0.0})
+    df_clin_harm["RESPONSE"] = df_clin["RESPONSE"]
+    df_clin_harm["RESPONSE_BINARY"] = df_clin["RESPONSE_BINARY"].astype(float)
+    df_clin_harm["AGE"] = np.nan  # Not available
+    df_clin_harm["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female"}).fillna("N/A")
     
-    # Specimen type
-    spec_map = lambda s: "Primary" if "primary" in str(s).lower() else ("Metastatic" if "metast" in str(s).lower() or "lymph" in str(s).lower() or "skin" in str(s).lower() else "N/A")
-    df_clin_harm["specimen_type"] = df_clin["BIOPSY_SITE_CATEG"].map(spec_map)
+    # Specimen type (Liu's cleaned CSV uses 'BIOPSY_SITE', mostly metastatic sites)
+    if "BIOPSY_SITE" in df_clin.columns:
+        spec_map = lambda s: "Primary" if "primary" in str(s).lower() else ("Metastatic" if pd.notna(s) and str(s).strip() != "" else "N/A")
+        df_clin_harm["SPECIMEN_TYPE"] = df_clin["BIOPSY_SITE"].map(spec_map)
+    else:
+        df_clin_harm["SPECIMEN_TYPE"] = "N/A"
+    
+    # All Liu patients received anti-PD-1 immunotherapy
+    df_clin_harm["IMMUNOTHERAPY"] = 1
     
     return df_expr, df_clin_harm
+
 
 def load_hugo():
     print("Loading Hugo 2016...")
     hugo_dir = PROCESSED_DIR / "hugo_2016"
     df_expr = pd.read_csv(hugo_dir / "expr_cleaned.csv", index_col=0)
-    df_clin = pd.read_csv(hugo_dir / "clin_cleaned.csv", index_col=0)
+    df_clin = pd.read_csv(hugo_dir / "clin_cleaned.csv", index_col="SAMPLE_ID")
     
     common_ids = list(set(df_expr.index) & set(df_clin.index))
     df_expr = df_expr.loc[common_ids]
     df_clin = df_clin.loc[common_ids]
     
     df_clin_harm = pd.DataFrame(index=df_clin.index)
-    df_clin_harm["patient_id"] = df_clin["patient_id"]
-    df_clin_harm["cohort"] = "Hugo_2016"
+    df_clin_harm["PATIENT_ID"] = df_clin["PATIENT_ID"]
+    df_clin_harm["COHORT"] = "Hugo_2016"
     
     # os_months from cBioPortal iAtlas clinical file
-    df_clin_harm["os_months"] = df_clin["os_months"]
-    df_clin_harm["os_status"] = df_clin["os_status"].astype(float)
-    df_clin_harm["response"] = df_clin["response"].astype(float)
-    df_clin_harm["age"] = df_clin["age (yrs)"].astype(float)
-    df_clin_harm["sex"] = df_clin["gender"].map({"Male": "Male", "Female": "Female", "M": "Male", "F": "Female"}).fillna("N/A")
-    df_clin_harm["specimen_type"] = "Metastatic"  # All were pre-treatment metastatic
+    df_clin_harm["OS_MONTHS"] = df_clin["OS_MONTHS"]
+    df_clin_harm["OS_STATUS"] = df_clin["OS_STATUS"].astype(float)
+    df_clin_harm["RESPONSE"] = df_clin["RESPONSE"]
+    df_clin_harm["RESPONSE_BINARY"] = df_clin["RESPONSE_BINARY"].astype(float)
+    df_clin_harm["AGE"] = df_clin["AGE"].astype(float)
+    df_clin_harm["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female", "M": "Male", "F": "Female"}).fillna("N/A")
+    df_clin_harm["SPECIMEN_TYPE"] = "Metastatic"  # All were pre-treatment metastatic
+    
+    # All Hugo patients received anti-PD-1 immunotherapy
+    df_clin_harm["IMMUNOTHERAPY"] = 1
     
     return df_expr, df_clin_harm
+
 
 def load_riaz():
     print("Loading Riaz 2017...")
     riaz_dir = PROCESSED_DIR / "riaz_2017"
     df_expr = pd.read_csv(riaz_dir / "expr_cleaned.csv", index_col=0)
-    df_clin = pd.read_csv(riaz_dir / "clin_cleaned.csv", index_col=0)
+    df_clin = pd.read_csv(riaz_dir / "clin_cleaned.csv", index_col="SAMPLE_ID")
     
     common_ids = list(set(df_expr.index) & set(df_clin.index))
     df_expr = df_expr.loc[common_ids]
     df_clin = df_clin.loc[common_ids]
     
     df_clin_harm = pd.DataFrame(index=df_clin.index)
-    df_clin_harm["patient_id"] = df_clin["patient_id"]
-    df_clin_harm["cohort"] = "Riaz_2017"
-    df_clin_harm["os_months"] = df_clin["os_months"]
-    df_clin_harm["os_status"] = df_clin["os_status"].astype(float)
-    df_clin_harm["response"] = df_clin["response"].astype(float)
-    df_clin_harm["age"] = df_clin["age"].astype(float)
-    df_clin_harm["sex"] = df_clin["sex"].map({"Male": "Male", "Female": "Female"}).fillna("N/A")
-    df_clin_harm["specimen_type"] = "Metastatic"
+    df_clin_harm["PATIENT_ID"] = df_clin["PATIENT_ID"]
+    df_clin_harm["COHORT"] = "Riaz_2017"
+    df_clin_harm["OS_MONTHS"] = df_clin["OS_MONTHS"]
+    df_clin_harm["OS_STATUS"] = df_clin["OS_STATUS"].astype(float)
+    df_clin_harm["RESPONSE"] = df_clin["RESPONSE"]
+    df_clin_harm["RESPONSE_BINARY"] = df_clin["RESPONSE_BINARY"].astype(float)
+    df_clin_harm["AGE"] = df_clin["AGE"].astype(float)
+    df_clin_harm["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female"}).fillna("N/A")
+    df_clin_harm["SPECIMEN_TYPE"] = "Metastatic"
+    
+    # All Riaz patients received nivolumab (anti-PD-1)
+    df_clin_harm["IMMUNOTHERAPY"] = 1
     
     return df_expr, df_clin_harm
+
+
+def batch_correct_and_save(df_expr_merged, df_clin_merged, output_dir, label=""):
+    """
+    Applies zero-variance gene removal and pyCombat batch correction to a
+    merged expression matrix, then saves the corrected expression and
+    clinical metadata to the specified output directory.
+
+    @param pd.DataFrame df_expr_merged: Merged expression matrix (samples x genes).
+    @param pd.DataFrame df_clin_merged: Merged clinical metadata (samples x features).
+    @param Path output_dir: Directory to write the output CSV files.
+    @param str label: Human-readable label for console output (e.g. "Full" or "Immunotherapy").
+    """
+    prefix = f"[{label}] " if label else ""
+
+    # Check that indices match perfectly
+    assert (df_expr_merged.index == df_clin_merged.index).all(), "Inconsistent sample indices!"
+    print(f"{prefix}Total cohort size: {len(df_clin_merged)} samples.")
+
+    # Remove any genes with zero variance to avoid division by zero in ComBat
+    print(f"{prefix}Checking for zero-variance genes...")
+    zero_var_genes = df_expr_merged.columns[df_expr_merged.var(axis=0) == 0].tolist()
+    if zero_var_genes:
+        print(f"  Removing {len(zero_var_genes)} zero-variance genes from expression matrix.")
+        df_expr_merged = df_expr_merged.drop(columns=zero_var_genes)
+
+    # Batch correction with pyCombat
+    print(f"{prefix}Running pyCombat batch-effect correction...")
+    cohorts_list = df_clin_merged["COHORT"].tolist()
+
+    # Build batch map dynamically from the cohorts present in this merge
+    unique_cohorts = sorted(set(cohorts_list))
+    cohort_map = {c: i for i, c in enumerate(unique_cohorts)}
+    batches = np.array([cohort_map[c] for c in cohorts_list])
+
+    # pyCombat expects samples as rows and genes as columns
+    combat_obj = Combat()
+    Y = df_expr_merged.values
+    Y_corrected = combat_obj.fit_transform(Y, batches)
+
+    # Re-construct corrected dataframe
+    df_expr_corrected = pd.DataFrame(
+        Y_corrected,
+        index=df_expr_merged.index,
+        columns=df_expr_merged.columns
+    )
+
+    # Save results
+    output_dir.mkdir(exist_ok=True, parents=True)
+    expr_out_path = output_dir / "expr_merged.csv"
+    clin_out_path = output_dir / "clin_merged.csv"
+
+    df_expr_corrected.to_csv(expr_out_path)
+    
+    # Reorder df_clin_merged to put PATIENT_ID first
+    df_clin_merged = df_clin_merged.reset_index()
+    if "PATIENT_ID" in df_clin_merged.columns:
+        cols = ["PATIENT_ID"] + [c for c in df_clin_merged.columns if c != "PATIENT_ID"]
+        df_clin_merged = df_clin_merged[cols]
+    df_clin_merged.to_csv(clin_out_path, index=False)
+
+    print(f"{prefix}Saved expression matrix to: {expr_out_path} (shape: {df_expr_corrected.shape})")
+    print(f"{prefix}Saved clinical metadata to:  {clin_out_path} (shape: {df_clin_merged.shape})")
+
 
 def main():
     # 1. Load each dataset
@@ -129,78 +224,67 @@ def main():
     expr_liu, clin_liu = load_liu()
     expr_hugo, clin_hugo = load_hugo()
     expr_riaz, clin_riaz = load_riaz()
-    
+
     print("\nAligning gene features...")
     # Find intersecting gene symbols
     common_genes = list(
-        set(expr_tcga.columns) & 
-        set(expr_liu.columns) & 
-        set(expr_hugo.columns) & 
+        set(expr_tcga.columns) &
+        set(expr_liu.columns) &
+        set(expr_hugo.columns) &
         set(expr_riaz.columns)
     )
     common_genes.sort()
     print(f"Number of common genes intersected: {len(common_genes)}")
-    
-    # Subset expressions
+
+    # Subset expressions to common genes
     expr_tcga = expr_tcga[common_genes]
     expr_liu = expr_liu[common_genes]
     expr_hugo = expr_hugo[common_genes]
     expr_riaz = expr_riaz[common_genes]
-    
-    # 2. Merge matrices
-    print("Concatenating clinical and expression tables...")
-    df_expr_merged = pd.concat([expr_tcga, expr_liu, expr_hugo, expr_riaz], axis=0)
-    df_clin_merged = pd.concat([clin_tcga, clin_liu, clin_hugo, clin_riaz], axis=0)
-    
-    # Check that indices match perfectly
-    assert (df_expr_merged.index == df_clin_merged.index).all(), "Inconsistent sample indices!"
-    print(f"Total merged cohort size: {len(df_clin_merged)} samples.")
-    
-    # Remove any genes with zero variance across the whole set to avoid division by zero in ComBat
-    print("Checking for zero-variance genes...")
-    zero_var_genes = df_expr_merged.columns[df_expr_merged.var(axis=0) == 0].tolist()
-    if zero_var_genes:
-        print(f"  Removing {len(zero_var_genes)} zero-variance genes from expression matrix.")
-        df_expr_merged = df_expr_merged.drop(columns=zero_var_genes)
-        common_genes = [g for g in common_genes if g not in zero_var_genes]
-        
-    # 3. Perform pyCombat batch correction
-    print("\nRunning pyCombat batch-effect correction...")
-    # Batch vector representing the cohort origin of each sample
-    cohorts_list = df_clin_merged["cohort"].tolist()
-    
-    # Map cohorts to integer batches for pycombat
-    cohort_map = {"TCGA": 0, "Liu_2019": 1, "Hugo_2016": 2, "Riaz_2017": 3}
-    batches = np.array([cohort_map[c] for c in cohorts_list])
-    
-    # pyCombat expects samples as rows and genes as columns
-    combat_obj = Combat()
-    # Y is the expression values array
-    Y = df_expr_merged.values
-    
-    # Run correction
-    Y_corrected = combat_obj.fit_transform(Y, batches)
-    
-    # Re-construct corrected dataframe
-    df_expr_corrected = pd.DataFrame(
-        Y_corrected, 
-        index=df_expr_merged.index, 
-        columns=df_expr_merged.columns
+
+    # ------------------------------------------------------------------
+    # 2a. FULL MERGE: all 4 cohorts, all patients
+    # ------------------------------------------------------------------
+    print("\n" + "=" * 60)
+    print("Building FULL merged cohort (all 4 datasets)")
+    print("=" * 60)
+
+    df_expr_full = pd.concat([expr_tcga, expr_liu, expr_hugo, expr_riaz], axis=0)
+    df_clin_full = pd.concat([clin_tcga, clin_liu, clin_hugo, clin_riaz], axis=0)
+
+    batch_correct_and_save(df_expr_full, df_clin_full, FULL_DIR, label="Full")
+
+    # ------------------------------------------------------------------
+    # 2b. IMMUNOTHERAPY-ONLY MERGE: Liu + Hugo + Riaz (all immuno)
+    #     plus TCGA patients flagged as immunotherapy-treated
+    # ------------------------------------------------------------------
+    print("\n" + "=" * 60)
+    print("Building IMMUNOTHERAPY-ONLY merged cohort")
+    print("=" * 60)
+
+    # Filter TCGA to immunotherapy-treated patients only
+    tcga_immuno_mask = clin_tcga["IMMUNOTHERAPY"] == 1
+    expr_tcga_immuno = expr_tcga.loc[tcga_immuno_mask]
+    clin_tcga_immuno = clin_tcga.loc[tcga_immuno_mask]
+    print(f"  TCGA immunotherapy patients: {len(clin_tcga_immuno)} / {len(clin_tcga)}")
+
+    df_expr_immuno = pd.concat(
+        [expr_tcga_immuno, expr_liu, expr_hugo, expr_riaz], axis=0
     )
-    
-    # 4. Save results
-    print("\nSaving merged and batch-corrected files...")
-    expr_out_path = MERGED_DIR / "expr_merged.csv"
-    clin_out_path = MERGED_DIR / "clin_merged.csv"
-    
-    df_expr_corrected.to_csv(expr_out_path)
-    df_clin_merged.to_csv(clin_out_path)
-    
-    print(f"Saved merged expression matrix to: {expr_out_path} (shape: {df_expr_corrected.shape})")
-    print(f"Saved merged clinical metadata to: {clin_out_path} (shape: {df_clin_merged.shape})")
-    print("\n==================================================")
+    df_clin_immuno = pd.concat(
+        [clin_tcga_immuno, clin_liu, clin_hugo, clin_riaz], axis=0
+    )
+
+    batch_correct_and_save(df_expr_immuno, df_clin_immuno, IMMUNO_DIR, label="Immunotherapy")
+
+    # ------------------------------------------------------------------
+    # Summary
+    # ------------------------------------------------------------------
+    print("\n" + "=" * 60)
     print("Merged Cohort Generation Completed Successfully!")
-    print("==================================================")
+    print("=" * 60)
+    print(f"  Full merge:          {len(df_clin_full)} samples  -> {FULL_DIR}")
+    print(f"  Immunotherapy merge: {len(df_clin_immuno)} samples -> {IMMUNO_DIR}")
 
 if __name__ == "__main__":
     main()

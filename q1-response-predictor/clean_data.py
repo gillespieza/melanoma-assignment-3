@@ -51,20 +51,23 @@ def parse_cbioportal_expression(expr_file_path: Path) -> pd.DataFrame:
     return df_expr
 
 
-def parse_maf_mutations(raw_dir: Path, sample_ids: Optional[list] = None) -> pd.DataFrame:
+def parse_maf_mutations(raw_dir: Path, sample_ids: Optional[list] = None, id_prefix: str = "") -> pd.DataFrame:
     """
-    Parses BRAF, NRAS, NF1 binary mutation status from a cBioPortal MAF file.
+    Parses a cBioPortal MAF file to extract binary mutation status for all genes.
 
     @param Path raw_dir Directory containing data_mutations.txt.
     @param list sample_ids Optional list of sample IDs to restrict to.
-    @return pd.DataFrame DataFrame indexed by SAMPLE_ID with columns mut_BRAF, mut_NRAS, mut_NF1.
+    @param str id_prefix Optional prefix to prepend to sample/patient IDs.
+    @return pd.DataFrame DataFrame indexed by Tumor_Sample_Barcode with gene symbols as columns.
     """
     mut_path = raw_dir / MUT_FILE
     if not mut_path.exists():
-        return pd.DataFrame(columns=["mut_BRAF", "mut_NRAS", "mut_NF1"])
+        return pd.DataFrame()
 
     df_mut = pd.read_csv(mut_path, sep="\t", comment="#", low_memory=False)
-    df_mut = df_mut[df_mut["Hugo_Symbol"].isin(["BRAF", "NRAS", "NF1"])]
+    # Prepend prefix and convert to uppercase
+    df_mut["Tumor_Sample_Barcode"] = (id_prefix + df_mut["Tumor_Sample_Barcode"].astype(str)).str.upper()
+
     if sample_ids is not None:
         df_mut = df_mut[df_mut["Tumor_Sample_Barcode"].isin(sample_ids)]
 
@@ -74,12 +77,12 @@ def parse_maf_mutations(raw_dir: Path, sample_ids: Optional[list] = None) -> pd.
                "Splice_Site", "Nonstop_Mutation", "Translation_Start_Site"]
     df_mut = df_mut[df_mut["Variant_Classification"].isin(non_syn)]
 
+    if df_mut.empty:
+        return pd.DataFrame()
+
+    # Pivot: group by sample and gene
     pivoted = df_mut.groupby(["Tumor_Sample_Barcode", "Hugo_Symbol"]).size().unstack(fill_value=0)
-    for gene in ["BRAF", "NRAS", "NF1"]:
-        if gene not in pivoted.columns:
-            pivoted[gene] = 0
-    pivoted = (pivoted[["BRAF", "NRAS", "NF1"]] > 0).astype(int)
-    pivoted.columns = ["mut_BRAF", "mut_NRAS", "mut_NF1"]
+    pivoted = (pivoted > 0).astype(int)
     pivoted.index.name = None
     return pivoted
 
@@ -90,9 +93,9 @@ def clean_iatlas_cohort(
     raw_dir: Path,
     proc_dir: Path,
     baseline_only: bool = False,
-    age_col_name: str = "age (yrs)",
-    sex_col_name: str = "gender",
-    mut_by_patient: bool = False
+    mut_by_patient: bool = False,
+    patient_prefix: str = "",
+    sample_prefix: str = ""
 ) -> None:
     """
     Generic pipeline function to clean and align iAtlas/cBioPortal datasets.
@@ -108,45 +111,56 @@ def clean_iatlas_cohort(
     # Load raw clinical data
     df_patient = pd.read_csv(raw_dir / CLIN_PATIENT_FILE, sep="\t", skiprows=4)
     df_sample = pd.read_csv(raw_dir / CLIN_SAMPLE_FILE, sep="\t", skiprows=4)
+
+    # Prepend dataset prefix and convert to uppercase for Patient and Sample IDs
+    df_patient["PATIENT_ID"] = (patient_prefix + df_patient["PATIENT_ID"].astype(str)).str.upper()
+    df_sample["PATIENT_ID"] = (patient_prefix + df_sample["PATIENT_ID"].astype(str)).str.upper()
+    df_sample["SAMPLE_ID"] = (sample_prefix + df_sample["SAMPLE_ID"].astype(str)).str.upper()
+
     df_clin = clean_clinical_df(pd.merge(df_sample, df_patient, on="PATIENT_ID"))
 
     # Optional pre-treatment filter (e.g. for Riaz)
     if baseline_only:
-        df_clin = df_clin[df_clin["SAMPLE_ID"].str.endswith("_pre")]
+        df_clin = df_clin[df_clin["SAMPLE_ID"].str.endswith("_PRE")]
 
-    # Map response using iAtlas column
-    df_clin['response'] = df_clin['RESPONSE'].map(RESPONSE_MAP)
-    df_clin = df_clin.dropna(subset=['response'])
+    # Map response using iAtlas column: keep RESPONSE granular, add RESPONSE_BINARY
+    if 'RESPONSE' in df_clin.columns:
+        df_clin['RESPONSE_BINARY'] = df_clin['RESPONSE'].map(RESPONSE_MAP)
+    else:
+        df_clin['RESPONSE_BINARY'] = np.nan
     df_clin = df_clin.set_index("SAMPLE_ID")
 
-    # Standardize clinical metadata columns
-    df_clin['patient_id'] = df_clin['PATIENT_ID']
-    df_clin['os_months'] = df_clin['OS_MONTHS']
-    df_clin['os_status'] = df_clin['OS_STATUS']
+    # Standardize clinical metadata columns to uppercase
     if 'AGE_AT_DIAGNOSIS' in df_clin.columns:
-        df_clin[age_col_name] = df_clin['AGE_AT_DIAGNOSIS']
+        df_clin['AGE'] = df_clin['AGE_AT_DIAGNOSIS'].astype(float)
     if 'SEX' in df_clin.columns:
-        df_clin[sex_col_name] = df_clin['SEX']
+        df_clin['SEX'] = df_clin['SEX'].map({"Male": "Male", "Female": "Female", "M": "Male", "F": "Female"}).fillna("N/A")
 
-    # Append mutation status (BRAF, NRAS, NF1) from MAF
+    # Extract mutation status from MAF
     if mut_by_patient:
-        df_mut = parse_maf_mutations(raw_dir)
-        # Convert index from sample barcode (e.g., Pt3_pre) to patient ID (e.g., Pt3)
-        df_mut.index = df_mut.index.map(lambda x: x.split("_")[0] if isinstance(x, str) else x)
-        # Aggregate by patient, taking max (1 if mutated in any sample, 0 otherwise)
-        df_mut = df_mut.groupby(df_mut.index).max()
-        for col in ["mut_BRAF", "mut_NRAS", "mut_NF1"]:
-            df_clin[col] = df_clin["patient_id"].map(df_mut[col].to_dict()).fillna(0).astype(int)
+        df_mut = parse_maf_mutations(raw_dir, id_prefix=sample_prefix)
+        if not df_mut.empty:
+            # Convert index from sample barcode (e.g., RIAZ_PT3_PRE) to patient ID (e.g., RIAZ_PT3)
+            df_mut.index = df_mut.index.map(lambda x: x.rsplit("_", 1)[0] if isinstance(x, str) else x)
+            # Aggregate by patient, taking max (1 if mutated in any sample, 0 otherwise)
+            df_mut = df_mut.groupby(df_mut.index).max()
+            # Map using Patient_ID and reindex to align with df_clin
+            df_mut_final = df_mut.reindex(df_clin["PATIENT_ID"], fill_value=0)
+            df_mut_final.index = df_clin.index
+        else:
+            df_mut_final = pd.DataFrame(index=df_clin.index)
     else:
-        df_mut = parse_maf_mutations(raw_dir, sample_ids=df_clin.index.tolist())
-        df_clin = df_clin.join(df_mut, how="left")
-        for col in ["mut_BRAF", "mut_NRAS", "mut_NF1"]:
-            df_clin[col] = df_clin[col].fillna(0).astype(int)
+        df_mut = parse_maf_mutations(raw_dir, sample_ids=df_clin.index.tolist(), id_prefix=sample_prefix)
+        if not df_mut.empty:
+            df_mut_final = df_mut.reindex(df_clin.index, fill_value=0)
+        else:
+            df_mut_final = pd.DataFrame(index=df_clin.index)
 
     # Load raw expression (TPM)
     df_expr = parse_cbioportal_expression(raw_dir / EXPR_FILE)
+    df_expr.columns = (sample_prefix + df_expr.columns.astype(str)).str.upper()
     if baseline_only:
-        pre_cols = [c for c in df_expr.columns if c.endswith("_pre")]
+        pre_cols = [c for c in df_expr.columns if c.endswith("_PRE")]
         df_expr = df_expr[pre_cols].T
     else:
         df_expr = df_expr.T
@@ -157,9 +171,30 @@ def clean_iatlas_cohort(
     # Log-transform expression
     df_expr = np.log2(df_expr + 1)
 
+    # Align mutation status to final sample IDs and save
+    df_mut_final = df_mut_final.loc[df_clin.index]
+    df_mut_final.index.name = "SAMPLE_ID"
+    df_mut_final.to_csv(proc_dir / "mutations_cleaned.csv")
+
     # Save cleaned
     df_expr.to_csv(proc_dir / "expr_cleaned.csv")
-    df_clin.to_csv(proc_dir / "clin_cleaned.csv")
+    
+    # Reorder so PATIENT_ID is the first column, and RESPONSE_BINARY is next to RESPONSE
+    df_clin = df_clin.reset_index()
+    if "PATIENT_ID" in df_clin.columns:
+        other_cols = []
+        for c in df_clin.columns:
+            if c == "PATIENT_ID" or c == "RESPONSE_BINARY":
+                continue
+            other_cols.append(c)
+            if c == "RESPONSE":
+                other_cols.append("RESPONSE_BINARY")
+        if "RESPONSE_BINARY" not in other_cols and "RESPONSE_BINARY" in df_clin.columns:
+            other_cols.append("RESPONSE_BINARY")
+        cols = ["PATIENT_ID"] + other_cols
+        df_clin = df_clin[cols]
+        
+    df_clin.to_csv(proc_dir / "clin_cleaned.csv", index=False)
     print(f"  {cohort_name}: Cleaned {len(df_clin)} samples.")
 
 
@@ -173,9 +208,9 @@ def clean_liu_2019() -> None:
         raw_dir=RAW_DIR / "liu_2019",
         proc_dir=PROCESSED_DIR / "liu_2019",
         baseline_only=False,
-        age_col_name="age (yrs)",
-        sex_col_name="gender",
-        mut_by_patient=False
+        mut_by_patient=False,
+        patient_prefix="liu_",
+        sample_prefix=""
     )
 
 
@@ -190,9 +225,9 @@ def clean_hugo_2016() -> None:
         raw_dir=RAW_DIR / "hugo_2016",
         proc_dir=PROCESSED_DIR / "hugo_2016",
         baseline_only=False,
-        age_col_name="age (yrs)",
-        sex_col_name="gender",
-        mut_by_patient=False
+        mut_by_patient=False,
+        patient_prefix="hugo_",
+        sample_prefix="hugo_"
     )
 
 
@@ -206,10 +241,10 @@ def clean_riaz_2017() -> None:
         study_id=RIAZ_STUDY_ID,
         raw_dir=RAW_DIR / "riaz_2017",
         proc_dir=PROCESSED_DIR / "riaz_2017",
-        baseline_only=True,
-        age_col_name="age",
-        sex_col_name="sex",
-        mut_by_patient=True
+        baseline_only=False,
+        mut_by_patient=True,
+        patient_prefix="riaz_",
+        sample_prefix="riaz_"
     )
 
 
@@ -314,7 +349,8 @@ def clean_tcga_skcm() -> None:
         "SUBTYPE", "TUMOR_TYPE", "SOMATIC_STATUS", "DAYS_TO_INITIAL_PATHOLOGIC_DIAGNOSIS",
         "INFORMED_CONSENT_VERIFIED", "DAYS_TO_BIRTH", "OTHER_PATIENT_ID", "TISSUE_SOURCE_SITE_CODE",
         "TISSUE_RETROSPECTIVE_COLLECTION_INDICATOR", "FORM_COMPLETION_DATE", "AJCC_STAGING_EDITION",
-        "SAMPLE_COUNT", "TISSUE_PROSPECTIVE_COLLECTION_INDICATOR", "IN_PANCANPATHWAYS_FREEZE"
+        "SAMPLE_COUNT", "TISSUE_PROSPECTIVE_COLLECTION_INDICATOR", "IN_PANCANPATHWAYS_FREEZE",
+        "GRADE", "TISSUE_SOURCE_SITE"
     ]
     cleaned_clin_df = cleaned_clin_df.drop(columns=[c for c in cols_to_drop if c in cleaned_clin_df.columns])
 

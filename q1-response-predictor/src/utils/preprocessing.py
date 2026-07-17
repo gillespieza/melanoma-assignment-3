@@ -39,17 +39,10 @@ def clean_clinical_df(raw_df: pd.DataFrame) -> pd.DataFrame:
     df["SAMPLE_ID"] = df["SAMPLE_ID"].apply(standardise_sample_id)
     df = df[df["SAMPLE_ID"] != ""]
     df = df.drop_duplicates(subset=["SAMPLE_ID"])
-    if "PATIENT_ID" in df.columns:
-        df = df.drop_duplicates(subset=["PATIENT_ID"])
     if "OS_STATUS" in df.columns and "OS_MONTHS" in df.columns:
         df["OS_STATUS"] = df["OS_STATUS"].apply(parse_survival_status)
         df["OS_MONTHS"] = pd.to_numeric(df["OS_MONTHS"], errors="coerce")
-        invalid_mask = (
-            df["OS_MONTHS"].isna() |
-            (df["OS_MONTHS"] <= 0) |
-            df["OS_STATUS"].isna()
-        )
-        df = df[~invalid_mask]
+        pass
     if "PFS_STATUS" in df.columns and "PFS_MONTHS" in df.columns:
         df["PFS_STATUS"] = df["PFS_STATUS"].apply(parse_survival_status)
         df["PFS_MONTHS"] = pd.to_numeric(df["PFS_MONTHS"], errors="coerce")
@@ -64,7 +57,7 @@ def clean_clinical_df(raw_df: pd.DataFrame) -> pd.DataFrame:
         if col.endswith(admin_suffixes):
             return True
         # Common admin columns that are not used in modeling
-        unwanted = {"BIRTH_YEAR", "CANCER_TYPE_DETAILED", "PROTOCOL_SUBMIT_DATE"}
+        unwanted = {"BIRTH_YEAR", "CANCER_TYPE_DETAILED", "PROTOCOL_SUBMIT_DATE", "LENS_ID"}
         if col in unwanted:
             return True
         # Keep identifier columns (only one copy)
@@ -74,6 +67,13 @@ def clean_clinical_df(raw_df: pd.DataFrame) -> pd.DataFrame:
 
     cols_to_drop = [c for c in df.columns if _is_admin(c)]
     df = df.drop(columns=cols_to_drop, errors="ignore")
+    
+    # Drop columns that are completely empty (all NaN) or have zero variance (at most 1 unique value including NaN)
+    zero_var_cols = [
+        c for c in df.columns 
+        if df[c].nunique(dropna=False) <= 1 and c not in {"PATIENT_ID", "SAMPLE_ID"}
+    ]
+    df = df.drop(columns=zero_var_cols)
     return df
 
 
@@ -87,12 +87,7 @@ def clean_rnaseq_df(rnaseq_df: pd.DataFrame) -> pd.DataFrame:
     df = rnaseq_df.copy()
     df["SAMPLE_ID"] = df["SAMPLE_ID"].apply(standardise_sample_id)
     df = df[df["SAMPLE_ID"] != ""]
-
-    df["PATIENT_ID"] = df["SAMPLE_ID"].apply(
-        lambda x: "-".join(x.split("-")[:3]) if isinstance(x, str) and x.startswith("TCGA-") else x
-    )
-    df = df.drop_duplicates(subset=["PATIENT_ID"])
-    df = df.drop(columns=["PATIENT_ID"])
+    df = df.drop_duplicates(subset=["SAMPLE_ID"])
 
     gene_cols = [c for c in df.columns if c != "SAMPLE_ID"]
     missing_counts = df[gene_cols].isna().sum()
@@ -114,4 +109,6 @@ def align_expression_and_clinical(df_expr: pd.DataFrame, df_clin: pd.DataFrame) 
     common_samples = df_expr.index.intersection(df_clin.index)
     df_expr = df_expr.loc[common_samples]
     df_clin = df_clin.loc[common_samples]
+    df_expr.index.name = "SAMPLE_ID"
+    df_clin.index.name = "SAMPLE_ID"
     return df_expr, df_clin
