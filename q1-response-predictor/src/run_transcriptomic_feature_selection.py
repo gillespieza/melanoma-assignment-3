@@ -121,15 +121,9 @@ def main():
     
     print(f"Aligned dataset shape: {df_expr_log.shape[0]} samples, {df_expr_log.shape[1]} genes")
     
-    # 2. Filter gene space
-    # Drop genes with extremely low expression or variance to prevent noise and convergence failures
-    print("Filtering gene space...")
-    gene_vars = df_expr_log.var()
     gene_means = df_expr_log.mean()
-    
-    # Keep genes with variance in the top 15% (approx 3,000 genes) and mean log2 expression >= 1.0
-    var_cutoff = gene_vars.quantile(0.85)
-    filtered_genes = gene_vars[(gene_vars >= var_cutoff) & (gene_means >= 1.0)].index.tolist()
+    # Keep all pre-filtered high-variance genes (since the input matrix is already restricted to top ~3,000 variance genes) with mean expression >= 1.0
+    filtered_genes = gene_means[gene_means >= 1.0].index.tolist()
     print(f"Filtered gene space from {df_expr_log.shape[1]} down to {len(filtered_genes)} genes.")
     
     # 3. Univariate Cox Proportional Hazards Regression (Parallelized)

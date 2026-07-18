@@ -249,14 +249,8 @@ def main():
         df_tcga_expr_raw = pd.read_csv(tcga_dir / "expr_cleaned.csv", index_col=0)
         df_tcga_clin = pd.read_csv(tcga_dir / "clin_cleaned.csv", index_col=0)
         
-        print("Using pre-log-transformed TCGA values, filtering genes by variance...")
-        df_tcga_log = df_tcga_expr_raw
-        variances = df_tcga_log.var()
-        # Keep top 15% high-variance genes (approx 3000 genes)
-        var_cutoff = variances.quantile(0.85)
-        high_var_symbols = variances[variances >= var_cutoff].index.tolist()
-        df_tcga_expr_filtered = df_tcga_log[high_var_symbols]
-        print(f"Kept {len(high_var_symbols)} high-variance genes out of {df_tcga_expr_raw.shape[1]}")
+        print("Using pre-log-transformed, pre-filtered TCGA values...")
+        df_tcga_expr_filtered = df_tcga_expr_raw
         
         # Keep common genes
         tcga_common_genes = df_tcga_expr_filtered.columns.intersection(common_genes)

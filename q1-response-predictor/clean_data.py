@@ -36,6 +36,41 @@ RESPONSE_MAP = {
     "Mixed Response": np.nan,
 }
 
+# Set of critical signature and driver genes to protect from variance filtering
+PROTECTED_GENES = {
+    # IMPRES genes
+    "CD274", "VSIR", "C10orf54", "VISTA", "CD28", "CD276", "CD86", "TNFRSF4", "CD200", 
+    "CTLA4", "PDCD1", "CD80", "TNFSF9", "HAVCR2", "CD27", "CD40", "TNFRSF14",
+    # IFN-gamma genes
+    "IFNG", "CXCL9", "CXCL10", "IDO1", "HLA-DRA", "STAT1",
+    # TIS genes
+    "CCL5", "CD2", "CD3D", "CD3E", "CD27", "CMKLR1", "CXCR6", "GZMB", "GZMK", "HLA-DQA1", "HLA-E", 
+    "LAG3", "NKG7", "PDCD1LG2", "PSMB10", "TIGIT",
+    # CYT genes
+    "GZMA", "PRF1",
+    # CD8 T-cell genes
+    "CD8A", "CD8B",
+    # Pathway/driver mutation genes
+    "B2M", "TAP1", "TAP2", "JAK1", "JAK2", "PTEN", "CDKN2A", "PIK3CA", "BRAF", "NRAS", "NF1"
+}
+
+
+def filter_top_variance_genes(df, protected_genes, top_n=3000):
+    """
+    Keep only the top N highest-variance genes, protecting critical signature/driver genes.
+    """
+    variances = df.var()
+    sorted_genes = variances.sort_values(ascending=False).index.tolist()
+    
+    keep_genes = set(sorted_genes[:top_n])
+    for g in protected_genes:
+        if g in df.columns:
+            keep_genes.add(g)
+            
+    ordered_keep = [g for g in sorted_genes if g in keep_genes]
+    return df[ordered_keep]
+
+
 
 def parse_cbioportal_expression(expr_file_path: Path) -> pd.DataFrame:
     """
@@ -170,6 +205,9 @@ def clean_iatlas_cohort(
 
     # Log-transform expression
     df_expr = np.log2(df_expr + 1)
+
+    # Filter to top ~3,000 highest-variance genes
+    df_expr = filter_top_variance_genes(df_expr, PROTECTED_GENES, top_n=3000)
 
     # Align mutation status to final sample IDs and save
     df_mut_final = df_mut_final.loc[df_clin.index]
@@ -362,6 +400,11 @@ def clean_tcga_skcm() -> None:
     # Apply log2(x + 1) transformation directly to the gene expression columns
     gene_cols = [c for c in cleaned_rnaseq_df.columns if c != "SAMPLE_ID"]
     cleaned_rnaseq_df[gene_cols] = np.log2(cleaned_rnaseq_df[gene_cols] + 1)
+    
+    # Filter to top ~3,000 highest-variance genes
+    df_expr_data = cleaned_rnaseq_df.set_index("SAMPLE_ID")
+    df_expr_data = filter_top_variance_genes(df_expr_data, PROTECTED_GENES, top_n=3000)
+    cleaned_rnaseq_df = df_expr_data.reset_index()
 
     # Drop constant, redundant, and administrative columns
     cols_to_drop = [
