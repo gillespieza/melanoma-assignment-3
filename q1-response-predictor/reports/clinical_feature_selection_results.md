@@ -19,13 +19,13 @@ This report documents the results of feature selection run on the cleaned clinic
 A Random Forest classifier was trained to predict **Overall Survival status (OS_STATUS)** using all clinical variables. Features are ranked by their Gini importance.
 
 ### Feature Importance Visualization
-![Random Forest Classifier Feature Importance](../plots/clinical_feature_importance.png)
+![Random Forest Classifier Feature Importance](../plots/clinical/clinical_feature_importance.png)
 
 ## Method 2: Cox Proportional Hazards Regression (Univariate)
 Univariate Cox Proportional Hazards models were fitted to assess the association of each individual feature with overall survival time (`OS_MONTHS`) and survival status (`OS_STATUS`). Features are sorted by statistical significance (lowest p-value).
 
 ### Cox Proportional Hazards Forest Plot
-![Cox Forest Plot](../plots/cox_forest_plot.png)
+![Cox Forest Plot](../plots/clinical/cox_forest_plot.png)
 
 ## Key Findings & Biological Summary
 1.  **Random Forest Top Predictor**: The feature with the highest predictive value for binary overall survival status is **`Fraction Genome Altered`**.

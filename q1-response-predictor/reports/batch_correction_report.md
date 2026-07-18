@@ -8,7 +8,7 @@ When combining transcriptomic datasets across independent clinical studies, tech
 
 To evaluate the batch effects, we performed a Principal Component Analysis (PCA) on the common intersected high-variance genes (**559 genes**) across the $N=699$ patients in the full merged cohort, comparing the uncorrected concatenated matrix against the Z-score standardized matrix.
 
-![Batch Effect PCA Comparison](../plots/batch_effect_pca.png)
+![Batch Effect PCA Comparison](../plots/biomarkers/batch_effect_pca.png)
 
 ---
 

@@ -8,14 +8,14 @@ The 20 genes most significantly associated with overall survival in univariate C
 ### Hazard Ratio Forest Plot (Top 20 Genes)
 The forest plot below visualizes the Hazard Ratios (HR) and their 95% confidence intervals for the top 20 most significant prognostic transcripts. Protective genes (HR < 1.0) are shown in blue, and risk-associated genes (HR > 1.0) are shown in red:
 
-![Prognostic Gene Forest Plot](../plots/transcriptomic_forest_plot.png)
+![Prognostic Gene Forest Plot](../plots/feature_selection/transcriptomic_forest_plot.png)
 
 ## 2. Kaplan-Meier Survival Curve on TCGA
 We partitioned TCGA-SKCM patients into High-Risk and Low-Risk groups using the median value of the signature score. The log-rank test indicates an extremely significant separation in survival curves:
 
 *   **Log-Rank p-value**: **4.89e-08**
 
-![KM Curve of TCGA Survival](../plots/km_pancancer_signature.png)
+![KM Curve of TCGA Survival](../plots/feature_selection/km_pancancer_signature.png)
 
 ## 3. Validation on Immunotherapy Clinical Trial Cohorts
 We evaluated the custom 20-gene prognostic signature on three cohorts receiving anti-PD-1 or combination immunotherapies to see if the overall survival signature translates into predicting immunotherapy response.
@@ -28,10 +28,10 @@ We evaluated the custom 20-gene prognostic signature on three cohorts receiving 
 
 ### Validation Visualizations
 #### ROC Curves predicting Response
-![ROC Curves for Response](../plots/pancancer_signature_trial_validation.png)
+![ROC Curves for Response](../plots/feature_selection/pancancer_signature_trial_validation.png)
 
 #### Signature Risk Score Stratified by Responders vs. Non-Responders
-![Signature Violin Plots](../plots/pancancer_signature_violins.png)
+![Signature Violin Plots](../plots/feature_selection/pancancer_signature_violins.png)
 
 ## 4. Biological Interpretation & Discussion
 - **Signature Composition**: Out of the top 20 prognostic genes, **0** genes are associated with increased risk, and **20** genes are protective.

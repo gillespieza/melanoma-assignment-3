@@ -50,9 +50,9 @@ Based on the multi-dimensional profiles, the three clusters represent distinct d
 ## Cluster Visualisation (2D PCA Projection)
 Below is a 2D PCA projection of the multi-dimensional patient profiles, showing the distinct separation of the three clinical-genomic patient groups. The 'X' markers show the cluster centroids:
 
-![2D PCA Visualization of Clusters](../plots/pca_clinical_clusters.png)
+![2D PCA Visualization of Clusters](../plots/clinical/pca_clinical_clusters.png)
 
 ## Kaplan-Meier Survival Analysis
 The unsupervised patient clusters show a highly statistically significant separation in overall survival duration (Log-Rank p-value = **\(1.86e-02\)**):
 
-![KM Survival of Clinical Clusters](../plots/km_clinical_clusters.png)
+![KM Survival of Clinical Clusters](../plots/clinical/km_clinical_clusters.png)

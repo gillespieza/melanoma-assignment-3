@@ -18,6 +18,7 @@ The distribution of the three major cutaneous melanoma driver mutations (*BRAF*,
 *   **Reference Alignment**: The reference **TCGA-SKCM** cohort aligns perfectly with cutaneous melanoma epidemiology, showing a *BRAF* mutation rate of **51.9%**, *NRAS* at **28.2%**, *NF1* at **17.1%**, and a Triple-WT rate of **15.5%**.
 *   **Representative Trial Cohorts**: All trial cohorts align closely with TCGA baseline frequencies. **Liu 2019** shows highly representative driver mutation distributions (*BRAF*: **40.4%**, *NRAS*: **30.8%**, *NF1*: **18.3%**). **Riaz 2017** mutations, after correcting the patient mapping bug, are also highly representative (*BRAF*: **50.0%**, *NRAS*: **20.0%**, *NF1*: **0.0%**, Triple-WT: **30.0%**).
 *   **Biological Note**: Driver mutations are generally mutually exclusive: tumors with *BRAF* mutations rarely harbor co-occurring *NRAS* mutations, validating standard melanoma genetics.
+*   **representative cohort features**: Genomic profiles show mutation status and burden metrics are representative.
 
 ### Extended Pathway Mutation Frequencies
 To further characterize tumor immunogenicity and mechanisms of resistance, we evaluated pre-treatment somatic mutation frequencies across three biological pathways:
@@ -45,7 +46,7 @@ Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic meas
 <table>
 <tr>
 <td><img src="../plots/genomic/tmb_distribution.png" width="430" alt="TMB Distributions"></td>
-<td><img src="../plots/extended_neoantigen_tmb.png" width="430" alt="Neoantigen vs TMB"></td>
+<td><img src="../plots/biomarkers/extended_neoantigen_tmb.png" width="430" alt="Neoantigen vs TMB"></td>
 </tr>
 </table>
 
@@ -70,7 +71,7 @@ A Spearman rank correlation matrix mapping the relationships between continuous 
 ### 3.2. Genomic Burden vs. Immune Infiltration
 To understand how tumor genomic features affect the microenvironment, we evaluated how copy-number burden (Aneuploidy Score) and mutational burden (TMB) correlate with continuous transcriptomic immune signatures in both TCGA-SKCM ($N=426$) and the pooled trials ($N=150$).
 
-![Genomic Burden vs Immune Heatmap](../plots/extended_immune_correlations.png)
+![Genomic Burden vs Immune Heatmap](../plots/biomarkers/extended_immune_correlations.png)
 
 | Immune Signature | TCGA Aneuploidy Score ($r$) | TCGA TMB ($r$) | Trial TMB ($r$) |
 |---|---|---|---|
@@ -93,7 +94,7 @@ Overall Survival (OS) in the reference **TCGA-SKCM** cohort is stratified below.
 <table>
 <tr>
 <td><img src="../plots/genomic/km_genomic_features.png" width="440" alt="TCGA Driver and TMB Survival"></td>
-<td><img src="../plots/extended_aneuploidy_survival.png" width="440" alt="TCGA Aneuploidy Survival"></td>
+<td><img src="../plots/biomarkers/extended_aneuploidy_survival.png" width="440" alt="TCGA Aneuploidy Survival"></td>
 </tr>
 </table>
 
