@@ -32,8 +32,8 @@ def load_tcga():
     df_expr = df_expr.rename(columns=entrez_mapping)
     # Average duplicates
     df_expr = df_expr.T.groupby(level=0).mean().T
-    # Log-transform
-    df_expr_log = np.log2(df_expr + 1)
+    # Already log-transformed
+    df_expr_log = df_expr
     
     # Align sample ids
     common_ids = list(df_expr_log.index.intersection(df_clin['SAMPLE_ID']))
@@ -49,6 +49,7 @@ def load_tcga():
     df_clin_harm["RESPONSE"] = np.nan
     df_clin_harm["RESPONSE_BINARY"] = np.nan
     df_clin_harm["AGE"] = df_clin["AGE"]
+    df_clin_harm["RACE"] = df_clin["RACE"]
     
     # Sex: standardise values
     df_clin_harm["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female"}).fillna("N/A")
@@ -84,6 +85,7 @@ def load_liu():
     df_clin_harm["RESPONSE"] = df_clin["RESPONSE"]
     df_clin_harm["RESPONSE_BINARY"] = df_clin["RESPONSE_BINARY"].astype(float)
     df_clin_harm["AGE"] = np.nan  # Not available
+    df_clin_harm["RACE"] = np.nan  # Not available
     df_clin_harm["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female"}).fillna("N/A")
     
     # Specimen type (Liu's cleaned CSV uses 'BIOPSY_SITE', mostly metastatic sites)
@@ -119,6 +121,7 @@ def load_hugo():
     df_clin_harm["RESPONSE"] = df_clin["RESPONSE"]
     df_clin_harm["RESPONSE_BINARY"] = df_clin["RESPONSE_BINARY"].astype(float)
     df_clin_harm["AGE"] = df_clin["AGE"].astype(float)
+    df_clin_harm["RACE"] = np.nan  # Not available
     df_clin_harm["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female", "M": "Male", "F": "Female"}).fillna("N/A")
     df_clin_harm["SPECIMEN_TYPE"] = "Metastatic"  # All were pre-treatment metastatic
     
@@ -146,6 +149,7 @@ def load_riaz():
     df_clin_harm["RESPONSE"] = df_clin["RESPONSE"]
     df_clin_harm["RESPONSE_BINARY"] = df_clin["RESPONSE_BINARY"].astype(float)
     df_clin_harm["AGE"] = df_clin["AGE"].astype(float)
+    df_clin_harm["RACE"] = df_clin["RACE"]
     df_clin_harm["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female"}).fillna("N/A")
     df_clin_harm["SPECIMEN_TYPE"] = "Metastatic"
     
@@ -160,11 +164,6 @@ def batch_correct_and_save(df_expr_merged, df_clin_merged, output_dir, label="")
     Applies zero-variance gene removal and pyCombat batch correction to a
     merged expression matrix, then saves the corrected expression and
     clinical metadata to the specified output directory.
-
-    @param pd.DataFrame df_expr_merged: Merged expression matrix (samples x genes).
-    @param pd.DataFrame df_clin_merged: Merged clinical metadata (samples x features).
-    @param Path output_dir: Directory to write the output CSV files.
-    @param str label: Human-readable label for console output (e.g. "Full" or "Immunotherapy").
     """
     prefix = f"[{label}] " if label else ""
 
@@ -216,6 +215,148 @@ def batch_correct_and_save(df_expr_merged, df_clin_merged, output_dir, label="")
 
     print(f"{prefix}Saved expression matrix to: {expr_out_path} (shape: {df_expr_corrected.shape})")
     print(f"{prefix}Saved clinical metadata to:  {clin_out_path} (shape: {df_clin_merged.shape})")
+
+    # Build and save merged genomic features
+    build_merged_genomic(df_clin_merged, output_dir)
+
+
+def parse_tcga_mutations(raw_dir: Path, sample_ids: list) -> pd.DataFrame:
+    mut_path = raw_dir / "data_mutations.txt"
+    if not mut_path.exists():
+        return pd.DataFrame(0, index=sample_ids, columns=["mut_BRAF", "mut_NRAS", "mut_NF1"])
+    
+    # Read mutations in chunks to be memory efficient
+    chunks = []
+    for chunk in pd.read_csv(mut_path, sep="\t", comment="#", low_memory=False, 
+                             usecols=["Hugo_Symbol", "Tumor_Sample_Barcode", "Variant_Classification"], 
+                             chunksize=100000):
+        filtered = chunk[chunk["Hugo_Symbol"].isin(["BRAF", "NRAS", "NF1"])]
+        chunks.append(filtered)
+    
+    df_mut = pd.concat(chunks, ignore_index=True)
+    
+    non_syn = ["Missense_Mutation", "Nonsense_Mutation", "Frame_Shift_Del",
+               "Frame_Shift_Ins", "In_Frame_Del", "In_Frame_Ins",
+               "Splice_Site", "Nonstop_Mutation", "Translation_Start_Site"]
+    df_mut = df_mut[df_mut["Variant_Classification"].isin(non_syn)]
+    
+    df_mut["SAMPLE_ID"] = df_mut["Tumor_Sample_Barcode"].apply(lambda x: x[:15] if isinstance(x, str) else "").str.upper()
+    df_mut = df_mut[df_mut["SAMPLE_ID"].isin(sample_ids)]
+    
+    pivoted = df_mut.groupby(["SAMPLE_ID", "Hugo_Symbol"]).size().unstack(fill_value=0)
+    for gene in ["BRAF", "NRAS", "NF1"]:
+        if gene not in pivoted.columns:
+            pivoted[gene] = 0
+            
+    pivoted = (pivoted[["BRAF", "NRAS", "NF1"]] > 0).astype(int)
+    pivoted.columns = ["mut_BRAF", "mut_NRAS", "mut_NF1"]
+    pivoted = pivoted.reindex(sample_ids, fill_value=0)
+    return pivoted
+
+
+def build_merged_genomic(df_clin_merged: pd.DataFrame, output_dir: Path) -> None:
+    """
+    Builds and saves merged_genomic.csv for the samples in df_clin_merged.
+    """
+    RAW_DIR = DATA_DIR / "raw"
+    print(f"Building merged genomic features file for {output_dir.name} cohort...")
+    
+    cohort_data = {}
+    
+    # 1. Liu 2019
+    liu_dir = PROCESSED_DIR / "liu_2019"
+    df_clin_liu = pd.read_csv(liu_dir / "clin_cleaned.csv", index_col="SAMPLE_ID")
+    df_mut_liu = pd.read_csv(liu_dir / "mutations_cleaned.csv", index_col="SAMPLE_ID")
+    df_mut_liu = df_mut_liu[['BRAF', 'NRAS', 'NF1']].rename(
+        columns={'BRAF': 'mut_BRAF', 'NRAS': 'mut_NRAS', 'NF1': 'mut_NF1'}
+    )
+    cohort_data["Liu_2019"] = df_clin_liu.join(df_mut_liu, how="left")
+    
+    # 2. Hugo 2016
+    hugo_dir = PROCESSED_DIR / "hugo_2016"
+    df_clin_hugo = pd.read_csv(hugo_dir / "clin_cleaned.csv", index_col="SAMPLE_ID")
+    df_mut_hugo = pd.read_csv(hugo_dir / "mutations_cleaned.csv", index_col="SAMPLE_ID")
+    df_mut_hugo = df_mut_hugo[['BRAF', 'NRAS', 'NF1']].rename(
+        columns={'BRAF': 'mut_BRAF', 'NRAS': 'mut_NRAS', 'NF1': 'mut_NF1'}
+    )
+    cohort_data["Hugo_2016"] = df_clin_hugo.join(df_mut_hugo, how="left")
+    
+    # 3. Riaz 2017
+    riaz_dir = PROCESSED_DIR / "riaz_2017"
+    df_clin_riaz = pd.read_csv(riaz_dir / "clin_cleaned.csv", index_col="SAMPLE_ID")
+    df_mut_riaz = pd.read_csv(riaz_dir / "mutations_cleaned.csv", index_col="SAMPLE_ID")
+    df_mut_riaz = df_mut_riaz[['BRAF', 'NRAS', 'NF1']].rename(
+        columns={'BRAF': 'mut_BRAF', 'NRAS': 'mut_NRAS', 'NF1': 'mut_NF1'}
+    )
+    cohort_data["Riaz_2017"] = df_clin_riaz.join(df_mut_riaz, how="left")
+    
+    # 4. TCGA
+    tcga_dir = PROCESSED_DIR / "skcm_tcga_pan_can_atlas_2018"
+    df_clin_tcga = pd.read_csv(tcga_dir / "clin_cleaned.csv", index_col="SAMPLE_ID")
+    raw_tcga_dir = RAW_DIR / "skcm_tcga_pan_can_atlas_2018"
+    df_mut_tcga = parse_tcga_mutations(raw_tcga_dir, df_clin_tcga.index.tolist())
+    cohort_data["TCGA"] = df_clin_tcga.join(df_mut_tcga, how="left")
+    
+    genomic_rows = []
+    
+    if "SAMPLE_ID" in df_clin_merged.columns:
+        samples_df = df_clin_merged
+    else:
+        samples_df = df_clin_merged.reset_index()
+        
+    for _, row in samples_df.iterrows():
+        sample_id = row["SAMPLE_ID"]
+        cohort = row["COHORT"]
+        patient_id = row["PATIENT_ID"]
+        
+        feat_dict = {
+            "PATIENT_ID": patient_id,
+            "SAMPLE_ID": sample_id,
+            "COHORT": cohort,
+            "TMB_NONSYNONYMOUS": np.nan,
+            "mut_BRAF": 0,
+            "mut_NRAS": 0,
+            "mut_NF1": 0,
+            "SNV_NEOANTIGEN": np.nan,
+            "INDEL_NEOANTIGEN": np.nan,
+            "FUSION_NEOANTIGEN": np.nan,
+            "SPLICE_NEOANTIGEN": np.nan,
+            "CTA_SELF_NEOANTIGEN": np.nan
+        }
+        
+        if cohort in cohort_data:
+            df_cohort = cohort_data[cohort]
+            if sample_id in df_cohort.index:
+                cohort_row = df_cohort.loc[sample_id]
+                if isinstance(cohort_row, pd.DataFrame):
+                    cohort_row = cohort_row.iloc[0]
+                    
+                if "TMB_NONSYNONYMOUS" in cohort_row:
+                    feat_dict["TMB_NONSYNONYMOUS"] = cohort_row["TMB_NONSYNONYMOUS"]
+                    
+                for m_gene in ["mut_BRAF", "mut_NRAS", "mut_NF1"]:
+                    if m_gene in cohort_row:
+                        feat_dict[m_gene] = int(cohort_row[m_gene]) if pd.notna(cohort_row[m_gene]) else 0
+                        
+                for neo_feat in ["SNV_NEOANTIGEN", "INDEL_NEOANTIGEN", "FUSION_NEOANTIGEN", "SPLICE_NEOANTIGEN", "CTA_SELF_NEOANTIGEN"]:
+                    if neo_feat in cohort_row:
+                        feat_dict[neo_feat] = cohort_row[neo_feat]
+                        
+        genomic_rows.append(feat_dict)
+        
+    df_genomic = pd.DataFrame(genomic_rows)
+    
+    cols_order = [
+        "PATIENT_ID", "SAMPLE_ID", "COHORT",
+        "TMB_NONSYNONYMOUS",
+        "mut_BRAF", "mut_NRAS", "mut_NF1",
+        "SNV_NEOANTIGEN", "INDEL_NEOANTIGEN", "FUSION_NEOANTIGEN", "SPLICE_NEOANTIGEN", "CTA_SELF_NEOANTIGEN"
+    ]
+    df_genomic = df_genomic[cols_order]
+    
+    out_path = output_dir / "merged_genomic.csv"
+    df_genomic.to_csv(out_path, index=False)
+    print(f"Saved merged genomic features to: {out_path} (shape: {df_genomic.shape})")
 
 
 def main():

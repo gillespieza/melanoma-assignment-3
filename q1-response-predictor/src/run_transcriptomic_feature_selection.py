@@ -127,9 +127,8 @@ def main():
     df_expr = df_expr.groupby(df_expr.columns, axis=1).mean()
     print(f"Deduplicated gene symbol expression matrix shape: {df_expr.shape}")
     
-    # Log-transform expression: log2(x + 1)
-    print("Applying log2(x + 1) transformation to TCGA expression data...")
-    df_expr_log = np.log2(df_expr + 1)
+    # Already log-transformed
+    df_expr_log = df_expr
     
     # Align patients
     df_clin_survival = df_clin.dropna(subset=['OS_MONTHS', 'OS_STATUS']).copy()

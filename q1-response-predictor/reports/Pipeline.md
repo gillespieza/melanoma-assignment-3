@@ -179,8 +179,10 @@ The pipeline outputs processed data, figures, and reports to their respective di
 ### Merged Data Outputs (`data/processed/merged/`)
 *   **`full/expr_merged.csv`**: Batch-corrected expression matrix for the full merged cohort (all 4 datasets).
 *   **`full/clin_merged.csv`**: Harmonised clinical metadata for the full merged cohort.
+*   **`full/merged_genomic.csv`**: Unified genomic features (TMB, driver mutations, neoantigens) for the full merged cohort.
 *   **`immunotherapy/expr_merged.csv`**: Batch-corrected expression matrix for immunotherapy-treated patients only.
 *   **`immunotherapy/clin_merged.csv`**: Harmonised clinical metadata for immunotherapy-treated patients only.
+*   **`immunotherapy/merged_genomic.csv`**: Unified genomic features for immunotherapy-treated patients only.
 
 ### Visualisation Outputs (`plots/`)
 *   **Clinical Characterisation**: Waffle charts, response rates, survival by response, and standardized univariate forest plots in `plots/clinical/`.

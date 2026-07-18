@@ -123,10 +123,18 @@ def main():
     print(f"Hugo signature shape: {sig_hugo.shape}")
     print(f"Riaz signature shape: {sig_riaz.shape}")
 
-    # Align labels
-    y_liu = clin_liu.loc[sig_liu.index, 'response']
-    y_hugo = clin_hugo.loc[sig_hugo.index, 'response']
-    y_riaz = clin_riaz.loc[sig_riaz.index, 'response']
+    # Align labels and filter out samples with missing response (NaN)
+    non_nan_liu = clin_liu.loc[sig_liu.index, 'response'].dropna().index
+    sig_liu = sig_liu.loc[non_nan_liu]
+    y_liu = clin_liu.loc[non_nan_liu, 'response']
+    
+    non_nan_hugo = clin_hugo.loc[sig_hugo.index, 'response'].dropna().index
+    sig_hugo = sig_hugo.loc[non_nan_hugo]
+    y_hugo = clin_hugo.loc[non_nan_hugo, 'response']
+    
+    non_nan_riaz = clin_riaz.loc[sig_riaz.index, 'response'].dropna().index
+    sig_riaz = sig_riaz.loc[non_nan_riaz]
+    y_riaz = clin_riaz.loc[non_nan_riaz, 'response']
 
     print("\n==================================================")
     print("Phase 3: Batch Effect Correction (ComBat)...")
@@ -241,8 +249,8 @@ def main():
         df_tcga_expr_raw = pd.read_csv(tcga_dir / "expr_cleaned.csv", index_col=0)
         df_tcga_clin = pd.read_csv(tcga_dir / "clin_cleaned.csv", index_col=0)
         
-        print("Log2-transforming and filtering genes by variance first...")
-        df_tcga_log = np.log2(df_tcga_expr_raw + 1)
+        print("Using pre-log-transformed TCGA values, filtering genes by variance...")
+        df_tcga_log = df_tcga_expr_raw
         variances = df_tcga_log.var()
         # Keep top 15% high-variance genes (approx 3000 genes)
         var_cutoff = variances.quantile(0.85)

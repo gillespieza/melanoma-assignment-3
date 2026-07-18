@@ -62,7 +62,8 @@ def map_tcga_expression_to_symbols(df_expr_raw, cache_path):
     
     df_expr = df_expr_raw.set_index('SAMPLE_ID')
     df_expr = df_expr.groupby(df_expr.columns, axis=1).mean()
-    return np.log2(df_expr + 1)
+    # Already log-transformed
+    return df_expr
 
 def parse_cohort_pathway_mutations(raw_dir: Path, target_genes: list, sample_ids: list, map_to_patient: bool = False, patient_id_map: dict = None) -> pd.DataFrame:
     mut_path = raw_dir / "data_mutations.txt"
@@ -131,14 +132,20 @@ def main():
             print(f"  {p.name}: {'FOUND' if p.exists() else 'MISSING'} ({p})")
         return
         
-    df_liu_clin = pd.read_csv(liu_clin_path, index_col=0)
+    df_liu_clin = pd.read_csv(liu_clin_path, index_col="SAMPLE_ID")
     df_liu_expr = pd.read_csv(liu_expr_path, index_col=0)
-    df_hugo_clin = pd.read_csv(hugo_clin_path, index_col=0)
+    df_hugo_clin = pd.read_csv(hugo_clin_path, index_col="SAMPLE_ID")
     df_hugo_expr = pd.read_csv(hugo_expr_path, index_col=0)
-    df_riaz_clin = pd.read_csv(riaz_clin_path, index_col=0)
+    df_riaz_clin = pd.read_csv(riaz_clin_path, index_col="SAMPLE_ID")
     df_riaz_expr = pd.read_csv(riaz_expr_path, index_col=0)
-    df_tcga_clin = pd.read_csv(tcga_clin_path, index_col=0)
+    df_tcga_clin = pd.read_csv(tcga_clin_path, index_col="SAMPLE_ID")
     df_tcga_expr_raw = pd.read_csv(tcga_expr_raw_path)
+    
+    # Map legacy lowercase aliases for backwards compatibility
+    for df in [df_liu_clin, df_hugo_clin, df_riaz_clin, df_tcga_clin]:
+        for up, low in [('PATIENT_ID', 'patient_id'), ('RESPONSE_BINARY', 'response'), ('SEX', 'sex'), ('AGE', 'age'), ('OS_STATUS', 'os_status'), ('OS_MONTHS', 'os_months')]:
+            if up in df.columns and low not in df.columns:
+                df[low] = df[up]
     
     # Calculate TOTAL_NEOANTIGEN for trial cohorts if missing
     neo_cols = ['SNV_NEOANTIGEN', 'INDEL_NEOANTIGEN', 'FUSION_NEOANTIGEN', 'SPLICE_NEOANTIGEN', 'VIRUS_NEOANTIGEN', 'ERV_NEOANTIGEN']
