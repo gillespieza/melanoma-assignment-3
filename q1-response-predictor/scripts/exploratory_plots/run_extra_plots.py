@@ -46,6 +46,18 @@ def main():
     y_hugo = clin_hugo.loc[sig_hugo.index, 'response']
     y_riaz = clin_riaz.loc[sig_riaz.index, 'response']
     
+    # Filter out samples with missing response (NaN)
+    non_nan_liu = y_liu.dropna().index
+    non_nan_hugo = y_hugo.dropna().index
+    non_nan_riaz = y_riaz.dropna().index
+    
+    sig_liu = sig_liu.loc[non_nan_liu]
+    y_liu = y_liu.loc[non_nan_liu]
+    sig_hugo = sig_hugo.loc[non_nan_hugo]
+    y_hugo = y_hugo.loc[non_nan_hugo]
+    sig_riaz = sig_riaz.loc[non_nan_riaz]
+    y_riaz = y_riaz.loc[non_nan_riaz]
+    
     # Pool and batch correct
     sig_all = pd.concat([sig_liu, sig_hugo, sig_riaz], axis=0)
     y_all = pd.concat([y_liu, y_hugo, y_riaz], axis=0)
@@ -71,36 +83,40 @@ def main():
     print(f"Saved correlation heatmap to {corr_path}")
     
     print("\n==================================================")
-    print("Phase 3: Generating Univariate Violins stratified by Response...")
+    print("Phase 3: Generating Univariate Response Plots (Box+Jitter)...")
     print("==================================================")
     
+    # Box plots + Jitter (stripplot)
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
     axes = axes.ravel()
-    
     for i, col in enumerate(sig_corrected.columns):
         ax = axes[i]
         df_plot = pd.DataFrame({
             'Score': sig_corrected[col],
             'Response': y_all.map({1.0: 'Responder', 0.0: 'Non-Responder'})
         })
-        
-        # Run Wilcoxon Mann-Whitney test
         resp_scores = df_plot[df_plot['Response'] == 'Responder']['Score']
         non_resp_scores = df_plot[df_plot['Response'] == 'Non-Responder']['Score']
         stat, p_val = mannwhitneyu(resp_scores, non_resp_scores, alternative='two-sided')
         
-        sns.violinplot(x='Response', y='Score', data=df_plot, ax=ax, palette={'Responder': '#d62728', 'Non-Responder': '#9467bd'}, inner='quartile')
+        # Draw Boxplot with light/muted colors
+        sns.boxplot(x='Response', y='Score', data=df_plot, ax=ax, 
+                    palette={'Responder': '#ffb3b3', 'Non-Responder': '#e1ccff'}, 
+                    showfliers=False, width=0.5, hue='Response', legend=False)
+        # Overlay Jittered Stripplot
+        sns.stripplot(x='Response', y='Score', data=df_plot, ax=ax, 
+                      palette={'Responder': '#d62728', 'Non-Responder': '#9467bd'}, 
+                      jitter=True, size=4, alpha=0.6, dodge=False, hue='Response', legend=False)
+        
         ax.set_title(f"{col}\n(Wilcoxon p = {p_val:.2e})", fontsize=11, fontweight='bold')
         ax.set_xlabel("")
         ax.set_ylabel("Signature Score")
-        
-    plt.suptitle("Signature Distributions by Immunotherapy Response (Pooled Clinical Cohorts)", fontsize=14, fontweight='bold', y=1.02)
+    plt.suptitle("Signature Distributions (Box + Jitter) by Immunotherapy Response", fontsize=14, fontweight='bold', y=1.02)
     plt.tight_layout()
-    
-    violin_path = PLOT_DIR / "signature_violins_by_response.png"
-    plt.savefig(violin_path, bbox_inches='tight', dpi=300)
+    box_jitter_path = PLOT_DIR / "signature_box_jitter_by_response.png"
+    plt.savefig(box_jitter_path, bbox_inches='tight', dpi=300)
     plt.close()
-    print(f"Saved violin plots to {violin_path}")
+    print(f"Saved box + jitter plots to {box_jitter_path}")
     
     print("\n==================================================")
     print("Phase 4: Generating Forest Plot of Odds Ratios...")

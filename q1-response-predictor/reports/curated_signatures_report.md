@@ -103,6 +103,11 @@ We have implemented six distinct curated signature modalities in [signatures.py]
 * **Gene**: `CD274`
 * **Mathematical Calculation**: Standard $\log_2(\text{TPM} + 1)$ expression of `CD274`.
 
+### 2.7. Univariate Distribution of Signatures by Response Status
+To visualize how well these continuous signature scores separate immunotherapy responders from non-responders, we generated a box plot distribution of each signature score stratified by Responder (red) and Non-Responder (purple) status across the pooled clinical cohorts, overlaid with individual patient data points:
+
+![Signature Distributions (Box + Jitter)](../plots/signature_box_jitter_by_response.png)
+
 ---
 
 ## 3. Custom TCGA-SKCM Overall Survival Signature
@@ -179,3 +184,13 @@ We evaluated the Spearman rank correlation ($r$) between genomic load metrics (T
   
   > [!IMPORTANT]  
   > **Key Design Decision**: TMB and immune infiltration represent **orthogonal biomarkers**. A tumor can be highly mutated (high TMB) but immunologically cold, or poorly mutated but highly inflamed (high IFN-γ/TIS). Consequently, combining these independent modalities into a multimodal model (e.g., _Sigs + TMB + Drivers_) is mathematically expected to improve response predictions compared to either modality alone. This design decision is validated by our Random Forest model, which achieves its highest performance (**AUC = 0.718**) when combining signatures with genomic burden features.
+
+### 5.3. Inter-Signature Correlations and Multivariate Modeling
+We evaluated the Spearman correlation between the 6 continuous transcriptomic signatures and ran a multivariate Logistic Regression model to assess their independent predictive power (odds ratios per standard deviation increase):
+
+| Heatmap of Inter-Signature Correlation | Forest Plot of Odds Ratios |
+| :---: | :---: |
+| ![Spearman Correlation Heatmap](../plots/signature_correlation_heatmap.png) | ![Forest Plot of Odds Ratios](../plots/forest_plot_odds_ratios.png) |
+
+* **Collinearity**: As shown in the correlation heatmap, the continuous transcriptomic signatures (TIS, IFN-γ, CYT, and CD8 T-cell) are highly co-expressed ($r_s \approx 0.85\text{–}0.90$).
+* **Multivariate Modeling**: In the forest plot of odds ratios, **TIS** ($\text{OR} = 3.91$, $95\%\text{ CI: } 0.77 - 19.81$) and **IMPRES** ($\text{OR} = 1.66$, $95\%\text{ CI: } 1.09 - 2.52$) emerge as positive independent predictors of response. The other signatures (CYT, CD8 T-cell, IFN-γ) have odds ratios $<1.0$ because they are highly redundant with the TIS signature, which captures overlapping T-cell and inflammatory biology.
