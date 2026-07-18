@@ -46,24 +46,7 @@ def clean_os_status(val):
             return 0
     return np.nan
 
-def map_tcga_expression_to_symbols(df_expr_raw, cache_path):
-    """
-    Maps Entrez columns in TCGA expression matrix to Hugo Symbols using local cache.
-    """
-    if not cache_path.exists():
-        raise FileNotFoundError("TCGA Entrez-to-Symbol mapping cache not found. Please run run_transcriptomic_feature_selection.py first.")
-        
-    with open(cache_path, 'r') as f:
-        gene_map = json.load(f)
-        
-    entrez_cols = [c for c in df_expr_raw.columns if c != 'SAMPLE_ID']
-    mapped_cols = ['SAMPLE_ID'] + [gene_map.get(str(col), col) for col in entrez_cols]
-    df_expr_raw.columns = mapped_cols
-    
-    df_expr = df_expr_raw.set_index('SAMPLE_ID')
-    df_expr = df_expr.groupby(df_expr.columns, axis=1).mean()
-    # Already log-transformed
-    return df_expr
+# map_tcga_expression_to_symbols is deprecated. TCGA is pre-mapped to Hugo Symbols in raw data cleaning.
 
 def parse_cohort_pathway_mutations(raw_dir: Path, target_genes: list, sample_ids: list, map_to_patient: bool = False, patient_id_map: dict = None) -> pd.DataFrame:
     mut_path = raw_dir / "data_mutations.txt"
@@ -172,9 +155,7 @@ def main():
     df_hugo_sigs = extract_all_signatures(df_hugo_expr)
     df_riaz_sigs = extract_all_signatures(df_riaz_expr)
     
-    # TCGA signatures
-    cache_path = DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/entrez_to_symbol_cache.json"
-    df_tcga_expr = map_tcga_expression_to_symbols(df_tcga_expr_raw, cache_path)
+    df_tcga_expr = df_tcga_expr_raw.set_index('SAMPLE_ID')
     df_tcga_sigs = extract_all_signatures(df_tcga_expr)
     
     # Align TCGA signatures & clinical

@@ -112,3 +112,50 @@ def align_expression_and_clinical(df_expr: pd.DataFrame, df_clin: pd.DataFrame) 
     df_expr.index.name = "SAMPLE_ID"
     df_clin.index.name = "SAMPLE_ID"
     return df_expr, df_clin
+
+
+def map_entrez_to_symbols(entrez_ids, cache_path=None):
+    """
+    Maps Entrez IDs to Hugo Symbols using MyGene.info API.
+    Uses local cache if available to prevent redundant API hits.
+    """
+    import json
+    import urllib.request
+    from pathlib import Path
+    
+    if cache_path and Path(cache_path).exists():
+        with open(cache_path, 'r') as f:
+            return json.load(f)
+            
+    print("Mapping Entrez IDs to Hugo Symbols via MyGene.info...")
+    entrez_mapping = {}
+    chunk_size = 1000
+    entrez_ids = [str(eid) for eid in entrez_ids]
+    
+    for i in range(0, len(entrez_ids), chunk_size):
+        chunk = entrez_ids[i:i+chunk_size]
+        url = 'https://mygene.info/v3/query'
+        q_str = ','.join(chunk)
+        data = f'q={q_str}&scopes=entrezgene&fields=symbol&species=human'.encode('utf-8')
+        req = urllib.request.Request(
+            url, 
+            data=data, 
+            headers={'Content-Type': 'application/x-www-form-urlencoded'}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                res = json.loads(response.read().decode('utf-8'))
+                for item in res:
+                    q = item.get('query')
+                    sym = item.get('symbol')
+                    if q and sym:
+                        entrez_mapping[q] = sym
+        except Exception as e:
+            print(f"  [WARNING] Error mapping Entrez chunk {i}: {e}")
+            
+    if cache_path:
+        with open(cache_path, 'w') as f:
+            json.dump(entrez_mapping, f, indent=4)
+            
+    return entrez_mapping
+

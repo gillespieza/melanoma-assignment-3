@@ -254,58 +254,13 @@ def main():
         variances = df_tcga_log.var()
         # Keep top 15% high-variance genes (approx 3000 genes)
         var_cutoff = variances.quantile(0.85)
-        high_var_entrez = variances[variances >= var_cutoff].index.tolist()
-        df_tcga_expr_filtered = df_tcga_log[high_var_entrez]
-        print(f"Kept {len(high_var_entrez)} high-variance genes out of {df_tcga_expr_raw.shape[1]}")
-        
-        print("Mapping TCGA Entrez IDs to Hugo Symbols...")
-        import urllib.request
-        import json
-        
-        cache_file = tcga_dir / "entrez_to_symbol_cache.json"
-        entrez_mapping = {}
-        
-        if cache_file.exists():
-            print(f"Loading mapping cache from: {cache_file}")
-            with open(cache_file, "r") as f:
-                entrez_mapping = json.load(f)
-        else:
-            print("Mapping high-variance Entrez IDs via MyGene.info API...")
-            chunk_size = 1000
-            for i in range(0, len(high_var_entrez), chunk_size):
-                chunk = [str(x) for x in high_var_entrez[i:i+chunk_size]]
-                url = 'https://mygene.info/v3/query'
-                q_str = ','.join(chunk)
-                data = f'q={q_str}&scopes=entrezgene&fields=symbol&species=human'.encode('utf-8')
-                req = urllib.request.Request(
-                    url, 
-                    data=data, 
-                    headers={'Content-Type': 'application/x-www-form-urlencoded'}
-                )
-                try:
-                    with urllib.request.urlopen(req, timeout=30) as response:
-                        res = json.loads(response.read().decode('utf-8'))
-                        for item in res:
-                            q = item.get('query')
-                            sym = item.get('symbol')
-                            if q and sym:
-                                entrez_mapping[q] = sym
-                except Exception as e:
-                    print(f"Error mapping Entrez chunk {i}: {e}")
-            
-            # Save cache
-            print(f"Saving mapping cache to: {cache_file}")
-            with open(cache_file, "w") as f:
-                json.dump(entrez_mapping, f)
-                
-        # Rename columns to symbols and take the average of duplicates (using non-deprecated groupby)
-        mapped_columns = [entrez_mapping.get(str(col), str(col)) for col in df_tcga_expr_filtered.columns]
-        df_tcga_expr_filtered.columns = mapped_columns
-        df_tcga_expr_mapped = df_tcga_expr_filtered.T.groupby(level=0).mean().T
+        high_var_symbols = variances[variances >= var_cutoff].index.tolist()
+        df_tcga_expr_filtered = df_tcga_log[high_var_symbols]
+        print(f"Kept {len(high_var_symbols)} high-variance genes out of {df_tcga_expr_raw.shape[1]}")
         
         # Keep common genes
-        tcga_common_genes = df_tcga_expr_mapped.columns.intersection(common_genes)
-        df_tcga_expr = df_tcga_expr_mapped[tcga_common_genes]
+        tcga_common_genes = df_tcga_expr_filtered.columns.intersection(common_genes)
+        df_tcga_expr = df_tcga_expr_filtered[tcga_common_genes]
         df_tcga_expr = df_tcga_expr.reindex(columns=common_genes, fill_value=0)
         
         # Compute signatures (correctly log-transformed)

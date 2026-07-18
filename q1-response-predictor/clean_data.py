@@ -333,15 +333,35 @@ def clean_tcga_skcm() -> None:
     df_expr = pd.read_csv(raw_dir / TCGA_EXPR_FILE, sep="\t")
     df_expr = df_expr.dropna(subset=["Entrez_Gene_Id"])
     df_expr["Entrez_Gene_Id"] = df_expr["Entrez_Gene_Id"].astype(int).astype(str)
-    df_expr = df_expr.set_index("Entrez_Gene_Id")
+    
+    # Map Entrez IDs to Hugo Symbols using modular preprocessing helper
+    from src.utils.preprocessing import map_entrez_to_symbols
+    entrez_ids = df_expr["Entrez_Gene_Id"].unique().tolist()
+    cache_path = proc_dir / "entrez_to_symbol_cache.json"
+    gene_map = map_entrez_to_symbols(entrez_ids, cache_path=cache_path)
+    
+    # Apply mapping
+    df_expr["Hugo_Symbol_Mapped"] = df_expr["Entrez_Gene_Id"].map(gene_map)
+    # Fallback to Entrez Gene ID if symbol not found
+    df_expr["Hugo_Symbol_Mapped"] = df_expr["Hugo_Symbol_Mapped"].fillna(df_expr["Entrez_Gene_Id"])
+    
+    df_expr = df_expr.set_index("Hugo_Symbol_Mapped")
     if "Hugo_Symbol" in df_expr.columns:
         df_expr = df_expr.drop(columns=["Hugo_Symbol"])
+    if "Entrez_Gene_Id" in df_expr.columns:
+        df_expr = df_expr.drop(columns=["Entrez_Gene_Id"])
+        
+    # Average duplicate Hugo Symbols
     df_expr = df_expr.groupby(df_expr.index).mean()
     df_expr = df_expr.T
     df_expr.index.name = "SAMPLE_ID"
     df_expr = df_expr.reset_index()
     
     cleaned_rnaseq_df = clean_rnaseq_df(df_expr)
+    
+    # Apply log2(x + 1) transformation directly to the gene expression columns
+    gene_cols = [c for c in cleaned_rnaseq_df.columns if c != "SAMPLE_ID"]
+    cleaned_rnaseq_df[gene_cols] = np.log2(cleaned_rnaseq_df[gene_cols] + 1)
 
     # Drop constant, redundant, and administrative columns
     cols_to_drop = [

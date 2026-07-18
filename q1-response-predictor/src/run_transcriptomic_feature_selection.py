@@ -104,31 +104,13 @@ def main():
         print(f"Error: Missing cleaned TCGA PanCan files in {tcga_dir}")
         return
         
-    df_expr_raw = pd.read_csv(expr_path)
+    df_expr_raw = pd.read_csv(expr_path, index_col='SAMPLE_ID')
     df_clin = pd.read_csv(clin_path)
     
-    print(f"Loaded raw expression: {df_expr_raw.shape}")
-    print(f"Loaded raw clinical: {df_clin.shape}")
+    print(f"Loaded expression: {df_expr_raw.shape}")
+    print(f"Loaded clinical: {df_clin.shape}")
     
-    # Extract Entrez IDs (excluding SAMPLE_ID)
-    entrez_cols = [c for c in df_expr_raw.columns if c != 'SAMPLE_ID']
-    
-    # Map Entrez IDs to Hugo Symbols
-    cache_file = tcga_dir / "entrez_to_symbol_cache.json"
-    gene_map = map_entrez_to_symbols(entrez_cols, cache_file)
-    
-    # Apply mapping
-    print("Applying gene symbol mapping and grouping duplicate symbols...")
-    mapped_cols = ['SAMPLE_ID'] + [gene_map.get(str(col), col) for col in entrez_cols]
-    df_expr_raw.columns = mapped_cols
-    
-    # Melt/group duplicate columns (some Entrez IDs map to same Hugo symbol)
-    df_expr = df_expr_raw.set_index('SAMPLE_ID')
-    df_expr = df_expr.groupby(df_expr.columns, axis=1).mean()
-    print(f"Deduplicated gene symbol expression matrix shape: {df_expr.shape}")
-    
-    # Already log-transformed
-    df_expr_log = df_expr
+    df_expr_log = df_expr_raw
     
     # Align patients
     df_clin_survival = df_clin.dropna(subset=['OS_MONTHS', 'OS_STATUS']).copy()

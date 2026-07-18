@@ -20,19 +20,8 @@ for d in [FULL_DIR, IMMUNO_DIR]:
 def load_tcga():
     print("Loading TCGA-SKCM...")
     tcga_dir = PROCESSED_DIR / "skcm_tcga_pan_can_atlas_2018"
-    df_expr_raw = pd.read_csv(tcga_dir / "expr_cleaned.csv")
+    df_expr = pd.read_csv(tcga_dir / "expr_cleaned.csv", index_col="SAMPLE_ID")
     df_clin = pd.read_csv(tcga_dir / "clin_cleaned.csv")
-    
-    # Map Entrez to Hugo Symbols
-    cache_file = tcga_dir / "entrez_to_symbol_cache.json"
-    with open(cache_file, "r") as f:
-        entrez_mapping = json.load(f)
-        
-    df_expr = df_expr_raw.set_index('SAMPLE_ID')
-    df_expr = df_expr.rename(columns=entrez_mapping)
-    # Average duplicates
-    df_expr = df_expr.T.groupby(level=0).mean().T
-    # Already log-transformed
     df_expr_log = df_expr
     
     # Align sample ids
