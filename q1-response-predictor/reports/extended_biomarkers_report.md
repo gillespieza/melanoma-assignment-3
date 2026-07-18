@@ -5,8 +5,8 @@ This report documents the training and evaluation of response prediction models 
 ### Model Performance (5-Fold Stratified Cross-Validation on Pooled Trial Cohort):
 | Model | Base Model (Sigs only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Sex | Full Extended Model (Sigs + Drivers + TMB + CNA + Mutations) |
 |---|---|---|---|
-| **Logistic Regression (LR)** | 0.632 (±0.087) | 0.626 (±0.080) | **0.610 (±0.083)** |
-| **Random Forest (RF)** | 0.632 (±0.081) | 0.644 (±0.087) | **0.718 (±0.102)** |
+| **Logistic Regression (LR)** | 0.623 (±0.081) | 0.616 (±0.075) | **0.606 (±0.078)** |
+| **Random Forest (RF)** | 0.645 (±0.082) | 0.647 (±0.083) | **0.705 (±0.108)** |
 
 ### Analysis of Predictor Performance:
 1.  **Baseline vs. Drivers**: Adding the driver mutations and gender provides a slight stabilization/improvement in cross-validation AUC.

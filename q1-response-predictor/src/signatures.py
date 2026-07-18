@@ -17,7 +17,7 @@ IMPRES_PAIRS = [
     ("CD40", "CD274"),
     ("CD40", "CD80"),
     ("CD40", "CD28"),
-    ("CD40", "CD274"),
+    ("CD40", "PDCD1"),
     ("TNFRSF14", "CD86")
 ]
 
