@@ -33,7 +33,7 @@ def zscore_df(df):
 
 # Paths
 DATA_DIR = BASE_DIR / "data"
-PLOT_DIR = BASE_DIR / "plots"
+PLOT_DIR = BASE_DIR / "plots" / "models"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
 def parse_hugo_mutations(df_meta):

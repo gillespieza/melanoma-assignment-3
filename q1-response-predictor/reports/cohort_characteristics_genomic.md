@@ -1,10 +1,10 @@
 # Genomic Characteristics of Data Cohorts
 
 This report presents a comparative analysis of the genomic features across the four melanoma study cohorts:
-*   **TCGA-SKCM**: Baseline genomic reference population ($N=426$).
+*   **TCGA-SKCM**: Baseline genomic reference population ($N=427$).
 *   **Liu 2019**: Anti-PD-1 clinical trial cohort ($N=104$).
-*   **Hugo 2016**: Anti-PD-1 clinical trial cohort ($N=26$).
-*   **Riaz 2017**: Anti-PD-1 clinical trial cohort ($N=20$).
+*   **Hugo 2016**: Anti-PD-1 clinical trial cohort ($N=27$).
+*   **Riaz 2017**: Anti-PD-1 clinical trial cohort ($N=64$).
 
 ---
 
@@ -26,14 +26,14 @@ To further characterize tumor immunogenicity and mechanisms of resistance, we ev
 *   **IFN-gamma Signaling**: *JAK1*, *JAK2*, *STAT1* (induces insensitivity to T-cell cytotoxicity).
 *   **Survival & Proliferation Drivers**: *PTEN*, *CDKN2A*, *PIK3CA* (oncogenic drivers).
 
-| Pathway / Gene | Liu 2019 ($N=104$) | Hugo 2016 ($N=26$) | Riaz 2017 ($N=20$) | Pooled Trials ($N=150$) |
+| Pathway / Gene | Liu 2019 ($N=104$) | Hugo 2016 ($N=27$) | Riaz 2017 ($N=64$) | Pooled Trials ($N=195$) |
 |---|---|---|---|---|
-| **BRAF mutation** | 40.4% | 57.7% | 50.0% | **44.7%** |
-| **NRAS mutation** | 30.8% | 19.2% | 20.0% | **27.3%** |
-| **NF1 mutation** | 18.3% | 23.1% | 0.0% | **16.7%** |
+| **BRAF mutation** | 40.4% | 59.3% | 40.6% | **43.1%** |
+| **NRAS mutation** | 30.8% | 18.5% | 17.2% | **24.6%** |
+| **NF1 mutation** | 18.3% | 25.9% | 3.1% | **14.4%** |
 | **Antigen Presentation (MHC)** | 0.0% | 0.0% | 0.0% | **0.0%** |
-| **IFN-gamma Signaling** | 10.6% | 15.4% | 0.0% | **10.0%** |
-| **Survival & Proliferation Drivers** | 23.1% | 30.8% | 20.0% | **24.0%** |
+| **IFN-gamma Signaling** | 10.6% | 18.5% | 3.1% | **9.2%** |
+| **Survival & Proliferation Drivers** | 23.1% | 29.6% | 10.9% | **20.0%** |
 
 *Note: Pre-treatment antigen presentation mutations are completely absent in these cohorts, reinforcing that MHC-class I mutations are mostly acquired under selective pressure during checkpoint blockade therapy rather than being common baseline resistance mechanisms.*
 
@@ -69,17 +69,17 @@ A Spearman rank correlation matrix mapping the relationships between continuous 
 *   **Neoantigen Subtypes**: Somatic indel neoantigens (`INDEL_NEOANTIGEN`, $r_s = 0.44$ with TMB) and cancer-testis antigens (`CTA_SELF_NEOANTIGEN`, $r_s = 0.22$ with TMB) show much weaker correlations. This suggests they capture distinct biological axes of tumor immunogenicity that are not simply surrogates for total mutational burden.
 
 ### 3.2. Genomic Burden vs. Immune Infiltration
-To understand how tumor genomic features affect the microenvironment, we evaluated how copy-number burden (Aneuploidy Score) and mutational burden (TMB) correlate with continuous transcriptomic immune signatures in both TCGA-SKCM ($N=426$) and the pooled trials ($N=150$).
+To understand how tumor genomic features affect the microenvironment, we evaluated how copy-number burden (Aneuploidy Score) and mutational burden (TMB) correlate with continuous transcriptomic immune signatures in both TCGA-SKCM ($N=427$) and the pooled trials ($N=195$).
 
 ![Genomic Burden vs Immune Heatmap](../plots/biomarkers/extended_immune_correlations.png)
 
 | Immune Signature | TCGA Aneuploidy Score ($r$) | TCGA TMB ($r$) | Trial TMB ($r$) |
 |---|---|---|---|
-| `IFN_gamma` | **-0.035** | **0.150** | **0.119** |
-| `TIS` | **-0.080** | **0.115** | **0.090** |
-| `CD8_Tcell` | **-0.049** | **0.105** | **0.080** |
-| `CYT` | **-0.052** | **0.112** | **0.049** |
-| `PD_L1` | **-0.100** | **0.159** | **0.134** |
+| `IFN_gamma` | **-0.045** | **0.144** | **0.034** |
+| `TIS` | **-0.090** | **0.108** | **-0.035** |
+| `CD8_Tcell` | **-0.056** | **0.096** | **-0.052** |
+| `CYT` | **-0.058** | **0.103** | **-0.091** |
+| `PD_L1` | **-0.110** | **0.159** | **0.046** |
 
 ### Key Observations
 *   **Aneuploidy vs Infiltration**: Chromosomal instability (Aneuploidy Score) shows a very weak negative correlation ($r \approx -0.03$ to $-0.10$) with baseline immune signatures in TCGA-SKCM, with only `PD_L1` showing a marginally significant negative correlation ($r = -0.100$, $p = 0.043$). This indicates that while copy number alterations are associated with immune exclusion in some cancer types, Aneuploidy Score alone is a weak predictor of immune-excluded "cold" status in melanoma.
@@ -107,7 +107,7 @@ Overall Survival (OS) in the reference **TCGA-SKCM** cohort is stratified below.
 
 ## 5. Co-Mutation Landscape (Oncoplot)
 
-The complete co-mutation (oncoplot) landscape for individual patients across all three clinical trial cohorts ($N=150$) is presented below. This combines somatic mutations in core driver and resistance genes (rows) with patient-specific clinical tracks (TMB, Response, Cohort source, and Sex).
+The complete co-mutation (oncoplot) landscape for individual patients across all three clinical trial cohorts ($N=195$) is presented below. This combines somatic mutations in core driver and resistance genes (rows) with patient-specific clinical tracks (TMB, Response, Cohort source, and Sex).
 
 ![Co-Mutation Landscape (Merged Trials)](../plots/genomic/comut_landscape_merged.png)
 

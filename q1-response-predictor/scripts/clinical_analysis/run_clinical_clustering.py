@@ -18,7 +18,8 @@ if str(BASE_DIR) not in sys.path:
 # Paths
 DATA_DIR = BASE_DIR / "data"
 CLINICAL_FILE = DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/clin_cleaned.csv"
-PLOTS_DIR = BASE_DIR / "plots"
+PLOTS_DIR = BASE_DIR / "plots" / "clinical"
+PLOTS_DIR.mkdir(exist_ok=True, parents=True)
 REPORTS_DIR = BASE_DIR / "reports"
 REPORTS_DIR.mkdir(exist_ok=True, parents=True)
 
@@ -43,7 +44,6 @@ def main():
     clustering_cols = [
         'AGE',
         'TMB_NONSYNONYMOUS',
-        'FRACTION_GENOME_ALTERED',
         'ANEUPLOIDY_SCORE',
         'WINTER_HYPOXIA_SCORE',
         'TX_TYPE_CHEMOTHERAPY',
@@ -212,10 +212,8 @@ def main():
     # Category: Genomics
     table_rows.append(['**Genomics**', '', '', ''])
     tmb_vals = [f"{profile_df.loc[profile_df['CLINICAL_CLUSTER'] == c, 'TMB_NONSYNONYMOUS'].values[0]:.1f}" for c in range(3)]
-    fga_vals = [f"{profile_df.loc[profile_df['CLINICAL_CLUSTER'] == c, 'FRACTION_GENOME_ALTERED'].values[0]:.3f}" for c in range(3)]
     aneu_vals = [f"{profile_df.loc[profile_df['CLINICAL_CLUSTER'] == c, 'ANEUPLOIDY_SCORE'].values[0]:.1f}" for c in range(3)]
     table_rows.append(['TMB (Nonsynonymous, Mean Mut/Mb)', tmb_vals[0], tmb_vals[1], tmb_vals[2]])
-    table_rows.append(['Fraction Genome Altered (Mean)', fga_vals[0], fga_vals[1], fga_vals[2]])
     table_rows.append(['Aneuploidy Score (Mean)', aneu_vals[0], aneu_vals[1], aneu_vals[2]])
     
     # Category: Microenvironment
@@ -275,29 +273,29 @@ def main():
         f.write("Based on the multi-dimensional profiles, the three clusters represent distinct disease states:\n\n")
         
         f.write(f"1.  **Cluster 0: Baseline Disease / Primary Specimen Phenotype** ($N={counts[0]}$)\n")
-        f.write(f"    *   *Genomics*: Moderate chromosomal instability (fraction genome altered = 0.314, aneuploidy score = 12.7) and moderate TMB (24.6 mut/Mb).\n")
-        f.write(f"    *   *Microenvironment*: Low-moderate Winter hypoxia score (-2.39).\n")
-        f.write(f"    *   *Clinical*: Stage IV rate = 0%. Highest rate of primary specimens (20.5%). No immunotherapy (0%).\n")
+        f.write(f"    *   *Genomics*: Moderate chromosomal instability (aneuploidy score = {aneu_vals[0]}) and moderate TMB ({tmb_vals[0]} mut/Mb).\n")
+        f.write(f"    *   *Microenvironment*: Low-moderate Winter hypoxia score ({hyp_vals[0]}).\n")
+        f.write(f"    *   *Clinical*: Stage IV rate = {stg_vals[0]}. Highest rate of primary specimens ({pri_vals[0]}). No immunotherapy ({imm_vals[0]}).\n")
         f.write(f"    *   *Prognosis*: Better overall survival trajectory.\n\n")
         
         f.write(f"2.  **Cluster 1: High Mutational Load & Immunotherapy Phenotype** ($N={counts[1]}$)\n")
-        f.write(f"    *   *Genomics*: Elevated copy number alteration fraction (0.343), aneuploidy score (13.9), and the highest mutational load (**TMB = 39.5 mut/Mb**).\n")
-        f.write(f"    *   *Microenvironment*: Low-moderate Winter hypoxia score (-2.09).\n")
-        f.write(f"    *   *Clinical*: Stage IV rate = 0%. Lower primary tumor rate (11.8%). **100% of these patients received immunotherapy**.\n")
+        f.write(f"    *   *Genomics*: Elevated copy-number alterations (aneuploidy score = {aneu_vals[1]}) and the highest mutational load (**TMB = {tmb_vals[1]} mut/Mb**).\n")
+        f.write(f"    *   *Microenvironment*: Low-moderate Winter hypoxia score ({hyp_vals[1]}).\n")
+        f.write(f"    *   *Clinical*: Stage IV rate = {stg_vals[1]}. Lower primary tumor rate ({pri_vals[1]}). High rate of immunotherapy ({imm_vals[1]}).\n")
         f.write(f"    *   *Prognosis*: Moderate survival trajectory.\n\n")
         
         f.write(f"3.  **Cluster 2: Stage IV / Advanced Metastatic Disease Phenotype** ($N={counts[2]}$)\n")
-        f.write(f"    *   *Genomics*: Lower mutational load (TMB = 13.5 mut/Mb) and lowest copy-number alterations.\n")
-        f.write(f"    *   *Clinical*: **100% of these patients have Stage IV disease**. No patients received immunotherapy (0%).\n")
+        f.write(f"    *   *Genomics*: Lower mutational load (TMB = {tmb_vals[2]} mut/Mb) and lowest copy-number alterations (aneuploidy score = {aneu_vals[2]}).\n")
+        f.write(f"    *   *Clinical*: **100% of these patients have Stage IV disease**. No patients received immunotherapy (0.0%).\n")
         f.write(f"    *   *Prognosis*: Poor overall survival trajectory (Stage IV baseline) (Median Overall Survival = **{median_survivals[2]}**).\n\n")
         
         f.write("## Cluster Visualisation (2D PCA Projection)\n")
         f.write("Below is a 2D PCA projection of the multi-dimensional patient profiles, showing the distinct separation of the three clinical-genomic patient groups. The 'X' markers show the cluster centroids:\n\n")
-        f.write("![2D PCA Visualization of Clusters](../plots/pca_clinical_clusters.png)\n\n")
+        f.write("![2D PCA Visualization of Clusters](../plots/clinical/pca_clinical_clusters.png)\n\n")
         
         f.write("## Kaplan-Meier Survival Analysis\n")
         f.write(f"The unsupervised patient clusters show a highly statistically significant separation in overall survival duration (Log-Rank p-value = **\\({p_val:.2e}\\)**):\n\n")
-        f.write("![KM Survival of Clinical Clusters](../plots/km_clinical_clusters.png)\n")
+        f.write("![KM Survival of Clinical Clusters](../plots/clinical/km_clinical_clusters.png)\n")
         
     print("Done! Clinical clustering workflow completed.")
 

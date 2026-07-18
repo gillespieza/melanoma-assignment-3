@@ -23,7 +23,7 @@ To maintain a clean and modular architecture, helper functions are organised und
 ---
 
 
-## 1. Data Acquisition (`download_data.py`)
+## 1. Data Acquisition (`scripts/download_data.py`)
 
 The data acquisition script standardizes the raw input files by downloading official, curated datasets from the **cBioPortal DataHub**. It processes four cohorts:
 1. **Liu 2019** (`mel_iatlas_liu_2019`)
@@ -39,7 +39,7 @@ The data acquisition script standardizes the raw input files by downloading offi
 
 ---
 
-## 2. Data Cleaning (`clean_data.py`)
+## 2. Data Cleaning (`scripts/clean_data.py`)
 
 The data cleaning pipeline transforms raw inputs into normalized expression matrices and clinical metadata dataframes suitable for modeling. 
 
@@ -68,10 +68,10 @@ The data cleaning pipeline transforms raw inputs into normalized expression matr
 * Log2-transforms expression data and aligns samples.
 
 #### C. Riaz 2017 (`clean_riaz_2017`)
-* Filters cohort to pre-treatment baseline biopsies only (restricting `SAMPLE_ID` to those ending in `_pre`).
-* Maps response outcomes to binary target `response`.
-* Resolves Riaz's mismatch where the MAF mutations are identified by `PATIENT_ID` rather than `SAMPLE_ID`, ensuring correct patient-to-sample linkage.
-* Restricts expression matrix columns to pre-treatment samples, transposes, log-transforms, and aligns samples.
+* Retains all samples (both pre and on-treatment) because `baseline_only=False` is set in the data cleaning script.
+* Maps response outcomes to binary target `response_binary`.
+* Resolves Riaz's mismatch by joining patient-level mutations with sample-level IDs in the clean mutations matrix.
+* Transposes, log-transforms, and aligns all 107 samples.
 
 #### D. TCGA-SKCM (`clean_tcga_skcm`)
 * Merges sample and patient sheets and calls custom TCGA clean helpers (`clean_clinical_df`, `clean_rnaseq_df`).
@@ -82,28 +82,25 @@ The data cleaning pipeline transforms raw inputs into normalized expression matr
 
 The following table summarizes the number of samples/patients retained and lost at each phase of the cleaning pipeline:
 
-| Cohort | Step | Starting N | Action / Filter | Lost | Retained N |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Liu 2019** | 1 | 122 | Raw patient-sample merge | - | 122 |
-| | 2 | 122 | Response filter (keep CR/PR/PD; drop SD/MR/NaN) | 18 | 104 |
-| | 3 | 104 | Expression matrix sample alignment | 0 | 104 |
-| **Hugo 2016** | 1 | 27 | Raw patient-sample merge | - | 27 |
-| | 2 | 27 | Quality check: drop duplicate PATIENT_ID & invalid OS | 1 | 26 |
-| | 3 | 26 | Response filter (keep CR/PR/PD; drop SD/MR/NaN) | 0 | 26 |
-| | 4 | 26 | Expression matrix sample alignment | 0 | 26 |
-| **Riaz 2017** | 1 | 107 | Raw patient-sample merge (64 patients) | - | 107 |
-| | 2 | 107 | Quality check: drop duplicate PATIENT_ID & invalid OS | 43 | 64 |
-| | 3 | 64 | Select pre-treatment baseline samples (`_pre`) | 30 | 34 |
-| | 4 | 34 | Response filter (keep CR/PR/PD; drop SD/MR/NaN) | 14 | 20 |
-| | 5 | 20 | Expression matrix sample alignment | 0 | 20 |
-| **TCGA-SKCM** | 1 | 448 | Raw patient-sample merge (442 patients) | - | 448 |
-| | 2 | 448 | Quality check: drop duplicate PATIENT_ID (keep first sample per patient) | 6 | 442 |
-| | 3 | 442 | Quality check: drop invalid OS months/status | 16 | 426 |
-| | 4 | 426 | Final clinical cohort size | 0 | 426 |
+| Cohort        | Step | Starting N | Action / Filter                                                          | Lost | Retained N |
+|:------------- |:---- |:---------- |:------------------------------------------------------------------------ |:---- |:---------- |
+| **Liu 2019**  | 1    | 122        | Raw patient-sample merge                                                 | -    | 122        |
+|               | 2    | 122        | Response filter (keep CR/PR/PD; drop SD/MR/NaN)                          | 18   | 104        |
+|               | 3    | 104        | Expression matrix sample alignment                                       | 0    | 104        |
+| **Hugo 2016** | 1    | 27         | Raw patient-sample merge                                                 | -    | 27         |
+|               | 2    | 27         | Response filter (keep CR/PR/PD; drop SD/MR/NaN)                          | 0    | 27         |
+|               | 3    | 27         | Expression matrix sample alignment                                       | 0    | 27         |
+| **Riaz 2017** | 1    | 107        | Raw patient-sample merge                                                 | -    | 107        |
+|               | 2    | 107        | Response filter (keep CR/PR/PD; drop SD/MR/NaN)                          | 43   | 64         |
+|               | 3    | 64         | Expression matrix sample alignment                                       | 0    | 64         |
+| **TCGA-SKCM** | 1    | 448        | Raw patient-sample merge                                                 | -    | 448        |
+|               | 2    | 448        | Cleaned intermediate clinical file size                                  | 0    | 448        |
+|               | 3    | 448        | Patient deduplication in model analysis                                  | 6    | 442        |
+|               | 4    | 442        | Survival validation cohort (drop invalid/missing OS)                     | 15   | 427        |
 
 ---
 
-## 3. Dataset Merging (`src/merge_datasets.py`)
+## 3. Dataset Merging (`scripts/merge_datasets.py`)
 
 After cleaning, the merge script combines all four cohorts into unified expression and clinical matrices. It produces **two** merged variants, each batch-corrected independently:
 
@@ -148,23 +145,25 @@ Each sample in the merged clinical metadata includes the following standardised 
 Once the clean datasets are generated, the characterisation scripts analyze clinical and genomic variables across trials (Liu, Hugo, Riaz) and the TCGA reference cohort.
 
 ### 4.1. Clinical Characterisation
-*   **`run_response_distribution.py`**: Reads processed clinical data and generates stacked bar charts showing percentage response rates (CR/PR vs. PD) across studies, saved to `plots/clinical/response_proportions.png`.
-*   **`run_waffle_chart.py`**: Draws waffle charts representing absolute sample sizes and response status (1 block = 1 patient), saved to `plots/clinical/waffle_cohorts.png`.
-*   **`run_response_km_curves.py`**: Evaluates overall survival stratified by response (Responder vs. Non-Responder) in trials, generating Kaplan-Meier curves and Log-Rank tests saved to `plots/clinical/survival_by_response.png`.
-*   **`run_forest_plot.py`**: Fits univariate logistic regression models for response across demographics and driver mutations. Generates a standardized forest plot (grey/red/blue color scheme) saved to `plots/clinical/forest_plot_odds_ratios.png`.
+*   **`scripts/clinical_analysis/run_clinical_analysis.py`**: Reads processed clinical data and generates stacked bar charts showing percentage response rates (CR/PR vs. PD) across studies, saved to `plots/clinical/response_distribution.png` and `plots/clinical/km_os_grid.png`.
+*   **`scripts/exploratory_plots/run_response_distribution.py`**: Generates cohort-level response breakdown bar charts.
+*   **`scripts/exploratory_plots/run_waffle_chart.py`**: Draws waffle charts representing absolute sample sizes and response status (1 block = 1 patient), saved to `plots/clinical/response_waffle_chart.png`.
+*   **`scripts/exploratory_plots/run_response_km_curves.py`**: Evaluates overall survival stratified by response (Responder vs. Non-Responder) in trials, generating Kaplan-Meier curves and Log-Rank tests saved to `plots/clinical/km_os_by_response.png`.
+*   **`scripts/exploratory_plots/run_forest_plot.py`**: Fits univariate logistic regression models for response across demographics and driver mutations. Generates a standardized forest plot (grey/red/blue color scheme) saved to `plots/clinical/forest_plot_odds_ratios.png`.
+*   **`scripts/clinical_analysis/run_clinical_feature_selection.py`**: Performs univariate Cox hazards modelling and Random Forest Gini feature selection on clinical phenotypes.
 
 ### 4.2. Genomic Characterisation
-*   **`run_genomic_characterisation.py`**: Evaluates baseline genomic properties of TCGA and trials:
+*   **`scripts/biomarkers/run_genomic_characterisation.py`**: Evaluates baseline genomic properties of TCGA and trials:
     *   Generates a comparison of driver mutations (*BRAF*, *NRAS*, *NF1*, and Triple-WT) saved to `plots/genomic/mutation_frequencies.png`.
     *   Plots pre-treatment TMB distributions (trial boxplots by response, TCGA log-normal histogram) saved to `plots/genomic/tmb_distribution.png`.
     *   Plots a Spearman correlation matrix of somatic mutation and neoantigen loads in Liu 2019 saved to `plots/genomic/biomarker_correlation_heatmap.png`.
     *   Generates Kaplan-Meier curves for TCGA overall survival by driver mutation subtype and TMB median-split saved to `plots/genomic/km_genomic_features.png`.
-*   **`run_merged_comut_plot.py`**: Aggregates clinical records and somatic mutations across the three trial studies to generate a pooled, sorted oncoplot ($N=150$) showing driver/resistance gene states aligned with TMB, Response, Cohort source, and Sex. Saved to `plots/genomic/comut_landscape_merged.png`.
-*   **`src/run_extended_biomarkers.py`**: Evaluates advanced genomic biomarkers:
-    *   Correlates total predicted neoantigens with TMB in the pooled trials, generating a regression plot saved to `plots/extended_neoantigen_tmb.png`.
-    *   Correlates copy-number alterations (Aneuploidy Score in TCGA) and TMB against 5 continuous transcriptomic immune signatures in TCGA and pooled trials, saving the correlation matrix heatmap to `plots/extended_immune_correlations.png`.
-    *   Computes Kaplan-Meier survival curves in TCGA stratified by Aneuploidy Score, saved to `plots/extended_aneuploidy_survival.png`.
-    *   Trains 5-fold cross-validated classifiers (Logistic Regression, Random Forest) on the pooled trial cohort ($N=150$) to evaluate the predictive benefit of signatures, driver mutations, TMB, and pathway mutations.
+*   **`scripts/biomarkers/run_merged_comut_plot.py`**: Aggregates clinical records and somatic mutations across the three trial studies to generate a pooled, sorted oncoplot ($N=195$) showing driver/resistance gene states aligned with TMB, Response, Cohort source, and Sex. Saved to `plots/genomic/comut_landscape_merged.png`.
+*   **`scripts/biomarkers/run_extended_biomarkers.py`**: Evaluates advanced genomic biomarkers:
+    *   Correlates total predicted neoantigens with TMB in the pooled trials, generating a regression plot saved to `plots/biomarkers/extended_neoantigen_tmb.png`.
+    *   Correlates copy-number alterations (Aneuploidy Score in TCGA) and TMB against 5 continuous transcriptomic immune signatures in TCGA and pooled trials, saving the correlation matrix heatmap to `plots/biomarkers/extended_immune_correlations.png`.
+    *   Computes Kaplan-Meier survival curves in TCGA stratified by Aneuploidy Score, saved to `plots/biomarkers/extended_aneuploidy_survival.png`.
+    *   Trains cross-validated classifiers (Logistic Regression, Random Forest) on the pooled trial cohort ($N=195$) to evaluate the predictive benefit of signatures, driver mutations, TMB, and pathway mutations.
 
 ---
 
@@ -186,9 +185,10 @@ The pipeline outputs processed data, figures, and reports to their respective di
 
 ### Visualisation Outputs (`plots/`)
 *   **Clinical Characterisation**: Waffle charts, response rates, survival by response, and standardized univariate forest plots in `plots/clinical/`.
-*   **Genomic Characterisation**: Mutation landscapes, TMB distributions, correlation heatmaps, merged Co-Mutation oncoplots, and TCGA survival curves in `plots/genomic/` and `plots/`.
+*   **Genomic Characterisation**: Mutation landscapes, TMB distributions, correlation heatmaps, merged Co-Mutation oncoplots, and TCGA survival curves in `plots/genomic/` and `plots/biomarkers/`.
+*   **Model Performance**: ROC and PR curves in `plots/models/`.
 
 ### Reporting Outputs (`reports/`)
 *   **`cohort_characteristics_clinical.md`**: Baseline report detailing clinical patient demographics, treatment histories, response distributions, survival curves, and forest plots.
 *   **`cohort_characteristics_genomic.md`**: Baseline report detailing driver mutations, pathway mutations, TMB, neoantigens, immune signature correlations, Aneuploidy overall survival curves, and the merged CoMut oncoplot.
-*   **`extended_biomarkers_report.md`**: Evaluation report of advanced biomarkers and 5-fold cross-validated response predictors on the pooled trials.
+*   **`extended_biomarkers_report.md`**: Evaluation report of advanced biomarkers and cross-validated response predictors on the pooled trials.

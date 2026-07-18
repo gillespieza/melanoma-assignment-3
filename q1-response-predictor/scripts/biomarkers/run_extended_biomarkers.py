@@ -27,7 +27,7 @@ if str(BASE_DIR) not in sys.path:
 
 # Paths
 DATA_DIR = BASE_DIR / "data"
-PLOT_DIR = BASE_DIR / "plots"
+PLOT_DIR = BASE_DIR / "plots" / "biomarkers"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 REPORTS_DIR = BASE_DIR / "reports"
 REPORTS_DIR.mkdir(exist_ok=True, parents=True)
@@ -92,8 +92,18 @@ def parse_cohort_pathway_mutations(raw_dir: Path, target_genes: list, sample_ids
             
     pivoted = (pivoted[target_genes] > 0).astype(int)
     
+    # Standardise index case and prefix to align with cleaned clinical IDs
+    dir_name = raw_dir.name.lower()
+    if "liu" in dir_name:
+        pivoted.index = pivoted.index.str.upper()
+    elif "hugo" in dir_name:
+        pivoted.index = "HUGO_" + pivoted.index.str.upper()
+    elif "riaz" in dir_name:
+        pivoted.index = "RIAZ_" + pivoted.index.str.upper()
+        
     if map_to_patient:
-        pivoted.index = pivoted.index.map(lambda x: x.split("_")[0] if isinstance(x, str) else x)
+        # For Riaz: standardise index (e.g. RIAZ_PT3_PRE -> RIAZ_PT3) to map to clinical patient_id
+        pivoted.index = pivoted.index.map(lambda x: "_".join(x.split("_")[:2]) if isinstance(x, str) else x)
         pivoted = pivoted.groupby(pivoted.index).max()
         
         mut_mapped = pd.DataFrame(0, index=sample_ids, columns=target_genes)
@@ -144,6 +154,31 @@ def main():
         for up, low in [('PATIENT_ID', 'patient_id'), ('RESPONSE_BINARY', 'response'), ('SEX', 'sex'), ('AGE', 'age'), ('OS_STATUS', 'os_status'), ('OS_MONTHS', 'os_months')]:
             if up in df.columns and low not in df.columns:
                 df[low] = df[up]
+                
+    # Filter trial cohorts to response-aligned samples (keep CR/PR/PD; drop SD/MR/NaN)
+    RESPONSE_MAP = {
+        "Complete Response": 1,
+        "Partial Response": 1,
+        "Progressive Disease": 0,
+        "Stable Disease": np.nan,
+        "Mixed Response": np.nan,
+    }
+    df_liu_clin['temp_resp'] = df_liu_clin['RESPONSE'].map(RESPONSE_MAP)
+    df_liu_clin.dropna(subset=['temp_resp'], inplace=True)
+    df_liu_clin.drop(columns=['temp_resp'], inplace=True)
+    
+    df_hugo_clin['temp_resp'] = df_hugo_clin['RESPONSE'].map(RESPONSE_MAP)
+    df_hugo_clin.dropna(subset=['temp_resp'], inplace=True)
+    df_hugo_clin.drop(columns=['temp_resp'], inplace=True)
+    
+    df_riaz_clin['temp_resp'] = df_riaz_clin['RESPONSE'].map(RESPONSE_MAP)
+    df_riaz_clin.dropna(subset=['temp_resp'], inplace=True)
+    df_riaz_clin.drop(columns=['temp_resp'], inplace=True)
+    
+    # Re-align expression matrix rows to clinical index
+    df_liu_expr = df_liu_expr.loc[df_liu_clin.index]
+    df_hugo_expr = df_hugo_expr.loc[df_hugo_clin.index]
+    df_riaz_expr = df_riaz_expr.loc[df_riaz_clin.index]
     
     # Calculate TOTAL_NEOANTIGEN for trial cohorts if missing
     neo_cols = ['SNV_NEOANTIGEN', 'INDEL_NEOANTIGEN', 'FUSION_NEOANTIGEN', 'SPLICE_NEOANTIGEN', 'VIRUS_NEOANTIGEN', 'ERV_NEOANTIGEN']
@@ -221,7 +256,7 @@ def main():
     # Output report setup
     report_content = []
     report_content.append("# Evaluation of Extended Genomic & Clinical Biomarkers")
-    report_content.append("\nThis report documents the statistical analysis and predictive modeling updates of extended biomarkers across the pooled trial datasets ($N=150$) and TCGA-SKCM ($N=426$) cohorts.")
+    report_content.append(f"\nThis report documents the statistical analysis and predictive modeling updates of extended biomarkers across the pooled trial datasets ($N={len(df_clin_merged)}$) and TCGA-SKCM ($N={len(df_tcga_clin)}$) cohorts.")
 
     # ==========================================
     # Step 1: Neoantigen Load Evaluation (Pooled Trials)
@@ -287,7 +322,7 @@ def main():
     report_content.append("*   **Survival & Proliferation Drivers**: `PTEN`, `CDKN2A`, `PIK3CA` (oncogenic drivers).")
     
     report_content.append("\n### Mutation Frequencies in Trial Cohorts:")
-    report_content.append("| Pathway / Gene | Liu 2019 ($N=104$) | Hugo 2016 ($N=26$) | Riaz 2017 ($N=20$) | Pooled Trials ($N=150$) |")
+    report_content.append(f"| Pathway / Gene | Liu 2019 ($N={len(df_liu_clin)}$) | Hugo 2016 ($N={len(df_hugo_clin)}$) | Riaz 2017 ($N={len(df_riaz_clin)}$) | Pooled Trials ($N={len(df_clin_merged)}$) |")
     report_content.append("|---|---|---|---|---|")
     
     def get_mut_freq_str(df, col):
@@ -456,7 +491,7 @@ def main():
     # (since the descriptive baseline genomic analysis is already in reports/cohort_characteristics_genomic.md)
     report_content = []
     report_content.append("# Extended Biomarkers: Multimodal Predictive Modeling")
-    report_content.append("\nThis report documents the training and evaluation of response prediction models on the pooled immunotherapy trial cohort ($N=150$), comparing signature models, driver-mutation models, and a full extended clinical-genomic model.")
+    report_content.append(f"\nThis report documents the training and evaluation of response prediction models on the pooled immunotherapy trial cohort ($N={len(df_clin_merged)}$), comparing signature models, driver-mutation models, and a full extended clinical-genomic model.")
     
     # Define features
     sig_features = ['IFN_gamma', 'TIS', 'CYT', 'CD8_Tcell', 'IMPRES', 'PD_L1']

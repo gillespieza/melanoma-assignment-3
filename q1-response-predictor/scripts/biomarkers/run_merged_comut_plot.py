@@ -51,9 +51,18 @@ def parse_cohort_mutations(raw_dir: Path, target_genes: list, sample_ids: list, 
             
     pivoted = pivoted[target_genes].copy()
     
+    # Standardise index case and prefix to align with cleaned clinical IDs
+    dir_name = raw_dir.name.lower()
+    if "liu" in dir_name:
+        pivoted.index = pivoted.index.str.upper()
+    elif "hugo" in dir_name:
+        pivoted.index = "HUGO_" + pivoted.index.str.upper()
+    elif "riaz" in dir_name:
+        pivoted.index = "RIAZ_" + pivoted.index.str.upper()
+    
     if map_to_patient:
-        # For Riaz: standardise index (e.g. Pt3_pre -> Pt3) to map to clinical patient_id
-        pivoted.index = pivoted.index.map(lambda x: x.split("_")[0] if isinstance(x, str) else x)
+        # For Riaz: standardise index (e.g. RIAZ_PT3_PRE -> RIAZ_PT3) to map to clinical patient_id
+        pivoted.index = pivoted.index.map(lambda x: "_".join(x.split("_")[:2]) if isinstance(x, str) else x)
         pivoted = pivoted.groupby(pivoted.index).max()
         
         # Map patient-level mutations back to sample index

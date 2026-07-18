@@ -371,6 +371,15 @@ def clean_tcga_skcm() -> None:
             if col.startswith("TX_TYPE_") or col.startswith("TX_AGENT_"):
                 cleaned_clin_df[col] = cleaned_clin_df[col].fillna(0).astype(int)
 
+    # Parse and Merge Supplementary Hypoxia Data if available
+    hypoxia_file = raw_dir / "data_clinical_supp_hypoxia.txt"
+    if hypoxia_file.exists():
+        print("  Found supplementary hypoxia data. Parsing and merging...")
+        df_hyp = pd.read_csv(hypoxia_file, sep="\t", comment="#")
+        df_hyp["PATIENT_ID"] = df_hyp["PATIENT_ID"].astype(str).str.strip().str.upper()
+        cleaned_clin_df = pd.merge(cleaned_clin_df, df_hyp[["PATIENT_ID", "WINTER_HYPOXIA_SCORE"]], on="PATIENT_ID", how="left")
+
+
     # Clean RNA-seq
     df_expr = pd.read_csv(raw_dir / TCGA_EXPR_FILE, sep="\t")
     df_expr = df_expr.dropna(subset=["Entrez_Gene_Id"])

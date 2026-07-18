@@ -1,12 +1,12 @@
 # Extended Biomarkers: Multimodal Predictive Modeling
 
-This report documents the training and evaluation of response prediction models on the pooled immunotherapy trial cohort ($N=150$), comparing signature models, driver-mutation models, and a full extended clinical-genomic model.
+This report documents the training and evaluation of response prediction models on the pooled immunotherapy trial cohort ($N=195$), comparing signature models, driver-mutation models, and a full extended clinical-genomic model.
 
 ### Model Performance (5-Fold Stratified Cross-Validation on Pooled Trial Cohort):
 | Model | Base Model (Sigs only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Sex | Full Extended Model (Sigs + Drivers + TMB + CNA + Mutations) |
 |---|---|---|---|
-| **Logistic Regression (LR)** | 0.627 (±0.095) | 0.611 (±0.084) | **0.611 (±0.094)** |
-| **Random Forest (RF)** | 0.627 (±0.075) | 0.642 (±0.070) | **0.705 (±0.102)** |
+| **Logistic Regression (LR)** | 0.632 (±0.087) | 0.626 (±0.080) | **0.610 (±0.083)** |
+| **Random Forest (RF)** | 0.632 (±0.081) | 0.644 (±0.087) | **0.718 (±0.102)** |
 
 ### Analysis of Predictor Performance:
 1.  **Baseline vs. Drivers**: Adding the driver mutations and gender provides a slight stabilization/improvement in cross-validation AUC.
