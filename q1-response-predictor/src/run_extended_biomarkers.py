@@ -48,6 +48,16 @@ def clean_os_status(val):
 
 # map_tcga_expression_to_symbols is deprecated. TCGA is pre-mapped to Hugo Symbols in raw data cleaning.
 
+def zscore_df(df):
+    """
+    Standardize DataFrame columns individually (Z-score scaling).
+    Avoids division by zero if std is zero.
+    """
+    means = df.mean(axis=0)
+    stds = df.std(axis=0)
+    stds = stds.replace(0, 1.0).fillna(1.0)
+    return (df - means) / stds
+
 def parse_cohort_pathway_mutations(raw_dir: Path, target_genes: list, sample_ids: list, map_to_patient: bool = False, patient_id_map: dict = None) -> pd.DataFrame:
     mut_path = raw_dir / "data_mutations.txt"
     if not mut_path.exists():
@@ -157,6 +167,7 @@ def main():
     
     df_tcga_expr = df_tcga_expr_raw.set_index('SAMPLE_ID')
     df_tcga_sigs = extract_all_signatures(df_tcga_expr)
+    df_tcga_sigs = zscore_df(df_tcga_sigs)
     
     # Align TCGA signatures & clinical
     df_tcga_sigs.index = df_tcga_sigs.index.str.upper().str[:12]
@@ -196,7 +207,11 @@ def main():
             df['CNA_PROP'] = np.nan
 
     df_clin_merged = pd.concat([df_liu_clin[clin_cols], df_hugo_clin[clin_cols], df_riaz_clin[clin_cols]])
-    df_sigs_merged = pd.concat([df_liu_sigs, df_hugo_sigs, df_riaz_sigs])
+    # Standardize each cohort's signatures individually (Z-score) to prevent batch technical effects and leakage
+    df_liu_sigs_scaled = zscore_df(df_liu_sigs)
+    df_hugo_sigs_scaled = zscore_df(df_hugo_sigs)
+    df_riaz_sigs_scaled = zscore_df(df_riaz_sigs)
+    df_sigs_merged = pd.concat([df_liu_sigs_scaled, df_hugo_sigs_scaled, df_riaz_sigs_scaled])
     
     # Output report setup
     report_content = []

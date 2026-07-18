@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import json
 from pathlib import Path
-from pycombat import Combat
+# pyCombat import removed to support cohort-independent Z-score standardization
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -148,11 +148,21 @@ def load_riaz():
     return df_expr, df_clin_harm
 
 
+def zscore_expression(df):
+    """
+    Standardize expression matrix columns individually (Z-score scaling).
+    Avoids division by zero if std is zero.
+    """
+    means = df.mean(axis=0)
+    stds = df.std(axis=0)
+    stds = stds.replace(0, 1.0).fillna(1.0)
+    return (df - means) / stds
+
+
 def batch_correct_and_save(df_expr_merged, df_clin_merged, output_dir, label=""):
     """
-    Applies zero-variance gene removal and pyCombat batch correction to a
-    merged expression matrix, then saves the corrected expression and
-    clinical metadata to the specified output directory.
+    Saves the pre-standardized expression matrix and clinical metadata
+    to the specified output directory.
     """
     prefix = f"[{label}] " if label else ""
 
@@ -160,40 +170,12 @@ def batch_correct_and_save(df_expr_merged, df_clin_merged, output_dir, label="")
     assert (df_expr_merged.index == df_clin_merged.index).all(), "Inconsistent sample indices!"
     print(f"{prefix}Total cohort size: {len(df_clin_merged)} samples.")
 
-    # Remove any genes with zero variance to avoid division by zero in ComBat
-    print(f"{prefix}Checking for zero-variance genes...")
-    zero_var_genes = df_expr_merged.columns[df_expr_merged.var(axis=0) == 0].tolist()
-    if zero_var_genes:
-        print(f"  Removing {len(zero_var_genes)} zero-variance genes from expression matrix.")
-        df_expr_merged = df_expr_merged.drop(columns=zero_var_genes)
-
-    # Batch correction with pyCombat
-    print(f"{prefix}Running pyCombat batch-effect correction...")
-    cohorts_list = df_clin_merged["COHORT"].tolist()
-
-    # Build batch map dynamically from the cohorts present in this merge
-    unique_cohorts = sorted(set(cohorts_list))
-    cohort_map = {c: i for i, c in enumerate(unique_cohorts)}
-    batches = np.array([cohort_map[c] for c in cohorts_list])
-
-    # pyCombat expects samples as rows and genes as columns
-    combat_obj = Combat()
-    Y = df_expr_merged.values
-    Y_corrected = combat_obj.fit_transform(Y, batches)
-
-    # Re-construct corrected dataframe
-    df_expr_corrected = pd.DataFrame(
-        Y_corrected,
-        index=df_expr_merged.index,
-        columns=df_expr_merged.columns
-    )
-
     # Save results
     output_dir.mkdir(exist_ok=True, parents=True)
     expr_out_path = output_dir / "expr_merged.csv"
     clin_out_path = output_dir / "clin_merged.csv"
 
-    df_expr_corrected.to_csv(expr_out_path)
+    df_expr_merged.to_csv(expr_out_path)
     
     # Reorder df_clin_merged to put PATIENT_ID first
     df_clin_merged = df_clin_merged.reset_index()
@@ -202,7 +184,7 @@ def batch_correct_and_save(df_expr_merged, df_clin_merged, output_dir, label="")
         df_clin_merged = df_clin_merged[cols]
     df_clin_merged.to_csv(clin_out_path, index=False)
 
-    print(f"{prefix}Saved expression matrix to: {expr_out_path} (shape: {df_expr_corrected.shape})")
+    print(f"{prefix}Saved expression matrix to: {expr_out_path} (shape: {df_expr_merged.shape})")
     print(f"{prefix}Saved clinical metadata to:  {clin_out_path} (shape: {df_clin_merged.shape})")
 
     # Build and save merged genomic features
@@ -372,6 +354,13 @@ def main():
     expr_hugo = expr_hugo[common_genes]
     expr_riaz = expr_riaz[common_genes]
 
+    # Standardize each cohort individually to avoid data leakage
+    print("Standardizing expression datasets individually (Z-score)...")
+    expr_tcga_scaled = zscore_expression(expr_tcga)
+    expr_liu_scaled = zscore_expression(expr_liu)
+    expr_hugo_scaled = zscore_expression(expr_hugo)
+    expr_riaz_scaled = zscore_expression(expr_riaz)
+
     # ------------------------------------------------------------------
     # 2a. FULL MERGE: all 4 cohorts, all patients
     # ------------------------------------------------------------------
@@ -379,7 +368,7 @@ def main():
     print("Building FULL merged cohort (all 4 datasets)")
     print("=" * 60)
 
-    df_expr_full = pd.concat([expr_tcga, expr_liu, expr_hugo, expr_riaz], axis=0)
+    df_expr_full = pd.concat([expr_tcga_scaled, expr_liu_scaled, expr_hugo_scaled, expr_riaz_scaled], axis=0)
     df_clin_full = pd.concat([clin_tcga, clin_liu, clin_hugo, clin_riaz], axis=0)
 
     batch_correct_and_save(df_expr_full, df_clin_full, FULL_DIR, label="Full")
@@ -394,12 +383,12 @@ def main():
 
     # Filter TCGA to immunotherapy-treated patients only
     tcga_immuno_mask = clin_tcga["IMMUNOTHERAPY"] == 1
-    expr_tcga_immuno = expr_tcga.loc[tcga_immuno_mask]
+    expr_tcga_immuno_scaled = expr_tcga_scaled.loc[tcga_immuno_mask]
     clin_tcga_immuno = clin_tcga.loc[tcga_immuno_mask]
     print(f"  TCGA immunotherapy patients: {len(clin_tcga_immuno)} / {len(clin_tcga)}")
 
     df_expr_immuno = pd.concat(
-        [expr_tcga_immuno, expr_liu, expr_hugo, expr_riaz], axis=0
+        [expr_tcga_immuno_scaled, expr_liu_scaled, expr_hugo_scaled, expr_riaz_scaled], axis=0
     )
     df_clin_immuno = pd.concat(
         [clin_tcga_immuno, clin_liu, clin_hugo, clin_riaz], axis=0

@@ -15,6 +15,16 @@ from src.evaluation import plot_roc_curves, plot_pr_curves, run_survival_analysi
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
+def zscore_df(df):
+    """
+    Standardize DataFrame columns individually (Z-score scaling).
+    Avoids division by zero if std is zero.
+    """
+    means = df.mean(axis=0)
+    stds = df.std(axis=0)
+    stds = stds.replace(0, 1.0).fillna(1.0)
+    return (df - means) / stds
+
 # Paths
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -137,23 +147,16 @@ def main():
     y_riaz = clin_riaz.loc[non_nan_riaz, 'response']
 
     print("\n==================================================")
-    print("Phase 3: Batch Effect Correction (ComBat)...")
+    print("Phase 3: Cohort-Independent Standardization (Z-score)...")
     print("==================================================")
     
-    from pycombat import Combat
+    # Scale each cohort individually to guarantee zero data leakage
+    sig_corrected_liu = zscore_df(sig_liu)
+    sig_corrected_hugo = zscore_df(sig_hugo)
+    sig_corrected_riaz = zscore_df(sig_riaz)
     
-    # Concatenate signature DataFrames
-    sig_all = pd.concat([sig_liu, sig_hugo, sig_riaz], axis=0)
-    batches = (['liu'] * len(sig_liu)) + (['hugo'] * len(sig_hugo)) + (['riaz'] * len(sig_riaz))
-    
-    # Run ComBat (expects samples as rows, signatures/features as columns)
-    sig_corrected_arr = Combat().fit_transform(sig_all.values, batches)
-    sig_corrected = pd.DataFrame(sig_corrected_arr, index=sig_all.index, columns=sig_all.columns)
-    
-    # Split back into individual cohorts
-    sig_corrected_liu = sig_corrected.iloc[:len(sig_liu)]
-    sig_corrected_hugo = sig_corrected.iloc[len(sig_liu):len(sig_liu)+len(sig_hugo)]
-    sig_corrected_riaz = sig_corrected.iloc[len(sig_liu)+len(sig_hugo):]
+    # Concatenate the standardized signatures for overall scaler fitting
+    sig_corrected = pd.concat([sig_corrected_liu, sig_corrected_hugo, sig_corrected_riaz], axis=0)
     
     cohort_dfs = {
         'Liu 2019': (sig_corrected_liu, y_liu),
@@ -273,12 +276,8 @@ def main():
         sig_tcga = sig_tcga.loc[common_tcga_patients]
         df_tcga_clin = df_tcga_clin.loc[common_tcga_patients]
         
-        # Batch-correct TCGA signatures pooled with Liu, Hugo, Riaz
-        sig_all_tcga = pd.concat([sig_liu, sig_hugo, sig_riaz, sig_tcga], axis=0)
-        batches_tcga = (['liu'] * len(sig_liu)) + (['hugo'] * len(sig_hugo)) + (['riaz'] * len(sig_riaz)) + (['tcga'] * len(sig_tcga))
-        sig_tcga_corrected_arr = Combat().fit_transform(sig_all_tcga.values, batches_tcga)
-        sig_tcga_corrected_df = pd.DataFrame(sig_tcga_corrected_arr, index=sig_all_tcga.index, columns=sig_all_tcga.columns)
-        sig_tcga_corrected = sig_tcga_corrected_df.iloc[len(sig_liu)+len(sig_hugo)+len(sig_riaz):]
+        # Scale TCGA signatures using cohort-independent Z-score scaling
+        sig_tcga_corrected = zscore_df(sig_tcga)
         
         # Train model on all clinical trials pooled
         X_train_full = sig_corrected
