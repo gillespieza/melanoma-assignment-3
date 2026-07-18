@@ -70,6 +70,19 @@ def main():
     _, clin_hugo = load_hugo_2016(DATA_DIR)
     _, clin_riaz = load_riaz_2017(DATA_DIR)
 
+    # Filter trials to response-aligned cohorts (keep CR/PR/PD; drop SD/MR/NaN)
+    RESPONSE_MAP = {
+        "Complete Response": 1,
+        "Partial Response": 1,
+        "Progressive Disease": 0,
+        "Stable Disease": np.nan,
+        "Mixed Response": np.nan,
+    }
+    for df in [clin_liu, clin_hugo, clin_riaz]:
+        df['temp_resp'] = df['RESPONSE'].map(RESPONSE_MAP)
+        df.dropna(subset=['temp_resp'], inplace=True)
+        df.drop(columns=['temp_resp'], inplace=True)
+
     # Load TCGA processed clinical data
     tcga_clin_path = DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018" / "clin_cleaned.csv"
     if not tcga_clin_path.exists():
@@ -77,20 +90,41 @@ def main():
         return
     clin_tcga = pd.read_csv(tcga_clin_path)
     
-    # We need a standard sample ID as index for TCGA
-    clin_tcga = clin_tcga.rename(columns={"SAMPLE_ID": "sample_id"}).set_index("sample_id")
+    # Restore standard uppercase SAMPLE_ID index for TCGA-SKCM
+    if "sample_id" in clin_tcga.columns:
+        clin_tcga = clin_tcga.rename(columns={"sample_id": "SAMPLE_ID"})
+    clin_tcga = clin_tcga.set_index("SAMPLE_ID")
     sample_ids_tcga = clin_tcga.index.tolist()
 
     # Parse TCGA mutations
     raw_tcga_dir = DATA_DIR / "raw" / "skcm_tcga_pan_can_atlas_2018"
     tcga_mut = parse_tcga_mutations(raw_tcga_dir, sample_ids_tcga)
     
-    # Join mutations to TCGA clinical df
+    # Join mutations to TCGA clinical df (avoiding duplicates)
+    for col in ["mut_BRAF", "mut_NRAS", "mut_NF1"]:
+        if col in clin_tcga.columns:
+            clin_tcga = clin_tcga.drop(columns=[col])
     clin_tcga = clin_tcga.join(tcga_mut)
     
     # Save the updated TCGA clinical file to include mutations
     clin_tcga.to_csv(DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018" / "clin_cleaned.csv")
     print("Saved updated TCGA clinical file with mutations added.")
+
+    # Align TCGA-SKCM to patient level and common expression samples
+    tcga_expr_path = DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018" / "expr_cleaned.csv"
+    df_tcga_expr = pd.read_csv(tcga_expr_path, index_col="SAMPLE_ID")
+    
+    clin_tcga.index = clin_tcga.index.str.upper().str[:12]
+    df_tcga_expr.index = df_tcga_expr.index.str.upper().str[:12]
+    
+    clin_tcga = clin_tcga.groupby(clin_tcga.index).first()
+    df_tcga_expr = df_tcga_expr.groupby(df_tcga_expr.index).first()
+    
+    common_tcga = clin_tcga.index.intersection(df_tcga_expr.index)
+    clin_tcga = clin_tcga.loc[common_tcga]
+    # Filter to patients with valid survival data (N=427) to align with baseline reference cohort
+    clin_tcga = clin_tcga.dropna(subset=["OS_MONTHS", "OS_STATUS"])
+    print(f"Aligned TCGA-SKCM cohort: N = {len(clin_tcga)} unique patients with expression and survival data.")
 
     cohorts = {
         "Liu 2019": clin_liu,

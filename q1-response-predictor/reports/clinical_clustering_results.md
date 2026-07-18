@@ -1,3 +1,14 @@
+---
+title:
+aliases: 
+tags: 
+created: 2026-07-16 13:16
+cssclasses: table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-07-18 17:41
+---
+
 # Patient Phenotyping via Clinical & Genomic Clustering
 
 We performed unsupervised phenotyping on the **TCGA-SKCM** cohort ($N = 426$ patients) using Agglomerative Hierarchical Clustering (Ward linkage). Patient profiles were constructed across demographics, tumor genetics, microenvironmental stress, and adjuvant therapy classes.
@@ -30,21 +41,21 @@ The average clinical and genomic values for each patient cluster are detailed be
 Based on the multi-dimensional profiles, the three clusters represent distinct disease states:
 
 1.  **Cluster 0: Baseline Disease / Primary Specimen Phenotype** ($N=312$)
-    *   *Genomics*: Moderate chromosomal instability (aneuploidy score = 13.1) and moderate TMB (24.9 mut/Mb).
-    *   *Microenvironment*: Low-moderate Winter hypoxia score (-2.57).
-    *   *Clinical*: Stage IV rate = 0.0%. Highest rate of primary specimens (19.9%). No immunotherapy (0.0%).
-    *   *Prognosis*: Better overall survival trajectory.
+    *   _Genomics_: Moderate chromosomal instability (aneuploidy score = 13.1) and moderate TMB (24.9 mut/Mb).
+    *   _Microenvironment_: Low-moderate Winter hypoxia score (-2.57).
+    *   _Clinical_: Stage IV rate = 0.0%. Highest rate of primary specimens (19.9%). No immunotherapy (0.0%).
+    *   _Prognosis_: Better overall survival trajectory.
 
 2.  **Cluster 1: High Mutational Load & Immunotherapy Phenotype** ($N=112$)
-    *   *Genomics*: Elevated copy-number alterations (aneuploidy score = 12.9) and the highest mutational load (**TMB = 31.4 mut/Mb**).
-    *   *Microenvironment*: Low-moderate Winter hypoxia score (-1.61).
-    *   *Clinical*: Stage IV rate = 0.0%. Lower primary tumor rate (14.3%). High rate of immunotherapy (63.4%).
-    *   *Prognosis*: Moderate survival trajectory.
+    *   _Genomics_: Elevated copy-number alterations (aneuploidy score = 12.9) and the highest mutational load (**TMB = 31.4 mut/Mb**).
+    *   _Microenvironment_: Low-moderate Winter hypoxia score (-1.61).
+    *   _Clinical_: Stage IV rate = 0.0%. Lower primary tumor rate (14.3%). High rate of immunotherapy (63.4%).
+    *   _Prognosis_: Moderate survival trajectory.
 
 3.  **Cluster 2: Stage IV / Advanced Metastatic Disease Phenotype** ($N=24$)
-    *   *Genomics*: Lower mutational load (TMB = 14.0 mut/Mb) and lowest copy-number alterations (aneuploidy score = 11.8).
-    *   *Clinical*: **100% of these patients have Stage IV disease**. No patients received immunotherapy (0.0%).
-    *   *Prognosis*: Poor overall survival trajectory (Stage IV baseline) (Median Overall Survival = **28.1 months**).
+    *   _Genomics_: Lower mutational load (TMB = 14.0 mut/Mb) and lowest copy-number alterations (aneuploidy score = 11.8).
+    *   _Clinical_: **100% of these patients have Stage IV disease**. No patients received immunotherapy (0.0%).
+    *   _Prognosis_: Poor overall survival trajectory (Stage IV baseline) (Median Overall Survival = **28.1 months**).
 
 ## Cluster Visualisation (2D PCA Projection)
 Below is a 2D PCA projection of the multi-dimensional patient profiles, showing the distinct separation of the three clinical-genomic patient groups. The 'X' markers show the cluster centroids:

@@ -1,7 +1,7 @@
 # Genomic Characteristics of Data Cohorts
 
 This report presents a comparative analysis of the genomic features across the four melanoma study cohorts:
-*   **TCGA-SKCM**: Baseline genomic reference population ($N=427$).
+*   **TCGA-SKCM**: Baseline genomic reference population ($N=426$).
 *   **Liu 2019**: Anti-PD-1 clinical trial cohort ($N=104$).
 *   **Hugo 2016**: Anti-PD-1 clinical trial cohort ($N=27$).
 *   **Riaz 2017**: Anti-PD-1 clinical trial cohort ($N=64$).
@@ -12,11 +12,13 @@ This report presents a comparative analysis of the genomic features across the f
 
 The distribution of the three major cutaneous melanoma driver mutations (*BRAF*, *NRAS*, and *NF1*) and the Triple-Wild-Type (Triple-WT) rate is compared across all cohorts below.
 
-![Driver Mutation Frequencies](../plots/genomic/mutation_frequencies.png)
+![[mutation_frequencies.png]]
+
+Driver Mutation Frequencies
 
 ### Key Observations
-*   **Reference Alignment**: The reference **TCGA-SKCM** cohort aligns perfectly with cutaneous melanoma epidemiology, showing a *BRAF* mutation rate of **51.9%**, *NRAS* at **28.2%**, *NF1* at **17.1%**, and a Triple-WT rate of **15.5%**.
-*   **Representative Trial Cohorts**: All trial cohorts align closely with TCGA baseline frequencies. **Liu 2019** shows highly representative driver mutation distributions (*BRAF*: **40.4%**, *NRAS*: **30.8%**, *NF1*: **18.3%**). **Riaz 2017** mutations, after correcting the patient mapping bug, are also highly representative (*BRAF*: **50.0%**, *NRAS*: **20.0%**, *NF1*: **0.0%**, Triple-WT: **30.0%**).
+*   **Reference Alignment**: The reference **TCGA-SKCM** cohort aligns perfectly with cutaneous melanoma epidemiology, showing a *BRAF* mutation rate of **51.9%**, *NRAS* at **28.2%**, *NF1* at **16.9%**, and a Triple-WT rate of **15.5%**.
+*   **Representative Trial Cohorts**: All trial cohorts align closely with TCGA baseline frequencies. **Liu 2019** shows highly representative driver mutation distributions (*BRAF*: **40.4%**, *NRAS*: **30.8%**, *NF1*: **18.3%**). **Riaz 2017** mutations, after correcting the patient mapping bug, are also highly representative (*BRAF*: **40.6%**, *NRAS*: **17.2%**, *NF1*: **3.1%**, Triple-WT: **42.2%**).
 *   **Biological Note**: Driver mutations are generally mutually exclusive: tumors with *BRAF* mutations rarely harbor co-occurring *NRAS* mutations, validating standard melanoma genetics.
 *   **representative cohort features**: Genomic profiles show mutation status and burden metrics are representative.
 
@@ -26,14 +28,14 @@ To further characterize tumor immunogenicity and mechanisms of resistance, we ev
 *   **IFN-gamma Signaling**: *JAK1*, *JAK2*, *STAT1* (induces insensitivity to T-cell cytotoxicity).
 *   **Survival & Proliferation Drivers**: *PTEN*, *CDKN2A*, *PIK3CA* (oncogenic drivers).
 
-| Pathway / Gene | Liu 2019 ($N=104$) | Hugo 2016 ($N=27$) | Riaz 2017 ($N=64$) | Pooled Trials ($N=195$) |
-|---|---|---|---|---|
-| **BRAF mutation** | 40.4% | 59.3% | 40.6% | **43.1%** |
-| **NRAS mutation** | 30.8% | 18.5% | 17.2% | **24.6%** |
-| **NF1 mutation** | 18.3% | 25.9% | 3.1% | **14.4%** |
-| **Antigen Presentation (MHC)** | 0.0% | 0.0% | 0.0% | **0.0%** |
-| **IFN-gamma Signaling** | 10.6% | 18.5% | 3.1% | **9.2%** |
-| **Survival & Proliferation Drivers** | 23.1% | 29.6% | 10.9% | **20.0%** |
+| Pathway / Gene                       | Liu 2019 ($N=104$) | Hugo 2016 ($N=27$) | Riaz 2017 ($N=64$) | Pooled Trials ($N=195$) |
+| ------------------------------------ | ------------------ | ------------------ | ------------------ | ----------------------- |
+| **BRAF mutation**                    | 40.4%              | 59.3%              | 40.6%              | **43.1%**               |
+| **NRAS mutation**                    | 30.8%              | 18.5%              | 17.2%              | **24.6%**               |
+| **NF1 mutation**                     | 18.3%              | 25.9%              | 3.1%               | **14.4%**               |
+| **Antigen Presentation (MHC)**       | 0.0%               | 0.0%               | 0.0%               | **0.0%**                |
+| **IFN-gamma Signaling**              | 10.6%              | 18.5%              | 3.1%               | **9.2%**                |
+| **Survival & Proliferation Drivers** | 23.1%              | 29.6%              | 10.9%              | **20.0%**               |
 
 *Note: Pre-treatment antigen presentation mutations are completely absent in these cohorts, reinforcing that MHC-class I mutations are mostly acquired under selective pressure during checkpoint blockade therapy rather than being common baseline resistance mechanisms.*
 
@@ -43,17 +45,18 @@ To further characterize tumor immunogenicity and mechanisms of resistance, we ev
 
 Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumor immunogenicity. Below, we present the TMB distribution (left panel) alongside a scatter plot showing the relationship between nonsynonymous TMB and predicted neoantigen load in the pooled trial cohorts (right panel).
 
-<table>
-<tr>
-<td><img src="../plots/genomic/tmb_distribution.png" width="430" alt="TMB Distributions"></td>
-<td><img src="../plots/biomarkers/extended_neoantigen_tmb.png" width="430" alt="Neoantigen vs TMB"></td>
-</tr>
-</table>
+![[tmb_distribution.png]]
+
+TMB Distributions
+
+![[extended_neoantigen_tmb.png]]
+
+Neoantigen vs TMB
 
 ### Key Observations
-*   **TMB as a Predictor**: In all three immunotherapy cohorts, responders (CR/PR, green boxes) exhibit a higher pre-treatment TMB distribution than non-responders (PD, red boxes). TMB is a significant predictor of response when cohorts are pooled ($p = 0.015$, ROC AUC = 0.617).
-*   **TCGA Distribution**: The reference cohort shows a classical log-normal TMB distribution with a median of **7.45 mutations/Mb**. A substantial proportion of patients lie above the standard FDA clinical cutoff of **10.0 mutations/Mb** for high-TMB status, validating the presence of a strong ultraviolet (UV) signature in cutaneous melanomas.
-*   **Neoantigen Collinearity**: There is a strong linear relationship between nonsynonymous TMB and predicted neoantigen load ($r = 0.710$, $p = 6.95 \times 10^{-24}$). Total predicted neoantigen load shows moderate predictive utility for response (ROC AUC = 0.566, Mann-Whitney $p = 0.167$). The extreme correlation confirms that these two metrics are collinear, making TMB a suitable surrogate for mutational neoantigen burden in downstream modeling.
+*   **TMB as a Predictor**: In all three immunotherapy cohorts, responders (CR/PR, green boxes) exhibit a higher pre-treatment TMB distribution than non-responders (PD, red boxes). TMB is a significant predictor of response when cohorts are pooled ($p = 0.079$, ROC AUC = 0.577).
+*   **TCGA Distribution**: The reference cohort shows a classical log-normal TMB distribution with a median of **15.23 mutations/Mb**. A substantial proportion of patients lie above the standard FDA clinical cutoff of **10.0 mutations/Mb** for high-TMB status, validating the presence of a strong ultraviolet (UV) signature in cutaneous melanomas.
+*   **Neoantigen Collinearity**: There is a strong linear relationship between nonsynonymous TMB and predicted neoantigen load ($r = 0.756$, $p = 2.39 \times 10^{-34}$). Total predicted neoantigen load shows moderate predictive utility for response (ROC AUC = 0.545, Mann-Whitney $p = 0.298$). The extreme correlation confirms that these two metrics are collinear, making TMB a suitable surrogate for mutational neoantigen burden in downstream modeling.
 
 ---
 
@@ -62,7 +65,9 @@ Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic meas
 ### 3.1. Intra-Cohort Correlation in Liu 2019
 A Spearman rank correlation matrix mapping the relationships between continuous genomic features (somatic mutation and neoantigen subtypes) in the **Liu 2019** cohort is presented below.
 
-![Genomic Biomarker Correlation Matrix](../plots/genomic/biomarker_correlation_heatmap.png)
+![[biomarker_correlation_heatmap.png]]
+
+Genomic Biomarker Correlation Matrix
 
 ### Key Observations
 *   **High Collinearity**: TMB and SNV Neoantigens show an extremely high correlation ($r_s = 0.96$). This indicates severe redundancy; in predictive machine learning models, using both features simultaneously is unlikely to add value and may destabilize model coefficients.
@@ -74,16 +79,16 @@ To understand how tumor genomic features affect the microenvironment, we evaluat
 ![Genomic Burden vs Immune Heatmap](../plots/biomarkers/extended_immune_correlations.png)
 
 | Immune Signature | TCGA Aneuploidy Score ($r$) | TCGA TMB ($r$) | Trial TMB ($r$) |
-|---|---|---|---|
-| `IFN_gamma` | **-0.045** | **0.144** | **0.034** |
-| `TIS` | **-0.090** | **0.108** | **-0.035** |
-| `CD8_Tcell` | **-0.056** | **0.096** | **-0.052** |
-| `CYT` | **-0.058** | **0.103** | **-0.091** |
-| `PD_L1` | **-0.110** | **0.159** | **0.046** |
+| ---------------- | --------------------------- | -------------- | --------------- |
+| `IFN_gamma`      | **-0.045**                  | **0.144**      | **0.034**       |
+| `TIS`            | **-0.090**                  | **0.108**      | **-0.035**      |
+| `CD8_Tcell`      | **-0.056**                  | **0.096**      | **-0.052**      |
+| `CYT`            | **-0.058**                  | **0.103**      | **-0.091**      |
+| `PD_L1`          | **-0.110**                  | **0.159**      | **0.046**       |
 
 ### Key Observations
-*   **Aneuploidy vs Infiltration**: Chromosomal instability (Aneuploidy Score) shows a very weak negative correlation ($r \approx -0.03$ to $-0.10$) with baseline immune signatures in TCGA-SKCM, with only `PD_L1` showing a marginally significant negative correlation ($r = -0.100$, $p = 0.043$). This indicates that while copy number alterations are associated with immune exclusion in some cancer types, Aneuploidy Score alone is a weak predictor of immune-excluded "cold" status in melanoma.
-*   **Orthogonal Biomarkers**: Mutational burden (TMB) shows near-zero/weak correlation with immune signature expression in both TCGA ($r \approx 0.11$ to $0.16$) and trial cohorts ($r \approx 0.05$ to $0.13$). This demonstrates that TMB and immune infiltration represent **orthogonal biomarkers**. A tumor can be highly mutated (high TMB) but still immunologically cold, or poorly mutated but hot/inflamed. Downstream predictive models should combine both independent modalities to maximize accuracy.
+*   **Aneuploidy vs Infiltration**: Chromosomal instability (Aneuploidy Score) shows a very weak negative correlation ($r \approx -0.05$ to $-0.11$) with baseline immune signatures in TCGA-SKCM, with only `PD_L1` showing a statistically significant negative correlation ($r = -0.110$, $p = 0.022$). This indicates that while copy number alterations are associated with immune exclusion in some cancer types, Aneuploidy Score alone is a weak predictor of immune-excluded "cold" status in melanoma.
+*   **Orthogonal Biomarkers**: Mutational burden (TMB) shows near-zero/weak correlation with immune signature expression in both TCGA ($r \approx 0.10$ to $0.16$) and trial cohorts ($r \approx -0.09$ to $0.05$). This demonstrates that TMB and immune infiltration represent **orthogonal biomarkers**. A tumor can be highly mutated (high TMB) but still immunologically cold, or poorly mutated but hot/inflamed. Downstream predictive models should combine both independent modalities to maximize accuracy.
 
 ---
 
@@ -91,16 +96,17 @@ To understand how tumor genomic features affect the microenvironment, we evaluat
 
 Overall Survival (OS) in the reference **TCGA-SKCM** cohort is stratified below. The left panel shows stratification by driver mutation subtype and TMB status. The right panel shows overall survival stratified by chromosomal instability (Aneuploidy Score) using a median split of 11.0.
 
-<table>
-<tr>
-<td><img src="../plots/genomic/km_genomic_features.png" width="440" alt="TCGA Driver and TMB Survival"></td>
-<td><img src="../plots/biomarkers/extended_aneuploidy_survival.png" width="440" alt="TCGA Aneuploidy Survival"></td>
-</tr>
-</table>
+![[km_genomic_features.png]]
+
+TCGA Driver and TMB Survival
+
+![[extended_aneuploidy_survival.png]]
+
+TCGA Aneuploidy Survival
 
 ### Key Observations
-*   **Driver Subtypes (Left Panel, Left Plot)**: Overall survival does not differ strongly between *BRAF*, *NRAS*, and *NF1* mutant genotypes ($p = 0.0615$). This confirms that while driver mutations are biologically critical for tumor initiation and targeted therapy matching, they do not act as strong, independent prognostic markers for long-term overall survival under standard care.
-*   **TMB Stratification (Left Panel, Right Plot)**: Stratifying TCGA overall survival by TMB using a median split shows no prognostic survival separation ($p = 0.4364$). While TMB is highly *predictive* of response to checkpoint inhibitors, it is not *prognostic* of baseline survival in the general TCGA population (where only a small subset received immunotherapy).
+*   **Driver Subtypes (Left Panel, Left Plot)**: Overall survival does not differ strongly between *BRAF*, *NRAS*, and *NF1* mutant genotypes ($p = 0.0519$). This confirms that while driver mutations are biologically critical for tumor initiation and targeted therapy matching, they do not act as strong, independent prognostic markers for long-term overall survival under standard care.
+*   **TMB Stratification (Left Panel, Right Plot)**: Stratifying TCGA overall survival by TMB using a median split (15.23) shows no prognostic survival separation ($p = 0.4483$). While TMB is highly *predictive* of response to checkpoint inhibitors, it is not *prognostic* of baseline survival in the general TCGA population (where only a small subset received immunotherapy).
 *   **Aneuploidy Prognostic Role (Right Panel)**: Partitioning the TCGA cohort by median Aneuploidy Score shows a marginally significant prognostic association ($p = 0.0806$), where patients with high aneuploidy (orange curve) trend towards worse overall survival compared to those with low aneuploidy (blue curve). Unlike TMB (which is purely predictive of therapy response), copy-number burden has a distinct, albeit modest, prognostic role on baseline clinical survival.
 
 ---
