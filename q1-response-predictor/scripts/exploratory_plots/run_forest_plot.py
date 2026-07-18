@@ -8,36 +8,31 @@ import seaborn as sns
 from pathlib import Path
 from scipy.stats import fisher_exact
 
+# Add project root to sys.path for importing src modules
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
+from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
+
 # Paths
-BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots" / "clinical"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
-sys.path.append(str(BASE_DIR))
-from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
-
 def calculate_odds_ratio(df, col, value_exposed, value_unexposed):
-    # Filter out missing
     temp = df[[col, 'response']].dropna()
     if len(temp) == 0:
         return None
-    
-    # 2x2 contingency table:
-    #             Responder (1)  Non-responder (0)
-    # Exposed          A                B
-    # Unexposed        C                D
     
     A = len(temp[(temp[col] == value_exposed) & (temp['response'] == 1.0)])
     B = len(temp[(temp[col] == value_exposed) & (temp['response'] == 0.0)])
     C = len(temp[(temp[col] == value_unexposed) & (temp['response'] == 1.0)])
     D = len(temp[(temp[col] == value_unexposed) & (temp['response'] == 0.0)])
     
-    # Fisher exact p-value
     table = [[A, B], [C, D]]
     _, p_val = fisher_exact(table)
     
-    # Haldane-Anscombe correction if any cell is 0
     if A == 0 or B == 0 or C == 0 or D == 0:
         A_c, B_c, C_c, D_c = A + 0.5, B + 0.5, C + 0.5, D + 0.5
     else:
@@ -144,13 +139,12 @@ def main():
         or_val = row['OR']
         
         if is_sig:
-            color = '#2b8cbe' if or_val > 1.0 else '#e05a47' # Blue for beneficial/protective, red for risk
+            color = '#2b8cbe' if or_val > 1.0 else '#e05a47'
             weight = 'bold'
         else:
-            color = '#777777' # Grey for non-significant
+            color = '#777777'
             weight = 'normal'
             
-        # Draw error bar (confidence interval) and square marker (point estimate)
         ax.errorbar(
             x=or_val, y=i, 
             xerr=[[max(0.01, or_val - row['CI_lower'])], [max(0.01, row['CI_upper'] - or_val)]], 

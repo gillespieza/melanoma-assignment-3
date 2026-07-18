@@ -10,7 +10,7 @@ import seaborn as sns
 from pathlib import Path
 
 # Paths
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots" / "genomic"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)

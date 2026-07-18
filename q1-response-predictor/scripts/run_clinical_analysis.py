@@ -15,7 +15,7 @@ from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test
 
 # ── Paths ────────────────────────────────────────────────────────────────────
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots" / "clinical"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)

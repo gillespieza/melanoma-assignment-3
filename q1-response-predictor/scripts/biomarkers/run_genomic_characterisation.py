@@ -9,14 +9,17 @@ from pathlib import Path
 from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test, multivariate_logrank_test
 
+# Add project root to sys.path for importing src modules
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
+from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
+
 # Paths
-BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots" / "genomic"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
-
-sys.path.append(str(BASE_DIR))
-from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 
 def parse_tcga_mutations(raw_dir: Path, sample_ids: list) -> pd.DataFrame:
     mut_path = raw_dir / "data_mutations.txt"
@@ -195,7 +198,7 @@ def main():
             _, p_val = mannwhitneyu(resp, non_resp)
             p_text = f"p = {p_val:.4f}" if p_val >= 0.0001 else "p < 0.0001"
             axes[0].text(idx, axes[0].get_ylim()[1] * 0.3, p_text, ha='center', va='bottom', 
-                         color='black', fontweight='semibold', fontsize=10, bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8, edgecolor='gray'))
+                          color='black', fontweight='semibold', fontsize=10, bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8, edgecolor='gray'))
 
     # Right Panel: TCGA-SKCM TMB Continuous Distribution
     tcga_tmb = clin_tcga["TMB_NONSYNONYMOUS"].dropna()

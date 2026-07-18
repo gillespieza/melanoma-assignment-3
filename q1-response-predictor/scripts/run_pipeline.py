@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,6 +8,11 @@ from pathlib import Path
 # Set matplotlib backend to Agg to avoid GUI errors
 import matplotlib
 matplotlib.use('Agg')
+
+# Add project root to sys.path for importing src modules
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
 
 from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 from src.signatures import extract_all_signatures
@@ -26,7 +32,6 @@ def zscore_df(df):
     return (df - means) / stds
 
 # Paths
-BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)

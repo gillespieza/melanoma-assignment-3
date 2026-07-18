@@ -12,7 +12,7 @@ from sklearn.metrics import roc_auc_score
 from pycombat import Combat
 
 # Paths
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 
 sys.path.append(str(BASE_DIR))

@@ -1,11 +1,16 @@
 import shutil
+import sys
 from pathlib import Path
+
+# Add project root to sys.path for importing src modules
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
 
 # Import utility helpers
 from src.utils.io import download_file, extract_tar_gz
 
 # Base directories
-BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 

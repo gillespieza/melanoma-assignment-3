@@ -1,13 +1,18 @@
 import numpy as np
 import pandas as pd
+import sys
 from pathlib import Path
 from typing import Optional
+
+# Add project root to sys.path for importing src modules
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
 
 # Import cleaning and utility functions from the modular utils package
 from src.utils.preprocessing import clean_clinical_df, clean_rnaseq_df, align_expression_and_clinical
 
 # Base directories
-BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
@@ -284,7 +289,6 @@ def clean_riaz_2017() -> None:
         patient_prefix="riaz_",
         sample_prefix="riaz_"
     )
-
 
 
 def clean_tcga_skcm() -> None:
