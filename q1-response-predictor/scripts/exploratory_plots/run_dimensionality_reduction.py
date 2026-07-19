@@ -348,7 +348,7 @@ def main():
     
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("# Batch Effect Assessment & Dimensionality Reduction Analysis\n\n")
-        f.write("When combining transcriptomic datasets across independent clinical studies, technical variations (e.g. sequencing platforms, RNA extraction methods, and library preparation) typically dominate the biological signals. This report documents how technical batch effects were identified and corrected across our melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) and whether global expression profiles separate patients based on therapeutic response. Plot aesthetics and palettes are aligned with the Nature Publishing Group (NPG) color guidelines used across other reports.\n\n")
+        f.write("When combining transcriptomic datasets across independent clinical studies, technical variations (e.g. sequencing platforms, RNA extraction methods, and library preparation) typically dominate the biological signals. This report documents how technical batch effects were identified and corrected across our melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) and whether global expression profiles separate patients based on therapeutic response. Plot aesthetics and palettes are aligned with the Okabe-Ito (Cell / Nature / Science Gold Standard) color guidelines used across other reports.\n\n")
         
         f.write("## 1. Full Cohort Batch Assessment (N = 697)\n\n")
         f.write("To evaluate overall batch effects across all samples, we performed a Principal Component Analysis (PCA) on the common intersected high-variance genes (**559 genes**) across the $N=697$ patients in the full merged cohort, comparing the uncorrected concatenated matrix against the individually Z-score standardized matrix.\n\n")
@@ -367,8 +367,8 @@ def main():
         f.write("![[umap_dimensionality_reduction.png]]\n\n")
         
         f.write("### Key Observations\n")
-        f.write("*   **Batch Mixing**: In both PCA and UMAP, the uncorrected projections (top row) show distinct cohort clustering. Individual Z-scoring (bottom row) resolves these batch effects completely, causing navy (Liu), teal (Hugo), and red (Riaz) points to mix homogeneously.\n")
-        f.write("*   **Global Response Overlap**: In both projections (colored by response in the right columns), responders (CR/PR, green) and non-responders (PD, red) exhibit complete overlap. No distinct boundaries or sub-clusters separate the two response groups.\n")
+        f.write("*   **Batch Mixing**: In both PCA and UMAP, the uncorrected projections (top row) show distinct cohort clustering. Individual Z-scoring (bottom row) resolves these batch effects completely, causing blue (Liu 2019), orange (Hugo 2016), and reddish purple (Riaz 2017) points to mix homogeneously.\n")
+        f.write("*   **Global Response Overlap**: In both projections (colored by response in the right columns), responders (CR/PR, bluish green) and non-responders (PD, vermillion red) exhibit complete overlap. No distinct boundaries or sub-clusters separate the two response groups.\n")
         f.write("*   **Biological Implication**: Immunotherapy response is **not** driven by a single dominant axis of high-level transcriptomic variance (which PCA and UMAP capture). Response is a complex, multi-factorial phenotype that relies on specific immunogenic and microenvironmental pathways. Consequently, simple global clustering is insufficient, and more sophisticated, targeted machine learning classifiers (or pathway-specific signatures) are required to predict patient outcomes.\n\n")
         
         f.write("## 3. Cross-Validation Rigor & Data Leakage Prevention\n\n")

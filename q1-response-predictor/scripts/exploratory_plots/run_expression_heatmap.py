@@ -202,12 +202,12 @@ To evaluate batch correction at the individual gene level, we selected the **top
 
 ### Key Observations
 *   **Before Batch Correction (Raw log2-TPM)**:
-    *   **Cohort Segregation**: The patient columns cluster heavily by cohort source. The **Riaz 2017** cohort (red annotation bar) and **Hugo 2016** cohort (teal annotation bar) are almost completely partitioned from **Liu 2019** (navy annotation bar), indicating that systemic scale differences across studies skew patient clustering.
+    *   **Cohort Segregation**: The patient columns cluster heavily by cohort source. The **Riaz 2017** cohort (reddish purple annotation bar) and **Hugo 2016** cohort (orange annotation bar) are almost completely partitioned from **Liu 2019** (blue annotation bar), indicating that systemic scale differences across studies skew patient clustering.
     *   **Gene-Level Offsets**: Clear horizontal bands of elevated or suppressed baseline expression are visible across cohorts for specific genes, illustrating study-specific calibration differences.
 *   **After Batch Correction (Individual Z-scoring)**:
     *   **Perfect Cohort Mixing**: After individually standardizing each study, the cohort annotation bars are distributed randomly across the patient dendrogram, confirming that baseline study-specific calibration offsets have been successfully aligned.
     *   **Biological Subgroups**: The hierarchical clustering now groups patients by shared relative gene expression patterns (e.g., core co-expressed gene modules) rather than study of origin.
-    *   **No Response Clustering**: Responders (teal column bar) and non-responders (red column bar) remain mixed throughout the patient dendrogram, verifying that global high-variance gene expression does not cleanly partition patients by immunotherapy response.
+    *   **No Response Clustering**: Responders (bluish green column bar) and non-responders (vermillion red column bar) remain mixed throughout the patient dendrogram, verifying that global high-variance gene expression does not cleanly partition patients by immunotherapy response.
 """
 
     # We append the heatmap section before the CV rigor section (which is Section 3 in the old report, let's make CV rigor Section 4)
