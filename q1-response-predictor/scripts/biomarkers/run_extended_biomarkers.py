@@ -483,7 +483,7 @@ def main():
     
     models = {
         'Logistic Regression (LR)': GridSearchCV(
-            LogisticRegression(penalty='l1', solver='liblinear', random_state=42, max_iter=1000),
+            LogisticRegression(solver='liblinear', l1_ratio=1.0, random_state=42, max_iter=1000),
             param_grid={'C': [0.01, 0.1, 1, 10, 100]}, cv=3, scoring='roc_auc'
         ),
         'Random Forest (RF)': GridSearchCV(
@@ -502,7 +502,7 @@ def main():
             cv=3, scoring='roc_auc'
         ),
         'Elastic-Net': GridSearchCV(
-            LogisticRegression(penalty='elasticnet', solver='saga', random_state=42, max_iter=5000),
+            LogisticRegression(solver='saga', random_state=42, max_iter=5000),
             param_grid={'C': [0.01, 0.1, 1, 10], 'l1_ratio': [0.1, 0.5, 0.9]},
             cv=3, scoring='roc_auc'
         )

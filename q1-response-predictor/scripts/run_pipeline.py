@@ -475,7 +475,7 @@ def main():
     svm_final = SVC(probability=True, random_state=42, C=1.0)
     svm_final.fit(X_train_final_scaled, y_train_final)
     
-    elasticnet_final = LogisticRegression(penalty='elasticnet', solver='saga', l1_ratio=0.5, C=1.0, random_state=42, max_iter=2000)
+    elasticnet_final = LogisticRegression(solver='saga', l1_ratio=0.5, C=1.0, random_state=42, max_iter=2000)
     elasticnet_final.fit(X_train_final_scaled, y_train_final)
     
     with open(models_dir / "final_rf_model.pkl", "wb") as f:

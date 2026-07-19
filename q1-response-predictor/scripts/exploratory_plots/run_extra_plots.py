@@ -137,7 +137,7 @@ def main():
     sig_scaled = pd.DataFrame(scaler.fit_transform(sig_corrected), columns=sig_corrected.columns, index=sig_corrected.index)
     
     # Fit standard Logistic Regression
-    lr = LogisticRegression(penalty=None, max_iter=1000)
+    lr = LogisticRegression(C=1e12, max_iter=1000)
     lr.fit(sig_scaled, y_all)
     
     beta = lr.coef_[0]

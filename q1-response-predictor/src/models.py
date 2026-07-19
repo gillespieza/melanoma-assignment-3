@@ -15,7 +15,7 @@ def tune_logistic_regression(X_train, y_train):
     param_grid = {
         'C': [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
     }
-    lr = LogisticRegression(penalty='l1', solver='liblinear', random_state=42, max_iter=1000)
+    lr = LogisticRegression(solver='liblinear', l1_ratio=1.0, random_state=42, max_iter=1000)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(lr, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
@@ -78,7 +78,7 @@ def tune_elasticnet(X_train, y_train):
         'C': [0.001, 0.01, 0.1, 1.0, 10.0],
         'l1_ratio': [0.1, 0.3, 0.5, 0.7, 0.9]
     }
-    lr = LogisticRegression(penalty='elasticnet', solver='saga', random_state=42, max_iter=2000)
+    lr = LogisticRegression(solver='saga', random_state=42, max_iter=2000)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(lr, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
