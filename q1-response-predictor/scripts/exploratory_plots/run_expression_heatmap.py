@@ -97,15 +97,14 @@ def main():
     # Map response label
     clin_merged['Response'] = clin_merged['response'].map({1.0: "Responder (CR/PR)", 0.0: "Non-responder (PD)"})
 
-    # Nature Publishing Group (NPG) Palette definitions
-    colors_cohort = {
-        'Liu 2019': '#3C5488',   # NPG Navy
-        'Hugo 2016': '#00A087',  # NPG Teal
-        'Riaz 2017': '#DC0000'   # NPG Red
-    }
+    from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+
+    set_presentation_style()
+
+    colors_cohort = COHORT_PALETTE
     colors_response = {
-        'Responder (CR/PR)': '#00A087',      # NPG Teal/Green (Positive response)
-        'Non-responder (PD)': '#DC0000'      # NPG Red (Negative response)
+        'Responder (CR/PR)': RESPONSE_PALETTE['CR/PR'],
+        'Non-responder (PD)': RESPONSE_PALETTE['PD']
     }
 
     # Setup column annotations (Cohort & Response)
@@ -115,13 +114,13 @@ def main():
 
     # Define legend elements
     legend_elements = [
-        Patch(facecolor='#3C5488', label='Liu 2019'),
-        Patch(facecolor='#00A087', label='Hugo 2016'),
-        Patch(facecolor='#DC0000', label='Riaz 2017'),
+        Patch(facecolor=COHORT_PALETTE['Liu 2019'], label='Liu 2019'),
+        Patch(facecolor=COHORT_PALETTE['Hugo 2016'], label='Hugo 2016'),
+        Patch(facecolor=COHORT_PALETTE['Riaz 2017'], label='Riaz 2017'),
         # Spacer
         Patch(facecolor='white', edgecolor='none', label=''),
-        Patch(facecolor='#00A087', label='Responder (CR/PR)'),
-        Patch(facecolor='#DC0000', label='Non-responder (PD)')
+        Patch(facecolor=RESPONSE_PALETTE['CR/PR'], label='Responder (CR/PR)'),
+        Patch(facecolor=RESPONSE_PALETTE['PD'], label='Non-responder (PD)')
     ]
 
     # 2. IDENTIFY TOP GENES BY VARIANCE
