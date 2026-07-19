@@ -21,61 +21,18 @@ DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots" / "genomic"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
-def parse_cohort_mutations(raw_dir: Path, target_genes: list, sample_ids: list, map_to_patient: bool = False, patient_id_map: dict = None) -> pd.DataFrame:
-    mut_path = raw_dir / "data_mutations.txt"
-    if not mut_path.exists():
-        print(f"Warning: mutation file not found in {raw_dir}")
+def load_processed_mutations(mutations_file: Path, target_genes: list, sample_ids: list) -> pd.DataFrame:
+    if not mutations_file.exists():
+        print(f"Warning: mutation file not found in {mutations_file}")
         return pd.DataFrame(0, index=sample_ids, columns=target_genes)
         
-    df_mut = pd.read_csv(mut_path, sep="\t", comment="#", low_memory=False)
-    df_mut = df_mut[df_mut['Hugo_Symbol'].isin(target_genes)]
-    
-    # Filter for non-silent somatic mutations
-    non_silent = [
-        "Frame_Shift_Del", "Frame_Shift_Ins", "In_Frame_Del", "In_Frame_Ins",
-        "Missense_Mutation", "Nonsense_Mutation", "Splice_Site",
-        "Translation_Start_Site", "Nonstop_Mutation"
-    ]
-    df_mut = df_mut[df_mut['Variant_Classification'].isin(non_silent)]
-    
-    pivoted = df_mut.pivot_table(
-        index='Tumor_Sample_Barcode', 
-        columns='Hugo_Symbol', 
-        values='Entrez_Gene_Id', 
-        aggfunc='count'
-    ).fillna(0).astype(int)
-    
+    df_mut = pd.read_csv(mutations_file, index_col="SAMPLE_ID")
     for g in target_genes:
-        if g not in pivoted.columns:
-            pivoted[g] = 0
+        if g not in df_mut.columns:
+            df_mut[g] = 0
             
-    pivoted = pivoted[target_genes].copy()
-    
-    # Standardise index case and prefix to align with cleaned clinical IDs
-    dir_name = raw_dir.name.lower()
-    if "liu" in dir_name:
-        pivoted.index = pivoted.index.str.upper()
-    elif "hugo" in dir_name:
-        pivoted.index = "HUGO_" + pivoted.index.str.upper()
-    elif "riaz" in dir_name:
-        pivoted.index = "RIAZ_" + pivoted.index.str.upper()
-    
-    if map_to_patient:
-        # For Riaz: standardise index (e.g. RIAZ_PT3_PRE -> RIAZ_PT3) to map to clinical patient_id
-        pivoted.index = pivoted.index.map(lambda x: "_".join(x.split("_")[:2]) if isinstance(x, str) else x)
-        pivoted = pivoted.groupby(pivoted.index).max()
-        
-        # Map patient-level mutations back to sample index
-        mut_mapped = pd.DataFrame(0, index=sample_ids, columns=target_genes)
-        for sample_id in sample_ids:
-            p_id = patient_id_map.get(sample_id)
-            if p_id in pivoted.index:
-                mut_mapped.loc[sample_id] = pivoted.loc[p_id]
-        return mut_mapped
-    else:
-        # Align index directly with sample_ids
-        pivoted = pivoted.reindex(sample_ids, fill_value=0)
-        return pivoted
+    df_mut = (df_mut[target_genes] > 0).astype(int)
+    return df_mut.reindex(sample_ids, fill_value=0)
 
 def main():
     print("==================================================")
@@ -100,14 +57,10 @@ def main():
     target_genes = ['BRAF', 'NRAS', 'NF1', 'CDKN2A', 'PTEN', 'KIT', 'TP53', 'JAK1', 'JAK2', 'B2M']
 
     # Load mutations for each cohort
-    print("Loading and parsing somatic mutation data per cohort...")
-    mut_liu = parse_cohort_mutations(DATA_DIR / "raw/liu_2019", target_genes, clin_liu.index.tolist())
-    mut_hugo = parse_cohort_mutations(DATA_DIR / "raw/hugo_2016", target_genes, clin_hugo.index.tolist())
-    
-    # Riaz requires patient-level mapping (standardised to patient_id)
-    riaz_pid_map = clin_riaz['patient_id'].to_dict()
-    mut_riaz = parse_cohort_mutations(DATA_DIR / "raw/riaz_2017", target_genes, clin_riaz.index.tolist(), 
-                                      map_to_patient=True, patient_id_map=riaz_pid_map)
+    print("Loading somatic mutation data per cohort...")
+    mut_liu = load_processed_mutations(DATA_DIR / "processed/liu_2019/mutations_cleaned.csv", target_genes, clin_liu.index.tolist())
+    mut_hugo = load_processed_mutations(DATA_DIR / "processed/hugo_2016/mutations_cleaned.csv", target_genes, clin_hugo.index.tolist())
+    mut_riaz = load_processed_mutations(DATA_DIR / "processed/riaz_2017/mutations_cleaned.csv", target_genes, clin_riaz.index.tolist())
 
     # Combine clinical metadata
     clin_cols = ['Cohort', 'response', 'TMB_NONSYNONYMOUS', 'SEX', 'patient_id']

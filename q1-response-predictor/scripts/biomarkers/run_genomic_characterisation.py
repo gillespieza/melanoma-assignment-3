@@ -21,44 +21,22 @@ DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots" / "genomic"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
-def parse_tcga_mutations(raw_dir: Path, sample_ids: list) -> pd.DataFrame:
-    mut_path = raw_dir / "data_mutations.txt"
+def load_tcga_mutations(proc_dir: Path, sample_ids: list) -> pd.DataFrame:
+    mut_path = proc_dir / "mutations_cleaned.csv"
+    default_df = pd.DataFrame(0, index=sample_ids, columns=["mut_BRAF", "mut_NRAS", "mut_NF1"])
     if not mut_path.exists():
-        print(f"Warning: TCGA raw mutations file not found at {mut_path}")
-        return pd.DataFrame(index=sample_ids, columns=["mut_BRAF", "mut_NRAS", "mut_NF1"]).fillna(0).astype(int)
-    
-    print("Parsing raw TCGA mutations data (this may take a few seconds)...")
-    chunks = []
-    # Read only needed columns to save memory and time
-    for chunk in pd.read_csv(mut_path, sep="\t", comment="#", low_memory=False, 
-                             usecols=["Hugo_Symbol", "Tumor_Sample_Barcode", "Variant_Classification"], 
-                             chunksize=100000):
-        filtered = chunk[chunk["Hugo_Symbol"].isin(["BRAF", "NRAS", "NF1"])]
-        chunks.append(filtered)
-    
-    df_mut = pd.concat(chunks, ignore_index=True)
-    
-    # Filter for non-synonymous variant classifications
-    non_syn = ["Missense_Mutation", "Nonsense_Mutation", "Frame_Shift_Del",
-               "Frame_Shift_Ins", "In_Frame_Del", "In_Frame_Ins",
-               "Splice_Site", "Nonstop_Mutation", "Translation_Start_Site"]
-    df_mut = df_mut[df_mut["Variant_Classification"].isin(non_syn)]
-    
-    # Map barcodes to standard 15-char sample IDs
-    df_mut["SAMPLE_ID"] = df_mut["Tumor_Sample_Barcode"].apply(lambda x: x[:15] if isinstance(x, str) else "")
-    df_mut = df_mut[df_mut["SAMPLE_ID"].isin(sample_ids)]
-    
-    pivoted = df_mut.groupby(["SAMPLE_ID", "Hugo_Symbol"]).size().unstack(fill_value=0)
+        print(f"Warning: Processed TCGA mutations file not found at {mut_path}")
+        return default_df
+        
+    df_mut = pd.read_csv(mut_path, index_col="SAMPLE_ID")
+    res = pd.DataFrame(index=df_mut.index)
     for gene in ["BRAF", "NRAS", "NF1"]:
-        if gene not in pivoted.columns:
-            pivoted[gene] = 0
+        if gene in df_mut.columns:
+            res[f"mut_{gene}"] = (df_mut[gene] > 0).astype(int)
+        else:
+            res[f"mut_{gene}"] = 0
             
-    pivoted = (pivoted[["BRAF", "NRAS", "NF1"]] > 0).astype(int)
-    pivoted.columns = ["mut_BRAF", "mut_NRAS", "mut_NF1"]
-    
-    # Reindex to include all sample_ids
-    pivoted = pivoted.reindex(sample_ids, fill_value=0)
-    return pivoted
+    return res.reindex(sample_ids, fill_value=0)
 
 def main():
     print("==================================================")
@@ -97,8 +75,8 @@ def main():
     sample_ids_tcga = clin_tcga.index.tolist()
 
     # Parse TCGA mutations
-    raw_tcga_dir = DATA_DIR / "raw" / "skcm_tcga_pan_can_atlas_2018"
-    tcga_mut = parse_tcga_mutations(raw_tcga_dir, sample_ids_tcga)
+    proc_tcga_dir = DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018"
+    tcga_mut = load_tcga_mutations(proc_tcga_dir, sample_ids_tcga)
     
     # Join mutations to TCGA clinical df (avoiding duplicates)
     for col in ["mut_BRAF", "mut_NRAS", "mut_NF1"]:

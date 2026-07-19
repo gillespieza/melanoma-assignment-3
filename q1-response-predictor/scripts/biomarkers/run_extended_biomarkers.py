@@ -63,58 +63,19 @@ def zscore_df(df):
     stds = stds.replace(0, 1.0).fillna(1.0)
     return (df - means) / stds
 
-def parse_cohort_pathway_mutations(raw_dir: Path, target_genes: list, sample_ids: list, map_to_patient: bool = False, patient_id_map: dict = None) -> pd.DataFrame:
-    mut_path = raw_dir / "data_mutations.txt"
-    if not mut_path.exists():
+def load_processed_mutations(mutations_file: Path, target_genes: list, sample_ids: list) -> pd.DataFrame:
+    if not mutations_file.exists():
         return pd.DataFrame(0, index=sample_ids, columns=target_genes)
         
-    df_mut = pd.read_csv(mut_path, sep="\t", comment="#", low_memory=False)
-    df_mut = df_mut[df_mut['Hugo_Symbol'].isin(target_genes)]
+    df_mut = pd.read_csv(mutations_file, index_col="SAMPLE_ID")
     
-    # Filter for non-silent somatic mutations
-    non_silent = [
-        "Frame_Shift_Del", "Frame_Shift_Ins", "In_Frame_Del", "In_Frame_Ins",
-        "Missense_Mutation", "Nonsense_Mutation", "Splice_Site",
-        "Translation_Start_Site", "Nonstop_Mutation"
-    ]
-    df_mut = df_mut[df_mut['Variant_Classification'].isin(non_silent)]
-    
-    pivoted = df_mut.pivot_table(
-        index='Tumor_Sample_Barcode', 
-        columns='Hugo_Symbol', 
-        values='Entrez_Gene_Id', 
-        aggfunc='count'
-    ).fillna(0).astype(int)
-    
+    # Ensure all target genes are in the columns
     for g in target_genes:
-        if g not in pivoted.columns:
-            pivoted[g] = 0
+        if g not in df_mut.columns:
+            df_mut[g] = 0
             
-    pivoted = (pivoted[target_genes] > 0).astype(int)
-    
-    # Standardise index case and prefix to align with cleaned clinical IDs
-    dir_name = raw_dir.name.lower()
-    if "liu" in dir_name:
-        pivoted.index = pivoted.index.str.upper()
-    elif "hugo" in dir_name:
-        pivoted.index = "HUGO_" + pivoted.index.str.upper()
-    elif "riaz" in dir_name:
-        pivoted.index = "RIAZ_" + pivoted.index.str.upper()
-        
-    if map_to_patient:
-        # For Riaz: standardise index (e.g. RIAZ_PT3_PRE -> RIAZ_PT3) to map to clinical patient_id
-        pivoted.index = pivoted.index.map(lambda x: "_".join(x.split("_")[:2]) if isinstance(x, str) else x)
-        pivoted = pivoted.groupby(pivoted.index).max()
-        
-        mut_mapped = pd.DataFrame(0, index=sample_ids, columns=target_genes)
-        for sample_id in sample_ids:
-            p_id = patient_id_map.get(sample_id)
-            if p_id in pivoted.index:
-                mut_mapped.loc[sample_id] = pivoted.loc[p_id]
-        return mut_mapped
-    else:
-        pivoted = pivoted.reindex(sample_ids, fill_value=0)
-        return pivoted
+    df_mut = (df_mut[target_genes] > 0).astype(int)
+    return df_mut.reindex(sample_ids, fill_value=0)
 
 def main():
     print("==================================================")
@@ -220,10 +181,9 @@ def main():
 
     # Load somatic pathway mutations across all 3 trials
     pathway_genes = ['B2M', 'TAP1', 'TAP2', 'JAK1', 'JAK2', 'STAT1', 'PTEN', 'CDKN2A', 'PIK3CA', 'BRAF', 'NRAS', 'NF1']
-    mut_liu = parse_cohort_pathway_mutations(DATA_DIR / "raw/liu_2019", pathway_genes, df_liu_clin.index.tolist())
-    mut_hugo = parse_cohort_pathway_mutations(DATA_DIR / "raw/hugo_2016", pathway_genes, df_hugo_clin.index.tolist())
-    mut_riaz = parse_cohort_pathway_mutations(DATA_DIR / "raw/riaz_2017", pathway_genes, df_riaz_clin.index.tolist(), 
-                                             map_to_patient=True, patient_id_map=df_riaz_clin['patient_id'].to_dict())
+    mut_liu = load_processed_mutations(DATA_DIR / "processed/liu_2019/mutations_cleaned.csv", pathway_genes, df_liu_clin.index.tolist())
+    mut_hugo = load_processed_mutations(DATA_DIR / "processed/hugo_2016/mutations_cleaned.csv", pathway_genes, df_hugo_clin.index.tolist())
+    mut_riaz = load_processed_mutations(DATA_DIR / "processed/riaz_2017/mutations_cleaned.csv", pathway_genes, df_riaz_clin.index.tolist())
 
     # Map mutation columns to clinical dataframes
     for col in pathway_genes:

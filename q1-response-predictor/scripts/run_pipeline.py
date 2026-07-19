@@ -36,60 +36,16 @@ DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots" / "models"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
-def parse_hugo_mutations(df_meta):
+def extract_driver_mutations(df_meta):
     """
-    Returns BRAF, NRAS, NF1 mutation status from Hugo 2016 clinical metadata.
-    Columns mut_BRAF, mut_NRAS, mut_NF1 are pre-parsed by clean_data.py from the MAF file.
+    Returns BRAF, NRAS, NF1 mutation status from pre-cleaned clinical metadata.
+    Columns mut_BRAF, mut_NRAS, mut_NF1 are pre-joined from mutations_cleaned.csv by the data loader.
     """
     df = df_meta.copy()
     for col in ['mut_BRAF', 'mut_NRAS', 'mut_NF1']:
         if col not in df.columns:
             df[col] = 0
     return df[['mut_BRAF', 'mut_NRAS', 'mut_NF1']]
-
-def parse_liu_mutations(data_dir, patient_ids):
-    """
-    Parses BRAF, NRAS, NF1 mutation status from Liu 2019 data_mutations.txt.
-    """
-    mut_file = Path(data_dir) / "raw/liu_2019/data_mutations.txt"
-    clin_sample_file = Path(data_dir) / "raw/liu_2019/data_clinical_sample.txt"
-    
-    # cBioPortal mutations file
-    df_mut = pd.read_csv(mut_file, sep="\t")
-    
-    # We need to map Tumor_Sample_Barcode to PATIENT_ID
-    df_sample = pd.read_csv(clin_sample_file, sep="\t", skiprows=4)
-    sample_to_patient = df_sample.set_index("SAMPLE_ID")["PATIENT_ID"].to_dict()
-    
-    # Map mutations to Patient ID
-    df_mut['patient_id'] = df_mut['Tumor_Sample_Barcode'].map(sample_to_patient)
-    
-    # Filter for non-silent mutations
-    non_silent = [
-        "Frame_Shift_Del", "Frame_Shift_Ins", "In_Frame_Del", "In_Frame_Ins",
-        "Missense_Mutation", "Nonsense_Mutation", "Splice_Site",
-        "Translation_Start_Site", "Nonstop_Mutation"
-    ]
-    df_mut = df_mut[df_mut['Variant_Classification'].isin(non_silent)]
-    
-    # Pivot to sample x gene mutation matrix
-    df_mut_wide = df_mut.pivot_table(
-        index='patient_id', 
-        columns='Hugo_Symbol', 
-        values='Entrez_Gene_Id', 
-        aggfunc='count'
-    ).fillna(0).astype(int)
-    
-    # Reindex to match patient_ids
-    df_mut_wide = df_mut_wide.reindex(patient_ids, fill_value=0)
-    
-    # Extract BRAF, NRAS, NF1
-    df_out = pd.DataFrame(index=patient_ids)
-    df_out['mut_BRAF'] = (df_mut_wide['BRAF'] > 0).astype(int) if 'BRAF' in df_mut_wide.columns else 0
-    df_out['mut_NRAS'] = (df_mut_wide['NRAS'] > 0).astype(int) if 'NRAS' in df_mut_wide.columns else 0
-    df_out['mut_NF1'] = (df_mut_wide['NF1'] > 0).astype(int) if 'NF1' in df_mut_wide.columns else 0
-    
-    return df_out
 
 def main():
     print("==================================================")
@@ -319,14 +275,8 @@ def main():
     print("==================================================")
     
     # Get mutation status
-    mut_hugo = parse_hugo_mutations(clin_hugo.loc[sig_hugo.index])
-    # Liu patient clinical has PATIENT_ID, we need to map SAMPLE_ID to PATIENT_ID
-    # In Liu loader, we merged on PATIENT_ID but kept SAMPLE_ID as index of df_expr (sig_corrected_liu)
-    # Let's get the patient IDs for sig_corrected_liu
-    liu_patients = clin_liu.loc[sig_liu.index, 'PATIENT_ID']
-    mut_liu = parse_liu_mutations(DATA_DIR, liu_patients)
-    # Reset index to match SAMPLE_ID
-    mut_liu.index = sig_liu.index
+    mut_hugo = extract_driver_mutations(clin_hugo.loc[sig_hugo.index])
+    mut_liu = extract_driver_mutations(clin_liu.loc[sig_liu.index])
     
     # Combine sig + mutations
     comb_liu = pd.concat([sig_corrected_liu, mut_liu], axis=1)

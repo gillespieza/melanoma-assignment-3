@@ -24,43 +24,26 @@ PLOT_DIR = BASE_DIR / "plots"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
 
+from src.data_loaders import load_liu_2019
+
 def main():
     print("==================================================")
     print("Generating Co-Mutation (Oncoplot) for Liu 2019...")
     print("==================================================")
     
     # 1. Load Clinical & Mutation data
-    clin_path = DATA_DIR / "processed/liu_2019/clin_cleaned.csv"
-    mut_path = DATA_DIR / "raw/liu_2019/data_mutations.txt"
-    clin_sample_file = DATA_DIR / "raw/liu_2019/data_clinical_sample.txt"
-    
-    if not (clin_path.exists() and mut_path.exists() and clin_sample_file.exists()):
-        print("Error: Required raw/processed files for Liu 2019 not found.")
+    mut_path = DATA_DIR / "processed/liu_2019/mutations_cleaned.csv"
+    try:
+        _, df_clin = load_liu_2019(DATA_DIR)
+    except Exception as e:
+        print(f"Error loading Liu 2019 clinical data: {e}")
         return
         
-    df_clin = pd.read_csv(clin_path, index_col=0)
-    df_mut = pd.read_csv(mut_path, sep="\t", low_memory=False)
-    df_sample_map = pd.read_csv(clin_sample_file, sep="\t", skiprows=4)
-    
-    # Map mutations to Patient ID
-    sample_to_patient = df_sample_map.set_index("SAMPLE_ID")["PATIENT_ID"].to_dict()
-    df_mut['patient_id'] = df_mut['Tumor_Sample_Barcode'].map(sample_to_patient)
-    
-    # Filter for non-silent somatic mutations
-    non_silent = [
-        "Frame_Shift_Del", "Frame_Shift_Ins", "In_Frame_Del", "In_Frame_Ins",
-        "Missense_Mutation", "Nonsense_Mutation", "Splice_Site",
-        "Translation_Start_Site", "Nonstop_Mutation"
-    ]
-    df_mut = df_mut[df_mut['Variant_Classification'].isin(non_silent)]
-    
-    # Pivot mutation table
-    df_mut_wide = df_mut.pivot_table(
-        index='patient_id', 
-        columns='Hugo_Symbol', 
-        values='Entrez_Gene_Id', 
-        aggfunc='count'
-    ).fillna(0).astype(int)
+    if not mut_path.exists():
+        print("Error: Required processed mutations file for Liu 2019 not found.")
+        return
+        
+    df_mut = pd.read_csv(mut_path, index_col=0)
     
     # Select target genes (10 drivers + 20 signature genes)
     driver_genes = ['BRAF', 'NRAS', 'NF1', 'CDKN2A', 'PTEN', 'JAK1', 'JAK2', 'B2M', 'TAP1', 'TAP2']
@@ -71,17 +54,13 @@ def main():
     ]
     target_genes = driver_genes + signature_genes
     
-    # Ensure all target genes are in the columns
-    for g in target_genes:
-        if g not in df_mut_wide.columns:
-            df_mut_wide[g] = 0
-            
-    df_mut_target = df_mut_wide[target_genes].copy()
-    
     # Map back to sample IDs in df_clin
     df_clin_mut = df_clin.copy()
     for g in target_genes:
-        df_clin_mut[f'mut_{g}'] = df_clin_mut['PATIENT_ID'].map(df_mut_target[g]).fillna(0).astype(int)
+        if g in df_mut.columns:
+            df_clin_mut[f'mut_{g}'] = df_clin_mut.index.map(df_mut[g]).fillna(0).astype(int)
+        else:
+            df_clin_mut[f'mut_{g}'] = 0
         
     # Filter/align patients with clinical data (excluding any missing response if necessary)
     df_clin_mut = df_clin_mut.dropna(subset=['response'])
@@ -108,8 +87,8 @@ def main():
     
     # Bottom tracks: Response, CNA proportion, Sex
     response_vals = df_clin_mut_sorted['response'].values
-    cna_vals = df_clin_mut_sorted['CNA_PROP'].fillna(0).values
-    sex_vals = df_clin_mut_sorted['SEX'].map({'Male': 1, 'Female': 0}).fillna(-1).values
+    cna_vals = df_clin_mut_sorted['CNA_PROP'].fillna(0).values if 'CNA_PROP' in df_clin_mut_sorted.columns else np.zeros(len(df_clin_mut_sorted))
+    sex_vals = df_clin_mut_sorted['SEX'].map({'Male': 1, 'Female': 0}).fillna(-1).values if 'SEX' in df_clin_mut_sorted.columns else np.zeros(len(df_clin_mut_sorted))
     
     # ==========================================
     # 4. Draw the Co-Mutation Plot

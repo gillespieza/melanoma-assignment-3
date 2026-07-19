@@ -10,7 +10,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
 # Import cleaning and utility functions from the modular utils package
-from src.utils.preprocessing import clean_clinical_df, clean_rnaseq_df, align_expression_and_clinical
+from src.utils.preprocessing import clean_clinical_df, clean_rnaseq_df, align_expression_and_clinical, standardise_sample_id
 
 # Base directories
 DATA_DIR = BASE_DIR / "data"
@@ -438,6 +438,21 @@ def clean_tcga_skcm() -> None:
     # Save cleaned
     cleaned_clin_df.to_csv(proc_dir / "clin_cleaned.csv", index=False)
     cleaned_rnaseq_df.to_csv(proc_dir / "expr_cleaned.csv", index=False)
+    
+    # Parse somatic mutations for TCGA-SKCM if available
+    mut_path = raw_dir / MUT_FILE
+    if mut_path.exists():
+        print("  Parsing TCGA somatic mutations...")
+        df_mut = parse_maf_mutations(raw_dir)
+        if not df_mut.empty:
+            df_mut.index = df_mut.index.map(standardise_sample_id)
+            df_mut_final = df_mut.groupby(df_mut.index).max()
+            tcga_sample_ids = cleaned_clin_df["SAMPLE_ID"].tolist() if "SAMPLE_ID" in cleaned_clin_df.columns else cleaned_clin_df.index.tolist()
+            df_mut_final = df_mut_final.reindex(tcga_sample_ids, fill_value=0)
+            df_mut_final.index.name = "SAMPLE_ID"
+            df_mut_final.to_csv(proc_dir / "mutations_cleaned.csv")
+            print(f"  TCGA-SKCM: Cleaned mutations written to {proc_dir / 'mutations_cleaned.csv'}")
+
     print(f"  TCGA-SKCM: Cleaned {len(cleaned_clin_df)} samples. Integrated and tidied treatment data fields (PATIENT_ID is first).")
 
 
