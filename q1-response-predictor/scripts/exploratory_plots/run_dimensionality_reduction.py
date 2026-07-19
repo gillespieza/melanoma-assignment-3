@@ -68,27 +68,23 @@ def main():
     expr_riaz = expr_riaz[common_genes]
 
     # Cohort tags
-    clin_tcga['Cohort'] = 'TCGA'
+    clin_tcga['Cohort'] = 'TCGA-SKCM'
     clin_liu['Cohort'] = 'Liu 2019'
     clin_hugo['Cohort'] = 'Hugo 2016'
     clin_riaz['Cohort'] = 'Riaz 2017'
 
-    # Nature Publishing Group (NPG) Palette definitions
-    colors_cohort = {
-        'TCGA': '#4DBBD5',       # NPG Cyan/Light Blue
-        'Liu 2019': '#3C5488',   # NPG Navy
-        'Hugo 2016': '#00A087',  # NPG Teal
-        'Riaz 2017': '#DC0000'   # NPG Red
-    }
-    cohort_order = ['TCGA', 'Liu 2019', 'Hugo 2016', 'Riaz 2017']
+    from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+
+    set_presentation_style()
+
+    colors_cohort = COHORT_PALETTE
+    cohort_order = ['TCGA-SKCM', 'Liu 2019', 'Hugo 2016', 'Riaz 2017']
 
     colors_response = {
-        'Responder (CR/PR)': '#00A087',      # NPG Teal/Green (Positive response)
-        'Non-responder (PD)': '#DC0000'      # NPG Red (Negative response)
+        'Responder (CR/PR)': RESPONSE_PALETTE['CR/PR'],
+        'Non-responder (PD)': RESPONSE_PALETTE['PD']
     }
     response_order = ['Responder (CR/PR)', 'Non-responder (PD)']
-
-    sns.set_theme(style="whitegrid")
 
     # ==================================================================
     # PART 1: FULL COHORT ANALYSIS (N = 697)
@@ -146,7 +142,7 @@ def main():
         hue='Cohort', hue_order=cohort_order, palette=colors_cohort, style='Cohort',
         alpha=0.8, s=100, edgecolor='w', linewidth=0.8, ax=axes[1]
     )
-    axes[1].set_title("Panel B: After Z-score Standardization (Full Cohort)", fontsize=13, fontweight='bold', pad=10)
+    axes[1].set_title("Panel B: After Z-score Standardisation (Full Cohort)", fontsize=13, fontweight='bold', pad=10)
     axes[1].set_xlabel(f"PC1 ({pca_scaled_full.explained_variance_ratio_[0]*100:.1f}% variance)")
     axes[1].set_ylabel(f"PC2 ({pca_scaled_full.explained_variance_ratio_[1]*100:.1f}% variance)")
     axes[1].grid(True, linestyle="--", alpha=0.5)

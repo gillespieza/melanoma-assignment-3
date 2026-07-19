@@ -1,28 +1,28 @@
 # Project Style & Visualization Guidelines
 
-Whenever generating plots, figures, web artifacts, or presentation reports for this project, always adhere to the project-wide visual style and color palettes defined below.
+Whenever generating plots, figures, web artifacts, or presentation reports for this project, always adhere to the project-wide visual style and Google Material Design color palettes defined below.
 
 ---
 
-## 1. Color Palettes
+## 1. Color Palettes (Google Material Design System)
 
 ### Study Cohorts
-- **Liu 2019**: `#2B5C8F` (Slate Blue)
-- **Hugo 2016**: `#D95F02` (Rust Orange)
-- **Riaz 2017**: `#7570B3` (Purple)
-- **TCGA-SKCM**: `#333333` (Charcoal)
-- **Pooled Trials**: `#1B9E77` (Teal Benchmark)
+- **Liu 2019**: `#1976D2` (Material Blue 700)
+- **Hugo 2016**: `#E65100` (Material Deep Orange 900)
+- **Riaz 2017**: `#673AB7` (Material Deep Purple 500)
+- **TCGA-SKCM**: `#37474F` (Material Blue Grey 800)
+- **Pooled Trials**: `#00796B` (Material Teal 700 Benchmark)
 
 ### Clinical Response & Phenotypes
-- **Responder (CR / PR)**: `#2E7D32` (Forest Green)
-- **Non-Responder (PD)**: `#C62828` (Crimson Red)
-- **Stable Disease (SD)**: `#F57C00` (Amber)
+- **Responder (CR / PR)**: `#2E7D32` (Material Green 800)
+- **Non-Responder (PD)**: `#C62828` (Material Red 800)
+- **Stable Disease (SD)**: `#F57C00` (Material Orange 700)
 
 ### Driver Mutation Subtypes
-- **BRAF**: `#E41A1C` (Red)
-- **NRAS**: `#377EB8` (Blue)
-- **NF1**: `#4DAF4A` (Green)
-- **Triple-WT**: `#984EA3` (Purple)
+- **BRAF**: `#D32F2F` (Material Red 700)
+- **NRAS**: `#0288D1` (Material Light Blue 700)
+- **NF1**: `#388E3C` (Material Green 700)
+- **Triple-WT**: `#7B1FA2` (Material Purple 700)
 
 ---
 
@@ -39,4 +39,3 @@ Whenever generating plots, figures, web artifacts, or presentation reports for t
 ## 3. Language & Spelling Conventions
 
 - **Spelling**: Always use **British English** spelling for all generated text, markdown reports, code docstrings, plot titles, labels, and presentation slide content (e.g., *colour*, *visualisation*, *characterisation*, *tumour*, *analyse*, *modelling*, *centre*).
-
