@@ -369,11 +369,13 @@ def main():
     high_mask = df_tcga_survival['Aneu_Group'].str.startswith('High')
     low_mask = df_tcga_survival['Aneu_Group'].str.startswith('Low')
     
+    from src.styles import COHORT_PALETTE
+
     kmf.fit(df_tcga_survival.loc[low_mask, 'OS_MONTHS'], df_tcga_survival.loc[low_mask, 'os_status_clean'], label=f"Low Aneuploidy (N={low_mask.sum()})")
-    kmf.plot_survival_function(ax=ax, color="#1f77b4", ci_show=False, linewidth=2.5)
+    kmf.plot_survival_function(ax=ax, color=COHORT_PALETTE["Liu 2019"], ci_show=False, linewidth=2.5) # Blue
     
     kmf.fit(df_tcga_survival.loc[high_mask, 'OS_MONTHS'], df_tcga_survival.loc[high_mask, 'os_status_clean'], label=f"High Aneuploidy (N={high_mask.sum()})")
-    kmf.plot_survival_function(ax=ax, color="#ff7f0e", ci_show=False, linewidth=2.5)
+    kmf.plot_survival_function(ax=ax, color=COHORT_PALETTE["Hugo 2016"], ci_show=False, linewidth=2.5) # Orange
     
     lr_res = logrank_test(
         df_tcga_survival.loc[high_mask, 'OS_MONTHS'], df_tcga_survival.loc[low_mask, 'OS_MONTHS'],
