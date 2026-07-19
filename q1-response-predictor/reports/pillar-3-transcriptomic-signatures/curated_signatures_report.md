@@ -210,6 +210,8 @@ To evaluate the predictive power of gene expression signatures when combined wit
 | **Logistic Regression (LR)** | 0.623 (±0.081) | 0.616 (±0.075) | **0.606 (±0.078)** |
 | **Random Forest (RF)** | 0.645 (±0.082) | 0.647 (±0.083) | **0.705 (±0.108)** |
 
+![Multimodal AUC Comparison](../../plots/biomarkers/multimodal_auc_comparison.png)
+
 ### Analysis of Predictor Performance
 1. **Signatures as Baseline**: Continuous transcriptomic signatures alone provide a solid baseline ROC-AUC of **0.623** (LR) and **0.645** (RF), outperforming raw high-dimensional gene selection.
 2. **Impact of Driver Mutations & Sex**: Adding driver mutation status (`BRAF`, `NRAS`, `NF1`) and sex provides slight stabilization in cross-validation performance.

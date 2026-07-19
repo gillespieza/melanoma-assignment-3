@@ -485,6 +485,7 @@ def main():
     }
     
     model_results = []
+    plot_data = []  # Store raw scores for visualisation
     
     for model_name, model in models.items():
         # 1. Base Model (Signatures only)
@@ -507,14 +508,65 @@ def main():
             'Full Extended AUC': f"{scores_full.mean():.3f} (±{scores_full.std():.3f})"
         })
         
+        plot_data.append({
+            'model': model_name,
+            'base_mean': scores_base.mean(), 'base_std': scores_base.std(),
+            'drivers_mean': scores_drivers.mean(), 'drivers_std': scores_drivers.std(),
+            'full_mean': scores_full.mean(), 'full_std': scores_full.std()
+        })
+        
     print("\nModel Cross-Validation AUC Comparison (Pooled Trials):")
     print(pd.DataFrame(model_results).to_string(index=False))
+
+    # --- Grouped Bar Chart: Multimodal AUC Comparison ---
+    set_presentation_style()
+    fig, ax = plt.subplots(figsize=(11, 6))
+    
+    bar_labels = ['Signatures Only', 'Sigs + Drivers + Sex', 'Full Extended\n(Sigs + Drivers + TMB\n+ CNA + Pathways)']
+    x = np.arange(len(bar_labels))
+    bar_width = 0.32
+    
+    # Okabe-Ito colours: Blue for LR, Bluish Green for RF
+    colors = [COHORT_PALETTE['Liu 2019'], COHORT_PALETTE['Pooled Trials']]
+    
+    for i, pd_row in enumerate(plot_data):
+        means = [pd_row['base_mean'], pd_row['drivers_mean'], pd_row['full_mean']]
+        stds = [pd_row['base_std'], pd_row['drivers_std'], pd_row['full_std']]
+        offset = (i - 0.5) * bar_width
+        bars = ax.bar(x + offset, means, bar_width, yerr=stds,
+                      label=pd_row['model'], color=colors[i],
+                      edgecolor='white', linewidth=0.8,
+                      capsize=5, error_kw={'elinewidth': 1.5, 'capthick': 1.2})
+        # Add value labels on bars
+        for bar, mean, std in zip(bars, means, stds):
+            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + std + 0.008,
+                    f'{mean:.3f}', ha='center', va='bottom', fontsize=10, fontweight='bold',
+                    color='#333333')
+    
+    ax.set_ylabel('ROC-AUC (5-Fold Stratified CV)', fontsize=12, fontweight='bold')
+    ax.set_xticks(x)
+    ax.set_xticklabels(bar_labels, fontsize=11)
+    ax.set_ylim(0.45, 0.85)
+    ax.axhline(y=0.5, color='#999999', linestyle=':', linewidth=1.0, label='Random Baseline (AUC = 0.5)')
+    ax.legend(fontsize=10, loc='upper left', framealpha=0.9)
+    ax.set_title('Multimodal Response Prediction: Feature Set Comparison\n(Pooled IO Trial Cohort, 5-Fold Stratified CV)',
+                 fontsize=14, fontweight='bold', pad=15)
+    sns.despine(ax=ax, top=True, right=True)
+    ax.grid(axis='y', linestyle='--', alpha=0.4)
+    plt.tight_layout()
+    
+    multimodal_plot_path = PLOT_DIR / "multimodal_auc_comparison.png"
+    plt.savefig(multimodal_plot_path, dpi=300)
+    plt.close()
+    print(f"Saved multimodal AUC comparison plot to {multimodal_plot_path}")
     
     report_content.append("\n### Model Performance (5-Fold Stratified Cross-Validation on Pooled Trial Cohort):")
     report_content.append("| Model | Base Model (Sigs only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Sex | Full Extended Model (Sigs + Drivers + TMB + CNA + Mutations) |")
     report_content.append("|---|---|---|---|")
     for res in model_results:
         report_content.append(f"| **{res['Model']}** | {res['Base AUC']} | {res['Sigs+Drivers+Sex AUC']} | **{res['Full Extended AUC']}** |")
+        
+    report_content.append("\n![Multimodal AUC Comparison](../plots/biomarkers/multimodal_auc_comparison.png)")
         
     report_content.append("\n### Analysis of Predictor Performance:")
     report_content.append("1.  **Baseline vs. Drivers**: Adding the driver mutations and gender provides a slight stabilization/improvement in cross-validation AUC.")
