@@ -191,4 +191,5 @@ The pipeline outputs processed data, figures, and reports to their respective di
 ### Reporting Outputs (`reports/`)
 *   **`cohort_characteristics_clinical.md`**: Baseline report detailing clinical patient demographics, treatment histories, response distributions, survival curves, and forest plots.
 *   **`cohort_characteristics_genomic.md`**: Baseline report detailing driver mutations, pathway mutations, TMB, neoantigens, immune signature correlations, Aneuploidy overall survival curves, and the merged CoMut oncoplot.
+*   **`transcriptomic_feature_selection_results.md`**: Consolidated report detailing response-based `SelectKBest` feature selection benchmarking (LOCO CV) and TCGA survival-based 20-gene signature derivation and domain annotations.
 *   **`extended_biomarkers_report.md`**: Evaluation report of advanced biomarkers and cross-validated response predictors on the pooled trials.
