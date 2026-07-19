@@ -76,7 +76,7 @@ Genomic Biomarker Correlation Matrix
 ### 3.2. Genomic Burden vs. Immune Infiltration
 To understand how tumor genomic features affect the microenvironment, we evaluated how copy-number burden (Aneuploidy Score) and mutational burden (TMB) correlate with continuous transcriptomic immune signatures in both TCGA-SKCM ($N=427$) and the pooled trials ($N=195$).
 
-![Genomic Burden vs Immune Heatmap](../plots/biomarkers/extended_immune_correlations.png)
+![Genomic Burden vs Immune Heatmap](../../plots/biomarkers/extended_immune_correlations.png)
 
 | Immune Signature | TCGA Aneuploidy Score ($r$) | TCGA TMB ($r$) | Trial TMB ($r$) |
 | ---------------- | --------------------------- | -------------- | --------------- |
@@ -115,7 +115,7 @@ TCGA Aneuploidy Survival
 
 The complete co-mutation (oncoplot) landscape for individual patients across all three clinical trial cohorts ($N=195$) is presented below. This combines somatic mutations in core driver and resistance genes (rows) with patient-specific clinical tracks (TMB, Response, Cohort source, and Sex).
 
-![Co-Mutation Landscape (Merged Trials)](../plots/genomic/comut_landscape_merged.png)
+![Co-Mutation Landscape (Merged Trials)](../../plots/genomic/comut_landscape_merged.png)
 
 ### Key Observations
 *   **MAPK Driver Mutual Exclusivity**: There is high mutual exclusivity between the two primary MAPK pathway drivers, *BRAF* and *NRAS* (only 3 overlapping cases in Liu 2019, 0 in Hugo/Riaz). This aligns with the classical understanding that *BRAF* and *NRAS* mutations represent redundant and mutually exclusive routes for activating the RAS-RAF-MEK-ERK signaling cascade.

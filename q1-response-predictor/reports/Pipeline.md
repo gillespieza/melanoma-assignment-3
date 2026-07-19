@@ -189,7 +189,16 @@ The pipeline outputs processed data, figures, and reports to their respective di
 *   **Model Performance**: ROC and PR curves in `plots/models/`.
 
 ### Reporting Outputs (`reports/`)
-*   **`cohort_characteristics_clinical.md`**: Baseline report detailing clinical patient demographics, treatment histories, response distributions, survival curves, and forest plots.
-*   **`cohort_characteristics_genomic.md`**: Baseline report detailing driver mutations, pathway mutations, TMB, neoantigens, immune signature correlations, Aneuploidy overall survival curves, and the merged CoMut oncoplot.
-*   **`transcriptomic_feature_selection_results.md`**: Consolidated report detailing response-based `SelectKBest` feature selection benchmarking (LOCO CV) and TCGA survival-based 20-gene signature derivation and domain annotations.
-*   **`extended_biomarkers_report.md`**: Evaluation report of advanced biomarkers and cross-validated response predictors on the pooled trials.
+*   **`README.md`**: Consolidated sitemap and 4-pillar documentation guide for the reports suite.
+*   **`pillar-1-cohorts-and-preprocessing/`**:
+    *   `cohort_characteristics_clinical.md`: Baseline report detailing clinical patient demographics, treatment histories, response distributions, survival curves, and forest plots.
+    *   `cohort_characteristics_genomic.md`: Baseline report detailing driver mutations, pathway mutations, TMB, neoantigens, immune signature correlations, Aneuploidy overall survival curves, and the merged CoMut oncoplot.
+    *   `batch_correction_report.md`: Evaluation report of technical batch effects (uncorrected PCA vs Z-score scaling vs ComBat) and cross-validation data leakage prevention.
+*   **`pillar-2-clinical-subtyping/`**:
+    *   `clinical_phenotyping_and_feature_selection.md`: Consolidated report detailing non-expression clinical feature importance (RF & Cox PH) and Ward's hierarchical subtype clustering.
+*   **`pillar-3-transcriptomic-signatures/`**:
+    *   `curated_signatures_report.md`: Comprehensive report detailing gene signature implementation (IFN-$\gamma$, TIS, CYT, IMPRES, CD8, TCGA OS), signature scaling, biomarker orthogonality, and 5-fold CV multimodal response predictor evaluation.
+*   **`pillar-4-out-of-cohort-benchmarks/`**:
+    *   `transcriptomic_feature_selection_results.md`: Benchmark report detailing response-based `SelectKBest` feature selection ($k=20, 100, 200$) vs. signatures across LOCO cross-validation, TCGA Cox 20-gene survival signature derivation, and InterPro domain annotations.
+
+

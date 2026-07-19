@@ -49,7 +49,7 @@ To ensure strict validation integrity and prevent data leakage:
 
 ### 2.2. Visualisation: Curated Signatures vs. SelectKBest Performance
 
-![Signature vs Raw Feature Selection AUC](../plots/feature_selection/signature_vs_raw_selection_auc.png)
+![Signature vs Raw Feature Selection AUC](../../plots/feature_selection/signature_vs_raw_selection_auc.png)
 
 _Figure 1: Cross-Validated Out-of-Cohort ROC-AUC across Logistic Regression (LR), Random Forest (RF), and XGBoost (XGB) classifiers evaluating Curated Domain Signatures against SelectKBest at k=20, k=100, and k=200._
 
@@ -103,13 +103,13 @@ A negative coefficient ($\beta < 0$) indicates a **protective gene** (higher exp
 #### Hazard Ratio Forest Plot (Top 20 Genes)
 The forest plot below visualizes the Hazard Ratios (HR) and 95% confidence intervals for the top 20 prognostic transcripts (protective genes in blue, risk genes in red):
 
-![Prognostic Gene Forest Plot](../plots/feature_selection/transcriptomic_forest_plot.png)
+![Prognostic Gene Forest Plot](../../plots/feature_selection/transcriptomic_forest_plot.png)
 
 ### 3.2. Kaplan-Meier Survival Curve on TCGA
 Stratifying TCGA-SKCM patients into High-Risk and Low-Risk groups using the median signature risk score demonstrates exceptional survival separation:
 * **Log-Rank p-value**: **4.89e-08**
 
-![KM Curve of TCGA Survival](../plots/feature_selection/km_pancancer_signature.png)
+![KM Curve of TCGA Survival](../../plots/feature_selection/km_pancancer_signature.png)
 
 ### 3.3. Validation on Immunotherapy Clinical Trial Cohorts
 Evaluating the TCGA overall survival signature on anti-PD-1 trial cohorts assesses whether baseline overall survival signals translate into immunotherapy response prediction:
@@ -122,10 +122,10 @@ Evaluating the TCGA overall survival signature on anti-PD-1 trial cohorts assess
 
 #### Validation Visualizations
 ##### ROC Curves predicting Response
-![ROC Curves for Response](../plots/feature_selection/pancancer_signature_trial_validation.png)
+![ROC Curves for Response](../../plots/feature_selection/pancancer_signature_trial_validation.png)
 
 ##### Signature Risk Score Stratified by Responders vs. Non-Responders
-![Signature Violin Plots](../plots/feature_selection/pancancer_signature_violins.png)
+![Signature Violin Plots](../../plots/feature_selection/pancancer_signature_violins.png)
 
 ### 3.4. Functional Classification & Domain Annotation of Signature Genes
 Using the **MyGene.info** and **InterPro** APIs, we mapped protein families and Pfam domains across the 20 prognostic genes:

@@ -110,7 +110,7 @@ Response Distribution Waffle Chart
 
 The unstratified Kaplan-Meier overall survival curves for each cohort are shown in the 2x2 grid below. The median overall survival is annotated for each cohort where reached.
 
-![Overall Survival KM Curves (All Cohorts)](../plots/clinical/km_os_grid.png)
+![Overall Survival KM Curves (All Cohorts)](../../plots/clinical/km_os_grid.png)
 
 ---
 
@@ -118,7 +118,7 @@ The unstratified Kaplan-Meier overall survival curves for each cohort are shown 
 
 To validate the clinical relevance of the response classifications, Overall Survival (OS) was stratified by RECIST response status (Responder: CR/PR vs. Non-responder: PD) for the three clinical trial cohorts.
 
-![Overall Survival by RECIST Response](../plots/clinical/km_os_by_response.png)
+![Overall Survival by RECIST Response](../../plots/clinical/km_os_by_response.png)
 
 ### Key Findings
 *   **Liu 2019**: Highly statistically significant survival separation ($p < 0.0001$). Responders demonstrate a dramatically extended OS, while non-responders have a median OS of approximately 10 months.
@@ -132,7 +132,7 @@ To validate the clinical relevance of the response classifications, Overall Surv
 
 To evaluate whether individual features predict response to anti-PD-1 therapy, univariate Odds Ratios (OR) and 95% Confidence Intervals (CI) were calculated for the pooled immunotherapy trial cohort ($N=195$). Continuous variables (TMB and Age) were dichotomized based on their cohort-specific medians (TMB median = 10.68 mut/Mb; Age median = 60.5 years).
 
-![Forest Plot of Univariate Odds Ratios](../plots/clinical/forest_plot_odds_ratios.png)
+![Forest Plot of Univariate Odds Ratios](../../plots/clinical/forest_plot_odds_ratios.png)
 
 ### Key Takeaways
 1.  **TMB is a Strong and Significant Predictor**: Patients with high TMB are **2.53 times more likely to respond** to anti-PD-1 immunotherapy compared to those with low TMB. This association is highly statistically significant ($p = 0.0083$) and represents the strongest univariate predictor in our clinical dataset.
