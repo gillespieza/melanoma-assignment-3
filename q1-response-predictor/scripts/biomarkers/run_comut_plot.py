@@ -22,7 +22,7 @@ from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 
 # Paths
 DATA_DIR = BASE_DIR / "data"
-PLOT_DIR = BASE_DIR / "plots"
+PLOT_DIR = BASE_DIR / "plots" / "genomic"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
 

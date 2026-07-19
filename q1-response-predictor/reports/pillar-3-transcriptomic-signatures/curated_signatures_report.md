@@ -106,7 +106,7 @@ We have implemented six distinct curated signature modalities in [signatures.py]
 ### 2.7. Univariate Distribution of Signatures by Response Status
 To visualize how well these continuous signature scores separate immunotherapy responders from non-responders, we generated a box plot distribution of each signature score stratified by Responder (bluish green, `#009E73`) and Non-Responder (vermillion, `#D55E00`) status across the pooled clinical cohorts, overlaid with individual patient data points:
 
-![Signature Distributions (Box + Jitter)](../../plots/signature_box_jitter_by_response.png)
+![Signature Distributions (Box + Jitter)](../../plots/signatures/signature_box_jitter_by_response.png)
 
 ---
 
@@ -194,7 +194,7 @@ We evaluated the Spearman correlation between the 6 continuous transcriptomic si
 
 | Heatmap of Inter-Signature Correlation | Forest Plot of Odds Ratios |
 | :---: | :---: |
-| ![Spearman Correlation Heatmap](../../plots/signature_correlation_heatmap.png) | ![Forest Plot of Odds Ratios](../../plots/forest_plot_odds_ratios.png) |
+| ![Spearman Correlation Heatmap](../../plots/signatures/signature_correlation_heatmap.png) | ![Forest Plot of Odds Ratios](../../plots/signatures/forest_plot_odds_ratios.png) |
 
 * **Collinearity**: As shown in the correlation heatmap, the continuous transcriptomic signatures (TIS, IFN-γ, CYT, and CD8 T-cell) are highly co-expressed ($r_s \approx 0.85\text{–}0.90$).
 * **Multivariate Modeling**: In the forest plot of odds ratios, **TIS** ($\text{OR} = 3.91$, $95\%\text{ CI: } 0.77 - 19.81$) and **IMPRES** ($\text{OR} = 1.66$, $95\%\text{ CI: } 1.09 - 2.52$) emerge as positive independent predictors of response. The other signatures (CYT, CD8 T-cell, IFN-γ) have odds ratios $<1.0$ because they are highly redundant with the TIS signature, which captures overlapping T-cell and inflammatory biology.

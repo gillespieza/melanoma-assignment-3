@@ -29,8 +29,10 @@ set_presentation_style()
 
 # Paths
 DATA_DIR = BASE_DIR / "data"
-PLOT_DIR = BASE_DIR / "plots"
-PLOT_DIR.mkdir(exist_ok=True, parents=True)
+SIG_PLOT_DIR = BASE_DIR / "plots" / "signatures"
+SIG_PLOT_DIR.mkdir(exist_ok=True, parents=True)
+CLIN_PLOT_DIR = BASE_DIR / "plots" / "clinical"
+CLIN_PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
 def main():
     print("==================================================")
@@ -82,7 +84,7 @@ def main():
     sns.heatmap(corr_matrix, annot=True, cmap="coolwarm", vmin=-1, vmax=1, fmt=".2f", linewidths=0.5)
     plt.title("Spearman Correlation Heatmap of Batch-Corrected Immune Signatures", fontsize=12, fontweight='bold', pad=15)
     
-    corr_path = PLOT_DIR / "signature_correlation_heatmap.png"
+    corr_path = SIG_PLOT_DIR / "signature_correlation_heatmap.png"
     plt.savefig(corr_path, bbox_inches='tight', dpi=300)
     plt.close()
     print(f"Saved correlation heatmap to {corr_path}")
@@ -121,7 +123,7 @@ def main():
         ax.set_ylabel("Signature Score")
     plt.suptitle("Signature Distributions (Box + Jitter) by Immunotherapy Response", fontsize=14, fontweight='bold', y=1.02)
     plt.tight_layout()
-    box_jitter_path = PLOT_DIR / "signature_box_jitter_by_response.png"
+    box_jitter_path = SIG_PLOT_DIR / "signature_box_jitter_by_response.png"
     plt.savefig(box_jitter_path, bbox_inches='tight', dpi=300)
     plt.close()
     print(f"Saved box + jitter plots to {box_jitter_path}")
@@ -188,7 +190,7 @@ def main():
     plt.gca().xaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
     plt.xticks([0.2, 0.5, 1.0, 2.0, 5.0])
     
-    forest_path = PLOT_DIR / "forest_plot_odds_ratios.png"
+    forest_path = SIG_PLOT_DIR / "forest_plot_odds_ratios.png"
     plt.savefig(forest_path, bbox_inches='tight', dpi=300)
     plt.close()
     print(f"\nSaved Forest Plot to {forest_path}")

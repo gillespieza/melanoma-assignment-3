@@ -1,6 +1,17 @@
+---
+title:
+aliases: 
+tags: 
+created: 2026-07-19 17:24
+cssclasses: table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-07-19 17:51
+---
+
 # Model Evaluation Report: LOCO Cross-Cohort Validation
 ## Overview
-This report documents the comprehensive evaluation of all trained models (Logistic Regression, Random Forest, XGBoost, SVM, ElasticNet) using Leave-One-Cohort-Out (LOCO) cross-validation on three independent melanoma immunotherapy cohorts.
+This report documents the comprehensive evaluation of all trained models (Logistic Regression, Random Forest, XGBoost, SVM, ElasticNet) using Leave-One-Cohort-Out (LOCO) cross-validation on three independent melanoma immunotherapy cohorts.  
 **Evaluation Framework:**
 - **Cross-validation**: Leave-One-Cohort-Out (LOCO) — train on 2 cohorts, test on 1
 - **Test cohorts**: Liu 2019 (N=104), Hugo 2016 (N=27), Riaz 2017 (N=64)
@@ -48,8 +59,8 @@ Actual Resp        0    20
 
 ### Precision-Recall Curve Summaries
 
-**Hugo 2016**: Average Precision = 0.539
-**Liu 2019**: Average Precision = 0.611
+**Hugo 2016**: Average Precision = 0.539  
+**Liu 2019**: Average Precision = 0.611  
 **Riaz 2017**: Average Precision = 0.312
 
 ---
@@ -92,8 +103,8 @@ Actual Resp        4    16
 
 ### Precision-Recall Curve Summaries
 
-**Hugo 2016**: Average Precision = 0.484
-**Liu 2019**: Average Precision = 0.611
+**Hugo 2016**: Average Precision = 0.484  
+**Liu 2019**: Average Precision = 0.611  
 **Riaz 2017**: Average Precision = 0.544
 
 ---
@@ -136,8 +147,8 @@ Actual Resp        7    13
 
 ### Precision-Recall Curve Summaries
 
-**Hugo 2016**: Average Precision = 0.426
-**Liu 2019**: Average Precision = 0.592
+**Hugo 2016**: Average Precision = 0.426  
+**Liu 2019**: Average Precision = 0.592  
 **Riaz 2017**: Average Precision = 0.478
 
 ---
@@ -180,8 +191,8 @@ Actual Resp        20   0
 
 ### Precision-Recall Curve Summaries
 
-**Hugo 2016**: Average Precision = 0.522
-**Liu 2019**: Average Precision = 0.609
+**Hugo 2016**: Average Precision = 0.522  
+**Liu 2019**: Average Precision = 0.609  
 **Riaz 2017**: Average Precision = 0.272
 
 ---
@@ -224,15 +235,15 @@ Actual Resp        0    20
 
 ### Precision-Recall Curve Summaries
 
-**Hugo 2016**: Average Precision = 0.539
-**Liu 2019**: Average Precision = 0.607
+**Hugo 2016**: Average Precision = 0.539  
+**Liu 2019**: Average Precision = 0.607  
 **Riaz 2017**: Average Precision = 0.312
 
 ---
 
 ## Summary & Interpretation
 
-### Key Metrics Explained:
+### Key Metrics Explained
 - **Sensitivity (Recall)**: TP / (TP + FN) — Proportion of actual responders correctly identified
 - **Specificity**: TN / (TN + FP) — Proportion of actual non-responders correctly identified
 - **Precision**: TP / (TP + FP) — Proportion of predicted responders who are actually responders
@@ -241,7 +252,7 @@ Actual Resp        0    20
 - **AUC-ROC**: Area under the Receiver Operating Characteristic curve — Robustness to threshold selection
 - **C-Index (Concordance Index)**: Evaluates how well predicted response probabilities rank patients by survival. 0.5 = random, 1.0 = perfect. Accounts for censoring in survival data.
 
-### Visualizations:
+### Visualizations
 - **ROC Curves** (`roc_curves_*.png`): Trade-off between True Positive Rate and False Positive Rate
 - **PR Curves** (`pr_curves_*.png`): Precision-Recall trade-off, especially relevant for class imbalance
 - **Confusion Matrices** (`confusion_matrices_*.png`): Cell-level breakdown of predictions per cohort

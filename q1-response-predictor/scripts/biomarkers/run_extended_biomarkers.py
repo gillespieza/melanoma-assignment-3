@@ -480,14 +480,37 @@ def main():
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     
     models = {
-        'Logistic Regression (LR)': LogisticRegression(max_iter=1000, C=1.0),
-        'Random Forest (RF)': RandomForestClassifier(n_estimators=100, max_depth=4, random_state=42)
+        'Logistic Regression (LR)': GridSearchCV(
+            LogisticRegression(penalty='l1', solver='liblinear', random_state=42, max_iter=1000),
+            param_grid={'C': [0.01, 0.1, 1, 10, 100]}, cv=3, scoring='roc_auc'
+        ),
+        'Random Forest (RF)': GridSearchCV(
+            RandomForestClassifier(random_state=42),
+            param_grid={'n_estimators': [50, 100, 200], 'max_depth': [3, 5, 10, None], 'min_samples_leaf': [1, 2, 4]},
+            cv=3, scoring='roc_auc'
+        ),
+        'XGBoost (XGB)': GridSearchCV(
+            XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss'),
+            param_grid={'n_estimators': [50, 100, 150], 'max_depth': [3, 5, 7], 'learning_rate': [0.01, 0.05, 0.1, 0.2]},
+            cv=3, scoring='roc_auc'
+        ),
+        'Support Vector Machine (SVM)': GridSearchCV(
+            SVC(probability=True, random_state=42),
+            param_grid={'C': [0.01, 0.1, 1, 10], 'kernel': ['linear', 'rbf']},
+            cv=3, scoring='roc_auc'
+        ),
+        'Elastic-Net': GridSearchCV(
+            LogisticRegression(penalty='elasticnet', solver='saga', random_state=42, max_iter=5000),
+            param_grid={'C': [0.01, 0.1, 1, 10], 'l1_ratio': [0.1, 0.5, 0.9]},
+            cv=3, scoring='roc_auc'
+        )
     }
     
     model_results = []
     plot_data = []  # Store raw scores for visualisation
     
     for model_name, model in models.items():
+        print(f"  > Evaluating {model_name}...")
         # 1. Base Model (Signatures only)
         X_base = df_features_clean[sig_features].values
         scores_base = cross_val_score(model, X_base, y, cv=cv, scoring='roc_auc')
@@ -520,27 +543,28 @@ def main():
 
     # --- Grouped Bar Chart: Multimodal AUC Comparison ---
     set_presentation_style()
-    fig, ax = plt.subplots(figsize=(11, 6))
+    fig, ax = plt.subplots(figsize=(12, 7))
     
     bar_labels = ['Signatures Only', 'Sigs + Drivers + Sex', 'Full Extended\n(Sigs + Drivers + TMB\n+ CNA + Pathways)']
     x = np.arange(len(bar_labels))
-    bar_width = 0.32
+    n_models = len(models)
+    bar_width = 0.8 / n_models
     
-    # Okabe-Ito colours: Blue for LR, Bluish Green for RF
-    colors = [COHORT_PALETTE['Liu 2019'], COHORT_PALETTE['Pooled Trials']]
+    # Okabe-Ito and other colorblind-friendly colors
+    colors = ['#0072B2', '#009E73', '#D55E00', '#CC79A7', '#F0E442']
     
     for i, pd_row in enumerate(plot_data):
         means = [pd_row['base_mean'], pd_row['drivers_mean'], pd_row['full_mean']]
         stds = [pd_row['base_std'], pd_row['drivers_std'], pd_row['full_std']]
-        offset = (i - 0.5) * bar_width
+        offset = (i - (n_models - 1) / 2) * bar_width
         bars = ax.bar(x + offset, means, bar_width, yerr=stds,
-                      label=pd_row['model'], color=colors[i],
-                      edgecolor='white', linewidth=0.8,
-                      capsize=5, error_kw={'elinewidth': 1.5, 'capthick': 1.2})
+                      label=pd_row['model'], color=colors[i % len(colors)],
+                      edgecolor='white', linewidth=0.7,
+                      capsize=4, error_kw={'elinewidth': 1.2, 'capthick': 1})
         # Add value labels on bars
         for bar, mean, std in zip(bars, means, stds):
-            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + std + 0.008,
-                    f'{mean:.3f}', ha='center', va='bottom', fontsize=10, fontweight='bold',
+            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + std + 0.01,
+                    f'{mean:.3f}', ha='center', va='bottom', fontsize=9,
                     color='#333333')
     
     ax.set_ylabel('ROC-AUC (5-Fold Stratified CV)', fontsize=12, fontweight='bold')
@@ -548,7 +572,7 @@ def main():
     ax.set_xticklabels(bar_labels, fontsize=11)
     ax.set_ylim(0.45, 0.85)
     ax.axhline(y=0.5, color='#999999', linestyle='--', linewidth=1.2, label='Random Baseline (AUC = 0.5)')
-    ax.legend(fontsize=10, loc='upper left', framealpha=0.9)
+    ax.legend(fontsize=10, loc='upper left', framealpha=0.9, title="Models")
     ax.set_title('Multimodal Response Prediction: Feature Set Comparison\n(Pooled IO Trial Cohort, 5-Fold Stratified CV)',
                  fontsize=14, fontweight='bold', pad=15)
     sns.despine(ax=ax, top=True, right=True)
