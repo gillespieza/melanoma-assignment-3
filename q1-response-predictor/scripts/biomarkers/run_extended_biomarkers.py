@@ -419,10 +419,10 @@ def main():
     low_tmb_mask = df_tcga_tmb_surv['TMB_Group'].str.startswith('Low')
     
     kmf.fit(df_tcga_tmb_surv.loc[low_tmb_mask, 'OS_MONTHS'], df_tcga_tmb_surv.loc[low_tmb_mask, 'os_status_clean'], label=f"Low TMB (N={low_tmb_mask.sum()})")
-    kmf.plot_survival_function(ax=ax, color="#2ca02c", ci_show=False, linewidth=2.5)
+    kmf.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["CR/PR"], ci_show=False, linewidth=2.5)
     
     kmf.fit(df_tcga_tmb_surv.loc[high_tmb_mask, 'OS_MONTHS'], df_tcga_tmb_surv.loc[high_tmb_mask, 'os_status_clean'], label=f"High TMB (N={high_tmb_mask.sum()})")
-    kmf.plot_survival_function(ax=ax, color="#d62728", ci_show=False, linewidth=2.5)
+    kmf.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["PD"], ci_show=False, linewidth=2.5)
     
     lr_tmb_res = logrank_test(
         df_tcga_tmb_surv.loc[high_tmb_mask, 'OS_MONTHS'], df_tcga_tmb_surv.loc[low_tmb_mask, 'OS_MONTHS'],

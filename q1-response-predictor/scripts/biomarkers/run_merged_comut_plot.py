@@ -15,6 +15,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
 from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
+from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 
 # Paths
 DATA_DIR = BASE_DIR / "data"
@@ -120,7 +121,9 @@ def main():
         wspace=0.08, hspace=0.12
     )
 
-    color_mut = "#1f77b4" # Blue for mutant
+    set_presentation_style()
+
+    color_mut = COHORT_PALETTE["Liu 2019"]
     color_wt = "#f0f0f0"  # Light grey for Wild-type
 
     # A. Top Subplot: TMB Barplot
@@ -196,7 +199,7 @@ def main():
 
     # F. Bottom Track 3: Sex
     ax_sex = fig.add_subplot(gs[5, 0])
-    cmap_sex = ListedColormap(["#f768a1", "#252525", "#e0e0e0"]) # Pink (Female), Dark grey (Male), Light grey (NaN)
+    cmap_sex = ListedColormap(["#f768a1", COHORT_PALETTE["TCGA-SKCM"], "#e0e0e0"]) # Pink (Female), Dark grey (Male), Light grey (NaN)
     bounds_sex = [-0.5, 0.5, 1.5, 2.5]
     norm_sex = BoundaryNorm(bounds_sex, cmap_sex.N)
     sns.heatmap(

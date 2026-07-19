@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from src.styles import RESPONSE_PALETTE, set_presentation_style
 from pathlib import Path
 from scipy.stats import mannwhitneyu
 from sklearn.metrics import roc_auc_score, roc_curve
@@ -194,6 +195,7 @@ def main():
     )
     
     # Plot KM curve
+    set_presentation_style()
     sns.set_theme(style="whitegrid", context="talk")
     fig, ax = plt.subplots(figsize=(9, 6.5))
     kmf = KaplanMeierFitter()
@@ -202,10 +204,10 @@ def main():
     low_mask = df_clin_survival['RISK_GROUP'] == 'Low-Risk'
     
     kmf.fit(df_clin_survival.loc[low_mask, 'OS_MONTHS'], df_clin_survival.loc[low_mask, 'OS_STATUS'], label=f"Low-Risk (N={low_mask.sum()})")
-    kmf.plot_survival_function(ax=ax, color="#2ca02c", ci_show=False, linewidth=2.5)
+    kmf.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["CR/PR"], ci_show=False, linewidth=2.5)
     
     kmf.fit(df_clin_survival.loc[high_mask, 'OS_MONTHS'], df_clin_survival.loc[high_mask, 'OS_STATUS'], label=f"High-Risk (N={high_mask.sum()})")
-    kmf.plot_survival_function(ax=ax, color="#d62728", ci_show=False, linewidth=2.5)
+    kmf.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["PD"], ci_show=False, linewidth=2.5)
     
     # Log-rank test
     lr_res = logrank_test(
@@ -311,7 +313,7 @@ def main():
         df_plot['Response_Label'] = df_plot['response'].map({1: 'Responder (CR/PR)', 0: 'Non-Responder (PD)'})
         sns.violinplot(
             data=df_plot, x='Response_Label', y='RISK_SCORE', 
-            ax=axes_viol[idx], palette=['#2ca02c', '#d62728'], inner='quartile'
+            ax=axes_viol[idx], palette=[RESPONSE_PALETTE['CR/PR'], RESPONSE_PALETTE['PD']], inner='quartile'
         )
         axes_viol[idx].set_title(f"{name} Signature Scores", fontsize=12, weight='bold')
         axes_viol[idx].set_xlabel("")
@@ -347,12 +349,12 @@ def main():
     ]
     
     category_colors = {
-        "Interferon GTPases": "#3C5488",
-        "Chemokines & Cytokines": "#00A087",
-        "NK-Cell & T-Cell Receptors & Regulators": "#DC0000",
-        "Signaling & Adapters": "#F39B7F",
-        "Enzymes & Metabolism": "#91D1C2",
-        "Transcription Factors": "#8491B4"
+        "Interferon GTPases": COHORT_PALETTE['Liu 2019'],
+        "Chemokines & Cytokines": COHORT_PALETTE['Pooled Trials'],
+        "NK-Cell & T-Cell Receptors & Regulators": RESPONSE_PALETTE['PD'],
+        "Signaling & Adapters": COHORT_PALETTE['Hugo 2016'],
+        "Enzymes & Metabolism": RESPONSE_PALETTE['CR/PR'],
+        "Transcription Factors": COHORT_PALETTE['Riaz 2017']
     }
     
     y_positions = []

@@ -6,6 +6,7 @@ import seaborn as sns
 from pathlib import Path
 from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test, multivariate_logrank_test
+from src.styles import COHORT_PALETTE, RESPONSE_PALETTE
 
 # Add project root to sys.path for importing src modules
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -51,8 +52,8 @@ def main():
     })
 
     # Color palettes
-    palette_2 = ["#1f77b4", "#ff7f0e"]
-    palette_multi = ["#d62728", "#9467bd", "#7f7f7f", "#17becf", "#ff7f0e"] # red, purple, gray, cyan, orange
+    palette_2 = [COHORT_PALETTE['Liu 2019'], COHORT_PALETTE['Hugo 2016']]
+    palette_multi = [RESPONSE_PALETTE['PD'], COHORT_PALETTE['Riaz 2017'], '#7f7f7f', '#17becf', COHORT_PALETTE['Hugo 2016']]
 
     # Helper function to plot KM
     def plot_km(df, group_col, title, filename, palette, labels=None, split_median=False):

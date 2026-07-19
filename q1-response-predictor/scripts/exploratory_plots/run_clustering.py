@@ -19,6 +19,7 @@ if str(BASE_DIR) not in sys.path:
 
 from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 from src.signatures import extract_all_signatures
+from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from pycombat import Combat
 
 # Paths
@@ -59,11 +60,13 @@ def main():
     print("Phase 2: Unsupervised Hierarchical Clustering...")
     print("==================================================")
     
+    set_presentation_style()
+
     # 1. Define color maps for column metadata
-    cohort_colors_map = {'liu': '#1f77b4', 'hugo': '#ff7f0e', 'riaz': '#2ca02c'}
+    cohort_colors_map = {'liu': COHORT_PALETTE['Liu 2019'], 'hugo': COHORT_PALETTE['Hugo 2016'], 'riaz': COHORT_PALETTE['Riaz 2017']}
     col_cohort_colors = pd.Series(batches, index=sig_corrected.index).map(cohort_colors_map)
     
-    response_colors_map = {1.0: '#d62728', 0.0: '#9467bd'}
+    response_colors_map = {1.0: RESPONSE_PALETTE['CR/PR'], 0.0: RESPONSE_PALETTE['PD']}
     col_response_colors = y_all.map(response_colors_map)
     
     col_colors = pd.DataFrame({
@@ -91,11 +94,11 @@ def main():
     
     from matplotlib.patches import Patch
     legend_elements = [
-        Patch(facecolor='#1f77b4', label='Liu 2019'),
-        Patch(facecolor='#ff7f0e', label='Hugo 2016'),
-        Patch(facecolor='#2ca02c', label='Riaz 2017'),
-        Patch(facecolor='#d62728', label='Responder (CR/PR)'),
-        Patch(facecolor='#9467bd', label='Non-Responder (PD)')
+        Patch(facecolor=COHORT_PALETTE['Liu 2019'], label='Liu 2019'),
+        Patch(facecolor=COHORT_PALETTE['Hugo 2016'], label='Hugo 2016'),
+        Patch(facecolor=COHORT_PALETTE['Riaz 2017'], label='Riaz 2017'),
+        Patch(facecolor=RESPONSE_PALETTE['CR/PR'], label='Responder (CR/PR)'),
+        Patch(facecolor=RESPONSE_PALETTE['PD'], label='Non-Responder (PD)')
     ]
     g.ax_col_dendrogram.legend(handles=legend_elements, bbox_to_anchor=(1.45, 1), loc="upper right", title="Metadata Legends")
     

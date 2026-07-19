@@ -18,6 +18,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
+from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+
 # Paths
 DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots"
@@ -111,8 +113,10 @@ def main():
         wspace=0.08, hspace=0.12
     )
     
+    set_presentation_style()
+
     # Color palette
-    color_mut = "#3182bd" # Blue for mutated
+    color_mut = COHORT_PALETTE["Liu 2019"]
     color_wt = "#f0f0f0"  # Grey for wild-type
     
     # A. Top Subplot: TMB Barplot
@@ -175,7 +179,7 @@ def main():
     # D. Bottom Track 1: Response Status
     ax_resp = fig.add_subplot(gs[3, 0])
     # Colormap: 0 = Non-Responder (PD, Red), 1 = Responder (CR/PR, Green)
-    cmap_resp = ListedColormap(["#d62728", "#2ca02c"])
+    cmap_resp = ListedColormap([RESPONSE_PALETTE["PD"], RESPONSE_PALETTE["CR/PR"]])
     sns.heatmap(
         response_vals.reshape(1, -1), cmap=cmap_resp, cbar=False, 
         ax=ax_resp, xticklabels=False, yticklabels=["Response"]
@@ -194,7 +198,7 @@ def main():
     # F. Bottom Track 3: Sex
     ax_sex = fig.add_subplot(gs[5, 0])
     # Colormap: 0 = Female (light pink/grey), 1 = Male (dark grey)
-    cmap_sex = ListedColormap(["#f768a1", "#252525"])
+    cmap_sex = ListedColormap(["#f768a1", COHORT_PALETTE["TCGA-SKCM"]])
     sns.heatmap(
         sex_vals.reshape(1, -1), cmap=cmap_sex, cbar=False, 
         ax=ax_sex, xticklabels=False, yticklabels=["Sex"]
@@ -218,9 +222,9 @@ def main():
     patches = [
         mpatches.Patch(color=color_mut, label='Mutated'),
         mpatches.Patch(color=color_wt, label='Wild-Type'),
-        mpatches.Patch(color="#2ca02c", label='Responder (CR/PR)'),
-        mpatches.Patch(color="#d62728", label='Non-Responder (PD)'),
-        mpatches.Patch(color="#252525", label='Sex: Male'),
+        mpatches.Patch(color=RESPONSE_PALETTE["CR/PR"], label='Responder (CR/PR)'),
+        mpatches.Patch(color=RESPONSE_PALETTE["PD"], label='Non-Responder (PD)'),
+        mpatches.Patch(color=COHORT_PALETTE["TCGA-SKCM"], label='Sex: Male'),
         mpatches.Patch(color="#f768a1", label='Sex: Female'),
         mpatches.Patch(color="#fc9272", label='High CNA Burden')
     ]

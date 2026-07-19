@@ -23,6 +23,7 @@ if str(BASE_DIR) not in sys.path:
 
 from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 from src.signatures import extract_all_signatures
+from src.styles import COHORT_PALETTE, RESPONSE_PALETTE
 
 # Paths
 DATA_DIR = BASE_DIR / "data"
@@ -138,10 +139,10 @@ def plot_comparison_results(df_results, out_plot_path):
     models = ["LR", "RF", "XGB"]
     model_titles = {"LR": "Logistic Regression", "RF": "Random Forest", "XGB": "XGBoost"}
     palette = {
-        'Curated Signatures': '#1f77b4',
-        'SelectKBest (k=20)': '#ff7f0e',
-        'SelectKBest (k=100)': '#2ca02c',
-        'SelectKBest (k=200)': '#d62728'
+        'Curated Signatures': COHORT_PALETTE['Liu 2019'],
+        'SelectKBest (k=20)': COHORT_PALETTE['Hugo 2016'],
+        'SelectKBest (k=100)': COHORT_PALETTE['Riaz 2017'],
+        'SelectKBest (k=200)': RESPONSE_PALETTE['PD']
     }
     
     for ax, m in zip(axes, models):
