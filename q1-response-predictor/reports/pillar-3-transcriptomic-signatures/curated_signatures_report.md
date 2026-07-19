@@ -183,6 +183,8 @@ We evaluated the Spearman rank correlation ($r$) between genomic load metrics (T
 
 * **Immune Exclusion (Aneuploidy)**: Chromosomal instability (Aneuploidy Score) shows a very weak negative correlation ($r \approx -0.05$ to $-0.11$) with baseline immune infiltration. While copy number burden is linked to immune exclusion in other cancer types, it is a weak standalone predictor of a "cold" microenvironment in melanoma.
 * **Orthogonality of TMB and Signatures**: TMB shows near-zero correlation with immune signature expression in both TCGA and trial datasets.
+
+![Genomic Burden vs Immune Signature Correlation Heatmap](../../plots/biomarkers/extended_immune_correlations.png)
   
   > [!IMPORTANT]  
   > **Key Design Decision**: TMB and immune infiltration represent **orthogonal biomarkers**. A tumor can be highly mutated (high TMB) but immunologically cold, or poorly mutated but highly inflamed (high IFN-γ/TIS). Consequently, combining these independent modalities into a multimodal model (e.g., _Sigs + TMB + Drivers_) is mathematically expected to improve response predictions compared to either modality alone. This design decision is validated by our Random Forest model, which achieves its highest performance (**AUC = 0.718**) when combining signatures with genomic burden features.
