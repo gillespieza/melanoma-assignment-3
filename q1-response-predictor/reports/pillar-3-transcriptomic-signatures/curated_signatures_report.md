@@ -207,7 +207,7 @@ To evaluate the predictive power of gene expression signatures when combined wit
 
 ### Table 2. Cross-validated multimodal response prediction performance. Values are mean ROC-AUC ± SD across 5-fold stratified CV
 
-| Model Architecture                  | Base Model (Signatures Only) | Signatures + Drivers (`BRAF/NRAS/NF1`) + Sex | Full Extended Model (Signatures + Drivers + TMB + CNA + Pathway Mutations) |
+| Model Architecture                  | Base Model (Signatures Only) | Signatures + Drivers (`BRAF/NRAS/NF1`) + Weight | Full Extended Model (Signatures + Drivers + TMB + CNA + Pathway Mutations) |
 |:----------------------------------- |:----------------------------:|:--------------------------------------------:|:--------------------------------------------------------------------------:|
 | **Logistic Regression (LR)**        |      **0.615 (±0.081)**      |                0.600 (±0.043)                |                               0.560 (±0.094)                               |
 | **Random Forest (RF)**              |        0.666 (±0.053)        |                0.661 (±0.072)                |                             **0.700 (±0.102)**                             |

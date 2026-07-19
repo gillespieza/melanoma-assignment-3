@@ -14,6 +14,7 @@ from sklearn.metrics import roc_auc_score, roc_curve
 from sklearn.model_selection import StratifiedKFold, cross_val_score, GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.calibration import CalibratedClassifierCV
 from xgboost import XGBClassifier
 from sklearn.svm import SVC
 from lifelines import KaplanMeierFitter
@@ -182,8 +183,8 @@ def main():
             df['SEX'] = df['SEX'].map({'Male': 'Male', 'Female': 'Female', 'M': 'Male', 'F': 'Female'})
 
     print("\nComputing expression signatures for all cohorts...")
-    df_liu_sigs = extract_all_signatures(df_liu_expr, n_jobs=-1)
-    df_hugo_sigs = extract_all_signatures(df_hugo_expr, n_jobs=-1)
+    df_liu_sigs = extract_all_signatures(df_liu_expr)
+    df_hugo_sigs = extract_all_signatures(df_hugo_expr)
     df_riaz_sigs = extract_all_signatures(df_riaz_expr)
     
     df_tcga_expr = df_tcga_expr_raw.set_index('SAMPLE_ID')
@@ -218,7 +219,7 @@ def main():
         df['mut_Survival_Pathways'] = (df[['mut_PTEN', 'mut_CDKN2A', 'mut_PIK3CA']].sum(axis=1) > 0).astype(int)
 
     # Pool trial datasets clinical and signatures
-    clin_cols = ['Cohort', 'response', 'TMB_NONSYNONYMOUS', 'WEIGHT', 'TOTAL_NEOANTIGEN', 'CNA_PROP',
+    clin_cols = ['Cohort', 'response', 'TMB_NONSYNONYMOUS', 'AGE', 'TOTAL_NEOANTIGEN', 'CNA_PROP',
                  'mut_BRAF', 'mut_NRAS', 'mut_NF1', 'mut_Antigen_Presentation', 'mut_IFN_gamma_Signaling', 'mut_Survival_Pathways']
     
     # Fill missing CNA_PROP (mostly absent, we can map to NaN or handle)
@@ -227,8 +228,8 @@ def main():
             df['CNA_PROP'] = np.nan
 
     for df in [df_liu_clin, df_hugo_clin, df_riaz_clin]:
-        if 'WEIGHT' not in df.columns:
-            df['WEIGHT'] = np.nan
+        if 'AGE' not in df.columns:
+            df['AGE'] = np.nan
     df_clin_merged = pd.concat([df_liu_clin[clin_cols], df_hugo_clin[clin_cols], df_riaz_clin[clin_cols]])
     # Standardize each cohort's signatures individually (Z-score) to prevent batch technical effects and leakage
     df_liu_sigs_scaled = zscore_df(df_liu_sigs)
@@ -482,13 +483,13 @@ def main():
     sig_features = ['IFN_gamma', 'TIS', 'CYT', 'CD8_Tcell', 'IMPRES', 'PD_L1']
     df_features = pd.concat([df_sigs_merged_aligned, df_clin_merged[[
         'mut_BRAF', 'mut_NRAS', 'mut_NF1', 'mut_Antigen_Presentation', 'mut_IFN_gamma_Signaling', 'mut_Survival_Pathways',
-        'TMB_NONSYNONYMOUS', 'TOTAL_NEOANTIGEN', 'WEIGHT'
+        'TMB_NONSYNONYMOUS', 'TOTAL_NEOANTIGEN', 'AGE'
     ]]], axis=1)
 
     # Impute missing values
     df_features['TMB_NONSYNONYMOUS'] = df_features['TMB_NONSYNONYMOUS'].fillna(df_features['TMB_NONSYNONYMOUS'].median())
     df_features['TOTAL_NEOANTIGEN'] = df_features['TOTAL_NEOANTIGEN'].fillna(df_features['TOTAL_NEOANTIGEN'].median())
-    df_features['WEIGHT'] = df_features['WEIGHT'].fillna(df_features['WEIGHT'].median())
+    df_features['AGE'] = df_features['AGE'].fillna(df_features['AGE'].median())
 
     # Drop samples with NaN response
     clean_idx = df_clin_merged['response'].dropna().index
@@ -520,8 +521,8 @@ def main():
             cv=3, scoring='roc_auc', n_jobs=-1
         ),
         'Support Vector Machine (SVM)': GridSearchCV(
-            SVC(probability=False, random_state=42),
-            param_grid={'C': [0.01, 0.1, 1, 10], 'kernel': ['linear', 'rbf']},
+            CalibratedClassifierCV(SVC(random_state=42), ensemble=False),
+            param_grid={'estimator__C': [0.01, 0.1, 1, 10], 'estimator__kernel': ['linear', 'rbf']},
             cv=3, scoring='roc_auc', n_jobs=-1
         ),
         'Elastic-Net': GridSearchCV(
@@ -540,11 +541,11 @@ def main():
         # 1. Base Model (Signatures only)
         X_base = df_features_clean[sig_features].values
         scores_base = evaluate_auc_cv(model, X_base, y, cv, "Signatures only")
-        
-        # 2. Driver Mutation Model (Sigs + Drivers + Weight)
-        driver_cols = sig_features + ['mut_BRAF', 'mut_NRAS', 'mut_NF1', 'WEIGHT']
+
+        # 2. Driver Mutation Model (Sigs + Drivers + AGE)
+        driver_cols = sig_features + ['mut_BRAF', 'mut_NRAS', 'mut_NF1', 'AGE']
         X_drivers = df_features_clean[driver_cols].values
-        scores_drivers = evaluate_auc_cv(model, X_drivers, y, cv, "Signatures + drivers + weight")
+        scores_drivers = evaluate_auc_cv(model, X_drivers, y, cv, "Signatures + drivers + age")
         
         # 3. Full Extended Model (All Features including TMB & CNA & pathway mutations)
         X_full = df_features_clean.values
@@ -553,7 +554,7 @@ def main():
         model_results.append({
             'Model': model_name,
             'Base AUC': f"{scores_base.mean():.3f} (+/-{scores_base.std():.3f})",
-            'Sigs+Drivers+Weight AUC': f"{scores_drivers.mean():.3f} (+/-{scores_drivers.std():.3f})",
+            'Sigs+Drivers+Age AUC': f"{scores_drivers.mean():.3f} (+/-{scores_drivers.std():.3f})",
             'Full Extended AUC': f"{scores_full.mean():.3f} (+/-{scores_full.std():.3f})"
         })
         
@@ -594,10 +595,25 @@ def main():
                     f'{mean:.3f}', ha='center', va='bottom', fontsize=9,
                     color='#333333')
     
+    # Compute dynamic y-limits from the actual data (mean +/- std across all bars),
+    # padding for the value-label text, and keeping the random-baseline (0.5) visible.
+    all_means = [v for pdr in plot_data for v in (pdr['base_mean'], pdr['drivers_mean'], pdr['full_mean'])]
+    all_stds = [v for pdr in plot_data for v in (pdr['base_std'], pdr['drivers_std'], pdr['full_std'])]
+    lower_vals = [m - s for m, s in zip(all_means, all_stds)]
+    upper_vals = [m + s for m, s in zip(all_means, all_stds)]
+
+    data_min = min(lower_vals + [0.5])   # include baseline so it's never clipped
+    data_max = max(upper_vals + [0.5])
+    y_range = data_max - data_min
+    padding = max(y_range * 0.12, 0.03)  # extra room for the text labels above bars
+
+    y_min = max(0.0, data_min - padding)
+    y_max = min(1.0, data_max + padding * 1.5)  # a bit more headroom above for labels
+
     ax.set_ylabel('ROC-AUC (5-Fold Stratified CV)', fontsize=12, fontweight='bold')
     ax.set_xticks(x)
     ax.set_xticklabels(bar_labels, fontsize=11)
-    ax.set_ylim(0.45, 0.85)
+    ax.set_ylim(y_min, y_max)
     ax.axhline(y=0.5, color='#999999', linestyle='--', linewidth=1.2, label='Random Baseline (AUC = 0.5)')
     ax.legend(fontsize=10, loc='upper left', framealpha=0.9, title="Models")
     ax.set_title('Multimodal Response Prediction: Feature Set Comparison\n(Pooled IO Trial Cohort, 5-Fold Stratified CV)',
@@ -612,11 +628,22 @@ def main():
     print(f"Saved multimodal AUC comparison plot to {multimodal_plot_path}")
     
     report_content.append("\n### Model Performance (5-Fold Stratified Cross-Validation on Pooled Trial Cohort):")
-    report_content.append("| Model | Base Model (Sigs only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Weight | Full Extended Model (Sigs + Drivers + TMB + CNA + Mutations) |")
+    report_content.append("| Model | Base Model (Sigs only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Age | Full Extended Model (Sigs + Drivers + TMB + CNA + Mutations) |")
     report_content.append("|---|---|---|---|")
-    for res in model_results:
-        report_content.append(f"| **{res['Model']}** | {res['Base AUC']} | {res['Sigs+Drivers+Weight AUC']} | **{res['Full Extended AUC']}** |")
-        
+    for res, pdr in zip(model_results, plot_data):
+        col_means = {
+            'Base AUC': pdr['base_mean'],
+            'Sigs+Drivers+Age AUC': pdr['drivers_mean'],
+            'Full Extended AUC': pdr['full_mean'],
+        }
+        best_col = max(col_means, key=col_means.get)
+        cells = {
+            k: (f"**{res[k]}**" if k == best_col else res[k])
+            for k in ['Base AUC', 'Sigs+Drivers+Age AUC', 'Full Extended AUC']
+        }
+        report_content.append(
+            f"| **{res['Model']}** | {cells['Base AUC']} | {cells['Sigs+Drivers+Age AUC']} | {cells['Full Extended AUC']} |"
+        )
     report_content.append("\n![Multimodal AUC Comparison](../plots/biomarkers/multimodal_auc_comparison.png)")
         
     report_content.append("\n### Analysis of Predictor Performance:")
@@ -624,7 +651,10 @@ def main():
     report_content.append("2.  **Full Multimodal Model**: The full extended model (incorporating 15 features including mutation flags and genomic load metrics) performs strongly with the tuned XGBoost grid, which favors shallow trees, moderate learning rates, and row/feature subsampling, and remains competitive with Random Forest.")
     
     # Save the report markdown
-    report_path = REPORTS_DIR / "extended_biomarkers_report.md"
+    report_path = (
+        REPORTS_DIR / "extended_biomarkers_report.md"
+        # REPORTS_DIR / "pillar-3-transcriptomic-signatures/curated_signatures_report.md"
+    )
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(report_content))
         
