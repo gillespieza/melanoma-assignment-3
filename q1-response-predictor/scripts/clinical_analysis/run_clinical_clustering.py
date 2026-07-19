@@ -102,11 +102,7 @@ def main():
     from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 
     set_presentation_style()
-    fig, ax = plt.subplots(figsize=(9, 6.5))
-    colors = [COHORT_PALETTE["Liu 2019"], RESPONSE_PALETTE["CR/PR"], RESPONSE_PALETTE["PD"]] # Blue, Bluish Green, Vermillion Red
-    
-    kmf = KaplanMeierFitter()
-    
+
     # Custom names/interpretations for clusters based on profiling
     cluster_names = {
         0: "Cluster 0: Low Chromosomal Instability / Low Hypoxia Phenotype",
@@ -114,11 +110,20 @@ def main():
         2: "Cluster 2: Stage IV / Advanced Metastatic Disease"
     }
 
+    palette_dict = {
+        cluster_names[0]: COHORT_PALETTE["Liu 2019"],   # #0072B2 Blue
+        cluster_names[1]: RESPONSE_PALETTE["CR/PR"],    # #009E73 Bluish Green
+        cluster_names[2]: RESPONSE_PALETTE["PD"]        # #D55E00 Vermillion Red
+    }
+
+    fig, ax = plt.subplots(figsize=(9, 6.5))
+    kmf = KaplanMeierFitter()
+
     for c in range(3):
         mask = df_survival['CLINICAL_CLUSTER'] == c
         label = f"{cluster_names[c]} (N={mask.sum()})"
         kmf.fit(df_survival.loc[mask, 'OS_MONTHS'], df_survival.loc[mask, 'OS_STATUS'], label=label)
-        kmf.plot_survival_function(ax=ax, color=colors[c], ci_show=False, linewidth=2.5)
+        kmf.plot_survival_function(ax=ax, color=palette_dict[cluster_names[c]], ci_show=False, linewidth=2.5)
 
     # Multivariate Log-Rank Test
     results = multivariate_logrank_test(
@@ -151,25 +156,18 @@ def main():
     pca = PCA(n_components=2)
     pca_coords = pca.fit_transform(scaled_data)
     
-    cluster_names_short = {
-        0: "Cluster 0: Low CNA / Low Hypoxia",
-        1: "Cluster 1: High CNA / High Hypoxia",
-        2: "Cluster 2: Stage IV Metastatic"
-    }
-    
     df_pca = pd.DataFrame(pca_coords, columns=['PC1', 'PC2'])
     df_pca['Cluster'] = cluster_labels
-    df_pca['Cluster_Name'] = df_pca['Cluster'].map(cluster_names_short)
+    df_pca['Cluster_Name'] = df_pca['Cluster'].map(cluster_names)
     
     var_explained = pca.explained_variance_ratio_
     
     fig_pca, ax_pca = plt.subplots(figsize=(9.5, 7.5))
-    # Map cluster names to sorted order for consistent legend colors
-    hue_order = [cluster_names_short[0], cluster_names_short[1], cluster_names_short[2]]
+    hue_order = [cluster_names[0], cluster_names[1], cluster_names[2]]
     
     sns.scatterplot(
         x='PC1', y='PC2', hue='Cluster_Name', style='Cluster_Name',
-        data=df_pca, hue_order=hue_order, palette=colors, alpha=0.8, s=100, ax=ax_pca,
+        data=df_pca, hue_order=hue_order, palette=palette_dict, alpha=0.8, s=100, ax=ax_pca,
         edgecolor='w', linewidth=0.8
     )
     
