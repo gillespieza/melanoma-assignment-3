@@ -22,6 +22,7 @@ from src.evaluation import plot_roc_curves, plot_pr_curves, plot_confusion_matri
 from src.utils.logging import TeeStream
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.calibration import CalibratedClassifierCV
 
 def zscore_df(df):
     """
@@ -475,7 +476,13 @@ def main():
     lr_final = LogisticRegression(max_iter=1000, C=1.0)
     lr_final.fit(X_train_final_scaled, y_train_final)
     
-    svm_final = SVC(probability=True, random_state=42, C=1.0)
+    svm_final = CalibratedClassifierCV(
+        estimator=SVC(random_state=42, C=1.0),
+        method='sigmoid',
+        cv=3,
+        ensemble=False,
+        n_jobs=-1
+    )
     svm_final.fit(X_train_final_scaled, y_train_final)
     
     elasticnet_final = LogisticRegression(solver='saga', l1_ratio=0.5, C=1.0, random_state=42, max_iter=20000, tol=1e-3)

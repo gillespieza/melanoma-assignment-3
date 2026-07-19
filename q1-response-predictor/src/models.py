@@ -4,6 +4,7 @@ from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
 import xgboost as xgb
@@ -61,10 +62,16 @@ def tune_svc(X_train, y_train):
     Tuning Support Vector Classifier (SVC) using Grid Search.
     """
     param_grid = {
-        'C': [0.01, 0.1, 1.0, 10.0],
-        'kernel': ['linear', 'rbf']
+        'estimator__C': [0.01, 0.1, 1.0, 10.0],
+        'estimator__kernel': ['linear', 'rbf']
     }
-    svc = SVC(probability=True, random_state=42)
+    svc = CalibratedClassifierCV(
+        estimator=SVC(random_state=42),
+        method='sigmoid',
+        cv=3,
+        ensemble=False,
+        n_jobs=-1
+    )
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(svc, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
