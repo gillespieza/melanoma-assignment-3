@@ -547,12 +547,12 @@ def main():
     ax.set_xticks(x)
     ax.set_xticklabels(bar_labels, fontsize=11)
     ax.set_ylim(0.45, 0.85)
-    ax.axhline(y=0.5, color='#999999', linestyle=':', linewidth=1.0, label='Random Baseline (AUC = 0.5)')
+    ax.axhline(y=0.5, color='#999999', linestyle='--', linewidth=1.2, label='Random Baseline (AUC = 0.5)')
     ax.legend(fontsize=10, loc='upper left', framealpha=0.9)
     ax.set_title('Multimodal Response Prediction: Feature Set Comparison\n(Pooled IO Trial Cohort, 5-Fold Stratified CV)',
                  fontsize=14, fontweight='bold', pad=15)
     sns.despine(ax=ax, top=True, right=True)
-    ax.grid(axis='y', linestyle='--', alpha=0.4)
+    ax.grid(axis='y', linestyle='--', linewidth=0.8, alpha=0.4)
     plt.tight_layout()
     
     multimodal_plot_path = PLOT_DIR / "multimodal_auc_comparison.png"
