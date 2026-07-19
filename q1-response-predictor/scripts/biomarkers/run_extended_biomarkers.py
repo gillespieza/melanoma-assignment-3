@@ -10,9 +10,11 @@ import seaborn as sns
 from pathlib import Path
 from scipy.stats import spearmanr, mannwhitneyu
 from sklearn.metrics import roc_auc_score, roc_curve
-from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.model_selection import StratifiedKFold, cross_val_score, GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
+from sklearn.svm import SVC
 from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test
 

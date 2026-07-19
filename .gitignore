@@ -219,3 +219,6 @@ __marimo__/
 
 # Exclude all data folders (raw and processed) from tracking
 data/
+
+# Agent stuff
+.agents
