@@ -120,8 +120,9 @@ def main():
     df_plot = pd.DataFrame(plot_data)
     print(df_plot)
 
-    # Plotting Forest Plot
-    sns.set_theme(style="whitegrid")
+    from src.styles import RESPONSE_PALETTE, set_presentation_style
+
+    set_presentation_style()
     fig, ax = plt.subplots(figsize=(11, 6.5))
 
     # Reverse order for plotting from top to bottom
@@ -130,7 +131,7 @@ def main():
     y_pos = np.arange(len(df_plot))
     
     # Plot vertical line at OR = 1.0 (No Effect)
-    ax.axvline(1.0, color='#e05a47', linestyle='--', linewidth=1.5, zorder=1)
+    ax.axvline(1.0, color='#555555', linestyle='--', linewidth=1.5, zorder=1)
     
     # Plot Odds Ratios and Confidence Intervals
     for i in range(len(df_plot)):
@@ -139,7 +140,7 @@ def main():
         or_val = row['OR']
         
         if is_sig:
-            color = '#2b8cbe' if or_val > 1.0 else '#e05a47'
+            color = RESPONSE_PALETTE['CR/PR'] if or_val > 1.0 else RESPONSE_PALETTE['PD']
             weight = 'bold'
         else:
             color = '#777777'
@@ -182,8 +183,8 @@ def main():
     # Add a custom legend explaining the colors
     import matplotlib.lines as mlines
     legend_elements = [
-        mlines.Line2D([0], [0], marker='s', color='none', markerfacecolor='#e05a47', markeredgecolor='none', markersize=8, label='Significant Risk / Harmful (p < 0.05, OR < 1.0)'),
-        mlines.Line2D([0], [0], marker='s', color='none', markerfacecolor='#2b8cbe', markeredgecolor='none', markersize=8, label='Significant Protective / Beneficial (p < 0.05, OR > 1.0)'),
+        mlines.Line2D([0], [0], marker='s', color='none', markerfacecolor=RESPONSE_PALETTE['PD'], markeredgecolor='none', markersize=8, label='Significant Harmful / Lower Odds (p < 0.05, OR < 1.0)'),
+        mlines.Line2D([0], [0], marker='s', color='none', markerfacecolor=RESPONSE_PALETTE['CR/PR'], markeredgecolor='none', markersize=8, label='Significant Beneficial / Higher Odds (p < 0.05, OR > 1.0)'),
         mlines.Line2D([0], [0], marker='s', color='none', markerfacecolor='#777777', markeredgecolor='none', markersize=8, label='Non-Significant (p \u2265 0.05)')
     ]
     ax.legend(

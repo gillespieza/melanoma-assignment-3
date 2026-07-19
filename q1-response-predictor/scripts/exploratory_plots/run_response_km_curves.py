@@ -21,6 +21,8 @@ DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots" / "clinical"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
+from src.styles import RESPONSE_PALETTE, set_presentation_style
+
 def plot_cohort_km_by_response(ax, df_clin, cohort_name):
     # normalise survival column names
     time_col = 'os_months' if 'os_months' in df_clin.columns else ('OS_MONTHS' if 'OS_MONTHS' in df_clin.columns else None)
@@ -52,8 +54,8 @@ def plot_cohort_km_by_response(ax, df_clin, cohort_name):
     kmf_nr.fit(non_responders[time_col], event_observed=non_responders[event_col])
 
     # Plot
-    kmf_r.plot_survival_function(ax=ax, color="#2ca02c", linewidth=2.5, ci_show=True, alpha=0.15, label=f"Responder (N={len(responders)})")
-    kmf_nr.plot_survival_function(ax=ax, color="#d62728", linewidth=2.5, ci_show=True, alpha=0.15, label=f"Non-responder (N={len(non_responders)})")
+    kmf_r.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["CR/PR"], linewidth=2.5, ci_show=True, alpha=0.15, label=f"Responder (N={len(responders)})")
+    kmf_nr.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["PD"], linewidth=2.5, ci_show=True, alpha=0.15, label=f"Non-responder (N={len(non_responders)})")
 
     # Log-rank test
     results = logrank_test(responders[time_col], non_responders[time_col],
