@@ -59,6 +59,9 @@ def _clean_os(df: pd.DataFrame, time_col: str, event_col: str, stratify_col: str
     return out
 
 
+from src.styles import COHORT_PALETTE, get_cohort_color, set_presentation_style
+
+
 def plot_km_os(ax, df_clin: pd.DataFrame, cohort_label: str):
     """
     Plot an unstratified Kaplan-Meier OS curve on the given axes.
@@ -70,9 +73,11 @@ def plot_km_os(ax, df_clin: pd.DataFrame, cohort_label: str):
     time_col, event_col = _resolve_os_columns(df_clin)
     df = _clean_os(df_clin, time_col, event_col)
 
+    cohort_color = get_cohort_color(cohort_label)
+
     kmf = KaplanMeierFitter()
     kmf.fit(df[time_col], event_observed=df[event_col], label=f"n = {len(df)}")
-    kmf.plot_survival_function(ax=ax, ci_show=True, color="#1f77b4", linewidth=2)
+    kmf.plot_survival_function(ax=ax, ci_show=True, color=cohort_color, linewidth=2)
 
     # Annotate median survival if reached
     median_surv = kmf.median_survival_time_
@@ -117,6 +122,7 @@ def main():
     ]
 
     # ── 2×2 grid ─────────────────────────────────────────────────────────
+    set_presentation_style()
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     axes = axes.ravel()
 
