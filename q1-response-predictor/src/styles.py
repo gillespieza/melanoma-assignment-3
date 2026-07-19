@@ -1,49 +1,50 @@
 """
 Centralized Visualization Styles and Color Palettes for Melanoma Assignment 3.
-Based on Google Material Design 3 (M3) Color System for optimal contrast and slide readability.
+Based on the Okabe-Ito Palette System - The universal gold standard for scientific publications (Cell, Nature, Science)
+ensuring 100% colorblind-safe accessibility across deuteranopia, protanopia, and tritanopia.
 """
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Study Cohort Color Mappings (Google Material Design System)
+# Study Cohort Color Mappings (Okabe-Ito Gold Standard System)
 COHORT_PALETTE = {
-    "Liu 2019": "#1976D2",               # Material Blue 700 (Vibrant Slate Indigo)
-    "Liu 2019 (N=104)": "#1976D2",
-    "Hugo 2016": "#E65100",               # Material Deep Orange 900 (Warm Terracotta)
-    "Hugo 2016 (N=27)": "#E65100",
-    "Riaz 2017": "#673AB7",               # Material Deep Purple 500 (Rich Violet)
-    "Riaz 2017 (N=64)": "#673AB7",
-    "TCGA-SKCM": "#37474F",               # Material Blue Grey 800 (Dark Charcoal Reference)
+    "Liu 2019": "#0072B2",               # Okabe-Ito Blue
+    "Liu 2019 (N=104)": "#0072B2",
+    "Hugo 2016": "#E69F00",               # Okabe-Ito Orange
+    "Hugo 2016 (N=27)": "#E69F00",
+    "Riaz 2017": "#CC79A7",               # Okabe-Ito Reddish Purple
+    "Riaz 2017 (N=64)": "#CC79A7",
+    "TCGA-SKCM": "#37474F",               # Dark Slate Charcoal Reference
     "TCGA-SKCM (N=426)": "#37474F",
-    "Pooled Trials": "#00796B",           # Material Teal 700 (Ocean Emerald Benchmark)
-    "Pooled Trials (N=195)": "#00796B",
+    "Pooled Trials": "#009E73",           # Okabe-Ito Bluish Green Benchmark
+    "Pooled Trials (N=195)": "#009E73",
 }
 
-# Clinical Response Mappings (Google Material Status Palette)
+# Clinical Response Mappings (Okabe-Ito Status Palette)
 RESPONSE_PALETTE = {
-    "CR/PR": "#2E7D32",                   # Material Green 800 (Positive Response)
-    "Responder": "#2E7D32",
-    "Response": "#2E7D32",
-    "PD": "#C62828",                      # Material Red 800 (Progressive Disease)
-    "Non-responder": "#C62828",
-    "Non-Response": "#C62828",
-    "SD": "#F57C00",                      # Material Orange 700 (Stable Disease)
+    "CR/PR": "#009E73",                   # Okabe-Ito Bluish Green (Positive Response)
+    "Responder": "#009E73",
+    "Response": "#009E73",
+    "PD": "#D55E00",                      # Okabe-Ito Vermillion Red (Progressive Disease)
+    "Non-responder": "#D55E00",
+    "Non-Response": "#D55E00",
+    "SD": "#F0E442",                      # Okabe-Ito Yellow (Stable Disease)
 }
 
-# Driver Mutation Subtype Mappings (Google Material Accent Palette)
+# Driver Mutation Subtype Mappings (Okabe-Ito Accent Palette)
 DRIVER_PALETTE = {
-    "BRAF": "#D32F2F",                    # Material Red 700
-    "NRAS": "#0288D1",                    # Material Light Blue 700
-    "NF1": "#388E3C",                     # Material Green 700
-    "Triple-WT": "#7B1FA2",               # Material Purple 700
+    "BRAF": "#D55E00",                    # Okabe-Ito Vermillion
+    "NRAS": "#56B4E9",                    # Okabe-Ito Sky Blue
+    "NF1": "#009E73",                     # Okabe-Ito Bluish Green
+    "Triple-WT": "#CC79A7",               # Okabe-Ito Reddish Purple
 }
 
 
 def set_presentation_style(font_scale: float = 1.0, dpi: int = 300):
     """
     Applies project-wide Matplotlib and Seaborn style configurations tailored for
-    presentation slides and report figures using Material Design typography.
+    presentation slides and report figures using Okabe-Ito publication standards.
     """
     sns.set_theme(style="whitegrid", font="sans-serif")
     plt.rcParams.update({

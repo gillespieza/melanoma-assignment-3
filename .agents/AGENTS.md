@@ -1,28 +1,28 @@
 # Project Style & Visualization Guidelines
 
-Whenever generating plots, figures, web artifacts, or presentation reports for this project, always adhere to the project-wide visual style and Google Material Design color palettes defined below.
+Whenever generating plots, figures, web artifacts, or presentation reports for this project, always adhere to the project-wide visual style and Okabe-Ito (Cell / Nature / Science Gold Standard) color palettes defined below.
 
 ---
 
-## 1. Color Palettes (Google Material Design System)
+## 1. Color Palettes (Okabe-Ito Scientific Gold Standard)
 
 ### Study Cohorts
-- **Liu 2019**: `#1976D2` (Material Blue 700)
-- **Hugo 2016**: `#E65100` (Material Deep Orange 900)
-- **Riaz 2017**: `#673AB7` (Material Deep Purple 500)
-- **TCGA-SKCM**: `#37474F` (Material Blue Grey 800)
-- **Pooled Trials**: `#00796B` (Material Teal 700 Benchmark)
+- **Liu 2019**: `#0072B2` (Okabe-Ito Blue)
+- **Hugo 2016**: `#E69F00` (Okabe-Ito Orange)
+- **Riaz 2017**: `#CC79A7` (Okabe-Ito Reddish Purple)
+- **TCGA-SKCM**: `#37474F` (Dark Slate Charcoal Reference)
+- **Pooled Trials**: `#009E73` (Okabe-Ito Bluish Green Benchmark)
 
 ### Clinical Response & Phenotypes
-- **Responder (CR / PR)**: `#2E7D32` (Material Green 800)
-- **Non-Responder (PD)**: `#C62828` (Material Red 800)
-- **Stable Disease (SD)**: `#F57C00` (Material Orange 700)
+- **Responder (CR / PR)**: `#009E73` (Okabe-Ito Bluish Green)
+- **Non-Responder (PD)**: `#D55E00` (Okabe-Ito Vermillion Red)
+- **Stable Disease (SD)**: `#F0E442` (Okabe-Ito Yellow)
 
 ### Driver Mutation Subtypes
-- **BRAF**: `#D32F2F` (Material Red 700)
-- **NRAS**: `#0288D1` (Material Light Blue 700)
-- **NF1**: `#388E3C` (Material Green 700)
-- **Triple-WT**: `#7B1FA2` (Material Purple 700)
+- **BRAF**: `#D55E00` (Okabe-Ito Vermillion)
+- **NRAS**: `#56B4E9` (Okabe-Ito Sky Blue)
+- **NF1**: `#009E73` (Okabe-Ito Bluish Green)
+- **Triple-WT**: `#CC79A7` (Okabe-Ito Reddish Purple)
 
 ---
 
