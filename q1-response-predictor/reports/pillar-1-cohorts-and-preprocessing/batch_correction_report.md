@@ -1,3 +1,14 @@
+---
+title:
+aliases: 
+tags: 
+created: 2026-07-18 12:17
+cssclasses: table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-07-19 11:48
+---
+
 # Batch Effect Assessment & Dimensionality Reduction Analysis
 
 When combining transcriptomic datasets across independent clinical studies, technical variations (e.g. sequencing platforms, RNA extraction methods, and library preparation) typically dominate the biological signals. This report documents how technical batch effects were identified and corrected across our melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) and whether global expression profiles separate patients based on therapeutic response. Plot aesthetics and palettes are aligned with the Nature Publishing Group (NPG) color guidelines used across other reports.
@@ -26,7 +37,6 @@ To evaluate technical batch effects and patient response separation in the clini
 *   **Batch Mixing**: In both PCA and UMAP, the uncorrected projections (top row) show distinct cohort clustering. Individual Z-scoring (bottom row) resolves these batch effects completely, causing navy (Liu), teal (Hugo), and red (Riaz) points to mix homogeneously.
 *   **Global Response Overlap**: In both projections (colored by response in the right columns), responders (CR/PR, green) and non-responders (PD, red) exhibit complete overlap. No distinct boundaries or sub-clusters separate the two response groups.
 *   **Biological Implication**: Immunotherapy response is **not** driven by a single dominant axis of high-level transcriptomic variance (which PCA and UMAP capture). Response is a complex, multi-factorial phenotype that relies on specific immunogenic and microenvironmental pathways. Consequently, simple global clustering is insufficient, and more sophisticated, targeted machine learning classifiers (or pathway-specific signatures) are required to predict patient outcomes.
-
 
 ## 3. Gene-Level Expression Heatmaps (Top 50 Highly Variable Genes)
 

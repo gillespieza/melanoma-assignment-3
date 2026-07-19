@@ -1,3 +1,14 @@
+---
+title:
+aliases: 
+tags: 
+created: 2026-07-16 18:38
+cssclasses: table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-07-19 11:48
+---
+
 # Genomic Characteristics of Data Cohorts
 
 This report presents a comparative analysis of the genomic features across the four melanoma study cohorts:
@@ -10,23 +21,30 @@ This report presents a comparative analysis of the genomic features across the f
 
 ## 1. Mutation Landscape Comparison
 
-The distribution of the three major cutaneous melanoma driver mutations (*BRAF*, *NRAS*, and *NF1*) and the Triple-Wild-Type (Triple-WT) rate is compared across all cohorts below.
+The distribution of the three major cutaneous melanoma driver mutations (_BRAF_, _NRAS_, and _NF1_) and the Triple-Wild-Type (Triple-WT) rate is compared across all cohorts below.
 
 ![[mutation_frequencies.png]]
 
 Driver Mutation Frequencies
 
 ### Key Observations
-*   **Reference Alignment**: The reference **TCGA-SKCM** cohort aligns perfectly with cutaneous melanoma epidemiology, showing a *BRAF* mutation rate of **51.9%**, *NRAS* at **28.2%**, *NF1* at **16.9%**, and a Triple-WT rate of **15.5%**.
-*   **Representative Trial Cohorts**: All trial cohorts align closely with TCGA baseline frequencies. **Liu 2019** shows highly representative driver mutation distributions (*BRAF*: **40.4%**, *NRAS*: **30.8%**, *NF1*: **18.3%**). **Riaz 2017** mutations, after correcting the patient mapping bug, are also highly representative (*BRAF*: **40.6%**, *NRAS*: **17.2%**, *NF1*: **3.1%**, Triple-WT: **42.2%**).
-*   **Biological Note**: Driver mutations are generally mutually exclusive: tumors with *BRAF* mutations rarely harbor co-occurring *NRAS* mutations, validating standard melanoma genetics.
+*   **Reference Alignment**: The reference **TCGA-SKCM** cohort aligns perfectly with cutaneous melanoma epidemiology, showing a _BRAF_ mutation rate of **51.9%**, _NRAS_ at **28.2%**, _NF1_ at **16.9%**, and a Triple-WT rate of **15.5%**.
+*   **Representative Trial Cohorts**: All trial cohorts align closely with TCGA baseline frequencies. **Liu 2019** shows highly representative driver mutation distributions (_BRAF_: **40.4%**, _NRAS_: **30.8%**, _NF1_: **18.3%**). **Riaz 2017** mutations, after correcting the patient mapping bug, are also highly representative (_BRAF_: **40.6%**, _NRAS_: **17.2%**, _NF1_: **3.1%**, Triple-WT: **42.2%**).
+*   **Biological Note**: Driver mutations are generally mutually exclusive: tumors with _BRAF_ mutations rarely harbor co-occurring _NRAS_ mutations, validating standard melanoma genetics.
 *   **representative cohort features**: Genomic profiles show mutation status and burden metrics are representative.
 
 ### Extended Pathway Mutation Frequencies
 To further characterize tumor immunogenicity and mechanisms of resistance, we evaluated pre-treatment somatic mutation frequencies across three biological pathways:
-*   **Antigen Presentation**: *B2M*, *TAP1*, *TAP2* (disrupts MHC Class I presentation).
-*   **IFN-gamma Signaling**: *JAK1*, *JAK2*, *STAT1* (induces insensitivity to T-cell cytotoxicity).
-*   **Survival & Proliferation Drivers**: *PTEN*, *CDKN2A*, *PIK3CA* (oncogenic drivers).
+*   **Antigen Presentation**: _B2M_, _TAP1_, _TAP2_ (disrupts MHC Class I presentation).
+*   **IFN-gamma Signaling**: _JAK1_, _JAK2_, _STAT1_ (induces insensitivity to T-cell cytotoxicity).
+*   **Survival & Proliferation Drivers**: _PTEN_, _CDKN2A_, _PIK3CA_ (oncogenic drivers).
+
+![Extended Pathway Mutation Frequencies](../../plots/genomic/extended_pathway_grouped_bars.png)
+
+Extended Pathway Somatic Mutation & Pathway Frequencies
+
+<details>
+<summary>Click to view exact numerical table</summary>
 
 | Pathway / Gene                       | Liu 2019 ($N=104$) | Hugo 2016 ($N=27$) | Riaz 2017 ($N=64$) | Pooled Trials ($N=195$) |
 | ------------------------------------ | ------------------ | ------------------ | ------------------ | ----------------------- |
@@ -37,7 +55,9 @@ To further characterize tumor immunogenicity and mechanisms of resistance, we ev
 | **IFN-gamma Signaling**              | 10.6%              | 18.5%              | 3.1%               | **9.2%**                |
 | **Survival & Proliferation Drivers** | 23.1%              | 29.6%              | 10.9%              | **20.0%**               |
 
-*Note: Pre-treatment antigen presentation mutations are completely absent in these cohorts, reinforcing that MHC-class I mutations are mostly acquired under selective pressure during checkpoint blockade therapy rather than being common baseline resistance mechanisms.*
+</details>
+
+_Note: Pre-treatment antigen presentation mutations are completely absent in these cohorts, reinforcing that MHC-class I mutations are mostly acquired under selective pressure during checkpoint blockade therapy rather than being common baseline resistance mechanisms._
 
 ---
 
@@ -105,8 +125,8 @@ TCGA Driver and TMB Survival
 TCGA Aneuploidy Survival
 
 ### Key Observations
-*   **Driver Subtypes (Left Panel, Left Plot)**: Overall survival does not differ strongly between *BRAF*, *NRAS*, and *NF1* mutant genotypes ($p = 0.0519$). This confirms that while driver mutations are biologically critical for tumor initiation and targeted therapy matching, they do not act as strong, independent prognostic markers for long-term overall survival under standard care.
-*   **TMB Stratification (Left Panel, Right Plot)**: Stratifying TCGA overall survival by TMB using a median split (15.23) shows no prognostic survival separation ($p = 0.4483$). While TMB is highly *predictive* of response to checkpoint inhibitors, it is not *prognostic* of baseline survival in the general TCGA population (where only a small subset received immunotherapy).
+*   **Driver Subtypes (Left Panel, Left Plot)**: Overall survival does not differ strongly between _BRAF_, _NRAS_, and _NF1_ mutant genotypes ($p = 0.0519$). This confirms that while driver mutations are biologically critical for tumor initiation and targeted therapy matching, they do not act as strong, independent prognostic markers for long-term overall survival under standard care.
+*   **TMB Stratification (Left Panel, Right Plot)**: Stratifying TCGA overall survival by TMB using a median split (15.23) shows no prognostic survival separation ($p = 0.4483$). While TMB is highly _predictive_ of response to checkpoint inhibitors, it is not _prognostic_ of baseline survival in the general TCGA population (where only a small subset received immunotherapy).
 *   **Aneuploidy Prognostic Role (Right Panel)**: Partitioning the TCGA cohort by median Aneuploidy Score shows a marginally significant prognostic association ($p = 0.0806$), where patients with high aneuploidy (orange curve) trend towards worse overall survival compared to those with low aneuploidy (blue curve). Unlike TMB (which is purely predictive of therapy response), copy-number burden has a distinct, albeit modest, prognostic role on baseline clinical survival.
 
 ---
@@ -118,8 +138,8 @@ The complete co-mutation (oncoplot) landscape for individual patients across all
 ![Co-Mutation Landscape (Merged Trials)](../../plots/genomic/comut_landscape_merged.png)
 
 ### Key Observations
-*   **MAPK Driver Mutual Exclusivity**: There is high mutual exclusivity between the two primary MAPK pathway drivers, *BRAF* and *NRAS* (only 3 overlapping cases in Liu 2019, 0 in Hugo/Riaz). This aligns with the classical understanding that *BRAF* and *NRAS* mutations represent redundant and mutually exclusive routes for activating the RAS-RAF-MEK-ERK signaling cascade.
-*   **NF1 Mutational Overlap**: Unlike *BRAF* and *NRAS*, mutations in the tumor suppressor *NF1* show significant overlap with both drivers (9 cases overlap with BRAF in Liu, 2 in Hugo). While some of these represent co-occurring driver events, many of these *NF1* mutations are passenger events. *NF1* is a large gene and highly susceptible to random somatic passenger mutations in melanoma, which features a high TMB driven by UV-light exposure.
-*   **Targeted Resistance Profile**: Core genes related to antigen presentation (*B2M*) and interferon signaling (*JAK1*, *JAK2*) show low baseline mutation rates. These mutations are rare in pre-treatment biopsies, indicating that genetic disruption of interferon signaling is mostly an acquired resistance mechanism rather than a common baseline driver.
-*   **Cohort Distribution**: The Cohort track shows that *BRAF* and *NRAS* mutations are evenly distributed across **Liu 2019** (purple) and **Hugo 2016** (orange). The corrected patient mapping for **Riaz 2017** (teal) is clearly visible, showing representative driver mutation profiles that match the other cohorts.
+*   **MAPK Driver Mutual Exclusivity**: There is high mutual exclusivity between the two primary MAPK pathway drivers, _BRAF_ and _NRAS_ (only 3 overlapping cases in Liu 2019, 0 in Hugo/Riaz). This aligns with the classical understanding that _BRAF_ and _NRAS_ mutations represent redundant and mutually exclusive routes for activating the RAS-RAF-MEK-ERK signaling cascade.
+*   **NF1 Mutational Overlap**: Unlike _BRAF_ and _NRAS_, mutations in the tumor suppressor _NF1_ show significant overlap with both drivers (9 cases overlap with BRAF in Liu, 2 in Hugo). While some of these represent co-occurring driver events, many of these _NF1_ mutations are passenger events. _NF1_ is a large gene and highly susceptible to random somatic passenger mutations in melanoma, which features a high TMB driven by UV-light exposure.
+*   **Targeted Resistance Profile**: Core genes related to antigen presentation (_B2M_) and interferon signaling (_JAK1_, _JAK2_) show low baseline mutation rates. These mutations are rare in pre-treatment biopsies, indicating that genetic disruption of interferon signaling is mostly an acquired resistance mechanism rather than a common baseline driver.
+*   **Cohort Distribution**: The Cohort track shows that _BRAF_ and _NRAS_ mutations are evenly distributed across **Liu 2019** (purple) and **Hugo 2016** (orange). The corrected patient mapping for **Riaz 2017** (teal) is clearly visible, showing representative driver mutation profiles that match the other cohorts.
 *   **No Driver Subtype Response Bias**: Responders (green blocks in the Response track) are distributed across all driver mutation subtypes (BRAF, NRAS, NF1, and Triple-WT). This visually confirms that driver mutation status itself is not predictive of anti-PD-1 clinical response.
