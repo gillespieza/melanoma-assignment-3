@@ -170,6 +170,8 @@ Somatic mutation rate (TMB) and predicted neoantigen count are highly collinear:
 * **Pooled Trial Cohort Correlation**: Spearman $r_s = 0.756$ ($p = 2.39 \times 10^{-34}$) between TMB and predicted neoantigen load.
 * **Modeling Implication**: Because they capture redundant biological signals, using both features simultaneously is counterproductive. We retain **TMB** as the clean genomic surrogate in our models.
 
+![Neoantigen vs TMB Regression](../../plots/biomarkers/extended_neoantigen_tmb.png)
+
 ### 5.2. Orthogonality of Genomic and Transcriptomic Modalities
 We evaluated the Spearman rank correlation ($r$) between genomic load metrics (TMB and Aneuploidy Score) and the five continuous transcriptomic signatures in both TCGA-SKCM ($N = 427$) and the pooled trial cohorts ($N = 195$):
 
