@@ -59,8 +59,9 @@ def main():
     chi2, p_val, dof, expected = chi2_contingency(contingency_table)
     print(f"\nChi-squared test p-value: {p_val:.4f}")
 
-    # Plotting
-    sns.set_theme(style="whitegrid")
+    from src.styles import RESPONSE_PALETTE, set_presentation_style
+
+    set_presentation_style()
     fig, ax = plt.subplots(figsize=(8, 6))
 
     cohort_names = df_resp["Cohort"].tolist()
@@ -71,8 +72,8 @@ def main():
     r_prop = responders / totals * 100
     nr_prop = non_responders / totals * 100
 
-    c_responder = "#2ca02c"
-    c_nonresponder = "#d62728"
+    c_responder = RESPONSE_PALETTE["CR/PR"]
+    c_nonresponder = RESPONSE_PALETTE["PD"]
 
     bars1 = ax.bar(cohort_names, r_prop, label="Responder (CR/PR)", color=c_responder, width=0.55, edgecolor="black")
     bars2 = ax.bar(cohort_names, nr_prop, bottom=r_prop, label="Non-responder (PD)", color=c_nonresponder, width=0.55, edgecolor="black")
