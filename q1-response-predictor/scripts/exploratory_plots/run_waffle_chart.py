@@ -15,11 +15,15 @@ if str(BASE_DIR) not in sys.path:
 PLOT_DIR = BASE_DIR / "plots" / "clinical"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
+from src.styles import RESPONSE_PALETTE, set_presentation_style
+
+set_presentation_style()
+
 def draw_waffle_cohort(ax, n_resp, n_nr, title, n_cols=10):
     total = n_resp + n_nr
-    # Colors: green for Responders, red for Non-responders
-    c_resp = "#2ca02c"
-    c_nr = "#d62728"
+    # Colors: Okabe-Ito Bluish Green for Responders, Vermillion for Non-responders
+    c_resp = RESPONSE_PALETTE["CR/PR"]
+    c_nr = RESPONSE_PALETTE["PD"]
     
     # List of colors for each block (Responders first, then Non-responders)
     block_colors = [c_resp] * n_resp + [c_nr] * n_nr
@@ -48,7 +52,7 @@ def draw_waffle_cohort(ax, n_resp, n_nr, title, n_cols=10):
     
     # Add subtitle with counts
     pct_resp = (n_resp / total) * 100
-    subtext = f"Responders: {n_resp} ({pct_resp:.1f}%)\nNon-Responders: {n_nr}"
+    subtext = f"Responders: {n_resp} ({pct_resp:.1f}%)\nNon-responders: {n_nr}"
     ax.text(n_cols / 2 - 0.5, n_rows - 0.1, f"{title} (N={total})", 
             ha='center', va='bottom', fontsize=14, fontweight='bold')
     ax.text(n_cols / 2 - 0.5, -0.6, subtext, 
@@ -81,8 +85,8 @@ def main():
     # Custom Legend
     import matplotlib.patches as mpatches
     legend_patches = [
-        mpatches.Patch(color="#2ca02c", label='Responder (CR/PR)'),
-        mpatches.Patch(color="#d62728", label='Non-responder (PD)')
+        mpatches.Patch(color=RESPONSE_PALETTE["CR/PR"], label='Responder (CR/PR)'),
+        mpatches.Patch(color=RESPONSE_PALETTE["PD"], label='Non-responder (PD)')
     ]
     fig.legend(handles=legend_patches, loc='lower center', ncol=2, fontsize=12, frameon=True, bbox_to_anchor=(0.5, 0.05))
 
