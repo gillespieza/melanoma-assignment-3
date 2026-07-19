@@ -198,7 +198,10 @@ def main():
     })
     
     fig, ax = plt.subplots(figsize=(11, 8.5))
-    colors = sns.color_palette("mako", n_colors=len(df_plot))[::-1]
+    # Use Okabe‑Ito palette for visual consistency
+    from itertools import cycle
+    okabe_colors = list(COHORT_PALETTE.values())
+    colors = [next(cycle(okabe_colors)) for _ in range(len(df_plot))]
     bars = ax.barh(df_plot['Formatted_Feature'][::-1], df_plot['Importance'][::-1], color=colors, edgecolor='none', height=0.75)
     for bar in bars:
         width = bar.get_width()

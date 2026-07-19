@@ -22,6 +22,11 @@ from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 from src.signatures import extract_all_signatures
 from pycombat import Combat
 
+from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+
+# Set style
+set_presentation_style()
+
 # Paths
 DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots"
@@ -87,6 +92,9 @@ def main():
     print("==================================================")
     
     # Box plots + Jitter (stripplot)
+    box_palette = {'Responder': '#99D8C9', 'Non-Responder': '#FCAE91'}       # Muted green / vermillion fill
+    strip_palette = {'Responder': RESPONSE_PALETTE['CR/PR'], 'Non-Responder': RESPONSE_PALETTE['PD']} # Okabe-Ito Bluish Green & Vermillion Red
+
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
     axes = axes.ravel()
     for i, col in enumerate(sig_corrected.columns):
@@ -99,14 +107,14 @@ def main():
         non_resp_scores = df_plot[df_plot['Response'] == 'Non-Responder']['Score']
         stat, p_val = mannwhitneyu(resp_scores, non_resp_scores, alternative='two-sided')
         
-        # Draw Boxplot with light/muted colors
+        # Draw Boxplot with light Okabe-Ito tints
         sns.boxplot(x='Response', y='Score', data=df_plot, ax=ax, 
-                    palette={'Responder': '#ffb3b3', 'Non-Responder': '#e1ccff'}, 
+                    palette=box_palette, 
                     showfliers=False, width=0.5, hue='Response', legend=False)
-        # Overlay Jittered Stripplot
+        # Overlay Jittered Stripplot with full Okabe-Ito colors
         sns.stripplot(x='Response', y='Score', data=df_plot, ax=ax, 
-                      palette={'Responder': '#d62728', 'Non-Responder': '#9467bd'}, 
-                      jitter=True, size=4, alpha=0.6, dodge=False, hue='Response', legend=False)
+                      palette=strip_palette, 
+                      jitter=True, size=4, alpha=0.7, dodge=False, hue='Response', legend=False)
         
         ax.set_title(f"{col}\n(Wilcoxon p = {p_val:.2e})", fontsize=11, fontweight='bold')
         ax.set_xlabel("")
@@ -164,11 +172,11 @@ def main():
     plt.errorbar(
         df_forest['OddsRatio'], y_pos, 
         xerr=[df_forest['OddsRatio'] - df_forest['CILower'], df_forest['CIUpper'] - df_forest['OddsRatio']],
-        fmt='o', color='#1f77b4', ecolor='#7f7f7f', elinewidth=2, capsize=6, markersize=8,
+        fmt='o', color=COHORT_PALETTE['Liu 2019'], ecolor='#555555', elinewidth=2, capsize=6, markersize=8,
         label='Odds Ratio (95% CI)'
     )
     
-    plt.axvline(x=1.0, color='r', linestyle='--', linewidth=1.5, label='Null Effect (OR = 1.0)')
+    plt.axvline(x=1.0, color='#D55E00', linestyle='--', linewidth=1.5, label='Null Effect (OR = 1.0)')
     
     plt.yticks(y_pos, df_forest['Feature'], fontsize=11, fontweight='bold')
     plt.xlabel("Odds Ratio of Response (per 1 Standard Deviation Increase)", fontsize=11, fontweight='bold')

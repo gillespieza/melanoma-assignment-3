@@ -1,0 +1,23 @@
+# Enforce LF line endings for all text files in the repository.
+# This ensures consistent line endings across Windows, macOS, and Linux,
+# and silences "LF will be replaced by CRLF" warnings.
+* text=auto eol=lf
+
+# Explicitly mark binary files to prevent git from mangling them.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.pkl binary
+*.pickle binary
+*.h5 binary
+*.hdf5 binary
+*.parquet binary
+*.feather binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.whl binary
