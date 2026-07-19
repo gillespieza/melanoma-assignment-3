@@ -182,8 +182,8 @@ def main():
             df['SEX'] = df['SEX'].map({'Male': 'Male', 'Female': 'Female', 'M': 'Male', 'F': 'Female'})
 
     print("\nComputing expression signatures for all cohorts...")
-    df_liu_sigs = extract_all_signatures(df_liu_expr)
-    df_hugo_sigs = extract_all_signatures(df_hugo_expr)
+    df_liu_sigs = extract_all_signatures(df_liu_expr, n_jobs=-1)
+    df_hugo_sigs = extract_all_signatures(df_hugo_expr, n_jobs=-1)
     df_riaz_sigs = extract_all_signatures(df_riaz_expr)
     
     df_tcga_expr = df_tcga_expr_raw.set_index('SAMPLE_ID')
@@ -218,7 +218,7 @@ def main():
         df['mut_Survival_Pathways'] = (df[['mut_PTEN', 'mut_CDKN2A', 'mut_PIK3CA']].sum(axis=1) > 0).astype(int)
 
     # Pool trial datasets clinical and signatures
-    clin_cols = ['Cohort', 'response', 'TMB_NONSYNONYMOUS', 'SEX', 'TOTAL_NEOANTIGEN', 'CNA_PROP',
+    clin_cols = ['Cohort', 'response', 'TMB_NONSYNONYMOUS', 'WEIGHT', 'TOTAL_NEOANTIGEN', 'CNA_PROP',
                  'mut_BRAF', 'mut_NRAS', 'mut_NF1', 'mut_Antigen_Presentation', 'mut_IFN_gamma_Signaling', 'mut_Survival_Pathways']
     
     # Fill missing CNA_PROP (mostly absent, we can map to NaN or handle)
@@ -226,6 +226,9 @@ def main():
         if 'CNA_PROP' not in df.columns:
             df['CNA_PROP'] = np.nan
 
+    for df in [df_liu_clin, df_hugo_clin, df_riaz_clin]:
+        if 'WEIGHT' not in df.columns:
+            df['WEIGHT'] = np.nan
     df_clin_merged = pd.concat([df_liu_clin[clin_cols], df_hugo_clin[clin_cols], df_riaz_clin[clin_cols]])
     # Standardize each cohort's signatures individually (Z-score) to prevent batch technical effects and leakage
     df_liu_sigs_scaled = zscore_df(df_liu_sigs)
@@ -477,18 +480,15 @@ def main():
     
     # Define features
     sig_features = ['IFN_gamma', 'TIS', 'CYT', 'CD8_Tcell', 'IMPRES', 'PD_L1']
-    
     df_features = pd.concat([df_sigs_merged_aligned, df_clin_merged[[
         'mut_BRAF', 'mut_NRAS', 'mut_NF1', 'mut_Antigen_Presentation', 'mut_IFN_gamma_Signaling', 'mut_Survival_Pathways',
-        'TMB_NONSYNONYMOUS', 'TOTAL_NEOANTIGEN', 'SEX'
+        'TMB_NONSYNONYMOUS', 'TOTAL_NEOANTIGEN', 'WEIGHT'
     ]]], axis=1)
 
     # Impute missing values
     df_features['TMB_NONSYNONYMOUS'] = df_features['TMB_NONSYNONYMOUS'].fillna(df_features['TMB_NONSYNONYMOUS'].median())
     df_features['TOTAL_NEOANTIGEN'] = df_features['TOTAL_NEOANTIGEN'].fillna(df_features['TOTAL_NEOANTIGEN'].median())
-    df_features['Sex_Male'] = df_features['SEX'].map({'Male': 1, 'Female': 0}).fillna(0).astype(int)
-    
-    df_features = df_features.drop(columns=['SEX'])
+    df_features['WEIGHT'] = df_features['WEIGHT'].fillna(df_features['WEIGHT'].median())
 
     # Drop samples with NaN response
     clean_idx = df_clin_merged['response'].dropna().index
@@ -541,10 +541,10 @@ def main():
         X_base = df_features_clean[sig_features].values
         scores_base = evaluate_auc_cv(model, X_base, y, cv, "Signatures only")
         
-        # 2. Driver Mutation Model (Sigs + Drivers + Sex)
-        driver_cols = sig_features + ['mut_BRAF', 'mut_NRAS', 'mut_NF1', 'Sex_Male']
+        # 2. Driver Mutation Model (Sigs + Drivers + Weight)
+        driver_cols = sig_features + ['mut_BRAF', 'mut_NRAS', 'mut_NF1', 'WEIGHT']
         X_drivers = df_features_clean[driver_cols].values
-        scores_drivers = evaluate_auc_cv(model, X_drivers, y, cv, "Signatures + drivers + sex")
+        scores_drivers = evaluate_auc_cv(model, X_drivers, y, cv, "Signatures + drivers + weight")
         
         # 3. Full Extended Model (All Features including TMB & CNA & pathway mutations)
         X_full = df_features_clean.values
@@ -553,7 +553,7 @@ def main():
         model_results.append({
             'Model': model_name,
             'Base AUC': f"{scores_base.mean():.3f} (+/-{scores_base.std():.3f})",
-            'Sigs+Drivers+Sex AUC': f"{scores_drivers.mean():.3f} (+/-{scores_drivers.std():.3f})",
+            'Sigs+Drivers+Weight AUC': f"{scores_drivers.mean():.3f} (+/-{scores_drivers.std():.3f})",
             'Full Extended AUC': f"{scores_full.mean():.3f} (+/-{scores_full.std():.3f})"
         })
         
@@ -612,10 +612,10 @@ def main():
     print(f"Saved multimodal AUC comparison plot to {multimodal_plot_path}")
     
     report_content.append("\n### Model Performance (5-Fold Stratified Cross-Validation on Pooled Trial Cohort):")
-    report_content.append("| Model | Base Model (Sigs only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Sex | Full Extended Model (Sigs + Drivers + TMB + CNA + Mutations) |")
+    report_content.append("| Model | Base Model (Sigs only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Weight | Full Extended Model (Sigs + Drivers + TMB + CNA + Mutations) |")
     report_content.append("|---|---|---|---|")
     for res in model_results:
-        report_content.append(f"| **{res['Model']}** | {res['Base AUC']} | {res['Sigs+Drivers+Sex AUC']} | **{res['Full Extended AUC']}** |")
+        report_content.append(f"| **{res['Model']}** | {res['Base AUC']} | {res['Sigs+Drivers+Weight AUC']} | **{res['Full Extended AUC']}** |")
         
     report_content.append("\n![Multimodal AUC Comparison](../plots/biomarkers/multimodal_auc_comparison.png)")
         

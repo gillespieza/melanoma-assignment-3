@@ -209,11 +209,11 @@ To evaluate the predictive power of gene expression signatures when combined wit
 
 | Model Architecture                  | Base Model (Signatures Only) | Signatures + Drivers (`BRAF/NRAS/NF1`) + Sex | Full Extended Model (Signatures + Drivers + TMB + CNA + Pathway Mutations) |
 |:----------------------------------- |:----------------------------:|:--------------------------------------------:|:--------------------------------------------------------------------------:|
-| **Logistic Regression (LR)**        |        0.615 (±0.081)        |                0.600 (±0.043)                |                             **0.560 (±0.094)**                             |
+| **Logistic Regression (LR)**        |      **0.615 (±0.081)**      |                0.600 (±0.043)                |                               0.560 (±0.094)                               |
 | **Random Forest (RF)**              |        0.666 (±0.053)        |                0.661 (±0.072)                |                             **0.700 (±0.102)**                             |
 | **XGBoost (XGB, tuned)**            |        0.632 (±0.061)        |                0.668 (±0.095)                |                             **0.699 (±0.123)**                             |
-| **Support Vector Machine (SVM)**    |        0.627 (±0.090)        |                0.666 (±0.055)                |                             **0.577 (±0.090)**                             |
-| **Elastic-Net Logistic Regression** |        0.606 (±0.070)        |                0.613 (±0.053)                |                             **0.537 (±0.067)**                             |
+| **Support Vector Machine (SVM)**    |        0.638 (±0.086)        |              **0.671 (±0.054)**              |                               0.655 (±0.084)                               |
+| **Elastic-Net Logistic Regression** |        0.615 (±0.068)        |              **0.621 (±0.051)**              |                               0.545 (±0.065)                               |
 
 ![Multimodal AUC Comparison](../../plots/biomarkers/multimodal_auc_comparison.png)
 
