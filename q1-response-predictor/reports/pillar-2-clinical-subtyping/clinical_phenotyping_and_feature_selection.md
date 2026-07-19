@@ -59,8 +59,16 @@ Univariate Cox Proportional Hazards models (`lifelines.CoxPHFitter`) were fitted
 
 We performed unsupervised phenotyping on the **TCGA-SKCM** cohort ($N = 426$ aligned patients) using Agglomerative Hierarchical Clustering (Ward linkage). Patient profiles were constructed across demographics, tumor genetics, microenvironmental stress, and adjuvant therapy classes.
 
-### 3.1. Cluster Profiles
-The average clinical and genomic values for each patient cluster are detailed below in a summary table:
+### 3.1. Visual Cluster Profiles & Multi-Dimensional Fingerprints
+
+To visualize how the three patient clusters differ across clinical presentation, treatment history, tumor mutational burden, hypoxia, and survival outcomes, the multi-dimensional profiles are presented below in a **Visual Feature Dashboard** and a **Polar Radar Fingerprint Chart**:
+
+![Cluster Profile Dashboard](../../plots/clinical/cluster_profile_dashboard.png)
+
+![Cluster Profile Radar Fingerprint](../../plots/clinical/cluster_profile_radar.png)
+
+<details>
+<summary>Click to view exact numerical summary table</summary>
 
 | Feature / Clinicopathological Metric | Cluster 0 ($N=312$) | Cluster 1 ($N=112$) | Cluster 2 ($N=24$) |
 | :--- | :--- | :--- | :--- |
@@ -81,6 +89,8 @@ The average clinical and genomic values for each patient cluster are detailed be
 | Stage IV Metastatic Disease (%) | 0.0% | 0.0% | **100.0%** |
 | **Prognosis & Outcomes** | | | |
 | Median Overall Survival | **93.0 months** | **66.5 months** | **28.1 months** |
+
+</details>
 
 ### 3.2. Clinical Interpretation of Subtypes
 
