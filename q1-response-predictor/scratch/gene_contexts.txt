@@ -1,0 +1,27 @@
+Line 180: CD28/CD276
+Line 188: CD40/PDL-1
+Line 189: CD28/CD86
+Line 190: CD40/CD28
+Line 192: CD40/CD80
+Line 193: CD40/PD-1
+Line 552: CD276
+Line 555: CD28
+Line 558: CD40
+Line 587: CD28/CD276
+Line 594: CD28/CD86
+Line 596: CD40/PDL-1
+Line 597: CD40/CD80
+Line 598: CD40/CD28
+Line 599: CD40/PD-1
+Line 617: CD40/PD-1
+Line 711: associated with it (y axis); CD40/PD-1 (left) and PD-1/OX40L (right). The Spearman ρ  and associated P values are shown for each ICB response 
+Line 727: HVEM, CD27 and CD40) is associated with a better response to 
+Line 729: inhibitory molecules (such as CD276, TIM-3, CD200 and VISTA) 
+Line 731: expression of CD40 compared to that of PD-1, PDL-1, CD80 and 
+Line 732: CD28 is associated with a better ICB response, in line with the 
+Line 733: recent finding that agonists of CD40 reverse resistance to anti-
+Line 735: resistance to antagonist CD40 treatment
+Line 748: more predictive for anti-PD-1 pretreatment (CD28/CD86, rank-
+Line 756: CD40/PD-1 and PD1/OX40L (Fig. 3e). Finally, a feature reduction 
+Line 831: mediates acquired resistance to agonistic anti-CD40 treatment. Cancer 
+Line 902: the genes encoding CTLA-4, CD28, CD80/CD86, PD-1 and PD-L1 (ref. 25), which 
