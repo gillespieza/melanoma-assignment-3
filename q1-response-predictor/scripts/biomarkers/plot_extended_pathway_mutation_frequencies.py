@@ -21,7 +21,6 @@ data = [
     {"Category": "MAPK Drivers", "Gene/Pathway": "BRAF mutation", "Liu 2019 (N=104)": 40.4, "Hugo 2016 (N=27)": 59.3, "Riaz 2017 (N=64)": 40.6, "Pooled Trials (N=195)": 43.1},
     {"Category": "MAPK Drivers", "Gene/Pathway": "NRAS mutation", "Liu 2019 (N=104)": 30.8, "Hugo 2016 (N=27)": 18.5, "Riaz 2017 (N=64)": 17.2, "Pooled Trials (N=195)": 24.6},
     {"Category": "MAPK Drivers", "Gene/Pathway": "NF1 mutation", "Liu 2019 (N=104)": 18.3, "Hugo 2016 (N=27)": 25.9, "Riaz 2017 (N=64)": 3.1, "Pooled Trials (N=195)": 14.4},
-    {"Category": "Immune Resistance", "Gene/Pathway": "Antigen Presentation (MHC)", "Liu 2019 (N=104)": 0.0, "Hugo 2016 (N=27)": 0.0, "Riaz 2017 (N=64)": 0.0, "Pooled Trials (N=195)": 0.0},
     {"Category": "Immune Resistance", "Gene/Pathway": "IFN-gamma Signaling", "Liu 2019 (N=104)": 10.6, "Hugo 2016 (N=27)": 18.5, "Riaz 2017 (N=64)": 3.1, "Pooled Trials (N=195)": 9.2},
     {"Category": "Survival & Proliferation", "Gene/Pathway": "Survival & Proliferation Drivers", "Liu 2019 (N=104)": 23.1, "Hugo 2016 (N=27)": 29.6, "Riaz 2017 (N=64)": 10.9, "Pooled Trials (N=195)": 20.0},
 ]
@@ -32,7 +31,7 @@ out_dir = BASE_DIR / "plots" / "genomic"
 out_dir.mkdir(parents=True, exist_ok=True)
 
 # --- Option 1: Horizontal Grouped Bar Chart ---
-fig, ax = plt.subplots(figsize=(12, 7), dpi=300)
+fig, ax = plt.subplots(figsize=(12, 6.5), dpi=300)
 
 y_labels = df["Gene/Pathway"].tolist()
 y_pos = np.arange(len(y_labels))
@@ -55,11 +54,6 @@ for i, cohort in enumerate(cohorts):
                         xytext=(4, 0), textcoords="offset points",
                         ha='left', va='center', fontsize=9, fontweight='bold' if "Pooled" in cohort else 'normal',
                         color='#222222')
-        else:
-            ax.annotate('0.0%',
-                        xy=(0.5, rect.get_y() + rect.get_height() / 2),
-                        xytext=(4, 0), textcoords="offset points",
-                        ha='left', va='center', fontsize=9, color='#888888', fontstyle='italic')
 
 ax.set_yticks(y_pos)
 ax.set_yticklabels(y_labels, fontweight='bold')
@@ -71,12 +65,12 @@ ax.legend(title="Cohort", frameon=True, facecolor='white', framealpha=0.9, loc='
 
 # Add subtle category separation lines & background shading
 ax.axhline(2.5, color='gray', linestyle='--', alpha=0.5)
-ax.axhline(4.5, color='gray', linestyle='--', alpha=0.5)
+ax.axhline(3.5, color='gray', linestyle='--', alpha=0.5)
 
 # Annotate Categories on left
 ax.text(-18, 1.0, "MAPK Drivers", rotation=90, va='center', ha='center', fontweight='bold', color='#333333', fontsize=11)
-ax.text(-18, 3.5, "Immune Resistance", rotation=90, va='center', ha='center', fontweight='bold', color='#333333', fontsize=11)
-ax.text(-18, 5.0, "Survival Drivers", rotation=90, va='center', ha='center', fontweight='bold', color='#333333', fontsize=11)
+ax.text(-18, 3.0, "Immune Resistance", rotation=90, va='center', ha='center', fontweight='bold', color='#333333', fontsize=11)
+ax.text(-18, 4.0, "Survival Drivers", rotation=90, va='center', ha='center', fontweight='bold', color='#333333', fontsize=11)
 
 plt.tight_layout()
 fig_path1 = out_dir / "extended_pathway_grouped_bars.png"

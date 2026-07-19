@@ -34,8 +34,7 @@ Driver Mutation Frequencies
 *   **representative cohort features**: Genomic profiles show mutation status and burden metrics are representative.
 
 ### Extended Pathway Mutation Frequencies
-To further characterize tumor immunogenicity and mechanisms of resistance, we evaluated pre-treatment somatic mutation frequencies across three biological pathways:
-*   **Antigen Presentation**: _B2M_, _TAP1_, _TAP2_ (disrupts MHC Class I presentation).
+To further characterize tumor immunogenicity and mechanisms of resistance, we evaluated pre-treatment somatic mutation frequencies across core biological pathways:
 *   **IFN-gamma Signaling**: _JAK1_, _JAK2_, _STAT1_ (induces insensitivity to T-cell cytotoxicity).
 *   **Survival & Proliferation Drivers**: _PTEN_, _CDKN2A_, _PIK3CA_ (oncogenic drivers).
 
@@ -51,13 +50,12 @@ Extended Pathway Somatic Mutation & Pathway Frequencies
 | **BRAF mutation**                    | 40.4%              | 59.3%              | 40.6%              | **43.1%**               |
 | **NRAS mutation**                    | 30.8%              | 18.5%              | 17.2%              | **24.6%**               |
 | **NF1 mutation**                     | 18.3%              | 25.9%              | 3.1%               | **14.4%**               |
-| **Antigen Presentation (MHC)**       | 0.0%               | 0.0%               | 0.0%               | **0.0%**                |
 | **IFN-gamma Signaling**              | 10.6%              | 18.5%              | 3.1%               | **9.2%**                |
 | **Survival & Proliferation Drivers** | 23.1%              | 29.6%              | 10.9%              | **20.0%**               |
 
 </details>
 
-_Note: Pre-treatment antigen presentation mutations are completely absent in these cohorts, reinforcing that MHC-class I mutations are mostly acquired under selective pressure during checkpoint blockade therapy rather than being common baseline resistance mechanisms._
+_Note: Pre-treatment somatic non-synonymous mutations in MHC Class I machinery (B2M, TAP1, TAP2) are absent in these trial cohorts, as genetic disruption of antigen presentation is primarily an acquired resistance mechanism that emerges under checkpoint blockade pressure rather than a baseline primary resistance mechanism._
 
 ---
 
