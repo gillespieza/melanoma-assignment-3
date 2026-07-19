@@ -30,7 +30,7 @@ def tune_random_forest(X_train, y_train):
         'max_depth': [3, 5, 10, None],
         'min_samples_leaf': [1, 2, 4]
     }
-    rf = RandomForestClassifier(random_state=42)
+    rf = RandomForestClassifier(random_state=42, n_jobs=-1)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(rf, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
@@ -50,7 +50,7 @@ def tune_xgboost(X_train, y_train):
     neg_count = sum(y_train == 0)
     scale_weight = neg_count / pos_count if pos_count > 0 else 1.0
     
-    xgb_clf = xgb.XGBClassifier(eval_metric='logloss', scale_pos_weight=scale_weight, random_state=42)
+    xgb_clf = xgb.XGBClassifier(eval_metric='logloss', scale_pos_weight=scale_weight, random_state=42, n_jobs=-1)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(xgb_clf, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
@@ -78,7 +78,7 @@ def tune_elasticnet(X_train, y_train):
         'C': [0.001, 0.01, 0.1, 1.0, 10.0],
         'l1_ratio': [0.1, 0.3, 0.5, 0.7, 0.9]
     }
-    lr = LogisticRegression(solver='saga', random_state=42, max_iter=2000)
+    lr = LogisticRegression(solver='saga', random_state=42, max_iter=20000, tol=1e-3)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(lr, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)

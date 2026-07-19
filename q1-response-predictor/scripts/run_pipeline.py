@@ -1,5 +1,6 @@
 import os
 import sys
+import contextlib
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,6 +19,7 @@ from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 from src.signatures import extract_all_signatures
 from src.models import run_loco_cv
 from src.evaluation import plot_roc_curves, plot_pr_curves, plot_confusion_matrices, calculate_extended_metrics, calculate_cindex, run_survival_analysis
+from src.utils.logging import TeeStream
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
@@ -37,6 +39,7 @@ PLOT_DIR = BASE_DIR / "plots" / "models"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 REPORTS_DIR = BASE_DIR / "reports"
 REPORTS_DIR.mkdir(exist_ok=True, parents=True)
+LOG_PATH = BASE_DIR / "q1_pipeline.log"
 
 def extract_driver_mutations(df_meta):
     """
@@ -466,7 +469,7 @@ def main():
     X_train_final_scaled = scaler_final.fit_transform(X_train_final)
     X_train_final_scaled = pd.DataFrame(X_train_final_scaled, columns=X_train_final.columns, index=X_train_final.index)
     
-    rf_final = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5)
+    rf_final = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5, n_jobs=-1)
     rf_final.fit(X_train_final_scaled, y_train_final)
     
     lr_final = LogisticRegression(max_iter=1000, C=1.0)
@@ -475,7 +478,7 @@ def main():
     svm_final = SVC(probability=True, random_state=42, C=1.0)
     svm_final.fit(X_train_final_scaled, y_train_final)
     
-    elasticnet_final = LogisticRegression(solver='saga', l1_ratio=0.5, C=1.0, random_state=42, max_iter=2000)
+    elasticnet_final = LogisticRegression(solver='saga', l1_ratio=0.5, C=1.0, random_state=42, max_iter=20000, tol=1e-3)
     elasticnet_final.fit(X_train_final_scaled, y_train_final)
     
     with open(models_dir / "final_rf_model.pkl", "wb") as f:
@@ -505,4 +508,9 @@ def main():
     print("==================================================")
 
 if __name__ == "__main__":
-    main()
+    with open(LOG_PATH, "w", encoding="utf-8") as log_file:
+        stdout_tee = TeeStream(sys.stdout, log_file)
+        stderr_tee = TeeStream(sys.stderr, log_file)
+        with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
+            print(f"Logging console output to {LOG_PATH}")
+            main()

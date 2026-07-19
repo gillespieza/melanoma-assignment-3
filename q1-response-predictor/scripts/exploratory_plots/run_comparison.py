@@ -53,9 +53,9 @@ def run_loco_signatures(cohort_dfs, model_type="rf"):
         if model_type == "lr":
             model = LogisticRegression(max_iter=1000, C=1.0, random_state=42)
         elif model_type == "rf":
-            model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+            model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42, n_jobs=-1)
         elif model_type == "xgb":
-            model = XGBClassifier(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42, eval_metric='logloss')
+            model = XGBClassifier(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42, eval_metric='logloss', n_jobs=-1)
             
         model.fit(X_train, y_train)
         
@@ -111,9 +111,9 @@ def run_loco_feature_selection(cohort_expr_dfs, cohort_y_dfs, k_features=20, mod
         if model_type == "lr":
             model = LogisticRegression(max_iter=1000, C=1.0, random_state=42)
         elif model_type == "rf":
-            model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+            model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42, n_jobs=-1)
         elif model_type == "xgb":
-            model = XGBClassifier(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42, eval_metric='logloss')
+            model = XGBClassifier(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42, eval_metric='logloss', n_jobs=-1)
             
         model.fit(X_train_sel, y_train)
         

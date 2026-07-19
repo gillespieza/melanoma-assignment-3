@@ -2,6 +2,7 @@ import os
 import sys
 import shutil
 import json
+import time
 import urllib.request
 import numpy as np
 import pandas as pd
@@ -79,6 +80,22 @@ def load_processed_mutations(mutations_file: Path, target_genes: list, sample_id
             
     df_mut = (df_mut[target_genes] > 0).astype(int)
     return df_mut.reindex(sample_ids, fill_value=0)
+
+def evaluate_auc_cv(model, X, y, cv, label):
+    """
+    Evaluate one feature set with serial outer CV and parallelized inner model search.
+    """
+    start = time.perf_counter()
+    print(f"    - {label}...", flush=True)
+    scores = cross_val_score(model, X, y, cv=cv, scoring='roc_auc', n_jobs=None)
+    elapsed = time.perf_counter() - start
+    print(
+        f"      AUC = {scores.mean():.3f} (+/-{scores.std():.3f}); "
+        f"folds = [{', '.join(f'{score:.3f}' for score in scores)}]; "
+        f"{elapsed:.1f}s",
+        flush=True,
+    )
+    return scores
 
 def main():
     print("==================================================")
@@ -484,27 +501,33 @@ def main():
     models = {
         'Logistic Regression (LR)': GridSearchCV(
             LogisticRegression(solver='liblinear', l1_ratio=1.0, random_state=42, max_iter=1000),
-            param_grid={'C': [0.01, 0.1, 1, 10, 100]}, cv=3, scoring='roc_auc'
+            param_grid={'C': [0.01, 0.1, 1, 10, 100]}, cv=3, scoring='roc_auc', n_jobs=-1
         ),
         'Random Forest (RF)': GridSearchCV(
-            RandomForestClassifier(random_state=42),
+            RandomForestClassifier(random_state=42, n_jobs=-1),
             param_grid={'n_estimators': [50, 100, 200], 'max_depth': [3, 5, 10, None], 'min_samples_leaf': [1, 2, 4]},
-            cv=3, scoring='roc_auc'
+            cv=3, scoring='roc_auc', n_jobs=-1
         ),
-        'XGBoost (XGB)': GridSearchCV(
-            XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss'),
-            param_grid={'n_estimators': [50, 100, 150], 'max_depth': [3, 5, 7], 'learning_rate': [0.01, 0.05, 0.1, 0.2]},
-            cv=3, scoring='roc_auc'
+        'XGBoost (XGB, tuned)': GridSearchCV(
+            XGBClassifier(random_state=42, eval_metric='logloss', n_jobs=-1),
+            param_grid={
+                'n_estimators': [50, 100, 200],
+                'max_depth': [2, 3],
+                'learning_rate': [0.03, 0.05, 0.1],
+                'subsample': [0.8, 1.0],
+                'colsample_bytree': [0.8, 1.0],
+            },
+            cv=3, scoring='roc_auc', n_jobs=-1
         ),
         'Support Vector Machine (SVM)': GridSearchCV(
-            SVC(probability=True, random_state=42),
+            SVC(probability=False, random_state=42),
             param_grid={'C': [0.01, 0.1, 1, 10], 'kernel': ['linear', 'rbf']},
-            cv=3, scoring='roc_auc'
+            cv=3, scoring='roc_auc', n_jobs=-1
         ),
         'Elastic-Net': GridSearchCV(
-            LogisticRegression(solver='saga', random_state=42, max_iter=5000),
+            LogisticRegression(solver='saga', random_state=42, max_iter=20000, tol=1e-3),
             param_grid={'C': [0.01, 0.1, 1, 10], 'l1_ratio': [0.1, 0.5, 0.9]},
-            cv=3, scoring='roc_auc'
+            cv=3, scoring='roc_auc', n_jobs=-1
         )
     }
     
@@ -512,25 +535,26 @@ def main():
     plot_data = []  # Store raw scores for visualisation
     
     for model_name, model in models.items():
-        print(f"  > Evaluating {model_name}...")
+        model_start = time.perf_counter()
+        print(f"  > Evaluating {model_name}...", flush=True)
         # 1. Base Model (Signatures only)
         X_base = df_features_clean[sig_features].values
-        scores_base = cross_val_score(model, X_base, y, cv=cv, scoring='roc_auc')
+        scores_base = evaluate_auc_cv(model, X_base, y, cv, "Signatures only")
         
         # 2. Driver Mutation Model (Sigs + Drivers + Sex)
         driver_cols = sig_features + ['mut_BRAF', 'mut_NRAS', 'mut_NF1', 'Sex_Male']
         X_drivers = df_features_clean[driver_cols].values
-        scores_drivers = cross_val_score(model, X_drivers, y, cv=cv, scoring='roc_auc')
+        scores_drivers = evaluate_auc_cv(model, X_drivers, y, cv, "Signatures + drivers + sex")
         
         # 3. Full Extended Model (All Features including TMB & CNA & pathway mutations)
         X_full = df_features_clean.values
-        scores_full = cross_val_score(model, X_full, y, cv=cv, scoring='roc_auc')
+        scores_full = evaluate_auc_cv(model, X_full, y, cv, "Full extended")
         
         model_results.append({
             'Model': model_name,
-            'Base AUC': f"{scores_base.mean():.3f} (±{scores_base.std():.3f})",
-            'Sigs+Drivers+Sex AUC': f"{scores_drivers.mean():.3f} (±{scores_drivers.std():.3f})",
-            'Full Extended AUC': f"{scores_full.mean():.3f} (±{scores_full.std():.3f})"
+            'Base AUC': f"{scores_base.mean():.3f} (+/-{scores_base.std():.3f})",
+            'Sigs+Drivers+Sex AUC': f"{scores_drivers.mean():.3f} (+/-{scores_drivers.std():.3f})",
+            'Full Extended AUC': f"{scores_full.mean():.3f} (+/-{scores_full.std():.3f})"
         })
         
         plot_data.append({
@@ -539,6 +563,7 @@ def main():
             'drivers_mean': scores_drivers.mean(), 'drivers_std': scores_drivers.std(),
             'full_mean': scores_full.mean(), 'full_std': scores_full.std()
         })
+        print(f"  > Finished {model_name} in {time.perf_counter() - model_start:.1f}s", flush=True)
         
     print("\nModel Cross-Validation AUC Comparison (Pooled Trials):")
     print(pd.DataFrame(model_results).to_string(index=False))
@@ -595,8 +620,8 @@ def main():
     report_content.append("\n![Multimodal AUC Comparison](../plots/biomarkers/multimodal_auc_comparison.png)")
         
     report_content.append("\n### Analysis of Predictor Performance:")
-    report_content.append("1.  **Baseline vs. Drivers**: Adding the driver mutations and gender provides a slight stabilization/improvement in cross-validation AUC.")
-    report_content.append("2.  **Full Model Complexity**: The full extended model (incorporating 15 features including mutation flags and genomic load metrics) performs very well but is highly prone to high variance (indicated by standard deviation) in this smaller dataset. Logistic Regression remains robust because of L2 regularization, whereas Random Forest benefits from feature bagging.")
+    report_content.append("1.  **Baseline vs. Drivers**: Adding the driver mutations and sex provides a slight stabilization/improvement in cross-validation AUC for some model families, including tuned XGBoost.")
+    report_content.append("2.  **Full Multimodal Model**: The full extended model (incorporating 15 features including mutation flags and genomic load metrics) performs strongly with the tuned XGBoost grid, which favors shallow trees, moderate learning rates, and row/feature subsampling, and remains competitive with Random Forest.")
     
     # Save the report markdown
     report_path = REPORTS_DIR / "extended_biomarkers_report.md"

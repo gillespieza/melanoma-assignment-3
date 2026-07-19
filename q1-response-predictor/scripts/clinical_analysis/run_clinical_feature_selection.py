@@ -102,7 +102,7 @@ def main():
     # Approach 1: Random Forest Classifier Importance
     # ==========================================
     print("\n--- Method 1: Random Forest Classifier Feature Importance ---")
-    rf = RandomForestClassifier(n_estimators=200, random_state=42, max_depth=6)
+    rf = RandomForestClassifier(n_estimators=200, random_state=42, max_depth=6, n_jobs=-1)
     rf.fit(features_encoded, y_os_status)
 
     importances = rf.feature_importances_

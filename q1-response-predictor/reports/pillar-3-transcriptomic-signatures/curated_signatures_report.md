@@ -187,7 +187,7 @@ We evaluated the Spearman rank correlation ($r$) between genomic load metrics (T
 ![Genomic Burden vs Immune Signature Correlation Heatmap](../../plots/biomarkers/extended_immune_correlations.png)
   
   > [!IMPORTANT]  
-  > **Key Design Decision**: TMB and immune infiltration represent **orthogonal biomarkers**. A tumor can be highly mutated (high TMB) but immunologically cold, or poorly mutated but highly inflamed (high IFN-γ/TIS). Consequently, combining these independent modalities into a multimodal model (e.g., _Sigs + TMB + Drivers_) is mathematically expected to improve response predictions compared to either modality alone. This design decision is validated by our Random Forest model, which achieves its highest performance (**AUC = 0.700**) when combining signatures with genomic burden features.
+  > **Key Design Decision**: TMB and immune infiltration represent **orthogonal biomarkers**. A tumor can be highly mutated (high TMB) but immunologically cold, or poorly mutated but highly inflamed (high IFN-γ/TIS). Consequently, combining these independent modalities into a multimodal model (e.g., _Sigs + TMB + Drivers_) is mathematically expected to improve response predictions compared to either modality alone. This design decision is validated by the tree-based full multimodal models, with tuned XGBoost (**AUC = 0.699**) and Random Forest (**AUC = 0.700**) performing best when combining signatures with genomic burden features.
 
 ### 5.3. Inter-Signature Correlations and Multivariate Modeling
 We evaluated the Spearman correlation between the 6 continuous transcriptomic signatures and ran a multivariate Logistic Regression model to assess their independent predictive power (odds ratios per standard deviation increase):
@@ -211,17 +211,17 @@ To evaluate the predictive power of gene expression signatures when combined wit
 |:----------------------------------- |:----------------------------:|:--------------------------------------------:|:--------------------------------------------------------------------------:|
 | **Logistic Regression (LR)**        |        0.615 (±0.081)        |                0.600 (±0.043)                |                             **0.560 (±0.094)**                             |
 | **Random Forest (RF)**              |        0.666 (±0.053)        |                0.661 (±0.072)                |                             **0.700 (±0.102)**                             |
-| **XGBoost (XGB)**                   |        0.671 (±0.070)        |                0.639 (±0.078)                |                             **0.663 (±0.063)**                             |
+| **XGBoost (XGB, tuned)**            |        0.632 (±0.061)        |                0.668 (±0.095)                |                             **0.699 (±0.123)**                             |
 | **Support Vector Machine (SVM)**    |        0.627 (±0.090)        |                0.666 (±0.055)                |                             **0.577 (±0.090)**                             |
 | **Elastic-Net Logistic Regression** |        0.606 (±0.070)        |                0.613 (±0.053)                |                             **0.537 (±0.067)**                             |
 
 ![Multimodal AUC Comparison](../../plots/biomarkers/multimodal_auc_comparison.png)
 
 ### Analysis of Predictor Performance
-1. **Signatures as Baseline**: Continuous transcriptomic signatures alone provide a solid baseline across model families, with the strongest signature-only performance from **XGBoost (AUC = 0.671)** and **Random Forest (AUC = 0.666)**.
-2. **Impact of Driver Mutations & Sex**: Adding driver mutation status (`BRAF`, `NRAS`, `NF1`) and sex provides modest gains for some classifiers, most notably **SVM** (0.627 to 0.666) and **Elastic-Net** (0.606 to 0.613), while slightly reducing performance for LR, RF, and XGB.
-3. **Full Multimodal Synergy**: The full extended model (combining signatures with TMB, copy-number alterations, and pathway mutations) achieves the highest overall predictive accuracy with **Random Forest (AUC = 0.700)**. This supports the design decision that combining orthogonal modalities (transcriptomic inflammation + mutational burden) can improve immunotherapy response prediction.
-4. **Model Expansion**: XGBoost, SVM, and elastic-net logistic regression have now been incorporated into the same 5-fold stratified CV benchmarking framework, enabling direct comparison against the original LR/RF baselines.
+1. **Signatures as Baseline**: Continuous transcriptomic signatures alone provide a solid baseline across model families, with the strongest signature-only performance from **Random Forest (AUC = 0.666)** and **XGBoost (AUC = 0.632)** under the tuned XGBoost grid.
+2. **Impact of Driver Mutations & Sex**: Adding driver mutation status (`BRAF`, `NRAS`, `NF1`) and sex provides modest gains for some classifiers, most notably **SVM** (0.627 to 0.666), **Elastic-Net** (0.606 to 0.613), and tuned **XGBoost** (0.632 to 0.668), while slightly reducing performance for LR and RF.
+3. **Full Multimodal Synergy**: The full extended model (combining signatures with TMB, copy-number alterations, and pathway mutations) performs best with tree-based learners, led by **Random Forest (AUC = 0.700)** and **tuned XGBoost (AUC = 0.699)**. This supports the design decision that combining orthogonal modalities (transcriptomic inflammation + mutational burden) can improve immunotherapy response prediction.
+4. **XGBoost Tuning**: The tuned XGBoost grid favors shallower trees (`max_depth` 2-3), moderate learning rates, and row/feature subsampling. This improves the full extended XGBoost model relative to the previous grid while trading off some signature-only performance.
 
 ---
 
@@ -272,6 +272,6 @@ The full diagnostic outputs are saved in `plots/models/`:
 
 ## 8. Consolidated Conclusion
 
-Curated transcriptomic signatures provide the most stable and interpretable foundation for immunotherapy response modeling in this project. The pooled 5-fold benchmark shows that compact immune signatures already perform competitively, while adding orthogonal genomic and clinical features improves the Random Forest full model to **AUC = 0.700**. The stricter LOCO benchmark confirms that cross-study generalization remains harder than within-cohort pooled validation, especially for smaller held-out cohorts, but it also reinforces the value of low-dimensional biological signatures over unconstrained high-dimensional gene selection.
+Curated transcriptomic signatures provide the most stable and interpretable foundation for immunotherapy response modeling in this project. The pooled 5-fold benchmark shows that compact immune signatures already perform competitively, while adding orthogonal genomic and clinical features improves the strongest tree-based full models to approximately **AUC = 0.70**. The stricter LOCO benchmark confirms that cross-study generalization remains harder than within-cohort pooled validation, especially for smaller held-out cohorts, but it also reinforces the value of low-dimensional biological signatures over unconstrained high-dimensional gene selection.
 
 Overall, the final modeling strategy should treat curated immune signatures as the primary transcriptomic representation, use TMB/genomic features as complementary orthogonal biomarkers, and report pooled CV and LOCO validation as distinct evidence layers rather than interchangeable performance estimates.
