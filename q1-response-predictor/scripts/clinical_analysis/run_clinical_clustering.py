@@ -99,8 +99,11 @@ def main():
         'legend.fontsize': 11
     })
 
+    from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+
+    set_presentation_style()
     fig, ax = plt.subplots(figsize=(9, 6.5))
-    colors = ["#3C5488", "#00A087", "#DC0000"] # Nature Publishing Group (NPG) palette
+    colors = [COHORT_PALETTE["Liu 2019"], RESPONSE_PALETTE["CR/PR"], RESPONSE_PALETTE["PD"]] # Blue, Bluish Green, Vermillion Red
     
     kmf = KaplanMeierFitter()
     

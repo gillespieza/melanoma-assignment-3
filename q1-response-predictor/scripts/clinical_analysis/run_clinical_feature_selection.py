@@ -268,6 +268,10 @@ def main():
         df_cph['FDR (BH-adjusted p-value)'] = p_adjusted
         df_cph['Significant (FDR < 0.05)'] = rejected
 
+    from src.styles import RESPONSE_PALETTE, set_presentation_style
+
+    set_presentation_style()
+
     # Sort by p-value
     df_cph = df_cph.sort_values(by='p-value', ascending=True)
     print(df_cph.head(15).to_string(index=False))
@@ -284,7 +288,7 @@ def main():
     plt.subplots_adjust(left=0.32, right=0.62, top=0.88, bottom=0.20)
     
     ax.set_xscale('log')
-    ax.axvline(1.0, color='#888888', linestyle='--', linewidth=1.0, alpha=0.7)
+    ax.axvline(1.0, color='#555555', linestyle='--', linewidth=1.5, zorder=1)
     
     for i, row in df_forest.iterrows():
         hr = row['Hazard Ratio (HR)']
@@ -293,7 +297,7 @@ def main():
         is_sig = row['Significant (FDR < 0.05)']
         
         if is_sig:
-            color = '#e05a47' if hr > 1.0 else '#2b8cbe'
+            color = RESPONSE_PALETTE['PD'] if hr > 1.0 else RESPONSE_PALETTE['CR/PR']
             weight = 'bold'
         else:
             color = '#777777'
@@ -344,8 +348,8 @@ def main():
     
     import matplotlib.lines as mlines
     legend_elements = [
-        mlines.Line2D([0], [0], marker='s', color='none', markerfacecolor='#e05a47', markeredgecolor='none', markersize=8, label='Significant Risk (FDR < 0.05, HR > 1.0)'),
-        mlines.Line2D([0], [0], marker='s', color='none', markerfacecolor='#2b8cbe', markeredgecolor='none', markersize=8, label='Significant Protective (FDR < 0.05, HR < 1.0)'),
+        mlines.Line2D([0], [0], marker='s', color='none', markerfacecolor=RESPONSE_PALETTE['PD'], markeredgecolor='none', markersize=8, label='Significant Risk (FDR < 0.05, HR > 1.0)'),
+        mlines.Line2D([0], [0], marker='s', color='none', markerfacecolor=RESPONSE_PALETTE['CR/PR'], markeredgecolor='none', markersize=8, label='Significant Protective (FDR < 0.05, HR < 1.0)'),
         mlines.Line2D([0], [0], marker='s', color='none', markerfacecolor='#777777', markeredgecolor='none', markersize=8, label='Non-Significant (FDR \u2265 0.05)')
     ]
     ax.legend(
