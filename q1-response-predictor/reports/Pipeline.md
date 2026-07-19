@@ -197,7 +197,7 @@ The pipeline outputs processed data, figures, and reports to their respective di
 *   **`pillar-2-clinical-subtyping/`**:
     *   `clinical_phenotyping_and_feature_selection.md`: Consolidated report detailing non-expression clinical feature importance (RF & Cox PH) and Ward's hierarchical subtype clustering.
 *   **`pillar-3-transcriptomic-signatures/`**:
-    *   `curated_signatures_report.md`: Comprehensive report detailing gene signature implementation (IFN-$\gamma$, TIS, CYT, IMPRES, CD8, TCGA OS), signature scaling, biomarker orthogonality, and 5-fold CV multimodal response predictor evaluation.
+    *   `curated_signatures_report.md`: Consolidated report detailing gene signature implementation (IFN-$\gamma$, TIS, CYT, IMPRES, CD8, TCGA OS), signature scaling, biomarker orthogonality, 5-fold CV multimodal response predictor evaluation, and LOCO model validation.
 *   **`pillar-4-out-of-cohort-benchmarks/`**:
     *   `transcriptomic_feature_selection_results.md`: Benchmark report detailing response-based `SelectKBest` feature selection ($k=20, 100, 200$) vs. signatures across LOCO cross-validation, TCGA Cox 20-gene survival signature derivation, and InterPro domain annotations.
 
