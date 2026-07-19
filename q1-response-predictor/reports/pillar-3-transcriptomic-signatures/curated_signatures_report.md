@@ -6,7 +6,7 @@ created: 2026-07-18 22:19
 cssclasses: table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-18 22:57
+updated: 2026-07-19 17:10
 ---
 
 # Curated Gene Expression Signatures & Feature Engineering Report
@@ -203,12 +203,17 @@ We evaluated the Spearman correlation between the 6 continuous transcriptomic si
 
 ## 6. Multimodal Response Prediction Models
 
-To evaluate the predictive power of gene expression signatures when combined with orthogonal genomic and clinical features, we trained cross-validated response prediction models on the pooled trial cohort ($N=195$). We evaluated three feature representation sets across Logistic Regression (LR) and Random Forest (RF) classifiers using 5-fold stratified cross-validation:
+To evaluate the predictive power of gene expression signatures when combined with orthogonal genomic and clinical features, we trained cross-validated response prediction models on the pooled trial cohort ($N=195$). We evaluated three feature representation sets across several classifiers using 5-fold stratified cross-validation. The values reported below are mean ROC-AUC values with standard deviation across folds (mean ± SD).
 
-| Model Architecture | Base Model (Signatures Only) | Signatures + Drivers (`BRAF/NRAS/NF1`) + Sex | Full Extended Model (Signatures + Drivers + TMB + CNA + Pathway Mutations) |
-| :--- | :---: | :---: | :---: |
-| **Logistic Regression (LR)** | 0.623 (±0.081) | 0.616 (±0.075) | **0.606 (±0.078)** |
-| **Random Forest (RF)** | 0.645 (±0.082) | 0.647 (±0.083) | **0.705 (±0.108)** |
+### Table 2. Cross-validated multimodal response prediction performance. Values are mean ROC-AUC ± SD across 5-fold stratified CV
+
+| Model Architecture                  | Base Model (Signatures Only) | Signatures + Drivers (`BRAF/NRAS/NF1`) + Sex | Full Extended Model (Signatures + Drivers + TMB + CNA + Pathway Mutations) |
+|:----------------------------------- |:----------------------------:|:--------------------------------------------:|:--------------------------------------------------------------------------:|
+| **Logistic Regression (LR)**        |        0.623 (±0.081)        |                0.616 (±0.075)                |                             **0.606 (±0.078)**                             |
+| **Random Forest (RF)**              |        0.645 (±0.082)        |                0.647 (±0.083)                |                             **0.705 (±0.108)**                             |
+| **XGBoost (XGB)**                   | Not evaluated in this draft  |         Not evaluated in this draft          |                        Not evaluated in this draft                         |
+| **Support Vector Machine (SVM)**    | Not evaluated in this draft  |         Not evaluated in this draft          |                        Not evaluated in this draft                         |
+| **Elastic-Net Logistic Regression** | Not evaluated in this draft  |         Not evaluated in this draft          |                        Not evaluated in this draft                         |
 
 ![Multimodal AUC Comparison](../../plots/biomarkers/multimodal_auc_comparison.png)
 
@@ -216,4 +221,5 @@ To evaluate the predictive power of gene expression signatures when combined wit
 1. **Signatures as Baseline**: Continuous transcriptomic signatures alone provide a solid baseline ROC-AUC of **0.623** (LR) and **0.645** (RF), outperforming raw high-dimensional gene selection.
 2. **Impact of Driver Mutations & Sex**: Adding driver mutation status (`BRAF`, `NRAS`, `NF1`) and sex provides slight stabilization in cross-validation performance.
 3. **Full Multimodal Synergy**: The full extended model (combining signatures with TMB, copy-number alterations, and pathway mutations) achieves the highest predictive accuracy (**RF AUC = 0.705**). This confirms our design decision that combining orthogonal modalities (transcriptomic inflammation + mutational burden) delivers maximum predictive power for immunotherapy response.
+4. **Model Expansion**: The current table reports the primary LR/RF benchmarks, but the analysis workflow is already set up to evaluate XGBoost, support vector machines, and elastic-net logistic regression as follow-up comparisons.
 
