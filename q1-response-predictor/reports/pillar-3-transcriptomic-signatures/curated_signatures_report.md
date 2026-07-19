@@ -104,7 +104,7 @@ We have implemented six distinct curated signature modalities in [signatures.py]
 * **Mathematical Calculation**: Standard $\log_2(\text{TPM} + 1)$ expression of `CD274`.
 
 ### 2.7. Univariate Distribution of Signatures by Response Status
-To visualize how well these continuous signature scores separate immunotherapy responders from non-responders, we generated a box plot distribution of each signature score stratified by Responder (red) and Non-Responder (purple) status across the pooled clinical cohorts, overlaid with individual patient data points:
+To visualize how well these continuous signature scores separate immunotherapy responders from non-responders, we generated a box plot distribution of each signature score stratified by Responder (bluish green, `#009E73`) and Non-Responder (vermillion, `#D55E00`) status across the pooled clinical cohorts, overlaid with individual patient data points:
 
 ![Signature Distributions (Box + Jitter)](../../plots/signature_box_jitter_by_response.png)
 
