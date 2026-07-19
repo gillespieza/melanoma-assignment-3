@@ -32,8 +32,9 @@ PLOT_DIR.mkdir(exist_ok=True, parents=True)
 REPORTS_DIR = BASE_DIR / "reports"
 REPORTS_DIR.mkdir(exist_ok=True, parents=True)
 
-# Import signature extractor
+# Import signature extractor and styles
 from src.signatures import extract_all_signatures
+from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 
 def clean_os_status(val):
     if pd.isna(val):
@@ -260,7 +261,7 @@ def main():
     # Plot Neoantigen vs TMB scatter
     sns.set_theme(style="whitegrid", context="talk")
     fig, ax = plt.subplots(figsize=(8, 6))
-    sns.regplot(data=df_trials_neo, x='TMB_NONSYNONYMOUS', y='TOTAL_NEOANTIGEN', color='#1f77b4', ax=ax,
+    sns.regplot(data=df_trials_neo, x='TMB_NONSYNONYMOUS', y='TOTAL_NEOANTIGEN', color=COHORT_PALETTE['Pooled Trials'], ax=ax,
                 scatter_kws={'alpha':0.6, 'edgecolor':'w', 's':70})
     ax.set_title(f"Neoantigen Load vs. TMB (Merged Trials, r = {r_spearman:.3f})", fontsize=14, weight='bold')
     ax.set_xlabel("Nonsynonymous TMB (mutations/Mb)")
@@ -369,7 +370,7 @@ def main():
     high_mask = df_tcga_survival['Aneu_Group'].str.startswith('High')
     low_mask = df_tcga_survival['Aneu_Group'].str.startswith('Low')
     
-    from src.styles import COHORT_PALETTE
+
 
     kmf.fit(df_tcga_survival.loc[low_mask, 'OS_MONTHS'], df_tcga_survival.loc[low_mask, 'os_status_clean'], label=f"Low Aneuploidy (N={low_mask.sum()})")
     kmf.plot_survival_function(ax=ax, color=COHORT_PALETTE["Liu 2019"], ci_show=False, linewidth=2.5) # Blue
