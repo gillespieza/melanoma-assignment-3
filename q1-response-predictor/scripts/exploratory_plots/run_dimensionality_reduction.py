@@ -22,7 +22,7 @@ DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots"
 EXPLORATORY_PLOT_DIR = PLOT_DIR / "exploratory"
 BIOMARKER_PLOT_DIR = PLOT_DIR / "biomarkers"
-REPORT_DIR = BASE_DIR / "reports"
+REPORT_DIR = BASE_DIR / "reports" / "pillar-1-cohorts-and-preprocessing"
 
 for d in [EXPLORATORY_PLOT_DIR, BIOMARKER_PLOT_DIR, REPORT_DIR]:
     d.mkdir(exist_ok=True, parents=True)

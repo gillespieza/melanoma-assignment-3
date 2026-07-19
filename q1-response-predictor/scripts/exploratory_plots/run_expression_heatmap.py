@@ -20,7 +20,7 @@ from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots" / "exploratory"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
-REPORT_DIR = BASE_DIR / "reports"
+REPORT_DIR = BASE_DIR / "reports" / "pillar-1-cohorts-and-preprocessing"
 
 def zscore_df(df):
     means = df.mean(axis=0)
