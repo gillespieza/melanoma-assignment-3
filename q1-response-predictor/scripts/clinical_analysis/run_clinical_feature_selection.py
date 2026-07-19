@@ -20,7 +20,7 @@ DATA_DIR = BASE_DIR / "data"
 CLINICAL_FILE = DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/clin_cleaned.csv"
 REPORTS_DIR = BASE_DIR / "reports"
 REPORTS_DIR.mkdir(exist_ok=True, parents=True)
-PLOTS_DIR = BASE_DIR / "plots"
+PLOTS_DIR = BASE_DIR / "plots" / "clinical"
 PLOTS_DIR.mkdir(exist_ok=True, parents=True)
 OUTPUT_FILE = REPORTS_DIR / "clinical_feature_selection_results.md"
 
@@ -36,6 +36,9 @@ def main():
     # Load data
     df = pd.read_csv(CLINICAL_FILE)
     print(f"Loaded clinical data with shape: {df.shape}")
+    df = df.dropna(subset=['OS_STATUS'])
+    print(f"Filtered clinical data (non-null OS_STATUS) shape: {df.shape}")
+
 
     # 1. Define targets and identifiers to exclude
     target_cols = ['OS_STATUS', 'OS_MONTHS', 'PFS_STATUS', 'PFS_MONTHS', 'DSS_STATUS', 'DSS_MONTHS']
@@ -392,12 +395,12 @@ def main():
         f.write("## Method 1: Random Forest Classifier Importance\n")
         f.write("A Random Forest classifier was trained to predict **Overall Survival status (OS_STATUS)** using all clinical variables. Features are ranked by their Gini importance.\n\n")
         f.write("### Feature Importance Visualization\n")
-        f.write("![Random Forest Classifier Feature Importance](../plots/clinical_feature_importance.png)\n\n")
+        f.write("![Random Forest Classifier Feature Importance](../plots/clinical/clinical_feature_importance.png)\n\n")
 
         f.write("## Method 2: Cox Proportional Hazards Regression (Univariate)\n")
         f.write("Univariate Cox Proportional Hazards models were fitted to assess the association of each individual feature with overall survival time (`OS_MONTHS`) and survival status (`OS_STATUS`). Features are sorted by statistical significance (lowest p-value).\n\n")
         f.write("### Cox Proportional Hazards Forest Plot\n")
-        f.write("![Cox Forest Plot](../plots/cox_forest_plot.png)\n\n")
+        f.write("![Cox Forest Plot](../plots/clinical/cox_forest_plot.png)\n\n")
         
         f.write("## Key Findings & Biological Summary\n")
         

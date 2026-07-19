@@ -3,9 +3,9 @@
 This report documents the results of feature selection run on the cleaned clinical dataset of the **TCGA-SKCM** cohort.
 
 ## Dataset Characteristics
-*   **Total samples analyzed**: 426
-*   **Original columns**: 59
-*   **Encoded feature columns size**: 79
+*   **Total samples analyzed**: 441
+*   **Original columns**: 57
+*   **Encoded feature columns size**: 78
 
 ### Excluded Columns Groupings
 *   **Identifiers and Administrative**: ['PATIENT_ID', 'SAMPLE_ID', 'ICD_10', 'ICD_O_3_HISTOLOGY', 'ICD_O_3_SITE']
@@ -28,8 +28,8 @@ Univariate Cox Proportional Hazards models were fitted to assess the association
 ![Cox Forest Plot](../plots/clinical/cox_forest_plot.png)
 
 ## Key Findings & Biological Summary
-1.  **Random Forest Top Predictor**: The feature with the highest predictive value for binary overall survival status is **`Fraction Genome Altered`**.
-2.  **Cox Regression Top Predictor**: The feature most statistically associated with survival duration is **`Primary Tumour (T) Staging: T4b`** (univariate Cox p-value = `6.63e-12`, Hazard Ratio = `3.299`).
+1.  **Random Forest Top Predictor**: The feature with the highest predictive value for binary overall survival status is **`Weight`**.
+2.  **Cox Regression Top Predictor**: The feature most statistically associated with survival duration is **`Primary Tumour (T) Staging: T4b`** (univariate Cox p-value = `2.09e-11`, Hazard Ratio = `3.190`).
 3.  **Pathology vs Sourcing**: Pathology staging features (like AJCC Stage or Primary Tumour (T) Staging dummy variables) rank highly across both models, validating the clinical value of anatomical staging.
 4.  **TMB & Hypoxia**: Quantitative metrics (e.g. `TMB_NONSYNONYMOUS` or hypoxia scores) are highly ranked, highlighting the coupling between genomic mutations/tumor microenvironment stress and overall survival outcomes.
 5.  **Sample Type & Primary Disease**: Primary tumor samples (`SAMPLE_TYPE_Primary`) show significantly higher hazard ratios (HR = `3.34`, univariate Cox p-value = `3.50e-08`) compared to metastatic samples in this cohort, representing a distinct risk profile.
