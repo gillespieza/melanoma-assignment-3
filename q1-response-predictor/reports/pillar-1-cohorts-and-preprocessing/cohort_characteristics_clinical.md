@@ -89,11 +89,11 @@ Response Distribution Waffle Chart
   <tr>
     <td width="50%">
       <p align="center"><b>Stacked Bar Chart (Proportions)</b></p>
-      <img src="../plots/clinical/" alt="">
+      <img src="../../plots/clinical/response_distribution.png" alt="Response Distribution Stacked Bar">
     </td>
     <td width="50%">
       <p align="center"><b>Waffle Chart (Patient Counts)</b></p>
-      <img src="../plots/clinical/" alt="">
+      <img src="../../plots/clinical/response_waffle_chart.png" alt="Response Distribution Waffle Chart">
     </td>
   </tr>
 </table>
