@@ -137,7 +137,9 @@ def main():
     df_mut_freq = pd.DataFrame(mut_data)
     df_mut_melt = df_mut_freq.melt(id_vars="Cohort", var_name="Gene", value_name="Frequency")
 
-    sns.set_theme(style="whitegrid")
+    from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, DRIVER_PALETTE, set_presentation_style
+
+    set_presentation_style()
     fig, ax = plt.subplots(figsize=(10, 6))
     
     sns.barplot(
@@ -145,7 +147,7 @@ def main():
         x="Gene",
         y="Frequency",
         hue="Cohort",
-        palette="viridis",
+        palette=COHORT_PALETTE,
         edgecolor="black",
         ax=ax
     )
@@ -164,7 +166,7 @@ def main():
     out_mut_path = PLOT_DIR / "mutation_frequencies.png"
     plt.savefig(out_mut_path, dpi=300)
     plt.close()
-    print(f"Saved mutation frequency comparison to {out_mut_path}")
+    print(f"Saved mutation frequencies plot to {out_mut_path}")
 
     # =========================================================================
     # 2. TMB Distribution Plot (by Response for trials, and Cohort-wide)
@@ -188,7 +190,7 @@ def main():
         x="Cohort",
         y="TMB_NONSYNONYMOUS",
         hue="Response",
-        palette=["#d62728", "#2ca02c"],
+        palette={"Responder (CR/PR)": RESPONSE_PALETTE["CR/PR"], "Non-responder (PD)": RESPONSE_PALETTE["PD"]},
         ax=axes[0],
         fliersize=4
     )
@@ -218,13 +220,13 @@ def main():
         tcga_tmb,
         kde=True,
         log_scale=True,
-        color="#8c564b",
+        color=COHORT_PALETTE["TCGA-SKCM"],
         ax=axes[1],
         bins=30,
         edgecolor="black"
     )
-    axes[1].axvline(tcga_tmb.median(), color="red", linestyle="--", linewidth=1.5, label=f"Median = {tcga_tmb.median():.2f}")
-    axes[1].axvline(10.0, color="darkred", linestyle=":", linewidth=1.5, label="Standard FDA Cutoff = 10.0")
+    axes[1].axvline(tcga_tmb.median(), color=RESPONSE_PALETTE["PD"], linestyle="--", linewidth=1.5, label=f"Median = {tcga_tmb.median():.2f}")
+    axes[1].axvline(10.0, color="#555555", linestyle=":", linewidth=1.5, label="Standard FDA Cutoff = 10.0")
     axes[1].set_xlabel("TMB (mutations/Mb, log scale)", fontsize=12, fontweight="bold")
     axes[1].set_ylabel("Number of Samples", fontsize=12, fontweight="bold")
     axes[1].set_title("TCGA-SKCM Tumor Mutational Burden (TMB) Distribution (N=426)", fontsize=13, fontweight="bold")
@@ -240,51 +242,37 @@ def main():
     # 3. Biomarker Correlation Clustermap / Heatmap
     # =========================================================================
     print("\n3. Generating biomarker correlation matrix...")
-    # Select continuous genomic variables from Liu and Hugo
-    # (these have detailed neoantigen counts)
     neo_cols = ['TMB_NONSYNONYMOUS', 'SNV_NEOANTIGEN', 'INDEL_NEOANTIGEN', 
                 'FUSION_NEOANTIGEN', 'SPLICE_NEOANTIGEN', 'CTA_SELF_NEOANTIGEN']
     
-    # Filter available columns
     available_cols = [c for c in neo_cols if c in clin_liu.columns]
     corr_df = clin_liu[available_cols].dropna()
-    
-    # Calculate Spearman correlation
-    corr_matrix = corr_df.corr(method="spearman")
-    
-    fig, ax = plt.subplots(figsize=(8, 6.5))
-    sns.heatmap(
-        corr_matrix,
-        annot=True,
-        cmap="coolwarm",
-        vmin=-1, vmax=1,
-        fmt=".2f",
-        square=True,
-        linewidths=0.5,
-        ax=ax
-    )
-    ax.set_title("Spearman Correlation of Continuous Genomic Biomarkers (Liu 2019)", fontsize=13, fontweight="bold", pad=15)
-    plt.tight_layout()
-    
-    out_corr_path = PLOT_DIR / "biomarker_correlation_heatmap.png"
-    plt.savefig(out_corr_path, dpi=300)
-    plt.close()
-    print(f"Saved correlation heatmap to {out_corr_path}")
+
+    if len(corr_df) > 0:
+        corr_matrix = corr_df.corr(method="spearman")
+        fig, ax = plt.subplots(figsize=(8, 6.5))
+        sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap="YlGnBu", cbar_kws={'label': 'Spearman Correlation (r_s)'},
+                    linewidths=1, linecolor='white', ax=ax, annot_kws={"size": 10, "weight": "bold"})
+        ax.set_title("Genomic & Neoantigen Biomarker Spearman Correlation (Liu 2019)", fontsize=13, fontweight="bold", pad=15)
+        plt.xticks(rotation=45, ha='right', fontweight='bold')
+        plt.yticks(fontweight='bold')
+        plt.tight_layout()
+        out_corr_path = PLOT_DIR / "biomarker_correlation_heatmap.png"
+        plt.savefig(out_corr_path, dpi=300)
+        plt.close()
+        print(f"Saved biomarker correlation heatmap to {out_corr_path}")
 
     # =========================================================================
-    # 4. TCGA Survival Stratification by Genomic Features
+    # 4. TCGA Overall Survival Stratification by Genomic Features
     # =========================================================================
-    print("\n4. Generating TCGA survival curves stratified by genomic features...")
-    # Clean TCGA survival
-    df_surv = clin_tcga.dropna(subset=["OS_MONTHS", "OS_STATUS"]).copy()
+    print("\n4. Generating TCGA survival stratification plots...")
+    df_surv = clin_tcga[["OS_MONTHS", "OS_STATUS", "mut_BRAF", "mut_NRAS", "mut_NF1", "TMB_NONSYNONYMOUS"]].dropna().copy()
     df_surv["OS_MONTHS"] = pd.to_numeric(df_surv["OS_MONTHS"], errors="coerce")
     df_surv["OS_STATUS"] = pd.to_numeric(df_surv["OS_STATUS"], errors="coerce")
     df_surv = df_surv[(df_surv["OS_MONTHS"] > 0) & (df_surv["OS_STATUS"].isin([0, 1]))]
 
     fig, axes = plt.subplots(1, 2, figsize=(16, 6.5))
 
-    # Left panel: KM by Mutation Status (BRAF vs NRAS vs NF1 vs Triple-WT)
-    # Define mutually exclusive genomic groups
     def map_genomic_groups(row):
         if row["mut_BRAF"] == 1:
             return "BRAF Mutant"
@@ -298,17 +286,20 @@ def main():
     df_surv["Genomic_Subtype"] = df_surv.apply(map_genomic_groups, axis=1)
     
     kmf = KaplanMeierFitter()
-    subtypes = ["BRAF Mutant", "NRAS Mutant", "NF1 Mutant", "Triple Wild-Type"]
-    colors = ["#1f77b4", "#ff7f0e", "#d62728", "#7f7f7f"]
+    subtypes_map = [
+        ("BRAF Mutant", DRIVER_PALETTE["BRAF"]),
+        ("NRAS Mutant", DRIVER_PALETTE["NRAS"]),
+        ("NF1 Mutant", DRIVER_PALETTE["NF1"]),
+        ("Triple Wild-Type", DRIVER_PALETTE["Triple-WT"])
+    ]
     
-    for subtype, color in zip(subtypes, colors):
+    for subtype, color in subtypes_map:
         mask = df_surv["Genomic_Subtype"] == subtype
         if mask.sum() > 0:
             kmf.fit(df_surv.loc[mask, "OS_MONTHS"], event_observed=df_surv.loc[mask, "OS_STATUS"], 
                     label=f"{subtype} (N={mask.sum()})")
             kmf.plot_survival_function(ax=axes[0], color=color, linewidth=2.5, ci_show=False)
             
-    # Multivariate logrank test
     results_mut = multivariate_logrank_test(df_surv["OS_MONTHS"], df_surv["Genomic_Subtype"], df_surv["OS_STATUS"])
     axes[0].text(0.05, 0.08, f"Multivariate Log-rank p = {results_mut.p_value:.4f}", transform=axes[0].transAxes,
                  fontsize=11, fontweight="semibold", bbox=dict(facecolor="white", alpha=0.8, edgecolor="gray"))
@@ -319,7 +310,6 @@ def main():
     axes[0].legend(loc="upper right", fontsize=10)
     axes[0].grid(True, linestyle="--", alpha=0.5)
 
-    # Right panel: KM by TMB (High vs Low using standard median split)
     tcga_tmb_med = df_surv["TMB_NONSYNONYMOUS"].median()
     df_surv["TMB_Group"] = df_surv["TMB_NONSYNONYMOUS"].apply(lambda x: "High TMB" if x >= tcga_tmb_med else "Low TMB")
     
@@ -330,10 +320,10 @@ def main():
     kmf_l = KaplanMeierFitter()
     
     kmf_h.fit(df_surv.loc[mask_high, "OS_MONTHS"], event_observed=df_surv.loc[mask_high, "OS_STATUS"], label=f"High TMB (N={mask_high.sum()})")
-    kmf_h.plot_survival_function(ax=axes[1], color="#2ca02c", linewidth=2.5, ci_show=False)
+    kmf_h.plot_survival_function(ax=axes[1], color=RESPONSE_PALETTE["CR/PR"], linewidth=2.5, ci_show=False)
     
     kmf_l.fit(df_surv.loc[mask_low, "OS_MONTHS"], event_observed=df_surv.loc[mask_low, "OS_STATUS"], label=f"Low TMB (N={mask_low.sum()})")
-    kmf_l.plot_survival_function(ax=axes[1], color="#d62728", linewidth=2.5, ci_show=False)
+    kmf_l.plot_survival_function(ax=axes[1], color=RESPONSE_PALETTE["PD"], linewidth=2.5, ci_show=False)
     
     results_tmb = logrank_test(df_surv.loc[mask_high, "OS_MONTHS"], df_surv.loc[mask_low, "OS_MONTHS"],
                                df_surv.loc[mask_high, "OS_STATUS"], df_surv.loc[mask_low, "OS_STATUS"])

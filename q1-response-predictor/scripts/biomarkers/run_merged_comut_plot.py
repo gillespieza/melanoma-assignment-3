@@ -167,9 +167,13 @@ def main():
         ax_freq.text(freq + 1, i, f"{freq:.1f}%", va='center', fontsize=9, weight='bold')
     ax_freq.axhline(y=2.5, color='black', linewidth=1.5, linestyle='-', zorder=10)
 
+    from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+
+    set_presentation_style()
+
     # D. Bottom Track 1: Response Status
     ax_resp = fig.add_subplot(gs[3, 0])
-    cmap_resp = ListedColormap(["#d62728", "#2ca02c"]) # Red, Green
+    cmap_resp = ListedColormap([RESPONSE_PALETTE["PD"], RESPONSE_PALETTE["CR/PR"]]) # Non-responder, Responder
     bounds_resp = [-0.5, 0.5, 1.5]
     norm_resp = BoundaryNorm(bounds_resp, cmap_resp.N)
     sns.heatmap(
@@ -180,8 +184,8 @@ def main():
 
     # E. Bottom Track 2: Cohort Source
     ax_cohort = fig.add_subplot(gs[4, 0])
-    # Colormap: 0 = Liu (purple), 1 = Hugo (orange), 2 = Riaz (teal)
-    cmap_cohort = ListedColormap(["#9467bd", "#ff7f0e", "#17becf"])
+    # Colormap: 0 = Liu 2019, 1 = Hugo 2016, 2 = Riaz 2017
+    cmap_cohort = ListedColormap([COHORT_PALETTE["Liu 2019"], COHORT_PALETTE["Hugo 2016"], COHORT_PALETTE["Riaz 2017"]])
     bounds_cohort = [-0.5, 0.5, 1.5, 2.5]
     norm_cohort = BoundaryNorm(bounds_cohort, cmap_cohort.N)
     sns.heatmap(
@@ -217,11 +221,11 @@ def main():
     patches = [
         mpatches.Patch(color=color_mut, label='Mutated'),
         mpatches.Patch(color=color_wt, label='Wild-Type'),
-        mpatches.Patch(color="#2ca02c", label='Responder (CR/PR)'),
-        mpatches.Patch(color="#d62728", label='Non-Responder (PD)'),
-        mpatches.Patch(color="#9467bd", label='Liu 2019'),
-        mpatches.Patch(color="#ff7f0e", label='Hugo 2016'),
-        mpatches.Patch(color="#17becf", label='Riaz 2017'),
+        mpatches.Patch(color=RESPONSE_PALETTE["CR/PR"], label='Responder (CR/PR)'),
+        mpatches.Patch(color=RESPONSE_PALETTE["PD"], label='Non-responder (PD)'),
+        mpatches.Patch(color=COHORT_PALETTE["Liu 2019"], label='Liu 2019'),
+        mpatches.Patch(color=COHORT_PALETTE["Hugo 2016"], label='Hugo 2016'),
+        mpatches.Patch(color=COHORT_PALETTE["Riaz 2017"], label='Riaz 2017'),
         mpatches.Patch(color="#252525", label='Sex: Male'),
         mpatches.Patch(color="#f768a1", label='Sex: Female'),
         mpatches.Patch(color="#e0e0e0", label='Sex: Unknown')
