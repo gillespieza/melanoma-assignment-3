@@ -6,7 +6,7 @@ created: 2026-07-20 13:44
 cssclasses: table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-20 13:46
+updated: 2026-07-20 13:55
 ---
 
 # Executive Summary: Melanoma Immunotherapy Response Predictor
@@ -19,14 +19,14 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 
 ## Cohort Summary
 
-| Cohort | N | Treatment | Response Rate | Role in Pipeline |
-|:---|:---|:---|:---|:---|
-| **Liu 2019** | 104 | Pembrolizumab / Nivolumab | 46.2% | Training / LOCO test fold |
-| **Hugo 2016** | 27 | Pembrolizumab | 51.9% | Training / LOCO test fold |
-| **Riaz 2017** | 64 | Nivolumab | 31.2% | Training / LOCO test fold |
-| **TCGA-SKCM** | 427 | Mixed (non-ICI reference) | N/A (survival only) | Signature derivation / clinical subtyping |
+### _Table 1: Study cohorts and their roles. Response rate differences across the three trial cohorts are not statistically significant (\chi^2 p = 0.1733), justifying their pooling for joint analysis._
 
-_Table 1: Study cohorts and their roles. Response rate differences across the three trial cohorts are not statistically significant ($\chi^2$ p = 0.1733), justifying their pooling for joint analysis._
+| Cohort        | N   | Treatment                 | Response Rate       | Role in Pipeline                          |
+|:------------- |:--- |:------------------------- |:------------------- |:----------------------------------------- |
+| **Liu 2019**  | 104 | Pembrolizumab / Nivolumab | 46.2%               | Training / LOCO test fold                 |
+| **Hugo 2016** | 27  | Pembrolizumab             | 51.9%               | Training / LOCO test fold                 |
+| **Riaz 2017** | 64  | Nivolumab                 | 31.2%               | Training / LOCO test fold                 |
+| **TCGA-SKCM** | 427 | Mixed (non-ICI reference) | N/A (survival only) | Signature derivation / clinical subtyping |
 
 ---
 
@@ -46,15 +46,15 @@ Tumour Mutational Burden and transcriptomic immune signatures are essentially un
 
 ### 3. Tree-Based Models Outperform Linear Models on Multimodal Features
 
-| Model | Pooled 5-Fold CV AUC | Best LOCO AUC (Cohort) |
-|:---|:---|:---|
-| **XGBoost** | **0.724 ± 0.089** | 0.618 (Riaz 2017) |
-| **Random Forest** | **0.710 ± 0.094** | 0.678 (Riaz 2017) |
-| **SVM** | — | **0.717** (Riaz 2017) |
-| Logistic Regression | 0.615 | 0.609 (Liu 2019) |
-| Elastic Net | — | 0.616 (Liu 2019) |
+#### _Table 2: Model performance under pooled cross-validation and strict Leave-One-Cohort-Out (LOCO) validation. Tree-based models benefit from multimodal feature integration; linear models degrade with additional features._
 
-_Table 2: Model performance under pooled cross-validation and strict Leave-One-Cohort-Out (LOCO) validation. Tree-based models benefit from multimodal feature integration; linear models degrade with additional features._
+| Model               | Pooled 5-Fold CV AUC | Best LOCO AUC (Cohort) |
+|:------------------- |:-------------------- |:---------------------- |
+| **XGBoost**         | **0.724 ± 0.089**    | 0.618 (Riaz 2017)      |
+| **Random Forest**   | **0.710 ± 0.094**    | 0.678 (Riaz 2017)      |
+| **SVM**             | —                    | **0.717** (Riaz 2017)  |
+| Logistic Regression | 0.615                | 0.609 (Liu 2019)       |
+| Elastic Net         | —                    | 0.616 (Liu 2019)       |
 
 > [!important] Performance Gap Between Pooled CV and LOCO  
 > Pooled 5-fold CV estimates (~0.70–0.72 AUC) substantially overestimate out-of-cohort performance. Strict LOCO validation, where an entire cohort is held out, yields AUCs in the 0.55–0.72 range, reflecting the true difficulty of cross-study generalisation with small clinical trial datasets ($N \approx 27$–$104$).
@@ -84,6 +84,8 @@ graph LR
     H --> I["LOCO Cross-Validation"]
 ```
 
+### _Table 3: Key pipeline architecture decisions and their justifications._
+
 | Decision | Choice | Rationale |
 |:---|:---|:---|
 | **Batch correction** | Cohort-independent Z-score scaling | Prevents cross-validation data leakage (ComBat requires access to all cohorts simultaneously) |
@@ -91,8 +93,6 @@ graph LR
 | **Genomic features** | TMB + 3 driver mutations (BRAF, NRAS, NF1) | Orthogonal to transcriptomic signatures; TMB is predictive of response but not prognostic of baseline survival |
 | **Feature selection** | Curated signatures over SelectKBest | Data-driven selection captures cohort-specific noise, not transferable immune biology |
 | **Validation strategy** | Report both pooled CV and LOCO | LOCO is the primary evidence layer; pooled CV provides complementary upper-bound estimates |
-
-_Table 3: Key pipeline architecture decisions and their justifications._
 
 ---
 
@@ -109,6 +109,8 @@ _Table 3: Key pipeline architecture decisions and their justifications._
 
 ## Report Navigation
 
+### _Table 4: Report navigation index across the 4-pillar documentation architecture._
+
 | Pillar | Report | Focus |
 |:---|:---|:---|
 | **1** | [cohort_characteristics_clinical.md](pillar-1-cohorts-and-preprocessing/cohort_characteristics_clinical.md) | Demographics, staging, response rates, survival curves |
@@ -120,4 +122,3 @@ _Table 3: Key pipeline architecture decisions and their justifications._
 | **4** | [transcriptomic_feature_selection_results.md](pillar-4-out-of-cohort-benchmarks/transcriptomic_feature_selection_results.md) | SelectKBest vs. signatures, TCGA survival signature |
 | — | [Pipeline.md](Pipeline.md) | Technical pipeline workflow and implementation details |
 
-_Table 4: Report navigation index across the 4-pillar documentation architecture._

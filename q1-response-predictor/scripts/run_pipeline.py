@@ -18,7 +18,7 @@ if str(BASE_DIR) not in sys.path:
 from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 from src.signatures import extract_all_signatures
 from src.models import run_loco_cv, get_model
-from src.evaluation import plot_roc_curves, plot_pr_curves, plot_confusion_matrices, calculate_extended_metrics, calculate_cindex, run_survival_analysis
+from src.evaluation import plot_roc_curves, plot_pr_curves, plot_confusion_matrices, calculate_extended_metrics, calculate_cindex, run_survival_analysis, find_optimal_threshold
 from src.utils.logging import TeeStream
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
@@ -68,7 +68,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir):
         "- **Cross-validation**: Leave-One-Cohort-Out (LOCO) — train on 2 cohorts, test on 1\n",
         "- **Test cohorts**: Liu 2019 (N=104), Hugo 2016 (N=27), Riaz 2017 (N=64)\n",
         "- **Features**: 11 immune response signatures (IFN-gamma, TIS, CD8 T-cell, CYT, IMPRES, PD-L1, etc.)\n",
-        "- **Decision threshold**: 0.5 (standard for binary classification)\n",
+        "- **Decision threshold**: 0.5 (default) and Youden's J optimal (per-fold)\n",
         "- **Metrics**: AUC-ROC, Accuracy, Sensitivity, Specificity, Precision, F1-score, C-index\n",
         "\n---\n\n"
     ]
@@ -85,7 +85,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir):
     for model_key, loco_results in all_loco_results.items():
         report_lines.append(f"## {model_names.get(model_key, model_key.upper())}\n\n")
         
-        # Create metrics table
+        # Create metrics table at default threshold
         report_lines.append("### Performance Metrics (Threshold = 0.5)\n\n")
         report_lines.append("| Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score | C-Index |\n")
         report_lines.append("|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
@@ -100,6 +100,25 @@ def generate_model_evaluation_report(all_loco_results, output_dir):
             cindex_str = f"{m['cindex']:.3f}" if 'cindex' in m and not np.isnan(m.get('cindex', np.nan)) else "N/A"
             report_lines.append(
                 f"| {cohort} | {n_samples} | {m['auc']:.3f} | {m['accuracy']:.3f} | {m['sensitivity']:.3f} | {m['specificity']:.3f} | {m['precision']:.3f} | {m['f1']:.3f} | {cindex_str} |\n"
+            )
+
+        # Create metrics table at Youden's J optimal threshold
+        report_lines.append("\n### Performance Metrics (Youden's J Optimal Threshold)\n\n")
+        report_lines.append("> Youden's J statistic ($J = \\text{sensitivity} + \\text{specificity} - 1$) identifies the threshold that maximises the sum of sensitivity and specificity. This is an **optimistic** estimate because the threshold is selected on the same data it is evaluated on; in production, the threshold should be fixed from a training set.\n\n")
+        report_lines.append("| Test Cohort | N | AUC | Threshold | Accuracy | Sensitivity | Specificity | Precision | F1-Score |\n")
+        report_lines.append("|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
+
+        for cohort, res in sorted(loco_results.items()):
+            if 'metrics_optimal' in res:
+                m = res['metrics_optimal']
+            else:
+                from src.evaluation import find_optimal_threshold as _find_opt
+                opt_t = _find_opt(res['y_true'], res['y_pred_prob'])
+                m = calculate_extended_metrics(res['y_true'], res['y_pred_prob'], threshold=opt_t)
+
+            n_samples = len(res['y_true'])
+            report_lines.append(
+                f"| {cohort} | {n_samples} | {m['auc']:.3f} | {m['threshold']:.3f} | {m['accuracy']:.3f} | {m['sensitivity']:.3f} | {m['specificity']:.3f} | {m['precision']:.3f} | {m['f1']:.3f} |\n"
             )
         
         # Confusion matrices
@@ -265,25 +284,35 @@ def main():
         # Print metrics table
         metrics_rows = []
         for cohort, res in loco_results.items():
-            # Recalculate with extended metrics
-            extended_metrics = calculate_extended_metrics(res['y_true'], res['y_pred_prob'])
-            
+            # Metrics at default threshold (0.5)
+            m_default = calculate_extended_metrics(res['y_true'], res['y_pred_prob'], threshold=0.5)
+
+            # Metrics at Youden's J optimal threshold
+            optimal_t = find_optimal_threshold(res['y_true'], res['y_pred_prob'])
+            m_optimal = calculate_extended_metrics(res['y_true'], res['y_pred_prob'], threshold=optimal_t)
+
             # Calculate C-index using survival data
             survival_data = cohort_survival[cohort]
             cindex = calculate_cindex(res['y_pred_prob'], survival_data['os_time'], survival_data['os_status'])
-            extended_metrics['cindex'] = cindex
-            
-            res['metrics_extended'] = extended_metrics
-            
+            m_default['cindex'] = cindex
+            m_optimal['cindex'] = cindex
+
+            res['metrics_extended'] = m_default
+            res['metrics_optimal'] = m_optimal
+
             metrics_rows.append({
                 'Test Cohort': cohort,
-                'AUC': f"{extended_metrics['auc']:.3f}",
-                'Accuracy': f"{extended_metrics['accuracy']:.3f}",
-                'Sensitivity': f"{extended_metrics['sensitivity']:.3f}",
-                'Specificity': f"{extended_metrics['specificity']:.3f}",
-                'Precision': f"{extended_metrics['precision']:.3f}",
-                'F1': f"{extended_metrics['f1']:.3f}",
-                'C-Index': f"{extended_metrics['cindex']:.3f}" if not np.isnan(extended_metrics['cindex']) else "N/A"
+                'AUC': f"{m_default['auc']:.3f}",
+                'Acc (0.5)': f"{m_default['accuracy']:.3f}",
+                'Sens (0.5)': f"{m_default['sensitivity']:.3f}",
+                'Spec (0.5)': f"{m_default['specificity']:.3f}",
+                'F1 (0.5)': f"{m_default['f1']:.3f}",
+                'Thresh*': f"{optimal_t:.3f}",
+                'Acc*': f"{m_optimal['accuracy']:.3f}",
+                'Sens*': f"{m_optimal['sensitivity']:.3f}",
+                'Spec*': f"{m_optimal['specificity']:.3f}",
+                'F1*': f"{m_optimal['f1']:.3f}",
+                'C-Index': f"{cindex:.3f}" if not np.isnan(cindex) else "N/A"
             })
         print(pd.DataFrame(metrics_rows).to_string(index=False))
         

@@ -101,24 +101,54 @@ def plot_confusion_matrices(loco_results, model_name, save_path=None):
     else:
         plt.show()
 
+def find_optimal_threshold(y_true: np.ndarray, y_pred_prob: np.ndarray) -> float:
+    """Finds the decision threshold that maximises Youden's J statistic.
+
+    Youden's J = sensitivity + specificity - 1, equivalent to the point
+    on the ROC curve furthest from the chance diagonal.
+
+    Args:
+        y_true: Binary ground-truth labels (0/1).
+        y_pred_prob: Predicted probabilities for the positive class.
+
+    Returns:
+        Optimal threshold (float). Falls back to 0.5 if both classes are
+        not present in y_true.
+    """
+    if len(np.unique(y_true)) < 2:
+        return 0.5
+
+    fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
+    j_scores = tpr - fpr  # Youden's J = TPR - FPR = sensitivity + specificity - 1
+    best_idx = np.argmax(j_scores)
+    return float(thresholds[best_idx])
+
+
 def calculate_extended_metrics(y_true, y_pred_prob, threshold=0.5):
     """
-    Calculates extended metrics including specificity at a fixed threshold.
-    
+    Calculates extended metrics including specificity at a given threshold.
+
+    Args:
+        y_true: Binary ground-truth labels (0/1).
+        y_pred_prob: Predicted probabilities for the positive class.
+        threshold: Decision threshold for converting probabilities to
+            class labels. Defaults to 0.5.
+
     Returns:
-        dict with keys: auc, accuracy, precision, recall (sensitivity), specificity, f1
+        dict with keys: auc, accuracy, precision, sensitivity, specificity,
+        f1, tp, tn, fp, fn, threshold.
     """
     y_pred_class = (y_pred_prob >= threshold).astype(int)
-    
+
     from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
-    
+
     # Calculate confusion matrix
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred_class).ravel()
-    
+
     # Calculate metrics
     sensitivity = tp / (tp + fn) if (tp + fn) > 0 else np.nan
     specificity = tn / (tn + fp) if (tn + fp) > 0 else np.nan
-    
+
     metrics = {
         'auc': roc_auc_score(y_true, y_pred_prob) if len(np.unique(y_true)) > 1 else np.nan,
         'accuracy': accuracy_score(y_true, y_pred_class),
@@ -129,7 +159,8 @@ def calculate_extended_metrics(y_true, y_pred_prob, threshold=0.5):
         'tp': tp,
         'tn': tn,
         'fp': fp,
-        'fn': fn
+        'fn': fn,
+        'threshold': threshold,
     }
     return metrics
 
