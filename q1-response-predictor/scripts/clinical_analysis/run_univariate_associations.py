@@ -4,7 +4,7 @@ Univariate Association Analysis Script for Clinical and Genomic Variables.
 Evaluates univariate statistical associations between baseline clinical/genomic features
 (Sex, Clinical Stage, BRAF/NRAS/NF1 mutations, Age, TMB, Neoantigens) and immunotherapy response (CR/PR vs. PD)
 across individual trial cohorts (Liu 2019, Hugo 2016, Riaz 2017) and the pooled trial dataset.
-Uses Fisher's Exact test for categorical features and Mann-Whitney U tests for continuous features.
+Outputs Odds Ratios (OR) with 95% Confidence Intervals (95% CI) presented in a publication-grade Forest Plot.
 """
 
 import contextlib
@@ -14,10 +14,13 @@ from typing import Dict, List, Tuple
 
 import matplotlib
 matplotlib.use("Agg")
+import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter
 import numpy as np
 import pandas as pd
-from scipy.stats import fisher_exact, mannwhitneyu
+from scipy.optimize import minimize
+from scipy.stats import fisher_exact, norm
 import seaborn as sns
 
 # Bootstrap project root resolution for top-level import
@@ -26,7 +29,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
-from src.styles import set_presentation_style
+from src.styles import COHORT_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import find_project_root
 from src.utils.plotting import resolve_colors, save_fig
@@ -46,43 +49,121 @@ CATEGORICAL_VARS: Dict[str, str] = {
 }
 
 CONTINUOUS_VARS: Dict[str, List[str]] = {
-    "Age": ["AGE", "AGE_AT_DIAGNOSIS", "AGE (YRS)", "age"],
-    "TMB": ["TMB_NONSYNONYMOUS"],
-    "SNV Neoantigens": ["SNV_NEOANTIGEN"],
-    "Indel Neoantigens": ["INDEL_NEOANTIGEN"],
+    "Age (per SD)": ["AGE", "AGE_AT_DIAGNOSIS", "AGE (YRS)", "age"],
+    "TMB (per SD)": ["TMB_NONSYNONYMOUS"],
+    "SNV Neoantigens (per SD)": ["SNV_NEOANTIGEN"],
+    "Indel Neoantigens (per SD)": ["INDEL_NEOANTIGEN"],
 }
 
 
+def _calc_categorical_or(contingency: pd.DataFrame, df_temp: pd.DataFrame, col: str) -> Tuple[float, float, float, float]:
+    """Calculates Odds Ratio and 95% CI for a 2x2 contingency matrix.
+
+    contingency rows: variable value (0 vs 1); cols: response (0 vs 1).
+    """
+    a = contingency.loc[1, 1.0] if (1 in contingency.index and 1.0 in contingency.columns) else 0
+    b = contingency.loc[1, 0.0] if (1 in contingency.index and 0.0 in contingency.columns) else 0
+    c = contingency.loc[0, 1.0] if (0 in contingency.index and 1.0 in contingency.columns) else 0
+    d = contingency.loc[0, 0.0] if (0 in contingency.index and 0.0 in contingency.columns) else 0
+
+    if a == 0 or b == 0 or c == 0 or d == 0:
+        a_c, b_c, c_c, d_c = a + 0.5, b + 0.5, c + 0.5, d + 0.5
+    else:
+        a_c, b_c, c_c, d_c = a, b, c, d
+
+    or_val = (a_c * d_c) / (b_c * c_c)
+    se_ln_or = np.sqrt(1.0 / a_c + 1.0 / b_c + 1.0 / c_c + 1.0 / d_c)
+    ci_lower = np.exp(np.log(or_val) - 1.96 * se_ln_or)
+    ci_upper = np.exp(np.log(or_val) + 1.96 * se_ln_or)
+
+    _, p_val = fisher_exact([[a, b], [c, d]])
+    return float(or_val), float(ci_lower), float(ci_upper), float(p_val)
+
+
+def _fit_univariate_logit(x: np.ndarray, y: np.ndarray) -> Tuple[float, float, float, float]:
+    """Fits univariate logistic regression on Z-scored continuous predictor.
+
+    Returns:
+        Tuple of (odds_ratio, ci_lower, ci_upper, p_value).
+    """
+    x_clean = np.asarray(x, dtype=float)
+    y_clean = np.asarray(y, dtype=float)
+    valid = ~np.isnan(x_clean) & ~np.isnan(y_clean)
+    x_clean, y_clean = x_clean[valid], y_clean[valid]
+
+    if len(x_clean) < 5 or len(np.unique(y_clean)) < 2 or np.std(x_clean) == 0:
+        return np.nan, np.nan, np.nan, 1.0
+
+    z_score = (x_clean - np.mean(x_clean)) / (np.std(x_clean) + 1e-8)
+    X = np.column_stack([np.ones_like(z_score), z_score])
+
+    def loss(beta):
+        p = 1.0 / (1.0 + np.exp(-np.clip(X @ beta, -30, 30)))
+        return -np.sum(y_clean * np.log(p + 1e-12) + (1.0 - y_clean) * np.log(1.0 - p + 1e-12))
+
+    res = minimize(loss, [0.0, 0.0], method="L-BFGS-B")
+    beta = res.x
+    p = 1.0 / (1.0 + np.exp(-np.clip(X @ beta, -30, 30)))
+    w = p * (1.0 - p)
+    w = np.maximum(w, 1e-6)
+
+    H = X.T @ (w[:, None] * X)
+    try:
+        cov = np.linalg.inv(H)
+        se = np.sqrt(cov[1, 1])
+    except np.linalg.LinAlgError:
+        return np.nan, np.nan, np.nan, 1.0
+
+    slope = beta[1]
+    or_val = np.exp(slope)
+    ci_lower = np.exp(slope - 1.96 * se)
+    ci_upper = np.exp(slope + 1.96 * se)
+
+    z_stat = slope / (se + 1e-12)
+    p_val = 2.0 * (1.0 - norm.cdf(abs(z_stat)))
+
+    return float(or_val), float(ci_lower), float(ci_upper), float(p_val)
+
+
 def calculate_associations(df: pd.DataFrame, cohort_name: str) -> pd.DataFrame:
-    """Computes univariate association metrics for categorical and continuous variables against response.
+    """Computes univariate association metrics (Odds Ratios and 95% CIs) against response.
 
     Args:
         df: Clinical DataFrame containing feature columns and binary response.
         cohort_name: Name of the cohort being evaluated.
 
     Returns:
-        DataFrame containing test statistics, odds ratios/mean differences, and p-values.
+        DataFrame containing Odds Ratios, 95% CIs, and p-values.
     """
     results = []
 
-    # 1. Categorical variables vs Response (Fisher's Exact Test)
+    # 1. Categorical variables vs Response
     for label, col in CATEGORICAL_VARS.items():
         if col in df.columns:
-            temp = df[[col, "response"]].dropna()
+            temp = df[[col, "response"]].dropna().copy()
+            if col == "SEX":
+                temp[col] = temp[col].map({"Male": 1, "Female": 0})
+            elif col == "CLINICAL_STAGE":
+                temp[col] = temp[col].map({"IV": 1, "III": 0})
+
+            temp[col] = pd.to_numeric(temp[col], errors="coerce")
+            temp = temp.dropna()
+
             if len(temp) > 0 and len(temp[col].unique()) == 2:
                 contingency = pd.crosstab(temp[col], temp["response"])
-                if contingency.shape == (2, 2):
-                    odds_ratio, p_val = fisher_exact(contingency)
-                    results.append({
-                        "Cohort": cohort_name,
-                        "Variable": label,
-                        "Test": "Fisher's Exact",
-                        "Statistic": odds_ratio,
-                        "p-value": p_val,
-                        "Type": "Categorical",
-                    })
+                or_val, lower, upper, p_val = _calc_categorical_or(contingency, temp, col)
+                results.append({
+                    "Cohort": cohort_name,
+                    "Variable": label,
+                    "Test": "Fisher's Exact / OR",
+                    "Odds Ratio (OR)": or_val,
+                    "95% CI Lower": lower,
+                    "95% CI Upper": upper,
+                    "p-value": p_val,
+                    "Type": "Categorical",
+                })
 
-    # 2. Continuous variables vs Response (Mann-Whitney U Test)
+    # 2. Continuous variables vs Response (Logistic Regression per 1 SD increase)
     for label, cols in CONTINUOUS_VARS.items():
         col = None
         for c in cols:
@@ -90,26 +171,23 @@ def calculate_associations(df: pd.DataFrame, cohort_name: str) -> pd.DataFrame:
                 col = c
                 break
         if col:
-            temp = df[[col, "response"]].dropna()
+            temp = df[[col, "response"]].dropna().copy()
             temp[col] = pd.to_numeric(temp[col], errors="coerce")
             temp = temp.dropna()
 
-            responders = temp[temp["response"] == 1.0][col]
-            non_responders = temp[temp["response"] == 0.0][col]
-
-            if len(responders) > 1 and len(non_responders) > 1:
-                _, p_val = mannwhitneyu(responders, non_responders, alternative="two-sided")
-                mean_r = responders.mean()
-                mean_nr = non_responders.mean()
-                diff = mean_r - mean_nr
-                results.append({
-                    "Cohort": cohort_name,
-                    "Variable": label,
-                    "Test": "Mann-Whitney U",
-                    "Statistic": diff,
-                    "p-value": p_val,
-                    "Type": "Continuous",
-                })
+            if len(temp) > 5 and len(temp["response"].unique()) == 2:
+                or_val, lower, upper, p_val = _fit_univariate_logit(temp[col].values, temp["response"].values)
+                if not np.isnan(or_val):
+                    results.append({
+                        "Cohort": cohort_name,
+                        "Variable": label,
+                        "Test": "Logistic Regression (per SD)",
+                        "Odds Ratio (OR)": or_val,
+                        "95% CI Lower": lower,
+                        "95% CI Upper": upper,
+                        "p-value": p_val,
+                        "Type": "Continuous",
+                    })
 
     return pd.DataFrame(results)
 
@@ -143,42 +221,117 @@ def _prepare_clinical_cohorts(data_dir: Path) -> Dict[str, pd.DataFrame]:
 
 
 def _plot_univariate_associations(all_results: pd.DataFrame, plot_dir: Path) -> None:
-    """Plots barplot of -log10(p-values) across clinical and genomic variables.
+    """Renders a publication-ready Forest Plot of Odds Ratios with 95% CIs.
 
     Args:
-        all_results: DataFrame of combined univariate statistical results.
-        plot_dir: Directory path to export plot figure.
+        all_results: Combined DataFrame of univariate statistical association results.
+        plot_dir: Path to export output plot figure and CSV table.
     """
-    all_results["-log10(p-value)"] = -np.log10(all_results["p-value"])
-    cohort_labels = all_results["Cohort"].unique().tolist()
-    palette_colors = resolve_colors(cohort_labels)
+    cohort_order = ["Pooled Trials", "Liu 2019", "Hugo 2016", "Riaz 2017"]
+    cohort_colors = {
+        "Liu 2019": COHORT_PALETTE["Liu 2019"],
+        "Hugo 2016": COHORT_PALETTE["Hugo 2016"],
+        "Riaz 2017": COHORT_PALETTE["Riaz 2017"],
+        "Pooled Trials": COHORT_PALETTE["Pooled Trials"],
+    }
+
+    variables = all_results["Variable"].unique().tolist()
+    n_vars = len(variables)
 
     set_presentation_style()
     sns.set_theme(style="whitegrid")
-    fig, ax = plt.subplots(figsize=(12, 7))
+    fig, ax = plt.subplots(figsize=(13, 10))
+    plt.subplots_adjust(left=0.28, right=0.62, top=0.90, bottom=0.12)
 
-    sns.barplot(
-        data=all_results,
-        x="Variable",
-        y="-log10(p-value)",
-        hue="Cohort",
-        ax=ax,
-        palette=palette_colors,
-        edgecolor="black",
-    )
+    ax.set_xscale("log")
+    ax.axvline(1.0, color="#555555", linestyle="--", linewidth=1.5, zorder=1)
 
-    ax.axhline(-np.log10(0.05), color="red", linestyle="--", linewidth=1.5, label="p = 0.05 (Significant)")
-    ax.axhline(-np.log10(0.01), color="darkred", linestyle=":", linewidth=1.5, label="p = 0.01")
+    y_pos = 0
+    y_ticks = []
+    y_labels = []
 
-    ax.set_title("Statistical Significance of Univariate Associations with Response", fontsize=15, fontweight="bold", pad=15)
-    ax.set_ylabel("-log10(p-value)", fontsize=13, fontweight="bold")
-    ax.set_xlabel("Clinical / Genomic Variable", fontsize=13, fontweight="bold")
-    plt.setp(ax.get_xticklabels(), rotation=30, ha="right", fontsize=11)
-    ax.legend(loc="upper right", framealpha=0.9, fontsize=11)
+    for var in reversed(variables):
+        sub_df = all_results[all_results["Variable"] == var].copy()
+        sub_df["Cohort"] = pd.Categorical(sub_df["Cohort"], categories=cohort_order, ordered=True)
+        sub_df = sub_df.sort_values("Cohort")
+
+        y_ticks.append(y_pos + (len(sub_df) - 1) / 2.0)
+        y_labels.append(var)
+
+        for _, row in sub_df.iterrows():
+            cohort = row["Cohort"]
+            or_val = row["Odds Ratio (OR)"]
+            lower = row["95% CI Lower"]
+            upper = row["95% CI Upper"]
+            p_val = row["p-value"]
+
+            color = cohort_colors.get(cohort, "#333333")
+            is_sig = p_val < 0.05
+            weight = "bold" if is_sig else "normal"
+
+            # Bound CIs for visual plotting display
+            disp_lower = max(0.1, lower)
+            disp_upper = min(20.0, upper)
+
+            ax.errorbar(
+                x=or_val,
+                y=y_pos,
+                xerr=[[max(0.01, or_val - disp_lower)], [max(0.01, disp_upper - or_val)]],
+                fmt="o" if cohort == "Pooled Trials" else "s",
+                color=color,
+                ecolor=color,
+                elinewidth=2.0 if cohort == "Pooled Trials" else 1.2,
+                capsize=4 if cohort == "Pooled Trials" else 3,
+                capthick=1.5 if cohort == "Pooled Trials" else 1.0,
+                markersize=8 if cohort == "Pooled Trials" else 6,
+                zorder=4 if cohort == "Pooled Trials" else 3,
+            )
+
+            lbl_or = f"{or_val:.2f} ({lower:.2f} - {upper:.2f})"
+            lbl_p = f"{p_val:.2e}" if p_val < 0.001 else f"{p_val:.3f}"
+            if is_sig:
+                lbl_p += " *"
+
+            ax.text(1.10, y_pos, f"{cohort}: {lbl_or}", transform=ax.get_yaxis_transform(), va="center", ha="left", fontsize=9.5, color="#222222", weight=weight)
+            ax.text(1.72, y_pos, lbl_p, transform=ax.get_yaxis_transform(), va="center", ha="left", fontsize=9.5, color="#222222", weight=weight)
+
+            y_pos += 1.0
+
+        y_pos += 0.8  # Gap between variable groups
+
+    header_y = y_pos - 0.2
+    ax.text(1.10, header_y, "Cohort & OR (95% CI)", transform=ax.get_yaxis_transform(), va="bottom", ha="left", fontsize=10.5, color="#111111", weight="bold")
+    ax.text(1.72, header_y, "p-value", transform=ax.get_yaxis_transform(), va="bottom", ha="left", fontsize=10.5, color="#111111", weight="bold")
+
+    ax.set_yticks(y_ticks)
+    ax.set_yticklabels(y_labels, fontsize=11, fontweight="bold", color="#222222")
+    ax.set_ylim(-0.8, y_pos)
+    ax.set_xlim(0.1, 20.0)
+
+    ax.set_xticks([0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0])
+    ax.xaxis.set_major_formatter(ScalarFormatter())
+    ax.tick_params(axis="x", which="both", labelsize=10.5)
+
+    ax.set_xlabel("Odds Ratio for Immunotherapy Response (log scale)", fontsize=12, labelpad=10, weight="bold")
+    ax.set_title("Univariate Associations with Immunotherapy Response (Forest Plot)", fontsize=15, fontweight="bold", pad=15)
+
+    ax.text(0.95, -0.09, "Favours Responder (OR > 1.0) \u2192", transform=ax.transAxes, ha="right", va="top", color="#555555", fontsize=9.5, style="italic")
+    ax.text(0.05, -0.09, "\u2190 Favours Non-Responder (OR < 1.0)", transform=ax.transAxes, ha="left", va="top", color="#555555", fontsize=9.5, style="italic")
+
+    legend_elements = [
+        mlines.Line2D([0], [0], marker="o", color="none", markerfacecolor=COHORT_PALETTE["Pooled Trials"], markeredgecolor="none", markersize=8, label="Pooled Trials Benchmark"),
+        mlines.Line2D([0], [0], marker="s", color="none", markerfacecolor=COHORT_PALETTE["Liu 2019"], markeredgecolor="none", markersize=7, label="Liu 2019"),
+        mlines.Line2D([0], [0], marker="s", color="none", markerfacecolor=COHORT_PALETTE["Hugo 2016"], markeredgecolor="none", markersize=7, label="Hugo 2016"),
+        mlines.Line2D([0], [0], marker="s", color="none", markerfacecolor=COHORT_PALETTE["Riaz 2017"], markeredgecolor="none", markersize=7, label="Riaz 2017"),
+    ]
+    ax.legend(handles=legend_elements, loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=4, frameon=False, fontsize=9.5)
+
+    sns.despine(ax=ax, top=True, right=True)
+    ax.grid(True, axis="x", linestyle="--", linewidth=0.5, color="#cccccc", alpha=0.7)
 
     out_path = plot_dir / "univariate_associations.png"
     save_fig(fig, out_path)
-    print(f"\nSaved univariate associations plot to {out_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"\nSaved univariate associations forest plot to {out_path.relative_to(BASE_DIR).as_posix()}")
 
     csv_path = plot_dir / "univariate_associations_stats.csv"
     all_results.to_csv(csv_path, index=False)
@@ -188,7 +341,7 @@ def _plot_univariate_associations(all_results: pd.DataFrame, plot_dir: Path) -> 
 def main() -> None:
     """Executes the univariate association analysis pipeline."""
     print("==================================================")
-    print("Computing Univariate Associations with Response")
+    print("Computing Univariate Associations with Response (Forest Plot)")
     print("==================================================\n")
 
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
