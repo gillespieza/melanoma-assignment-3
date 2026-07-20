@@ -141,7 +141,8 @@ def generate_model_evaluation_report(all_loco_results, output_dir):
     report_lines.append("- **PR Curves** (`pr_curves_*.png`): Precision-Recall trade-off, especially relevant for class imbalance\n")
     report_lines.append("- **Confusion Matrices** (`confusion_matrices_*.png`): Cell-level breakdown of predictions per cohort\n\n")
     
-    report_path = output_dir / "model_evaluation_report.md"
+    report_path = output_dir / "pillar-4-out-of-cohort-benchmarks" / "model_evaluation_report.md"
+    report_path.parent.mkdir(parents=True, exist_ok=True)
     with open(report_path, 'w', encoding='utf-8') as f:
         f.writelines(report_lines)
     

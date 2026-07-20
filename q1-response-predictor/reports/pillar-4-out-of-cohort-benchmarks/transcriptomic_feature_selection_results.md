@@ -36,7 +36,7 @@ To overcome these obstacles, we evaluate **data-driven feature filtering** again
 
 ### 2.1. Experimental Methodology & Data Leakage Prevention
 To ensure strict validation integrity and prevent data leakage:
-1. **ComBat Batch Correction**: Technical batch variations were corrected across raw gene matrices prior to cross-validation partitioning.
+1. **Cohort-Independent Z-Score Standardisation**: Technical batch variations were corrected by standardising gene expression matrices independently within each cohort prior to fold partitioning, preventing cross-validation data leakage.
 2. **Fold-Enclosed Feature Selection**:
    - For every cross-validation iteration, one cohort is held out entirely as the **unseen test set** ($X_{\text{test}}$).
    - Variance filtering (retaining the top 1,000 most variable genes) and `SelectKBest(score_func=f_classif, k=K)` are fitted **exclusively on the training fold** ($X_{\text{train}}, y_{\text{train}}$).
@@ -51,7 +51,7 @@ To ensure strict validation integrity and prevent data leakage:
 
 ![Signature vs Raw Feature Selection AUC](../../plots/feature_selection/signature_vs_raw_selection_auc.png)
 
-_Figure 1: Cross-Validated Out-of-Cohort ROC-AUC across Logistic Regression (LR), Random Forest (RF), and XGBoost (XGB) classifiers evaluating Curated Domain Signatures against SelectKBest at k=20, k=100, and k=200._
+_Figure 1: Cross-validated out-of-cohort ROC-AUC across 5 model families (Logistic Regression, Random Forest, XGBoost, Support Vector Machine, Elastic Net) and overall cross-model mean benchmark in a 3x2 grid visualising Curated Domain Signatures against SelectKBest at k=20, k=100, and k=200._
 
 ### 2.3. Quantitative Out-of-Cohort Performance Comparison
 

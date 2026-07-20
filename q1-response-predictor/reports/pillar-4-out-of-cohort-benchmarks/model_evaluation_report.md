@@ -33,14 +33,14 @@ This report documents the comprehensive evaluation of all trained models (Logist
 | Liu 2019 | 104 | 0.609 | 0.625 | 0.500 | 0.732 | 0.615 | 0.552 | 0.398 |
 | Riaz 2017 | 64 | 0.500 | 0.312 | 1.000 | 0.000 | 0.312 | 0.476 | 0.500 |
 
-### Visualizations & Diagnostics
+### Visualizations &amp; Diagnostics
 
 #### Confusion Matrices (Threshold = 0.5)
-![Logistic Regression Confusion Matrices](../plots/models/confusion_matrices_lr.png)
+![Logistic Regression Confusion Matrices](../../plots/models/confusion_matrices_lr.png)
 
-#### ROC & Precision-Recall Curves
-![Logistic Regression ROC Curves](../plots/models/roc_curves_lr.png)  
-![Logistic Regression PR Curves](../plots/models/pr_curves_lr.png)
+#### ROC &amp; Precision-Recall Curves
+![Logistic Regression ROC Curves](../../plots/models/roc_curves_lr.png)  
+![Logistic Regression PR Curves](../../plots/models/pr_curves_lr.png)
 
 ---
 
@@ -54,14 +54,14 @@ This report documents the comprehensive evaluation of all trained models (Logist
 | Liu 2019 | 104 | 0.580 | 0.596 | 0.188 | 0.946 | 0.750 | 0.300 | 0.431 |
 | Riaz 2017 | 64 | 0.678 | 0.609 | 0.800 | 0.523 | 0.432 | 0.561 | 0.455 |
 
-### Visualizations & Diagnostics
+### Visualizations &amp; Diagnostics
 
 #### Confusion Matrices (Threshold = 0.5)
-![Random Forest Confusion Matrices](../plots/models/confusion_matrices_rf.png)
+![Random Forest Confusion Matrices](../../plots/models/confusion_matrices_rf.png)
 
-#### ROC & Precision-Recall Curves
-![Random Forest ROC Curves](../plots/models/roc_curves_rf.png)  
-![Random Forest PR Curves](../plots/models/pr_curves_rf.png)
+#### ROC &amp; Precision-Recall Curves
+![Random Forest ROC Curves](../../plots/models/roc_curves_rf.png)  
+![Random Forest PR Curves](../../plots/models/pr_curves_rf.png)
 
 ---
 
@@ -75,14 +75,14 @@ This report documents the comprehensive evaluation of all trained models (Logist
 | Liu 2019 | 104 | 0.581 | 0.567 | 0.521 | 0.607 | 0.532 | 0.526 | 0.471 |
 | Riaz 2017 | 64 | 0.618 | 0.531 | 0.650 | 0.477 | 0.361 | 0.464 | 0.515 |
 
-### Visualizations & Diagnostics
+### Visualizations &amp; Diagnostics
 
 #### Confusion Matrices (Threshold = 0.5)
-![XGBoost Confusion Matrices](../plots/models/confusion_matrices_xgb.png)
+![XGBoost Confusion Matrices](../../plots/models/confusion_matrices_xgb.png)
 
-#### ROC & Precision-Recall Curves
-![XGBoost ROC Curves](../plots/models/roc_curves_xgb.png)  
-![XGBoost PR Curves](../plots/models/pr_curves_xgb.png)
+#### ROC &amp; Precision-Recall Curves
+![XGBoost ROC Curves](../../plots/models/roc_curves_xgb.png)  
+![XGBoost PR Curves](../../plots/models/pr_curves_xgb.png)
 
 ---
 
@@ -96,14 +96,14 @@ This report documents the comprehensive evaluation of all trained models (Logist
 | Liu 2019 | 104 | 0.657 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 | 0.429 |
 | Riaz 2017 | 64 | 0.717 | 0.719 | 0.500 | 0.818 | 0.556 | 0.526 | 0.428 |
 
-### Visualizations & Diagnostics
+### Visualizations &amp; Diagnostics
 
 #### Confusion Matrices (Threshold = 0.5)
-![Support Vector Machine Confusion Matrices](../plots/models/confusion_matrices_svm.png)
+![Support Vector Machine Confusion Matrices](../../plots/models/confusion_matrices_svm.png)
 
-#### ROC & Precision-Recall Curves
-![SVM ROC Curves](../plots/models/roc_curves_svm.png)  
-![SVM PR Curves](../plots/models/pr_curves_svm.png)
+#### ROC &amp; Precision-Recall Curves
+![SVM ROC Curves](../../plots/models/roc_curves_svm.png)  
+![SVM PR Curves](../../plots/models/pr_curves_svm.png)
 
 ---
 
@@ -117,18 +117,18 @@ This report documents the comprehensive evaluation of all trained models (Logist
 | Liu 2019 | 104 | 0.616 | 0.615 | 0.458 | 0.750 | 0.611 | 0.524 | 0.398 |
 | Riaz 2017 | 64 | 0.500 | 0.312 | 1.000 | 0.000 | 0.312 | 0.476 | 0.500 |
 
-### Visualizations & Diagnostics
+### Visualizations &amp; Diagnostics
 
 #### Confusion Matrices (Threshold = 0.5)
-![ElasticNet Confusion Matrices](../plots/models/confusion_matrices_elasticnet.png)
+![ElasticNet Confusion Matrices](../../plots/models/confusion_matrices_elasticnet.png)
 
-#### ROC & Precision-Recall Curves
-![ElasticNet ROC Curves](../plots/models/roc_curves_elasticnet.png)  
-![ElasticNet PR Curves](../plots/models/pr_curves_elasticnet.png)
+#### ROC &amp; Precision-Recall Curves
+![ElasticNet ROC Curves](../../plots/models/roc_curves_elasticnet.png)  
+![ElasticNet PR Curves](../../plots/models/pr_curves_elasticnet.png)
 
 ---
 
-## Summary & Interpretation
+## Summary &amp; Interpretation
 
 ### Key Metrics Explained
 - **Sensitivity (Recall)**: TP / (TP + FN) — Proportion of actual responders correctly identified

@@ -25,6 +25,7 @@ reports/
 │   └── curated_signatures_report.md
 │
 └── pillar-4-out-of-cohort-benchmarks/
+    ├── model_evaluation_report.md
     └── transcriptomic_feature_selection_results.md
 ```
 
@@ -45,4 +46,5 @@ reports/
 | **Pillar 3: Transcriptomic Signatures & Multimodal ML** | | |
 | [curated_signatures_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-3-transcriptomic-signatures/curated_signatures_report.md) | Feature Engineering & Model Evaluation | Consolidated report covering implemented gene signatures (IFN-$\gamma$, TIS, CYT, IMPRES, CD8, TCGA OS), signature scaling, biomarker orthogonality (TMB vs. Signatures), odds ratios, pooled 5-fold multimodal ML performance, and LOCO model validation. |
 | **Pillar 4: Feature Selection & Out-of-Cohort Benchmarks** | | |
+| [model_evaluation_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-4-out-of-cohort-benchmarks/model_evaluation_report.md) | Model Benchmarking | LOCO cross-cohort validation of all classifiers (LR, RF, XGB, SVM, ElasticNet): AUC-ROC, confusion matrices, PR curves, C-index, and per-cohort metric tables. |
 | [transcriptomic_feature_selection_results.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-4-out-of-cohort-benchmarks/transcriptomic_feature_selection_results.md) | Out-of-Cohort Validation | LOCO cross-validation benchmark comparing unconstrained `SelectKBest` ($k=20, 100, 200$) against biological signatures, plus TCGA Cox 20-gene survival signature derivation & InterPro domain annotations. |

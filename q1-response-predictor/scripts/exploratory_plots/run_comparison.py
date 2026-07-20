@@ -165,7 +165,9 @@ def _run_loco_feature_selection(
 
 
 def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> None:
-    """Generates a grouped bar chart comparing ROC-AUC of Domain Signatures vs Raw SelectKBest across 5 models.
+    """Generates a 3x2 grid of grouped bar charts comparing ROC-AUC of Domain Signatures vs Raw SelectKBest.
+
+    Displays 5 model families plus an overall cross-model mean panel.
 
     Args:
         df_results: Results DataFrame containing LOCO AUC scores.
@@ -173,7 +175,8 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
     """
     set_presentation_style()
     sns.set_theme(style="whitegrid", font="sans-serif")
-    fig, axes = plt.subplots(1, 5, figsize=(24, 5.2), sharey=True)
+    fig, axes = plt.subplots(3, 2, figsize=(13, 10.5), sharey=True)
+    axes_flat = axes.flatten()
 
     models = ["LR", "RF", "XGB", "SVM", "ElasticNet"]
     model_titles = {
@@ -184,31 +187,34 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
         "ElasticNet": "Elastic Net",
     }
     palette = {
-        "Curated Signatures": COHORT_PALETTE["Liu 2019"],
-        "SelectKBest (k=20)": COHORT_PALETTE["Hugo 2016"],
-        "SelectKBest (k=100)": COHORT_PALETTE["Riaz 2017"],
-        "SelectKBest (k=200)": RESPONSE_PALETTE["PD"],
+        "Curated Signatures": "#1B9E77",
+        "SelectKBest (k=20)": "#D95F02",
+        "SelectKBest (k=100)": "#7570B3",
+        "SelectKBest (k=200)": "#C62828",
     }
 
-    for ax, m in zip(axes, models):
-        df_sub = df_results[df_results["Model"] == m].copy()
+    # Prepare long-format melted dataframe
+    df_melted_all = pd.melt(
+        df_results,
+        id_vars=["Model", "Test Cohort"],
+        value_vars=[
+            "Curated Signatures AUC",
+            "SelectKBest (k=20) AUC",
+            "SelectKBest (k=100) AUC",
+            "SelectKBest (k=200) AUC",
+        ],
+        var_name="Feature Representation",
+        value_name="ROC-AUC",
+    )
+    df_melted_all["Feature Representation"] = df_melted_all["Feature Representation"].str.replace(" AUC", "")
 
-        df_melted = pd.melt(
-            df_sub,
-            id_vars=["Test Cohort"],
-            value_vars=[
-                "Curated Signatures AUC",
-                "SelectKBest (k=20) AUC",
-                "SelectKBest (k=100) AUC",
-                "SelectKBest (k=200) AUC",
-            ],
-            var_name="Feature Representation",
-            value_name="ROC-AUC",
-        )
-        df_melted["Feature Representation"] = df_melted["Feature Representation"].str.replace(" AUC", "")
+    # Plot 5 model subplots
+    for i, m in enumerate(models):
+        ax = axes_flat[i]
+        df_sub = df_melted_all[df_melted_all["Model"] == m]
 
         sns.barplot(
-            data=df_melted,
+            data=df_sub,
             x="Test Cohort",
             y="ROC-AUC",
             hue="Feature Representation",
@@ -218,14 +224,11 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
             linewidth=0.8,
         )
 
-        ax.set_title(f"{model_titles[m]}", fontsize=12, fontweight="bold", pad=10)
-        ax.axhline(0.50, color="gray", linestyle="--", linewidth=1.2, label="Chance Baseline (AUC=0.5)")
+        ax.set_title(f"{model_titles[m]}", fontsize=11, fontweight="bold", pad=8)
+        ax.axhline(0.50, color="gray", linestyle="--", linewidth=1.1, label="Chance Baseline (AUC=0.50)")
         ax.set_ylim(0.25, 0.85)
-        ax.set_xlabel("Held-out Test Cohort", fontsize=10, fontweight="bold")
-        if ax == axes[0]:
-            ax.set_ylabel("Cross-Validated ROC-AUC", fontsize=11, fontweight="bold")
-        else:
-            ax.set_ylabel("")
+        ax.set_xlabel("Held-out Test Cohort" if i >= 4 else "", fontsize=10, fontweight="bold")
+        ax.set_ylabel("Cross-Validated ROC-AUC" if i % 2 == 0 else "", fontsize=10, fontweight="bold")
 
         for p in ax.patches:
             height = p.get_height()
@@ -240,20 +243,59 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
                     xytext=(0, 2),
                     textcoords="offset points",
                 )
-
         ax.legend().remove()
 
-    handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 1.05), ncol=5, fontsize=11, frameon=True)
+    # Panel 6: Cross-Model Mean Summary
+    ax_mean = axes_flat[5]
+    df_mean = df_melted_all.groupby(["Test Cohort", "Feature Representation"], as_index=False)["ROC-AUC"].mean()
+
+    sns.barplot(
+        data=df_mean,
+        x="Test Cohort",
+        y="ROC-AUC",
+        hue="Feature Representation",
+        palette=palette,
+        ax=ax_mean,
+        edgecolor="black",
+        linewidth=0.8,
+    )
+
+    ax_mean.set_title("Overall Cross-Model Mean", fontsize=11, fontweight="bold", pad=8)
+    ax_mean.axhline(0.50, color="gray", linestyle="--", linewidth=1.1, label="Chance Baseline (AUC=0.50)")
+    ax_mean.set_ylim(0.25, 0.85)
+    ax_mean.set_xlabel("Held-out Test Cohort", fontsize=10, fontweight="bold")
+    ax_mean.set_ylabel("", fontsize=10, fontweight="bold")
+
+    for p in ax_mean.patches:
+        height = p.get_height()
+        if not np.isnan(height) and height > 0:
+            ax_mean.annotate(
+                f"{height:.2f}",
+                (p.get_x() + p.get_width() / 2.0, height),
+                ha="center",
+                va="bottom",
+                fontsize=7.5,
+                color="black",
+                xytext=(0, 2),
+                textcoords="offset points",
+            )
+    ax_mean.legend().remove()
+
+    # Single top legend
+    handles, labels = axes_flat[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.99), ncol=5, fontsize=10, frameon=True)
 
     plt.suptitle(
-        "Cross-Cohort Validation: Curated Immune Signatures vs. Data-Driven SelectKBest Feature Selection",
-        fontsize=14,
+        "Cross-Cohort Validation: Curated Immune Signatures vs. SelectKBest Feature Selection",
+        fontsize=13,
         fontweight="bold",
-        y=1.12,
+        y=1.025,
     )
+    plt.tight_layout()
+    fig.subplots_adjust(top=0.93, hspace=0.35, wspace=0.20)
+
     save_fig(fig, out_plot_path)
-    print(f"Saved comparison plot to {out_plot_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved refactored comparison plot to {out_plot_path.relative_to(BASE_DIR).as_posix()}")
 
 
 def main() -> None:
