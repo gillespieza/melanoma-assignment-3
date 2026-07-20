@@ -104,34 +104,28 @@ def generate_model_evaluation_report(all_loco_results, output_dir):
             )
         
         # Confusion matrices
-        report_lines.append("\n### Confusion Matrices (Threshold = 0.5)\n\n")
+        report_lines.append("\n### Visualizations & Diagnostics\n\n")
+        report_lines.append(f"#### Confusion Matrices (Threshold = 0.5)\n")
+        report_lines.append(f"![{model_name} Confusion Matrices](../plots/models/confusion_matrices_{model_type}.png)\n\n")
+        
+        report_lines.append("```\n")
         for cohort, res in sorted(loco_results.items()):
             if 'metrics_extended' in res:
                 m = res['metrics_extended']
             else:
                 m = calculate_extended_metrics(res['y_true'], res['y_pred_prob'])
             
-            report_lines.append(f"**{cohort}** (N={len(res['y_true'])}):\n")
-            report_lines.append(f"```\n")
+            report_lines.append(f"{cohort} (N={len(res['y_true'])}):\n")
             report_lines.append(f"                Predicted\n")
             report_lines.append(f"              Non-Resp  Resp\n")
             report_lines.append(f"Actual Non-Resp    {m['tn']:<4} {m['fp']:<4}\n")
-            report_lines.append(f"Actual Resp        {m['fn']:<4} {m['tp']:<4}\n")
-            report_lines.append(f"```\n\n")
+            report_lines.append(f"Actual Resp        {m['fn']:<4} {m['tp']:<4}\n\n")
+        report_lines.append("```\n\n")
         
-        # Precision-Recall summary
-        report_lines.append("### Precision-Recall Curve Summaries\n\n")
-        for cohort, res in sorted(loco_results.items()):
-            y_true = res['y_true']
-            y_pred_prob = res['y_pred_prob']
-            
-            if len(np.unique(y_true)) > 1:
-                ap = average_precision_score(y_true, y_pred_prob)
-                report_lines.append(f"**{cohort}**: Average Precision = {ap:.3f}\n")
-            else:
-                report_lines.append(f"**{cohort}**: Single class (skipped)\n")
-        
-        report_lines.append("\n---\n\n")
+        # Curves
+        report_lines.append(f"#### ROC & Precision-Recall Curves\n")
+        report_lines.append(f"![{model_name} ROC Curves](../plots/models/roc_curves_{model_type}.png)\n")
+        report_lines.append(f"![{model_name} PR Curves](../plots/models/pr_curves_{model_type}.png)\n\n")
     
     report_lines.append("## Summary & Interpretation\n\n")
     report_lines.append("### Key Metrics Explained:\n")
