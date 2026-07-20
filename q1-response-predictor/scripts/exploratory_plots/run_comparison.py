@@ -1,10 +1,13 @@
 """
 Cross-Cohort Validation: Curated Immune Signatures vs. SelectKBest Feature Selection.
 
-Evaluates predictive models (Logistic Regression, Random Forest, XGBoost) under Leave-One-Cohort-Out (LOCO)
-cross-validation, comparing domain-driven curated signatures against data-driven SelectKBest feature selection
-(k=20, k=100, k=200), exporting performance summaries and grouped bar charts.
+Evaluates 5 predictive model architectures (Logistic Regression, Random Forest, XGBoost, Support Vector Machine,
+and Elastic Net) under Leave-One-Cohort-Out (LOCO) cross-validation, comparing domain-driven curated signatures
+against data-driven SelectKBest feature selection (k=20, k=100, k=200), exporting performance summaries and grouped bar charts.
 """
+
+import warnings
+warnings.filterwarnings("ignore")
 
 import contextlib
 from pathlib import Path
@@ -20,6 +23,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
+from sklearn.svm import SVC
 from xgboost import XGBClassifier
 import seaborn as sns
 
@@ -48,7 +52,7 @@ def _run_loco_signatures(cohort_dfs: Dict[str, Tuple[pd.DataFrame, pd.Series]], 
 
     Args:
         cohort_dfs: Dictionary mapping cohort names to (signatures_df, response_series).
-        model_type: Classifier choice ('lr', 'rf', or 'xgb').
+        model_type: Classifier choice ('lr', 'rf', 'xgb', 'svm', or 'elasticnet').
 
     Returns:
         Dictionary mapping held-out cohort name to test ROC-AUC.
@@ -73,6 +77,10 @@ def _run_loco_signatures(cohort_dfs: Dict[str, Tuple[pd.DataFrame, pd.Series]], 
             model = XGBClassifier(
                 n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42, eval_metric="logloss", n_jobs=-1
             )
+        elif model_type == "svm":
+            model = SVC(probability=True, kernel="rbf", C=1.0, random_state=42)
+        elif model_type == "elasticnet":
+            model = LogisticRegression(penalty="elasticnet", solver="saga", l1_ratio=0.5, max_iter=2000, random_state=42)
 
         model.fit(X_train, y_train)
         y_prob = model.predict_proba(X_test)[:, 1]
@@ -99,7 +107,7 @@ def _run_loco_feature_selection(
         cohort_expr_dfs: Dictionary mapping cohort names to gene expression DataFrames.
         cohort_y_dfs: Dictionary mapping cohort names to response Series.
         k_features: Number of top features to select.
-        model_type: Classifier choice ('lr', 'rf', or 'xgb').
+        model_type: Classifier choice ('lr', 'rf', 'xgb', 'svm', or 'elasticnet').
 
     Returns:
         Dictionary mapping test cohort to (ROC-AUC, selected_genes list).
@@ -138,6 +146,10 @@ def _run_loco_feature_selection(
             model = XGBClassifier(
                 n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42, eval_metric="logloss", n_jobs=-1
             )
+        elif model_type == "svm":
+            model = SVC(probability=True, kernel="rbf", C=1.0, random_state=42)
+        elif model_type == "elasticnet":
+            model = LogisticRegression(penalty="elasticnet", solver="saga", l1_ratio=0.5, max_iter=2000, random_state=42)
 
         model.fit(X_train_sel, y_train)
         y_prob = model.predict_proba(X_test_sel)[:, 1]
@@ -153,7 +165,7 @@ def _run_loco_feature_selection(
 
 
 def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> None:
-    """Generates a grouped bar chart comparing ROC-AUC of Domain Signatures vs Raw SelectKBest.
+    """Generates a grouped bar chart comparing ROC-AUC of Domain Signatures vs Raw SelectKBest across 5 models.
 
     Args:
         df_results: Results DataFrame containing LOCO AUC scores.
@@ -161,10 +173,16 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
     """
     set_presentation_style()
     sns.set_theme(style="whitegrid", font="sans-serif")
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5), sharey=True)
+    fig, axes = plt.subplots(1, 5, figsize=(24, 5.2), sharey=True)
 
-    models = ["LR", "RF", "XGB"]
-    model_titles = {"LR": "Logistic Regression", "RF": "Random Forest", "XGB": "XGBoost"}
+    models = ["LR", "RF", "XGB", "SVM", "ElasticNet"]
+    model_titles = {
+        "LR": "Logistic Regression",
+        "RF": "Random Forest",
+        "XGB": "XGBoost",
+        "SVM": "Support Vector Machine",
+        "ElasticNet": "Elastic Net",
+    }
     palette = {
         "Curated Signatures": COHORT_PALETTE["Liu 2019"],
         "SelectKBest (k=20)": COHORT_PALETTE["Hugo 2016"],
@@ -200,10 +218,10 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
             linewidth=0.8,
         )
 
-        ax.set_title(f"{model_titles[m]}", fontsize=13, fontweight="bold", pad=10)
+        ax.set_title(f"{model_titles[m]}", fontsize=12, fontweight="bold", pad=10)
         ax.axhline(0.50, color="gray", linestyle="--", linewidth=1.2, label="Chance Baseline (AUC=0.5)")
         ax.set_ylim(0.25, 0.85)
-        ax.set_xlabel("Held-out Test Cohort", fontsize=11, fontweight="bold")
+        ax.set_xlabel("Held-out Test Cohort", fontsize=10, fontweight="bold")
         if ax == axes[0]:
             ax.set_ylabel("Cross-Validated ROC-AUC", fontsize=11, fontweight="bold")
         else:
@@ -217,7 +235,7 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
                     (p.get_x() + p.get_width() / 2.0, height),
                     ha="center",
                     va="bottom",
-                    fontsize=8,
+                    fontsize=7.5,
                     color="black",
                     xytext=(0, 2),
                     textcoords="offset points",
@@ -241,7 +259,7 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
 def main() -> None:
     """Executes feature selection comparison pipeline."""
     print("==================================================")
-    print("LOCO CV Evaluation: Curated Signatures vs SelectKBest")
+    print("LOCO CV Evaluation: Curated Signatures vs SelectKBest (5 Model Families)")
     print("==================================================\n")
 
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
@@ -287,7 +305,7 @@ def main() -> None:
         "Riaz 2017": y_riaz,
     }
 
-    models = ["LR", "RF", "XGB"]
+    models = ["LR", "RF", "XGB", "SVM", "ElasticNet"]
     records = []
 
     for m in models:
@@ -309,7 +327,7 @@ def main() -> None:
             })
 
     df_results = pd.DataFrame(records)
-    print("\nSummary of Cross-Cohort LOCO ROC-AUC Performance:")
+    print("\nSummary of Cross-Cohort LOCO ROC-AUC Performance Across All 5 Model Families:")
     print(df_results.to_string(index=False))
 
     out_plot_path = PLOT_DIR / "signature_vs_raw_selection_auc.png"
