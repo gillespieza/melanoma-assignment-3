@@ -1,21 +1,46 @@
+"""
+Data Cleaning & Preprocessing Pipeline for Immunotherapy Cohorts & TCGA-SKCM.
+
+Cleans raw clinical, gene expression (TPM / RSEM), and somatic mutation (MAF) datasets across:
+- Liu et al. 2019
+- Hugo et al. 2016
+- Riaz et al. 2017
+- TCGA-SKCM Pan-Cancer Atlas 2018
+
+Standardises sample/patient IDs, harmonises RECIST clinical responses, log2-transforms expression matrices,
+filters to top ~3,000 variance genes while protecting key immune signature and driver genes,
+and exports cleaned matrices to data/processed/.
+"""
+
+import contextlib
+from pathlib import Path
+import sys
+from typing import Dict, List, Optional, Set, Tuple
+
 import numpy as np
 import pandas as pd
-import sys
-from pathlib import Path
-from typing import Optional
 
-# Add project root to sys.path for importing src modules
+# Bootstrap project root resolution for top-level import
 BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
-# Import cleaning and utility functions from the modular utils package
-from src.utils.preprocessing import clean_clinical_df, clean_rnaseq_df, align_expression_and_clinical, standardise_sample_id
+from src.utils.logging import TeeStream
+from src.utils.paths import find_project_root
+from src.utils.preprocessing import (
+    align_expression_and_clinical,
+    clean_clinical_df,
+    clean_rnaseq_df,
+    map_entrez_to_symbols,
+    standardise_sample_id,
+)
 
 # Base directories
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
+LOG_DIR = find_project_root(Path(__file__).resolve()) / "logs"
+LOG_PATH = LOG_DIR / "clean_data.log"
 
 # Study IDs
 LIU_STUDY_ID = "mel_iatlas_liu_2019"
@@ -28,8 +53,6 @@ CLIN_PATIENT_FILE = "data_clinical_patient.txt"
 CLIN_SAMPLE_FILE = "data_clinical_sample.txt"
 EXPR_FILE = "data_mrna_seq_tpm.txt"
 MUT_FILE = "data_mutations.txt"
-
-# TCGA uses RSEM counts, not TPM
 TCGA_EXPR_FILE = "data_mrna_seq_v2_rsem.txt"
 
 # Standard response mapping for all iAtlas / cBioPortal cohorts
@@ -44,43 +67,53 @@ RESPONSE_MAP = {
 # Set of critical signature and driver genes to protect from variance filtering
 PROTECTED_GENES = {
     # IMPRES genes
-    "CD274", "VSIR", "C10orf54", "VISTA", "CD28", "CD276", "CD86", "TNFRSF4", "CD200", 
+    "CD274", "VSIR", "C10orf54", "VISTA", "CD28", "CD276", "CD86", "TNFRSF4", "CD200",
     "CTLA4", "PDCD1", "CD80", "TNFSF9", "HAVCR2", "CD27", "CD40", "TNFRSF14",
     # IFN-gamma genes
     "IFNG", "CXCL9", "CXCL10", "IDO1", "HLA-DRA", "STAT1",
     # TIS genes
-    "CCL5", "CD2", "CD3D", "CD3E", "CD27", "CMKLR1", "CXCR6", "GZMB", "GZMK", "HLA-DQA1", "HLA-E", 
+    "CCL5", "CD2", "CD3D", "CD3E", "CD27", "CMKLR1", "CXCR6", "GZMB", "GZMK", "HLA-DQA1", "HLA-E",
     "LAG3", "NKG7", "PDCD1LG2", "PSMB10", "TIGIT",
     # CYT genes
     "GZMA", "PRF1",
     # CD8 T-cell genes
     "CD8A", "CD8B",
     # Pathway/driver mutation genes
-    "B2M", "TAP1", "TAP2", "JAK1", "JAK2", "PTEN", "CDKN2A", "PIK3CA", "BRAF", "NRAS", "NF1"
+    "B2M", "TAP1", "TAP2", "JAK1", "JAK2", "PTEN", "CDKN2A", "PIK3CA", "BRAF", "NRAS", "NF1",
 }
 
 
-def filter_top_variance_genes(df, protected_genes, top_n=3000):
-    """
-    Keep only the top N highest-variance genes, protecting critical signature/driver genes.
+def filter_top_variance_genes(df: pd.DataFrame, protected_genes: Set[str], top_n: int = 3000) -> pd.DataFrame:
+    """Retains top N highest-variance genes while protecting domain-critical signature and driver genes.
+
+    Args:
+        df: Expression DataFrame with samples as rows and genes as columns.
+        protected_genes: Set of gene symbols exempt from variance truncation.
+        top_n: Number of highest-variance genes to retain.
+
+    Returns:
+        Filtered DataFrame containing selected genes.
     """
     variances = df.var()
     sorted_genes = variances.sort_values(ascending=False).index.tolist()
-    
+
     keep_genes = set(sorted_genes[:top_n])
     for g in protected_genes:
         if g in df.columns:
             keep_genes.add(g)
-            
+
     ordered_keep = [g for g in sorted_genes if g in keep_genes]
     return df[ordered_keep]
 
 
-
 def parse_cbioportal_expression(expr_file_path: Path) -> pd.DataFrame:
-    """
-    Loads a raw cBioPortal expression file, handles Entrez_Gene_Id dropping,
-    averages duplicates by Hugo_Symbol, and returns the gene x sample dataframe.
+    """Loads a raw cBioPortal expression file, averages duplicate Hugo Symbols, and returns gene x sample DataFrame.
+
+    Args:
+        expr_file_path: Path to tabular cBioPortal expression file.
+
+    Returns:
+        DataFrame indexed by Hugo_Symbol with sample IDs as columns.
     """
     df_expr = pd.read_csv(expr_file_path, sep="\t")
     df_expr = df_expr.dropna(subset=["Hugo_Symbol"])
@@ -91,36 +124,37 @@ def parse_cbioportal_expression(expr_file_path: Path) -> pd.DataFrame:
     return df_expr
 
 
-def parse_maf_mutations(raw_dir: Path, sample_ids: Optional[list] = None, id_prefix: str = "") -> pd.DataFrame:
-    """
-    Parses a cBioPortal MAF file to extract binary mutation status for all genes.
+def parse_maf_mutations(raw_dir: Path, sample_ids: Optional[List[str]] = None, id_prefix: str = "") -> pd.DataFrame:
+    """Parses cBioPortal MAF file to extract binary non-synonymous mutation matrix for all genes.
 
-    @param Path raw_dir Directory containing data_mutations.txt.
-    @param list sample_ids Optional list of sample IDs to restrict to.
-    @param str id_prefix Optional prefix to prepend to sample/patient IDs.
-    @return pd.DataFrame DataFrame indexed by Tumor_Sample_Barcode with gene symbols as columns.
+    Args:
+        raw_dir: Directory containing data_mutations.txt.
+        sample_ids: Optional list of sample IDs to restrict matrix to.
+        id_prefix: Optional string prefix prepended to sample barcodes.
+
+    Returns:
+        Binary mutation DataFrame indexed by Tumor_Sample_Barcode with gene symbols as columns.
     """
     mut_path = raw_dir / MUT_FILE
     if not mut_path.exists():
         return pd.DataFrame()
 
     df_mut = pd.read_csv(mut_path, sep="\t", comment="#", low_memory=False)
-    # Prepend prefix and convert to uppercase
     df_mut["Tumor_Sample_Barcode"] = (id_prefix + df_mut["Tumor_Sample_Barcode"].astype(str)).str.upper()
 
     if sample_ids is not None:
         df_mut = df_mut[df_mut["Tumor_Sample_Barcode"].isin(sample_ids)]
 
-    # Any non-synonymous mutation = mutated
-    non_syn = ["Missense_Mutation", "Nonsense_Mutation", "Frame_Shift_Del",
-               "Frame_Shift_Ins", "In_Frame_Del", "In_Frame_Ins",
-               "Splice_Site", "Nonstop_Mutation", "Translation_Start_Site"]
+    non_syn = [
+        "Missense_Mutation", "Nonsense_Mutation", "Frame_Shift_Del",
+        "Frame_Shift_Ins", "In_Frame_Del", "In_Frame_Ins",
+        "Splice_Site", "Nonstop_Mutation", "Translation_Start_Site",
+    ]
     df_mut = df_mut[df_mut["Variant_Classification"].isin(non_syn)]
 
     if df_mut.empty:
         return pd.DataFrame()
 
-    # Pivot: group by sample and gene
     pivoted = df_mut.groupby(["Tumor_Sample_Barcode", "Hugo_Symbol"]).size().unstack(fill_value=0)
     pivoted = (pivoted > 0).astype(int)
     pivoted.index.name = None
@@ -135,56 +169,58 @@ def clean_iatlas_cohort(
     baseline_only: bool = False,
     mut_by_patient: bool = False,
     patient_prefix: str = "",
-    sample_prefix: str = ""
+    sample_prefix: str = "",
 ) -> None:
-    """
-    Generic pipeline function to clean and align iAtlas/cBioPortal datasets.
+    """Generic pipeline function to clean and align iAtlas/cBioPortal trial datasets.
+
+    Args:
+        cohort_name: Display name of the trial cohort.
+        study_id: cBioPortal study identifier.
+        raw_dir: Directory containing raw data files.
+        proc_dir: Target directory for processed outputs.
+        baseline_only: Whether to restrict to pre-treatment samples.
+        mut_by_patient: Whether to aggregate sample mutations at patient level.
+        patient_prefix: Prefix to prepend to patient IDs.
+        sample_prefix: Prefix to prepend to sample IDs.
     """
     proc_dir.mkdir(parents=True, exist_ok=True)
 
     required = [CLIN_PATIENT_FILE, CLIN_SAMPLE_FILE, EXPR_FILE]
     if not all((raw_dir / f).exists() for f in required):
-        raise FileNotFoundError(f"Missing raw input files in {raw_dir}. Please run download_data.py first.")
+        raise FileNotFoundError(
+            f"Missing raw input files in {raw_dir.relative_to(BASE_DIR).as_posix()}. Please run download_data.py first."
+        )
 
     print(f"Cleaning {cohort_name} ({study_id})...")
 
-    # Load raw clinical data
     df_patient = pd.read_csv(raw_dir / CLIN_PATIENT_FILE, sep="\t", skiprows=4)
     df_sample = pd.read_csv(raw_dir / CLIN_SAMPLE_FILE, sep="\t", skiprows=4)
 
-    # Prepend dataset prefix and convert to uppercase for Patient and Sample IDs
     df_patient["PATIENT_ID"] = (patient_prefix + df_patient["PATIENT_ID"].astype(str)).str.upper()
     df_sample["PATIENT_ID"] = (patient_prefix + df_sample["PATIENT_ID"].astype(str)).str.upper()
     df_sample["SAMPLE_ID"] = (sample_prefix + df_sample["SAMPLE_ID"].astype(str)).str.upper()
 
     df_clin = clean_clinical_df(pd.merge(df_sample, df_patient, on="PATIENT_ID"))
 
-    # Optional pre-treatment filter (e.g. for Riaz)
     if baseline_only:
         df_clin = df_clin[df_clin["SAMPLE_ID"].str.endswith("_PRE")]
 
-    # Map response using iAtlas column: keep RESPONSE granular, add RESPONSE_BINARY
-    if 'RESPONSE' in df_clin.columns:
-        df_clin['RESPONSE_BINARY'] = df_clin['RESPONSE'].map(RESPONSE_MAP)
+    if "RESPONSE" in df_clin.columns:
+        df_clin["RESPONSE_BINARY"] = df_clin["RESPONSE"].map(RESPONSE_MAP)
     else:
-        df_clin['RESPONSE_BINARY'] = np.nan
+        df_clin["RESPONSE_BINARY"] = np.nan
     df_clin = df_clin.set_index("SAMPLE_ID")
 
-    # Standardize clinical metadata columns to uppercase
-    if 'AGE_AT_DIAGNOSIS' in df_clin.columns:
-        df_clin['AGE'] = df_clin['AGE_AT_DIAGNOSIS'].astype(float)
-    if 'SEX' in df_clin.columns:
-        df_clin['SEX'] = df_clin['SEX'].map({"Male": "Male", "Female": "Female", "M": "Male", "F": "Female"}).fillna("N/A")
+    if "AGE_AT_DIAGNOSIS" in df_clin.columns:
+        df_clin["AGE"] = df_clin["AGE_AT_DIAGNOSIS"].astype(float)
+    if "SEX" in df_clin.columns:
+        df_clin["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female", "M": "Male", "F": "Female"}).fillna("N/A")
 
-    # Extract mutation status from MAF
     if mut_by_patient:
         df_mut = parse_maf_mutations(raw_dir, id_prefix=sample_prefix)
         if not df_mut.empty:
-            # Convert index from sample barcode (e.g., RIAZ_PT3_PRE) to patient ID (e.g., RIAZ_PT3)
             df_mut.index = df_mut.index.map(lambda x: x.rsplit("_", 1)[0] if isinstance(x, str) else x)
-            # Aggregate by patient, taking max (1 if mutated in any sample, 0 otherwise)
             df_mut = df_mut.groupby(df_mut.index).max()
-            # Map using Patient_ID and reindex to align with df_clin
             df_mut_final = df_mut.reindex(df_clin["PATIENT_ID"], fill_value=0)
             df_mut_final.index = df_clin.index
         else:
@@ -196,7 +232,6 @@ def clean_iatlas_cohort(
         else:
             df_mut_final = pd.DataFrame(index=df_clin.index)
 
-    # Load raw expression (TPM)
     df_expr = parse_cbioportal_expression(raw_dir / EXPR_FILE)
     df_expr.columns = (sample_prefix + df_expr.columns.astype(str)).str.upper()
     if baseline_only:
@@ -205,29 +240,20 @@ def clean_iatlas_cohort(
     else:
         df_expr = df_expr.T
 
-    # Align samples
     df_expr, df_clin = align_expression_and_clinical(df_expr, df_clin)
-
-    # Log-transform expression
     df_expr = np.log2(df_expr + 1)
-
-    # Filter to top ~3,000 highest-variance genes
     df_expr = filter_top_variance_genes(df_expr, PROTECTED_GENES, top_n=3000)
 
-    # Align mutation status to final sample IDs and save
     df_mut_final = df_mut_final.loc[df_clin.index]
     df_mut_final.index.name = "SAMPLE_ID"
     df_mut_final.to_csv(proc_dir / "mutations_cleaned.csv")
-
-    # Save cleaned
     df_expr.to_csv(proc_dir / "expr_cleaned.csv")
-    
-    # Reorder so PATIENT_ID is the first column, and RESPONSE_BINARY is next to RESPONSE
+
     df_clin = df_clin.reset_index()
     if "PATIENT_ID" in df_clin.columns:
         other_cols = []
         for c in df_clin.columns:
-            if c == "PATIENT_ID" or c == "RESPONSE_BINARY":
+            if c in ("PATIENT_ID", "RESPONSE_BINARY"):
                 continue
             other_cols.append(c)
             if c == "RESPONSE":
@@ -236,15 +262,13 @@ def clean_iatlas_cohort(
             other_cols.append("RESPONSE_BINARY")
         cols = ["PATIENT_ID"] + other_cols
         df_clin = df_clin[cols]
-        
+
     df_clin.to_csv(proc_dir / "clin_cleaned.csv", index=False)
     print(f"  {cohort_name}: Cleaned {len(df_clin)} samples.")
 
 
 def clean_liu_2019() -> None:
-    """
-    Cleans raw Liu 2019 datasets and writes processed matrices to the processed folder.
-    """
+    """Cleans raw Liu 2019 datasets and exports processed matrices."""
     clean_iatlas_cohort(
         cohort_name="Liu 2019",
         study_id=LIU_STUDY_ID,
@@ -253,15 +277,12 @@ def clean_liu_2019() -> None:
         baseline_only=False,
         mut_by_patient=False,
         patient_prefix="liu_",
-        sample_prefix=""
+        sample_prefix="",
     )
 
 
 def clean_hugo_2016() -> None:
-    """
-    Cleans Hugo 2016 (mel_iatlas_hugo_ucla_2016) cBioPortal datasets and writes
-    processed matrices to the processed folder.
-    """
+    """Cleans raw Hugo 2016 datasets and exports processed matrices."""
     clean_iatlas_cohort(
         cohort_name="Hugo 2016",
         study_id=HUGO_STUDY_ID,
@@ -270,15 +291,12 @@ def clean_hugo_2016() -> None:
         baseline_only=False,
         mut_by_patient=False,
         patient_prefix="hugo_",
-        sample_prefix="hugo_"
+        sample_prefix="hugo_",
     )
 
 
 def clean_riaz_2017() -> None:
-    """
-    Cleans Riaz 2017 (mel_iatlas_riaz_nivolumab_2017) cBioPortal datasets and writes
-    processed matrices to the processed folder.
-    """
+    """Cleans raw Riaz 2017 datasets and exports processed matrices."""
     clean_iatlas_cohort(
         cohort_name="Riaz 2017",
         study_id=RIAZ_STUDY_ID,
@@ -287,39 +305,34 @@ def clean_riaz_2017() -> None:
         baseline_only=False,
         mut_by_patient=True,
         patient_prefix="riaz_",
-        sample_prefix="riaz_"
+        sample_prefix="riaz_",
     )
 
 
 def clean_tcga_skcm() -> None:
-    """
-    Cleans raw TCGA-SKCM datasets and writes processed matrices to the processed folder.
-
-    @return None
-    """
+    """Cleans raw TCGA-SKCM datasets and exports processed matrices."""
     raw_dir = RAW_DIR / TCGA_STUDY_ID
     proc_dir = PROCESSED_DIR / TCGA_STUDY_ID
     proc_dir.mkdir(parents=True, exist_ok=True)
 
     if not all((raw_dir / f).exists() for f in [CLIN_PATIENT_FILE, CLIN_SAMPLE_FILE, TCGA_EXPR_FILE]):
-        raise FileNotFoundError(f"Missing raw input files in {raw_dir}. Please run download_data.py first.")
+        raise FileNotFoundError(
+            f"Missing raw input files in {raw_dir.relative_to(BASE_DIR).as_posix()}. Please run download_data.py first."
+        )
 
     print(f"Cleaning TCGA-SKCM ({TCGA_STUDY_ID})...")
 
-    # Clean Clinical
     df_patient = pd.read_csv(raw_dir / CLIN_PATIENT_FILE, sep="\t", skiprows=4)
     df_sample = pd.read_csv(raw_dir / CLIN_SAMPLE_FILE, sep="\t", skiprows=4)
     df_clin = pd.merge(df_sample, df_patient, on="PATIENT_ID")
     cleaned_clin_df = clean_clinical_df(df_clin)
 
-    # Parse and Merge Treatment Timeline Data if available
     timeline_file = raw_dir / "data_timeline_treatment.txt"
     if timeline_file.exists():
         print("  Found treatment timeline data. Parsing and aggregating features...")
         df_treat = pd.read_csv(timeline_file, sep="\t")
         df_treat["PATIENT_ID"] = df_treat["PATIENT_ID"].astype(str).str.strip().str.upper()
 
-        # Aggregate unique treatment types and agents
         treatment_types_series = df_treat.groupby("PATIENT_ID")["TREATMENT_TYPE"].apply(
             lambda x: ", ".join(sorted(set(x.dropna())))
         )
@@ -332,7 +345,6 @@ def clean_tcga_skcm() -> None:
         treat_features["TREATMENT_TYPES"] = treatment_types_series
         treat_features["TREATMENT_AGENTS"] = agents_series
 
-        # Pivot treatment types (e.g. Radiation Therapy, Chemotherapy, Immunotherapy)
         unique_types = df_treat["TREATMENT_TYPE"].dropna().unique()
         for t_type in unique_types:
             col_name = f"TX_TYPE_{t_type.replace(' ', '_').upper()}"
@@ -340,7 +352,6 @@ def clean_tcga_skcm() -> None:
             treat_features[col_name] = 0
             treat_features.loc[patients_with_type, col_name] = 1
 
-        # Pivot key drugs/agents
         key_agents = {
             "TX_AGENT_IPILIMUMAB": ["Ipilimumab"],
             "TX_AGENT_PEMBROLIZUMAB": ["Pembrolizumab"],
@@ -350,7 +361,7 @@ def clean_tcga_skcm() -> None:
             "TX_AGENT_TRAMETINIB": ["Trametinib"],
             "TX_AGENT_DACARBAZINE": ["Dacarbazine"],
             "TX_AGENT_TEMOZOLOMIDE": ["Temozolomide"],
-            "TX_AGENT_INTERFERON": ["Interferon Alfa", "Interferon Nos", "Interferon"]
+            "TX_AGENT_INTERFERON": ["Interferon Alfa", "Interferon Nos", "Interferon"],
         }
 
         for feat_name, agents_list in key_agents.items():
@@ -364,14 +375,12 @@ def clean_tcga_skcm() -> None:
         treat_features = treat_features.reset_index().rename(columns={"index": "PATIENT_ID"})
         cleaned_clin_df = pd.merge(cleaned_clin_df, treat_features, on="PATIENT_ID", how="left")
 
-        # Fill NaNs for patients who did not receive clinical treatments
         cleaned_clin_df["TREATMENT_TYPES"] = cleaned_clin_df["TREATMENT_TYPES"].fillna("None")
         cleaned_clin_df["TREATMENT_AGENTS"] = cleaned_clin_df["TREATMENT_AGENTS"].fillna("None")
         for col in cleaned_clin_df.columns:
             if col.startswith("TX_TYPE_") or col.startswith("TX_AGENT_"):
                 cleaned_clin_df[col] = cleaned_clin_df[col].fillna(0).astype(int)
 
-    # Parse and Merge Supplementary Hypoxia Data if available
     hypoxia_file = raw_dir / "data_clinical_supp_hypoxia.txt"
     if hypoxia_file.exists():
         print("  Found supplementary hypoxia data. Parsing and merging...")
@@ -379,67 +388,54 @@ def clean_tcga_skcm() -> None:
         df_hyp["PATIENT_ID"] = df_hyp["PATIENT_ID"].astype(str).str.strip().str.upper()
         cleaned_clin_df = pd.merge(cleaned_clin_df, df_hyp[["PATIENT_ID", "WINTER_HYPOXIA_SCORE"]], on="PATIENT_ID", how="left")
 
-
-    # Clean RNA-seq
     df_expr = pd.read_csv(raw_dir / TCGA_EXPR_FILE, sep="\t")
     df_expr = df_expr.dropna(subset=["Entrez_Gene_Id"])
     df_expr["Entrez_Gene_Id"] = df_expr["Entrez_Gene_Id"].astype(int).astype(str)
-    
-    # Map Entrez IDs to Hugo Symbols using modular preprocessing helper
-    from src.utils.preprocessing import map_entrez_to_symbols
+
     entrez_ids = df_expr["Entrez_Gene_Id"].unique().tolist()
     cache_path = proc_dir / "entrez_to_symbol_cache.json"
     gene_map = map_entrez_to_symbols(entrez_ids, cache_path=cache_path)
-    
-    # Apply mapping
+
     df_expr["Hugo_Symbol_Mapped"] = df_expr["Entrez_Gene_Id"].map(gene_map)
-    # Fallback to Entrez Gene ID if symbol not found
     df_expr["Hugo_Symbol_Mapped"] = df_expr["Hugo_Symbol_Mapped"].fillna(df_expr["Entrez_Gene_Id"])
-    
+
     df_expr = df_expr.set_index("Hugo_Symbol_Mapped")
     if "Hugo_Symbol" in df_expr.columns:
         df_expr = df_expr.drop(columns=["Hugo_Symbol"])
     if "Entrez_Gene_Id" in df_expr.columns:
         df_expr = df_expr.drop(columns=["Entrez_Gene_Id"])
-        
-    # Average duplicate Hugo Symbols
+
     df_expr = df_expr.groupby(df_expr.index).mean()
     df_expr = df_expr.T
     df_expr.index.name = "SAMPLE_ID"
     df_expr = df_expr.reset_index()
-    
+
     cleaned_rnaseq_df = clean_rnaseq_df(df_expr)
-    
-    # Apply log2(x + 1) transformation directly to the gene expression columns
+
     gene_cols = [c for c in cleaned_rnaseq_df.columns if c != "SAMPLE_ID"]
     cleaned_rnaseq_df[gene_cols] = np.log2(cleaned_rnaseq_df[gene_cols] + 1)
-    
-    # Filter to top ~3,000 highest-variance genes
+
     df_expr_data = cleaned_rnaseq_df.set_index("SAMPLE_ID")
     df_expr_data = filter_top_variance_genes(df_expr_data, PROTECTED_GENES, top_n=3000)
     cleaned_rnaseq_df = df_expr_data.reset_index()
 
-    # Drop constant, redundant, and administrative columns
     cols_to_drop = [
         "CANCER_TYPE", "CANCER_TYPE_DETAILED", "ONCOTREE_CODE", "CANCER_TYPE_ACRONYM",
         "SUBTYPE", "TUMOR_TYPE", "SOMATIC_STATUS", "DAYS_TO_INITIAL_PATHOLOGIC_DIAGNOSIS",
         "INFORMED_CONSENT_VERIFIED", "DAYS_TO_BIRTH", "OTHER_PATIENT_ID", "TISSUE_SOURCE_SITE_CODE",
         "TISSUE_RETROSPECTIVE_COLLECTION_INDICATOR", "FORM_COMPLETION_DATE", "AJCC_STAGING_EDITION",
         "SAMPLE_COUNT", "TISSUE_PROSPECTIVE_COLLECTION_INDICATOR", "IN_PANCANPATHWAYS_FREEZE",
-        "GRADE", "TISSUE_SOURCE_SITE"
+        "GRADE", "TISSUE_SOURCE_SITE",
     ]
     cleaned_clin_df = cleaned_clin_df.drop(columns=[c for c in cols_to_drop if c in cleaned_clin_df.columns])
 
-    # Reorder so PATIENT_ID is the first column
     if "PATIENT_ID" in cleaned_clin_df.columns:
         cols = ["PATIENT_ID"] + [c for c in cleaned_clin_df.columns if c != "PATIENT_ID"]
         cleaned_clin_df = cleaned_clin_df[cols]
 
-    # Save cleaned
     cleaned_clin_df.to_csv(proc_dir / "clin_cleaned.csv", index=False)
     cleaned_rnaseq_df.to_csv(proc_dir / "expr_cleaned.csv", index=False)
-    
-    # Parse somatic mutations for TCGA-SKCM if available
+
     mut_path = raw_dir / MUT_FILE
     if mut_path.exists():
         print("  Parsing TCGA somatic mutations...")
@@ -451,28 +447,24 @@ def clean_tcga_skcm() -> None:
             df_mut_final = df_mut_final.reindex(tcga_sample_ids, fill_value=0)
             df_mut_final.index.name = "SAMPLE_ID"
             df_mut_final.to_csv(proc_dir / "mutations_cleaned.csv")
-            print(f"  TCGA-SKCM: Cleaned mutations written to {proc_dir / 'mutations_cleaned.csv'}")
+            print(f"  TCGA-SKCM: Cleaned mutations written to {(proc_dir / 'mutations_cleaned.csv').relative_to(BASE_DIR).as_posix()}")
 
-    print(f"  TCGA-SKCM: Cleaned {len(cleaned_clin_df)} samples. Integrated and tidied treatment data fields (PATIENT_ID is first).")
+    print(f"  TCGA-SKCM: Cleaned {len(cleaned_clin_df)} samples. Integrated treatment data fields.")
 
 
 def main() -> None:
-    """
-    Orchestrates the data cleaning workflow for all studies.
-
-    @return None
-    """
+    """Orchestrates the data cleaning workflow for all study cohorts."""
     print("==================================================")
     print("Data Cleaning Pipeline: Transforming Raw Data")
-    print("==================================================")
-    
+    print("==================================================\n")
+
     stages = [
         ("Liu 2019", clean_liu_2019),
         ("Hugo 2016", clean_hugo_2016),
         ("Riaz 2017", clean_riaz_2017),
-        ("TCGA-SKCM", clean_tcga_skcm)
+        ("TCGA-SKCM", clean_tcga_skcm),
     ]
-    
+
     success_count = 0
     for name, stage_fn in stages:
         try:
@@ -480,11 +472,17 @@ def main() -> None:
             success_count += 1
         except Exception as e:
             print(f"  [ERROR] Stage '{name}' failed: {e}")
-            
-    print("==================================================")
+
+    print("\n==================================================")
     print(f"Workflow completed: {success_count}/{len(stages)} stages succeeded.")
     print("==================================================")
 
 
 if __name__ == "__main__":
-    main()
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    with open(LOG_PATH, "w", encoding="utf-8") as log_file:
+        stdout_tee = TeeStream(sys.stdout, log_file)
+        stderr_tee = TeeStream(sys.stderr, log_file)
+        with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
+            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+            main()
