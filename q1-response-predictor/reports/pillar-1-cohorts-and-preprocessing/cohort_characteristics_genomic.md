@@ -23,7 +23,7 @@ This report presents a comparative analysis of the genomic features across the f
 
 The distribution of the three major cutaneous melanoma driver mutations (_BRAF_, _NRAS_, and _NF1_) and the Triple-Wild-Type (Triple-WT) rate is compared across all cohorts below.
 
-![[mutation_frequencies.png]]
+![Driver Mutation Frequencies](../../plots/genomic/genomic_driver_frequencies.png)
 
 Driver Mutation Frequencies
 
@@ -38,7 +38,7 @@ To further characterize tumor immunogenicity and mechanisms of resistance, we ev
 *   **IFN-gamma Signaling**: _JAK1_, _JAK2_, _STAT1_ (induces insensitivity to T-cell cytotoxicity).
 *   **Survival & Proliferation Drivers**: _PTEN_, _CDKN2A_, _PIK3CA_ (oncogenic drivers).
 
-![Extended Pathway Mutation Frequencies](../../plots/genomic/extended_pathway_grouped_bars.png)
+![Extended Pathway Mutation Frequencies](../../plots/genomic/extended_pathway_mutation_frequencies.png)
 
 Extended Pathway Somatic Mutation & Pathway Frequencies
 
@@ -63,11 +63,11 @@ _Note: Pre-treatment somatic non-synonymous mutations in MHC Class I machinery (
 
 Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumor immunogenicity. Below, we present the TMB distribution (left panel) alongside a scatter plot showing the relationship between nonsynonymous TMB and predicted neoantigen load in the pooled trial cohorts (right panel).
 
-![[tmb_distribution.png]]
+![TMB Distributions](../../plots/genomic/tmb_distributions_by_cohort.png)
 
 TMB Distributions
 
-![[extended_neoantigen_tmb.png]]
+![Neoantigen vs TMB](../../plots/biomarkers/extended_neoantigen_tmb.png)
 
 Neoantigen vs TMB
 
@@ -83,7 +83,7 @@ Neoantigen vs TMB
 ### 3.1. Intra-Cohort Correlation in Liu 2019
 A Spearman rank correlation matrix mapping the relationships between continuous genomic features (somatic mutation and neoantigen subtypes) in the **Liu 2019** cohort is presented below.
 
-![[biomarker_correlation_heatmap.png]]
+![Genomic Biomarker Correlation Matrix](../../plots/genomic/biomarker_correlation_matrix.png)
 
 Genomic Biomarker Correlation Matrix
 
@@ -114,7 +114,7 @@ To understand how tumor genomic features affect the microenvironment, we evaluat
 
 Overall Survival (OS) in the reference **TCGA-SKCM** cohort is stratified below. The left panel shows stratification by driver mutation subtype and TMB status. The right panel shows overall survival stratified by chromosomal instability (Aneuploidy Score) using a median split of 11.0.
 
-![[km_genomic_features.png]]
+![TCGA Driver and TMB Survival](../../plots/genomic/tcga_survival_by_mutation.png)
 
 TCGA Driver and TMB Survival
 
