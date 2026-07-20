@@ -1,23 +1,12 @@
----
-title:
-aliases: 
-tags: 
-created: 2026-07-18 12:17
-cssclasses: table-small
-obsidianEditingMode: preview
-obsidianUIMode: source
-updated: 2026-07-19 11:48
----
-
 # Batch Effect Assessment & Dimensionality Reduction Analysis
 
-When combining transcriptomic datasets across independent clinical studies, technical variations (e.g. sequencing platforms, RNA extraction methods, and library preparation) typically dominate the biological signals. This report documents how technical batch effects were identified and corrected across our melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) and whether global expression profiles separate patients based on therapeutic response. Plot aesthetics and palettes are aligned with the Okabe-Ito (Cell / Nature / Science Gold Standard) color guidelines used across other reports.
+When combining transcriptomic datasets across independent clinical studies, technical variations (e.g. sequencing platforms, RNA extraction methods, and library preparation) typically dominate the biological signals. This report documents how technical batch effects were identified and corrected across our melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) and whether global expression profiles separate patients based on therapeutic response. Plot aesthetics and palettes are aligned with the Okabe-Ito color guidelines used across other reports.
 
 ## 1. Full Cohort Batch Assessment (N = 697)
 
 To evaluate overall batch effects across all samples, we performed a Principal Component Analysis (PCA) on the common intersected high-variance genes (**559 genes**) across the $N=697$ patients in the full merged cohort, comparing the uncorrected concatenated matrix against the individually Z-score standardized matrix.
 
-![[batch_effect_pca.png]]
+![Full Cohort PCA Batch Correction](../../plots/biomarkers/batch_effect_pca.png)
 
 ### Key Findings
 *   **Panel A: Before Batch Correction**: The uncorrected PCA reveals a highly severe batch structure. Samples from each study cluster distinctly and occupy isolated regions of the projection space. The first two principal components (PC1 and PC2) represent **technical variance** driven entirely by the study of origin, rather than any shared underlying biology.
@@ -28,10 +17,10 @@ To evaluate overall batch effects across all samples, we performed a Principal C
 To evaluate technical batch effects and patient response separation in the clinical trials specifically, we performed PCA and Uniform Manifold Approximation and Projection (UMAP) on the $N=195$ response-aligned trial patients (Liu 2019, Hugo 2016, and Riaz 2017) using the 559 common genes.
 
 ### PCA Projections (Raw vs. Standardized)
-![[pca_dimensionality_reduction.png]]
+![PCA Projections](../../plots/exploratory/pca_dimensionality_reduction.png)
 
 ### UMAP Projections (Raw vs. Standardized)
-![[umap_dimensionality_reduction.png]]
+![UMAP Projections](../../plots/exploratory/umap_dimensionality_reduction.png)
 
 ### Key Observations
 *   **Batch Mixing**: In both PCA and UMAP, the uncorrected projections (top row) show distinct cohort clustering. Individual Z-scoring (bottom row) resolves these batch effects completely, causing blue (Liu 2019), orange (Hugo 2016), and reddish purple (Riaz 2017) points to mix homogeneously.
@@ -43,29 +32,19 @@ To evaluate technical batch effects and patient response separation in the clini
 To evaluate batch correction at the individual gene level, we selected the **top 50 genes by variance** (calculated on raw log2-TPM expression data across trial patients) and performed hierarchical clustering on both uncorrected and standardized expression values.
 
 ### Raw Expression (Top 50 Genes)
-![[heatmap_top_variance_genes_raw.png]]
+![Raw Expression Heatmap](../../plots/exploratory/heatmap_top_variance_genes_raw.png)
 
 ### Standardized Expression (Top 50 Genes)
-![[heatmap_top_variance_genes_standardized.png]]
+![Standardized Expression Heatmap](../../plots/exploratory/heatmap_top_variance_genes_standardized.png)
 
 ### Key Observations
-*   **Before Batch Correction (Raw log2-TPM)**:
-    *   **Cohort Segregation**: The patient columns cluster heavily by cohort source. The **Riaz 2017** cohort (reddish purple annotation bar) and **Hugo 2016** cohort (orange annotation bar) are almost completely partitioned from **Liu 2019** (blue annotation bar), indicating that systemic scale differences across studies skew patient clustering.
-    *   **Gene-Level Offsets**: Clear horizontal bands of elevated or suppressed baseline expression are visible across cohorts for specific genes, illustrating study-specific calibration differences.
-*   **After Batch Correction (Individual Z-scoring)**:
-    *   **Perfect Cohort Mixing**: After individually standardizing each study, the cohort annotation bars are distributed randomly across the patient dendrogram, confirming that baseline study-specific calibration offsets have been successfully aligned.
-    *   **Biological Subgroups**: The hierarchical clustering now groups patients by shared relative gene expression patterns (e.g., core co-expressed gene modules) rather than study of origin.
-    *   **No Response Clustering**: Responders (bluish green column bar) and non-responders (vermillion red column bar) remain mixed throughout the patient dendrogram, verifying that global high-variance gene expression does not cleanly partition patients by immunotherapy response.
+*   **Before Batch Correction (Raw log2-TPM)**: Patient columns cluster heavily by cohort source.
+*   **After Batch Correction (Individual Z-scoring)**: Perfect cohort mixing across patient dendrograms.
 
 ## 4. Cross-Validation Rigor & Data Leakage Prevention
 
 ### The Hazard of Global Batch Correction (e.g. ComBat)
-Algorithms like ComBat pool all samples together to estimate batch correction parameters. When applied to a multi-study cohort prior to Leave-One-Cohort-Out (LOCO) cross-validation:
-1.  The test cohort is included in the ComBat estimation step.
-2.  The features in the training cohorts are adjusted using information (the mean and variance) from the test set.
-3.  This **data leakage** violates the fundamental assumption of cross-validation (strict separation of train and test sets), leading to overly optimistic metric estimates.
+Algorithms like ComBat pool all samples together to estimate batch correction parameters. When applied to a multi-study cohort prior to Leave-One-Cohort-Out (LOCO) cross-validation, the test cohort is included in parameter estimation, introducing data leakage.
 
 ### The Z-score Scaling Solution
-By applying Z-score standardization **cohort-independently** (scaling each gene column strictly using its own cohort's mean and standard deviation):
-*   **Zero Leakage**: No information is shared across datasets during the scaling process. When testing on a left-out cohort, the model relies on features scaled using only that cohort's internal distribution, mirroring real-world clinical deployment where the model encounters a completely new study/laboratory.
-*   **Robust Alignment**: As shown in Section 1 and 2, this simple self-contained standardization achieves batch alignment performance comparable to ComBat, while maintaining complete mathematical rigor.
+By applying Z-score standardization cohort-independently, zero leakage is guaranteed during model cross-validation.
