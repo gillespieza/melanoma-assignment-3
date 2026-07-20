@@ -27,26 +27,6 @@ This report documents the comprehensive evaluation of all trained models (Logist
 #### Confusion Matrices (Threshold = 0.5)
 ![Logistic Regression Confusion Matrices](../plots/models/confusion_matrices_lr.png)
 
-```
-Hugo 2016 (N=27):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    7    6   
-Actual Resp        8    6   
-
-Liu 2019 (N=104):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    41   15  
-Actual Resp        24   24  
-
-Riaz 2017 (N=64):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    0    44  
-Actual Resp        0    20  
-```
-
 #### ROC & Precision-Recall Curves
 ![Logistic Regression ROC Curves](../plots/models/roc_curves_lr.png)
 ![Logistic Regression PR Curves](../plots/models/pr_curves_lr.png)
@@ -67,26 +47,6 @@ Actual Resp        0    20
 
 #### Confusion Matrices (Threshold = 0.5)
 ![Random Forest Confusion Matrices](../plots/models/confusion_matrices_rf.png)
-
-```
-Hugo 2016 (N=27):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    8    5   
-Actual Resp        10   4   
-
-Liu 2019 (N=104):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    53   3   
-Actual Resp        39   9   
-
-Riaz 2017 (N=64):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    23   21  
-Actual Resp        4    16  
-```
 
 #### ROC & Precision-Recall Curves
 ![Random Forest ROC Curves](../plots/models/roc_curves_rf.png)
@@ -109,26 +69,6 @@ Actual Resp        4    16
 #### Confusion Matrices (Threshold = 0.5)
 ![XGBoost Confusion Matrices](../plots/models/confusion_matrices_xgb.png)
 
-```
-Hugo 2016 (N=27):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    8    5   
-Actual Resp        13   1   
-
-Liu 2019 (N=104):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    34   22  
-Actual Resp        23   25  
-
-Riaz 2017 (N=64):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    21   23  
-Actual Resp        7    13  
-```
-
 #### ROC & Precision-Recall Curves
 ![XGBoost ROC Curves](../plots/models/roc_curves_xgb.png)
 ![XGBoost PR Curves](../plots/models/pr_curves_xgb.png)
@@ -150,26 +90,6 @@ Actual Resp        7    13
 #### Confusion Matrices (Threshold = 0.5)
 ![Support Vector Machine Confusion Matrices](../plots/models/confusion_matrices_svm.png)
 
-```
-Hugo 2016 (N=27):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    9    4   
-Actual Resp        11   3   
-
-Liu 2019 (N=104):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    56   0   
-Actual Resp        48   0   
-
-Riaz 2017 (N=64):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    36   8   
-Actual Resp        10   10  
-```
-
 #### ROC & Precision-Recall Curves
 ![SVM ROC Curves](../plots/models/roc_curves_svm.png)
 ![SVM PR Curves](../plots/models/pr_curves_svm.png)
@@ -190,26 +110,6 @@ Actual Resp        10   10
 
 #### Confusion Matrices (Threshold = 0.5)
 ![ElasticNet Confusion Matrices](../plots/models/confusion_matrices_elasticnet.png)
-
-```
-Hugo 2016 (N=27):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    13   0   
-Actual Resp        14   0   
-
-Liu 2019 (N=104):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    42   14  
-Actual Resp        26   22  
-
-Riaz 2017 (N=64):
-                Predicted
-              Non-Resp  Resp
-Actual Non-Resp    0    44  
-Actual Resp        0    20  
-```
 
 #### ROC & Precision-Recall Curves
 ![ElasticNet ROC Curves](../plots/models/roc_curves_elasticnet.png)
