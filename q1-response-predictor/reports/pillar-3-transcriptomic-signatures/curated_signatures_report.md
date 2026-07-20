@@ -207,21 +207,19 @@ To evaluate the predictive power of gene expression signatures when combined wit
 
 ### Table 2. Cross-validated multimodal response prediction performance. Values are mean ROC-AUC ± SD across 5-fold stratified CV
 
-| Model Architecture                  | Base Model (Signatures Only) | Signatures + Drivers (`BRAF/NRAS/NF1`) + Weight | Full Extended Model (Signatures + Drivers + TMB + CNA + Pathway Mutations) |
-|:----------------------------------- |:----------------------------:|:--------------------------------------------:|:--------------------------------------------------------------------------:|
-| **Logistic Regression (LR)**        |      **0.615 (±0.081)**      |                0.600 (±0.043)                |                               0.560 (±0.094)                               |
-| **Random Forest (RF)**              |        0.666 (±0.053)        |                0.661 (±0.072)                |                             **0.700 (±0.102)**                             |
-| **XGBoost (XGB, tuned)**            |        0.632 (±0.061)        |                0.668 (±0.095)                |                             **0.699 (±0.123)**                             |
-| **Support Vector Machine (SVM)**    |        0.638 (±0.086)        |              **0.671 (±0.054)**              |                               0.655 (±0.084)                               |
-| **Elastic-Net Logistic Regression** |        0.615 (±0.068)        |              **0.621 (±0.051)**              |                               0.545 (±0.065)                               |
+| Model Architecture | Base Model (Signatures Only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Age | Full Extended Model (Signatures + Drivers + TMB + Neoantigens + Mutations) |
+|:--- |:---:|:---:|:---:|
+| **Logistic Regression (LR)** | **0.615 (+/-0.081)** | 0.553 (+/-0.046) | 0.587 (+/-0.069) |
+| **Random Forest (RF)** | 0.666 (+/-0.053) | 0.662 (+/-0.067) | **0.710 (+/-0.094)** |
+| **XGBoost (XGB, tuned)** | 0.632 (+/-0.058) | 0.681 (+/-0.051) | **0.724 (+/-0.089)** |
+| **Support Vector Machine (SVM)** | **0.626 (+/-0.081)** | 0.617 (+/-0.089) | 0.625 (+/-0.073) |
+| **Elastic-Net** | **0.610 (+/-0.075)** | 0.585 (+/-0.059) | 0.534 (+/-0.030) |
 
 ![Multimodal AUC Comparison](../../plots/biomarkers/multimodal_auc_comparison.png)
 
 ### Analysis of Predictor Performance
-1. **Signatures as Baseline**: Continuous transcriptomic signatures alone provide a solid baseline across model families, with the strongest signature-only performance from **Random Forest (AUC = 0.666)** and **XGBoost (AUC = 0.632)** under the tuned XGBoost grid.
-2. **Impact of Driver Mutations & Sex**: Adding driver mutation status (`BRAF`, `NRAS`, `NF1`) and sex provides modest gains for some classifiers, most notably **SVM** (0.627 to 0.666), **Elastic-Net** (0.606 to 0.613), and tuned **XGBoost** (0.632 to 0.668), while slightly reducing performance for LR and RF.
-3. **Full Multimodal Synergy**: The full extended model (combining signatures with TMB, copy-number alterations, and pathway mutations) performs best with tree-based learners, led by **Random Forest (AUC = 0.700)** and **tuned XGBoost (AUC = 0.699)**. This supports the design decision that combining orthogonal modalities (transcriptomic inflammation + mutational burden) can improve immunotherapy response prediction.
-4. **XGBoost Tuning**: The tuned XGBoost grid favors shallower trees (`max_depth` 2-3), moderate learning rates, and row/feature subsampling. This improves the full extended XGBoost model relative to the previous grid while trading off some signature-only performance.
+1.  **Baseline vs. Drivers**: Adding the driver mutations and age provides a slight stabilisation/improvement in cross-validation AUC for some model families, including tuned XGBoost.
+2.  **Full Multimodal Model**: The full extended model (incorporating 15 features including mutation flags and genomic load metrics) performs strongly with the tuned XGBoost grid (AUC = 0.724 ± 0.089) and Random Forest (AUC = 0.710 ± 0.094).
 
 ---
 

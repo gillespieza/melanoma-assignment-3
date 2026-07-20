@@ -36,8 +36,71 @@ if str(BASE_DIR) not in sys.path:
 DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots" / "biomarkers"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
-REPORTS_DIR = BASE_DIR / "reports"
-REPORTS_DIR.mkdir(exist_ok=True, parents=True)
+REPORTS_DIR = BASE_DIR / "reports" / "pillar-3-transcriptomic-signatures"
+CURATED_SIGNATURES_REPORT_PATH = REPORTS_DIR / "curated_signatures_report.md"
+
+
+def _update_curated_signatures_report(report_path: Path, section_6_lines: list[str]) -> None:
+    """Updates Section 6 of curated_signatures_report.md with live cross-validation results.
+
+    Args:
+        report_path: Absolute path to curated_signatures_report.md.
+        section_6_lines: List of markdown formatted string lines for Section 6.
+    """
+    if not report_path.exists():
+        print(f"Warning: Could not find report at {report_path.relative_to(BASE_DIR).as_posix()}")
+        return
+
+    text = report_path.read_text(encoding="utf-8")
+
+    sec6_marker = "## 6. Multimodal Response Prediction Models"
+    sec7_marker = "## 7. Leave-One-Cohort-Out Model Evaluation"
+
+    start_idx = text.find(sec6_marker)
+    if start_idx == -1:
+        print(f"Warning: '{sec6_marker}' heading not found in {report_path.relative_to(BASE_DIR).as_posix()}")
+        return
+
+    end_idx = text.find(sec7_marker)
+    if end_idx == -1:
+        end_idx = len(text)
+
+    before_sec6 = text[:start_idx]
+    after_sec6 = text[end_idx:] if end_idx != len(text) else ""
+
+    sec6_content = "\n".join(section_6_lines)
+    new_report_text = before_sec6 + sec6_content.strip() + "\n\n---\n\n" + after_sec6.lstrip("-\n ")
+
+    report_path.write_text(new_report_text, encoding="utf-8")
+    print(f"\nUpdated Section 6 in {report_path.relative_to(BASE_DIR).as_posix()}")
+
+
+def main() -> None:
+    print("==================================================")
+    print("Extended Biomarker Evaluation & Predictive Modeling (Merged Trial Cohorts)")
+    print("==================================================")
+    
+    data = _load_and_prepare_data()
+    if data is None:
+        return
+    df_clin_merged, df_sigs_merged, df_tcga_clin, df_tcga_sigs, df_liu_clin, df_hugo_clin, df_riaz_clin = data
+    
+    # 1. Neoantigen Load Evaluation
+    _evaluate_neoantigen_load(df_clin_merged)
+    
+    # 2. Somatic Pathway Mutations
+    _evaluate_pathway_mutations(df_liu_clin, df_hugo_clin, df_riaz_clin, df_clin_merged)
+    
+    # 3. Aneuploidy & TMB vs. Immune Infiltration
+    _evaluate_aneuploidy_and_tmb(df_tcga_clin, df_tcga_sigs, df_clin_merged, df_sigs_merged)
+    
+    # 4. Multimodal Response Predictor
+    section_6_lines = _train_multimodal_predictor(df_clin_merged, df_sigs_merged)
+    
+    _update_curated_signatures_report(CURATED_SIGNATURES_REPORT_PATH, section_6_lines)
+    print("==================================================")
+    print("Execution completed successfully!")
+    print("==================================================")
 LOG_DIR = BASE_DIR / "logs"
 LOG_PATH = LOG_DIR / "run_extended_biomarkers.log"
 
@@ -622,9 +685,17 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
     save_fig(fig, multimodal_plot_path)
     print(f"Saved multimodal AUC comparison plot to {multimodal_plot_path.relative_to(BASE_DIR).as_posix()}")
     
-    report_section.append("\n### Model Performance (5-Fold Stratified Cross-Validation on Pooled Trial Cohort):")
-    report_section.append("| Model | Base Model (Sigs only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Age | Full Extended Model (Sigs + Drivers + TMB + Neoantigens + Mutations) |")
-    report_section.append("|---|---|---|---|")
+    section_6_lines = [
+        "## 6. Multimodal Response Prediction Models",
+        "",
+        "To evaluate the predictive power of gene expression signatures when combined with orthogonal genomic and clinical features, we trained cross-validated response prediction models on the pooled trial cohort ($N=195$). We evaluated three feature representation sets across several classifiers using 5-fold stratified cross-validation. The values reported below are mean ROC-AUC values with standard deviation across folds (mean ± SD).",
+        "",
+        "### Table 2. Cross-validated multimodal response prediction performance. Values are mean ROC-AUC ± SD across 5-fold stratified CV",
+        "",
+        "| Model Architecture | Base Model (Signatures Only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Age | Full Extended Model (Signatures + Drivers + TMB + Neoantigens + Mutations) |",
+        "|:--- |:---:|:---:|:---:|",
+    ]
+
     for res, pdr in zip(model_results, plot_data):
         col_means = {
             'Base AUC': pdr['base_mean'],
@@ -636,48 +707,18 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
             k: (f"**{res[k]}**" if k == best_col else res[k])
             for k in ['Base AUC', 'Sigs+Drivers+Age AUC', 'Full Extended AUC']
         }
-        report_section.append(
+        section_6_lines.append(
             f"| **{res['Model']}** | {cells['Base AUC']} | {cells['Sigs+Drivers+Age AUC']} | {cells['Full Extended AUC']} |"
         )
-    report_section.append("\n![Multimodal AUC Comparison](../plots/biomarkers/multimodal_auc_comparison.png)")
-        
-    report_section.append("\n### Analysis of Predictor Performance:")
-    report_section.append("1.  **Baseline vs. Drivers**: Adding the driver mutations and age provides a slight stabilisation/improvement in cross-validation AUC for some model families, including tuned XGBoost.")
-    report_section.append("2.  **Full Multimodal Model**: The full extended model (incorporating 15 features including mutation flags and genomic load metrics) performs strongly with the tuned XGBoost grid, which favours shallow trees, moderate learning rates, and row/feature subsampling, and remains competitive with Random Forest.")
-    
-    return report_section
 
-
-def main() -> None:
-    print("==================================================")
-    print("Extended Biomarker Evaluation & Predictive Modeling (Merged Trial Cohorts)")
-    print("==================================================")
+    section_6_lines.append("")
+    section_6_lines.append("![Multimodal AUC Comparison](../../plots/biomarkers/multimodal_auc_comparison.png)")
+    section_6_lines.append("")
+    section_6_lines.append("### Analysis of Predictor Performance")
+    section_6_lines.append("1.  **Baseline vs. Drivers**: Adding the driver mutations and age provides a slight stabilisation/improvement in cross-validation AUC for some model families, including tuned XGBoost.")
+    section_6_lines.append("2.  **Full Multimodal Model**: The full extended model (incorporating 15 features including mutation flags and genomic load metrics) performs strongly with the tuned XGBoost grid (AUC = 0.724 ± 0.089) and Random Forest (AUC = 0.710 ± 0.094).")
     
-    data = _load_and_prepare_data()
-    if data is None:
-        return
-    df_clin_merged, df_sigs_merged, df_tcga_clin, df_tcga_sigs, df_liu_clin, df_hugo_clin, df_riaz_clin = data
-    
-    # 1. Neoantigen Load Evaluation
-    _evaluate_neoantigen_load(df_clin_merged)
-    
-    # 2. Somatic Pathway Mutations
-    _evaluate_pathway_mutations(df_liu_clin, df_hugo_clin, df_riaz_clin, df_clin_merged)
-    
-    # 3. Aneuploidy & TMB vs. Immune Infiltration
-    _evaluate_aneuploidy_and_tmb(df_tcga_clin, df_tcga_sigs, df_clin_merged, df_sigs_merged)
-    
-    # 4. Multimodal Response Predictor
-    report_content = _train_multimodal_predictor(df_clin_merged, df_sigs_merged)
-    
-    report_path = REPORTS_DIR / "extended_biomarkers_report.md"
-    with open(report_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(report_content))
-        
-    print(f"\nResults report successfully written to {report_path.relative_to(BASE_DIR).as_posix()}")
-    print("==================================================")
-    print("Execution completed successfully!")
-    print("==================================================")
+    return section_6_lines
 
 
 if __name__ == "__main__":
