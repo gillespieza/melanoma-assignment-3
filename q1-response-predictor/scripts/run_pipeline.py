@@ -126,14 +126,14 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
         report_lines.append("\n### Visualizations & Diagnostics\n\n")
         report_lines.append(f"#### Confusion Matrices (Threshold = 0.5)\n")
         model_label = model_names.get(model_key, model_key.upper())
-        report_lines.append(f"![[confusion_matrices_{model_key}.png]]\n")
+        report_lines.append(f"![[confusion_matrices_{model_key}.png]]\n\n")
         report_lines.append(f"_Figure: Confusion matrices for {model_label} at the default 0.5 decision threshold, per LOCO test cohort._\n\n")
         
         # Curves
         report_lines.append(f"#### ROC & Precision-Recall Curves\n")
-        report_lines.append(f"![[roc_curves_{model_key}.png]]\n")
+        report_lines.append(f"![[roc_curves_{model_key}.png]]\n\n")
         report_lines.append(f"_Figure: ROC curves for {model_label} across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._\n\n")
-        report_lines.append(f"![[pr_curves_{model_key}.png]]\n")
+        report_lines.append(f"![[pr_curves_{model_key}.png]]\n\n")
         report_lines.append(f"_Figure: Precision-Recall curves for {model_label}. Particularly informative under class imbalance._\n\n")
 
     # --- Combined Features Section ---
@@ -157,7 +157,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
                 )
 
             # ROC plot
-            report_lines.append(f"\n![[roc_curves_combined_{model_key}.png]]\n")
+            report_lines.append(f"\n![[roc_curves_combined_{model_key}.png]]\n\n")
             report_lines.append(f"_Figure: ROC curves for {model_label_comb} with combined immune signature + driver mutation features._\n\n")
     
     # --- Survival Analysis Section ---
@@ -185,7 +185,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
         report_lines.append("### Kaplan-Meier Curves\n\n")
         for sr in survival_results:
             report_lines.append(f"#### {sr['cohort']}\n\n")
-            report_lines.append(f"![[{sr['plot_filename']}]]\n")
+            report_lines.append(f"![[{sr['plot_filename']}]]\n\n")
             if sr['p_value'] is not None:
                 report_lines.append(f"_Figure: KM survival curves for {sr['cohort']} stratified by {sr['model'].upper()} predicted response probability (log-rank p = {sr['p_value']:.3e})._\n\n")
             else:
