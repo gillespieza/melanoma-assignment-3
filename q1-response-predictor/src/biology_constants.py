@@ -17,8 +17,9 @@ NON_SILENT = [
 # Driver genes to evaluate for mutations
 DRIVER_GENES = ["BRAF", "NRAS", "NF1"]
 
-# Extended driver genes for the CoMut plot
+# Extended driver genes for the single-cohort and merged CoMut plots
 COMUT_DRIVER_GENES = ['BRAF', 'NRAS', 'NF1', 'CDKN2A', 'PTEN', 'JAK1', 'JAK2', 'B2M', 'TAP1', 'TAP2']
+MERGED_COMUT_DRIVER_GENES = ['BRAF', 'NRAS', 'NF1', 'CDKN2A', 'PTEN', 'KIT', 'TP53', 'JAK1', 'JAK2', 'B2M']
 
 # Signature genes for the CoMut plot
 SIGNATURE_GENES = [

@@ -10,6 +10,7 @@ import contextlib
 from pathlib import Path
 import sys
 from typing import List, Optional, Tuple
+import warnings
 
 import matplotlib
 matplotlib.use("Agg")
@@ -26,6 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
+from src.biology_constants import MERGED_COMUT_DRIVER_GENES
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
@@ -37,9 +39,6 @@ DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
 PLOT_DIR = find_project_root(Path(__file__).resolve()) / "plots" / "genomic"
 LOG_DIR = find_project_root(Path(__file__).resolve()) / "logs"
 LOG_PATH = LOG_DIR / "run_merged_comut_plot.log"
-
-# Target Melanoma Driver Genes for the Merged CoMut Plot
-MERGED_TARGET_GENES = ['BRAF', 'NRAS', 'NF1', 'CDKN2A', 'PTEN', 'KIT', 'TP53', 'JAK1', 'JAK2', 'B2M']
 
 SEX_PALETTE = {
     "Male": "#37474F",
@@ -94,9 +93,9 @@ def _load_and_align_merged_data(data_dir: Path) -> Optional[Tuple[pd.DataFrame, 
             df['SEX'] = df['SEX'].map({'Male': 'Male', 'Female': 'Female', 'M': 'Male', 'F': 'Female'})
 
     print("Loading somatic mutation data per cohort...")
-    mut_liu = load_processed_mutations(data_dir / "processed/liu_2019/mutations_cleaned.csv", MERGED_TARGET_GENES, clin_liu.index.tolist())
-    mut_hugo = load_processed_mutations(data_dir / "processed/hugo_2016/mutations_cleaned.csv", MERGED_TARGET_GENES, clin_hugo.index.tolist())
-    mut_riaz = load_processed_mutations(data_dir / "processed/riaz_2017/mutations_cleaned.csv", MERGED_TARGET_GENES, clin_riaz.index.tolist())
+    mut_liu = load_processed_mutations(data_dir / "processed/liu_2019/mutations_cleaned.csv", MERGED_COMUT_DRIVER_GENES, clin_liu.index.tolist())
+    mut_hugo = load_processed_mutations(data_dir / "processed/hugo_2016/mutations_cleaned.csv", MERGED_COMUT_DRIVER_GENES, clin_hugo.index.tolist())
+    mut_riaz = load_processed_mutations(data_dir / "processed/riaz_2017/mutations_cleaned.csv", MERGED_COMUT_DRIVER_GENES, clin_riaz.index.tolist())
 
     clin_cols = ['Cohort', 'response', 'TMB_NONSYNONYMOUS', 'SEX', 'patient_id']
     df_clin_merged = pd.concat([
@@ -111,7 +110,7 @@ def _load_and_align_merged_data(data_dir: Path) -> Optional[Tuple[pd.DataFrame, 
 
     print(f"Total merged clinical trial samples aligned for CoMut plot: {len(df_merged)}")
 
-    sort_cols = MERGED_TARGET_GENES + ['response', 'Cohort']
+    sort_cols = MERGED_COMUT_DRIVER_GENES + ['response', 'Cohort']
     df_sorted = df_merged.sort_values(by=sort_cols, ascending=False)
     sorted_sample_ids = df_sorted.index.tolist()
 
@@ -128,8 +127,8 @@ def _draw_merged_comut_plot(df_sorted: pd.DataFrame, sorted_sample_ids: List[str
     """
     n_samples = len(sorted_sample_ids)
 
-    mut_grid = np.zeros((len(MERGED_TARGET_GENES), n_samples))
-    for i, g in enumerate(MERGED_TARGET_GENES):
+    mut_grid = np.zeros((len(MERGED_COMUT_DRIVER_GENES), n_samples))
+    for i, g in enumerate(MERGED_COMUT_DRIVER_GENES):
         mut_grid[i, :] = df_sorted[g].values
 
     tmb_vals = df_sorted['TMB_NONSYNONYMOUS'].fillna(0).values
@@ -137,7 +136,7 @@ def _draw_merged_comut_plot(df_sorted: pd.DataFrame, sorted_sample_ids: List[str
     cohort_vals = df_sorted['Cohort'].map({'Liu 2019': 0, 'Hugo 2016': 1, 'Riaz 2017': 2}).values
     sex_vals = df_sorted['SEX'].map({'Female': 0, 'Male': 1}).fillna(2).values
 
-    gene_freqs = [(df_sorted[g] > 0).mean() * 100 for g in MERGED_TARGET_GENES]
+    gene_freqs = [(df_sorted[g] > 0).mean() * 100 for g in MERGED_COMUT_DRIVER_GENES]
 
     set_presentation_style()
     sns.set_theme(style="white")
@@ -171,7 +170,7 @@ def _draw_merged_comut_plot(df_sorted: pd.DataFrame, sorted_sample_ids: List[str
     sns.heatmap(
         mut_grid, cmap=cmap_mut, norm=norm, cbar=False,
         linewidths=0.5, linecolor="white", ax=ax_mut,
-        yticklabels=MERGED_TARGET_GENES, xticklabels=False,
+        yticklabels=MERGED_COMUT_DRIVER_GENES, xticklabels=False,
     )
     for label in ax_mut.get_yticklabels():
         label.set_color("black")
@@ -253,7 +252,9 @@ def _draw_merged_comut_plot(df_sorted: pd.DataFrame, sorted_sample_ids: List[str
     ax_legend.legend(handles=patches, loc="center left", frameon=True, fontsize=9.5)
 
     out_path = plot_dir / "comut_landscape_merged.png"
-    save_fig(fig, out_path)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        save_fig(fig, out_path)
 
     print(f"\nSaved Merged CoMut plot to {out_path.relative_to(BASE_DIR).as_posix()}")
 
