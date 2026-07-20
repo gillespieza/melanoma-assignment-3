@@ -130,15 +130,15 @@ To validate the clinical relevance of the response classifications, Overall Surv
 
 ## Univariate Associations with Response (Forest Plot)
 
-To evaluate whether individual features predict response to anti-PD-1 therapy, univariate Odds Ratios (OR) and 95% Confidence Intervals (CI) were calculated for the pooled immunotherapy trial cohort ($N=195$). Continuous variables (TMB and Age) were dichotomized based on their cohort-specific medians (TMB median = 10.68 mut/Mb; Age median = 60.5 years).
+To evaluate whether individual baseline clinical and genomic features predict response to anti-PD-1 therapy, univariate Odds Ratios (OR) and 95% Confidence Intervals (95% CI) were calculated across individual trial cohorts (Liu 2019, Hugo 2016, Riaz 2017) and the pooled immunotherapy trial cohort ($N=195$). Categorical variables were evaluated via Fisher's Exact test, and continuous variables (Age, TMB, SNV Neoantigens, Indel Neoantigens) were evaluated per 1 SD increase via univariate logistic regression.
 
-![Forest Plot of Univariate Odds Ratios](../../plots/clinical/forest_plot_odds_ratios.png)
+![Forest Plot of Univariate Odds Ratios](../../plots/clinical/univariate_associations.png)
 
 ### Key Takeaways
-1.  **TMB is a Strong and Significant Predictor**: Patients with high TMB are **2.53 times more likely to respond** to anti-PD-1 immunotherapy compared to those with low TMB. This association is highly statistically significant ($p = 0.0083$) and represents the strongest univariate predictor in our clinical dataset.
-2.  **Anatomical Stage Trend**: Clinical Stage IV was associated with an OR of 5.96 relative to Stage III, but this did not cross the threshold of statistical significance ($p = 0.0777$), due to a very wide confidence interval reflecting a small number of Stage III patients in the trial cohorts ($n=8$, with only $1$ responder).
-3.  **Driver Mutations Lack Predictive Power**: While _NRAS_ (OR = 1.71) and _NF1_ (OR = 1.79) mutated tumors trend toward slightly higher response odds, neither is statistically significant. _BRAF_ mutations (OR = 1.11, $p = 0.8656$) have virtually no association with response, confirming that driver mutation status does not determine clinical benefit from anti-PD-1 checkpoint inhibitors.
-4.  **Demographics Have No Effect**: Age and Sex are completely unassociated with response (OR $\approx$ 1.00), demonstrating that demographics do not influence immunotherapy success in this population.
+1.  **Driver Mutations**: *NF1* mutated tumours show the highest odds ratio for response in the pooled trial cohort (OR = 2.43, $95\%\text{ CI: } 1.07 - 5.50, p = 0.0386$), while *BRAF* mutations (OR = 1.06, $p = 0.884$) show virtually no univariate association with response.
+2.  **Anatomical Stage Trend**: Clinical Stage IV was associated with an OR of 6.06 relative to Stage III in pooled analysis ($p = 0.0826$), reflecting small Stage III representation in checkpoint blockade trial cohorts.
+3.  **TMB & Neoantigen Trends**: TMB shows a positive trend with response in the pooled trial cohort (OR = 1.37 per SD increase, $p = 0.160$), with consistent positive point estimates across Liu 2019 and Hugo 2016.
+4.  **Demographics**: Age and Sex show no significant association with immunotherapy response (OR $\approx$ 1.00 - 1.26), confirming demographic balance across treatment groups.
 
 ---
 
