@@ -1,31 +1,34 @@
-import os
+import contextlib
 import sys
-import shutil
-import json
 import time
-import urllib.request
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
-from scipy.stats import spearmanr, mannwhitneyu
-from sklearn.metrics import roc_auc_score, roc_curve
-from sklearn.model_selection import StratifiedKFold, cross_val_score, GridSearchCV
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.calibration import CalibratedClassifierCV
-from xgboost import XGBClassifier
-from sklearn.svm import SVC
-from lifelines import KaplanMeierFitter
-from lifelines.statistics import logrank_test
+from typing import Any, List, Tuple
 
-# Set matplotlib backend to Agg to avoid GUI errors
 import matplotlib
 matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from lifelines import KaplanMeierFitter
+from lifelines.statistics import logrank_test
+from scipy.stats import mannwhitneyu, spearmanr
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_score
+from sklearn.svm import SVC
+from xgboost import XGBClassifier
 
-# Add project root to sys.path for importing src modules
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# Add project root to sys.path
+_THIS_FILE = Path(__file__).resolve()
+for _candidate in [_THIS_FILE.parent] + list(_THIS_FILE.parent.parents):
+    if (_candidate / "src").exists() and (_candidate / "data").exists():
+        BASE_DIR = _candidate
+        break
+else:
+    raise FileNotFoundError(f"Could not locate project root above {_THIS_FILE}")
+
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
@@ -35,46 +38,55 @@ PLOT_DIR = BASE_DIR / "plots" / "biomarkers"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 REPORTS_DIR = BASE_DIR / "reports"
 REPORTS_DIR.mkdir(exist_ok=True, parents=True)
+LOG_DIR = BASE_DIR / "logs"
+LOG_PATH = LOG_DIR / "run_extended_biomarkers.log"
 
-# Import signature extractor and styles
+# Imports from src
+from src.biology_constants import DRIVER_GENES, PATHWAY_GENES
 from src.signatures import extract_all_signatures
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+from src.utils.logging import TeeStream
+from src.utils.plotting import save_fig
 
-def clean_os_status(val):
+set_presentation_style()
+
+
+def clean_os_status(val: Any) -> float:
+    """Clean and standardise overall survival status to 0 (living) or 1 (deceased)."""
     if pd.isna(val):
         return np.nan
     if isinstance(val, (int, float)):
         if val in [1, 1.0]:
-            return 1
+            return 1.0
         if val in [0, 0.0]:
-            return 0
+            return 0.0
     if isinstance(val, str):
         val_upper = val.upper()
         if 'DECEASED' in val_upper or '1' in val_upper:
-            return 1
+            return 1.0
         if 'LIVING' in val_upper or '0' in val_upper:
-            return 0
+            return 0.0
     return np.nan
 
-# map_tcga_expression_to_symbols is deprecated. TCGA is pre-mapped to Hugo Symbols in raw data cleaning.
 
-def zscore_df(df):
-    """
-    Standardize DataFrame columns individually (Z-score scaling).
-    Avoids division by zero if std is zero.
+def zscore_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Standardise DataFrame columns individually (Z-score scaling).
+    
+    Avoids division by zero if standard deviation is zero.
     """
     means = df.mean(axis=0)
     stds = df.std(axis=0)
     stds = stds.replace(0, 1.0).fillna(1.0)
     return (df - means) / stds
 
-def load_processed_mutations(mutations_file: Path, target_genes: list, sample_ids: list) -> pd.DataFrame:
+
+def load_processed_mutations(mutations_file: Path, target_genes: List[str], sample_ids: List[str]) -> pd.DataFrame:
+    """Load processed mutation calls for target genes across specified sample IDs."""
     if not mutations_file.exists():
         return pd.DataFrame(0, index=sample_ids, columns=target_genes)
         
     df_mut = pd.read_csv(mutations_file, index_col="SAMPLE_ID")
     
-    # Ensure all target genes are in the columns
     for g in target_genes:
         if g not in df_mut.columns:
             df_mut[g] = 0
@@ -82,10 +94,9 @@ def load_processed_mutations(mutations_file: Path, target_genes: list, sample_id
     df_mut = (df_mut[target_genes] > 0).astype(int)
     return df_mut.reindex(sample_ids, fill_value=0)
 
-def evaluate_auc_cv(model, X, y, cv, label):
-    """
-    Evaluate one feature set with serial outer CV and parallelized inner model search.
-    """
+
+def evaluate_auc_cv(model: Any, X: np.ndarray, y: np.ndarray, cv: StratifiedKFold, label: str) -> np.ndarray:
+    """Evaluate one feature set with serial outer CV and parallelised inner model search."""
     start = time.perf_counter()
     print(f"    - {label}...", flush=True)
     scores = cross_val_score(model, X, y, cv=cv, scoring='roc_auc', n_jobs=None)
@@ -98,12 +109,9 @@ def evaluate_auc_cv(model, X, y, cv, label):
     )
     return scores
 
-def main():
-    print("==================================================")
-    print("Extended Biomarker Evaluation & Predictive Modeling (Merged Trial Cohorts)")
-    print("==================================================")
-    
-    # 1. Load Clinical Datasets
+
+def _load_and_prepare_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame] | None:
+    """Load and preprocess clinical, expression, and mutation data for trial cohorts and TCGA."""
     liu_clin_path = DATA_DIR / "processed/liu_2019/clin_cleaned.csv"
     liu_expr_path = DATA_DIR / "processed/liu_2019/expr_cleaned.csv"
     hugo_clin_path = DATA_DIR / "processed/hugo_2016/clin_cleaned.csv"
@@ -114,13 +122,12 @@ def main():
     tcga_clin_path = DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/clin_cleaned.csv"
     tcga_expr_raw_path = DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/expr_cleaned.csv"
     
-    # Verify paths
     paths = [liu_clin_path, liu_expr_path, hugo_clin_path, hugo_expr_path, riaz_clin_path, riaz_expr_path, tcga_clin_path, tcga_expr_raw_path]
     if not all(p.exists() for p in paths):
         print("Error: Cleansed processed files not found. Run clean_data.py first.")
         for p in paths:
             print(f"  {p.name}: {'FOUND' if p.exists() else 'MISSING'} ({p})")
-        return
+        return None
         
     df_liu_clin = pd.read_csv(liu_clin_path, index_col="SAMPLE_ID")
     df_liu_expr = pd.read_csv(liu_expr_path, index_col=0)
@@ -138,24 +145,17 @@ def main():
                 df[low] = df[up]
                 
     # Filter trial cohorts to response-aligned samples (keep CR/PR/PD; drop SD/MR/NaN)
-    RESPONSE_MAP = {
+    response_map = {
         "Complete Response": 1,
         "Partial Response": 1,
         "Progressive Disease": 0,
         "Stable Disease": np.nan,
         "Mixed Response": np.nan,
     }
-    df_liu_clin['temp_resp'] = df_liu_clin['RESPONSE'].map(RESPONSE_MAP)
-    df_liu_clin.dropna(subset=['temp_resp'], inplace=True)
-    df_liu_clin.drop(columns=['temp_resp'], inplace=True)
-    
-    df_hugo_clin['temp_resp'] = df_hugo_clin['RESPONSE'].map(RESPONSE_MAP)
-    df_hugo_clin.dropna(subset=['temp_resp'], inplace=True)
-    df_hugo_clin.drop(columns=['temp_resp'], inplace=True)
-    
-    df_riaz_clin['temp_resp'] = df_riaz_clin['RESPONSE'].map(RESPONSE_MAP)
-    df_riaz_clin.dropna(subset=['temp_resp'], inplace=True)
-    df_riaz_clin.drop(columns=['temp_resp'], inplace=True)
+    for df in [df_liu_clin, df_hugo_clin, df_riaz_clin]:
+        df['temp_resp'] = df['RESPONSE'].map(response_map)
+        df.dropna(subset=['temp_resp'], inplace=True)
+        df.drop(columns=['temp_resp'], inplace=True)
     
     # Re-align expression matrix rows to clinical index
     df_liu_expr = df_liu_expr.loc[df_liu_clin.index]
@@ -173,8 +173,8 @@ def main():
                 df.loc[all_nan, 'TOTAL_NEOANTIGEN'] = np.nan
             else:
                 df['TOTAL_NEOANTIGEN'] = np.nan
- 
-    # Standardize Cohorts and Sex
+
+    # Standardise Cohorts and Sex
     df_liu_clin['Cohort'] = 'Liu 2019'
     df_hugo_clin['Cohort'] = 'Hugo 2016'
     df_riaz_clin['Cohort'] = 'Riaz 2017'
@@ -201,60 +201,58 @@ def main():
     df_tcga_clin = df_tcga_clin.loc[common_tcga]
 
     # Load somatic pathway mutations across all 3 trials
-    pathway_genes = ['B2M', 'TAP1', 'TAP2', 'JAK1', 'JAK2', 'STAT1', 'PTEN', 'CDKN2A', 'PIK3CA', 'BRAF', 'NRAS', 'NF1']
-    mut_liu = load_processed_mutations(DATA_DIR / "processed/liu_2019/mutations_cleaned.csv", pathway_genes, df_liu_clin.index.tolist())
-    mut_hugo = load_processed_mutations(DATA_DIR / "processed/hugo_2016/mutations_cleaned.csv", pathway_genes, df_hugo_clin.index.tolist())
-    mut_riaz = load_processed_mutations(DATA_DIR / "processed/riaz_2017/mutations_cleaned.csv", pathway_genes, df_riaz_clin.index.tolist())
+    all_pathway_genes = sorted(list(set([g for genes in PATHWAY_GENES.values() for g in genes] + DRIVER_GENES)))
+    mut_liu = load_processed_mutations(DATA_DIR / "processed/liu_2019/mutations_cleaned.csv", all_pathway_genes, df_liu_clin.index.tolist())
+    mut_hugo = load_processed_mutations(DATA_DIR / "processed/hugo_2016/mutations_cleaned.csv", all_pathway_genes, df_hugo_clin.index.tolist())
+    mut_riaz = load_processed_mutations(DATA_DIR / "processed/riaz_2017/mutations_cleaned.csv", all_pathway_genes, df_riaz_clin.index.tolist())
 
     # Map mutation columns to clinical dataframes
-    for col in pathway_genes:
+    for col in all_pathway_genes:
         df_liu_clin[f'mut_{col}'] = mut_liu[col]
         df_hugo_clin[f'mut_{col}'] = mut_hugo[col]
         df_riaz_clin[f'mut_{col}'] = mut_riaz[col]
 
-    # Create pathway mutation trackers
+    # Create pathway mutation trackers using PATHWAY_GENES from biology_constants
     for df in [df_liu_clin, df_hugo_clin, df_riaz_clin]:
-        df['mut_Antigen_Presentation'] = (df[['mut_B2M', 'mut_TAP1', 'mut_TAP2']].sum(axis=1) > 0).astype(int)
-        df['mut_IFN_gamma_Signaling'] = (df[['mut_JAK1', 'mut_JAK2', 'mut_STAT1']].sum(axis=1) > 0).astype(int)
-        df['mut_Survival_Pathways'] = (df[['mut_PTEN', 'mut_CDKN2A', 'mut_PIK3CA']].sum(axis=1) > 0).astype(int)
+        df['mut_Antigen_Presentation'] = (df[[f'mut_{g}' for g in PATHWAY_GENES["Antigen Presentation"]]].sum(axis=1) > 0).astype(int)
+        df['mut_IFN_gamma_Signaling'] = (df[[f'mut_{g}' for g in PATHWAY_GENES["IFN-gamma Signaling"]]].sum(axis=1) > 0).astype(int)
+        df['mut_Survival_Pathways'] = (df[[f'mut_{g}' for g in PATHWAY_GENES["Survival & Proliferation Drivers"]]].sum(axis=1) > 0).astype(int)
 
     # Pool trial datasets clinical and signatures
     clin_cols = ['Cohort', 'response', 'TMB_NONSYNONYMOUS', 'AGE', 'TOTAL_NEOANTIGEN', 'CNA_PROP',
                  'mut_BRAF', 'mut_NRAS', 'mut_NF1', 'mut_Antigen_Presentation', 'mut_IFN_gamma_Signaling', 'mut_Survival_Pathways']
     
-    # Fill missing CNA_PROP (mostly absent, we can map to NaN or handle)
     for df in [df_liu_clin, df_hugo_clin, df_riaz_clin]:
         if 'CNA_PROP' not in df.columns:
             df['CNA_PROP'] = np.nan
-
-    for df in [df_liu_clin, df_hugo_clin, df_riaz_clin]:
         if 'AGE' not in df.columns:
             df['AGE'] = np.nan
+
     df_clin_merged = pd.concat([df_liu_clin[clin_cols], df_hugo_clin[clin_cols], df_riaz_clin[clin_cols]])
-    # Standardize each cohort's signatures individually (Z-score) to prevent batch technical effects and leakage
+    
+    # Standardise each cohort's signatures individually (Z-score) to prevent batch technical effects and leakage
     df_liu_sigs_scaled = zscore_df(df_liu_sigs)
     df_hugo_sigs_scaled = zscore_df(df_hugo_sigs)
     df_riaz_sigs_scaled = zscore_df(df_riaz_sigs)
     df_sigs_merged = pd.concat([df_liu_sigs_scaled, df_hugo_sigs_scaled, df_riaz_sigs_scaled])
     
-    # Output report setup
-    report_content = []
-    report_content.append("# Evaluation of Extended Genomic & Clinical Biomarkers")
-    report_content.append(f"\nThis report documents the statistical analysis and predictive modeling updates of extended biomarkers across the pooled trial datasets ($N={len(df_clin_merged)}$) and TCGA-SKCM ($N={len(df_tcga_clin)}$) cohorts.")
+    return df_clin_merged, df_sigs_merged, df_tcga_clin, df_tcga_sigs, df_liu_clin, df_hugo_clin, df_riaz_clin
 
-    # ==========================================
-    # Step 1: Neoantigen Load Evaluation (Pooled Trials)
-    # ==========================================
+
+def _evaluate_neoantigen_load(df_clin_merged: pd.DataFrame) -> List[str]:
+    """Evaluate Neoantigen Load vs. TMB in Pooled Trials and generate plot."""
     print("\nEvaluating Neoantigen Load vs. TMB in Pooled Trials...")
-    report_content.append("\n## 1. Neoantigen Load vs. Tumor Mutational Burden (TMB)")
+    report_section = [
+        "\n## 1. Neoantigen Load vs. Tumour Mutational Burden (TMB)"
+    ]
     
     df_trials_neo = df_clin_merged.dropna(subset=['TOTAL_NEOANTIGEN', 'TMB_NONSYNONYMOUS']).copy()
     r_spearman, p_spearman = spearmanr(df_trials_neo['TOTAL_NEOANTIGEN'], df_trials_neo['TMB_NONSYNONYMOUS'], nan_policy='omit')
     
     print(f"  Spearman correlation (pooled): r = {r_spearman:.3f}, p = {p_spearman:.2e}")
-    report_content.append(f"We evaluated the correlation between predicted neoantigen load (`TOTAL_NEOANTIGEN`) and mutational burden (`TMB_NONSYNONYMOUS`) in the pooled trial cohorts ($N={len(df_trials_neo)}$):")
-    report_content.append(f"\n*   **Spearman Correlation Coefficient ($r$)**: **{r_spearman:.3f}** (p-value: **{p_spearman:.2e}**)")
-    report_content.append("\nAs expected, there is an almost perfect linear relationship between mutational burden and the number of predicted MHC-binding neoantigens.")
+    report_section.append(f"We evaluated the correlation between predicted neoantigen load (`TOTAL_NEOANTIGEN`) and mutational burden (`TMB_NONSYNONYMOUS`) in the pooled trial cohorts ($N={len(df_trials_neo)}$):")
+    report_section.append(f"\n*   **Spearman Correlation Coefficient ($r$)**: **{r_spearman:.3f}** (p-value: **{p_spearman:.2e}**)")
+    report_section.append("\nAs expected, there is an almost perfect linear relationship between mutational burden and the number of predicted MHC-binding neoantigens.")
     
     # Evaluate predictive power of Neoantigens vs. TMB for Response
     y_true_trials = df_clin_merged['response'].dropna()
@@ -275,60 +273,73 @@ def main():
     print(f"  Neoantigen response prediction ROC AUC: {auc_neo:.3f} (p = {p_neo_mw:.3e})")
     print(f"  TMB response prediction ROC AUC: {auc_tmb:.3f} (p = {p_tmb_mw:.3e})")
     
-    report_content.append("\n### Predictive Utility for Immunotherapy Response")
-    report_content.append("| Biomarker | N | Response ROC AUC | Mann-Whitney U p-value |")
-    report_content.append("|---|---|---|---|")
-    report_content.append(f"| **TOTAL_NEOANTIGEN** | {len(common_idx)} | **{auc_neo:.3f}** | {p_neo_mw:.3e} |")
-    report_content.append(f"| **TMB_NONSYNONYMOUS** | {len(common_idx)} | **{auc_tmb:.3f}** | {p_tmb_mw:.3e} |")
+    report_section.append("\n### Predictive Utility for Immunotherapy Response")
+    report_section.append("| Biomarker | N | Response ROC AUC | Mann-Whitney U p-value |")
+    report_section.append("|---|---|---|---|")
+    report_section.append(f"| **TOTAL_NEOANTIGEN** | {len(common_idx)} | **{auc_neo:.3f}** | {p_neo_mw:.3e} |")
+    report_section.append(f"| **TMB_NONSYNONYMOUS** | {len(common_idx)} | **{auc_tmb:.3f}** | {p_tmb_mw:.3e} |")
     
     # Plot Neoantigen vs TMB scatter
-    sns.set_theme(style="whitegrid", context="talk")
     fig, ax = plt.subplots(figsize=(8, 6))
     sns.regplot(data=df_trials_neo, x='TMB_NONSYNONYMOUS', y='TOTAL_NEOANTIGEN', color=COHORT_PALETTE['Pooled Trials'], ax=ax,
-                scatter_kws={'alpha':0.6, 'edgecolor':'w', 's':70})
+                scatter_kws={'alpha': 0.6, 'edgecolor': 'w', 's': 70})
     ax.set_title(f"Neoantigen Load vs. TMB (Merged Trials, r = {r_spearman:.3f})", fontsize=14, weight='bold')
     ax.set_xlabel("Nonsynonymous TMB (mutations/Mb)")
     ax.set_ylabel("Predicted Total Neoantigens")
     plt.tight_layout()
     neo_plot_path = PLOT_DIR / "extended_neoantigen_tmb.png"
-    plt.savefig(neo_plot_path, dpi=300)
-    plt.close()
-    report_content.append("\n![Neoantigen vs TMB](../plots/extended_neoantigen_tmb.png)")
+    save_fig(fig, neo_plot_path)
+    report_section.append("\n![Neoantigen vs TMB](../plots/extended_neoantigen_tmb.png)")
     
-    # ==========================================
-    # Step 2: Somatic Pathway Mutations (Pooled Trials)
-    # ==========================================
-    print("\nCalculating pathway mutation frequencies in trial cohorts...")
-    report_content.append("\n## 2. Somatic Pathway Mutations")
-    report_content.append("We evaluated somatic mutations in three biological pathways that dictate tumor immunogenicity and escape:")
-    report_content.append("*   **Antigen Presentation**: `B2M`, `TAP1`, `TAP2` (disrupts MHC Class I presentation).")
-    report_content.append("*   **IFN-gamma Signaling**: `JAK1`, `JAK2`, `STAT1` (induces insensitivity to T-cell cytotoxicity).")
-    report_content.append("*   **Survival & Proliferation Drivers**: `PTEN`, `CDKN2A`, `PIK3CA` (oncogenic drivers).")
-    
-    report_content.append("\n### Mutation Frequencies in Trial Cohorts:")
-    report_content.append(f"| Pathway / Gene | Liu 2019 ($N={len(df_liu_clin)}$) | Hugo 2016 ($N={len(df_hugo_clin)}$) | Riaz 2017 ($N={len(df_riaz_clin)}$) | Pooled Trials ($N={len(df_clin_merged)}$) |")
-    report_content.append("|---|---|---|---|---|")
-    
-    def get_mut_freq_str(df, col):
-        return f"{df[col].mean():.1%}"
-        
-    report_content.append(f"| **BRAF mutation** | {get_mut_freq_str(df_liu_clin, 'mut_BRAF')} | {get_mut_freq_str(df_hugo_clin, 'mut_BRAF')} | {get_mut_freq_str(df_riaz_clin, 'mut_BRAF')} | **{get_mut_freq_str(df_clin_merged, 'mut_BRAF')}** |")
-    report_content.append(f"| **NRAS mutation** | {get_mut_freq_str(df_liu_clin, 'mut_NRAS')} | {get_mut_freq_str(df_hugo_clin, 'mut_NRAS')} | {get_mut_freq_str(df_riaz_clin, 'mut_NRAS')} | **{get_mut_freq_str(df_clin_merged, 'mut_NRAS')}** |")
-    report_content.append(f"| **NF1 mutation** | {get_mut_freq_str(df_liu_clin, 'mut_NF1')} | {get_mut_freq_str(df_hugo_clin, 'mut_NF1')} | {get_mut_freq_str(df_riaz_clin, 'mut_NF1')} | **{get_mut_freq_str(df_clin_merged, 'mut_NF1')}** |")
-    report_content.append(f"| **Antigen Presentation (MHC)** | {get_mut_freq_str(df_liu_clin, 'mut_Antigen_Presentation')} | {get_mut_freq_str(df_hugo_clin, 'mut_Antigen_Presentation')} | {get_mut_freq_str(df_riaz_clin, 'mut_Antigen_Presentation')} | **{get_mut_freq_str(df_clin_merged, 'mut_Antigen_Presentation')}** |")
-    report_content.append(f"| **IFN-gamma Signaling** | {get_mut_freq_str(df_liu_clin, 'mut_IFN_gamma_Signaling')} | {get_mut_freq_str(df_hugo_clin, 'mut_IFN_gamma_Signaling')} | {get_mut_freq_str(df_riaz_clin, 'mut_IFN_gamma_Signaling')} | **{get_mut_freq_str(df_clin_merged, 'mut_IFN_gamma_Signaling')}** |")
-    report_content.append(f"| **Survival & Proliferation Drivers** | {get_mut_freq_str(df_liu_clin, 'mut_Survival_Pathways')} | {get_mut_freq_str(df_hugo_clin, 'mut_Survival_Pathways')} | {get_mut_freq_str(df_riaz_clin, 'mut_Survival_Pathways')} | **{get_mut_freq_str(df_clin_merged, 'mut_Survival_Pathways')}** |")
+    return report_section
 
-    # ==========================================
-    # Step 3: Aneuploidy & TMB vs. Immune Infiltration
-    # ==========================================
+
+def _evaluate_pathway_mutations(
+    df_liu_clin: pd.DataFrame, df_hugo_clin: pd.DataFrame, df_riaz_clin: pd.DataFrame, df_clin_merged: pd.DataFrame
+) -> List[str]:
+    """Calculate and tabulate pathway mutation frequencies across trial cohorts."""
+    print("\nCalculating pathway mutation frequencies in trial cohorts...")
+    report_section = [
+        "\n## 2. Somatic Pathway Mutations",
+        "We evaluated somatic mutations in three biological pathways that dictate tumour immunogenicity and escape:",
+        "*   **Antigen Presentation**: `B2M`, `TAP1`, `TAP2` (disrupts MHC Class I presentation).",
+        "*   **IFN-gamma Signaling**: `JAK1`, `JAK2`, `STAT1` (induces insensitivity to T-cell cytotoxicity).",
+        "*   **Survival & Proliferation Drivers**: `PTEN`, `CDKN2A`, `PIK3CA` (oncogenic drivers).",
+        "\n### Mutation Frequencies in Trial Cohorts:",
+        f"| Pathway / Gene | Liu 2019 ($N={len(df_liu_clin)}$) | Hugo 2016 ($N={len(df_hugo_clin)}$) | Riaz 2017 ($N={len(df_riaz_clin)}$) | Pooled Trials ($N={len(df_clin_merged)}$) |",
+        "|---|---|---|---|---|",
+    ]
+    
+    for label, col in [
+        ('BRAF mutation', 'mut_BRAF'),
+        ('NRAS mutation', 'mut_NRAS'),
+        ('NF1 mutation', 'mut_NF1'),
+        ('Antigen Presentation (MHC)', 'mut_Antigen_Presentation'),
+        ('IFN-gamma Signaling', 'mut_IFN_gamma_Signaling'),
+        ('Survival & Proliferation Drivers', 'mut_Survival_Pathways'),
+    ]:
+        report_section.append(
+            f"| **{label}** | {df_liu_clin[col].mean():.1%} | {df_hugo_clin[col].mean():.1%} | {df_riaz_clin[col].mean():.1%} | **{df_clin_merged[col].mean():.1%}** |"
+        )
+        
+    return report_section
+
+
+def _evaluate_aneuploidy_and_tmb(
+    df_tcga_clin: pd.DataFrame, df_tcga_sigs: pd.DataFrame, df_clin_merged: pd.DataFrame, df_sigs_merged: pd.DataFrame
+) -> List[str]:
+    """Evaluate Aneuploidy and TMB vs. Immune Infiltration, generating survival curves."""
     print("\nEvaluating Aneuploidy/CNA and TMB vs. Immune Infiltration...")
-    report_content.append("\n## 3. Aneuploidy, Copy-Number Alterations, & TMB vs. Immune Infiltration")
-    report_content.append("We evaluated how copy-number burden (aneuploidy score / fraction genome altered) and mutational burden (TMB) correlate with continuous immune signatures. Highly aneuploid tumors are hypothesized to suppress immune infiltration (cold), whereas high TMB tumors are expected to stimulate immune infiltration due to neoantigens (hot).")
+    report_section = [
+        "\n## 3. Aneuploidy, Copy-Number Alterations, & TMB vs. Immune Infiltration",
+        "We evaluated how copy-number burden (aneuploidy score / fraction genome altered) and mutational burden (TMB) correlate with continuous immune signatures. Highly aneuploid tumours are hypothesised to suppress immune infiltration (cold), whereas high TMB tumours are expected to stimulate immune infiltration due to neoantigens (hot).",
+    ]
+    
+    sig_names = ['IFN_gamma', 'TIS', 'CD8_Tcell', 'CYT', 'PD_L1']
     
     # A. TCGA correlations
     tcga_corrs = {}
-    for sig_name in ['IFN_gamma', 'TIS', 'CD8_Tcell', 'CYT', 'PD_L1']:
+    for sig_name in sig_names:
         r_aneu, p_aneu = spearmanr(df_tcga_clin['ANEUPLOIDY_SCORE'], df_tcga_sigs[sig_name], nan_policy='omit')
         r_tmb, p_tmb = spearmanr(df_tcga_clin['TMB_NONSYNONYMOUS'], df_tcga_sigs[sig_name], nan_policy='omit')
         tcga_corrs[sig_name] = {
@@ -337,45 +348,41 @@ def main():
         }
         
     # B. Pooled Trial correlations
-    # Align merged clinical and signature indexes
     df_sigs_merged_aligned = df_sigs_merged.loc[df_clin_merged.index]
     
     trial_corrs = {}
-    for sig_name in ['IFN_gamma', 'TIS', 'CD8_Tcell', 'CYT', 'PD_L1']:
+    for sig_name in sig_names:
         r_tmb, p_tmb = spearmanr(df_clin_merged['TMB_NONSYNONYMOUS'], df_sigs_merged_aligned[sig_name], nan_policy='omit')
         trial_corrs[sig_name] = {
             'Tmb_r': r_tmb, 'Tmb_p': p_tmb
         }
         
-    report_content.append("\n### Spearman Correlations table:")
-    report_content.append("| Immune Signature | TCGA Aneuploidy Score ($r$) | TCGA TMB ($r$) | Trial TMB ($r$) |")
-    report_content.append("|---|---|---|---|")
-    for sig in ['IFN_gamma', 'TIS', 'CD8_Tcell', 'CYT', 'PD_L1']:
-        report_content.append(f"| `{sig}` | **{tcga_corrs[sig]['Aneu_r']:.3f}** | **{tcga_corrs[sig]['Tmb_r']:.3f}** | **{trial_corrs[sig]['Tmb_r']:.3f}** |")
+    report_section.append("\n### Spearman Correlations table:")
+    report_section.append("| Immune Signature | TCGA Aneuploidy Score ($r$) | TCGA TMB ($r$) | Trial TMB ($r$) |")
+    report_section.append("|---|---|---|---|")
+    for sig in sig_names:
+        report_section.append(f"| `{sig}` | **{tcga_corrs[sig]['Aneu_r']:.3f}** | **{tcga_corrs[sig]['Tmb_r']:.3f}** | **{trial_corrs[sig]['Tmb_r']:.3f}** |")
         
-    report_content.append("\n**Biological Conclusion**: In both cohorts:")
-    report_content.append("1.  **Chromosomal Instability (Aneuploidy)** shows a **very weak negative correlation** ($r \\approx -0.03$ to $-0.10$) with immune signatures in the TCGA SKCM cohort, with only `PD_L1` showing a marginally significant negative correlation ($r = -0.100$, $p = 0.043$). This indicates that chromosomal instability is only weakly associated with reduced baseline immune infiltration in this cohort.")
-    report_content.append("2.  **Mutational Burden (TMB)** shows **very weak or near-zero correlation** with immune signature expression ($r \\approx 0.05$ to $0.15$). This indicates that the mutational burden (TMB) and immune infiltration (signatures) are **orthogonal biomarkers**—a tumor can be highly mutated but still immunologically cold, or poorly mutated but inflamed. This suggests combining both independent modalities could improve response predictions.")
+    report_section.append("\n**Biological Conclusion**: In both cohorts:")
+    report_section.append("1.  **Chromosomal Instability (Aneuploidy)** shows a **very weak negative correlation** ($r \\approx -0.03$ to $-0.10$) with immune signatures in the TCGA SKCM cohort, with only `PD_L1` showing a marginally significant negative correlation ($r = -0.100$, $p = 0.043$). This indicates that chromosomal instability is only weakly associated with reduced baseline immune infiltration in this cohort.")
+    report_section.append("2.  **Mutational Burden (TMB)** shows **very weak or near-zero correlation** with immune signature expression ($r \\approx 0.05$ to $0.15$). This indicates that the mutational burden (TMB) and immune infiltration (signatures) are **orthogonal biomarkers**: a tumour can be highly mutated but still immunologically cold, or poorly mutated but inflamed. This suggests combining both independent modalities could improve response predictions.")
 
     # Plot correlation heatmap
     fig, ax = plt.subplots(figsize=(10, 7))
     corr_data = pd.DataFrame({
-        'Aneuploidy Score (TCGA)': [tcga_corrs[s]['Aneu_r'] for s in ['IFN_gamma', 'TIS', 'CD8_Tcell', 'CYT', 'PD_L1']],
-        'TMB (TCGA)': [tcga_corrs[s]['Tmb_r'] for s in ['IFN_gamma', 'TIS', 'CD8_Tcell', 'CYT', 'PD_L1']],
-        'TMB (Trials)': [trial_corrs[s]['Tmb_r'] for s in ['IFN_gamma', 'TIS', 'CD8_Tcell', 'CYT', 'PD_L1']]
-    }, index=['IFN_gamma', 'TIS', 'CD8_Tcell', 'CYT', 'PD_L1'])
+        'Aneuploidy Score (TCGA)': [tcga_corrs[s]['Aneu_r'] for s in sig_names],
+        'TMB (TCGA)': [tcga_corrs[s]['Tmb_r'] for s in sig_names],
+        'TMB (Trials)': [trial_corrs[s]['Tmb_r'] for s in sig_names]
+    }, index=sig_names)
     
     sns.heatmap(corr_data, annot=True, cmap='coolwarm', vmin=-0.4, vmax=0.4, center=0, ax=ax, fmt=".3f", linewidths=1)
     ax.set_title("Spearman Correlation: Genomic Burden vs. Immune Signatures", fontsize=12, weight='bold', pad=15)
     plt.tight_layout()
     corr_plot_path = PLOT_DIR / "extended_immune_correlations.png"
-    plt.savefig(corr_plot_path, dpi=300)
-    plt.close()
-    report_content.append("\n![Correlation Heatmap](../plots/extended_immune_correlations.png)")
+    save_fig(fig, corr_plot_path)
+    report_section.append("\n![Correlation Heatmap](../plots/extended_immune_correlations.png)")
 
-    # ---------------------------------------------
     # Kaplan-Meier Curve by Aneuploidy in TCGA
-    # ---------------------------------------------
     print("\nRunning survival curve by Aneuploidy in TCGA...")
     df_tcga_survival = df_tcga_clin.dropna(subset=['OS_MONTHS', 'OS_STATUS', 'ANEUPLOIDY_SCORE']).copy()
     df_tcga_survival['OS_MONTHS'] = pd.to_numeric(df_tcga_survival['OS_MONTHS'], errors='coerce')
@@ -393,13 +400,11 @@ def main():
     high_mask = df_tcga_survival['Aneu_Group'].str.startswith('High')
     low_mask = df_tcga_survival['Aneu_Group'].str.startswith('Low')
     
-
-
     kmf.fit(df_tcga_survival.loc[low_mask, 'OS_MONTHS'], df_tcga_survival.loc[low_mask, 'os_status_clean'], label=f"Low Aneuploidy (N={low_mask.sum()})")
-    kmf.plot_survival_function(ax=ax, color=COHORT_PALETTE["Liu 2019"], ci_show=False, linewidth=2.5) # Blue
+    kmf.plot_survival_function(ax=ax, color=COHORT_PALETTE["Liu 2019"], ci_show=False, linewidth=2.5)
     
     kmf.fit(df_tcga_survival.loc[high_mask, 'OS_MONTHS'], df_tcga_survival.loc[high_mask, 'os_status_clean'], label=f"High Aneuploidy (N={high_mask.sum()})")
-    kmf.plot_survival_function(ax=ax, color=COHORT_PALETTE["Hugo 2016"], ci_show=False, linewidth=2.5) # Orange
+    kmf.plot_survival_function(ax=ax, color=COHORT_PALETTE["Hugo 2016"], ci_show=False, linewidth=2.5)
     
     lr_res = logrank_test(
         df_tcga_survival.loc[high_mask, 'OS_MONTHS'], df_tcga_survival.loc[low_mask, 'OS_MONTHS'],
@@ -414,17 +419,14 @@ def main():
     ax.set_ylabel("Survival Probability", fontsize=13)
     plt.tight_layout()
     aneu_plot_path = PLOT_DIR / "extended_aneuploidy_survival.png"
-    plt.savefig(aneu_plot_path, dpi=300)
-    plt.close()
+    save_fig(fig, aneu_plot_path)
     
-    report_content.append("\n### TCGA Overall Survival by Aneuploidy")
-    report_content.append(f"We partitioned the baseline TCGA cohort at the median Aneuploidy Score (**{aneu_median:.1f}**):")
-    report_content.append(f"\n*   **Log-Rank p-value**: **{lr_res.p_value:.3e}** (Statistically Significant)")
-    report_content.append("\n![TCGA Aneuploidy Survival](../plots/extended_aneuploidy_survival.png)")
+    report_section.append("\n### TCGA Overall Survival by Aneuploidy")
+    report_section.append(f"We partitioned the baseline TCGA cohort at the median Aneuploidy Score (**{aneu_median:.1f}**):")
+    report_section.append(f"\n*   **Log-Rank p-value**: **{lr_res.p_value:.3e}** (Statistically Significant)")
+    report_section.append("\n![TCGA Aneuploidy Survival](../plots/extended_aneuploidy_survival.png)")
 
-    # ---------------------------------------------
     # Kaplan-Meier Curve by TMB in TCGA
-    # ---------------------------------------------
     print("\nRunning survival curve by TMB in TCGA...")
     df_tcga_tmb_surv = df_tcga_clin.dropna(subset=['OS_MONTHS', 'OS_STATUS', 'TMB_NONSYNONYMOUS']).copy()
     df_tcga_tmb_surv['OS_MONTHS'] = pd.to_numeric(df_tcga_tmb_surv['OS_MONTHS'], errors='coerce')
@@ -455,31 +457,30 @@ def main():
     ax.text(0.05, 0.08, p_tmb_text, transform=ax.transAxes, fontsize=13, weight='bold',
             bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray', boxstyle='round,pad=0.5'))
             
-    ax.set_title("TCGA-SKCM Overall Survival by Tumor Mutational Burden (TMB)", fontsize=15, weight='bold', pad=15)
+    ax.set_title("TCGA-SKCM Overall Survival by Tumour Mutational Burden (TMB)", fontsize=15, weight='bold', pad=15)
     ax.set_xlabel("Overall Survival (Months)", fontsize=13)
     ax.set_ylabel("Survival Probability", fontsize=13)
     plt.tight_layout()
     tmb_plot_path = PLOT_DIR / "survival_tcga_tmb.png"
-    plt.savefig(tmb_plot_path, dpi=300)
-    plt.close()
+    save_fig(fig, tmb_plot_path)
     
-    report_content.append("\n### TCGA Overall Survival by Tumor Mutational Burden (TMB)")
-    report_content.append(f"We partitioned the baseline TCGA cohort at the median TMB value (**{tmb_median:.2f} mutations/Mb**):")
-    report_content.append(f"\n*   **Log-Rank p-value**: **{lr_tmb_res.p_value:.3f}** (Prognostically Neutral)")
-    report_content.append("\n![TCGA TMB Survival](../plots/survival_tcga_tmb.png)")
+    report_section.append("\n### TCGA Overall Survival by Tumour Mutational Burden (TMB)")
+    report_section.append(f"We partitioned the baseline TCGA cohort at the median TMB value (**{tmb_median:.2f} mutations/Mb**):")
+    report_section.append(f"\n*   **Log-Rank p-value**: **{lr_tmb_res.p_value:.3f}** (Prognostically Neutral)")
+    report_section.append("\n![TCGA TMB Survival](../plots/survival_tcga_tmb.png)")
+    
+    return report_section
 
-    # ==========================================
-    # Step 4: Updated Multimodal Predictor (Pooled Trials)
-    # ==========================================
+
+def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd.DataFrame) -> List[str]:
+    """Train cross-validated multimodal prediction models and generate comparison report."""
     print("\nTraining Multimodal Response Predictor on Pooled Trial Cohort...")
+    report_section = [
+        "# Extended Biomarkers: Multimodal Predictive Modeling",
+        f"\nThis report documents the training and evaluation of response prediction models on the pooled immunotherapy trial cohort ($N={len(df_clin_merged)}$), comparing signature models, driver-mutation models, and a full extended clinical-genomic model.",
+    ]
     
-    # Re-initialize report content to contain only predictive modeling details
-    # (since the descriptive baseline genomic analysis is already in reports/cohort_characteristics_genomic.md)
-    report_content = []
-    report_content.append("# Extended Biomarkers: Multimodal Predictive Modeling")
-    report_content.append(f"\nThis report documents the training and evaluation of response prediction models on the pooled immunotherapy trial cohort ($N={len(df_clin_merged)}$), comparing signature models, driver-mutation models, and a full extended clinical-genomic model.")
-    
-    # Define features
+    df_sigs_merged_aligned = df_sigs_merged.loc[df_clin_merged.index]
     sig_features = ['IFN_gamma', 'TIS', 'CYT', 'CD8_Tcell', 'IMPRES', 'PD_L1']
     df_features = pd.concat([df_sigs_merged_aligned, df_clin_merged[[
         'mut_BRAF', 'mut_NRAS', 'mut_NF1', 'mut_Antigen_Presentation', 'mut_IFN_gamma_Signaling', 'mut_Survival_Pathways',
@@ -521,8 +522,8 @@ def main():
             cv=3, scoring='roc_auc', n_jobs=-1
         ),
         'Support Vector Machine (SVM)': GridSearchCV(
-            CalibratedClassifierCV(SVC(random_state=42), ensemble=False),
-            param_grid={'estimator__C': [0.01, 0.1, 1, 10], 'estimator__kernel': ['linear', 'rbf']},
+            SVC(kernel='linear', random_state=42),
+            param_grid={'C': [0.01, 0.1, 1, 10]},
             cv=3, scoring='roc_auc', n_jobs=-1
         ),
         'Elastic-Net': GridSearchCV(
@@ -547,7 +548,7 @@ def main():
         X_drivers = df_features_clean[driver_cols].values
         scores_drivers = evaluate_auc_cv(model, X_drivers, y, cv, "Signatures + drivers + age")
         
-        # 3. Full Extended Model (All Features including TMB & CNA & pathway mutations)
+        # 3. Full Extended Model (All Features including TMB & Neoantigens & pathway mutations)
         X_full = df_features_clean.values
         scores_full = evaluate_auc_cv(model, X_full, y, cv, "Full extended")
         
@@ -570,15 +571,13 @@ def main():
     print(pd.DataFrame(model_results).to_string(index=False))
 
     # --- Grouped Bar Chart: Multimodal AUC Comparison ---
-    set_presentation_style()
     fig, ax = plt.subplots(figsize=(12, 7))
     
-    bar_labels = ['Signatures Only', 'Sigs + Drivers + Sex', 'Full Extended\n(Sigs + Drivers + TMB\n+ CNA + Pathways)']
+    bar_labels = ['Signatures Only', 'Sigs + Drivers + Age', 'Full Extended\n(Sigs + Drivers + TMB\n+ Neoantigens + Pathways)']
     x = np.arange(len(bar_labels))
     n_models = len(models)
     bar_width = 0.8 / n_models
     
-    # Okabe-Ito and other colorblind-friendly colors
     colors = ['#0072B2', '#009E73', '#D55E00', '#CC79A7', '#F0E442']
     
     for i, pd_row in enumerate(plot_data):
@@ -589,26 +588,23 @@ def main():
                       label=pd_row['model'], color=colors[i % len(colors)],
                       edgecolor='white', linewidth=0.7,
                       capsize=4, error_kw={'elinewidth': 1.2, 'capthick': 1})
-        # Add value labels on bars
         for bar, mean, std in zip(bars, means, stds):
             ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + std + 0.01,
                     f'{mean:.3f}', ha='center', va='bottom', fontsize=9,
                     color='#333333')
     
-    # Compute dynamic y-limits from the actual data (mean +/- std across all bars),
-    # padding for the value-label text, and keeping the random-baseline (0.5) visible.
     all_means = [v for pdr in plot_data for v in (pdr['base_mean'], pdr['drivers_mean'], pdr['full_mean'])]
     all_stds = [v for pdr in plot_data for v in (pdr['base_std'], pdr['drivers_std'], pdr['full_std'])]
     lower_vals = [m - s for m, s in zip(all_means, all_stds)]
     upper_vals = [m + s for m, s in zip(all_means, all_stds)]
 
-    data_min = min(lower_vals + [0.5])   # include baseline so it's never clipped
+    data_min = min(lower_vals + [0.5])
     data_max = max(upper_vals + [0.5])
     y_range = data_max - data_min
-    padding = max(y_range * 0.12, 0.03)  # extra room for the text labels above bars
+    padding = max(y_range * 0.12, 0.03)
 
     y_min = max(0.0, data_min - padding)
-    y_max = min(1.0, data_max + padding * 1.5)  # a bit more headroom above for labels
+    y_max = min(1.0, data_max + padding * 1.5)
 
     ax.set_ylabel('ROC-AUC (5-Fold Stratified CV)', fontsize=12, fontweight='bold')
     ax.set_xticks(x)
@@ -623,13 +619,12 @@ def main():
     plt.tight_layout()
     
     multimodal_plot_path = PLOT_DIR / "multimodal_auc_comparison.png"
-    plt.savefig(multimodal_plot_path, dpi=300)
-    plt.close()
+    save_fig(fig, multimodal_plot_path)
     print(f"Saved multimodal AUC comparison plot to {multimodal_plot_path}")
     
-    report_content.append("\n### Model Performance (5-Fold Stratified Cross-Validation on Pooled Trial Cohort):")
-    report_content.append("| Model | Base Model (Sigs only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Age | Full Extended Model (Sigs + Drivers + TMB + CNA + Mutations) |")
-    report_content.append("|---|---|---|---|")
+    report_section.append("\n### Model Performance (5-Fold Stratified Cross-Validation on Pooled Trial Cohort):")
+    report_section.append("| Model | Base Model (Sigs only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Age | Full Extended Model (Sigs + Drivers + TMB + Neoantigens + Mutations) |")
+    report_section.append("|---|---|---|---|")
     for res, pdr in zip(model_results, plot_data):
         col_means = {
             'Base AUC': pdr['base_mean'],
@@ -641,20 +636,41 @@ def main():
             k: (f"**{res[k]}**" if k == best_col else res[k])
             for k in ['Base AUC', 'Sigs+Drivers+Age AUC', 'Full Extended AUC']
         }
-        report_content.append(
+        report_section.append(
             f"| **{res['Model']}** | {cells['Base AUC']} | {cells['Sigs+Drivers+Age AUC']} | {cells['Full Extended AUC']} |"
         )
-    report_content.append("\n![Multimodal AUC Comparison](../plots/biomarkers/multimodal_auc_comparison.png)")
+    report_section.append("\n![Multimodal AUC Comparison](../plots/biomarkers/multimodal_auc_comparison.png)")
         
-    report_content.append("\n### Analysis of Predictor Performance:")
-    report_content.append("1.  **Baseline vs. Drivers**: Adding the driver mutations and sex provides a slight stabilization/improvement in cross-validation AUC for some model families, including tuned XGBoost.")
-    report_content.append("2.  **Full Multimodal Model**: The full extended model (incorporating 15 features including mutation flags and genomic load metrics) performs strongly with the tuned XGBoost grid, which favors shallow trees, moderate learning rates, and row/feature subsampling, and remains competitive with Random Forest.")
+    report_section.append("\n### Analysis of Predictor Performance:")
+    report_section.append("1.  **Baseline vs. Drivers**: Adding the driver mutations and age provides a slight stabilisation/improvement in cross-validation AUC for some model families, including tuned XGBoost.")
+    report_section.append("2.  **Full Multimodal Model**: The full extended model (incorporating 15 features including mutation flags and genomic load metrics) performs strongly with the tuned XGBoost grid, which favours shallow trees, moderate learning rates, and row/feature subsampling, and remains competitive with Random Forest.")
     
-    # Save the report markdown
-    report_path = (
-        REPORTS_DIR / "extended_biomarkers_report.md"
-        # REPORTS_DIR / "pillar-3-transcriptomic-signatures/curated_signatures_report.md"
-    )
+    return report_section
+
+
+def main() -> None:
+    print("==================================================")
+    print("Extended Biomarker Evaluation & Predictive Modeling (Merged Trial Cohorts)")
+    print("==================================================")
+    
+    data = _load_and_prepare_data()
+    if data is None:
+        return
+    df_clin_merged, df_sigs_merged, df_tcga_clin, df_tcga_sigs, df_liu_clin, df_hugo_clin, df_riaz_clin = data
+    
+    # 1. Neoantigen Load Evaluation
+    _evaluate_neoantigen_load(df_clin_merged)
+    
+    # 2. Somatic Pathway Mutations
+    _evaluate_pathway_mutations(df_liu_clin, df_hugo_clin, df_riaz_clin, df_clin_merged)
+    
+    # 3. Aneuploidy & TMB vs. Immune Infiltration
+    _evaluate_aneuploidy_and_tmb(df_tcga_clin, df_tcga_sigs, df_clin_merged, df_sigs_merged)
+    
+    # 4. Multimodal Response Predictor
+    report_content = _train_multimodal_predictor(df_clin_merged, df_sigs_merged)
+    
+    report_path = REPORTS_DIR / "extended_biomarkers_report.md"
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(report_content))
         
@@ -663,5 +679,12 @@ def main():
     print("Execution completed successfully!")
     print("==================================================")
 
+
 if __name__ == "__main__":
-    main()
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    with open(LOG_PATH, "w", encoding="utf-8") as log_file:
+        stdout_tee = TeeStream(sys.stdout, log_file)
+        stderr_tee = TeeStream(sys.stderr, log_file)
+        with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
+            print(f"Logging console output to {LOG_PATH}")
+            main()

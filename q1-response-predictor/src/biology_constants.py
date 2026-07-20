@@ -29,6 +29,8 @@ SIGNATURE_GENES = [
 
 # Definitions of genes included in specific functional pathways
 PATHWAY_GENES = {
+    "Antigen Presentation": ["B2M", "TAP1", "TAP2"],
     "IFN-gamma Signaling": ["JAK1", "JAK2", "STAT1"],
     "Survival & Proliferation Drivers": ["PTEN", "CDKN2A", "PIK3CA"],
 }
+
