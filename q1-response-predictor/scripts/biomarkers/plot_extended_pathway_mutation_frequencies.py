@@ -299,7 +299,7 @@ def main() -> None:
     plot_heatmap(df, cohort_cols, pooled_col, OUT_DIR / "extended_pathway_heatmap.png")
     plot_dumbbell(df, cohort_cols, pooled_col, colors, OUT_DIR / "extended_pathway_dumbbell.png")
 
-    print(f"Successfully generated 3 visualisation figures in {OUT_DIR}")
+    print(f"Successfully generated 3 visualisation figures in {OUT_DIR.relative_to(BASE_DIR).as_posix()}")
     print(f"Patient counts used (from clin_cleaned.csv): {ns}")
 
 
@@ -309,5 +309,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH}")
+            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
             main()

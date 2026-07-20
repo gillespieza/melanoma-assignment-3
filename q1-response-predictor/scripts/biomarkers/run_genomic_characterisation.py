@@ -203,7 +203,7 @@ def _plot_mutation_frequencies(cohorts: Dict[str, pd.DataFrame], plot_dir: Path)
 
     out_mut_path = plot_dir / "mutation_frequencies.png"
     save_fig(fig, out_mut_path)
-    print(f"Saved mutation frequencies plot to {out_mut_path}")
+    print(f"Saved mutation frequencies plot to {out_mut_path.relative_to(BASE_DIR).as_posix()}")
 
 
 def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) -> None:
@@ -280,7 +280,7 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
 
     out_tmb_path = plot_dir / "tmb_distribution.png"
     save_fig(fig, out_tmb_path)
-    print(f"Saved TMB distributions to {out_tmb_path}")
+    print(f"Saved TMB distributions to {out_tmb_path.relative_to(BASE_DIR).as_posix()}")
 
 
 def _plot_biomarker_correlations(clin_liu: pd.DataFrame, plot_dir: Path) -> None:
@@ -314,7 +314,7 @@ def _plot_biomarker_correlations(clin_liu: pd.DataFrame, plot_dir: Path) -> None
 
         out_corr_path = plot_dir / "biomarker_correlation_heatmap.png"
         save_fig(fig, out_corr_path)
-        print(f"Saved biomarker correlation heatmap to {out_corr_path}")
+        print(f"Saved biomarker correlation heatmap to {out_corr_path.relative_to(BASE_DIR).as_posix()}")
 
 
 def _plot_tcga_survival_stratification(clin_tcga: pd.DataFrame, plot_dir: Path) -> None:
@@ -420,7 +420,7 @@ def _plot_tcga_survival_stratification(clin_tcga: pd.DataFrame, plot_dir: Path) 
 
     out_surv_path = plot_dir / "km_genomic_features.png"
     save_fig(fig, out_surv_path)
-    print(f"Saved TCGA survival stratification plots to {out_surv_path}")
+    print(f"Saved TCGA survival stratification plots to {out_surv_path.relative_to(BASE_DIR).as_posix()}")
 
 
 def main() -> None:
@@ -449,5 +449,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH}")
+            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
             main()

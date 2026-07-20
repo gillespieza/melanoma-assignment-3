@@ -620,7 +620,7 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
     
     multimodal_plot_path = PLOT_DIR / "multimodal_auc_comparison.png"
     save_fig(fig, multimodal_plot_path)
-    print(f"Saved multimodal AUC comparison plot to {multimodal_plot_path}")
+    print(f"Saved multimodal AUC comparison plot to {multimodal_plot_path.relative_to(BASE_DIR).as_posix()}")
     
     report_section.append("\n### Model Performance (5-Fold Stratified Cross-Validation on Pooled Trial Cohort):")
     report_section.append("| Model | Base Model (Sigs only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Age | Full Extended Model (Sigs + Drivers + TMB + Neoantigens + Mutations) |")
@@ -674,7 +674,7 @@ def main() -> None:
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(report_content))
         
-    print(f"\nResults report successfully written to {report_path}")
+    print(f"\nResults report successfully written to {report_path.relative_to(BASE_DIR).as_posix()}")
     print("==================================================")
     print("Execution completed successfully!")
     print("==================================================")
@@ -686,5 +686,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH}")
+            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
             main()

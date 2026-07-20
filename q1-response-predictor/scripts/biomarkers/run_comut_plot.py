@@ -271,7 +271,7 @@ def _draw_comut_plot(df_clin_mut_sorted: pd.DataFrame, sorted_sample_ids: list[s
     comut_path = PLOT_DIR / "comut_landscape_liu_2019.png"
     save_fig(fig, comut_path)
 
-    print(f"Saved CoMut plot to {comut_path}")
+    print(f"Saved CoMut plot to {comut_path.relative_to(BASE_DIR).as_posix()}")
 
 
 def main() -> None:
@@ -294,5 +294,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH}")
+            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
             main()
