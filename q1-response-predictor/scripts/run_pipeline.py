@@ -521,19 +521,22 @@ def main():
     # Get mutation status
     mut_hugo = extract_driver_mutations(clin_hugo.loc[sig_hugo.index])
     mut_liu = extract_driver_mutations(clin_liu.loc[sig_liu.index])
+    mut_riaz = extract_driver_mutations(clin_riaz.loc[sig_riaz.index])
     
     # Combine sig + mutations
     comb_liu = pd.concat([sig_corrected_liu, mut_liu], axis=1)
     comb_hugo = pd.concat([sig_corrected_hugo, mut_hugo], axis=1)
+    comb_riaz = pd.concat([sig_corrected_riaz, mut_riaz], axis=1)
     
     cohort_dfs_comb = {
         'Liu 2019': (comb_liu, y_liu),
-        'Hugo 2016': (comb_hugo, y_hugo)
+        'Hugo 2016': (comb_hugo, y_hugo),
+        'Riaz 2017': (comb_riaz, y_riaz),
     }
     
     comb_features = signature_cols + ['mut_BRAF', 'mut_NRAS', 'mut_NF1']
     
-    print("\nTraining combined Expression + Mutation model (LOCO between Liu and Hugo):")
+    print("\nTraining combined Expression + Mutation model (3-cohort LOCO):")
     for model_type in ["lr", "rf", "xgb", "svm", "elasticnet"]:
         print(f"\nCombined Model: {model_type.upper()}")
         loco_results_comb = run_loco_cv(cohort_dfs_comb, comb_features, model_type=model_type)
