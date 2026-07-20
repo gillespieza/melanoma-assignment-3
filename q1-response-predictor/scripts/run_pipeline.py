@@ -54,10 +54,10 @@ def extract_driver_mutations(df_meta):
             df[col] = 0
     return df[['mut_BRAF', 'mut_NRAS', 'mut_NF1']]
 
-def generate_model_evaluation_report(all_loco_results, output_dir, survival_results=None):
+def generate_model_evaluation_report(all_loco_results, output_dir, survival_results=None, combined_loco_results=None):
     """
-    Generates a comprehensive markdown report documenting model evaluation metrics
-    and survival analysis results.
+    Generates a comprehensive markdown report documenting model evaluation metrics,
+    combined feature benchmarks, and survival analysis results.
     """
     from sklearn.metrics import precision_recall_curve, average_precision_score
     
@@ -129,26 +129,36 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
         report_lines.append(f"![[confusion_matrices_{model_key}.png]]\n")
         report_lines.append(f"_Figure: Confusion matrices for {model_label} at the default 0.5 decision threshold, per LOCO test cohort._\n\n")
         
-        report_lines.append("```\n")
-        for cohort, res in sorted(loco_results.items()):
-            if 'metrics_extended' in res:
-                m = res['metrics_extended']
-            else:
-                m = calculate_extended_metrics(res['y_true'], res['y_pred_prob'])
-            
-            report_lines.append(f"{cohort} (N={len(res['y_true'])}):\n")
-            report_lines.append(f"                Predicted\n")
-            report_lines.append(f"              Non-Resp  Resp\n")
-            report_lines.append(f"Actual Non-Resp    {m['tn']:<4} {m['fp']:<4}\n")
-            report_lines.append(f"Actual Resp        {m['fn']:<4} {m['tp']:<4}\n\n")
-        report_lines.append("```\n\n")
-        
         # Curves
         report_lines.append(f"#### ROC & Precision-Recall Curves\n")
         report_lines.append(f"![[roc_curves_{model_key}.png]]\n")
         report_lines.append(f"_Figure: ROC curves for {model_label} across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._\n\n")
         report_lines.append(f"![[pr_curves_{model_key}.png]]\n")
         report_lines.append(f"_Figure: Precision-Recall curves for {model_label}. Particularly informative under class imbalance._\n\n")
+
+    # --- Combined Features Section ---
+    if combined_loco_results:
+        report_lines.append("---\n\n")
+        report_lines.append("## Combined Features: Immune Signatures + Driver Mutations\n\n")
+        report_lines.append("This section benchmarks models trained on the 11 immune signatures plus 3 binary driver-mutation features (BRAF, NRAS, NF1) using the same 3-cohort LOCO framework. Adding genomic features tests whether mutation status provides complementary predictive signal beyond transcriptomic signatures alone.\n\n")
+
+        for model_key, loco_results in combined_loco_results.items():
+            model_label_comb = model_names.get(model_key, model_key.upper())
+            report_lines.append(f"### {model_label_comb}\n\n")
+
+            # Metrics table
+            report_lines.append("| Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score |\n")
+            report_lines.append("|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
+            for cohort, res in sorted(loco_results.items()):
+                m = calculate_extended_metrics(res['y_true'], res['y_pred_prob'])
+                n_samples = len(res['y_true'])
+                report_lines.append(
+                    f"| {cohort} | {n_samples} | {m['auc']:.3f} | {m['accuracy']:.3f} | {m['sensitivity']:.3f} | {m['specificity']:.3f} | {m['precision']:.3f} | {m['f1']:.3f} |\n"
+                )
+
+            # ROC plot
+            report_lines.append(f"\n![[roc_curves_combined_{model_key}.png]]\n")
+            report_lines.append(f"_Figure: ROC curves for {model_label_comb} with combined immune signature + driver mutation features._\n\n")
     
     # --- Survival Analysis Section ---
     if survival_results:
@@ -537,9 +547,11 @@ def main():
     comb_features = signature_cols + ['mut_BRAF', 'mut_NRAS', 'mut_NF1']
     
     print("\nTraining combined Expression + Mutation model (3-cohort LOCO):")
+    all_combined_results = {}
     for model_type in ["lr", "rf", "xgb", "svm", "elasticnet"]:
         print(f"\nCombined Model: {model_type.upper()}")
         loco_results_comb = run_loco_cv(cohort_dfs_comb, comb_features, model_type=model_type)
+        all_combined_results[model_type] = loco_results_comb
         metrics_rows = []
         for cohort, res in loco_results_comb.items():
             m = res['metrics']
@@ -599,7 +611,11 @@ def main():
     print("==================================================")
     
     # Generate comprehensive evaluation report
-    generate_model_evaluation_report(all_loco_results, REPORTS_DIR, survival_results=survival_results)
+    generate_model_evaluation_report(
+        all_loco_results, REPORTS_DIR,
+        survival_results=survival_results,
+        combined_loco_results=all_combined_results,
+    )
 
     print("\n==================================================")
     print("Done! All analysis runs completed successfully.")
