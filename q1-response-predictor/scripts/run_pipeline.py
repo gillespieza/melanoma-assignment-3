@@ -342,22 +342,35 @@ def main():
                 return 0
         return np.nan
 
-    # We will use Logistic Regression LOCO results for survival analysis
-    loco_lr = run_loco_cv(cohort_dfs, signature_cols, model_type="lr")
-    
+    # Reuse Logistic Regression LOCO results from Phase 4
+    # (re-running run_loco_cv would re-tune hyperparameters non-deterministically)
+    loco_lr = all_loco_results['lr']
+
+    # Build index maps: LOCO predictions cover response-valid patients only,
+    # so we must align clinical data to that same subset.
+    cohort_response_index = {
+        'Hugo 2016': sig_hugo.index,
+        'Liu 2019': sig_liu.index,
+        'Riaz 2017': sig_riaz.index,
+    }
+
     # 1. Hugo 2016 survival
+    hugo_idx = cohort_response_index['Hugo 2016']
     hugo_pred = loco_lr['Hugo 2016']['y_pred_prob']
+    clin_hugo_valid = clin_hugo.loc[hugo_idx].copy()
+    clin_hugo_valid['y_pred_prob'] = hugo_pred
     p_hugo = run_survival_analysis(
-        clin_hugo.loc[sig_hugo.index], hugo_pred, 
-        time_col='os_months', status_col='os_status', 
+        clin_hugo_valid, hugo_pred,
+        time_col='os_months', status_col='os_status',
         save_path=PLOT_DIR / "survival_hugo_lr.png"
     )
     print(f"Hugo 2016 Overall Survival difference p-value: {p_hugo:.3e}" if p_hugo else "Hugo 2016: No survival data")
 
     # 2. Liu 2019 survival
-    clin_liu_clean = clin_liu.loc[sig_liu.index].copy()
-    clin_liu_clean['os_status_clean'] = clin_liu_clean['OS_STATUS'].apply(clean_os_status)
+    liu_idx = cohort_response_index['Liu 2019']
     liu_pred = loco_lr['Liu 2019']['y_pred_prob']
+    clin_liu_clean = clin_liu.loc[liu_idx].copy()
+    clin_liu_clean['os_status_clean'] = clin_liu_clean['OS_STATUS'].apply(clean_os_status)
     p_liu = run_survival_analysis(
         clin_liu_clean, liu_pred,
         time_col='OS_MONTHS', status_col='os_status_clean',
@@ -366,10 +379,12 @@ def main():
     print(f"Liu 2019 Overall Survival difference p-value: {p_liu:.3e}" if p_liu else "Liu 2019: No survival data")
 
     # 3. Riaz 2017 survival
+    riaz_idx = cohort_response_index['Riaz 2017']
     riaz_pred = loco_lr['Riaz 2017']['y_pred_prob']
+    clin_riaz_valid = clin_riaz.loc[riaz_idx].copy()
     p_riaz = run_survival_analysis(
-        clin_riaz.loc[sig_riaz.index], riaz_pred, 
-        time_col='os_months', status_col='os_status', 
+        clin_riaz_valid, riaz_pred,
+        time_col='os_months', status_col='os_status',
         save_path=PLOT_DIR / "survival_riaz_lr.png"
     )
     print(f"Riaz 2017 Overall Survival difference p-value: {p_riaz:.3e}" if p_riaz else "Riaz 2017: No survival data")
