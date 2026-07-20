@@ -34,13 +34,16 @@ This report documents the comprehensive evaluation of all trained models (Logist
 
 #### Confusion Matrices (Threshold = 0.5)
 ![[confusion_matrices_lr.png]]
+
 _Figure: Confusion matrices for Logistic Regression (L1-penalized, GridSearchCV) at the default 0.5 decision threshold, per LOCO test cohort._
 
 #### ROC & Precision-Recall Curves
 ![[roc_curves_lr.png]]
+
 _Figure: ROC curves for Logistic Regression (L1-penalized, GridSearchCV) across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._
 
 ![[pr_curves_lr.png]]
+
 _Figure: Precision-Recall curves for Logistic Regression (L1-penalized, GridSearchCV). Particularly informative under class imbalance._
 
 ## Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4])
@@ -67,13 +70,16 @@ _Figure: Precision-Recall curves for Logistic Regression (L1-penalized, GridSear
 
 #### Confusion Matrices (Threshold = 0.5)
 ![[confusion_matrices_rf.png]]
+
 _Figure: Confusion matrices for Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4]) at the default 0.5 decision threshold, per LOCO test cohort._
 
 #### ROC & Precision-Recall Curves
 ![[roc_curves_rf.png]]
+
 _Figure: ROC curves for Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4]) across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._
 
 ![[pr_curves_rf.png]]
+
 _Figure: Precision-Recall curves for Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4]). Particularly informative under class imbalance._
 
 ## XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2])
@@ -100,13 +106,16 @@ _Figure: Precision-Recall curves for Random Forest (GridSearchCV: n_estimators i
 
 #### Confusion Matrices (Threshold = 0.5)
 ![[confusion_matrices_xgb.png]]
+
 _Figure: Confusion matrices for XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2]) at the default 0.5 decision threshold, per LOCO test cohort._
 
 #### ROC & Precision-Recall Curves
 ![[roc_curves_xgb.png]]
+
 _Figure: ROC curves for XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2]) across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._
 
 ![[pr_curves_xgb.png]]
+
 _Figure: Precision-Recall curves for XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2]). Particularly informative under class imbalance._
 
 ## Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf])
@@ -133,13 +142,16 @@ _Figure: Precision-Recall curves for XGBoost (GridSearchCV: n_estimators in [50,
 
 #### Confusion Matrices (Threshold = 0.5)
 ![[confusion_matrices_svm.png]]
+
 _Figure: Confusion matrices for Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf]) at the default 0.5 decision threshold, per LOCO test cohort._
 
 #### ROC & Precision-Recall Curves
 ![[roc_curves_svm.png]]
+
 _Figure: ROC curves for Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf]) across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._
 
 ![[pr_curves_svm.png]]
+
 _Figure: Precision-Recall curves for Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf]). Particularly informative under class imbalance._
 
 ## ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9])
@@ -166,13 +178,16 @@ _Figure: Precision-Recall curves for Support Vector Machine (GridSearchCV: C in 
 
 #### Confusion Matrices (Threshold = 0.5)
 ![[confusion_matrices_elasticnet.png]]
+
 _Figure: Confusion matrices for ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9]) at the default 0.5 decision threshold, per LOCO test cohort._
 
 #### ROC & Precision-Recall Curves
 ![[roc_curves_elasticnet.png]]
+
 _Figure: ROC curves for ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9]) across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._
 
 ![[pr_curves_elasticnet.png]]
+
 _Figure: Precision-Recall curves for ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9]). Particularly informative under class imbalance._
 
 ---
@@ -190,6 +205,7 @@ This section benchmarks models trained on the 11 immune signatures plus 3 binary
 | Riaz 2017 | 64 | 0.500 | 0.312 | 1.000 | 0.000 | 0.312 | 0.476 |
 
 ![[roc_curves_combined_lr.png]]
+
 _Figure: ROC curves for Logistic Regression (L1-penalized, GridSearchCV) with combined immune signature + driver mutation features._
 
 ### Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4])
@@ -201,6 +217,7 @@ _Figure: ROC curves for Logistic Regression (L1-penalized, GridSearchCV) with co
 | Riaz 2017 | 64 | 0.702 | 0.672 | 0.700 | 0.659 | 0.483 | 0.571 |
 
 ![[roc_curves_combined_rf.png]]
+
 _Figure: ROC curves for Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4]) with combined immune signature + driver mutation features._
 
 ### XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2])
@@ -212,6 +229,7 @@ _Figure: ROC curves for Random Forest (GridSearchCV: n_estimators in [50,100,200
 | Riaz 2017 | 64 | 0.645 | 0.547 | 0.650 | 0.500 | 0.371 | 0.473 |
 
 ![[roc_curves_combined_xgb.png]]
+
 _Figure: ROC curves for XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2]) with combined immune signature + driver mutation features._
 
 ### Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf])
@@ -223,6 +241,7 @@ _Figure: ROC curves for XGBoost (GridSearchCV: n_estimators in [50,100,150], max
 | Riaz 2017 | 64 | 0.511 | 0.516 | 0.500 | 0.523 | 0.323 | 0.392 |
 
 ![[roc_curves_combined_svm.png]]
+
 _Figure: ROC curves for Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf]) with combined immune signature + driver mutation features._
 
 ### ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9])
@@ -234,6 +253,7 @@ _Figure: ROC curves for Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0
 | Riaz 2017 | 64 | 0.500 | 0.312 | 1.000 | 0.000 | 0.312 | 0.476 |
 
 ![[roc_curves_combined_elasticnet.png]]
+
 _Figure: ROC curves for ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9]) with combined immune signature + driver mutation features._
 
 ---
@@ -256,21 +276,25 @@ Kaplan-Meier survival curves stratify patients into high and low predicted-respo
 #### Hugo 2016
 
 ![[survival_hugo_svm.png]]
+
 _Figure: KM survival curves for Hugo 2016 stratified by SVM predicted response probability (log-rank p = 1.107e-01)._
 
 #### Liu 2019
 
 ![[survival_liu_svm.png]]
+
 _Figure: KM survival curves for Liu 2019 stratified by SVM predicted response probability (log-rank p = 9.729e-01)._
 
 #### Riaz 2017
 
 ![[survival_riaz_svm.png]]
+
 _Figure: KM survival curves for Riaz 2017 stratified by SVM predicted response probability (log-rank p = 6.545e-02)._
 
 #### TCGA-SKCM
 
 ![[survival_tcga_lr.png]]
+
 _Figure: KM survival curves for TCGA-SKCM stratified by LR predicted response probability (log-rank p = 9.798e-01)._
 
 ---
