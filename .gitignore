@@ -217,8 +217,10 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Exclude all data folders (raw and processed) from tracking
-data/
+# Data folders: ignore everything, then whitelist documentation
+data/**
+!data/**/
+!data/**/*.md
 
 # Agent stuff
 .agents
