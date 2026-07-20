@@ -54,9 +54,10 @@ def extract_driver_mutations(df_meta):
             df[col] = 0
     return df[['mut_BRAF', 'mut_NRAS', 'mut_NF1']]
 
-def generate_model_evaluation_report(all_loco_results, output_dir):
+def generate_model_evaluation_report(all_loco_results, output_dir, survival_results=None):
     """
-    Generates a comprehensive markdown report documenting model evaluation metrics.
+    Generates a comprehensive markdown report documenting model evaluation metrics
+    and survival analysis results.
     """
     from sklearn.metrics import precision_recall_curve, average_precision_score
     
@@ -149,6 +150,38 @@ def generate_model_evaluation_report(all_loco_results, output_dir):
         report_lines.append(f"![[pr_curves_{model_key}.png]]\n")
         report_lines.append(f"_Figure: Precision-Recall curves for {model_label}. Particularly informative under class imbalance._\n\n")
     
+    # --- Survival Analysis Section ---
+    if survival_results:
+        report_lines.append("---\n\n")
+        report_lines.append("## Survival Analysis (Log-Rank Test)\n\n")
+        report_lines.append("Kaplan-Meier survival curves stratify patients into high and low predicted-response-probability groups using the best-performing LOCO model per cohort (selected by AUC, excluding models with degenerate predictions). A log-rank test assesses whether the two groups have significantly different overall survival.\n\n")
+
+        # Summary table
+        report_lines.append("### Table: Survival Stratification Summary\n\n")
+        report_lines.append("| Cohort | Model Used | LOCO AUC | Log-Rank p-value | Significant (p < 0.05)? |\n")
+        report_lines.append("|:---|:---:|:---:|:---:|:---:|\n")
+        for sr in survival_results:
+            p_str = f"{sr['p_value']:.3e}" if sr['p_value'] is not None else "N/A"
+            sig_str = "Yes" if sr['p_value'] is not None and sr['p_value'] < 0.05 else "No"
+            if sr['p_value'] is None:
+                sig_str = "N/A"
+            auc_str = f"{sr['auc']:.3f}" if isinstance(sr['auc'], (int, float)) else str(sr['auc'])
+            report_lines.append(
+                f"| {sr['cohort']} | {sr['model'].upper()} | {auc_str} | {p_str} | {sig_str} |\n"
+            )
+        report_lines.append("\n")
+
+        # Individual KM plots
+        report_lines.append("### Kaplan-Meier Curves\n\n")
+        for sr in survival_results:
+            report_lines.append(f"#### {sr['cohort']}\n\n")
+            report_lines.append(f"![[{sr['plot_filename']}]]\n")
+            if sr['p_value'] is not None:
+                report_lines.append(f"_Figure: KM survival curves for {sr['cohort']} stratified by {sr['model'].upper()} predicted response probability (log-rank p = {sr['p_value']:.3e})._\n\n")
+            else:
+                report_lines.append(f"_Figure: KM survival curves for {sr['cohort']} could not be generated (constant predictions)._\n\n")
+
+    report_lines.append("---\n\n")
     report_lines.append("## Summary & Interpretation\n\n")
     report_lines.append("### Key Metrics Explained:\n")
     report_lines.append("- **Sensitivity (Recall)**: TP / (TP + FN) — Proportion of actual responders correctly identified\n")
@@ -366,6 +399,8 @@ def main():
         'Riaz 2017': clin_riaz,
     }
 
+    survival_results = []
+
     for cohort_name in ['Hugo 2016', 'Liu 2019', 'Riaz 2017']:
         # Find the model with the highest AUC for this cohort
         best_model_key, best_auc = None, -1.0
@@ -390,11 +425,19 @@ def main():
         if cohort_name == 'Liu 2019':
             clin_valid['os_status_clean'] = clin_valid['OS_STATUS'].apply(clean_os_status)
 
+        plot_filename = f"survival_{cohort_name.split()[0].lower()}_{best_model_key}.png"
         p_val = run_survival_analysis(
             clin_valid, cohort_pred,
             time_col=time_col, status_col=status_col,
-            save_path=PLOT_DIR / f"survival_{cohort_name.split()[0].lower()}_{best_model_key}.png"
+            save_path=PLOT_DIR / plot_filename
         )
+        survival_results.append({
+            'cohort': cohort_name,
+            'model': best_model_key,
+            'auc': best_auc,
+            'p_value': p_val,
+            'plot_filename': plot_filename,
+        })
         if p_val is not None:
             print(f"  Overall Survival difference p-value: {p_val:.3e}")
         else:
@@ -458,6 +501,13 @@ def main():
             time_col='OS_MONTHS', status_col='os_status_clean',
             save_path=PLOT_DIR / "survival_tcga_lr.png"
         )
+        survival_results.append({
+            'cohort': 'TCGA-SKCM',
+            'model': 'lr',
+            'auc': 'N/A (external)',
+            'p_value': p_tcga,
+            'plot_filename': 'survival_tcga_lr.png',
+        })
         print(f"TCGA-SKCM Overall Survival difference p-value: {p_tcga:.3e}" if p_tcga else "TCGA-SKCM: No survival data")
         
     except Exception as e:
@@ -546,7 +596,7 @@ def main():
     print("==================================================")
     
     # Generate comprehensive evaluation report
-    generate_model_evaluation_report(all_loco_results, REPORTS_DIR)
+    generate_model_evaluation_report(all_loco_results, REPORTS_DIR, survival_results=survival_results)
 
     print("\n==================================================")
     print("Done! All analysis runs completed successfully.")

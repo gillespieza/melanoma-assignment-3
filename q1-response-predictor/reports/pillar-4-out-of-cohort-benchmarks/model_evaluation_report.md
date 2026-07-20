@@ -1,17 +1,6 @@
----
-title:
-aliases: 
-tags: 
-created: 2026-07-20 13:20
-cssclasses: table-small
-obsidianEditingMode: preview
-obsidianUIMode: source
-updated: 2026-07-20 14:04
----
-
 # Model Evaluation Report: LOCO Cross-Cohort Validation
 ## Overview
-This report documents the comprehensive evaluation of all trained models (Logistic Regression, Random Forest, XGBoost, SVM, ElasticNet) using Leave-One-Cohort-Out (LOCO) cross-validation on three independent melanoma immunotherapy cohorts.  
+This report documents the comprehensive evaluation of all trained models (Logistic Regression, Random Forest, XGBoost, SVM, ElasticNet) using Leave-One-Cohort-Out (LOCO) cross-validation on three independent melanoma immunotherapy cohorts.
 **Evaluation Framework:**
 - **Cross-validation**: Leave-One-Cohort-Out (LOCO) — train on 2 cohorts, test on 1
 - **Test cohorts**: Liu 2019 (N=104), Hugo 2016 (N=27), Riaz 2017 (N=64)
@@ -44,7 +33,8 @@ This report documents the comprehensive evaluation of all trained models (Logist
 ### Visualizations & Diagnostics
 
 #### Confusion Matrices (Threshold = 0.5)
-![Logistic Regression (L1-penalized, GridSearchCV) Confusion Matrices](../plots/models/confusion_matrices_lr.png)
+![[confusion_matrices_lr.png]]
+_Figure: Confusion matrices for Logistic Regression (L1-penalized, GridSearchCV) at the default 0.5 decision threshold, per LOCO test cohort._
 
 ```
 Hugo 2016 (N=27):
@@ -68,8 +58,11 @@ Actual Resp        0    20
 ```
 
 #### ROC & Precision-Recall Curves
-![Logistic Regression (L1-penalized, GridSearchCV) ROC Curves](../plots/models/roc_curves_lr.png)  
-![Logistic Regression (L1-penalized, GridSearchCV) PR Curves](../plots/models/pr_curves_lr.png)
+![[roc_curves_lr.png]]
+_Figure: ROC curves for Logistic Regression (L1-penalized, GridSearchCV) across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._
+
+![[pr_curves_lr.png]]
+_Figure: Precision-Recall curves for Logistic Regression (L1-penalized, GridSearchCV). Particularly informative under class imbalance._
 
 ## Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4])
 
@@ -94,7 +87,8 @@ Actual Resp        0    20
 ### Visualizations & Diagnostics
 
 #### Confusion Matrices (Threshold = 0.5)
-![Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4]) Confusion Matrices](../plots/models/confusion_matrices_rf.png)
+![[confusion_matrices_rf.png]]
+_Figure: Confusion matrices for Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4]) at the default 0.5 decision threshold, per LOCO test cohort._
 
 ```
 Hugo 2016 (N=27):
@@ -118,8 +112,11 @@ Actual Resp        4    16
 ```
 
 #### ROC & Precision-Recall Curves
-![Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4]) ROC Curves](../plots/models/roc_curves_rf.png)  
-![Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4]) PR Curves](../plots/models/pr_curves_rf.png)
+![[roc_curves_rf.png]]
+_Figure: ROC curves for Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4]) across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._
+
+![[pr_curves_rf.png]]
+_Figure: Precision-Recall curves for Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4]). Particularly informative under class imbalance._
 
 ## XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2])
 
@@ -144,7 +141,8 @@ Actual Resp        4    16
 ### Visualizations & Diagnostics
 
 #### Confusion Matrices (Threshold = 0.5)
-![XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2]) Confusion Matrices](../plots/models/confusion_matrices_xgb.png)
+![[confusion_matrices_xgb.png]]
+_Figure: Confusion matrices for XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2]) at the default 0.5 decision threshold, per LOCO test cohort._
 
 ```
 Hugo 2016 (N=27):
@@ -168,8 +166,11 @@ Actual Resp        7    13
 ```
 
 #### ROC & Precision-Recall Curves
-![XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2]) ROC Curves](../plots/models/roc_curves_xgb.png)  
-![XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2]) PR Curves](../plots/models/pr_curves_xgb.png)
+![[roc_curves_xgb.png]]
+_Figure: ROC curves for XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2]) across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._
+
+![[pr_curves_xgb.png]]
+_Figure: Precision-Recall curves for XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2]). Particularly informative under class imbalance._
 
 ## Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf])
 
@@ -194,7 +195,8 @@ Actual Resp        7    13
 ### Visualizations & Diagnostics
 
 #### Confusion Matrices (Threshold = 0.5)
-![Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf]) Confusion Matrices](../plots/models/confusion_matrices_svm.png)
+![[confusion_matrices_svm.png]]
+_Figure: Confusion matrices for Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf]) at the default 0.5 decision threshold, per LOCO test cohort._
 
 ```
 Hugo 2016 (N=27):
@@ -218,8 +220,11 @@ Actual Resp        10   10
 ```
 
 #### ROC & Precision-Recall Curves
-![Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf]) ROC Curves](../plots/models/roc_curves_svm.png)  
-![Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf]) PR Curves](../plots/models/pr_curves_svm.png)
+![[roc_curves_svm.png]]
+_Figure: ROC curves for Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf]) across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._
+
+![[pr_curves_svm.png]]
+_Figure: Precision-Recall curves for Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf]). Particularly informative under class imbalance._
 
 ## ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9])
 
@@ -244,7 +249,8 @@ Actual Resp        10   10
 ### Visualizations & Diagnostics
 
 #### Confusion Matrices (Threshold = 0.5)
-![ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9]) Confusion Matrices](../plots/models/confusion_matrices_elasticnet.png)
+![[confusion_matrices_elasticnet.png]]
+_Figure: Confusion matrices for ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9]) at the default 0.5 decision threshold, per LOCO test cohort._
 
 ```
 Hugo 2016 (N=27):
@@ -269,16 +275,14 @@ Actual Resp        0    20
 
 #### ROC & Precision-Recall Curves
 ![[roc_curves_elasticnet.png]]
-
-ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9]) ROC Curves
+_Figure: ROC curves for ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9]) across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._
 
 ![[pr_curves_elasticnet.png]]
-
-_ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9]) PR Curves_
+_Figure: Precision-Recall curves for ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9]). Particularly informative under class imbalance._
 
 ## Summary & Interpretation
 
-### Key Metrics Explained
+### Key Metrics Explained:
 - **Sensitivity (Recall)**: TP / (TP + FN) — Proportion of actual responders correctly identified
 - **Specificity**: TN / (TN + FP) — Proportion of actual non-responders correctly identified
 - **Precision**: TP / (TP + FP) — Proportion of predicted responders who are actually responders
@@ -287,7 +291,7 @@ _ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l
 - **AUC-ROC**: Area under the Receiver Operating Characteristic curve — Robustness to threshold selection
 - **C-Index (Concordance Index)**: Evaluates how well predicted response probabilities rank patients by survival. 0.5 = random, 1.0 = perfect. Accounts for censoring in survival data.
 
-### Visualizations
+### Visualizations:
 - **ROC Curves** (`roc_curves_*.png`): Trade-off between True Positive Rate and False Positive Rate
 - **PR Curves** (`pr_curves_*.png`): Precision-Recall trade-off, especially relevant for class imbalance
 - **Confusion Matrices** (`confusion_matrices_*.png`): Cell-level breakdown of predictions per cohort
