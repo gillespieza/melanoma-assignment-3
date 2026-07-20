@@ -35,12 +35,14 @@ def zscore_df(df):
     return (df - means) / stds
 
 # Paths
+# Paths
 DATA_DIR = BASE_DIR / "data"
 PLOT_DIR = BASE_DIR / "plots" / "models"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 REPORTS_DIR = BASE_DIR / "reports"
 REPORTS_DIR.mkdir(exist_ok=True, parents=True)
-LOG_PATH = BASE_DIR / "q1_pipeline.log"
+LOG_DIR = BASE_DIR / "logs"
+LOG_PATH = LOG_DIR / "q1_pipeline.log"
 
 def extract_driver_mutations(df_meta):
     """
@@ -515,6 +517,7 @@ def main():
     print("==================================================")
 
 if __name__ == "__main__":
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
     with open(LOG_PATH, "w", encoding="utf-8") as log_file:
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
