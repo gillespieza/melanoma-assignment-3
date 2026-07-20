@@ -17,12 +17,11 @@ if str(BASE_DIR) not in sys.path:
 
 from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 from src.signatures import extract_all_signatures
-from src.models import run_loco_cv
+from src.models import run_loco_cv, get_model
 from src.evaluation import plot_roc_curves, plot_pr_curves, plot_confusion_matrices, calculate_extended_metrics, calculate_cindex, run_survival_analysis
 from src.utils.logging import TeeStream
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
-from sklearn.calibration import CalibratedClassifierCV
 
 def zscore_df(df):
     """
@@ -453,64 +452,39 @@ def main():
     print("==================================================")
     models_dir = BASE_DIR / "models"
     models_dir.mkdir(exist_ok=True)
-    
+
     import pickle
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.svm import SVC
-    from xgboost import XGBClassifier
-    
-    # Train final models on all pooled clinical trial data
+
+    # Train final models on all pooled clinical trial data using the same
+    # GridSearchCV tuning logic used during LOCO evaluation (src.models.get_model).
     X_train_final = sig_corrected
     y_train_final = pd.concat([y_liu, y_hugo, y_riaz], axis=0)
-    
+
     # Standard scale features
     scaler_final = StandardScaler()
     X_train_final_scaled = scaler_final.fit_transform(X_train_final)
-    X_train_final_scaled = pd.DataFrame(X_train_final_scaled, columns=X_train_final.columns, index=X_train_final.index)
-    
-    rf_final = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5, n_jobs=-1)
-    rf_final.fit(X_train_final_scaled, y_train_final)
-    
-    lr_final = LogisticRegression(max_iter=1000, C=1.0)
-    lr_final.fit(X_train_final_scaled, y_train_final)
-    
-    svm_final = CalibratedClassifierCV(
-        estimator=SVC(random_state=42, C=1.0),
-        method='sigmoid',
-        cv=3,
-        ensemble=False,
-        n_jobs=-1
+    X_train_final_scaled = pd.DataFrame(
+        X_train_final_scaled, columns=X_train_final.columns, index=X_train_final.index
     )
-    svm_final.fit(X_train_final_scaled, y_train_final)
-    
-    elasticnet_final = LogisticRegression(solver='saga', l1_ratio=0.5, C=1.0, random_state=42, max_iter=20000, tol=1e-3)
-    elasticnet_final.fit(X_train_final_scaled, y_train_final)
 
-    # XGBoost: best pooled-CV model (AUC 0.724) with class imbalance weighting
-    pos_count = int((y_train_final == 1).sum())
-    neg_count = int((y_train_final == 0).sum())
-    scale_weight = neg_count / pos_count if pos_count > 0 else 1.0
-    xgb_final = XGBClassifier(
-        n_estimators=100, max_depth=5, learning_rate=0.1,
-        eval_metric='logloss', scale_pos_weight=scale_weight,
-        random_state=42, n_jobs=-1,
-    )
-    xgb_final.fit(X_train_final_scaled, y_train_final)
+    model_types = ["lr", "rf", "xgb", "svm", "elasticnet"]
+    for model_type in model_types:
+        print(f"  Tuning {model_type.upper()} via GridSearchCV on pooled data...")
+        tuned_model = get_model(model_type, X_train_final_scaled, y_train_final)
 
-    with open(models_dir / "final_rf_model.pkl", "wb") as f:
-        pickle.dump(rf_final, f)
-    with open(models_dir / "final_lr_model.pkl", "wb") as f:
-        pickle.dump(lr_final, f)
-    with open(models_dir / "final_svm_model.pkl", "wb") as f:
-        pickle.dump(svm_final, f)
-    with open(models_dir / "final_elasticnet_model.pkl", "wb") as f:
-        pickle.dump(elasticnet_final, f)
-    with open(models_dir / "final_xgb_model.pkl", "wb") as f:
-        pickle.dump(xgb_final, f)
+        # Log the selected hyperparameters for reproducibility
+        params = tuned_model.get_params()
+        print(f"    Best params: {params}")
+
+        pkl_path = models_dir / f"final_{model_type}_model.pkl"
+        with open(pkl_path, "wb") as f:
+            pickle.dump(tuned_model, f)
+        print(f"    Saved to {pkl_path.relative_to(BASE_DIR).as_posix()}")
+
     with open(models_dir / "final_scaler.pkl", "wb") as f:
         pickle.dump(scaler_final, f)
-        
-    print(f"Saved final RF, LR, SVM, ElasticNet, XGBoost models and scaler to {models_dir.relative_to(BASE_DIR).as_posix()}/")
+
+    print(f"\n  Saved scaler and {len(model_types)} tuned models to {models_dir.relative_to(BASE_DIR).as_posix()}/")
 
     print("\n==================================================")
     print("Phase 7: Generating Model Evaluation Report...")
