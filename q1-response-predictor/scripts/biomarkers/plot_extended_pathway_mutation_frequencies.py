@@ -23,6 +23,7 @@ else:
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
+from src.biology_constants import COHORT_DIRS, NON_SILENT, DRIVER_GENES, PATHWAY_GENES
 from src.styles import get_cohort_color, set_presentation_style
 from src.utils.dataframes import find_id_column
 from src.utils.logging import TeeStream
@@ -35,24 +36,8 @@ OUT_DIR = BASE_DIR / "plots" / "genomic"
 LOG_DIR = BASE_DIR / "logs"
 LOG_PATH = LOG_DIR / "extended_pathway_mutation_frequencies.log"
 
-COHORT_DIRS = {
-    "Liu 2019": "liu_2019",
-    "Hugo 2016": "hugo_2016",
-    "Riaz 2017": "riaz_2017",
-}
 POOLED_LABEL = "Pooled Trials"
 
-NON_SILENT = [
-    "Frame_Shift_Del", "Frame_Shift_Ins", "In_Frame_Del", "In_Frame_Ins",
-    "Missense_Mutation", "Nonsense_Mutation", "Splice_Site",
-    "Translation_Start_Site", "Nonstop_Mutation",
-]
-
-PATHWAY_GENES = {
-    "IFN-gamma Signaling": ["JAK1", "JAK2", "STAT1"],
-    "Survival & Proliferation Drivers": ["PTEN", "CDKN2A", "PIK3CA"],
-}
-DRIVER_GENES = ["BRAF", "NRAS", "NF1"]
 ROW_LABELS = {"BRAF": "BRAF mutation", "NRAS": "NRAS mutation", "NF1": "NF1 mutation"}
 ROW_ORDER = [
     ("MAPK Drivers", "BRAF"),
@@ -75,6 +60,27 @@ ROW_ORDER = [
 #       column + Hugo_Symbol (+ optionally Variant_Classification)
 #   (b) wide format -- already a patient x gene indicator/count matrix
 # --------------------------------------------------------------------------
+def _compute_gene_frequency(mut_wide: pd.DataFrame, genes: list[str], cohort_name: str) -> float:
+    """Helper to compute frequency of mutation in a list of genes."""
+    present = [g for g in genes if g in mut_wide.columns]
+    if not present:
+        warnings.warn(
+            f"{cohort_name}: none of {genes} found in mutation panel -- reporting NaN",
+            stacklevel=2,
+        )
+        return np.nan
+    mutated = (mut_wide[present].fillna(0) > 0).any(axis=1)
+    return 100.0 * mutated.mean()
+
+
+def _weighted_pooled(row: pd.Series, cohort_names: list[str], ns: dict[str, int]) -> float:
+    """Helper to compute N-weighted average for pooled trials."""
+    vals, weights = [], []
+    for c in cohort_names:
+        if pd.notna(row[c]):
+            vals.append(row[c] * ns[c] / 100.0)
+            weights.append(ns[c])
+    return 100.0 * sum(vals) / sum(weights) if weights else np.nan
 def compute_cohort_frequencies(cohort_name: str) -> tuple[dict, int]:
     """
     Compute driver/pathway mutation frequencies (%) for one cohort.
@@ -110,20 +116,9 @@ def compute_cohort_frequencies(cohort_name: str) -> tuple[dict, int]:
 
     mut_wide = mut_wide.reindex(all_patients, fill_value=0)
 
-    def freq(genes: list[str]) -> float:
-        present = [g for g in genes if g in mut_wide.columns]
-        if not present:
-            warnings.warn(
-                f"{cohort_name}: none of {genes} found in mutation panel -- reporting NaN",
-                stacklevel=2,
-            )
-            return np.nan
-        mutated = (mut_wide[present].fillna(0) > 0).any(axis=1)
-        return 100.0 * mutated.mean()
-
-    freqs = {gene: freq([gene]) for gene in DRIVER_GENES}
+    freqs = {gene: _compute_gene_frequency(mut_wide, [gene], cohort_name) for gene in DRIVER_GENES}
     for pathway, genes in PATHWAY_GENES.items():
-        freqs[pathway] = freq(genes)
+        freqs[pathway] = _compute_gene_frequency(mut_wide, genes, cohort_name)
 
     return freqs, n_patients
 
@@ -151,15 +146,7 @@ def build_dataframe() -> tuple[pd.DataFrame, list[str], str, dict]:
 
     # Pooled = N-weighted average across cohorts that have a value for that
     # row, using each cohort's real patient count (not a fixed literal).
-    def weighted_pooled(row):
-        vals, weights = [], []
-        for c in cohort_names:
-            if pd.notna(row[c]):
-                vals.append(row[c] * ns[c] / 100.0)
-                weights.append(ns[c])
-        return 100.0 * sum(vals) / sum(weights) if weights else np.nan
-
-    df[POOLED_LABEL] = df.apply(weighted_pooled, axis=1)
+    df[POOLED_LABEL] = df.apply(_weighted_pooled, axis=1, cohort_names=cohort_names, ns=ns)
     ns[POOLED_LABEL] = sum(ns.values())
 
     rename = {c: f"{c} (N={ns[c]})" for c in cohort_names + [POOLED_LABEL]}
@@ -172,7 +159,7 @@ def build_dataframe() -> tuple[pd.DataFrame, list[str], str, dict]:
 # --------------------------------------------------------------------------
 # Chart builders -- one function per figure
 # --------------------------------------------------------------------------
-def plot_grouped_bars(df, cohort_cols, pooled_col, colors, out_path: Path):
+def plot_grouped_bars(df: pd.DataFrame, cohort_cols: list[str], pooled_col: str, colors: list[str], out_path: Path) -> None:
     all_cols = cohort_cols + [pooled_col]
     y_labels = df["Gene/Pathway"].tolist()
     y_pos = np.arange(len(y_labels))
@@ -236,7 +223,7 @@ def plot_grouped_bars(df, cohort_cols, pooled_col, colors, out_path: Path):
     save_fig(fig, out_path)
 
 
-def plot_heatmap(df, cohort_cols, pooled_col, out_path: Path):
+def plot_heatmap(df: pd.DataFrame, cohort_cols: list[str], pooled_col: str, out_path: Path) -> None:
     all_cols = cohort_cols + [pooled_col]
     fig, ax = plt.subplots(figsize=(10, 6), dpi=300)
     heatmap_df = df.set_index("Gene/Pathway")[all_cols]
@@ -258,7 +245,7 @@ def plot_heatmap(df, cohort_cols, pooled_col, out_path: Path):
     save_fig(fig, out_path)
 
 
-def plot_dumbbell(df, cohort_cols, pooled_col, colors, out_path: Path):
+def plot_dumbbell(df: pd.DataFrame, cohort_cols: list[str], pooled_col: str, colors: list[str], out_path: Path) -> None:
     trial_colors = dict(zip(cohort_cols, colors[: len(cohort_cols)]))
     pooled_color = get_cohort_color(pooled_col, default="#e41a1c")
     max_val = np.nanmax(df[cohort_cols + [pooled_col]].values.astype(float))
@@ -299,7 +286,7 @@ def plot_dumbbell(df, cohort_cols, pooled_col, colors, out_path: Path):
     save_fig(fig, out_path)
 
 
-def main():
+def main() -> None:
     print("==================================================")
     print("Extended Pathway Mutation Frequencies")
     print("==================================================")
@@ -312,7 +299,7 @@ def main():
     plot_heatmap(df, cohort_cols, pooled_col, OUT_DIR / "extended_pathway_heatmap.png")
     plot_dumbbell(df, cohort_cols, pooled_col, colors, OUT_DIR / "extended_pathway_dumbbell.png")
 
-    print(f"Successfully generated 3 visualization figures in {OUT_DIR}")
+    print(f"Successfully generated 3 visualisation figures in {OUT_DIR}")
     print(f"Patient counts used (from clin_cleaned.csv): {ns}")
 
 
