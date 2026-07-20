@@ -34,8 +34,8 @@ def zscore_df(df):
     return (df - means) / stds
 
 # Paths
-# Paths
-DATA_DIR = BASE_DIR / "data"
+from src.utils.paths import find_project_root
+DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
 PLOT_DIR = BASE_DIR / "plots" / "models"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 REPORTS_DIR = BASE_DIR / "reports"
