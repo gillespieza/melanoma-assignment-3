@@ -342,52 +342,59 @@ def main():
                 return 0
         return np.nan
 
-    # Reuse Logistic Regression LOCO results from Phase 4
-    # (re-running run_loco_cv would re-tune hyperparameters non-deterministically)
-    loco_lr = all_loco_results['lr']
-
-    # Build index maps: LOCO predictions cover response-valid patients only,
-    # so we must align clinical data to that same subset.
+    # Select the best model per cohort by LOCO AUC from Phase 4,
+    # because some models produce degenerate predictions for certain cohorts
+    # (e.g. LR yields constant 0.5 for Riaz 2017).
     cohort_response_index = {
         'Hugo 2016': sig_hugo.index,
         'Liu 2019': sig_liu.index,
         'Riaz 2017': sig_riaz.index,
     }
+    # OS column names differ across cohorts
+    cohort_os_cols = {
+        'Hugo 2016': ('os_months', 'os_status'),
+        'Riaz 2017': ('os_months', 'os_status'),
+        'Liu 2019': ('OS_MONTHS', 'os_status_clean'),
+    }
+    cohort_clin_map = {
+        'Hugo 2016': clin_hugo,
+        'Liu 2019': clin_liu,
+        'Riaz 2017': clin_riaz,
+    }
 
-    # 1. Hugo 2016 survival
-    hugo_idx = cohort_response_index['Hugo 2016']
-    hugo_pred = loco_lr['Hugo 2016']['y_pred_prob']
-    clin_hugo_valid = clin_hugo.loc[hugo_idx].copy()
-    clin_hugo_valid['y_pred_prob'] = hugo_pred
-    p_hugo = run_survival_analysis(
-        clin_hugo_valid, hugo_pred,
-        time_col='os_months', status_col='os_status',
-        save_path=PLOT_DIR / "survival_hugo_lr.png"
-    )
-    print(f"Hugo 2016 Overall Survival difference p-value: {p_hugo:.3e}" if p_hugo else "Hugo 2016: No survival data")
+    for cohort_name in ['Hugo 2016', 'Liu 2019', 'Riaz 2017']:
+        # Find the model with the highest AUC for this cohort
+        best_model_key, best_auc = None, -1.0
+        for mkey, mresults in all_loco_results.items():
+            auc_val = mresults[cohort_name]['metrics_extended']['auc']
+            if not np.isnan(auc_val) and auc_val > best_auc:
+                pred_std = np.std(mresults[cohort_name]['y_pred_prob'])
+                if pred_std > 1e-6:  # Skip degenerate (constant) predictions
+                    best_auc = auc_val
+                    best_model_key = mkey
+        if best_model_key is None:
+            print(f"{cohort_name}: All models produce constant predictions, skipping survival analysis.")
+            continue
 
-    # 2. Liu 2019 survival
-    liu_idx = cohort_response_index['Liu 2019']
-    liu_pred = loco_lr['Liu 2019']['y_pred_prob']
-    clin_liu_clean = clin_liu.loc[liu_idx].copy()
-    clin_liu_clean['os_status_clean'] = clin_liu_clean['OS_STATUS'].apply(clean_os_status)
-    p_liu = run_survival_analysis(
-        clin_liu_clean, liu_pred,
-        time_col='OS_MONTHS', status_col='os_status_clean',
-        save_path=PLOT_DIR / "survival_liu_lr.png"
-    )
-    print(f"Liu 2019 Overall Survival difference p-value: {p_liu:.3e}" if p_liu else "Liu 2019: No survival data")
+        print(f"{cohort_name}: Using {best_model_key.upper()} (best LOCO AUC = {best_auc:.3f}) for survival stratification.")
+        cohort_pred = all_loco_results[best_model_key][cohort_name]['y_pred_prob']
+        cohort_idx = cohort_response_index[cohort_name]
+        clin_valid = cohort_clin_map[cohort_name].loc[cohort_idx].copy()
 
-    # 3. Riaz 2017 survival
-    riaz_idx = cohort_response_index['Riaz 2017']
-    riaz_pred = loco_lr['Riaz 2017']['y_pred_prob']
-    clin_riaz_valid = clin_riaz.loc[riaz_idx].copy()
-    p_riaz = run_survival_analysis(
-        clin_riaz_valid, riaz_pred,
-        time_col='os_months', status_col='os_status',
-        save_path=PLOT_DIR / "survival_riaz_lr.png"
-    )
-    print(f"Riaz 2017 Overall Survival difference p-value: {p_riaz:.3e}" if p_riaz else "Riaz 2017: No survival data")
+        time_col, status_col = cohort_os_cols[cohort_name]
+        # Liu needs OS_STATUS cleaned from string to numeric
+        if cohort_name == 'Liu 2019':
+            clin_valid['os_status_clean'] = clin_valid['OS_STATUS'].apply(clean_os_status)
+
+        p_val = run_survival_analysis(
+            clin_valid, cohort_pred,
+            time_col=time_col, status_col=status_col,
+            save_path=PLOT_DIR / f"survival_{cohort_name.split()[0].lower()}_{best_model_key}.png"
+        )
+        if p_val is not None:
+            print(f"  Overall Survival difference p-value: {p_val:.3e}")
+        else:
+            print(f"  {cohort_name}: Survival stratification failed (could not split groups).")
 
     # 4. TCGA-SKCM survival validation
     try:
