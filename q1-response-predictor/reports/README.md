@@ -11,6 +11,7 @@ The reports are organized into a 4-pillar directory hierarchy that progresses fr
 ```
 reports/
 ├── README.md (This sitemap and documentation guide)
+├── executive_summary.md (Cross-pillar synthesis & key findings)
 ├── Pipeline.md (Master pipeline workflow & technical implementation)
 │
 ├── pillar-1-cohorts-and-preprocessing/
@@ -36,6 +37,7 @@ reports/
 | Pillar Folder / File | Theme | Description & Focus Area |
 | :--- | :--- | :--- |
 | **Master Navigation** | | |
+| [executive_summary.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/executive_summary.md) | Executive Summary | Cross-pillar synthesis of key findings, pipeline architecture decisions, model performance benchmarks, known limitations, and report navigation index. |
 | [Pipeline.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/Pipeline.md) | Technical Workflow | Fetching (`download_data.py`), cleaning (`clean_data.py`), merging (`merge_datasets.py`), sample attrition, and pipeline architecture. |
 | **Pillar 1: Cohort Characterization & Preprocessing** | | |
 | [cohort_characteristics_clinical.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-1-cohorts-and-preprocessing/cohort_characteristics_clinical.md) | Baseline Clinical | Comparative summary of demographics, disease stages, response distributions, survival curves, and forest plots across Liu, Hugo, Riaz, and TCGA. |

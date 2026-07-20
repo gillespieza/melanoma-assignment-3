@@ -457,6 +457,7 @@ def main():
     import pickle
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.svm import SVC
+    from xgboost import XGBClassifier
     
     # Train final models on all pooled clinical trial data
     X_train_final = sig_corrected
@@ -484,7 +485,18 @@ def main():
     
     elasticnet_final = LogisticRegression(solver='saga', l1_ratio=0.5, C=1.0, random_state=42, max_iter=20000, tol=1e-3)
     elasticnet_final.fit(X_train_final_scaled, y_train_final)
-    
+
+    # XGBoost: best pooled-CV model (AUC 0.724) with class imbalance weighting
+    pos_count = int((y_train_final == 1).sum())
+    neg_count = int((y_train_final == 0).sum())
+    scale_weight = neg_count / pos_count if pos_count > 0 else 1.0
+    xgb_final = XGBClassifier(
+        n_estimators=100, max_depth=5, learning_rate=0.1,
+        eval_metric='logloss', scale_pos_weight=scale_weight,
+        random_state=42, n_jobs=-1,
+    )
+    xgb_final.fit(X_train_final_scaled, y_train_final)
+
     with open(models_dir / "final_rf_model.pkl", "wb") as f:
         pickle.dump(rf_final, f)
     with open(models_dir / "final_lr_model.pkl", "wb") as f:
@@ -493,10 +505,12 @@ def main():
         pickle.dump(svm_final, f)
     with open(models_dir / "final_elasticnet_model.pkl", "wb") as f:
         pickle.dump(elasticnet_final, f)
+    with open(models_dir / "final_xgb_model.pkl", "wb") as f:
+        pickle.dump(xgb_final, f)
     with open(models_dir / "final_scaler.pkl", "wb") as f:
         pickle.dump(scaler_final, f)
         
-    print(f"Saved final Random Forest, Logistic Regression, SVM, ElasticNet models and scaler to {models_dir}/")
+    print(f"Saved final RF, LR, SVM, ElasticNet, XGBoost models and scaler to {models_dir.relative_to(BASE_DIR).as_posix()}/")
 
     print("\n==================================================")
     print("Phase 7: Generating Model Evaluation Report...")
