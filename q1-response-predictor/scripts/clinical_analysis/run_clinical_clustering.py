@@ -39,7 +39,7 @@ from src.utils.plotting import save_fig
 DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
 CLINICAL_FILE = DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018" / "clin_cleaned.csv"
 PLOTS_DIR = find_project_root(Path(__file__).resolve()) / "plots" / "clinical"
-REPORTS_DIR = find_project_root(Path(__file__).resolve()) / "reports"
+REPORTS_DIR = find_project_root(Path(__file__).resolve()) / "reports" / "pillar-2-clinical-subtyping"
 LOG_DIR = find_project_root(Path(__file__).resolve()) / "logs"
 LOG_PATH = LOG_DIR / "run_clinical_clustering.log"
 
@@ -328,11 +328,11 @@ def _generate_clustering_report(
 
         f.write("## Cluster Visualisation (2D PCA Projection)\n")
         f.write("Below is a 2D PCA projection of the multi-dimensional patient profiles, showing the distinct separation of the three clinical-genomic patient groups. The 'X' markers show the cluster centroids:\n\n")
-        f.write("![2D PCA Visualisation of Clusters](../plots/clinical/pca_clinical_clusters.png)\n\n")
+        f.write("![2D PCA Visualisation of Clusters](../../plots/clinical/pca_clinical_clusters.png)\n\n")
 
         f.write("## Kaplan-Meier Survival Analysis\n")
         f.write(f"The unsupervised patient clusters show a highly statistically significant separation in overall survival duration (Log-Rank p-value = **\\({p_val:.2e}\\)**):\n\n")
-        f.write("![KM Survival of Clinical Clusters](../plots/clinical/km_clinical_clusters.png)\n")
+        f.write("![KM Survival of Clinical Clusters](../../plots/clinical/km_clinical_clusters.png)\n")
 
     print(f"Clustering report successfully written to {report_path.relative_to(BASE_DIR).as_posix()}")
 
@@ -365,7 +365,7 @@ def main() -> None:
     p_val, median_survivals = _plot_cluster_survival(df_survival, PLOTS_DIR)
     _plot_cluster_pca(scaled_data, cluster_labels, PLOTS_DIR)
 
-    output_report = REPORTS_DIR / "clinical_clustering_results.md"
+    output_report = REPORTS_DIR / "clinical_phenotyping_and_feature_selection.md"
     _generate_clustering_report(profile_df, counts, p_val, median_survivals, output_report)
 
     print("\n==================================================")

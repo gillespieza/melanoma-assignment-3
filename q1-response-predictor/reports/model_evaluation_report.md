@@ -1,3 +1,14 @@
+---
+title:
+aliases: 
+tags: 
+created: 2026-07-19 21:13
+cssclasses: table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-07-20 13:08
+---
+
 # Model Evaluation Report: LOCO Cross-Cohort Validation
 
 ## Overview
@@ -28,7 +39,7 @@ This report documents the comprehensive evaluation of all trained models (Logist
 ![Logistic Regression Confusion Matrices](../plots/models/confusion_matrices_lr.png)
 
 #### ROC & Precision-Recall Curves
-![Logistic Regression ROC Curves](../plots/models/roc_curves_lr.png)
+![Logistic Regression ROC Curves](../plots/models/roc_curves_lr.png)  
 ![Logistic Regression PR Curves](../plots/models/pr_curves_lr.png)
 
 ---
@@ -49,7 +60,7 @@ This report documents the comprehensive evaluation of all trained models (Logist
 ![Random Forest Confusion Matrices](../plots/models/confusion_matrices_rf.png)
 
 #### ROC & Precision-Recall Curves
-![Random Forest ROC Curves](../plots/models/roc_curves_rf.png)
+![Random Forest ROC Curves](../plots/models/roc_curves_rf.png)  
 ![Random Forest PR Curves](../plots/models/pr_curves_rf.png)
 
 ---
@@ -70,7 +81,7 @@ This report documents the comprehensive evaluation of all trained models (Logist
 ![XGBoost Confusion Matrices](../plots/models/confusion_matrices_xgb.png)
 
 #### ROC & Precision-Recall Curves
-![XGBoost ROC Curves](../plots/models/roc_curves_xgb.png)
+![XGBoost ROC Curves](../plots/models/roc_curves_xgb.png)  
 ![XGBoost PR Curves](../plots/models/pr_curves_xgb.png)
 
 ---
@@ -91,7 +102,7 @@ This report documents the comprehensive evaluation of all trained models (Logist
 ![Support Vector Machine Confusion Matrices](../plots/models/confusion_matrices_svm.png)
 
 #### ROC & Precision-Recall Curves
-![SVM ROC Curves](../plots/models/roc_curves_svm.png)
+![SVM ROC Curves](../plots/models/roc_curves_svm.png)  
 ![SVM PR Curves](../plots/models/pr_curves_svm.png)
 
 ---
@@ -112,14 +123,14 @@ This report documents the comprehensive evaluation of all trained models (Logist
 ![ElasticNet Confusion Matrices](../plots/models/confusion_matrices_elasticnet.png)
 
 #### ROC & Precision-Recall Curves
-![ElasticNet ROC Curves](../plots/models/roc_curves_elasticnet.png)
+![ElasticNet ROC Curves](../plots/models/roc_curves_elasticnet.png)  
 ![ElasticNet PR Curves](../plots/models/pr_curves_elasticnet.png)
 
 ---
 
 ## Summary & Interpretation
 
-### Key Metrics Explained:
+### Key Metrics Explained
 - **Sensitivity (Recall)**: TP / (TP + FN) — Proportion of actual responders correctly identified
 - **Specificity**: TN / (TN + FP) — Proportion of actual non-responders correctly identified
 - **Precision**: TP / (TP + FP) — Proportion of predicted responders who are actually responders
@@ -128,7 +139,7 @@ This report documents the comprehensive evaluation of all trained models (Logist
 - **AUC-ROC**: Area under the Receiver Operating Characteristic curve — Robustness to threshold selection
 - **C-Index (Concordance Index)**: Evaluates how well predicted response probabilities rank patients by survival. 0.5 = random, 1.0 = perfect. Accounts for censoring in survival data.
 
-### Embedded Figure Artifacts:
+### Embedded Figure Artifacts
 - **Confusion Matrices** (`confusion_matrices_*.png`): Heatmaps displaying cell-level breakdown of true vs predicted responses across test cohorts.
 - **ROC Curves** (`roc_curves_*.png`): Trade-off between True Positive Rate and False Positive Rate across decision thresholds.
 - **PR Curves** (`pr_curves_*.png`): Precision-Recall trade-off Curves.

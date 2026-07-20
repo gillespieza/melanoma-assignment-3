@@ -6,7 +6,7 @@ created: 2026-07-18 22:19
 cssclasses: table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-19 20:05
+updated: 2026-07-20 13:02
 ---
 
 # Curated Gene Expression Signatures, Extended Biomarkers & Model Evaluation Report
@@ -90,10 +90,7 @@ We have implemented six distinct curated signature modalities in [signatures.py]
   13. `("CD40", "CD28")` (CD40 vs CD28)
   14. `("CD40", "PDCD1")` (CD40 vs PD-1)
   15. `("TNFRSF14", "CD86")` (HVEM vs CD86)
-  
-  > [!NOTE]  
-  > **Implementation Update**: A previous duplication where the pair `("CD40", "CD274")` was listed twice has been corrected. The duplicate has been corrected to `("CD40", "PDCD1")` (CD40 vs PD-1) in [signatures.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py#L20) in accordance with the original IMPRES publication by Auslander et al., 2018.
-  
+
   \[S_{\text{raw}} = \sum_{i=1}^{15} \mathbb{I}(E_{\text{Gene A}_i} > E_{\text{Gene B}_i})\]  
   To account for missing genes, the score is scaled back to a range of 0–15:  
   \[S_{\text{IMPRES}} = S_{\text{raw}} \times \left( \frac{15}{\text{number of valid pairs evaluated}} \right)\]
