@@ -124,7 +124,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir):
         # Confusion matrices
         report_lines.append("\n### Visualizations & Diagnostics\n\n")
         report_lines.append(f"#### Confusion Matrices (Threshold = 0.5)\n")
-        report_lines.append(f"![{model_name} Confusion Matrices](../plots/models/confusion_matrices_{model_type}.png)\n\n")
+        report_lines.append(f"![{model_names.get(model_key, model_key.upper())} Confusion Matrices](../plots/models/confusion_matrices_{model_key}.png)\n\n")
         
         report_lines.append("```\n")
         for cohort, res in sorted(loco_results.items()):
@@ -142,8 +142,8 @@ def generate_model_evaluation_report(all_loco_results, output_dir):
         
         # Curves
         report_lines.append(f"#### ROC & Precision-Recall Curves\n")
-        report_lines.append(f"![{model_name} ROC Curves](../plots/models/roc_curves_{model_type}.png)\n")
-        report_lines.append(f"![{model_name} PR Curves](../plots/models/pr_curves_{model_type}.png)\n\n")
+        report_lines.append(f"![{model_names.get(model_key, model_key.upper())} ROC Curves](../plots/models/roc_curves_{model_key}.png)\n")
+        report_lines.append(f"![{model_names.get(model_key, model_key.upper())} PR Curves](../plots/models/pr_curves_{model_key}.png)\n\n")
     
     report_lines.append("## Summary & Interpretation\n\n")
     report_lines.append("### Key Metrics Explained:\n")
