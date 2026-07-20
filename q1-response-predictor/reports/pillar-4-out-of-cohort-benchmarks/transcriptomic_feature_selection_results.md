@@ -55,33 +55,59 @@ _Figure 1: Cross-validated out-of-cohort ROC-AUC across 5 model families (Logist
 
 ### 2.3. Quantitative Out-of-Cohort Performance Comparison
 
-The table below details out-of-cohort prediction ROC-AUC values for each feature representation and model architecture:
+The annotated heatmap below visualises out-of-cohort prediction ROC-AUC values for each feature representation and model architecture. The colour scale diverges around the chance baseline (AUC = 0.50), and bold outlines mark the best-performing feature representation per model-cohort combination.
 
-| Model   | Test Cohort   |   Curated Signatures AUC |   SelectKBest (k=20) AUC |   SelectKBest (k=100) AUC |   SelectKBest (k=200) AUC |
-|:--------|:--------------|-------------------------:|-------------------------:|--------------------------:|--------------------------:|
-| LR      | Liu 2019      |                    0.594 |                    0.526 |                     0.573 |                     0.578 |
-| LR      | Hugo 2016     |                    0.407 |                    0.577 |                     0.593 |                     0.670 |
-| LR      | Riaz 2017     |                    0.527 |                    0.661 |                     0.669 |                     0.673 |
-| RF      | Liu 2019      |                    0.598 |                    0.554 |                     0.607 |                     0.598 |
-| RF      | Hugo 2016     |                    0.396 |                    0.632 |                     0.538 |                     0.566 |
-| RF      | Riaz 2017     |                    0.602 |                    0.625 |                     0.661 |                     0.617 |
-| XGB     | Liu 2019      |                    0.642 |                    0.589 |                     0.563 |                     0.592 |
-| XGB     | Hugo 2016     |                    0.310 |                    0.643 |                     0.643 |                     0.637 |
-| XGB     | Riaz 2017     |                    0.571 |                    0.634 |                     0.715 |                     0.681 |
+![Out-of-Cohort ROC-AUC Heatmap](../../plots/feature_selection/signature_vs_raw_selection_heatmap.png)
+
+_Figure 2: Divergent annotated heatmap of LOCO cross-validated ROC-AUC across 5 model families and 3 held-out test cohorts. Green cells indicate above-chance performance; red cells indicate below-chance. Bold borders highlight the best feature representation per row._
+
+> [!summary]- Raw AUC Values
+> 
+> | Model   | Test Cohort   |   Curated Signatures AUC |   SelectKBest (k=20) AUC |   SelectKBest (k=100) AUC |   SelectKBest (k=200) AUC |
+> |:--------|:--------------|-------------------------:|-------------------------:|--------------------------:|--------------------------:|
+> | LR      | Liu 2019      |                    0.594 |                    0.526 |                     0.573 |                     0.578 |
+> | LR      | Hugo 2016     |                    0.407 |                    0.577 |                     0.593 |                     0.670 |
+> | LR      | Riaz 2017     |                    0.527 |                    0.661 |                     0.669 |                     0.673 |
+> | RF      | Liu 2019      |                    0.598 |                    0.554 |                     0.607 |                     0.598 |
+> | RF      | Hugo 2016     |                    0.396 |                    0.632 |                     0.538 |                     0.566 |
+> | RF      | Riaz 2017     |                    0.602 |                    0.625 |                     0.661 |                     0.617 |
+> | XGB     | Liu 2019      |                    0.642 |                    0.589 |                     0.563 |                     0.592 |
+> | XGB     | Hugo 2016     |                    0.310 |                    0.643 |                     0.643 |                     0.637 |
+> | XGB     | Riaz 2017     |                    0.571 |                    0.634 |                     0.715 |                     0.681 |
+> | SVM     | Liu 2019      |                    0.621 |                    0.614 |                     0.592 |                     0.619 |
+> | SVM     | Hugo 2016     |                    0.571 |                    0.637 |                     0.654 |                     0.681 |
+> | SVM     | Riaz 2017     |                    0.682 |                    0.713 |                     0.703 |                     0.667 |
+> | ElasticNet | Liu 2019   |                    0.598 |                    0.560 |                     0.523 |                     0.596 |
+> | ElasticNet | Hugo 2016  |                    0.412 |                    0.555 |                     0.566 |                     0.615 |
+> | ElasticNet | Riaz 2017  |                    0.398 |                    0.657 |                     0.691 |                     0.667 |
 
 ### 2.4. Top Selected Genes Analysis (`SelectKBest` per Fold)
 
-| Model   | Test Cohort   | Top 5 Selected Genes (k=20)                |
-|:--------|:--------------|:-------------------------------------------|
-| LR      | Liu 2019      | NBPF4, MMP13, IGHV3-20, IGHV3-64D, CYP4F11 |
-| LR      | Hugo 2016     | TFAP2B, LHFPL3, ABHD12B, CNTNAP5, KCNJ13   |
-| LR      | Riaz 2017     | TFAP2B, PAX6, PRSS3, LHFPL3, GRIA4         |
-| RF      | Liu 2019      | NBPF4, MMP13, IGHV3-20, IGHV3-64D, CYP4F11 |
-| RF      | Hugo 2016     | TFAP2B, LHFPL3, ABHD12B, CNTNAP5, KCNJ13   |
-| RF      | Riaz 2017     | TFAP2B, PAX6, PRSS3, LHFPL3, GRIA4         |
-| XGB     | Liu 2019      | NBPF4, MMP13, IGHV3-20, IGHV3-64D, CYP4F11 |
-| XGB     | Hugo 2016     | TFAP2B, LHFPL3, ABHD12B, CNTNAP5, KCNJ13   |
-| XGB     | Riaz 2017     | TFAP2B, PAX6, PRSS3, LHFPL3, GRIA4         |
+Because `SelectKBest` is a model-agnostic filter step applied before the classifier, the selected genes depend only on which cohort is held out during LOCO cross-validation, not on the downstream model architecture. The table below lists the top 5 genes selected per fold with functional annotations to assess their biological relevance to anti-tumour immunity.
+
+#### _Table 1: Top 5 genes selected by `SelectKBest` (k=20) per LOCO fold, annotated with full protein names and functional categories. Gene selection is model-agnostic (identical across all 5 classifiers for a given fold)._
+
+| Held-out Cohort | Gene | Full Name | Functional Category |
+|:---|:---|:---|:---|
+| **Liu 2019** | `NBPF4` | Neuroblastoma breakpoint family member 4 | Neuronal / copy-number variable region |
+| | `MMP13` | Matrix metallopeptidase 13 | Extracellular matrix remodelling |
+| | `IGHV3-20` | Immunoglobulin heavy variable 3-20 | B-cell receptor rearrangement |
+| | `IGHV3-64D` | Immunoglobulin heavy variable 3-64D | B-cell receptor rearrangement |
+| | `CYP4F11` | Cytochrome P450 4F11 | Lipid / drug metabolism |
+| **Hugo 2016** | `TFAP2B` | Transcription factor AP-2 beta | Neural crest / melanocyte lineage |
+| | `LHFPL3` | LHFPL tetraspan subfamily member 3 | Membrane protein (lipoma-associated) |
+| | `ABHD12B` | Abhydrolase domain containing 12B | Lipid hydrolase |
+| | `CNTNAP5` | Contactin-associated protein family member 5 | Neuronal cell adhesion |
+| | `KCNJ13` | Potassium inwardly rectifying channel J13 | Ion channel |
+| **Riaz 2017** | `TFAP2B` | Transcription factor AP-2 beta | Neural crest / melanocyte lineage |
+| | `PAX6` | Paired box 6 | Eye / neuronal development |
+| | `PRSS3` | Serine protease 3 (trypsinogen) | Digestive serine protease |
+| | `LHFPL3` | LHFPL tetraspan subfamily member 3 | Membrane protein (lipoma-associated) |
+| | `GRIA4` | Glutamate ionotropic receptor AMPA type subunit 4 | Neuronal signalling |
+
+> [!warning] No canonical immune markers selected
+> None of the 13 unique top-ranked genes across any fold belong to established immunotherapy-relevant pathways (IFN-$\gamma$ signalling, cytolytic activity, antigen presentation, or PD-1/PD-L1 axis). The two immunoglobulin genes (`IGHV3-20`, `IGHV3-64D`) likely capture fold-specific B-cell infiltration variance rather than a robust immune signal. The remaining genes are neuronal, developmental, metabolic, or structural. Notably, there is **zero overlap** between these 13 genes and the Top 20 Prognostic Genes identified from the independent TCGA-SKCM survival analysis (Section 3.1), which are exclusively protective immune markers (GBP family, chemokines, NK/T-cell receptors). This confirms that unconstrained univariate ANOVA feature selection isolates cohort-specific technical variance rather than transferable biological signal.
+
 
 ### 2.5. Methodological & Biological Observations
 1. **Overfitting at Higher $k$ ($k=100\text{--}200$)**:
@@ -112,13 +138,17 @@ Stratifying TCGA-SKCM patients into High-Risk and Low-Risk groups using the medi
 ![KM Curve of TCGA Survival](../../plots/feature_selection/km_pancancer_signature.png)
 
 ### 3.3. Validation on Immunotherapy Clinical Trial Cohorts
-Evaluating the TCGA overall survival signature on anti-PD-1 trial cohorts assesses whether baseline overall survival signals translate into immunotherapy response prediction:
+Evaluating the TCGA overall survival signature on anti-PD-1 trial cohorts assesses whether baseline overall survival signals translate into immunotherapy response prediction. No classifier is trained here: each patient's risk score is computed as a direct linear projection of the 20 Cox $\beta$-coefficients onto their gene expression vector ($\text{Risk} = \sum_i \beta_i \cdot x_i$), and the resulting continuous score is evaluated against binary response labels.
 
-| Cohort | N | Aligned Signature Genes | Response ROC AUC | Mann-Whitney U p-value | Mean Risk (Responders) | Mean Risk (Non-Responders) |
+#### _Table 2: Out-of-cohort validation of the TCGA-SKCM 20-gene prognostic signature on three anti-PD-1 trial cohorts. The ROC-AUC measures discriminative ability of the raw Cox risk-score projection (not a trained classifier). Mann-Whitney U tests compare risk-score distributions between responders and non-responders._
+
+| Cohort | N | Aligned Signature Genes | Cox Risk-Score ROC-AUC | Mann-Whitney U p-value | Mean Risk (Responders) | Mean Risk (Non-Responders) |
 |---|---|---|---|---|---|---|
 | Liu 2019 | 103 | 19/20 | **0.554** | 3.52e-01 | -8.881 | -8.071 |
 | Hugo 2016 | 26 | 19/20 | **0.432** | 5.73e-01 | -6.738 | -7.687 |
 | Riaz 2017 | 33 | 20/20 | **0.652** | 1.77e-01 | -9.811 | -7.506 |
+
+
 
 #### Validation Visualizations
 ##### ROC Curves predicting Response
@@ -129,6 +159,8 @@ Evaluating the TCGA overall survival signature on anti-PD-1 trial cohorts assess
 
 ### 3.4. Functional Classification & Domain Annotation of Signature Genes
 Using the **MyGene.info** and **InterPro** APIs, we mapped protein families and Pfam domains across the 20 prognostic genes:
+
+#### _Table 3: Functional classification and InterPro/Pfam domain annotation of the 20 TCGA-SKCM prognostic genes, grouped by biological pathway. Annotations retrieved via MyGene.info and InterPro APIs._
 
 | Gene Symbol / Category                                      | Functional Name / Description                             | Major InterPro Domains (Pfam)                                                                                                                |
 |:------------------------------------------------------------|:----------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------|
@@ -158,6 +190,8 @@ Using the **MyGene.info** and **InterPro** APIs, we mapped protein families and 
 | - **PLAAT4**                                                | phospholipase A and acyltransferase 4                     | LRAT domain, H-rev107 Phospholipase/Acyltransferase                                                                                          |
 | **Transcription Factors & Zinc Fingers**                    |                                                           |                                                                                                                                              |
 | - **ZNF831**                                                | zinc finger protein 831                                   | Zinc finger C2H2-type, Zinc finger C2H2 superfamily                                                                                          |
+
+
 
 #### Key Biological Mechanisms
 1. **Type II Interferon (IFN-$\gamma$) Response**: All 20 genes are protective. A major cluster consists of _Guanylate-Binding Proteins (`GBP1`, `GBP4`, `GBP5`)_, key GTPases induced by IFN-$\gamma$ during cell-autonomous immunity.

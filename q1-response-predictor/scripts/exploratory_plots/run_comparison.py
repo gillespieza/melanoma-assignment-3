@@ -298,6 +298,78 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
     print(f"Saved refactored comparison plot to {out_plot_path.relative_to(BASE_DIR).as_posix()}")
 
 
+def _plot_comparison_heatmap(df_results: pd.DataFrame, out_plot_path: Path) -> None:
+    """Generates a divergent annotated heatmap of LOCO ROC-AUC values.
+
+    Rows represent Model x Test Cohort combinations. Columns represent
+    the four feature representations. Colour diverges around the chance
+    baseline of 0.50 so below-chance cells are visually distinct.
+
+    Args:
+        df_results: Results DataFrame containing LOCO AUC scores.
+        out_plot_path: Destination path for figure output artifact.
+    """
+    set_presentation_style()
+
+    value_cols = [
+        "Curated Signatures AUC",
+        "SelectKBest (k=20) AUC",
+        "SelectKBest (k=100) AUC",
+        "SelectKBest (k=200) AUC",
+    ]
+    display_cols = [c.replace(" AUC", "") for c in value_cols]
+
+    # Build row labels as "Model · Cohort"
+    df_hm = df_results.copy()
+    df_hm["Row"] = df_hm["Model"] + "  ·  " + df_hm["Test Cohort"]
+    df_hm = df_hm.set_index("Row")[value_cols]
+    df_hm.columns = display_cols
+
+    # Highlight best feature representation per row
+    best_col_per_row = df_hm.idxmax(axis=1)
+
+    fig, ax = plt.subplots(figsize=(10, 7))
+
+    # Divergent colourmap centred on 0.50 (chance baseline)
+    sns.heatmap(
+        df_hm,
+        annot=True,
+        fmt=".3f",
+        cmap="RdYlGn",
+        center=0.50,
+        vmin=0.30,
+        vmax=0.75,
+        linewidths=0.8,
+        linecolor="white",
+        cbar_kws={"label": "ROC-AUC", "shrink": 0.85},
+        ax=ax,
+        annot_kws={"fontsize": 10},
+    )
+
+    # Bold-outline the best cell in each row
+    for row_idx, (row_label, col_label) in enumerate(best_col_per_row.items()):
+        col_idx = display_cols.index(col_label)
+        ax.add_patch(plt.Rectangle(
+            (col_idx, row_idx), 1, 1,
+            fill=False, edgecolor="black", linewidth=2.5,
+        ))
+
+    ax.set_xlabel("Feature Representation", fontsize=12, fontweight="bold", labelpad=10)
+    ax.set_ylabel("Model  ·  Held-out Test Cohort", fontsize=12, fontweight="bold", labelpad=10)
+    ax.set_title(
+        "Out-of-Cohort ROC-AUC Heatmap: Feature Selection Method Comparison",
+        fontsize=13, fontweight="bold", pad=14,
+    )
+
+    # Rotate x-axis labels for readability
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=25, ha="right", fontsize=10)
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=0, fontsize=10)
+
+    plt.tight_layout()
+    save_fig(fig, out_plot_path)
+    print(f"Saved comparison heatmap to {out_plot_path.relative_to(BASE_DIR).as_posix()}")
+
+
 def main() -> None:
     """Executes feature selection comparison pipeline."""
     print("==================================================")
@@ -374,6 +446,9 @@ def main() -> None:
 
     out_plot_path = PLOT_DIR / "signature_vs_raw_selection_auc.png"
     _plot_comparison_results(df_results, out_plot_path)
+
+    out_heatmap_path = PLOT_DIR / "signature_vs_raw_selection_heatmap.png"
+    _plot_comparison_heatmap(df_results, out_heatmap_path)
 
     print("==================================================")
     print("Done!")

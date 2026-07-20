@@ -19,46 +19,46 @@ This report provides a comparative summary of the patient demographic and clinic
 
 ## Table 1: Baseline Patient and Disease Characteristics
 
-| Characteristic | Liu 2019 | Hugo 2016 | Riaz 2017 | TCGA-SKCM |
-|:---|:---|:---|:---|:---|
-| **N** | 104 | 27 | 64 | 427 |
-| | | | | |
-| **Demographics** | | | | |
-| Age, median (IQR) | N/A | 61.0 (54.0–68.5) | 53.0 (48.0–63.0)^a^ | 58.0 (47.0–70.5) |
-| Female sex, n (%) | 43 (41.3%) | 8 (29.6%) | 26 (45.6%)^b^ | 162 (37.9%) |
-| | | | | |
-| **Disease Stage** | | | | |
-| Stage III | 6 (5.8%) | 1 (3.8%) | 2 (3.1%)^c^ | 166 (39.0%)^d^ |
-| Stage IV | 98 (94.2%) | 26 (96.2%) | 50 (78.1%)^c^ | 22 (5.2%)^d^ |
-| Stage I/II | — | — | — | 194 (45.5%)^d^ |
-| | | | | |
-| **Specimen** | | | | |
-| Metastatic site | 98 (94.2%)^e^ | 27 (100%) | 64 (100%) | 349 (81.7%) |
-| Primary site | — | — | — | 78 (18.3%) |
-| | | | | |
-| **Treatment** | | | | |
-| ICI agent — Pembrolizumab | 57 (54.8%) | 27 (100%) | — | 3 (0.7%)^f^ |
-| ICI agent — Nivolumab | 47 (45.2%) | — | 64 (100%) | 1 (0.2%)^f^ |
-| Prior anti-CTLA-4 | 40 (38.5%) | N/A | 31 (48.4%) | 21 (4.9%)^f^ |
-| Adjuvant Therapy (TCGA only)^h^ | | | | |
-| — Radiation Therapy | — | — | — | 107 (25.1%) |
-| — Immunotherapy | — | — | — | 68 (15.9%) |
-| — Chemotherapy | — | — | — | 66 (15.5%) |
-| — Vaccine | — | — | — | 22 (5.2%) |
-| — Targeted Therapy | — | — | — | 12 (2.8%) |
-| — Other Therapy^i^ | — | — | — | 7 (1.6%) |
-| — No recorded treatment | — | — | — | 232 (54.3%) |
-| | | | | |
-| **RECIST Response** | | | | |
-| Responder (CR/PR) | 48 (46.2%) | 14 (51.9%) | 20 (31.2%) | N/A |
-| Non-responder (PD) | 56 (53.8%) | 13 (48.1%) | 44 (68.8%) | N/A |
-| | | | | |
-| **Survival Outcomes** | | | | |
-| Median OS, months (95% CI) | 22.4 (14.2–NR) | 32.2 (11.1–NR) | 23.6 (5.5–27.5) | 79.0 (64.4–103.2) |
-| OS events, n (%) | 54 (51.9%) | 12 (44.4%) | 36 (56.2%) | 211 (49.4%) |
-| Median follow-up, months | 17.0 | 14.4 | 16.9 | 41.6 |
-| Median PFS, months (95% CI) | 3.3 (2.9–7.9) | N/A | N/A | 36.3 (29.9–43.8)^g^ |
-| PFS events, n (%) | 74 (71.2%) | N/A | N/A | 297 (70.5%)^g^ |
+| Characteristic                  | Liu 2019       | Hugo 2016        | Riaz 2017           | TCGA-SKCM           |
+|:------------------------------- |:-------------- |:---------------- |:------------------- |:------------------- |
+| **N**                           | 104            | 27               | 64                  | 427                 |
+|                                 |                |                  |                     |                     |
+| **Demographics**                |                |                  |                     |                     |
+| Age, median (IQR)               | N/A            | 61.0 (54.0–68.5) | 53.0 (48.0–63.0)^a^ | 58.0 (47.0–70.5)    |
+| Female sex, n (%)               | 43 (41.3%)     | 8 (29.6%)        | 26 (45.6%)^b^       | 162 (37.9%)         |
+|                                 |                |                  |                     |                     |
+| **Disease Stage**               |                |                  |                     |                     |
+| Stage III                       | 6 (5.8%)       | 1 (3.8%)         | 2 (3.1%)^c^         | 166 (39.0%)^d^      |
+| Stage IV                        | 98 (94.2%)     | 26 (96.2%)       | 50 (78.1%)^c^       | 22 (5.2%)^d^        |
+| Stage I/II                      | —              | —                | —                   | 194 (45.5%)^d^      |
+|                                 |                |                  |                     |                     |
+| **Specimen**                    |                |                  |                     |                     |
+| Metastatic site                 | 98 (94.2%)^e^  | 27 (100%)        | 64 (100%)           | 349 (81.7%)         |
+| Primary site                    | —              | —                | —                   | 78 (18.3%)          |
+|                                 |                |                  |                     |                     |
+| **Treatment**                   |                |                  |                     |                     |
+| ICI agent — Pembrolizumab       | 57 (54.8%)     | 27 (100%)        | —                   | 3 (0.7%)^f^         |
+| ICI agent — Nivolumab           | 47 (45.2%)     | —                | 64 (100%)           | 1 (0.2%)^f^         |
+| Prior anti-CTLA-4               | 40 (38.5%)     | N/A              | 31 (48.4%)          | 21 (4.9%)^f^        |
+| Adjuvant Therapy (TCGA only)^h^ |                |                  |                     |                     |
+| — Radiation Therapy             | —              | —                | —                   | 107 (25.1%)         |
+| — Immunotherapy                 | —              | —                | —                   | 68 (15.9%)          |
+| — Chemotherapy                  | —              | —                | —                   | 66 (15.5%)          |
+| — Vaccine                       | —              | —                | —                   | 22 (5.2%)           |
+| — Targeted Therapy              | —              | —                | —                   | 12 (2.8%)           |
+| — Other Therapy^i^              | —              | —                | —                   | 7 (1.6%)            |
+| — No recorded treatment         | —              | —                | —                   | 232 (54.3%)         |
+|                                 |                |                  |                     |                     |
+| **RECIST Response**             |                |                  |                     |                     |
+| Responder (CR/PR)               | 48 (46.2%)     | 14 (51.9%)       | 20 (31.2%)          | N/A                 |
+| Non-responder (PD)              | 56 (53.8%)     | 13 (48.1%)       | 44 (68.8%)          | N/A                 |
+|                                 |                |                  |                     |                     |
+| **Survival Outcomes**           |                |                  |                     |                     |
+| Median OS, months (95% CI)      | 22.4 (14.2–NR) | 32.2 (11.1–NR)   | 23.6 (5.5–27.5)     | 79.0 (64.4–103.2)   |
+| OS events, n (%)                | 54 (51.9%)     | 12 (44.4%)       | 36 (56.2%)          | 211 (49.4%)         |
+| Median follow-up, months        | 17.0           | 14.4             | 16.9                | 41.6                |
+| Median PFS, months (95% CI)     | 3.3 (2.9–7.9)  | N/A              | N/A                 | 36.3 (29.9–43.8)^g^ |
+| PFS events, n (%)               | 74 (71.2%)     | N/A              | N/A                 | 297 (70.5%)^g^      |
 
 ^a^ Age available for 57/64 patients. ^b^ Sex available for 57/64 patients. ^c^ Stage available for 52/64 patients. ^d^ TCGA uses AJCC pathologic stage; stages I–IIIA grouped as I/II, stages IIIB–IIIC grouped as III. ^e^ Specimen type available for 98/104 patients. ^f^ TCGA-SKCM is not an ICI trial cohort; treatment history (immunotherapy, chemotherapy, radiation, targeted therapy) is from adjuvant/post-diagnosis records. ^g^ PFS in TCGA-SKCM refers to progression-free interval, not treatment-specific PFS. NR = not reached. ^h^ For TCGA-SKCM, adjuvant/post-diagnosis treatment categories are not mutually exclusive (patients can receive multiple modalities). Treatment history is available for 195/427 (45.7%) patients. ^i^ Other therapy includes hormone therapy (n=4, 0.9%), ancillary therapy (n=2, 0.5%), and other unclassified systemic therapy (n=1, 0.2%).
 
