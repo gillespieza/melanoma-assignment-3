@@ -1,187 +1,99 @@
 ---
-title:
-aliases: 
-tags: 
-created: 2026-07-16 13:36
-cssclasses: table-small
+title: Clinical Characteristics of Data Cohorts
+aliases:
+  - Clinical Cohort Characteristics
+tags:
+  - melanoma
+  - clinical-analysis
+  - cohort-characteristics
+  - survival-analysis
+created: 2026-07-21 19:30
+cssclasses:
+  - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-18 17:09
+updated: 2026-07-21 19:30
 ---
 
 # Clinical Characteristics of Data Cohorts
 
-This report provides a comparative summary of the patient demographic and clinicopathological features across the four cohorts analyzed in this study:
-*   **TCGA-SKCM**: Baseline reference cohort with adjuvant systemic treatment annotations.
-*   **Liu 2019**: Advanced melanoma trial of patients treated with anti-PD-1 monotherapy.
+This report provides a comparative summary of the patient demographic, treatment and survival characteristics across the four cohorts analysed in this study:
+
+*   **TCGA-SKCM**: Baseline reference cohort with recorded treatment history.
+*   **Liu 2019**: Advanced melanoma trial cohort treated with anti-PD-1 monotherapy.
 *   **Hugo 2016**: Anti-PD-1 clinical trial cohort.
-*   **Riaz 2017**: Anti-PD-1 clinical trial cohort (nivolumab-treated).
+*   **Riaz 2017**: Anti-PD-1 clinical trial cohort treated with nivolumab.
 
-## Table 1: Baseline Patient and Disease Characteristics
+The demographic and treatment characteristics were calculated from the available clinical cohort data. Survival characteristics were calculated from the cleaned clinical data used in the Kaplan-Meier analysis.
 
-| Characteristic                  | Liu 2019       | Hugo 2016        | Riaz 2017           | TCGA-SKCM           |
-|:------------------------------- |:-------------- |:---------------- |:------------------- |:------------------- |
-| **N**                           | 104            | 27               | 64                  | 427                 |
-|                                 |                |                  |                     |                     |
-| **Demographics**                |                |                  |                     |                     |
-| Age, median (IQR)               | N/A            | 61.0 (54.0–68.5) | 53.0 (48.0–63.0)^a^ | 58.0 (47.0–70.5)    |
-| Female sex, n (%)               | 43 (41.3%)     | 8 (29.6%)        | 26 (45.6%)^b^       | 162 (37.9%)         |
-|                                 |                |                  |                     |                     |
-| **Disease Stage**               |                |                  |                     |                     |
-| Stage III                       | 6 (5.8%)       | 1 (3.8%)         | 2 (3.1%)^c^         | 166 (39.0%)^d^      |
-| Stage IV                        | 98 (94.2%)     | 26 (96.2%)       | 50 (78.1%)^c^       | 22 (5.2%)^d^        |
-| Stage I/II                      | —              | —                | —                   | 194 (45.5%)^d^      |
-|                                 |                |                  |                     |                     |
-| **Specimen**                    |                |                  |                     |                     |
-| Metastatic site                 | 98 (94.2%)^e^  | 27 (100%)        | 64 (100%)           | 349 (81.7%)         |
-| Primary site                    | —              | —                | —                   | 78 (18.3%)          |
-|                                 |                |                  |                     |                     |
-| **Treatment**                   |                |                  |                     |                     |
-| ICI agent — Pembrolizumab       | 57 (54.8%)     | 27 (100%)        | —                   | 3 (0.7%)^f^         |
-| ICI agent — Nivolumab           | 47 (45.2%)     | —                | 64 (100%)           | 1 (0.2%)^f^         |
-| Prior anti-CTLA-4               | 40 (38.5%)     | N/A              | 31 (48.4%)          | 21 (4.9%)^f^        |
-| Adjuvant Therapy (TCGA only)^h^ |                |                  |                     |                     |
-| — Radiation Therapy             | —              | —                | —                   | 107 (25.1%)         |
-| — Immunotherapy                 | —              | —                | —                   | 68 (15.9%)          |
-| — Chemotherapy                  | —              | —                | —                   | 66 (15.5%)          |
-| — Vaccine                       | —              | —                | —                   | 22 (5.2%)           |
-| — Targeted Therapy              | —              | —                | —                   | 12 (2.8%)           |
-| — Other Therapy^i^              | —              | —                | —                   | 7 (1.6%)            |
-| — No recorded treatment         | —              | —                | —                   | 232 (54.3%)         |
-|                                 |                |                  |                     |                     |
-| **RECIST Response**             |                |                  |                     |                     |
-| Responder (CR/PR)               | 48 (46.2%)     | 14 (51.9%)       | 20 (31.2%)          | N/A                 |
-| Non-responder (PD)              | 56 (53.8%)     | 13 (48.1%)       | 44 (68.8%)          | N/A                 |
-|                                 |                |                  |                     |                     |
-| **Survival Outcomes**           |                |                  |                     |                     |
-| Median OS, months (95% CI)      | 22.4 (14.2–NR) | 32.2 (11.1–NR)   | 23.6 (5.5–27.5)     | 79.0 (64.4–103.2)   |
-| OS events, n (%)                | 54 (51.9%)     | 12 (44.4%)       | 36 (56.2%)          | 211 (49.4%)         |
-| Median follow-up, months        | 17.0           | 14.4             | 16.9                | 41.6                |
-| Median PFS, months (95% CI)     | 3.3 (2.9–7.9)  | N/A              | N/A                 | 36.3 (29.9–43.8)^g^ |
-| PFS events, n (%)               | 74 (71.2%)     | N/A              | N/A                 | 297 (70.5%)^g^      |
+_**Table 1: Baseline Patient and Disease Characteristics**_
 
-^a^ Age available for 57/64 patients. ^b^ Sex available for 57/64 patients. ^c^ Stage available for 52/64 patients. ^d^ TCGA uses AJCC pathologic stage; stages I–IIIA grouped as I/II, stages IIIB–IIIC grouped as III. ^e^ Specimen type available for 98/104 patients. ^f^ TCGA-SKCM is not an ICI trial cohort; treatment history (immunotherapy, chemotherapy, radiation, targeted therapy) is from adjuvant/post-diagnosis records. ^g^ PFS in TCGA-SKCM refers to progression-free interval, not treatment-specific PFS. NR = not reached. ^h^ For TCGA-SKCM, adjuvant/post-diagnosis treatment categories are not mutually exclusive (patients can receive multiple modalities). Treatment history is available for 195/427 (45.7%) patients. ^i^ Other therapy includes hormone therapy (n=4, 0.9%), ancillary therapy (n=2, 0.5%), and other unclassified systemic therapy (n=1, 0.2%).
+| Characteristic                | Liu 2019   | Hugo 2016        | Riaz 2017        | TCGA-SKCM        |
+|:------------------------------|:-----------|:-----------------|:-----------------|:-----------------|
+| **N**                         | 122        | 27               | 107              | 448              |
+|                               |            |                  |                  |                  |
+| **Demographics**              |            |                  |                  |                  |
+| Age, median (IQR)             | N/A        | 61.0 (54.0–68.5) | 56.0 (48.8–63.0) | 57.0 (47.0–70.0) |
+| Female sex, n (%)             | 51 (41.8%) | 8 (29.6%)        | 47 (51.1%)       | 171 (38.2%)      |
+|                               |            |                  |                  |                  |
+| **Treatment**                 |            |                  |                  |                  |
+| ICI agent — Pembrolizumab     | 71 (58.2%) | 0 (0.0%)         | —                | 3 (0.7%)         |
+| ICI agent — Nivolumab         | 51 (41.8%) | 0 (0.0%)         | 0 (0.0%)         | 1 (0.2%)         |
+| Prior anti-CTLA-4             | 0 (0.0%)   | —                | 55 (100.0%)      | —                |
+| Treatment History (TCGA only) | —          | —                | —                |                  |
+| — Radiation Therapy           | —          | —                | —                | 114 (25.4%)      |
+| — Immunotherapy               | —          | —                | —                | 71 (15.8%)       |
+| — Chemotherapy                | —          | —                | —                | 68 (15.2%)       |
+| — Vaccine                     | —          | —                | —                | 22 (4.9%)        |
+| — Targeted Therapy            | —          | —                | —                | 12 (2.7%)        |
+| — Other Therapy               | —          | —                | —                | 7 (1.6%)         |
+| — No recorded treatment       | —          | —                | —                | 244 (54.5%)      |
+|                               |            |                  |                  |                  |
+| **Survival Outcomes**         |            |                  |                  |                  |
+| Median OS, months (95% CI)    | 22.6       | 32.2             | 21.2             | 74.7             |
+| OS events, n (%)              | 62 (50.8%) | 12 (46.2%)       | 63 (62.4%)       | 215 (49.8%)      |
+| Median follow-up, months      | 17.5       | 14.4             | 17.8             | 40.1             |
 
 ## Key Observations
 
-1.  **Cohort Size and Context**: The TCGA-SKCM cohort is the largest ($N=427$) and serves as a genomic reference population with detailed adjuvant treatment histories. The three IO cohorts ($N=27$–$104$) are anti-PD-1 clinical trial cohorts where pre-treatment biopsies are matched to subsequent RECIST response.
-2.  **Response Rates**: Response rates vary substantially: 46.2% (Liu), 50.0% (Hugo), and 25.0% (Riaz). The lower rate in Riaz is consistent with a higher proportion of ipilimumab-pretreated patients (45.0%) and reflects the more refractory population enrolled in the CA209-038 study.
-3.  **Survival**: Median OS ranges from 17.8 months (Riaz) to 79.0 months (TCGA-SKCM). The longer TCGA survival reflects a mixed-stage, non-trial population with longer follow-up (median 41.6 months). Median OS was not reached in Liu or Hugo, consistent with the survival benefit of anti-PD-1 therapy in responding patients.
-4.  **Missing Data**: Age is unavailable for the Liu 2019 cohort. Sex, age, and stage are each missing for 2–5 patients in the Riaz cohort. LDH, ECOG performance status, and PD-L1 expression — standard clinical predictors in ICI trials — are not available in any of the cBioPortal downloads and represent a limitation of this dataset.
-5.  **Specimen Sites**: While TCGA-SKCM contains a mix of primary cutaneous melanomas (18.1%) and metastases (81.9%), the IO cohorts consist almost entirely of metastatic biopsies, consistent with advanced-stage trial enrolment.
+1. **Cohort Size**: The largest cohort is **TCGA-SKCM** with **N = 448** patients. The TCGA-SKCM cohort serves as a genomic reference population with detailed treatment history. The three IO cohorts are anti-PD-1 clinical trial cohorts.
 
----
+2. **Overall Survival**: Median OS was estimated using the Kaplan-Meier survival function. Where the estimated survival probability did not fall below 50% during follow-up, median OS was not reached.
 
-## RECIST Response Distribution
+3. **Follow-up**: **TCGA-SKCM** had the longest median follow-up at **40.1 months**.
 
-The RECIST response distribution (Responder: CR/PR vs. Non-Responder: PD) across the three immunotherapy-treated cohorts (Liu, Hugo, and Riaz) is shown below. A Chi-squared test of homogeneity was performed to assess whether response rates differ significantly across the trials.
+4. **Event Rates**: Observed OS event rates varied between cohorts, reflecting differences in cohort composition, disease stage, treatment context, follow-up duration, and censoring.
 
-![[response_distribution.png]]
+5. **Missing Data**: Age, sex and treatment variables have different levels of availability across cohorts. These differences should be considered when comparing clinical characteristics across datasets.
 
-Response Distribution Stacked Bar
-
-![[response_waffle_chart.png]]
-
-Response Distribution Waffle Chart
-
-
-<table>
-  <tr>
-    <td width="50%">
-      <p align="center"><b>Stacked Bar Chart (Proportions)</b></p>
-      <img src="../../plots/clinical/response_distribution.png" alt="Response Distribution Stacked Bar">
-    </td>
-    <td width="50%">
-      <p align="center"><b>Waffle Chart (Patient Counts)</b></p>
-      <img src="../../plots/clinical/response_waffle_chart.png" alt="Response Distribution Waffle Chart">
-    </td>
-  </tr>
-</table>
-
-### Statistical Summary
-*   **Liu 2019**: Response rate of 46.2% ($n=48$ Responders, $n=56$ Non-Responders, $N=104$)
-*   **Hugo 2016**: Response rate of 51.9% ($n=14$ Responders, $n=13$ Non-Responders, $N=27$)
-*   **Riaz 2017**: Response rate of 31.2% ($n=20$ Responders, $n=44$ Non-Responders, $N=64$)
-*   **Homogeneity Test**: The difference in response rates across the cohorts is not statistically significant (Chi-squared $p = 0.1733$), justifying their combination for joint or multi-cohort machine learning analysis. However, the lower response rate in the Riaz cohort should be noted as a potential source of heterogeneity.
+6. **Interpretation**: These unstratified survival estimates provide a descriptive baseline for subsequent molecular and predictive analyses. Cross-cohort comparisons should be interpreted cautiously because the cohorts differ in clinical context and study design.
 
 ---
 
 ## Overall Survival Curves (KM Plots)
 
-The unstratified Kaplan-Meier overall survival curves for each cohort are shown in the 2x2 grid below. The median overall survival is annotated for each cohort where reached.
+The unstratified Kaplan-Meier overall survival curves for each cohort are shown below. Median overall survival is annotated for each cohort where reached.
 
-![Overall Survival KM Curves (All Cohorts)](../../plots/clinical/km_os_grid.png)
+![[km_os_grid.png]]
 
----
-
-## Overall Survival by Response Status (KM Plots)
-
-To validate the clinical relevance of the response classifications, Overall Survival (OS) was stratified by RECIST response status (Responder: CR/PR vs. Non-responder: PD) for the three clinical trial cohorts.
-
-![Overall Survival by RECIST Response](../../plots/clinical/km_os_by_response.png)
-
-### Key Findings
-*   **Liu 2019**: Highly statistically significant survival separation ($p < 0.0001$). Responders demonstrate a dramatically extended OS, while non-responders have a median OS of approximately 10 months.
-*   **Hugo 2016**: Significant survival advantage for responders ($p = 0.0001$). Responders show long-term survival, whereas non-responders experience rapid decline (median survival around 11 months).
-*   **Riaz 2017**: Significant survival benefit for responders ($p = 0.0053$). Responders exhibit prolonged OS despite the relatively small cohort size and advanced treatment history (45% prior CTLA-4).
-*   **Conclusion**: Clinical response to immunotherapy is a robust surrogate endpoint for overall survival in metastatic melanoma. Patients who achieve complete or partial response (CR/PR) experience a massive, durable survival benefit compared to those with progressive disease (PD).
+_**Overall Survival KM Curves (All Cohorts)**_
 
 ---
 
-## Univariate Associations with Response (Forest Plot)
+## Analysis Notes
 
-To evaluate whether individual baseline clinical and genomic features predict response to anti-PD-1 therapy, univariate Odds Ratios (OR) and 95% Confidence Intervals (95% CI) were calculated across individual trial cohorts (Liu 2019, Hugo 2016, Riaz 2017) and the pooled immunotherapy trial cohort ($N=195$). Categorical variables were evaluated via Fisher's Exact test, and continuous variables (Age, TMB, SNV Neoantigens, Indel Neoantigens) were evaluated per 1 SD increase via univariate logistic regression.
+Overall survival was analysed using the available cohort-specific survival duration and event-status variables.
 
-![Forest Plot of Univariate Odds Ratios](../../plots/clinical/univariate_associations.png)
+Records were excluded from the survival analysis if they had:
 
-### Key Takeaways
-1.  **Driver Mutations**: *NF1* mutated tumours show the highest odds ratio for response in the pooled trial cohort (OR = 2.43, $95\%\text{ CI: } 1.07 - 5.50, p = 0.0386$), while *BRAF* mutations (OR = 1.06, $p = 0.884$) show virtually no univariate association with response.
-2.  **Anatomical Stage Trend**: Clinical Stage IV was associated with an OR of 6.06 relative to Stage III in pooled analysis ($p = 0.0826$), reflecting small Stage III representation in checkpoint blockade trial cohorts.
-3.  **TMB & Neoantigen Trends**: TMB shows a positive trend with response in the pooled trial cohort (OR = 1.37 per SD increase, $p = 0.160$), with consistent positive point estimates across Liu 2019 and Hugo 2016.
-4.  **Demographics**: Age and Sex show no significant association with immunotherapy response (OR $\approx$ 1.00 - 1.26), confirming demographic balance across treatment groups.
+*   Missing survival time.
+*   Missing survival event status.
+*   Non-numeric survival values.
+*   A survival time less than or equal to zero.
 
----
+Median overall survival was estimated using the Kaplan-Meier survival function. Where the estimated survival probability did not fall below 50% during follow-up, median OS was reported as **NR (not reached)**.
 
-## Patient Selection (CONSORT Flowcharts)
+Treatment percentages use the number of patients with an available treatment annotation as the denominator where this differs from the total cohort size. TCGA treatment-history categories are based on binary treatment-type indicators and are not necessarily mutually exclusive.
 
-The flowcharts below document the cohort attrition and selection process from raw downloads to final cleaned datasets:
+The analysis is descriptive and unstratified. It does not adjust for demographic, clinical, molecular, treatment, or study-specific confounding factors.
 
-### Liu 2019 Attrition Flowchart
-```mermaid
-graph TD
-    A["Raw Merged Cohort (N = 122)"] --> B{"Response Filter"}
-    B -->|"Excluded SD, MR, or Missing Response (n = 18)"| C("Excluded (n = 18)")
-    B -->|"Included CR, PR, PD (n = 104)"| D["Response-Aligned Cohort (N = 104)"]
-    D --> E{"Expression Data Alignment"}
-    E -->|"No Expression Matching Mismatch (n = 0)"| F["Final Cleaned Cohort (N = 104)"]
-```
-
-### Hugo 2016 Attrition Flowchart
-```mermaid
-graph TD
-    A["Raw Merged Cohort (N = 27)"] --> B{"Response Filter"}
-    B -->|"Excluded SD, MR, or Missing Response (n = 0)"| C["Response-Aligned Cohort (N = 27)"]
-    C --> D{"Expression Data Alignment"}
-    D -->|"No Expression Matching Mismatch (n = 0)"| E["Final Cleaned Cohort (N = 27)"]
-```
-
-### Riaz 2017 Attrition Flowchart
-```mermaid
-graph TD
-    A["Raw Merged Cohort (N = 107)"] --> B{"Response Filter"}
-    B -->|"Excluded SD, MR, or Missing Response (n = 43)"| C("Excluded (n = 43)")
-    B -->|"Included CR, PR, PD (n = 64)"| D["Response-Aligned Cohort (N = 64)"]
-    D --> E{"Expression Data Alignment"}
-    E -->|"No Expression Matching Mismatch (n = 0)"| F["Final Cleaned Cohort (N = 64)"]
-```
-
-### TCGA-SKCM Attrition Flowchart
-```mermaid
-graph TD
-    A["Raw Merged Cohort (N = 448)<br>442 Patients"] --> B{"Clinical QC Check<br>(Duplicate Patient IDs)"}
-    B -->|"Excluded Duplicate Patient Records (n = 6)"| C("Excluded (n = 6)")
-    B -->|"Unique Patient Records (n = 442)"| D["QC-Passed Cohort (N = 442)"]
-    D --> E{"Survival Data QC Check<br>(Invalid/Missing OS)"}
-    E -->|"Excluded Invalid OS Data (n = 15)"| F("Excluded (n = 15)")
-    E -->|"Valid Survival Records (n = 427)"| G["Final Cleaned Cohort (N = 427)"]
-```

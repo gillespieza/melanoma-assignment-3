@@ -33,7 +33,7 @@ def load_liu_2019(data_dir):
     
     df_expr = pd.read_csv(expr_file, index_col="SAMPLE_ID")
     df_clin = pd.read_csv(clin_file, index_col="SAMPLE_ID")
-    df_clin = _add_legacy_aliases(df_clin, mut_file)
+    # df_clin = _add_legacy_aliases(df_clin, mut_file)
     
     return df_expr, df_clin
 
@@ -52,8 +52,7 @@ def load_hugo_2016(data_dir):
     
     df_expr = pd.read_csv(expr_file, index_col="SAMPLE_ID")
     df_clin = pd.read_csv(clin_file, index_col="SAMPLE_ID")
-    df_clin = _add_legacy_aliases(df_clin, mut_file)
-    
+
     return df_expr, df_clin
 
 
@@ -71,6 +70,5 @@ def load_riaz_2017(data_dir):
     
     df_expr = pd.read_csv(expr_file, index_col="SAMPLE_ID")
     df_clin = pd.read_csv(clin_file, index_col="SAMPLE_ID")
-    df_clin = _add_legacy_aliases(df_clin, mut_file)
-    
+
     return df_expr, df_clin
