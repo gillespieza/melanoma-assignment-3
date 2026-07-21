@@ -17,8 +17,11 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-# Bootstrap project root resolution for top-level import
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# ---------------------------------------------------------------------------
+# Bootstrap project root resolution for top-level imports
+# ---------------------------------------------------------------------------
+
+BASE_DIR = Path(__file__).resolve().parents[2]
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
@@ -30,9 +33,9 @@ from src.utils.plotting import save_fig
 
 # Module-level Constants
 DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
-PLOT_DIR = find_project_root(Path(__file__).resolve()) / "plots" / "exploratory"
-REPORT_DIR = find_project_root(Path(__file__).resolve()) / "reports" / "pillar-1-cohorts-and-preprocessing"
-LOG_DIR = find_project_root(Path(__file__).resolve()) / "logs"
+PLOT_DIR = BASE_DIR / "plots" / "exploratory"
+REPORT_DIR = BASE_DIR  / "reports" / "pillar-1-cohorts-and-preprocessing"
+LOG_DIR = BASE_DIR / "logs"
 LOG_PATH = LOG_DIR / "run_expression_heatmap.log"
 
 
@@ -149,16 +152,32 @@ def main() -> None:
         metric="euclidean",
         cmap="viridis",
         col_colors=col_colors,
-        figsize=(12, 10),
+        figsize=(12, 14),
         yticklabels=True,
         xticklabels=False,
-        cbar_pos=(0.02, 0.8, 0.05, 0.15),
+        cbar_pos=(0.02, 0.8, 0.035, 0.15),
         cbar_kws={"label": "log2(Expression + 1)"},
     )
+
     g_raw.ax_col_dendrogram.set_title(
-        "Expression Heatmap Before Batch Correction (Top 50 Genes by Variance)", fontsize=14, fontweight="bold", pad=15
+        "Expression Heatmap Before Batch Correction (Top 50 Genes by Variance)",
+        fontsize=14,
+        fontweight="bold",
+        pad=15,
     )
-    g_raw.ax_row_dendrogram.legend(handles=legend_elements, loc="lower left", bbox_to_anchor=(0.2, 1.15), ncol=2, frameon=True)
+
+    g_raw.fig.subplots_adjust(
+        top=0.90,
+        right=0.95,
+    )
+
+    g_raw.ax_col_dendrogram.legend(
+        handles=legend_elements,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.25),
+        ncol=4,
+        frameon=True,
+    )
 
     raw_heatmap_path = PLOT_DIR / "heatmap_top_variance_genes_raw.png"
     save_fig(g_raw.fig, raw_heatmap_path)
@@ -171,18 +190,34 @@ def main() -> None:
         metric="euclidean",
         cmap="RdBu_r",
         col_colors=col_colors,
-        figsize=(12, 10),
+        figsize=(12, 14),
         yticklabels=True,
         xticklabels=False,
         vmin=-3,
         vmax=3,
-        cbar_pos=(0.02, 0.8, 0.05, 0.15),
+        cbar_pos=(0.02, 0.8, 0.035, 0.15),
         cbar_kws={"label": "Z-score Expression"},
     )
+
     g_scaled.ax_col_dendrogram.set_title(
-        "Expression Heatmap After Batch Correction (Top 50 Genes by Variance)", fontsize=14, fontweight="bold", pad=15
+        "Expression Heatmap After Batch Correction (Top 50 Genes by Variance)",
+        fontsize=14,
+        fontweight="bold",
+        pad=15,
     )
-    g_scaled.ax_row_dendrogram.legend(handles=legend_elements, loc="lower left", bbox_to_anchor=(0.2, 1.15), ncol=2, frameon=True)
+
+    g_scaled.fig.subplots_adjust(
+        top=0.85,
+        right=0.95,
+    )
+
+    g_scaled.ax_col_dendrogram.legend(
+        handles=legend_elements,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.25),
+        ncol=4,
+        frameon=True,
+    )
 
     scaled_heatmap_path = PLOT_DIR / "heatmap_top_variance_genes_standardized.png"
     save_fig(g_scaled.fig, scaled_heatmap_path)
