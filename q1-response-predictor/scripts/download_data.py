@@ -115,7 +115,12 @@ REORGANISATION_RETRY_DELAY_SECONDS = 2
 
 
 def format_relative_path(path: Path) -> str:
-    """Return a project-relative path for readable console output."""
+    """Return a project-relative path for readable console output.
+
+    Paths outside the project root are returned as absolute paths.
+    """
+    path = Path(path).resolve()
+
     try:
         return path.relative_to(PROJECT_ROOT).as_posix()
     except ValueError:
@@ -287,7 +292,8 @@ def download_and_extract_dataset(
     """
     target_dir = RAW_DIR / dataset.raw_directory
     tar_path = RAW_DIR / f"{dataset.study_id}.tar.gz"
-    extracted_dir = RAW_DIR / dataset.study_id
+    extraction_root = RAW_DIR / "_extracted"
+    extracted_dir = extraction_root / dataset.study_id
 
     if is_dataset_present(dataset):
         print(
@@ -319,9 +325,11 @@ def download_and_extract_dataset(
 
         download_file(url, tar_path)
 
+        extraction_root.mkdir(parents=True, exist_ok=True)
+
         extract_tar_gz(
             tar_path=tar_path,
-            extract_to=RAW_DIR,
+            extract_to=extraction_root,
         )
 
         reorganise_extracted_dataset(
@@ -343,6 +351,7 @@ def download_and_extract_dataset(
         raise
 
     finally:
+        shutil.rmtree(extraction_root, ignore_errors=True)
         if tar_path.exists():
             tar_path.unlink(missing_ok=True)
 
