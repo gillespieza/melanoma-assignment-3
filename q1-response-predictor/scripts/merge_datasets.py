@@ -1,429 +1,1329 @@
 """
-Merge Datasets: Harmonising Clinical, Expression, and Genomic Features Across Melanoma Cohorts.
+Merge Cleaned Melanoma Cohorts.
 
-Intersects common gene features across TCGA-SKCM, Liu 2019, Hugo 2016, and Riaz 2017,
-independently Z-score standardises expression matrices to prevent cross-cohort data leakage,
-harmonises clinical response metadata, and exports two unified merged datasets to data/processed/merged/:
-1. Full Merged Cohort (All 4 datasets, all patients)
-2. Immunotherapy-Only Merged Cohort (Trial cohorts + TCGA immunotherapy-treated sub-cohort)
+Loads configuration-driven cleaned datasets, harmonises clinical metadata,
+intersects common expression genes, independently Z-score standardises
+expression within each cohort, and produces:
+
+1. Full merged cohort:
+   All configured datasets.
+
+2. Immunotherapy-only merged cohort:
+   Immunotherapy-treated samples from configured immunotherapy cohorts,
+   plus the TCGA immunotherapy-treated subset.
+
+The merge stage consumes only the outputs of clean_data.py:
+
+    clin_cleaned.csv
+    expr_cleaned.csv
+    mutations_cleaned.csv
+
+Dataset-specific paths and processing strategies are defined in:
+
+    config/datasets.yaml
+
+Domain-level constants are defined in:
+
+    src/config/constants.py
 """
 
+from __future__ import annotations
+
 import contextlib
-from pathlib import Path
 import sys
-from typing import List, Tuple
+from pathlib import Path
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
 
-# Bootstrap project root resolution for top-level import
-BASE_DIR = Path(__file__).resolve().parent.parent
-if str(BASE_DIR) not in sys.path:
-    sys.path.append(str(BASE_DIR))
 
-from src.utils.logging import TeeStream
-from src.utils.paths import find_project_root
+# ============================================================================
+# Bootstrap project root resolution
+# ============================================================================
 
-# Base directories
-DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
-PROCESSED_DIR = DATA_DIR / "processed"
-MERGED_DIR = PROCESSED_DIR / "merged"
-LOG_DIR = find_project_root(Path(__file__).resolve()) / "logs"
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT_CANDIDATE = SCRIPT_DIR.parent
+
+if str(PROJECT_ROOT_CANDIDATE) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT_CANDIDATE))
+
+
+# ============================================================================
+# Project imports
+# ============================================================================
+
+from src.config.constants import (
+    DRIVER_GENES,
+    GENOMIC_FEATURES,
+)
+from src.config.datasets import (
+    DatasetConfig,
+    load_dataset_config,
+)
+from src.utils.logging import (
+    TeeStream,
+    display_path,
+)
+from src.utils.paths import (
+    CONFIG_DIR,
+    LOG_DIR,
+    PROCESSED_DIR,
+)
+
+
+# ============================================================================
+# Configuration
+# ============================================================================
+
+CONFIG_PATH = CONFIG_DIR / "datasets.yaml"
 LOG_PATH = LOG_DIR / "merge_datasets.log"
 
+MERGED_DIR = PROCESSED_DIR / "merged"
+
 FULL_DIR = MERGED_DIR / "full"
-IMMUNO_DIR = MERGED_DIR / "immunotherapy"
+IMMUNOTHERAPY_DIR = MERGED_DIR / "immunotherapy"
 
 
-def load_tcga(processed_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Loads TCGA-SKCM cleaned expression and clinical data, harmonising column names.
+# ============================================================================
+# Type aliases
+# ============================================================================
 
-    Args:
-        processed_dir: Base processed data directory.
+DatasetFrames = Tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+]
+
+
+# ============================================================================
+# Dataset loading
+# ============================================================================
+
+
+def _get_dataset_directory(
+    dataset: DatasetConfig,
+) -> Path:
+    """
+    Return the processed directory for a configured dataset.
+    """
+    return (
+        PROCESSED_DIR
+        / dataset.processed_directory
+    )
+
+
+def _load_cleaned_expression(
+    dataset: DatasetConfig,
+) -> pd.DataFrame:
+    """
+    Load a cleaned expression matrix.
 
     Returns:
-        Tuple of (expression DataFrame, harmonised clinical DataFrame).
+        DataFrame indexed by SAMPLE_ID with genes as columns.
     """
-    print("Loading TCGA-SKCM...")
-    tcga_dir = processed_dir / "skcm_tcga_pan_can_atlas_2018"
-    df_expr = pd.read_csv(tcga_dir / "expr_cleaned.csv", index_col="SAMPLE_ID")
-    df_clin = pd.read_csv(tcga_dir / "clin_cleaned.csv")
+    dataset_dir = _get_dataset_directory(dataset)
+    expression_path = dataset_dir / "expr_cleaned.csv"
 
-    common_ids = list(df_expr.index.intersection(df_clin["SAMPLE_ID"]))
-    df_expr_log = df_expr.loc[common_ids]
-    df_clin = df_clin.set_index("SAMPLE_ID").loc[common_ids]
-
-    df_clin_harm = pd.DataFrame(index=df_clin.index)
-    df_clin_harm["PATIENT_ID"] = df_clin["PATIENT_ID"]
-    df_clin_harm["COHORT"] = "TCGA"
-    df_clin_harm["OS_MONTHS"] = df_clin["OS_MONTHS"]
-    df_clin_harm["OS_STATUS"] = df_clin["OS_STATUS"].astype(float)
-    df_clin_harm["RESPONSE"] = np.nan
-    df_clin_harm["RESPONSE_BINARY"] = np.nan
-    df_clin_harm["AGE"] = df_clin["AGE"]
-    df_clin_harm["RACE"] = df_clin["RACE"]
-    df_clin_harm["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female"}).fillna("N/A")
-    df_clin_harm["SPECIMEN_TYPE"] = df_clin["SAMPLE_TYPE"].map({"Primary": "Primary", "Metastatic": "Metastatic"}).fillna("N/A")
-
-    if "TX_TYPE_IMMUNOTHERAPY" in df_clin.columns:
-        df_clin_harm["IMMUNOTHERAPY"] = df_clin["TX_TYPE_IMMUNOTHERAPY"].astype(int)
-    else:
-        df_clin_harm["IMMUNOTHERAPY"] = 0
-
-    return df_expr_log, df_clin_harm
-
-
-def load_liu(processed_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Loads Liu 2019 cleaned expression and clinical data, harmonising column names.
-
-    Args:
-        processed_dir: Base processed data directory.
-
-    Returns:
-        Tuple of (expression DataFrame, harmonised clinical DataFrame).
-    """
-    print("Loading Liu 2019...")
-    liu_dir = processed_dir / "liu_2019"
-    df_expr = pd.read_csv(liu_dir / "expr_cleaned.csv", index_col=0)
-    df_clin = pd.read_csv(liu_dir / "clin_cleaned.csv", index_col="SAMPLE_ID")
-
-    common_ids = list(set(df_expr.index) & set(df_clin.index))
-    df_expr = df_expr.loc[common_ids]
-    df_clin = df_clin.loc[common_ids]
-
-    df_clin_harm = pd.DataFrame(index=df_clin.index)
-    df_clin_harm["PATIENT_ID"] = df_clin["PATIENT_ID"]
-    df_clin_harm["COHORT"] = "Liu_2019"
-    df_clin_harm["OS_MONTHS"] = df_clin["OS_MONTHS"]
-    df_clin_harm["OS_STATUS"] = df_clin["OS_STATUS"].map({"1:DECEASED": 1.0, "0:LIVING": 0.0})
-    df_clin_harm["RESPONSE"] = df_clin["RESPONSE"]
-    df_clin_harm["RESPONSE_BINARY"] = df_clin["RESPONSE_BINARY"].astype(float)
-    df_clin_harm["AGE"] = np.nan
-    df_clin_harm["RACE"] = np.nan
-    df_clin_harm["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female"}).fillna("N/A")
-
-    if "BIOPSY_SITE" in df_clin.columns:
-        spec_map = lambda s: "Primary" if "primary" in str(s).lower() else ("Metastatic" if pd.notna(s) and str(s).strip() != "" else "N/A")
-        df_clin_harm["SPECIMEN_TYPE"] = df_clin["BIOPSY_SITE"].map(spec_map)
-    else:
-        df_clin_harm["SPECIMEN_TYPE"] = "N/A"
-
-    df_clin_harm["IMMUNOTHERAPY"] = 1
-    return df_expr, df_clin_harm
-
-
-def load_hugo(processed_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Loads Hugo 2016 cleaned expression and clinical data, harmonising column names.
-
-    Args:
-        processed_dir: Base processed data directory.
-
-    Returns:
-        Tuple of (expression DataFrame, harmonised clinical DataFrame).
-    """
-    print("Loading Hugo 2016...")
-    hugo_dir = processed_dir / "hugo_2016"
-    df_expr = pd.read_csv(hugo_dir / "expr_cleaned.csv", index_col=0)
-    df_clin = pd.read_csv(hugo_dir / "clin_cleaned.csv", index_col="SAMPLE_ID")
-
-    common_ids = list(set(df_expr.index) & set(df_clin.index))
-    df_expr = df_expr.loc[common_ids]
-    df_clin = df_clin.loc[common_ids]
-
-    df_clin_harm = pd.DataFrame(index=df_clin.index)
-    df_clin_harm["PATIENT_ID"] = df_clin["PATIENT_ID"]
-    df_clin_harm["COHORT"] = "Hugo_2016"
-    df_clin_harm["OS_MONTHS"] = df_clin["OS_MONTHS"]
-    df_clin_harm["OS_STATUS"] = df_clin["OS_STATUS"].astype(float)
-    df_clin_harm["RESPONSE"] = df_clin["RESPONSE"]
-    df_clin_harm["RESPONSE_BINARY"] = df_clin["RESPONSE_BINARY"].astype(float)
-    df_clin_harm["AGE"] = df_clin["AGE"].astype(float)
-    df_clin_harm["RACE"] = np.nan
-    df_clin_harm["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female", "M": "Male", "F": "Female"}).fillna("N/A")
-    df_clin_harm["SPECIMEN_TYPE"] = "Metastatic"
-    df_clin_harm["IMMUNOTHERAPY"] = 1
-    return df_expr, df_clin_harm
-
-
-def load_riaz(processed_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Loads Riaz 2017 cleaned expression and clinical data, harmonising column names.
-
-    Args:
-        processed_dir: Base processed data directory.
-
-    Returns:
-        Tuple of (expression DataFrame, harmonised clinical DataFrame).
-    """
-    print("Loading Riaz 2017...")
-    riaz_dir = processed_dir / "riaz_2017"
-    df_expr = pd.read_csv(riaz_dir / "expr_cleaned.csv", index_col=0)
-    df_clin = pd.read_csv(riaz_dir / "clin_cleaned.csv", index_col="SAMPLE_ID")
-
-    common_ids = list(set(df_expr.index) & set(df_clin.index))
-    df_expr = df_expr.loc[common_ids]
-    df_clin = df_clin.loc[common_ids]
-
-    df_clin_harm = pd.DataFrame(index=df_clin.index)
-    df_clin_harm["PATIENT_ID"] = df_clin["PATIENT_ID"]
-    df_clin_harm["COHORT"] = "Riaz_2017"
-    df_clin_harm["OS_MONTHS"] = df_clin["OS_MONTHS"]
-    df_clin_harm["OS_STATUS"] = df_clin["OS_STATUS"].astype(float)
-    df_clin_harm["RESPONSE"] = df_clin["RESPONSE"]
-    df_clin_harm["RESPONSE_BINARY"] = df_clin["RESPONSE_BINARY"].astype(float)
-    df_clin_harm["AGE"] = df_clin["AGE"].astype(float)
-    df_clin_harm["RACE"] = df_clin["RACE"]
-    df_clin_harm["SEX"] = df_clin["SEX"].map({"Male": "Male", "Female": "Female"}).fillna("N/A")
-    df_clin_harm["SPECIMEN_TYPE"] = "Metastatic"
-    df_clin_harm["IMMUNOTHERAPY"] = 1
-    return df_expr, df_clin_harm
-
-
-def zscore_expression(df: pd.DataFrame) -> pd.DataFrame:
-    """Standardises expression matrix columns individually (Z-score scaling).
-
-    Args:
-        df: Expression DataFrame.
-
-    Returns:
-        Z-score scaled DataFrame.
-    """
-    means = df.mean(axis=0)
-    stds = df.std(axis=0).replace(0, 1.0).fillna(1.0)
-    return (df - means) / stds
-
-
-def parse_tcga_mutations(raw_dir: Path, sample_ids: List[str]) -> pd.DataFrame:
-    """Parses raw TCGA MAF file to extract binary status for key driver mutations (BRAF, NRAS, NF1).
-
-    Args:
-        raw_dir: Directory containing TCGA raw files.
-        sample_ids: List of TCGA sample IDs to restrict matrix to.
-
-    Returns:
-        Binary driver mutation DataFrame.
-    """
-    mut_path = raw_dir / "data_mutations.txt"
-    if not mut_path.exists():
-        return pd.DataFrame(0, index=sample_ids, columns=["mut_BRAF", "mut_NRAS", "mut_NF1"])
-
-    chunks = []
-    for chunk in pd.read_csv(
-        mut_path,
-        sep="\t",
-        comment="#",
-        low_memory=False,
-        usecols=["Hugo_Symbol", "Tumor_Sample_Barcode", "Variant_Classification"],
-        chunksize=100000,
-    ):
-        filtered = chunk[chunk["Hugo_Symbol"].isin(["BRAF", "NRAS", "NF1"])]
-        chunks.append(filtered)
-
-    df_mut = pd.concat(chunks, ignore_index=True)
-
-    non_syn = [
-        "Missense_Mutation", "Nonsense_Mutation", "Frame_Shift_Del",
-        "Frame_Shift_Ins", "In_Frame_Del", "In_Frame_Ins",
-        "Splice_Site", "Nonstop_Mutation", "Translation_Start_Site",
-    ]
-    df_mut = df_mut[df_mut["Variant_Classification"].isin(non_syn)]
-
-    df_mut["SAMPLE_ID"] = df_mut["Tumor_Sample_Barcode"].apply(lambda x: x[:15] if isinstance(x, str) else "").str.upper()
-    df_mut = df_mut[df_mut["SAMPLE_ID"].isin(sample_ids)]
-
-    pivoted = df_mut.groupby(["SAMPLE_ID", "Hugo_Symbol"]).size().unstack(fill_value=0)
-    for gene in ["BRAF", "NRAS", "NF1"]:
-        if gene not in pivoted.columns:
-            pivoted[gene] = 0
-
-    pivoted = (pivoted[["BRAF", "NRAS", "NF1"]] > 0).astype(int)
-    pivoted.columns = ["mut_BRAF", "mut_NRAS", "mut_NF1"]
-    pivoted = pivoted.reindex(sample_ids, fill_value=0)
-    return pivoted
-
-
-def build_merged_genomic(df_clin_merged: pd.DataFrame, output_dir: Path) -> None:
-    """Builds and exports unified merged_genomic.csv containing mutation and neoantigen features.
-
-    Args:
-        df_clin_merged: Merged clinical DataFrame.
-        output_dir: Target output directory.
-    """
-    raw_tcga_dir = DATA_DIR / "raw" / "skcm_tcga_pan_can_atlas_2018"
-    print(f"Building merged genomic features file for {output_dir.relative_to(BASE_DIR).as_posix()} cohort...")
-
-    cohort_data = {}
-
-    for c_name, c_dir in [
-        ("Liu_2019", PROCESSED_DIR / "liu_2019"),
-        ("Hugo_2016", PROCESSED_DIR / "hugo_2016"),
-        ("Riaz_2017", PROCESSED_DIR / "riaz_2017"),
-    ]:
-        df_c_clin = pd.read_csv(c_dir / "clin_cleaned.csv", index_col="SAMPLE_ID")
-        df_c_mut = pd.read_csv(c_dir / "mutations_cleaned.csv", index_col="SAMPLE_ID")
-        df_c_mut = df_c_mut[["BRAF", "NRAS", "NF1"]].rename(
-            columns={"BRAF": "mut_BRAF", "NRAS": "mut_NRAS", "NF1": "mut_NF1"}
+    if not expression_path.exists():
+        raise FileNotFoundError(
+            "Cleaned expression file not found: "
+            f"{display_path(expression_path)}"
         )
-        cohort_data[c_name] = df_c_clin.join(df_c_mut, how="left")
 
-    df_tcga_clin = pd.read_csv(PROCESSED_DIR / "skcm_tcga_pan_can_atlas_2018" / "clin_cleaned.csv", index_col="SAMPLE_ID")
-    df_tcga_mut = parse_tcga_mutations(raw_tcga_dir, df_tcga_clin.index.tolist())
-    cohort_data["TCGA"] = df_tcga_clin.join(df_tcga_mut, how="left")
+    df_expr = pd.read_csv(
+        expression_path,
+        index_col=0,
+    )
+
+    df_expr.index = (
+        df_expr.index
+        .astype(str)
+        .str.strip()
+        .str.upper()
+    )
+
+    df_expr.index.name = "SAMPLE_ID"
+
+    return df_expr
+
+
+def _load_cleaned_clinical(
+    dataset: DatasetConfig,
+) -> pd.DataFrame:
+    """
+    Load a cleaned clinical dataset.
+
+    Returns:
+        DataFrame indexed by SAMPLE_ID.
+    """
+    dataset_dir = _get_dataset_directory(dataset)
+    clinical_path = dataset_dir / "clin_cleaned.csv"
+
+    if not clinical_path.exists():
+        raise FileNotFoundError(
+            "Cleaned clinical file not found: "
+            f"{display_path(clinical_path)}"
+        )
+
+    df_clin = pd.read_csv(
+        clinical_path,
+    )
+
+    if "SAMPLE_ID" not in df_clin.columns:
+        raise ValueError(
+            "Cleaned clinical file does not contain "
+            f"SAMPLE_ID: {display_path(clinical_path)}"
+        )
+
+    df_clin["SAMPLE_ID"] = (
+        df_clin["SAMPLE_ID"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+    )
+
+    df_clin = df_clin.set_index(
+        "SAMPLE_ID"
+    )
+
+    df_clin.index.name = "SAMPLE_ID"
+
+    return df_clin
+
+
+def _load_cleaned_mutations(
+    dataset: DatasetConfig,
+) -> pd.DataFrame:
+    """
+    Load a cleaned binary mutation matrix.
+
+    Returns:
+        DataFrame indexed by SAMPLE_ID or patient identifier,
+        with gene symbols as columns.
+    """
+    dataset_dir = _get_dataset_directory(dataset)
+    mutation_path = dataset_dir / "mutations_cleaned.csv"
+
+    if not mutation_path.exists():
+        print(
+            f"  No cleaned mutation file found for "
+            f"{dataset.cohort_name}. "
+            "Using an empty mutation matrix."
+        )
+
+        return pd.DataFrame()
+
+    df_mut = pd.read_csv(
+        mutation_path,
+        index_col=0,
+    )
+
+    df_mut.index = (
+        df_mut.index
+        .astype(str)
+        .str.strip()
+        .str.upper()
+    )
+
+    df_mut.index.name = "SAMPLE_ID"
+
+    return df_mut
+
+
+def load_dataset(
+    dataset: DatasetConfig,
+) -> DatasetFrames:
+    """
+    Load all cleaned outputs for one configured dataset.
+
+    Returns:
+        Tuple containing:
+
+        - expression DataFrame;
+        - clinical DataFrame;
+        - mutation DataFrame.
+    """
+    print(
+        f"Loading {dataset.cohort_name} "
+        f"({dataset.study_id})..."
+    )
+
+    df_expr = _load_cleaned_expression(
+        dataset
+    )
+
+    df_clin = _load_cleaned_clinical(
+        dataset
+    )
+
+    df_mut = _load_cleaned_mutations(
+        dataset
+    )
+
+    print(
+        f"  Expression: {df_expr.shape[0]:,} samples × "
+        f"{df_expr.shape[1]:,} genes"
+    )
+
+    print(
+        f"  Clinical:   {df_clin.shape[0]:,} samples × "
+        f"{df_clin.shape[1]:,} features"
+    )
+
+    print(
+        f"  Mutations:  {df_mut.shape[0]:,} samples × "
+        f"{df_mut.shape[1]:,} genes"
+    )
+
+    return (
+        df_expr,
+        df_clin,
+        df_mut,
+    )
+
+
+# ============================================================================
+# Clinical harmonisation
+# ============================================================================
+
+
+def _normalise_os_status(
+    series: pd.Series,
+) -> pd.Series:
+    """
+    Convert common survival-status representations to binary values.
+    """
+    if pd.api.types.is_numeric_dtype(series):
+        return pd.to_numeric(
+            series,
+            errors="coerce",
+        )
+
+    status_map = {
+        "1:DECEASED": 1.0,
+        "0:LIVING": 0.0,
+        "DECEASED": 1.0,
+        "LIVING": 0.0,
+        "DEAD": 1.0,
+        "ALIVE": 0.0,
+        "1": 1.0,
+        "0": 0.0,
+    }
+
+    return (
+        series
+        .astype(str)
+        .str.strip()
+        .str.upper()
+        .map(status_map)
+    )
+
+
+def _normalise_sex(
+    series: pd.Series,
+) -> pd.Series:
+    """
+    Harmonise sex values.
+    """
+    sex_map = {
+        "MALE": "Male",
+        "M": "Male",
+        "FEMALE": "Female",
+        "F": "Female",
+    }
+
+    return (
+        series
+        .astype(str)
+        .str.strip()
+        .str.upper()
+        .map(sex_map)
+        .fillna("N/A")
+    )
+
+
+def _normalise_specimen_type(
+    series: pd.Series,
+) -> pd.Series:
+    """
+    Harmonise specimen-type descriptions.
+    """
+    def classify(value: object) -> str:
+        if pd.isna(value):
+            return "N/A"
+
+        value = str(value).strip().lower()
+
+        if not value:
+            return "N/A"
+
+        if "primary" in value:
+            return "Primary"
+
+        if (
+            "metastatic" in value
+            or "metastasis" in value
+            or "metastase" in value
+        ):
+            return "Metastatic"
+
+        return "N/A"
+
+    return series.map(classify)
+
+
+def _harmonise_clinical(
+    df_clin: pd.DataFrame,
+    dataset: DatasetConfig,
+) -> pd.DataFrame:
+    """
+    Convert cohort-specific clinical data to a common schema.
+    """
+    df = pd.DataFrame(
+        index=df_clin.index
+    )
+
+    # ------------------------------------------------------------------
+    # Required identifiers
+    # ------------------------------------------------------------------
+
+    if "PATIENT_ID" in df_clin.columns:
+        pass
+
+    # ------------------------------------------------------------------
+    # Patient identifier
+    # ------------------------------------------------------------------
+
+    if "PATIENT_ID" in df_clin.columns:
+        df["PATIENT_ID"] = df_clin[
+            "PATIENT_ID"
+        ]
+    else:
+        df["PATIENT_ID"] = np.nan
+
+    # ------------------------------------------------------------------
+    # Cohort
+    # ------------------------------------------------------------------
+
+    df["COHORT"] = dataset.cohort_name
+
+    # ------------------------------------------------------------------
+    # Overall survival
+    # ------------------------------------------------------------------
+
+    if "OS_MONTHS" in df_clin.columns:
+        df["OS_MONTHS"] = pd.to_numeric(
+            df_clin["OS_MONTHS"],
+            errors="coerce",
+        )
+    else:
+        df["OS_MONTHS"] = np.nan
+
+    if "OS_STATUS" in df_clin.columns:
+        df["OS_STATUS"] = _normalise_os_status(
+            df_clin["OS_STATUS"]
+        )
+    else:
+        df["OS_STATUS"] = np.nan
+
+    # ------------------------------------------------------------------
+    # Response
+    # ------------------------------------------------------------------
+
+    if "RESPONSE" in df_clin.columns:
+        df["RESPONSE"] = df_clin[
+            "RESPONSE"
+        ]
+    else:
+        df["RESPONSE"] = np.nan
+
+    if "RESPONSE_BINARY" in df_clin.columns:
+        df["RESPONSE_BINARY"] = pd.to_numeric(
+            df_clin["RESPONSE_BINARY"],
+            errors="coerce",
+        )
+    else:
+        df["RESPONSE_BINARY"] = np.nan
+
+    # ------------------------------------------------------------------
+    # Demographics
+    # ------------------------------------------------------------------
+
+    if "AGE" in df_clin.columns:
+        df["AGE"] = pd.to_numeric(
+            df_clin["AGE"],
+            errors="coerce",
+        )
+    else:
+        df["AGE"] = np.nan
+
+    if "RACE" in df_clin.columns:
+        df["RACE"] = df_clin[
+            "RACE"
+        ]
+    else:
+        df["RACE"] = np.nan
+
+    if "SEX" in df_clin.columns:
+        df["SEX"] = _normalise_sex(
+            df_clin["SEX"]
+        )
+    else:
+        df["SEX"] = "N/A"
+
+    # ------------------------------------------------------------------
+    # Specimen type
+    # ------------------------------------------------------------------
+
+    if "SPECIMEN_TYPE" in df_clin.columns:
+        df["SPECIMEN_TYPE"] = (
+            _normalise_specimen_type(
+                df_clin["SPECIMEN_TYPE"]
+            )
+        )
+
+    elif "SAMPLE_TYPE" in df_clin.columns:
+        df["SPECIMEN_TYPE"] = (
+            _normalise_specimen_type(
+                df_clin["SAMPLE_TYPE"]
+            )
+        )
+
+    elif "BIOPSY_SITE" in df_clin.columns:
+        df["SPECIMEN_TYPE"] = (
+            _normalise_specimen_type(
+                df_clin["BIOPSY_SITE"]
+            )
+        )
+
+    else:
+        df["SPECIMEN_TYPE"] = "N/A"
+
+    # ------------------------------------------------------------------
+    # Immunotherapy status
+    # ------------------------------------------------------------------
+
+    if "IMMUNOTHERAPY" in df_clin.columns:
+        df["IMMUNOTHERAPY"] = pd.to_numeric(
+            df_clin["IMMUNOTHERAPY"],
+            errors="coerce",
+        ).fillna(0).astype(int)
+
+    elif (
+        "TX_TYPE_IMMUNOTHERAPY"
+        in df_clin.columns
+    ):
+        df["IMMUNOTHERAPY"] = pd.to_numeric(
+            df_clin[
+                "TX_TYPE_IMMUNOTHERAPY"
+            ],
+            errors="coerce",
+        ).fillna(0).astype(int)
+
+    else:
+        # Configured trial cohorts are assumed to be
+        # immunotherapy cohorts.
+        if dataset.processing_strategy == "iatlas":
+            df["IMMUNOTHERAPY"] = 1
+        else:
+            df["IMMUNOTHERAPY"] = 0
+
+    df.index.name = "SAMPLE_ID"
+
+    return df
+
+
+# ============================================================================
+# Expression processing
+# ============================================================================
+
+
+def zscore_expression(
+    df_expr: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Z-score standardise each gene independently within one cohort.
+
+    Standardisation is performed within each cohort before merging to
+    prevent cohort-specific expression distributions from dominating
+    the merged matrix.
+
+    Constant or entirely missing genes receive a standard deviation of
+    one to avoid division by zero.
+    """
+    df = df_expr.copy()
+
+    means = df.mean(
+        axis=0,
+        skipna=True,
+    )
+
+    stds = (
+        df.std(
+            axis=0,
+            skipna=True,
+        )
+        .replace(0, 1.0)
+        .fillna(1.0)
+    )
+
+    return (
+        df - means
+    ) / stds
+
+
+def find_common_genes(
+    expression_data: Dict[str, pd.DataFrame],
+) -> List[str]:
+    """
+    Find the intersection of genes present in all datasets.
+    """
+    gene_sets = [
+        set(df.columns)
+        for df in expression_data.values()
+    ]
+
+    if not gene_sets:
+        return []
+
+    common_genes = set.intersection(
+        *gene_sets
+    )
+
+    return sorted(
+        common_genes
+    )
+
+
+# ============================================================================
+# Genomic feature processing
+# ============================================================================
+
+
+def _mutation_feature_columns() -> List[str]:
+    """
+    Return mutation feature names derived from DRIVER_GENES.
+    """
+    return [
+        f"mut_{gene}"
+        for gene in DRIVER_GENES
+    ]
+
+
+def _load_driver_mutation_features(
+    df_mut: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Extract configured driver mutation features.
+
+    Converts gene-level mutation columns such as:
+
+        BRAF
+        NRAS
+        NF1
+
+    into:
+
+        mut_BRAF
+        mut_NRAS
+        mut_NF1
+    """
+    result = pd.DataFrame(
+        index=df_mut.index
+    )
+
+    for gene in DRIVER_GENES:
+        output_column = (
+            f"mut_{gene}"
+        )
+
+        if gene in df_mut.columns:
+            result[output_column] = (
+                pd.to_numeric(
+                    df_mut[gene],
+                    errors="coerce",
+                )
+                .fillna(0)
+                .astype(int)
+            )
+        else:
+            result[output_column] = 0
+
+    return result
+
+
+def _build_genomic_features(
+    datasets: List[DatasetConfig],
+    clinical_data: Dict[str, pd.DataFrame],
+    mutation_data: Dict[str, pd.DataFrame],
+) -> pd.DataFrame:
+    """
+    Build a unified genomic feature matrix for all merged samples.
+    """
+    mutation_features = (
+        _mutation_feature_columns()
+    )
+
+    all_feature_columns = [
+        "PATIENT_ID",
+        "SAMPLE_ID",
+        "COHORT",
+    ]
+
+    all_feature_columns.extend(
+        GENOMIC_FEATURES
+    )
+
+    all_feature_columns.extend(
+        mutation_features
+    )
 
     genomic_rows = []
-    samples_df = df_clin_merged if "SAMPLE_ID" in df_clin_merged.columns else df_clin_merged.reset_index()
 
-    for _, row in samples_df.iterrows():
-        sample_id = row["SAMPLE_ID"]
-        cohort = row["COHORT"]
-        patient_id = row["PATIENT_ID"]
+    for dataset in datasets:
+        cohort_name = dataset.cohort_name
 
-        feat_dict = {
-            "PATIENT_ID": patient_id,
-            "SAMPLE_ID": sample_id,
-            "COHORT": cohort,
-            "TMB_NONSYNONYMOUS": np.nan,
-            "mut_BRAF": 0,
-            "mut_NRAS": 0,
-            "mut_NF1": 0,
-            "SNV_NEOANTIGEN": np.nan,
-            "INDEL_NEOANTIGEN": np.nan,
-            "FUSION_NEOANTIGEN": np.nan,
-            "SPLICE_NEOANTIGEN": np.nan,
-            "CTA_SELF_NEOANTIGEN": np.nan,
-        }
+        df_clin = clinical_data[
+            cohort_name
+        ]
 
-        if cohort in cohort_data:
-            df_cohort = cohort_data[cohort]
-            if sample_id in df_cohort.index:
-                cohort_row = df_cohort.loc[sample_id]
-                if isinstance(cohort_row, pd.DataFrame):
-                    cohort_row = cohort_row.iloc[0]
+        df_mut = mutation_data.get(
+            cohort_name,
+            pd.DataFrame(),
+        )
 
-                if "TMB_NONSYNONYMOUS" in cohort_row:
-                    feat_dict["TMB_NONSYNONYMOUS"] = cohort_row["TMB_NONSYNONYMOUS"]
+        if not df_mut.empty:
+            df_driver_mut = (
+                _load_driver_mutation_features(
+                    df_mut
+                )
+            )
+        else:
+            df_driver_mut = pd.DataFrame(
+                index=df_clin.index
+            )
 
-                for m_gene in ["mut_BRAF", "mut_NRAS", "mut_NF1"]:
-                    if m_gene in cohort_row:
-                        feat_dict[m_gene] = int(cohort_row[m_gene]) if pd.notna(cohort_row[m_gene]) else 0
+            for column in mutation_features:
+                df_driver_mut[column] = 0
 
-                for neo_feat in ["SNV_NEOANTIGEN", "INDEL_NEOANTIGEN", "FUSION_NEOANTIGEN", "SPLICE_NEOANTIGEN", "CTA_SELF_NEOANTIGEN"]:
-                    if neo_feat in cohort_row:
-                        feat_dict[neo_feat] = cohort_row[neo_feat]
+        for sample_id, clinical_row in df_clin.iterrows():
+            row = {
+                "PATIENT_ID": clinical_row.get(
+                    "PATIENT_ID",
+                    np.nan,
+                ),
+                "SAMPLE_ID": sample_id,
+                "COHORT": cohort_name,
+            }
 
-        genomic_rows.append(feat_dict)
+            # Add configured genomic features.
+            for feature in GENOMIC_FEATURES:
+                if feature in df_clin.columns:
+                    row[feature] = clinical_row[
+                        feature
+                    ]
+                elif (
+                    feature in df_mut.columns
+                ):
+                    row[feature] = df_mut.loc[
+                        sample_id,
+                        feature,
+                    ]
+                else:
+                    row[feature] = np.nan
 
-    df_genomic = pd.DataFrame(genomic_rows)
-    cols_order = [
-        "PATIENT_ID", "SAMPLE_ID", "COHORT",
-        "TMB_NONSYNONYMOUS",
-        "mut_BRAF", "mut_NRAS", "mut_NF1",
-        "SNV_NEOANTIGEN", "INDEL_NEOANTIGEN", "FUSION_NEOANTIGEN", "SPLICE_NEOANTIGEN", "CTA_SELF_NEOANTIGEN",
+            # Add driver mutation features.
+            for column in mutation_features:
+                if (
+                    sample_id
+                    in df_driver_mut.index
+                ):
+                    row[column] = (
+                        df_driver_mut.loc[
+                            sample_id,
+                            column,
+                        ]
+                    )
+                else:
+                    row[column] = 0
+
+            genomic_rows.append(row)
+
+    if not genomic_rows:
+        return pd.DataFrame(
+            columns=all_feature_columns
+        )
+
+    df_genomic = pd.DataFrame(
+        genomic_rows
+    )
+
+    # Ensure all configured columns exist.
+    for column in all_feature_columns:
+        if column not in df_genomic.columns:
+            df_genomic[column] = np.nan
+
+    return df_genomic[
+        all_feature_columns
     ]
-    df_genomic = df_genomic[cols_order]
-
-    out_path = output_dir / "merged_genomic.csv"
-    df_genomic.to_csv(out_path, index=False)
-    print(f"Saved merged genomic features to: {out_path.relative_to(BASE_DIR).as_posix()} (shape: {df_genomic.shape})")
 
 
-def batch_correct_and_save(
-    df_expr_merged: pd.DataFrame, df_clin_merged: pd.DataFrame, output_dir: Path, label: str = ""
+# ============================================================================
+# Merge output
+# ============================================================================
+
+
+def _save_merged_outputs(
+    df_expr: pd.DataFrame,
+    df_clin: pd.DataFrame,
+    df_genomic: pd.DataFrame,
+    output_dir: Path,
+    label: str,
 ) -> None:
-    """Saves pre-standardised expression matrix and clinical metadata to output directory.
-
-    Args:
-        df_expr_merged: Merged expression DataFrame.
-        df_clin_merged: Merged clinical DataFrame.
-        output_dir: Destination output directory.
-        label: Cohort merge label for logging.
     """
-    prefix = f"[{label}] " if label else ""
-    assert (df_expr_merged.index == df_clin_merged.index).all(), "Inconsistent sample indices!"
-    print(f"{prefix}Total cohort size: {len(df_clin_merged)} samples.")
+    Save merged expression, clinical, and genomic outputs.
+    """
+    output_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
-    output_dir.mkdir(exist_ok=True, parents=True)
-    expr_out_path = output_dir / "expr_merged.csv"
-    clin_out_path = output_dir / "clin_merged.csv"
+    expr_path = (
+        output_dir
+        / "expr_merged.csv"
+    )
 
-    df_expr_merged.to_csv(expr_out_path)
+    clinical_path = (
+        output_dir
+        / "clin_merged.csv"
+    )
 
-    df_clin_merged = df_clin_merged.reset_index()
-    if "PATIENT_ID" in df_clin_merged.columns:
-        cols = ["PATIENT_ID"] + [c for c in df_clin_merged.columns if c != "PATIENT_ID"]
-        df_clin_merged = df_clin_merged[cols]
-    df_clin_merged.to_csv(clin_out_path, index=False)
+    genomic_path = (
+        output_dir
+        / "merged_genomic.csv"
+    )
 
-    print(f"{prefix}Saved expression matrix to: {expr_out_path.relative_to(BASE_DIR).as_posix()} (shape: {df_expr_merged.shape})")
-    print(f"{prefix}Saved clinical metadata to:  {clin_out_path.relative_to(BASE_DIR).as_posix()} (shape: {df_clin_merged.shape})")
+    df_expr.to_csv(
+        expr_path
+    )
 
-    build_merged_genomic(df_clin_merged, output_dir)
+    df_clin.reset_index().to_csv(
+        clinical_path,
+        index=False,
+    )
+
+    df_genomic.to_csv(
+        genomic_path,
+        index=False,
+    )
+
+    print(
+        f"\n[{label}] Saved merged outputs:"
+    )
+
+    print(
+        f"  Expression: "
+        f"{display_path(expr_path)} "
+        f"{df_expr.shape}"
+    )
+
+    print(
+        f"  Clinical:   "
+        f"{display_path(clinical_path)} "
+        f"{df_clin.shape}"
+    )
+
+    print(
+        f"  Genomic:    "
+        f"{display_path(genomic_path)} "
+        f"{df_genomic.shape}"
+    )
+
+
+# ============================================================================
+# Merge construction
+# ============================================================================
+
+
+def _prepare_dataset_data(
+    datasets: List[DatasetConfig],
+) -> Tuple[
+    Dict[str, pd.DataFrame],
+    Dict[str, pd.DataFrame],
+    Dict[str, pd.DataFrame],
+]:
+    """
+    Load and harmonise all configured datasets.
+    """
+    expression_data = {}
+    clinical_data = {}
+    mutation_data = {}
+
+    for dataset in datasets:
+        (
+            df_expr,
+            df_clin_raw,
+            df_mut,
+        ) = load_dataset(
+            dataset
+        )
+
+        # --------------------------------------------------------------
+        # Align expression and clinical samples.
+        # --------------------------------------------------------------
+
+        common_ids = (
+            df_expr.index
+            .intersection(
+                df_clin_raw.index
+            )
+        )
+
+        if len(common_ids) == 0:
+            raise ValueError(
+                f"No overlapping samples between "
+                f"expression and clinical data for "
+                f"{dataset.cohort_name}."
+            )
+
+        df_expr = df_expr.loc[
+            common_ids
+        ]
+
+        df_clin_raw = df_clin_raw.loc[
+            common_ids
+        ]
+
+        # --------------------------------------------------------------
+        # Align mutation data where possible.
+        # --------------------------------------------------------------
+
+        if not df_mut.empty:
+            mutation_ids = (
+                df_mut.index
+                .intersection(
+                    common_ids
+                )
+            )
+
+            df_mut = df_mut.loc[
+                mutation_ids
+            ]
+
+        # --------------------------------------------------------------
+        # Harmonise clinical metadata.
+        # --------------------------------------------------------------
+
+        df_clin = _harmonise_clinical(
+            df_clin_raw,
+            dataset,
+        )
+
+        # Ensure exactly the same sample order.
+        df_clin = df_clin.loc[
+            df_expr.index
+        ]
+
+        expression_data[
+            dataset.cohort_name
+        ] = df_expr
+
+        clinical_data[
+            dataset.cohort_name
+        ] = df_clin
+
+        mutation_data[
+            dataset.cohort_name
+        ] = df_mut
+
+        print(
+            f"  Aligned samples: "
+            f"{len(common_ids):,}"
+        )
+
+    return (
+        expression_data,
+        clinical_data,
+        mutation_data,
+    )
+
+
+def build_merged_cohort(
+    datasets: List[DatasetConfig],
+    expression_data: Dict[str, pd.DataFrame],
+    clinical_data: Dict[str, pd.DataFrame],
+    mutation_data: Dict[str, pd.DataFrame],
+    output_dir: Path,
+    label: str,
+    immunotherapy_only: bool = False,
+) -> Tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+]:
+    """
+    Build, standardise, and save a merged cohort.
+    """
+    print(
+        f"\n{'=' * 60}"
+    )
+
+    print(
+        f"Building {label.upper()} merged cohort"
+    )
+
+    print(
+        f"{'=' * 60}"
+    )
+
+    # ------------------------------------------------------------------
+    # Select samples
+    # ------------------------------------------------------------------
+
+    selected_expression = {}
+    selected_clinical = {}
+    selected_mutations = {}
+
+    for dataset in datasets:
+        cohort_name = dataset.cohort_name
+
+        df_expr = expression_data[
+            cohort_name
+        ]
+
+        df_clin = clinical_data[
+            cohort_name
+        ]
+
+        df_mut = mutation_data[
+            cohort_name
+        ]
+
+        if immunotherapy_only:
+            mask = (
+                df_clin[
+                    "IMMUNOTHERAPY"
+                ]
+                == 1
+            )
+
+            df_expr = df_expr.loc[
+                mask
+            ]
+
+            df_clin = df_clin.loc[
+                mask
+            ]
+
+            if not df_mut.empty:
+                df_mut = df_mut.loc[
+                    df_mut.index.intersection(
+                        df_expr.index
+                    )
+                ]
+
+        selected_expression[
+            cohort_name
+        ] = df_expr
+
+        selected_clinical[
+            cohort_name
+        ] = df_clin
+
+        selected_mutations[
+            cohort_name
+        ] = df_mut
+
+        print(
+            f"  {cohort_name}: "
+            f"{len(df_clin):,} samples"
+        )
+
+    # ------------------------------------------------------------------
+    # Find common expression genes.
+    # ------------------------------------------------------------------
+
+    print(
+        "\nFinding common expression genes..."
+    )
+
+    common_genes = find_common_genes(
+        selected_expression
+    )
+
+    if not common_genes:
+        raise ValueError(
+            "No common expression genes found "
+            "across selected datasets."
+        )
+
+    print(
+        f"  Common genes: "
+        f"{len(common_genes):,}"
+    )
+
+    # ------------------------------------------------------------------
+    # Restrict and standardise each cohort.
+    # ------------------------------------------------------------------
+
+    print(
+        "\nZ-score standardising expression "
+        "within each cohort..."
+    )
+
+    scaled_expression = []
+
+    clinical_frames = []
+
+    for dataset in datasets:
+        cohort_name = (
+            dataset.cohort_name
+        )
+
+        df_expr = selected_expression[
+            cohort_name
+        ]
+
+        df_clin = selected_clinical[
+            cohort_name
+        ]
+
+        if df_expr.empty:
+            continue
+
+        df_expr = df_expr[
+            common_genes
+        ]
+
+        df_expr = zscore_expression(
+            df_expr
+        )
+
+        # Ensure identical ordering.
+        df_expr = df_expr.loc[
+            df_clin.index
+        ]
+
+        scaled_expression.append(
+            df_expr
+        )
+
+        clinical_frames.append(
+            df_clin
+        )
+
+    # ------------------------------------------------------------------
+    # Concatenate cohorts.
+    # ------------------------------------------------------------------
+
+    df_expr_merged = pd.concat(
+        scaled_expression,
+        axis=0,
+    )
+
+    df_clin_merged = pd.concat(
+        clinical_frames,
+        axis=0,
+    )
+
+    if not (
+        df_expr_merged.index
+        == df_clin_merged.index
+    ).all():
+        raise ValueError(
+            "Expression and clinical sample "
+            "indices are not identical after merge."
+        )
+
+    # ------------------------------------------------------------------
+    # Build genomic feature output.
+    # ------------------------------------------------------------------
+
+    df_genomic = _build_genomic_features(
+        datasets=datasets,
+        clinical_data=selected_clinical,
+        mutation_data=selected_mutations,
+    )
+
+    # Only retain genomic rows present in this merged cohort.
+    df_genomic = df_genomic[
+        df_genomic["SAMPLE_ID"].isin(
+            df_clin_merged.index
+        )
+    ]
+
+    _save_merged_outputs(
+        df_expr=df_expr_merged,
+        df_clin=df_clin_merged,
+        df_genomic=df_genomic,
+        output_dir=output_dir,
+        label=label,
+    )
+
+    return (
+        df_expr_merged,
+        df_clin_merged,
+    )
+
+
+# ============================================================================
+# Main workflow
+# ============================================================================
 
 
 def main() -> None:
-    """Orchestrates dataset loading, feature intersection, Z-score standardisation, and export."""
-    print("==================================================")
-    print("Merging Datasets: Harmonising Clinical & Expression Features")
-    print("==================================================\n")
-
-    FULL_DIR.mkdir(exist_ok=True, parents=True)
-    IMMUNO_DIR.mkdir(exist_ok=True, parents=True)
-
-    expr_tcga, clin_tcga = load_tcga(PROCESSED_DIR)
-    expr_liu, clin_liu = load_liu(PROCESSED_DIR)
-    expr_hugo, clin_hugo = load_hugo(PROCESSED_DIR)
-    expr_riaz, clin_riaz = load_riaz(PROCESSED_DIR)
-
-    print("\nAligning gene features...")
-    common_genes = list(
-        set(expr_tcga.columns) & set(expr_liu.columns) & set(expr_hugo.columns) & set(expr_riaz.columns)
+    """
+    Run the configuration-driven dataset merge.
+    """
+    print(
+        "=================================================="
     )
-    common_genes.sort()
-    print(f"Number of common genes intersected: {len(common_genes)}")
 
-    expr_tcga = expr_tcga[common_genes]
-    expr_liu = expr_liu[common_genes]
-    expr_hugo = expr_hugo[common_genes]
-    expr_riaz = expr_riaz[common_genes]
+    print(
+        "Merging Cleaned Melanoma Cohorts"
+    )
 
-    print("Standardising expression datasets individually (Z-score)...")
-    expr_tcga_scaled = zscore_expression(expr_tcga)
-    expr_liu_scaled = zscore_expression(expr_liu)
-    expr_hugo_scaled = zscore_expression(expr_hugo)
-    expr_riaz_scaled = zscore_expression(expr_riaz)
+    print(
+        "==================================================\n"
+    )
 
-    print("\n" + "=" * 60)
-    print("Building FULL merged cohort (all 4 datasets)")
-    print("=" * 60)
+    datasets = load_dataset_config(
+        CONFIG_PATH
+    )
 
-    df_expr_full = pd.concat([expr_tcga_scaled, expr_liu_scaled, expr_hugo_scaled, expr_riaz_scaled], axis=0)
-    df_clin_full = pd.concat([clin_tcga, clin_liu, clin_hugo, clin_riaz], axis=0)
-    batch_correct_and_save(df_expr_full, df_clin_full, FULL_DIR, label="Full")
+    print(
+        f"Loaded {len(datasets)} dataset "
+        f"configuration(s) from "
+        f"{display_path(CONFIG_PATH)}:\n"
+    )
 
-    print("\n" + "=" * 60)
-    print("Building IMMUNOTHERAPY-ONLY merged cohort")
-    print("=" * 60)
+    for dataset in datasets:
+        print(
+            f"  - {dataset.cohort_name} "
+            f"({dataset.study_id})"
+        )
 
-    tcga_immuno_mask = clin_tcga["IMMUNOTHERAPY"] == 1
-    expr_tcga_immuno_scaled = expr_tcga_scaled.loc[tcga_immuno_mask]
-    clin_tcga_immuno = clin_tcga.loc[tcga_immuno_mask]
-    print(f"  TCGA immunotherapy patients: {len(clin_tcga_immuno)} / {len(clin_tcga)}")
+    print()
 
-    df_expr_immuno = pd.concat([expr_tcga_immuno_scaled, expr_liu_scaled, expr_hugo_scaled, expr_riaz_scaled], axis=0)
-    df_clin_immuno = pd.concat([clin_tcga_immuno, clin_liu, clin_hugo, clin_riaz], axis=0)
-    batch_correct_and_save(df_expr_immuno, df_clin_immuno, IMMUNO_DIR, label="Immunotherapy")
+    (
+        expression_data,
+        clinical_data,
+        mutation_data,
+    ) = _prepare_dataset_data(
+        datasets
+    )
 
-    print("\n" + "=" * 60)
-    print("Merged Cohort Generation Completed Successfully!")
-    print("=" * 60)
-    print(f"  Full merge:          {len(df_clin_full)} samples  -> {FULL_DIR.relative_to(BASE_DIR).as_posix()}")
-    print(f"  Immunotherapy merge: {len(df_clin_immuno)} samples -> {IMMUNO_DIR.relative_to(BASE_DIR).as_posix()}")
+    # ------------------------------------------------------------------
+    # FULL MERGE
+    # ------------------------------------------------------------------
+
+    (
+        df_expr_full,
+        df_clin_full,
+    ) = build_merged_cohort(
+        datasets=datasets,
+        expression_data=expression_data,
+        clinical_data=clinical_data,
+        mutation_data=mutation_data,
+        output_dir=FULL_DIR,
+        label="Full",
+        immunotherapy_only=False,
+    )
+
+    # ------------------------------------------------------------------
+    # IMMUNOTHERAPY-ONLY MERGE
+    # ------------------------------------------------------------------
+
+    (
+        df_expr_immuno,
+        df_clin_immuno,
+    ) = build_merged_cohort(
+        datasets=datasets,
+        expression_data=expression_data,
+        clinical_data=clinical_data,
+        mutation_data=mutation_data,
+        output_dir=IMMUNOTHERAPY_DIR,
+        label="Immunotherapy",
+        immunotherapy_only=True,
+    )
+
+    # ------------------------------------------------------------------
+    # Summary
+    # ------------------------------------------------------------------
+
+    print(
+        "\n"
+        + "=" * 60
+    )
+
+    print(
+        "Merged Cohort Generation Completed Successfully"
+    )
+
+    print(
+        "=" * 60
+    )
+
+    print(
+        f"  Full merge: "
+        f"{len(df_clin_full):,} samples"
+    )
+
+    print(
+        f"  Immunotherapy merge: "
+        f"{len(df_clin_immuno):,} samples"
+    )
+
+    print(
+        f"\n  Full output: "
+        f"{display_path(FULL_DIR)}"
+    )
+
+    print(
+        f"  Immunotherapy output: "
+        f"{display_path(IMMUNOTHERAPY_DIR)}"
+    )
+
+
+# ============================================================================
+# Script entry point
+# ============================================================================
 
 
 if __name__ == "__main__":
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    with open(LOG_PATH, "w", encoding="utf-8") as log_file:
-        stdout_tee = TeeStream(sys.stdout, log_file)
-        stderr_tee = TeeStream(sys.stderr, log_file)
-        with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+
+    LOG_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    with LOG_PATH.open(
+        "w",
+        encoding="utf-8",
+    ) as log_file:
+
+        stdout_tee = TeeStream(
+            sys.stdout,
+            log_file,
+        )
+
+        stderr_tee = TeeStream(
+            sys.stderr,
+            log_file,
+        )
+
+        with (
+            contextlib.redirect_stdout(
+                stdout_tee
+            ),
+            contextlib.redirect_stderr(
+                stderr_tee
+            ),
+        ):
+
+            print(
+                "Logging console output to "
+                f"{display_path(LOG_PATH)}"
+            )
+
             main()

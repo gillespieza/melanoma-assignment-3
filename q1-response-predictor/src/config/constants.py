@@ -41,6 +41,18 @@ NON_SILENT_VARIANT_CLASSIFICATIONS = {
     "Nonstop_Mutation",
 }
 
+GENOMIC_FEATURES = [
+    "TMB_NONSYNONYMOUS",
+    "mut_BRAF",
+    "mut_NRAS",
+    "mut_NF1",
+    "SNV_NEOANTIGEN",
+    "INDEL_NEOANTIGEN",
+    "FUSION_NEOANTIGEN",
+    "SPLICE_NEOANTIGEN",
+    "CTA_SELF_NEOANTIGEN",
+]
+
 # Driver genes to evaluate for mutations
 DRIVER_GENES = ["BRAF", "NRAS", "NF1"]
 
