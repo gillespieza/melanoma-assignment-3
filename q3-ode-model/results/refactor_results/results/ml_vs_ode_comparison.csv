@@ -1,0 +1,5 @@
+model,mean_auc,std_auc,n_features
+"ODE ""Digital Twin"" (3 ODE outputs)",0.6658646616541353,0.07405034848043118,3
+Neural Net (12 raw features),0.5827903091060985,0.054010189820782345,12
+Random Forest (12 raw features),0.685563909774436,0.04567319233500732,12
+Logistic Reg (12 raw features),0.6459649122807017,0.028678922500830685,12

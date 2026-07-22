@@ -6,7 +6,12 @@ single merged CSV that the BRAF/MEK/ERK ODE simulation (Phase 3) can read.
 
 Steps:
   A. Parse clinical survival data      → OS_MONTHS, SURV_STATUS
-  B. Extract 10 pathway genes from RSEM → normalise each gene by its mean
+  B. Extract 12 pathway genes from RSEM → normalise each gene by its mean
+     (adds PDCD1/CD274 — checkpoint-axis inputs for the anti-PD-1 refactor)
+  B.1 Checkpoint signatures            → IMPRES, PD_L1 (reused from Q1's
+      signatures.py, computed on raw expression so cross-gene comparisons
+      aren't distorted by per-gene mean-normalisation); CYT (Rooney et al.
+      2015) from the already-normalised GZMA/PRF1 columns
   C. Determine BRAF mutation status    → V600E/K/R/K601E = "mutant"
   D. Merge everything on SAMPLE_ID     → melanoma_params_full.csv
 
@@ -19,6 +24,7 @@ Output:
 
 import os
 import sys
+import warnings
 import pandas as pd
 import numpy as np
 
@@ -30,13 +36,27 @@ TCGA_DIR   = os.path.join(ASSIGN_DIR, "q1-response-predictor", "data", "raw",
 OUT_DIR    = os.path.join(BASE_DIR, "data")
 os.makedirs(OUT_DIR, exist_ok=True)
 
+# Reuse Q1's already-validated checkpoint signatures (IMPRES, PD-L1) instead
+# of re-deriving them here. Falls back gracefully if Q1's module can't be
+# imported (e.g. moved/renamed) — the checkpoint axis in Phase 3 only needs
+# raw PDCD1/CD274 expression, so IMPRES/PD_L1 are context columns, not a
+# hard dependency.
+sys.path.insert(0, os.path.join(ASSIGN_DIR, "q1-response-predictor", "src"))
+try:
+    from signatures import compute_impres, compute_pd_l1  # type: ignore  # noqa: E402
+    HAVE_SIGNATURES = True
+except ImportError as e:
+    warnings.warn(f"Could not import Q1 signatures.py ({e}); "
+                   "IMPRES/PD_L1 columns will be NaN.")
+    HAVE_SIGNATURES = False
+
 CLINICAL_PATIENT_FILE = os.path.join(TCGA_DIR, "data_clinical_patient.txt")
 CLINICAL_SAMPLE_FILE  = os.path.join(TCGA_DIR, "data_clinical_sample.txt")
 MRNA_FILE             = os.path.join(TCGA_DIR, "data_mrna_seq_v2_rsem.txt")
 MUTATION_FILE         = os.path.join(TCGA_DIR, "data_mutations.txt")
 OUTPUT_FILE           = os.path.join(OUT_DIR, "melanoma_params_full.csv")
 
-# The 10 genes the BRAF/MEK/ERK/Tumour/Immune ODE needs:
+# The 12 genes the BRAF/MEK/ERK/Tumour/Immune/Checkpoint ODE needs:
 #   Signalling cascade
 MODEL_GENES = [
     "BRAF",     # RAF kinase (V600E = constitutively active)
@@ -49,7 +69,18 @@ MODEL_GENES = [
     "CD8A",     # cytotoxic T-cell infiltration
     "PRF1",     # perforin (immune effector)
     "GZMA",     # granzyme A (immune effector)
+    "PDCD1",    # PD-1 receptor  — checkpoint-axis input (anti-PD-1 target)
+    "CD274",    # PD-L1 ligand   — checkpoint-axis input
 ]
+
+# Unique genes needed by Q1's IMPRES signature (Auslander et al., 2018) plus
+# PD-L1 (CD274). Extracted SEPARATELY, from RAW (not mean-normalised) RSEM
+# values: IMPRES is a set of pairwise comparisons (gene A > gene B) and would
+# be distorted if each gene were divided by a different per-gene mean first.
+SIGNATURE_GENES = sorted({
+    "CD274", "VSIR", "CD28", "CD276", "CD86", "TNFRSF4", "CD200", "CTLA4",
+    "PDCD1", "CD80", "TNFSF9", "HAVCR2", "CD27", "CD40", "TNFRSF14",
+})
 
 # Activating BRAF mutations that make the tumour vemurafenib-sensitive.
 # (Class I V600 mutations + the closely-related K601E.)
@@ -94,8 +125,8 @@ print(f"  {len(clinical)} samples with valid survival data")
 print(f"  Events (deceased): {clinical['SURV_STATUS'].sum()}  |  "
       f"Censored (living): {(clinical['SURV_STATUS'] == 0).sum()}")
 
-# ─── Step B: Expression — extract 10 pathway genes ───────────────────────────
-print("\n[Step B] Extracting 10 pathway genes from RSEM file (~60 MB)...")
+# ─── Step B: Expression — extract 12 pathway genes ───────────────────────────
+print("\n[Step B] Extracting 12 pathway genes from RSEM file (~60 MB)...")
 
 mrna = pd.read_csv(MRNA_FILE, sep="\t", low_memory=False)
 # Column 1 = Hugo_Symbol, column 2 = Entrez_Gene_Id, rest = samples
@@ -106,6 +137,32 @@ missing = [g for g in MODEL_GENES if g not in set(mrna["GENE"])]
 if missing:
     print(f"  ERROR: genes not found in RSEM file: {missing}")
     sys.exit(1)
+
+# ─── Step B.0: raw signature genes (IMPRES / PD-L1), BEFORE normalisation ────
+# Taken from the full RSEM matrix directly so IMPRES's pairwise comparisons
+# use genuine relative magnitudes, not per-gene-normalised ones.
+sig_genes_present = [g for g in SIGNATURE_GENES if g in set(mrna["GENE"])]
+sig_genes_missing = [g for g in SIGNATURE_GENES if g not in set(mrna["GENE"])]
+if sig_genes_missing:
+    print(f"  NOTE: signature genes not found in RSEM (IMPRES pairs using them "
+          f"are skipped, not fatal): {sig_genes_missing}")
+
+sig_expr_raw = (mrna[mrna["GENE"].isin(sig_genes_present)]
+                .groupby("GENE").mean(numeric_only=True).T)
+sig_expr_raw.index.name = "SAMPLE_ID"
+
+if HAVE_SIGNATURES and len(sig_genes_present) > 0:
+    checkpoint_sig = pd.DataFrame({
+        "IMPRES": compute_impres(sig_expr_raw),   # Auslander 2018 — baseline checkpoint pressure
+        "PD_L1":  compute_pd_l1(sig_expr_raw),    # CD274 proxy (context/validation column)
+    })
+else:
+    checkpoint_sig = pd.DataFrame(
+        {"IMPRES": np.nan, "PD_L1": np.nan}, index=sig_expr_raw.index)
+checkpoint_sig.index.name = "SAMPLE_ID"
+checkpoint_sig = checkpoint_sig.reset_index()
+print(f"  Checkpoint signatures (IMPRES, PD_L1): {checkpoint_sig.shape[0]} samples "
+      f"({'reused Q1 signatures.py' if HAVE_SIGNATURES else 'UNAVAILABLE — NaN'})")
 
 # Some Hugo symbols appear more than once — collapse duplicates by mean
 expr = mrna[mrna["GENE"].isin(MODEL_GENES)].groupby("GENE").mean(numeric_only=True)
@@ -124,7 +181,15 @@ for gene in MODEL_GENES:
     else:
         print(f"  WARNING: mean of {gene} is 0 — skipping normalisation")
 
-print(f"  Expression matrix: {expr.shape[0]} samples × {len(MODEL_GENES)} genes")
+# CYT (Rooney et al., 2015): mean of GZMA/PRF1. Built from the ALREADY
+# mean-normalised columns above — a simple within-patient average of two
+# comparably-scaled genes is unaffected by per-gene normalisation (unlike
+# IMPRES's cross-gene comparisons), and this keeps CYT's cohort mean ~1.0,
+# matching the convention Phase 3 uses to scale eta8 (killing rate) per patient.
+expr["CYT"] = (expr["GZMA"] + expr["PRF1"]) / 2.0
+
+print(f"  Expression matrix: {expr.shape[0]} samples × {len(MODEL_GENES)} genes "
+      f"(+ CYT)")
 
 # ─── Step C: BRAF mutation status ────────────────────────────────────────────
 print("\n[Step C] Determining BRAF mutation status from mutations file (~550 MB)...")
@@ -176,6 +241,7 @@ data = clinical.merge(expr, on="SAMPLE_ID", how="inner")
 data = data.merge(braf_status, on="SAMPLE_ID", how="left")
 data = data.merge(variant_map, on="SAMPLE_ID", how="left")
 data = data.merge(nras_status, on="SAMPLE_ID", how="left")
+data = data.merge(checkpoint_sig, on="SAMPLE_ID", how="left")
 
 # Samples with no mutation record = wild-type for our purposes
 data["BRAF_MUT"] = data["BRAF_MUT"].fillna(0).astype(int)
@@ -194,6 +260,9 @@ n_wt = int((data["MAPK_DRIVEN"] == 0).sum())
 print(f"  Final merged dataset: {len(data)} patients")
 print(f"    BRAF-mutant: {n_braf}  |  NRAS-mutant (BRAF-WT): {n_nras}  |  "
       f"MAPK-quiet WT: {n_wt}")
+n_impres = int(data["IMPRES"].notna().sum())
+print(f"    Checkpoint-axis inputs: PDCD1/CD274 for all {len(data)} patients  |  "
+      f"IMPRES available for {n_impres} patients")
 
 # ─── Save ─────────────────────────────────────────────────────────────────────
 data.to_csv(OUTPUT_FILE, index=False)
