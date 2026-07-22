@@ -1,0 +1,16 @@
+datasets:
+  - cohort_name: Liu 2019
+    study_id: mel_iatlas_liu_2019
+    raw_directory: liu_2019
+
+  - cohort_name: Hugo 2016
+    study_id: mel_iatlas_hugo_ucla_2016
+    raw_directory: hugo_2016
+
+  - cohort_name: Riaz 2017
+    study_id: mel_iatlas_riaz_nivolumab_2017
+    raw_directory: riaz_2017
+
+  - cohort_name: TCGA-SKCM
+    study_id: skcm_tcga_pan_can_atlas_2018
+    raw_directory: skcm_tcga_pan_can_atlas_2018

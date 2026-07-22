@@ -1,9 +1,9 @@
 """Path-resolution helpers shared across project and subproject scripts.
 
-Project structure:
+Project structure::
 
     melanoma-assignment-3/              <- PROJECT_ROOT
-    ├── data/
+    ├── data/                           <- Shared project-level data
     │   ├── raw/
     │   └── processed/
     │
@@ -16,14 +16,24 @@ Project structure:
         ├── scripts/
         └── src/
 
-The top-level project root contains shared data and logs. The subproject
-contains code, configuration, models, plots, and reports specific to the
-current assignment question.
+The top-level project root contains shared datasets. The subproject contains
+code, configuration, logs, models, plots, and reports specific to the current
+assignment question.
+
+This module provides both:
+
+1. ``ProjectPaths`` and ``get_project_paths()`` for structured path access.
+2. Module-level path constants for convenient use by project scripts.
 """
 
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
+
+
+# ============================================================================
+# Path dataclass
+# ============================================================================
 
 
 @dataclass(frozen=True)
@@ -44,7 +54,6 @@ class ProjectPaths:
     data: Path
     raw: Path
     processed: Path
-    
 
     # ------------------------------------------------------------------
     # Subproject-level resources
@@ -87,6 +96,11 @@ class ProjectPaths:
 
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
+
+
+# ============================================================================
+# Root discovery
+# ============================================================================
 
 
 def find_directory_with_markers(
@@ -149,7 +163,7 @@ def find_project_root(subproject_root: Path) -> Path:
     """Find the top-level project root containing a subproject.
 
     The top-level project root is expected to contain the shared ``data``
-    directory alongside the subproject directory.
+    directory alongside the current subproject.
 
     Args:
         subproject_root:
@@ -183,6 +197,11 @@ def find_project_root(subproject_root: Path) -> Path:
     return project_root
 
 
+# ============================================================================
+# Structured path resolution
+# ============================================================================
+
+
 def get_project_paths(start: Path) -> ProjectPaths:
     """Resolve all important project and subproject paths.
 
@@ -195,9 +214,9 @@ def get_project_paths(start: Path) -> ProjectPaths:
 
         - the overall project root;
         - the current subproject root;
-        - shared raw and processed data;
-        - shared logs;
+        - shared data, raw, and processed data;
         - subproject configuration;
+        - subproject logs;
         - subproject reports;
         - subproject models;
         - subproject plots.
@@ -205,20 +224,39 @@ def get_project_paths(start: Path) -> ProjectPaths:
     subproject_root = find_subproject_root(start)
     project_root = find_project_root(subproject_root)
 
+    data_dir = project_root / "data"
+
     return ProjectPaths(
-        # Roots
         project_root=project_root,
         subproject_root=subproject_root,
-
-        # Shared project-level resources
-        data=project_root / "data",
-        raw=project_root / "data" / "raw",
-        processed=project_root / "data" / "processed",
-        
-        # Subproject-level resources
+        data=data_dir,
+        raw=data_dir / "raw",
+        processed=data_dir / "processed",
         logs=subproject_root / "logs",
         config=subproject_root / "config",
         reports=subproject_root / "reports",
         models=subproject_root / "models",
         plots=subproject_root / "plots",
     )
+
+
+# ============================================================================
+# Module-level convenience paths
+# ============================================================================
+
+# Resolve paths relative to this file. This allows any module in the
+# subproject to import these constants without manually reconstructing paths.
+PATHS = get_project_paths(Path(__file__).resolve())
+
+PROJECT_ROOT = PATHS.project_root
+SUBPROJECT_ROOT = PATHS.subproject_root
+
+DATA_DIR = PATHS.data
+RAW_DIR = PATHS.raw
+PROCESSED_DIR = PATHS.processed
+
+CONFIG_DIR = PATHS.config
+LOG_DIR = PATHS.logs
+REPORTS_DIR = PATHS.reports
+MODELS_DIR = PATHS.models
+PLOTS_DIR = PATHS.plots

@@ -1,24 +1,6 @@
 import pandas as pd
 from pathlib import Path
 
-def _add_legacy_aliases(df_clin: pd.DataFrame, mutations_file: Path) -> pd.DataFrame:
-    # Expose lowercase aliases for compatibility with legacy downstream scripts
-    for up, low in [('PATIENT_ID', 'patient_id'), ('RESPONSE_BINARY', 'response'), ('SEX', 'sex'), ('AGE', 'age'), ('OS_STATUS', 'os_status'), ('OS_MONTHS', 'os_months')]:
-        if up in df_clin.columns:
-            df_clin[low] = df_clin[up]
-            
-    # Load and join mutations if the file exists
-    if mutations_file.exists():
-        df_mut = pd.read_csv(mutations_file, index_col="SAMPLE_ID")
-        for up, low in [('BRAF', 'mut_BRAF'), ('NRAS', 'mut_NRAS'), ('NF1', 'mut_NF1')]:
-            if up in df_mut.columns:
-                df_mut[low] = df_mut[up]
-            else:
-                df_mut[low] = 0
-        df_clin = df_clin.join(df_mut, how="left")
-        
-    return df_clin
-
 def load_liu_2019(data_dir):
     """
     Loads pre-processed Liu et al. 2019 dataset.

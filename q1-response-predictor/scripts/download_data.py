@@ -1,310 +1,418 @@
-"""
-Download and Extract Melanoma Immunotherapy & TCGA Datasets from cBioPortal.
+"""Download and extract datasets configured for the Q1 subproject.
 
-Fetches raw cohort archives from the cBioPortal DataHub, extracts compressed
-tarballs, reorganises directories into standardised data/raw/ subfolders,
-and logs progress with TeeStream.
+Dataset metadata is defined in:
+
+    config/datasets.yaml
+
+This script deliberately contains no dataset-specific study IDs or dataset
+lists. To add another cBioPortal dataset, add a new entry to datasets.yaml.
+
+Expected project structure:
+
+    📂 melanoma-assignment-3/                  <- PROJECT_ROOT
+    ├── 📂 data/
+    │   └── 📂 raw/                            <- shared raw data
+    
+    │
+    └── 📂 q1-response-predictor/              <- SUBPROJECT_ROOT
+        ├── 📂 config/
+        │   └── datasets.yaml
+        ├── 📂 logs/
+        ├── 📂 scripts/
+        │   └── download_data.py
+        └── 📂 src/
+            ├── 📂 config/
+            └── 📂 utils/
+
+Adding a new dataset
+--------------------
+
+1. Add a new dataset entry to ``config/datasets.yaml``.
+2. Define its cBioPortal study ID.
+3. Define the target directory name under ``data/raw/``.
+4. Run this script again.
+
+For example:
+
+    datasets:
+      - cohort_name: "New Cohort"
+        study_id: "cbioportal_study_id"
+        raw_directory: "new_cohort"
+
+The download URL is generated automatically from the study ID:
+
+    https://datahub.assets.cbioportal.org/{study_id}.tar.gz
+
+No changes to this script should be required when adding a standard
+cBioPortal DataHub dataset.
 """
 
 import contextlib
 import shutil
 import sys
-from dataclasses import dataclass
+import time
 from pathlib import Path
 
+# ---------------------------------------------------------------------------
+# Bootstrap imports
+#
+# This script lives inside the subproject:
+#
+#     q1-response-predictor/scripts/download_data.py
+#
+# The source package is:
+#
+#     q1-response-predictor/src/
+#
+# Therefore the subproject root must be added to sys.path before importing
+# src.* modules.
+# ---------------------------------------------------------------------------
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+SUBPROJECT_ROOT = SCRIPT_DIR.parent
+
+if str(SUBPROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(SUBPROJECT_ROOT))
 
 # ---------------------------------------------------------------------------
-# Bootstrap project root resolution for top-level imports
+# Project imports
 # ---------------------------------------------------------------------------
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-if str(BASE_DIR) not in sys.path:
-    sys.path.append(str(BASE_DIR))
-
-
-from src.utils.io import download_file, extract_tar_gz
+from src.config.datasets import (
+    DatasetConfig,
+    load_dataset_config,
+)
+from src.utils.io import (
+    download_file,
+    extract_tar_gz,
+)
 from src.utils.logging import TeeStream
-from src.utils.paths import find_project_root
-
+from src.utils.paths import (
+    CONFIG_DIR,
+    LOG_DIR,
+    PROJECT_ROOT,
+    RAW_DIR,
+)
 
 # ---------------------------------------------------------------------------
-# Project paths
+# Paths
 # ---------------------------------------------------------------------------
 
-PROJECT_ROOT = find_project_root(Path(__file__).resolve())
-
-DATA_DIR = PROJECT_ROOT / "data"
-RAW_DIR = DATA_DIR / "raw"
-
-LOG_DIR = PROJECT_ROOT / "logs"
+CONFIG_PATH = CONFIG_DIR / "datasets.yaml"
 LOG_PATH = LOG_DIR / "download_data.log"
 
 
 # ---------------------------------------------------------------------------
-# Dataset configuration
+# Configuration
 # ---------------------------------------------------------------------------
 
-@dataclass(frozen=True)
-class DatasetConfig:
-    """Configuration for a cBioPortal dataset."""
-
-    study_id: str
-    directory_name: str
-
-
-# ---------------------------------------------------------------------------
-# DATASET REGISTRY
-# ---------------------------------------------------------------------------
-#
-# To add a new dataset:
-#
-# 1. Find the dataset's cBioPortal study ID.
-#
-# 2. Add one new DatasetConfig entry to DATASETS below.
-#
-# 3. Set:
-#
-#       study_id
-#           The exact cBioPortal study ID. This is used to construct the
-#           cBioPortal DataHub download URL:
-#
-#           https://datahub.assets.cbioportal.org/{study_id}.tar.gz
-#
-#       directory_name
-#           The local directory name used under:
-#
-#           data/raw/{directory_name}/
-#
-# Example:
-#
-#     DatasetConfig(
-#         study_id="example_cbioportal_study",
-#         directory_name="example_dataset",
-#     ),
-#
-# No other code changes are required. The dataset will automatically be:
-#
-# - included in directory setup
-# - downloaded
-# - extracted
-# - reorganised into data/raw/{directory_name}/
-#
-# The directory_name should be descriptive, stable, and consistent with the
-# naming conventions used by the rest of the project.
-#
-# ---------------------------------------------------------------------------
-
-DATASETS = (
-    DatasetConfig(
-        study_id="mel_iatlas_liu_2019",
-        directory_name="liu_2019",
-    ),
-    DatasetConfig(
-        study_id="mel_iatlas_hugo_ucla_2016",
-        directory_name="hugo_2016",
-    ),
-    DatasetConfig(
-        study_id="mel_iatlas_riaz_nivolumab_2017",
-        directory_name="riaz_2017",
-    ),
-    DatasetConfig(
-        study_id="skcm_tcga_pan_can_atlas_2018",
-        directory_name="skcm_tcga_pan_can_atlas_2018",
-    ),
+CBIOPORTAL_DATAHUB_URL = (
+    "https://datahub.assets.cbioportal.org"
 )
 
-
-# ---------------------------------------------------------------------------
-# Dataset paths
-# ---------------------------------------------------------------------------
-
-def get_dataset_directory(dataset: DatasetConfig) -> Path:
-    """Returns the standardised raw directory for a dataset."""
-    return RAW_DIR / dataset.directory_name
+MAX_REORGANISATION_RETRIES = 5
+REORGANISATION_RETRY_DELAY_SECONDS = 2
 
 
-# ---------------------------------------------------------------------------
-# Directory setup
-# ---------------------------------------------------------------------------
+def format_relative_path(path: Path) -> str:
+    """Return a project-relative path for readable console output."""
+    try:
+        return path.relative_to(PROJECT_ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
 
-def setup_directories(
-    datasets: tuple[DatasetConfig, ...],
+
+def is_dataset_present(dataset: DatasetConfig) -> bool:
+    """Return whether the configured dataset already contains data.
+
+    A dataset is considered present when its target directory exists and
+    contains at least one file or directory.
+
+    This avoids relying on a particular filename because different
+    cBioPortal datasets may contain different file collections.
+    """
+    target_dir = RAW_DIR / dataset.raw_directory
+
+    if not target_dir.exists():
+        return False
+
+    return any(target_dir.iterdir())
+
+
+def remove_existing_dataset_directory(target_dir: Path) -> None:
+    """Remove an existing dataset directory before clean extraction."""
+    if not target_dir.exists():
+        return
+
+    print(
+        f"Removing existing directory "
+        f"{format_relative_path(target_dir)} "
+        "to ensure a clean extraction..."
+    )
+
+    shutil.rmtree(target_dir)
+
+
+def move_with_retry(
+    source: Path,
+    destination: Path,
+    retries: int = MAX_REORGANISATION_RETRIES,
+    delay_seconds: float = REORGANISATION_RETRY_DELAY_SECONDS,
 ) -> None:
-    """Initialises target directories for all configured datasets."""
-    for dataset in datasets:
-        get_dataset_directory(dataset).mkdir(
-            exist_ok=True,
-            parents=True,
-        )
+    """Move a file or directory with retry handling.
 
-
-# ---------------------------------------------------------------------------
-# Dataset download and extraction
-# ---------------------------------------------------------------------------
-
-def download_and_extract_cbioportal_dataset(
-    dataset: DatasetConfig,
-) -> None:
-    """Downloads, extracts, and reorganises a cBioPortal dataset.
+    Retry behaviour is useful when a synchronisation service or another
+    process briefly holds a file handle. The implementation is platform
+    independent and works on Windows, macOS, and Linux.
 
     Args:
-        dataset: Dataset configuration containing the cBioPortal study ID
-            and standardised local directory name.
+        source:
+            Source file or directory.
+
+        destination:
+            Destination file or directory.
+
+        retries:
+            Maximum number of attempts.
+
+        delay_seconds:
+            Delay between attempts. The delay increases slightly after
+            each failed attempt.
 
     Raises:
-        Exception: Re-raises any download, extraction, or file-system error
-            so that the overall pipeline cannot report false success.
+        OSError:
+            If the move fails after all retry attempts.
     """
-    target_dir = get_dataset_directory(dataset)
-    study_id = dataset.study_id
+    last_error = None
 
-    patient_file = target_dir / "data_clinical_patient.txt"
+    for attempt in range(1, retries + 1):
+        try:
+            shutil.move(str(source), str(destination))
+            return
 
-    if patient_file.exists() and patient_file.stat().st_size > 0:
+        except OSError as exc:
+            last_error = exc
+
+            if attempt == retries:
+                break
+
+            wait_seconds = delay_seconds * attempt
+
+            print(
+                f"  Move attempt {attempt}/{retries} failed for "
+                f"{source.name}: {exc}"
+            )
+            print(
+                f"  Retrying in {wait_seconds:.1f} seconds..."
+            )
+
+            time.sleep(wait_seconds)
+
+    raise OSError(
+        f"Failed to move {source} to {destination} "
+        f"after {retries} attempts."
+    ) from last_error
+
+
+def reorganise_extracted_dataset(
+    extracted_dir: Path,
+    target_dir: Path,
+) -> None:
+    """Move extracted dataset contents into the configured target directory.
+
+    cBioPortal archives typically extract into a directory named after the
+    study ID. This function moves the contents of that directory into the
+    configured standard directory under data/raw/.
+
+    The source directory is removed only after all contents have been moved
+    successfully.
+    """
+    if not extracted_dir.exists():
+        raise FileNotFoundError(
+            f"Expected extracted dataset directory not found: "
+            f"{extracted_dir}"
+        )
+
+    if not extracted_dir.is_dir():
+        raise NotADirectoryError(
+            f"Expected extracted dataset path to be a directory: "
+            f"{extracted_dir}"
+        )
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    print(
+        f"Reorganising files from {extracted_dir.name} to "
+        f"{format_relative_path(target_dir)}..."
+    )
+
+    extracted_items = list(extracted_dir.iterdir())
+
+    if not extracted_items:
+        raise FileNotFoundError(
+            f"Extracted dataset directory is empty: {extracted_dir}"
+        )
+
+    for item in extracted_items:
+        destination = target_dir / item.name
+
+        if destination.exists():
+            if destination.is_dir():
+                shutil.rmtree(destination)
+            else:
+                destination.unlink()
+
+        move_with_retry(item, destination)
+
+    extracted_dir.rmdir()
+
+    print(
+        f"Reorganisation of {extracted_dir.name} complete."
+    )
+
+
+def download_and_extract_dataset(
+    dataset: DatasetConfig,
+) -> None:
+    """Download, extract, and reorganise one configured dataset.
+
+    Args:
+        dataset:
+            Dataset configuration loaded from datasets.yaml.
+
+    Raises:
+        Exception:
+            Any download, extraction, or reorganisation failure is
+            propagated to the caller after cleanup.
+    """
+    target_dir = RAW_DIR / dataset.raw_directory
+    tar_path = RAW_DIR / f"{dataset.study_id}.tar.gz"
+    extracted_dir = RAW_DIR / dataset.study_id
+
+    if is_dataset_present(dataset):
         print(
-            f"Dataset {study_id} already exists in "
-            f"{target_dir.relative_to(PROJECT_ROOT).as_posix()} "
-            "and is non-empty."
+            f"Dataset {dataset.cohort_name} already exists in "
+            f"{format_relative_path(target_dir)}. Skipping."
         )
         return
 
-    if target_dir.exists():
-        try:
-            shutil.rmtree(target_dir)
+    print()
+    print("=" * 60)
+    print(f"Processing dataset: {dataset.cohort_name}")
+    print(f"Study ID: {dataset.study_id}")
+    print("=" * 60)
 
-            print(
-                f"Removed existing directory "
-                f"{target_dir.relative_to(PROJECT_ROOT).as_posix()} "
-                "to ensure a clean extraction."
-            )
-
-        except Exception as error:
-            print(
-                f"Failed to remove existing directory "
-                f"{target_dir.relative_to(PROJECT_ROOT).as_posix()}: "
-                f"{error}"
-            )
-            raise
-
-    target_dir.mkdir(
-        exist_ok=True,
-        parents=True,
+    url = (
+        f"{CBIOPORTAL_DATAHUB_URL}/"
+        f"{dataset.study_id}.tar.gz"
     )
 
-    tar_path = RAW_DIR / f"{study_id}.tar.gz"
-    url = f"https://datahub.assets.cbioportal.org/{study_id}.tar.gz"
-
     try:
-        print(f"Downloading dataset: {study_id}")
+        remove_existing_dataset_directory(target_dir)
+
+        if extracted_dir.exists():
+            print(
+                f"Removing previous incomplete extraction: "
+                f"{format_relative_path(extracted_dir)}"
+            )
+            shutil.rmtree(extracted_dir)
 
         download_file(url, tar_path)
 
-        print(f"Extracting dataset: {study_id}")
-
-        extract_tar_gz(tar_path, RAW_DIR)
-
-        extracted_dir = RAW_DIR / study_id
-
-        if not extracted_dir.exists() or not extracted_dir.is_dir():
-            raise FileNotFoundError(
-                f"Expected extracted directory was not found: "
-                f"{extracted_dir}"
-            )
-
-        print(
-            f"Reorganising files from {study_id} to "
-            f"{target_dir.relative_to(PROJECT_ROOT).as_posix()}..."
+        extract_tar_gz(
+            tar_path=tar_path,
+            extract_to=RAW_DIR,
         )
 
-        for item in extracted_dir.iterdir():
-            destination = target_dir / item.name
-
-            if destination.is_dir():
-                shutil.rmtree(destination)
-
-            elif destination.exists():
-                destination.unlink()
-
-            shutil.move(
-                str(item),
-                str(destination),
-            )
-
-        extracted_dir.rmdir()
-
-        print(f"Reorganisation of {study_id} complete.")
-
-    except Exception as error:
-        print(
-            f"Error downloading/extracting {study_id}: "
-            f"{error}"
+        reorganise_extracted_dataset(
+            extracted_dir=extracted_dir,
+            target_dir=target_dir,
         )
 
-        # Re-raise the original exception so the script exits with a failure
-        # status. This prevents the pipeline from incorrectly reporting that
-        # all datasets were downloaded successfully.
+        print(
+            f"Successfully downloaded and prepared "
+            f"{dataset.cohort_name}."
+        )
+
+    except Exception as exc:
+        print(
+            f"Error downloading/extracting "
+            f"{dataset.cohort_name}: {exc}"
+        )
+
         raise
 
     finally:
-        tar_path.unlink(missing_ok=True)
+        if tar_path.exists():
+            tar_path.unlink(missing_ok=True)
 
 
-# ---------------------------------------------------------------------------
-# Main orchestration
-# ---------------------------------------------------------------------------
+def setup_directories() -> None:
+    """Create the shared raw-data and log directories."""
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 
 def main() -> None:
-    """Orchestrates dataset directory setup and downloads."""
-    print("=" * 50)
+    """Load configuration and download all configured datasets."""
+    print("=" * 60)
     print("Downloading Raw cBioPortal Datasets")
-    print("=" * 50)
-    print()
+    print("=" * 60)
 
-    setup_directories(DATASETS)
+    setup_directories()
 
-    for dataset in DATASETS:
-        download_and_extract_cbioportal_dataset(dataset)
+    datasets = load_dataset_config(CONFIG_PATH)
 
-    print()
-    print("=" * 50)
-    print("All raw datasets downloaded and extracted successfully!")
-    print("=" * 50)
+    if not datasets:
+        raise ValueError(
+            f"No datasets found in configuration file: "
+            f"{CONFIG_PATH}"
+        )
 
-
-# ---------------------------------------------------------------------------
-# Script entry point
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    LOG_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
+    print(
+        f"Loaded {len(datasets)} dataset configuration(s) "
+        f"from {format_relative_path(CONFIG_PATH)}."
     )
 
-    with open(
-        LOG_PATH,
-        "w",
-        encoding="utf-8",
-    ) as log_file:
+    successful = 0
 
-        stdout_tee = TeeStream(
-            sys.stdout,
-            log_file,
-        )
+    for dataset in datasets:
+        try:
+            download_and_extract_dataset(dataset)
+            successful += 1
 
-        stderr_tee = TeeStream(
-            sys.stderr,
-            log_file,
-        )
+        except Exception as exc:
+            print(
+                f"\n[ERROR] Dataset '{dataset.cohort_name}' failed: "
+                f"{exc}"
+            )
+
+            # Fail fast. A partially downloaded dataset should not be
+            # treated as a successful pipeline run.
+            raise
+
+    print()
+    print("=" * 60)
+    print(
+        f"All datasets processed successfully: "
+        f"{successful}/{len(datasets)}."
+    )
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+    with open(LOG_PATH, "w", encoding="utf-8") as log_file:
+        stdout_tee = TeeStream(sys.stdout, log_file)
+        stderr_tee = TeeStream(sys.stderr, log_file)
 
         with (
             contextlib.redirect_stdout(stdout_tee),
             contextlib.redirect_stderr(stderr_tee),
         ):
             print(
-                "Logging console output to "
-                f"{LOG_PATH.relative_to(PROJECT_ROOT).as_posix()}"
+                f"Logging console output to "
+                f"{format_relative_path(LOG_PATH)}"
             )
-
             main()
