@@ -217,6 +217,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+
 # Data folders: ignore everything, then whitelist documentation
 data/**
 !data/**/
