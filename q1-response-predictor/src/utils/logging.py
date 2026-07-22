@@ -2,8 +2,29 @@
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
 from typing import IO, Any
 
+# ---------------------------------------------------------------------------
+# Bootstrap project root resolution for top-level imports
+# ---------------------------------------------------------------------------
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+SUBPROJECT_ROOT = SCRIPT_DIR.parent
+
+if str(SUBPROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(SUBPROJECT_ROOT))
+from src.utils.paths import (
+    PROJECT_ROOT,
+)    
+
+def display_path(path: Path) -> str:
+    """Return a project-relative path for logging where possible."""
+    try:
+        return path.relative_to(PROJECT_ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
 
 class TeeStream:
     """Writes output to multiple streams simultaneously.

@@ -19,18 +19,30 @@ from __future__ import annotations
 
 import json
 import time
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional
 
+import numpy as np
 import pandas as pd
 
+# ---------------------------------------------------------------------------
+# Bootstrap project root resolution for top-level imports
+# ---------------------------------------------------------------------------
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+SUBPROJECT_ROOT = SCRIPT_DIR.parent
+
+if str(SUBPROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(SUBPROJECT_ROOT))
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
+from src.config.constants import NON_SILENT_VARIANT_CLASSIFICATIONS
 
 SURVIVAL_ENDPOINTS = (
     "OS",
@@ -41,31 +53,6 @@ SURVIVAL_ENDPOINTS = (
 IDENTIFIER_COLUMNS = {
     "PATIENT_ID",
     "SAMPLE_ID",
-}
-
-ADMINISTRATIVE_SUFFIXES = (
-    "_PATIENT",
-    "_SAMPLE",
-)
-
-ADMINISTRATIVE_COLUMNS = {
-    "BIRTH_YEAR",
-    "CANCER_TYPE_DETAILED",
-    "PROTOCOL_SUBMIT_DATE",
-    "LENS_ID",
-}
-
-# Variant classifications considered protein-altering.
-NON_SILENT_VARIANT_CLASSIFICATIONS = {
-    "Frame_Shift_Del",
-    "Frame_Shift_Ins",
-    "In_Frame_Del",
-    "In_Frame_Ins",
-    "Missense_Mutation",
-    "Nonsense_Mutation",
-    "Splice_Site",
-    "Translation_Start_Site",
-    "Nonstop_Mutation",
 }
 
 MYGENE_QUERY_URL = "https://mygene.info/v3/query"
@@ -225,22 +212,8 @@ def clean_survival_endpoints(df: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Clinical data cleaning
 # ---------------------------------------------------------------------------
-
-def _is_administrative_column(column: str) -> bool:
-    """Return whether a column is considered administrative metadata."""
-    if column in IDENTIFIER_COLUMNS:
-        return False
-
-    if column.endswith(ADMINISTRATIVE_SUFFIXES):
-        return True
-
-    return column in ADMINISTRATIVE_COLUMNS
-
-
 def clean_clinical_df(
-    raw_df: pd.DataFrame,
-    *,
-    drop_constant_columns: bool = True,
+    raw_df: pd.DataFrame
 ) -> pd.DataFrame:
     """Clean and standardise a clinical dataframe.
 
@@ -258,9 +231,6 @@ def clean_clinical_df(
     Args:
         raw_df:
             Raw clinical dataframe.
-
-        drop_constant_columns:
-            Whether to remove non-identifier columns with zero variance.
 
     Returns:
         Cleaned clinical dataframe.
@@ -296,32 +266,112 @@ def clean_clinical_df(
 
     df = clean_survival_endpoints(df)
 
-    administrative_columns = [
-        column
-        for column in df.columns
-        if _is_administrative_column(column)
-    ]
-
-    df = df.drop(
-        columns=administrative_columns,
-        errors="ignore",
-    )
-
-    if drop_constant_columns:
-        constant_columns = [
-            column
-            for column in df.columns
-            if column not in IDENTIFIER_COLUMNS
-            and df[column].nunique(dropna=False) <= 1
-        ]
-
-        df = df.drop(
-            columns=constant_columns,
-            errors="ignore",
-        )
-
     return df.reset_index(drop=True)
 
+def drop_empty_columns(
+    df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Drop columns containing no usable values."""
+
+    cleaned = df.copy()
+
+    cleaned = cleaned.replace(
+        r"^\s*$",
+        np.nan,
+        regex=True,
+    )
+
+    return cleaned.dropna(
+        axis=1,
+        how="all",
+    )
+
+# ---------------------------------------------------------------------------
+# Mutation cleaning
+# ---------------------------------------------------------------------------
+def parse_maf_mutations(
+    maf_path: Path,
+    sample_ids: Optional[Sequence[str]] = None,
+) -> pd.DataFrame:
+    """Create a binary non-synonymous mutation matrix from a MAF file.
+
+    Args:
+        maf_path:
+            Path to the MAF file.
+        sample_ids:
+            Optional sample IDs to retain.
+
+    Returns:
+        Binary mutation matrix indexed by sample ID, with gene symbols as
+        columns. Returns an empty DataFrame if the file does not exist or
+        contains no qualifying mutations.
+    """
+    if not maf_path.exists():
+        return pd.DataFrame()
+
+    df_mut = pd.read_csv(
+        maf_path,
+        sep="\t",
+        comment="#",
+        low_memory=False,
+    )
+
+    required_columns = {
+        "Tumor_Sample_Barcode",
+        "Hugo_Symbol",
+        "Variant_Classification",
+    }
+
+    missing_columns = required_columns.difference(df_mut.columns)
+
+    if missing_columns:
+        raise ValueError(
+            f"MAF file is missing required columns: "
+            f"{sorted(missing_columns)}"
+        )
+
+    df_mut["Tumor_Sample_Barcode"] = (
+        df_mut["Tumor_Sample_Barcode"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+    )
+
+    if sample_ids is not None:
+        normalised_sample_ids = {
+            str(sample_id).strip().upper()
+            for sample_id in sample_ids
+        }
+
+        df_mut = df_mut[
+            df_mut["Tumor_Sample_Barcode"].isin(normalised_sample_ids)
+        ]
+
+    df_mut = df_mut[
+        df_mut["Variant_Classification"].isin(
+            NON_SILENT_VARIANT_CLASSIFICATIONS
+        )
+    ]
+
+    if df_mut.empty:
+        return pd.DataFrame()
+
+    mutation_matrix = (
+        df_mut.assign(mutation=1)
+        .pivot_table(
+            index="Tumor_Sample_Barcode",
+            columns="Hugo_Symbol",
+            values="mutation",
+            aggfunc="max",
+            fill_value=0,
+        )
+        .astype("int8")
+    )
+
+    mutation_matrix.index.name = None
+    mutation_matrix.columns.name = None
+
+    return mutation_matrix
 
 # ---------------------------------------------------------------------------
 # RNA-seq cleaning
@@ -455,6 +505,54 @@ def align_expression_and_clinical(
 
     return aligned_expression, aligned_clinical
 
+
+
+def read_cbioportal_table(
+    path: Path,
+    required_column: str,
+) -> pd.DataFrame:
+    """Read a cBioPortal tab-delimited file.
+
+    Detects the header row dynamically rather than assuming a fixed number
+    of metadata/comment lines.
+
+    Args:
+        path:
+            Path to the cBioPortal tab-delimited file.
+
+        required_column:
+            Column expected to appear in the header.
+
+    Returns:
+        Parsed DataFrame.
+
+    Raises:
+        FileNotFoundError:
+            If the file does not exist.
+
+        ValueError:
+            If the required column cannot be found in the detected header.
+    """
+    if not path.exists():
+        raise FileNotFoundError(
+            f"cBioPortal file not found: {path}"
+        )
+
+    with path.open("r", encoding="utf-8") as file:
+        for line_number, line in enumerate(file):
+            columns = line.rstrip("\n\r").split("\t")
+
+            if required_column in columns:
+                return pd.read_csv(
+                    path,
+                    sep="\t",
+                    skiprows=line_number,
+                )
+
+    raise ValueError(
+        f"Could not detect a header containing "
+        f"'{required_column}' in {path}."
+    )
 
 # ---------------------------------------------------------------------------
 # Entrez Gene ID mapping
