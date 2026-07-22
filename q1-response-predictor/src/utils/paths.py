@@ -1,105 +1,224 @@
-"""Shared project path-resolution utilities.
+"""Path-resolution helpers shared across project and subproject scripts.
 
-Provides:
-- dynamic project-root discovery
-- strongly typed standard project-directory paths
+Project structure:
 
-Dataset-specific paths should not be defined here. Those should be derived
-from the dataset configuration loaded from config/datasets.yaml.
+    melanoma-assignment-3/              <- PROJECT_ROOT
+    ├── data/
+    │   ├── raw/
+    │   └── processed/
+    │
+    └── q1-response-predictor/          <- SUBPROJECT_ROOT
+        ├── config/
+        ├── logs/
+        ├── models/
+        ├── plots/
+        ├── reports/
+        ├── scripts/
+        └── src/
+
+The top-level project root contains shared data and logs. The subproject
+contains code, configuration, models, plots, and reports specific to the
+current assignment question.
 """
 
 from dataclasses import dataclass
 from pathlib import Path
-
-
-# ---------------------------------------------------------------------------
-# Project structure
-# ---------------------------------------------------------------------------
-
-DEFAULT_PROJECT_ROOT_MARKERS = ("src", "data")
+from typing import Iterable
 
 
 @dataclass(frozen=True)
 class ProjectPaths:
-    """Standard directory paths for the project.
+    """Resolved filesystem paths for the project and current subproject."""
 
-    Attributes:
-        root: Project root directory.
-        data: Root data directory.
-        raw: Raw, unmodified input data directory.
-        processed: Cleaned and transformed data directory.
-        config: Project configuration directory.
-        logs: Pipeline log directory.
-        reports: Generated reports directory.
-    """
+    # ------------------------------------------------------------------
+    # Root directories
+    # ------------------------------------------------------------------
 
-    root: Path
+    project_root: Path
+    subproject_root: Path
+
+    # ------------------------------------------------------------------
+    # Shared project-level resources
+    # ------------------------------------------------------------------
+
     data: Path
     raw: Path
     processed: Path
-    config: Path
+    
+
+    # ------------------------------------------------------------------
+    # Subproject-level resources
+    # ------------------------------------------------------------------
+
     logs: Path
+    config: Path
     reports: Path
+    models: Path
+    plots: Path
+
+    # ------------------------------------------------------------------
+    # Convenience helpers for structured output directories
+    # ------------------------------------------------------------------
+
+    def report_dir(self, *parts: str) -> Path:
+        """Return a path within the subproject reports directory."""
+        return self.reports.joinpath(*parts)
+
+    def model_dir(self, *parts: str) -> Path:
+        """Return a path within the subproject models directory."""
+        return self.models.joinpath(*parts)
+
+    def plot_dir(self, *parts: str) -> Path:
+        """Return a path within the subproject plots directory."""
+        return self.plots.joinpath(*parts)
+
+    def ensure_directories(self) -> None:
+        """Create the standard project and subproject directories."""
+        directories = (
+            self.data,
+            self.raw,
+            self.processed,
+            self.logs,
+            self.config,
+            self.reports,
+            self.models,
+            self.plots,
+        )
+
+        for directory in directories:
+            directory.mkdir(parents=True, exist_ok=True)
 
 
-def find_project_root(
+def find_directory_with_markers(
     start: Path,
-    markers: tuple[str, ...] = DEFAULT_PROJECT_ROOT_MARKERS,
+    markers: Iterable[str],
 ) -> Path:
-    """Finds the project root by searching upwards from a starting path.
-
-    A directory is considered the project root when it contains all
-    configured marker directories.
+    """Find the nearest ancestor containing all specified markers.
 
     Args:
-        start: Path from which to begin searching. This may be a file or
-            directory.
-        markers: Directory names expected to exist at the project root.
+        start:
+            File or directory from which to begin searching.
+
+        markers:
+            Files or directories that must exist in the candidate directory.
 
     Returns:
-        Resolved project root path.
+        The nearest matching ancestor directory.
 
     Raises:
-        FileNotFoundError: If no matching project root can be found.
+        FileNotFoundError:
+            If no matching directory is found.
     """
     start = start.resolve()
 
-    # If the starting path is a file, search from its parent directory.
-    search_start = start.parent if start.is_file() else start
+    if start.is_file():
+        start = start.parent
 
-    for candidate in (search_start, *search_start.parents):
-        if all((candidate / marker).is_dir() for marker in markers):
+    markers = tuple(markers)
+
+    for candidate in (start, *start.parents):
+        if all((candidate / marker).exists() for marker in markers):
             return candidate
 
     raise FileNotFoundError(
-        f"Could not locate project root. "
-        f"Expected directories {markers} above: {start}"
+        f"Could not find a directory containing all markers "
+        f"{markers!r} starting from {start}"
     )
 
 
-def get_project_paths(
-    project_root: Path,
-) -> ProjectPaths:
-    """Builds standard project paths from a project root.
+def find_subproject_root(start: Path) -> Path:
+    """Find the root directory of the current subproject.
 
-    This function only defines stable project-level directories. Dataset-
-    specific directories should be derived from the dataset configuration.
+    A subproject is identified by the presence of both ``src`` and
+    ``config`` directories.
 
     Args:
-        project_root: Root directory of the project.
+        start:
+            Any file or directory within the subproject.
 
     Returns:
-        A ProjectPaths instance containing standard project directories.
+        The resolved subproject root.
     """
-    project_root = project_root.resolve()
+    return find_directory_with_markers(
+        start,
+        markers=("src", "config"),
+    )
+
+
+def find_project_root(subproject_root: Path) -> Path:
+    """Find the top-level project root containing a subproject.
+
+    The top-level project root is expected to contain the shared ``data``
+    directory alongside the subproject directory.
+
+    Args:
+        subproject_root:
+            Path to the current subproject root.
+
+    Returns:
+        The resolved top-level project root.
+
+    Raises:
+        NotADirectoryError:
+            If ``subproject_root`` is not a directory.
+
+        FileNotFoundError:
+            If the expected shared ``data`` directory is not found.
+    """
+    subproject_root = subproject_root.resolve()
+
+    if not subproject_root.is_dir():
+        raise NotADirectoryError(
+            f"Subproject root is not a directory: {subproject_root}"
+        )
+
+    project_root = subproject_root.parent
     data_dir = project_root / "data"
 
+    if not data_dir.is_dir():
+        raise FileNotFoundError(
+            f"Expected shared data directory not found: {data_dir}"
+        )
+
+    return project_root
+
+
+def get_project_paths(start: Path) -> ProjectPaths:
+    """Resolve all important project and subproject paths.
+
+    Args:
+        start:
+            Any file or directory within the current subproject.
+
+    Returns:
+        A ``ProjectPaths`` instance containing resolved paths for:
+
+        - the overall project root;
+        - the current subproject root;
+        - shared raw and processed data;
+        - shared logs;
+        - subproject configuration;
+        - subproject reports;
+        - subproject models;
+        - subproject plots.
+    """
+    subproject_root = find_subproject_root(start)
+    project_root = find_project_root(subproject_root)
+
     return ProjectPaths(
-        root=project_root,
-        data=data_dir,
-        raw=data_dir / "raw",
-        processed=data_dir / "processed",
-        config=project_root / "config",
-        logs=project_root / "logs",
-        reports=project_root / "reports",
+        # Roots
+        project_root=project_root,
+        subproject_root=subproject_root,
+
+        # Shared project-level resources
+        data=project_root / "data",
+        raw=project_root / "data" / "raw",
+        processed=project_root / "data" / "processed",
+        
+        # Subproject-level resources
+        logs=subproject_root / "logs",
+        config=subproject_root / "config",
+        reports=subproject_root / "reports",
+        models=subproject_root / "models",
+        plots=subproject_root / "plots",
     )
