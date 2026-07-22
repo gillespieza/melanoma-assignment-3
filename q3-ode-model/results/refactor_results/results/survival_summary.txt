@@ -1,0 +1,42 @@
+ODE Model — Survival Analysis Summary (TCGA-SKCM Melanoma)
+============================================================
+
+pERK:
+  Optimal dose (Vemurafenib dose) : BRAFi_0.560
+  Cox PH p-value           : 1.7752e-01
+  KM threshold             : 195.2346
+  Log-rank p-value         : 2.4519e-02
+  High group n=177 (median OS 68.1 mo), Low group n=244 (median OS 103.1 mo)
+  Observed direction       : High pERK -> WORSE survival
+
+tumour burden:
+  Optimal dose (Vemurafenib dose) : BRAFi_0.230
+  Cox PH p-value           : 6.3254e-02
+  KM threshold             : 0.1967
+  Log-rank p-value         : 2.6873e-02
+  High group n=297 (median OS 68.1 mo), Low group n=124 (median OS 105.0 mo)
+  Observed direction       : High tumour burden -> WORSE survival
+
+checkpoint tumour burden:
+  Optimal dose (Anti-PD-1 dose) : antiPD1_0.560
+  Cox PH p-value           : 9.8633e-03
+  KM threshold             : 0.1563
+  Log-rank p-value         : 2.4030e-03
+  High group n=275 (median OS 65.9 mo), Low group n=146 (median OS 148.2 mo)
+  Observed direction       : High checkpoint tumour burden -> WORSE survival
+
+Interpretation:
+  A log-rank p < 0.05 means the ODE readout separates melanoma patients by
+  survival; the observed direction for each readout is stated above and is
+  read directly from the data, not assumed.
+   * Mechanistic pERK reflects MAPK-pathway output, which is greatest in
+     NRAS-mutant tumours — the worst-prognosis SKCM subtype — so elevated
+     pERK tracks more aggressive disease.
+   * Modelled tumour burden (BRAFi sweep) integrates proliferation against
+     immune control; high residual burden marks aggressive, immune-cold
+     disease.
+   * Modelled checkpoint tumour burden (anti-PD-1 sweep, Module D) marks
+     disease that persists even under simulated checkpoint blockade —
+     i.e. checkpoint-refractory tumours — expected to track worse OS just
+     as the BRAFi-arm tumour burden does.
+  All three readouts are prognostic where log-rank p < 0.05.

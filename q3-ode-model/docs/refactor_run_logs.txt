@@ -1,0 +1,279 @@
+##################  PHASE 1  ##################
+============================================================
+  Melanoma BRAF/MEK/ERK ODE Project — Environment Check
+============================================================
+
+Python version: 3.9.25 (main, Apr 17 2026, 00:00:00) 
+[GCC 11.5.0 20240719 (Red Hat 11.5.0-14)]
+
+  [OK]   numpy              v2.0.2       — Array maths — backbone of ODE solver
+  [OK]   pandas             v2.3.3       — Data tables — loads TCGA files
+  [OK]   scipy.integrate    v1.13.1      — ODE solver (odeint)
+  [OK]   lifelines          v0.30.0      — Kaplan-Meier & Cox PH survival analysis
+  [OK]   matplotlib         v3.9.4       — Plotting KM curves and correlations
+  [OK]   sklearn            v1.6.1       — ML baseline (Phase 6)
+
+  [OK]   scipy.integrate.odeint confirmed available
+
+TCGA-SKCM data directory:
+  /scratch/23225831/melanoma-assignment/q1-response-predictor/data/raw/skcm_tcga_pan_can_atlas_2018
+
+  [OK]   data_clinical_patient.txt         0.1 MB  — Survival (OS_MONTHS, OS_STATUS)
+  [OK]   data_clinical_sample.txt          0.1 MB  — SAMPLE_ID ↔ PATIENT_ID mapping
+  [OK]   data_mrna_seq_v2_rsem.txt        62.4 MB  — RSEM gene expression (20k genes)
+  [OK]   data_mutations.txt              547.3 MB  — BRAF V600E/K mutation status
+  [OK]   data_rppa.txt                     0.8 MB  — RPPA phospho-protein (pERK validation)
+
+  CPU cores available: 48
+  (Phase 3 will use up to 48 parallel workers for ~443 patients)
+
+============================================================
+  ALL CHECKS PASSED — Ready for Phase 2
+============================================================
+
+##################  PHASE 2  ##################
+============================================================
+  Phase 2: Data Pre-processing (TCGA-SKCM Melanoma)
+============================================================
+
+[Step A] Loading clinical survival data...
+  425 samples with valid survival data
+  Events (deceased): 215  |  Censored (living): 210
+
+[Step B] Extracting 12 pathway genes from RSEM file (~60 MB)...
+  NOTE: signature genes not found in RSEM (IMPRES pairs using them are skipped, not fatal): ['VSIR']
+  Checkpoint signatures (IMPRES, PD_L1): 443 samples (reused Q1 signatures.py)
+  Normalising each gene by its mean across all patients (mean -> 1.0)...
+  Expression matrix: 443 samples × 12 genes (+ CYT)
+
+[Step C] Determining BRAF mutation status from mutations file (~550 MB)...
+  BRAF-mutated samples (activating): 202
+  (V600E=158, V600K=35, plus V600R/D/K601E)
+  NRAS-mutated samples (activating): 117
+
+[Step D] Merging survival + expression + BRAF status on SAMPLE_ID...
+  Final merged dataset: 421 patients
+    BRAF-mutant: 192  |  NRAS-mutant (BRAF-WT): 108  |  MAPK-quiet WT: 121
+    Checkpoint-axis inputs: PDCD1/CD274 for all 421 patients  |  IMPRES available for 421 patients
+
+  Saved: /scratch/23225831/melanoma-assignment/q3-ode-model/data/melanoma_params_full.csv
+  Shape: 421 rows × 24 columns
+
+============================================================
+  Phase 2 COMPLETE — Ready for Phase 3 (ODE Simulation)
+============================================================
+
+##################  PHASE 3  ##################
+====================================================================
+  Phase 3: Mechanistic Melanoma ODE (signalling + tumour-immune)
+====================================================================
+
+[1] Loading patient data: /scratch/23225831/melanoma-assignment/q3-ode-model/data/melanoma_params_full.csv
+    421 patients  (192 BRAF-mutant, 229 WT)
+
+[2] Computing cohort-reference pERK (wild-type baseline) and CYT...
+    reference pERK (ERKpp) = 217.490 nM  (cascade at published V1=2.5)
+    reference CYT (cohort mean) = 1.027  (Rooney et al. 2015)
+
+[3] Simulating on 48 CPU cores
+    BRAFi dose u in [0.01, 1.0] -> vemurafenib 0..1000 nM
+    anti-PD-1 dose u in [0.01, 1.0] -> 0..500 nM
+    fast module: 8-ODE MAPK cascade (feedback Ki=9.0)
+    slow module: melanoma tumour-immune (lambdaC=0.616/day)
+    checkpoint module: PD-1/PD-L1 binding (Kd_PA=5.0, Kd_PL=8.0 nM)
+    421 patients x (10 BRAFi + 10 anti-PD-1) doses = 8420 fast+slow solves
+    Progress: 50/421 (12%) — 0s
+    Progress: 100/421 (24%) — 0s
+    Progress: 150/421 (36%) — 0s
+    Progress: 200/421 (48%) — 0s
+    Progress: 250/421 (59%) — 1s
+    Progress: 300/421 (71%) — 1s
+    Progress: 350/421 (83%) — 1s
+    Progress: 400/421 (95%) — 1s
+    Progress: 421/421 (100%) — 1s
+
+    Simulation complete in 0.7s
+
+[4] Assembling result tables...
+    Saved: /scratch/23225831/melanoma-assignment/q3-ode-model/results/pERK_simulations.csv  (421, 15)
+    Saved: /scratch/23225831/melanoma-assignment/q3-ode-model/results/tumour_burden_simulations.csv  (421, 15)
+    Saved: /scratch/23225831/melanoma-assignment/q3-ode-model/results/checkpoint_tumour_simulations.csv  (421, 17)
+
+[5] Sanity check — mean pERK (low dose -> high dose):
+    BRAF-V600E     low= 195.37  high= 100.57  peak= 195.37  (suppressed)
+    NRAS-mutant    low= 258.57  high= 267.79  peak= 280.10  (paradox/flat)
+    MAPK-quiet WT  low= 161.51  high= 170.16  peak= 188.12  (paradox/flat)
+
+[6] Sanity check — checkpoint blockade shrinks tumour burden more in
+    high-PD-L1 patients than low-PD-L1 patients (median CD274 split):
+    High PD-L1 (CD274 > median)  untreated= 0.3595  max anti-PD-1= 0.2392  (burden drop  33.4%)
+    Low PD-L1 (CD274 <= median)  untreated= 0.4378  max anti-PD-1= 0.4290  (burden drop   2.0%)
+
+====================================================================
+  Phase 3 COMPLETE — Ready for Phase 4 (Survival Analysis)
+====================================================================
+
+##################  PHASE 4  ##################
+=================================================================
+  Phase 4: Survival Analysis (TCGA-SKCM)
+=================================================================
+
+[1] Loading data...
+    Clinical: 421  |  pERK sims: (421, 15)  |  tumour sims: (421, 15)  |  checkpoint sims: (421, 17)
+
+-------------------------------------------------------
+  Analysing ODE readout: pERK
+-------------------------------------------------------
+
+  [pERK] 421 patients with complete survival data
+  [pERK] Optimal dose: BRAFi_0.560  |  Cox p = 1.7752e-01
+  [pERK] Optimal threshold: 195.2346  |  log-rank p = 2.4519e-02
+  [pERK] High n=177 (median OS 68.1 mo)  |  Low n=244 (median OS 103.1 mo)  -> worse: High
+
+-------------------------------------------------------
+  Analysing ODE readout: tumour burden
+-------------------------------------------------------
+
+  [tumour burden] 421 patients with complete survival data
+  [tumour burden] Optimal dose: BRAFi_0.230  |  Cox p = 6.3254e-02
+  [tumour burden] Optimal threshold: 0.1967  |  log-rank p = 2.6873e-02
+  [tumour burden] High n=297 (median OS 68.1 mo)  |  Low n=124 (median OS 105.0 mo)  -> worse: High
+
+-------------------------------------------------------
+  Analysing ODE readout: checkpoint tumour burden
+-------------------------------------------------------
+
+  [checkpoint tumour burden] 421 patients with complete survival data
+  [checkpoint tumour burden] Optimal dose: antiPD1_0.560  |  Cox p = 9.8633e-03
+  [checkpoint tumour burden] Optimal threshold: 0.1563  |  log-rank p = 2.4030e-03
+  [checkpoint tumour burden] High n=275 (median OS 65.9 mo)  |  Low n=146 (median OS 148.2 mo)  -> worse: High
+
+ODE Model — Survival Analysis Summary (TCGA-SKCM Melanoma)
+============================================================
+
+pERK:
+  Optimal dose (Vemurafenib dose) : BRAFi_0.560
+  Cox PH p-value           : 1.7752e-01
+  KM threshold             : 195.2346
+  Log-rank p-value         : 2.4519e-02
+  High group n=177 (median OS 68.1 mo), Low group n=244 (median OS 103.1 mo)
+  Observed direction       : High pERK -> WORSE survival
+
+tumour burden:
+  Optimal dose (Vemurafenib dose) : BRAFi_0.230
+  Cox PH p-value           : 6.3254e-02
+  KM threshold             : 0.1967
+  Log-rank p-value         : 2.6873e-02
+  High group n=297 (median OS 68.1 mo), Low group n=124 (median OS 105.0 mo)
+  Observed direction       : High tumour burden -> WORSE survival
+
+checkpoint tumour burden:
+  Optimal dose (Anti-PD-1 dose) : antiPD1_0.560
+  Cox PH p-value           : 9.8633e-03
+  KM threshold             : 0.1563
+  Log-rank p-value         : 2.4030e-03
+  High group n=275 (median OS 65.9 mo), Low group n=146 (median OS 148.2 mo)
+  Observed direction       : High checkpoint tumour burden -> WORSE survival
+
+Interpretation:
+  A log-rank p < 0.05 means the ODE readout separates melanoma patients by
+  survival; the observed direction for each readout is stated above and is
+  read directly from the data, not assumed.
+   * Mechanistic pERK reflects MAPK-pathway output, which is greatest in
+     NRAS-mutant tumours — the worst-prognosis SKCM subtype — so elevated
+     pERK tracks more aggressive disease.
+   * Modelled tumour burden (BRAFi sweep) integrates proliferation against
+     immune control; high residual burden marks aggressive, immune-cold
+     disease.
+   * Modelled checkpoint tumour burden (anti-PD-1 sweep, Module D) marks
+     disease that persists even under simulated checkpoint blockade —
+     i.e. checkpoint-refractory tumours — expected to track worse OS just
+     as the BRAFi-arm tumour burden does.
+  All three readouts are prognostic where log-rank p < 0.05.
+
+  Saved KM figure : /scratch/23225831/melanoma-assignment/q3-ode-model/plots/km_ode_stratified.pdf
+  Saved scan figure: /scratch/23225831/melanoma-assignment/q3-ode-model/plots/cox_dose_scan.pdf
+  Saved summary   : /scratch/23225831/melanoma-assignment/q3-ode-model/results/survival_summary.txt
+
+=================================================================
+  Phase 4 COMPLETE — Ready for Phase 5 (RPPA Validation)
+=================================================================
+
+##################  PHASE 5  ##################
+=================================================================
+  Phase 5: RPPA Phospho-Protein Validation
+=================================================================
+
+[1] Loading ODE baseline pERK predictions...
+    421 patients with ODE predictions
+
+[2] Loading measured RPPA phospho-protein data...
+    Antibodies found: ['pERK (measured)', 'pMEK (measured)']
+    329 samples with RPPA data
+
+[3] Correlating ODE pERK vs measured RPPA phospho-proteins...
+    310 patients with BOTH ODE prediction and RPPA measurement
+
+    ODE pERK vs pERK (measured):
+      Pearson  r = 0.175  p = 2.033e-03
+      Spearman r = 0.164  p = 3.761e-03
+
+    ODE pERK vs pMEK (measured):
+      Pearson  r = -0.031  p = 5.819e-01
+      Spearman r = 0.038  p = 5.099e-01
+
+[4] Subtype-level check: pERK by MAPK genotype (model vs measured)...
+    NRAS highest pERK — MWU p = 3.156e-09
+
+ODE vs RPPA Validation — TCGA-SKCM Melanoma
+==================================================
+Patients with both ODE and RPPA data: 310
+ODE readout: baseline pERK (dose BRAFi_0.010)
+
+ODE pERK vs pERK (measured)  [PRIMARY]:
+  Pearson  r = 0.175, p = 2.033e-03
+  Spearman r = 0.164, p = 3.761e-03
+  SIGNIFICANT (positive association)
+
+ODE pERK vs pMEK (measured)  [secondary]:
+  Pearson  r = -0.031, p = 5.819e-01
+  Spearman r = 0.038, p = 5.099e-01
+  not significant (negative association)
+
+Subtype means (ODE-predicted / measured pERK):
+  WT   : ODE +165.792   measured -0.377   (n=92)
+  BRAF : ODE +193.288   measured -0.525   (n=141)
+  NRAS : ODE +264.745   measured +0.135   (n=77)
+NRAS-mutant vs rest, measured pERK: Mann-Whitney p = 3.156e-09 (higher in NRAS)
+Both model and RPPA agree NRAS-mutant tumours have the highest pERK.
+
+  Saved plot   : /scratch/23225831/melanoma-assignment/q3-ode-model/plots/ode_vs_rppa_validation.pdf
+  Saved summary: /scratch/23225831/melanoma-assignment/q3-ode-model/results/rppa_validation_summary.txt
+
+=================================================================
+  Phase 5 COMPLETE — Ready for Phase 6 (ML vs ODE)
+=================================================================
+
+##################  PHASE 6  ##################
+=================================================================
+  Phase 6: Mechanistic ODE vs Machine Learning (TCGA-SKCM)
+=================================================================
+
+Patients with unambiguous 2-year outcome: 358
+  Survived > 2 yr: 285  |  Died <= 2 yr: 73
+
+[Running 5-fold cross-validation — ROC-AUC]
+  ODE "Digital Twin"     ROC-AUC = 0.666 ± 0.074  (3 features)
+  Neural Net             ROC-AUC = 0.583 ± 0.054  (12 features)
+  Random Forest          ROC-AUC = 0.686 ± 0.046  (12 features)
+  Logistic Reg           ROC-AUC = 0.646 ± 0.029  (12 features)
+
+  Saved: /scratch/23225831/melanoma-assignment/q3-ode-model/results/ml_vs_ode_comparison.csv
+  Saved: /scratch/23225831/melanoma-assignment/q3-ode-model/plots/ml_vs_ode_comparison.pdf
+
+  Best model: Random Forest (12 raw features)
+  ODE digital twin AUC = 0.666 using only 3 interpretable features
+
+=================================================================
+  Phase 6 COMPLETE — Pipeline finished!
+=================================================================

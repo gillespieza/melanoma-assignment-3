@@ -6,7 +6,7 @@ constants are identical for every patient; only INPUTS vary per patient —
 protein abundances (from RSEM expression), mutation state (RAS-GTP level /
 BRAF-V600E monomer), and drug dose.
 
-Three coupled modules with an explicit fast/slow timescale split (a
+Four coupled modules with an explicit fast/slow timescale split (a
 quasi-steady-state approximation):
 
   MODULE A — RAF dimerisation + drug binding  (the RAF-inhibitor paradox)
@@ -36,21 +36,42 @@ quasi-steady-state approximation):
     mechanistic pERK output of Module B (pERK / pERK_ref). Because that pERK
     carries the RAF paradox from Module A, the drug shrinks BRAF-V600E tumours
     but not NRAS/WT tumours. CD8 killing uses the patient's measured
-    infiltration (CD8A/PRF1/GZMA) as the effector level. Solved on its own slow
-    timescale with pERK as a fixed input (quasi-steady-state), so the fast
-    cascade is not co-integrated with the slow tumour dynamics.
+    infiltration (CD8A/PRF1/GZMA) as the effector level, scaled by cytolytic
+    capacity (Module D) and gated by checkpoint suppression (Module D). Solved
+    on its own slow timescale with pERK as a fixed input (quasi-steady-state),
+    so the fast cascade is not co-integrated with the slow tumour dynamics.
     Readout: steady-state tumour burden C (g/cm^3).
+
+  MODULE D — Checkpoint axis + diallable anti-PD-1  (steady state)
+    Minimal PD-1/PD-L1 binding equilibrium (Lai et al. 2017, BMC Syst Biol
+    11:70 — the same paper Module C's tumour-immune constants come from).
+    Anti-PD-1 drug (A) competitively depletes free PD-1 (P) before it can form
+    the inhibitory complex (Q) with PD-L1 (L); Q suppresses CD8 killing.
+    f_kill = 1 - Q/P_tot is the fraction of killing capacity NOT blocked by the
+    checkpoint (1.0 = fully unleashed, 0.0 = fully suppressed). At drug = 0,
+    f_kill reflects the patient's own baseline PD-1/PD-L1 burden — this is why
+    Module C's killing term is no longer a fixed universal eta8*T8: it is
+    gated by each patient's checkpoint state even before any drug is given.
+    Also implements the CYT "speed limit" (Rooney et al. 2015): even a fully
+    unleashed (f_kill=1) tumour can only be killed as fast as the patient's
+    baseline GZMA/PRF1 cytolytic machinery allows.
+    Readout: tumour burden under a vemurafenib-only sweep (checkpoint held at
+    each patient's untreated baseline) AND under an anti-PD-1-only sweep
+    (BRAFi held at zero) — the two arms of the Q5 treatment decision tree.
 
 Per-patient INPUTS only (kinetics are fixed):
   * protein totals  : Raf<-BRAF, MEK<-mean(MAP2K1,MAP2K2), ERK<-mean(MAPK1,MAPK3)
   * RAS-GTP level   : high if NRAS-activating mutation, basal otherwise
   * BRAF-V600E pool : present iff BRAF-V600 activating mutation
   * infiltration    : mean(CD8A, PRF1, GZMA)
-  * drug dose       : vemurafenib concentration (nM)
+  * cytolytic level : CYT = mean(GZMA, PRF1)                    (Module D)
+  * checkpoint pool : PD-1 <- PDCD1, PD-L1 <- CD274 expression  (Module D)
+  * drug dose       : vemurafenib concentration (nM) AND/OR anti-PD-1 (nM)
 
 Output:
-    results/pERK_simulations.csv           pERK (di-phospho-ERK) per patient/dose
-    results/tumour_burden_simulations.csv  tumour burden per patient/dose
+    results/pERK_simulations.csv              pERK per patient/BRAFi-dose
+    results/tumour_burden_simulations.csv     tumour burden per patient/BRAFi-dose
+    results/checkpoint_tumour_simulations.csv tumour burden per patient/anti-PD-1-dose
 """
 
 import os
@@ -66,14 +87,22 @@ DATA_FILE   = os.path.join(BASE_DIR, "data", "melanoma_params_full.csv")
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
-OUT_PERK   = os.path.join(RESULTS_DIR, "pERK_simulations.csv")
-OUT_TUMOUR = os.path.join(RESULTS_DIR, "tumour_burden_simulations.csv")
+OUT_PERK       = os.path.join(RESULTS_DIR, "pERK_simulations.csv")
+OUT_TUMOUR     = os.path.join(RESULTS_DIR, "tumour_burden_simulations.csv")
+OUT_CHECKPOINT = os.path.join(RESULTS_DIR, "checkpoint_tumour_simulations.csv")
 
 # ─── Simulation grid ──────────────────────────────────────────────────────────
 DOSE_UNITS     = np.linspace(0.01, 1.0, num=10)      # normalised dose knob
 DRUG_MAX_NM    = 1000.0                              # u = 1.0  ->  1 uM vemurafenib
 BRAFi_dose     = DOSE_UNITS                          # kept for column naming
 DOSE_COL_NAMES = ["BRAFi_" + f"{v:.3f}" for v in DOSE_UNITS]
+
+# Anti-PD-1 dose sweep (Module D). Kept as its own grid/output — a full
+# BRAFi x anti-PD-1 combination grid (and the antagonism it would let us
+# study) is deliberately deferred; see docs/Q3_Refactor_Proposal.md.
+ANTIPD1_DOSE_UNITS = np.linspace(0.01, 1.0, num=10)  # normalised dose knob
+ANTIPD1_MAX_NM     = 500.0                           # u = 1.0 -> 500 nM anti-PD-1
+ANTIPD1_COL_NAMES  = ["antiPD1_" + f"{v:.3f}" for v in ANTIPD1_DOSE_UNITS]
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  UNIVERSAL PARAMETERS (identical for every patient) — all from the literature
@@ -133,6 +162,18 @@ RASGTP_V600E = 0.05
 PERK_PROLIF_CAP = 3.0    # max fold-change of tumour growth from ERK
 PERK_PROLIF_MIN = 0.05   # floor (avoids zero growth)
 
+# ── Module D: checkpoint axis (PD-1 / PD-L1 / complex) + anti-PD-1 ────────────
+# Minimal steady-state binding model (Lai et al. 2017, BMC Syst Biol 11:70 —
+# the same paper Module C's lambdaC/dC/CM/eta8/dT8 constants are taken from).
+# Anti-PD-1 (drug A, nM) competitively occupies PD-1 (P) before it can bind
+# PD-L1 (L) to form the inhibitory complex (Q). Like Module A's KD_RAF/COOP,
+# these binding constants are literature-motivated order-of-magnitude values,
+# not separately fit.
+KD_PA        = 5.0     # nM, anti-PD-1 affinity for PD-1 (biochemical, ~nM range)
+KD_PL        = 8.0     # nM, PD-1-PD-L1 complex affinity (published range)
+PDCD1_TOTAL_0 = 50.0    # nM, total PD-1 pool at mean PDCD1 expression (=1.0)
+PDL1_TOTAL_0  = 50.0    # nM, total PD-L1 pool at mean CD274 expression (=1.0)
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  MODULE A — RAF dimerisation + drug  ->  effective active-RAF drive
@@ -171,6 +212,28 @@ def active_raf_signal(drug_nM, raf_total, rasgtp, v600e_frac):
 # Reference RAF drive (wild-type, basal RAS-GTP, mean expression, no drug) —
 # used to normalise Module A output onto the published baseline V1 = 2.5.
 _A_REF = active_raf_signal(0.0, RAF_TOTAL_0, RASGTP_BASAL, 0.0)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MODULE D — checkpoint axis (PD-1/PD-L1 binding equilibrium) + anti-PD-1
+# ══════════════════════════════════════════════════════════════════════════════
+def checkpoint_kill_factor(drug_nM, pdcd1_pool, pdl1_pool):
+    """
+    Fraction of CD8 killing capacity NOT blocked by the PD-1/PD-L1 checkpoint.
+
+    P_free : PD-1 remaining after anti-PD-1 competitively occupies some of it.
+    Q      : inhibitory PD-1/PD-L1 complex formed from the remaining free PD-1.
+    f_kill = 1 - (Q / P_tot)  ->  1.0 = fully unleashed, 0.0 = fully suppressed.
+
+    At drug_nM = 0 this still returns < 1 whenever the patient's own PD-L1
+    pool is non-trivial relative to KD_PL — i.e. the checkpoint is already
+    partly "on" from the tumour's baseline biology, exactly as in Lai et al.
+    Increasing drug_nM depletes P_free, which depletes Q, which raises f_kill.
+    """
+    P_free = pdcd1_pool / (1.0 + drug_nM / KD_PA)
+    Q = pdl1_pool * P_free / (KD_PL + P_free)
+    Q = min(Q, pdcd1_pool)                       # Q cannot exceed total PD-1
+    return 1.0 - (Q / max(pdcd1_pool, 1e-9))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -236,29 +299,37 @@ def steady_pERK(V1_eff, RAF_T, MEK_T, ERK_T):
 SLOW_T = np.linspace(0.0, 200.0, 400)   # days
 
 
-def cancer_rhs(C, t, prolif, T8):
+def cancer_rhs(C, t, prolif, T8, f_kill, eta8_i):
     """
     Reduced melanoma cancer-cell ODE (published constants). Proliferation is
     scaled by `prolif` (= pERK/pERK_ref from the mechanistic cascade), so the
     RAF paradox governs whether the drug actually suppresses proliferation.
+    Killing is scaled by `f_kill` (Module D checkpoint gate: 0=fully blocked,
+    1=fully unleashed) and by `eta8_i` (this patient's CYT-scaled killing
+    ceiling), instead of the universal LF["eta8"].
     """
     C = max(C[0], 0.0)
     dC = (LF["lambdaC"] * prolif * C * (1.0 - C / LF["CM"])
-          - LF["eta8"] * T8 * C
+          - eta8_i * f_kill * T8 * C
           - LF["dC"] * C)
     return [dC]
 
 
-def steady_tumour(pERK, pERK_ref, infil):
+def steady_tumour(pERK, pERK_ref, infil, f_kill, cyt_level, cyt_ref):
     """
     Slow melanoma tumour steady state, using fast-module pERK as a fixed input.
-    ERK drives proliferation; measured infiltration sets the CD8 effector level.
+    ERK drives proliferation; measured infiltration sets the CD8 effector
+    density. Killing capacity is gated by the Module D checkpoint state
+    (`f_kill`) and capped by this patient's cytolytic machinery relative to
+    the cohort (`cyt_level / cyt_ref`, Rooney et al. 2015) — even a fully
+    unleashed checkpoint (f_kill=1) cannot kill faster than CYT allows.
     """
     prolif = np.clip(pERK / max(pERK_ref, 1e-9), PERK_PROLIF_MIN, PERK_PROLIF_CAP)
     T8 = T8_SCALE * max(infil, 0.0)          # CD8 effector density from infiltration
+    eta8_i = LF["eta8"] * max(cyt_level, 0.0) / max(cyt_ref, 1e-9)
     try:
         sol = odeint(cancer_rhs, [0.1 * LF["CM"]], SLOW_T,
-                     args=(prolif, T8), rtol=1e-6, atol=1e-9, mxstep=5000)
+                     args=(prolif, T8, f_kill, eta8_i), rtol=1e-6, atol=1e-9, mxstep=5000)
         return float(max(sol[-1, 0], 0.0))
     except Exception:
         return np.nan
@@ -267,10 +338,14 @@ def steady_tumour(pERK, pERK_ref, infil):
 # ══════════════════════════════════════════════════════════════════════════════
 #  Per-patient driver
 # ══════════════════════════════════════════════════════════════════════════════
-# Cohort-reference pERK (wild-type baseline) is computed in __main__ and injected.
+# Cohort-reference pERK/CYT (wild-type baseline / cohort mean) are computed in
+# __main__ and injected.
 def simulate_patient(args):
-    """Simulate one patient across all doses. Returns (i, pERK_row, tumour_row)."""
-    i_patient, row, pERK_ref = args
+    """
+    Simulate one patient across the BRAFi dose sweep AND the anti-PD-1 dose
+    sweep. Returns (i, pERK_row, tumour_row, checkpoint_row).
+    """
+    i_patient, row, pERK_ref, cyt_ref = args
 
     # Per-patient INPUTS (never kinetic constants):
     RAF_T = RAF_TOTAL_0 * float(row["BRAF"])
@@ -289,16 +364,36 @@ def simulate_patient(args):
     raf_amount = RAF_TOTAL_0 * float(row["BRAF"])     # RAF pool for Module A
     infil      = (float(row["CD8A"]) + float(row["PRF1"]) + float(row["GZMA"])) / 3.0
 
+    # Module D per-patient inputs: checkpoint pools and cytolytic level.
+    pdcd1_pool = PDCD1_TOTAL_0 * float(row["PDCD1"])
+    pdl1_pool  = PDL1_TOTAL_0 * float(row["CD274"])
+    cyt_level  = float(row["CYT"])
+
+    # ── BRAFi-only sweep: checkpoint held at this patient's untreated
+    # baseline (no anti-PD-1) — isolates the targeted-therapy arm, as before,
+    # but killing is now checkpoint-gated and CYT-scaled instead of universal.
+    f_kill_baseline = checkpoint_kill_factor(0.0, pdcd1_pool, pdl1_pool)
     perk_row, tumour_row = [], []
     for u in DOSE_UNITS:
         drug_nM = u * DRUG_MAX_NM
         A = active_raf_signal(drug_nM, raf_amount, rasgtp, v600e_frac)
         V1_eff = KH["V1"] * A / _A_REF          # normalise onto published V1=2.5
         pERK = steady_pERK(V1_eff, RAF_T, MEK_T, ERK_T)
-        tumour = steady_tumour(pERK, pERK_ref, infil)
+        tumour = steady_tumour(pERK, pERK_ref, infil, f_kill_baseline, cyt_level, cyt_ref)
         perk_row.append(pERK)
         tumour_row.append(tumour)
-    return i_patient, perk_row, tumour_row
+
+    # ── Anti-PD-1-only sweep: BRAFi held at zero (untreated pERK), checkpoint
+    # dose scanned — isolates the immunotherapy arm of the Q5 decision tree.
+    pERK_untreated = perk_row[0]
+    checkpoint_row = []
+    for u in ANTIPD1_DOSE_UNITS:
+        checkpoint_dose_nM = u * ANTIPD1_MAX_NM
+        f_kill = checkpoint_kill_factor(checkpoint_dose_nM, pdcd1_pool, pdl1_pool)
+        checkpoint_row.append(
+            steady_tumour(pERK_untreated, pERK_ref, infil, f_kill, cyt_level, cyt_ref))
+
+    return i_patient, perk_row, tumour_row, checkpoint_row
 
 
 def compute_reference_pERK():
@@ -322,29 +417,42 @@ if __name__ == "__main__":
     n_mut = int(patients["BRAF_MUT"].sum())
     print(f"    {n_patients} patients  ({n_mut} BRAF-mutant, {n_patients - n_mut} WT)")
 
-    print("\n[2] Computing cohort-reference pERK (wild-type baseline)...")
+    required_cols = ["PDCD1", "CD274", "CYT"]
+    missing_cols = [c for c in required_cols if c not in patients.columns]
+    if missing_cols:
+        raise SystemExit(
+            f"Missing checkpoint-axis columns {missing_cols} in {DATA_FILE}. "
+            "Re-run phase2_preprocess_data.py (updated for Module D) first.")
+
+    print("\n[2] Computing cohort-reference pERK (wild-type baseline) and CYT...")
     pERK_ref = compute_reference_pERK()
+    cyt_ref = float(patients["CYT"].mean())
     print(f"    reference pERK (ERKpp) = {pERK_ref:.3f} nM  "
           f"(cascade at published V1={KH['V1']})")
+    print(f"    reference CYT (cohort mean) = {cyt_ref:.3f}  (Rooney et al. 2015)")
 
     n_cores = min(cpu_count(), n_patients)
     print(f"\n[3] Simulating on {n_cores} CPU cores")
-    print(f"    dose knob u in [0.01, 1.0] -> vemurafenib 0..{DRUG_MAX_NM:.0f} nM")
+    print(f"    BRAFi dose u in [0.01, 1.0] -> vemurafenib 0..{DRUG_MAX_NM:.0f} nM")
+    print(f"    anti-PD-1 dose u in [0.01, 1.0] -> 0..{ANTIPD1_MAX_NM:.0f} nM")
     print(f"    fast module: 8-ODE MAPK cascade (feedback Ki={KH['Ki']})")
     print(f"    slow module: melanoma tumour-immune (lambdaC={LF['lambdaC']}/day)")
-    print(f"    {n_patients} patients x {len(DOSE_UNITS)} doses = "
-          f"{n_patients * len(DOSE_UNITS)} fast+slow solves")
+    print(f"    checkpoint module: PD-1/PD-L1 binding (Kd_PA={KD_PA}, Kd_PL={KD_PL} nM)")
+    print(f"    {n_patients} patients x ({len(DOSE_UNITS)} BRAFi + "
+          f"{len(ANTIPD1_DOSE_UNITS)} anti-PD-1) doses = "
+          f"{n_patients * (len(DOSE_UNITS) + len(ANTIPD1_DOSE_UNITS))} fast+slow solves")
 
-    args_list = [(i, patients.iloc[i], pERK_ref) for i in range(n_patients)]
+    args_list = [(i, patients.iloc[i], pERK_ref, cyt_ref) for i in range(n_patients)]
 
     t0 = time.time()
-    perk_res, tumour_res = {}, {}
+    perk_res, tumour_res, checkpoint_res = {}, {}, {}
     with Pool(processes=n_cores) as pool:
         done = 0
-        for i_patient, perk_row, tumour_row in pool.imap_unordered(
+        for i_patient, perk_row, tumour_row, checkpoint_row in pool.imap_unordered(
                 simulate_patient, args_list, chunksize=4):
             perk_res[i_patient] = perk_row
             tumour_res[i_patient] = tumour_row
+            checkpoint_res[i_patient] = checkpoint_row
             done += 1
             if done % 50 == 0 or done == n_patients:
                 print(f"    Progress: {done}/{n_patients} "
@@ -357,17 +465,23 @@ if __name__ == "__main__":
                            columns=DOSE_COL_NAMES)
     tumour_df = pd.DataFrame([tumour_res[i] for i in range(n_patients)],
                              columns=DOSE_COL_NAMES)
-    for df in (perk_df, tumour_df):
+    checkpoint_df = pd.DataFrame([checkpoint_res[i] for i in range(n_patients)],
+                                 columns=ANTIPD1_COL_NAMES)
+    for df in (perk_df, tumour_df, checkpoint_df):
         df.insert(0, "SAMPLE_ID", patients["SAMPLE_ID"].values)
         df.insert(1, "PATIENT_ID", patients["PATIENT_ID"].values)
         df.insert(2, "BRAF_MUT", patients["BRAF_MUT"].values)
         df.insert(3, "NRAS_MUT", patients["NRAS_MUT"].values)
         df.insert(4, "MAPK_DRIVEN", patients["MAPK_DRIVEN"].values)
+    checkpoint_df.insert(5, "CD274", patients["CD274"].values)
+    checkpoint_df.insert(6, "PDCD1", patients["PDCD1"].values)
 
     perk_df.to_csv(OUT_PERK, index=False)
     tumour_df.to_csv(OUT_TUMOUR, index=False)
+    checkpoint_df.to_csv(OUT_CHECKPOINT, index=False)
     print(f"    Saved: {OUT_PERK}  {perk_df.shape}")
     print(f"    Saved: {OUT_TUMOUR}  {tumour_df.shape}")
+    print(f"    Saved: {OUT_CHECKPOINT}  {checkpoint_df.shape}")
 
     print("\n[5] Sanity check — mean pERK (low dose -> high dose):")
     sub_defs = [
@@ -384,6 +498,19 @@ if __name__ == "__main__":
         trend = ("suppressed" if hi < 0.8 * lo else
                  "paradox/flat" if hi >= lo else "partial")
         print(f"    {label:<14} low={lo:7.2f}  high={hi:7.2f}  peak={peak:7.2f}  ({trend})")
+
+    print("\n[6] Sanity check — checkpoint blockade shrinks tumour burden more in")
+    print("    high-PD-L1 patients than low-PD-L1 patients (median CD274 split):")
+    pdl1_med = checkpoint_df["CD274"].median()
+    for label, sub in [("High PD-L1 (CD274 > median)", checkpoint_df[checkpoint_df.CD274 > pdl1_med]),
+                       ("Low PD-L1 (CD274 <= median)", checkpoint_df[checkpoint_df.CD274 <= pdl1_med])]:
+        if len(sub) == 0:
+            continue
+        lo = sub[ANTIPD1_COL_NAMES[0]].mean()
+        hi = sub[ANTIPD1_COL_NAMES[-1]].mean()
+        pct_drop = 100.0 * (lo - hi) / lo if lo > 0 else float("nan")
+        print(f"    {label:<28} untreated={lo:7.4f}  max anti-PD-1={hi:7.4f}  "
+              f"(burden drop {pct_drop:5.1f}%)")
 
     print("\n" + "=" * 68)
     print("  Phase 3 COMPLETE — Ready for Phase 4 (Survival Analysis)")
