@@ -560,24 +560,19 @@ def build_extended_pathway_dataframe(data_dir: Path) -> Tuple[pd.DataFrame, List
 def _plot_extended_pathway_grouped_bars(
     df: pd.DataFrame, cohort_cols: List[str], pooled_col: str, colors: List[str], out_dir: Path
 ) -> None:
-    """Plots grouped horizontal bars of extended pathway mutation frequencies."""
+    """Plots grouped horizontal bars of extended pathway mutation frequencies with category hierarchy labels."""
     all_cols = cohort_cols + [pooled_col]
-    y_labels = df["Gene/Pathway"].tolist()
+    y_labels = [f"[{row['Category']}]  {row['Gene/Pathway']}" for _, row in df.iterrows()]
     y_pos = np.arange(len(y_labels))
 
     cat_sizes = df.groupby("Category", sort=False).size()
-    cat_names = list(cat_sizes.index)
     boundaries = np.cumsum(cat_sizes.values)[:-1] - 0.5
-    cat_centers, start = [], 0
-    for size in cat_sizes.values:
-        cat_centers.append(start + (size - 1) / 2.0)
-        start += size
 
     n_cohorts = len(all_cols)
     bar_width = 0.8 / n_cohorts
     max_val = np.nanmax(df[all_cols].values.astype(float))
 
-    fig, ax = plt.subplots(figsize=(12, 6.5), dpi=300)
+    fig, ax = plt.subplots(figsize=(12, 7.5), dpi=300)
 
     for i, cohort in enumerate(all_cols):
         values = df[cohort].values
@@ -599,7 +594,7 @@ def _plot_extended_pathway_grouped_bars(
                 )
 
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(y_labels, fontweight="bold")
+    ax.set_yticklabels(y_labels, fontweight="bold", fontsize=10)
     ax.invert_yaxis()
     ax.set_xlabel("Mutation Frequency (%)", fontweight="bold")
     ax.set_title(
@@ -611,13 +606,7 @@ def _plot_extended_pathway_grouped_bars(
     for b in boundaries:
         ax.axhline(b, color="gray", linestyle="--", alpha=0.5)
 
-    label_x = -max_val * 0.31
-    ax.set_xlim(label_x * 1.15, max_val * 1.2)
-    for cat_name, center in zip(cat_names, cat_centers):
-        ax.text(
-            label_x, center, cat_name, rotation=90, va="center", ha="center",
-            fontweight="bold", color="#333333", fontsize=11,
-        )
+    ax.set_xlim(0, max_val * 1.25)
 
     out_path = out_dir / "extended_pathway_mutation_frequencies.png"
     save_fig(fig, out_path)
@@ -632,8 +621,10 @@ def _plot_extended_pathway_heatmap(
 ) -> None:
     """Plots heatmap of extended pathway mutation frequencies across cohorts."""
     all_cols = cohort_cols + [pooled_col]
-    fig, ax = plt.subplots(figsize=(10, 6), dpi=300)
-    heatmap_df = df.set_index("Gene/Pathway")[all_cols]
+    fig, ax = plt.subplots(figsize=(10, 7), dpi=300)
+    df_plot = df.copy()
+    df_plot["Full_Label"] = [f"[{row['Category']}]  {row['Gene/Pathway']}" for _, row in df_plot.iterrows()]
+    heatmap_df = df_plot.set_index("Full_Label")[all_cols]
 
     sns.heatmap(
         heatmap_df, annot=True, fmt=".1f", cmap="YlGnBu",
@@ -661,8 +652,9 @@ def _plot_extended_pathway_dumbbell(
     trial_colors = dict(zip(cohort_cols, colors[: len(cohort_cols)]))
     pooled_color = get_cohort_color(pooled_col, default="#e41a1c")
     max_val = np.nanmax(df[cohort_cols + [pooled_col]].values.astype(float))
+    y_labels = [f"[{row['Category']}]  {row['Gene/Pathway']}" for _, row in df.iterrows()]
 
-    fig, ax = plt.subplots(figsize=(11, 6), dpi=300)
+    fig, ax = plt.subplots(figsize=(11, 7), dpi=300)
     for idx, row in df.iterrows():
         y = idx
         trial_vals = [row[c] for c in cohort_cols if pd.notna(row[c])]
@@ -685,9 +677,15 @@ def _plot_extended_pathway_dumbbell(
             )
 
     ax.set_yticks(np.arange(len(df)))
-    ax.set_yticklabels(df["Gene/Pathway"], fontweight="bold")
+    ax.set_yticklabels(y_labels, fontweight="bold")
     ax.invert_yaxis()
     ax.set_xlabel("Mutation Frequency (%)", fontweight="bold")
+    ax.set_xlim(-max_val * 0.03, max_val * 1.1)
+    ax.set_title(
+        "Extended Pathway Mutation Rates: Trial Variation vs. Pooled Benchmark",
+        fontweight="bold", pad=15,
+    )
+    ax.legend(loc="lower right", frameon=True, facecolor="white")
     ax.set_xlim(-max_val * 0.03, max_val * 1.1)
     ax.set_title(
         "Extended Pathway Mutation Rates: Trial Variation vs. Pooled Benchmark",
