@@ -1,5 +1,4 @@
-"""
-Univariate Association Analysis Script for Clinical and Genomic Variables.
+"""Univariate Association Analysis Script for Clinical and Genomic Variables.
 
 Evaluates univariate statistical associations between baseline clinical/genomic features
 (Sex, Clinical Stage, BRAF/NRAS/NF1 mutations, Age, TMB, Neoantigens) and immunotherapy response (CR/PR vs. PD)
@@ -23,21 +22,31 @@ from scipy.optimize import minimize
 from scipy.stats import fisher_exact, norm
 import seaborn as sns
 
-# Bootstrap project root resolution for top-level import
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-if str(BASE_DIR) not in sys.path:
-    sys.path.append(str(BASE_DIR))
+# ---------------------------------------------------------------------------
+# Bootstrap project root resolution for top-level imports
+# ---------------------------------------------------------------------------
+
+_SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(_SUBPROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SUBPROJECT_ROOT))
 
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
-from src.styles import COHORT_PALETTE, set_presentation_style
+from src.styles import COHORT_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import find_project_root
-from src.utils.plotting import resolve_colors, save_fig
+from src.utils.paths import (
+    CONFIG_DIR,
+    DATA_DIR,
+    LOG_DIR,
+    PLOTS_DIR,
+    PROJECT_ROOT,
+    REPORTS_DIR,
+    SUBPROJECT_ROOT,
+    rel_path,
+)
+from src.utils.plotting import save_fig
 
 # Module-level Constants
-DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
-PLOT_DIR = find_project_root(Path(__file__).resolve()) / "plots" / "clinical"
-LOG_DIR = find_project_root(Path(__file__).resolve()) / "logs"
+PLOT_DIR = PLOTS_DIR / "clinical"
 LOG_PATH = LOG_DIR / "run_univariate_associations.log"
 
 CATEGORICAL_VARS: Dict[str, str] = {
@@ -56,10 +65,14 @@ CONTINUOUS_VARS: Dict[str, List[str]] = {
 }
 
 
-def _calc_categorical_or(contingency: pd.DataFrame, df_temp: pd.DataFrame, col: str) -> Tuple[float, float, float, float]:
-    """Calculates Odds Ratio and 95% CI for a 2x2 contingency matrix.
+def _calc_categorical_or(contingency: pd.DataFrame) -> Tuple[float, float, float, float]:
+    """Calculates Odds Ratio and 95% CI for a 2x2 contingency matrix using Haldane-Anscombe correction if needed.
 
-    contingency rows: variable value (0 vs 1); cols: response (0 vs 1).
+    Args:
+        contingency: 2x2 contingency matrix (variable vs response).
+
+    Returns:
+        Tuple of (odds_ratio, ci_lower, ci_upper, p_value).
     """
     a = contingency.loc[1, 1.0] if (1 in contingency.index and 1.0 in contingency.columns) else 0
     b = contingency.loc[1, 0.0] if (1 in contingency.index and 0.0 in contingency.columns) else 0
@@ -82,6 +95,10 @@ def _calc_categorical_or(contingency: pd.DataFrame, df_temp: pd.DataFrame, col: 
 
 def _fit_univariate_logit(x: np.ndarray, y: np.ndarray) -> Tuple[float, float, float, float]:
     """Fits univariate logistic regression on Z-scored continuous predictor.
+
+    Args:
+        x: Continuous feature array.
+        y: Binary response array.
 
     Returns:
         Tuple of (odds_ratio, ci_lower, ci_upper, p_value).
@@ -151,7 +168,7 @@ def calculate_associations(df: pd.DataFrame, cohort_name: str) -> pd.DataFrame:
 
             if len(temp) > 0 and len(temp[col].unique()) == 2:
                 contingency = pd.crosstab(temp[col], temp["response"])
-                or_val, lower, upper, p_val = _calc_categorical_or(contingency, temp, col)
+                or_val, lower, upper, p_val = _calc_categorical_or(contingency)
                 results.append({
                     "Cohort": cohort_name,
                     "Variable": label,
@@ -206,6 +223,11 @@ def _prepare_clinical_cohorts(data_dir: Path) -> Dict[str, pd.DataFrame]:
     _, clin_riaz = load_riaz_2017(data_dir)
 
     for df in [clin_liu, clin_hugo, clin_riaz]:
+        if "RESPONSE_BINARY" in df.columns:
+            df["response"] = df["RESPONSE_BINARY"]
+        elif "RESPONDER" in df.columns:
+            df["response"] = df["RESPONDER"].map({True: 1.0, False: 0.0, 1.0: 1.0, 0.0: 0.0, "1": 1.0, "0": 0.0, "CR/PR": 1.0, "PD": 0.0})
+
         if "SEX" in df.columns:
             df["SEX"] = df["SEX"].map({"Male": "Male", "Female": "Female", "M": "Male", "F": "Female"})
         if "CLINICAL_STAGE" in df.columns:
@@ -220,23 +242,17 @@ def _prepare_clinical_cohorts(data_dir: Path) -> Dict[str, pd.DataFrame]:
     }
 
 
-def _plot_univariate_associations(all_results: pd.DataFrame, plot_dir: Path) -> None:
+def _plot_univariate_associations(all_results: pd.DataFrame, cohort_counts: Dict[str, int], plot_dir: Path) -> None:
     """Renders a publication-ready Forest Plot of Odds Ratios with 95% CIs.
 
     Args:
         all_results: Combined DataFrame of univariate statistical association results.
+        cohort_counts: Dictionary mapping cohort names to dynamic patient sample counts.
         plot_dir: Path to export output plot figure and CSV table.
     """
     cohort_order = ["Pooled Trials", "Liu 2019", "Hugo 2016", "Riaz 2017"]
-    cohort_colors = {
-        "Liu 2019": COHORT_PALETTE["Liu 2019"],
-        "Hugo 2016": COHORT_PALETTE["Hugo 2016"],
-        "Riaz 2017": COHORT_PALETTE["Riaz 2017"],
-        "Pooled Trials": COHORT_PALETTE["Pooled Trials"],
-    }
 
     variables = all_results["Variable"].unique().tolist()
-    n_vars = len(variables)
 
     set_presentation_style()
     sns.set_theme(style="whitegrid")
@@ -244,9 +260,9 @@ def _plot_univariate_associations(all_results: pd.DataFrame, plot_dir: Path) -> 
     plt.subplots_adjust(left=0.28, right=0.62, top=0.90, bottom=0.12)
 
     ax.set_xscale("log")
-    ax.axvline(1.0, color="#555555", linestyle="--", linewidth=1.5, zorder=1)
+    ax.axvline(1.0, color="#37474F", linestyle="--", linewidth=1.5, zorder=1)
 
-    y_pos = 0
+    y_pos = 0.0
     y_ticks = []
     y_labels = []
 
@@ -265,9 +281,10 @@ def _plot_univariate_associations(all_results: pd.DataFrame, plot_dir: Path) -> 
             upper = row["95% CI Upper"]
             p_val = row["p-value"]
 
-            color = cohort_colors.get(cohort, "#333333")
+            color = get_cohort_color(cohort)
             is_sig = p_val < 0.05
             weight = "bold" if is_sig else "normal"
+            text_color = "#222222" if is_sig else "#555555"
 
             # Bound CIs for visual plotting display
             disp_lower = max(0.1, lower)
@@ -292,8 +309,9 @@ def _plot_univariate_associations(all_results: pd.DataFrame, plot_dir: Path) -> 
             if is_sig:
                 lbl_p += " *"
 
-            ax.text(1.10, y_pos, f"{cohort}: {lbl_or}", transform=ax.get_yaxis_transform(), va="center", ha="left", fontsize=9.5, color="#222222", weight=weight)
-            ax.text(1.72, y_pos, lbl_p, transform=ax.get_yaxis_transform(), va="center", ha="left", fontsize=9.5, color="#222222", weight=weight)
+            cohort_label = f"{cohort} (N={cohort_counts.get(cohort, 0)})"
+            ax.text(1.10, y_pos, f"{cohort_label}: {lbl_or}", transform=ax.get_yaxis_transform(), va="center", ha="left", fontsize=9.5, color=text_color, weight=weight)
+            ax.text(1.72, y_pos, lbl_p, transform=ax.get_yaxis_transform(), va="center", ha="left", fontsize=9.5, color=text_color, weight=weight)
 
             y_pos += 1.0
 
@@ -312,30 +330,33 @@ def _plot_univariate_associations(all_results: pd.DataFrame, plot_dir: Path) -> 
     ax.xaxis.set_major_formatter(ScalarFormatter())
     ax.tick_params(axis="x", which="both", labelsize=10.5)
 
+    n_pooled = cohort_counts.get("Pooled Trials", 0)
     ax.set_xlabel("Odds Ratio for Immunotherapy Response (log scale)", fontsize=12, labelpad=10, weight="bold")
-    ax.set_title("Univariate Associations with Immunotherapy Response (Forest Plot)", fontsize=15, fontweight="bold", pad=15)
+    ax.set_title(f"Univariate Associations with Immunotherapy Response (Forest Plot, N={n_pooled})", fontsize=15, fontweight="bold", pad=15)
 
     ax.text(0.95, -0.09, "Favours Responder (OR > 1.0) \u2192", transform=ax.transAxes, ha="right", va="top", color="#555555", fontsize=9.5, style="italic")
     ax.text(0.05, -0.09, "\u2190 Favours Non-Responder (OR < 1.0)", transform=ax.transAxes, ha="left", va="top", color="#555555", fontsize=9.5, style="italic")
 
     legend_elements = [
-        mlines.Line2D([0], [0], marker="o", color="none", markerfacecolor=COHORT_PALETTE["Pooled Trials"], markeredgecolor="none", markersize=8, label="Pooled Trials Benchmark"),
-        mlines.Line2D([0], [0], marker="s", color="none", markerfacecolor=COHORT_PALETTE["Liu 2019"], markeredgecolor="none", markersize=7, label="Liu 2019"),
-        mlines.Line2D([0], [0], marker="s", color="none", markerfacecolor=COHORT_PALETTE["Hugo 2016"], markeredgecolor="none", markersize=7, label="Hugo 2016"),
-        mlines.Line2D([0], [0], marker="s", color="none", markerfacecolor=COHORT_PALETTE["Riaz 2017"], markeredgecolor="none", markersize=7, label="Riaz 2017"),
+        mlines.Line2D([0], [0], marker="o", color="none", markerfacecolor=get_cohort_color("Pooled Trials"), markeredgecolor="none", markersize=8, label=f"Pooled Trials Benchmark (N={cohort_counts.get('Pooled Trials', 0)})"),
+        mlines.Line2D([0], [0], marker="s", color="none", markerfacecolor=get_cohort_color("Liu 2019"), markeredgecolor="none", markersize=7, label=f"Liu 2019 (N={cohort_counts.get('Liu 2019', 0)})"),
+        mlines.Line2D([0], [0], marker="s", color="none", markerfacecolor=get_cohort_color("Hugo 2016"), markeredgecolor="none", markersize=7, label=f"Hugo 2016 (N={cohort_counts.get('Hugo 2016', 0)})"),
+        mlines.Line2D([0], [0], marker="s", color="none", markerfacecolor=get_cohort_color("Riaz 2017"), markeredgecolor="none", markersize=7, label=f"Riaz 2017 (N={cohort_counts.get('Riaz 2017', 0)})"),
     ]
-    ax.legend(handles=legend_elements, loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=4, frameon=False, fontsize=9.5)
+    ax.legend(handles=legend_elements, loc="upper center", bbox_to_anchor=(0.5, -0.08), ncol=2, frameon=True, facecolor="white", edgecolor="#CCCCCC", fontsize=9.5)
 
     sns.despine(ax=ax, top=True, right=True)
-    ax.grid(True, axis="x", linestyle="--", linewidth=0.5, color="#cccccc", alpha=0.7)
+    ax.yaxis.grid(True, linestyle="--", color="#E0E0E0", linewidth=0.5, alpha=0.7)
+    ax.xaxis.grid(True, linestyle=":", color="#E0E0E0", linewidth=0.5, alpha=0.5)
+    ax.set_axisbelow(True)
 
     out_path = plot_dir / "univariate_associations.png"
     save_fig(fig, out_path)
-    print(f"\nSaved univariate associations forest plot to {out_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"\nSaved univariate associations forest plot to {rel_path(out_path)}")
 
     csv_path = plot_dir / "univariate_associations_stats.csv"
     all_results.to_csv(csv_path, index=False)
-    print(f"Saved univariate association statistics table to {csv_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved univariate association statistics table to {rel_path(csv_path)}")
 
 
 def main() -> None:
@@ -360,10 +381,17 @@ def main() -> None:
     ], ignore_index=True)
     results_pooled = calculate_associations(pooled_df, "Pooled Trials")
 
+    cohort_counts = {
+        "Liu 2019": len(cohorts["Liu 2019"][cohorts["Liu 2019"]["response"].notna()]),
+        "Hugo 2016": len(cohorts["Hugo 2016"][cohorts["Hugo 2016"]["response"].notna()]),
+        "Riaz 2017": len(cohorts["Riaz 2017"][cohorts["Riaz 2017"]["response"].notna()]),
+        "Pooled Trials": len(pooled_df[pooled_df["response"].notna()]),
+    }
+
     all_results = pd.concat([results_liu, results_hugo, results_riaz, results_pooled], ignore_index=True)
     print(all_results.to_string())
 
-    _plot_univariate_associations(all_results, PLOT_DIR)
+    _plot_univariate_associations(all_results, cohort_counts, PLOT_DIR)
 
     print("\n==================================================")
     print("Done!")
@@ -376,5 +404,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+            print(f"Logging console output to {rel_path(LOG_PATH)}")
             main()
