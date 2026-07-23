@@ -209,13 +209,13 @@ def _plot_mutation_frequencies(cohorts: Dict[str, pd.DataFrame], plot_dir: Path)
 
 
 def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) -> None:
-    """Plots tumour mutational burden (TMB) distributions by response and cohort-wide.
+    """Plots tumour mutational burden (TMB) distributions by response alongside Neoantigen Collinearity.
 
     Args:
         cohorts: Dictionary of cohort DataFrames.
         plot_dir: Path to directory for saving plot artifacts.
     """
-    print("\n2. Generating TMB distributions...")
+    print("\n2. Generating TMB & Neoantigen Collinearity plots...")
     trial_list = []
     for name in ["Liu 2019", "Hugo 2016", "Riaz 2017"]:
         df = cohorts[name][["TMB_NONSYNONYMOUS", "response"]].dropna().copy()
@@ -228,6 +228,7 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
 
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
+    # Subplot 1: Pre-treatment TMB by Immunotherapy Response
     sns.boxplot(
         data=df_trials_tmb,
         x="Cohort",
@@ -264,29 +265,37 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
                 bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.8, edgecolor="gray"),
             )
 
-    clin_tcga = cohorts["TCGA-SKCM"]
-    tcga_tmb = clin_tcga["TMB_NONSYNONYMOUS"].dropna()
-    tcga_color = get_cohort_color("TCGA-SKCM")
+    # Subplot 2: Neoantigen Collinearity (TMB vs TOTAL_NEOANTIGEN)
+    neo_list = []
+    for name in ["Liu 2019", "Hugo 2016", "Riaz 2017"]:
+        if "TOTAL_NEOANTIGEN" in cohorts[name].columns:
+            sub_df = cohorts[name][["TMB_NONSYNONYMOUS", "TOTAL_NEOANTIGEN"]].dropna()
+            if len(sub_df) > 0:
+                neo_list.append(sub_df)
 
-    sns.histplot(
-        tcga_tmb,
-        kde=True,
-        log_scale=True,
-        color=tcga_color,
-        ax=axes[1],
-        bins=30,
-        edgecolor="black",
-    )
-    axes[1].axvline(tcga_tmb.median(), color=RESPONSE_PALETTE["PD"], linestyle="--", linewidth=1.5, label=f"Median = {tcga_tmb.median():.2f}")
-    axes[1].axvline(STANDARD_FDA_TMB_CUTOFF, color="#555555", linestyle=":", linewidth=1.5, label=f"Standard FDA Cutoff = {STANDARD_FDA_TMB_CUTOFF:.1f}")
-    axes[1].set_xlabel("TMB (mutations/Mb, log scale)", fontsize=12, fontweight="bold")
-    axes[1].set_ylabel("Number of Samples", fontsize=12, fontweight="bold")
-    axes[1].set_title(f"TCGA-SKCM Tumour Mutational Burden (TMB) Distribution (N={len(tcga_tmb)})", fontsize=13, fontweight="bold")
-    axes[1].legend(loc="upper right")
+    if neo_list:
+        df_trials_neo = pd.concat(neo_list, ignore_index=True)
+        r_spearman, _ = spearmanr(df_trials_neo["TMB_NONSYNONYMOUS"], df_trials_neo["TOTAL_NEOANTIGEN"])
+
+        sns.regplot(
+            data=df_trials_neo,
+            x="TMB_NONSYNONYMOUS",
+            y="TOTAL_NEOANTIGEN",
+            color=get_cohort_color("Pooled Trials"),
+            ax=axes[1],
+            scatter_kws={"alpha": 0.6, "edgecolor": "w", "s": 70},
+            line_kws={"color": RESPONSE_PALETTE["PD"], "linewidth": 2},
+        )
+        axes[1].set_title(
+            f"Neoantigen Collinearity with TMB (Pooled Trials, N={len(df_trials_neo)}, r_s = {r_spearman:.3f})",
+            fontsize=13, fontweight="bold",
+        )
+        axes[1].set_xlabel("Nonsynonymous TMB (mutations/Mb)", fontsize=12, fontweight="bold")
+        axes[1].set_ylabel("Predicted Total Neoantigens", fontsize=12, fontweight="bold")
 
     out_tmb_path = plot_dir / "tmb_distributions_by_cohort.png"
     save_fig(fig, out_tmb_path)
-    print(f"Saved TMB distributions to {rel_path(out_tmb_path)}")
+    print(f"Saved TMB distributions and neoantigen collinearity plot to {rel_path(out_tmb_path)}")
 
     out_tmb_legacy = plot_dir / "tmb_distribution.png"
     save_fig(fig, out_tmb_legacy)
