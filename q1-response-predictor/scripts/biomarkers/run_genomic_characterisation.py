@@ -8,7 +8,7 @@ analysis, and TCGA overall survival (OS) stratification by genomic features.
 import contextlib
 from pathlib import Path
 import sys
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import matplotlib
 matplotlib.use("Agg")
@@ -28,10 +28,14 @@ _SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(_SUBPROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_SUBPROJECT_ROOT))
 
+import warnings
+
 from src.config.constants import (
     DRIVER_GENES,
     GENOMIC_FEATURES,
     NEOANTIGEN_FEATURES,
+    NON_SILENT_VARIANT_CLASSIFICATIONS,
+    PATHWAY_GENES,
     RECIST_RESPONSE_MAP,
 )
 from src.config.datasets import DatasetConfig, load_dataset_config
@@ -43,6 +47,7 @@ from src.styles import (
     get_cohort_color,
     set_presentation_style,
 )
+from src.utils.dataframes import find_id_column
 from src.utils.logging import TeeStream
 from src.utils.paths import (
     CONFIG_DIR,
@@ -52,7 +57,7 @@ from src.utils.paths import (
     SUBPROJECT_ROOT,
     rel_path,
 )
-from src.utils.plotting import save_fig
+from src.utils.plotting import resolve_colors, save_fig
 
 # Module-level Constants
 CONFIG_PATH = CONFIG_DIR / "datasets.yaml"
@@ -430,6 +435,252 @@ def _plot_tcga_survival_stratification(clin_tcga: pd.DataFrame, plot_dir: Path) 
     save_fig(fig, out_surv_legacy)
 
 
+# ---------------------------------------------------------------------------
+# Extended Pathway Mutation Frequencies (Consolidated)
+# ---------------------------------------------------------------------------
+
+POOLED_LABEL = "Pooled Trials"
+ROW_LABELS = {"BRAF": "BRAF mutation", "NRAS": "NRAS mutation", "NF1": "NF1 mutation"}
+ROW_ORDER = [
+    ("MAPK Drivers", "BRAF"),
+    ("MAPK Drivers", "NRAS"),
+    ("MAPK Drivers", "NF1"),
+    ("Immune Resistance", "IFN-gamma Signaling"),
+    ("Survival & Proliferation", "Survival & Proliferation Drivers"),
+]
+
+
+def _compute_gene_frequency(mut_wide: pd.DataFrame, genes: List[str], cohort_name: str) -> float:
+    """Helper to compute frequency of mutation in a list of genes."""
+    present = [g for g in genes if g in mut_wide.columns]
+    if not present:
+        warnings.warn(
+            f"{cohort_name}: none of {genes} found in mutation panel -- reporting NaN",
+            stacklevel=2,
+        )
+        return np.nan
+    mutated = (mut_wide[present].fillna(0) > 0).any(axis=1)
+    return 100.0 * mutated.mean()
+
+
+def _weighted_pooled(row: pd.Series, cohort_names: List[str], ns: Dict[str, int]) -> float:
+    """Helper to compute N-weighted average for pooled trials."""
+    vals, weights = [], []
+    for c in cohort_names:
+        if pd.notna(row[c]):
+            vals.append(row[c] * ns[c] / 100.0)
+            weights.append(ns[c])
+    return 100.0 * sum(vals) / sum(weights) if weights else np.nan
+
+
+def compute_cohort_frequencies(config: DatasetConfig, data_dir: Path) -> Tuple[Dict[str, float], int]:
+    """Compute driver/pathway mutation frequencies (%) for one cohort."""
+    cohort_dir = data_dir / "processed" / config.processed_directory
+    mut_path = cohort_dir / "mutations_cleaned.csv"
+    clin_path = cohort_dir / "clin_cleaned.csv"
+
+    if not mut_path.exists():
+        raise FileNotFoundError(f"Missing {rel_path(mut_path)}. Run preprocessing script for {config.cohort_name} first.")
+    if not clin_path.exists():
+        raise FileNotFoundError(f"Missing {rel_path(clin_path)}. Run preprocessing script for {config.cohort_name} first.")
+
+    df_clin = pd.read_csv(clin_path, index_col=0)
+    n_patients = len(df_clin)
+    all_patients = df_clin.index
+
+    df_mut = pd.read_csv(mut_path)
+
+    if "Hugo_Symbol" in df_mut.columns:
+        id_col = find_id_column(df_mut)
+        if "Variant_Classification" in df_mut.columns:
+            df_mut = df_mut[df_mut["Variant_Classification"].isin(NON_SILENT_VARIANT_CLASSIFICATIONS)]
+        mut_wide = df_mut.pivot_table(
+            index=id_col, columns="Hugo_Symbol", values="Hugo_Symbol", aggfunc="count",
+        )
+    else:
+        id_col = find_id_column(df_mut)
+        mut_wide = df_mut.set_index(id_col)
+
+    mut_wide = mut_wide.reindex(all_patients, fill_value=0)
+
+    freqs = {gene: _compute_gene_frequency(mut_wide, [gene], config.cohort_name) for gene in DRIVER_GENES}
+    for pathway, genes in PATHWAY_GENES.items():
+        freqs[pathway] = _compute_gene_frequency(mut_wide, genes, config.cohort_name)
+
+    return freqs, n_patients
+
+
+def build_extended_pathway_dataframe(data_dir: Path) -> Tuple[pd.DataFrame, List[str], str, Dict[str, int]]:
+    """Assemble cohort x gene/pathway frequency table with N-weighted Pooled Trials column."""
+    dataset_configs = load_dataset_config(CONFIG_PATH)
+    per_cohort = {config.cohort_name: compute_cohort_frequencies(config, data_dir) for config in dataset_configs}
+    freqs = {name: f for name, (f, n) in per_cohort.items()}
+    ns = {name: n for name, (f, n) in per_cohort.items()}
+    cohort_names = [config.cohort_name for config in dataset_configs]
+
+    rows = []
+    for category, key in ROW_ORDER:
+        label = ROW_LABELS.get(key, key)
+        row = {"Category": category, "Gene/Pathway": label}
+        for c in cohort_names:
+            row[c] = freqs[c].get(key)
+        rows.append(row)
+
+    df = pd.DataFrame(rows)
+
+    df[POOLED_LABEL] = df.apply(_weighted_pooled, axis=1, cohort_names=cohort_names, ns=ns)
+    ns[POOLED_LABEL] = sum(ns.values())
+
+    rename = {c: f"{c} (N={ns[c]})" for c in cohort_names + [POOLED_LABEL]}
+    df = df.rename(columns=rename)
+    cohort_cols = [rename[c] for c in cohort_names]
+    pooled_col = rename[POOLED_LABEL]
+    return df, cohort_cols, pooled_col, ns
+
+
+def _plot_extended_pathway_grouped_bars(
+    df: pd.DataFrame, cohort_cols: List[str], pooled_col: str, colors: List[str], out_dir: Path
+) -> None:
+    """Plots grouped horizontal bars of extended pathway mutation frequencies."""
+    all_cols = cohort_cols + [pooled_col]
+    y_labels = df["Gene/Pathway"].tolist()
+    y_pos = np.arange(len(y_labels))
+
+    cat_sizes = df.groupby("Category", sort=False).size()
+    cat_names = list(cat_sizes.index)
+    boundaries = np.cumsum(cat_sizes.values)[:-1] - 0.5
+    cat_centers, start = [], 0
+    for size in cat_sizes.values:
+        cat_centers.append(start + (size - 1) / 2.0)
+        start += size
+
+    n_cohorts = len(all_cols)
+    bar_width = 0.8 / n_cohorts
+    max_val = np.nanmax(df[all_cols].values.astype(float))
+
+    fig, ax = plt.subplots(figsize=(12, 6.5), dpi=300)
+
+    for i, cohort in enumerate(all_cols):
+        values = df[cohort].values
+        offset = (i - (n_cohorts - 1) / 2.0) * bar_width
+        rects = ax.barh(
+            y_pos + offset, values, height=bar_width, label=cohort,
+            color=colors[i], edgecolor="white", linewidth=0.8,
+        )
+        for rect in rects:
+            width = rect.get_width()
+            if width and not np.isnan(width) and width > 0:
+                ax.annotate(
+                    f"{width:.1f}%",
+                    xy=(width, rect.get_y() + rect.get_height() / 2),
+                    xytext=(4, 0), textcoords="offset points",
+                    ha="left", va="center", fontsize=9,
+                    fontweight="bold" if cohort == pooled_col else "normal",
+                    color="#222222",
+                )
+
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(y_labels, fontweight="bold")
+    ax.invert_yaxis()
+    ax.set_xlabel("Mutation Frequency (%)", fontweight="bold")
+    ax.set_title(
+        "Pre-Treatment Somatic Mutation & Pathway Frequencies Across Cohorts",
+        fontweight="bold", pad=15,
+    )
+    ax.legend(title="Cohort", frameon=True, facecolor="white", framealpha=0.9, loc="lower right")
+
+    for b in boundaries:
+        ax.axhline(b, color="gray", linestyle="--", alpha=0.5)
+
+    label_x = -max_val * 0.31
+    ax.set_xlim(label_x * 1.15, max_val * 1.2)
+    for cat_name, center in zip(cat_names, cat_centers):
+        ax.text(
+            label_x, center, cat_name, rotation=90, va="center", ha="center",
+            fontweight="bold", color="#333333", fontsize=11,
+        )
+
+    out_path = out_dir / "extended_pathway_mutation_frequencies.png"
+    save_fig(fig, out_path)
+    print(f"Saved extended pathway mutation frequencies plot to {rel_path(out_path)}")
+
+    out_legacy = out_dir / "extended_pathway_grouped_bars.png"
+    save_fig(fig, out_legacy)
+
+
+def _plot_extended_pathway_heatmap(
+    df: pd.DataFrame, cohort_cols: List[str], pooled_col: str, out_dir: Path
+) -> None:
+    """Plots heatmap of extended pathway mutation frequencies across cohorts."""
+    all_cols = cohort_cols + [pooled_col]
+    fig, ax = plt.subplots(figsize=(10, 6), dpi=300)
+    heatmap_df = df.set_index("Gene/Pathway")[all_cols]
+
+    sns.heatmap(
+        heatmap_df, annot=True, fmt=".1f", cmap="YlGnBu",
+        cbar_kws={"label": "Frequency (%)"},
+        linewidths=1, linecolor="white", ax=ax,
+        annot_kws={"size": 11, "weight": "bold"},
+    )
+    for text in ax.texts:
+        text.set_text(text.get_text() + "%")
+
+    ax.set_title("Pathway Mutation Frequency Heatmap (%)", fontweight="bold", pad=15)
+    ax.set_ylabel("")
+    plt.setp(ax.get_xticklabels(), rotation=15, ha="right", fontweight="bold")
+    plt.setp(ax.get_yticklabels(), fontweight="bold")
+
+    out_path = out_dir / "extended_pathway_heatmap.png"
+    save_fig(fig, out_path)
+    print(f"Saved extended pathway heatmap to {rel_path(out_path)}")
+
+
+def _plot_extended_pathway_dumbbell(
+    df: pd.DataFrame, cohort_cols: List[str], pooled_col: str, colors: List[str], out_dir: Path
+) -> None:
+    """Plots dumbbell plot showing trial variation vs. pooled benchmark for extended pathways."""
+    trial_colors = dict(zip(cohort_cols, colors[: len(cohort_cols)]))
+    pooled_color = get_cohort_color(pooled_col, default="#e41a1c")
+    max_val = np.nanmax(df[cohort_cols + [pooled_col]].values.astype(float))
+
+    fig, ax = plt.subplots(figsize=(11, 6), dpi=300)
+    for idx, row in df.iterrows():
+        y = idx
+        trial_vals = [row[c] for c in cohort_cols if pd.notna(row[c])]
+        if trial_vals:
+            ax.hlines(y, min(trial_vals), max(trial_vals), color="#cccccc", linewidth=4, zorder=1)
+
+        for c in cohort_cols:
+            if pd.notna(row[c]):
+                ax.scatter(row[c], y, color=trial_colors[c], s=90, zorder=3, label=c if idx == 0 else "")
+
+        if pd.notna(row[pooled_col]):
+            ax.scatter(
+                row[pooled_col], y, color=pooled_color, marker="D", s=130, zorder=4,
+                label=pooled_col if idx == 0 else "",
+            )
+            ax.annotate(
+                f"Pooled: {row[pooled_col]:.1f}%", (row[pooled_col], y),
+                xytext=(0, 12), textcoords="offset points",
+                ha="center", va="bottom", fontsize=9, fontweight="bold", color=pooled_color,
+            )
+
+    ax.set_yticks(np.arange(len(df)))
+    ax.set_yticklabels(df["Gene/Pathway"], fontweight="bold")
+    ax.invert_yaxis()
+    ax.set_xlabel("Mutation Frequency (%)", fontweight="bold")
+    ax.set_xlim(-max_val * 0.03, max_val * 1.1)
+    ax.set_title(
+        "Extended Pathway Mutation Rates: Trial Variation vs. Pooled Benchmark",
+        fontweight="bold", pad=15,
+    )
+    ax.legend(loc="lower right", frameon=True, facecolor="white")
+
+    out_path = out_dir / "extended_pathway_dumbbell.png"
+    save_fig(fig, out_path)
+    print(f"Saved extended pathway dumbbell plot to {rel_path(out_path)}")
+
+
 def main() -> None:
     """Executes the complete genomic characterisation and visualisation pipeline."""
     print("==================================================")
@@ -444,6 +695,13 @@ def main() -> None:
     _plot_tmb_distributions(cohorts, PLOT_DIR)
     _plot_biomarker_correlations(cohorts["Liu 2019"], PLOT_DIR)
     _plot_tcga_survival_stratification(cohorts["TCGA-SKCM"], PLOT_DIR)
+
+    print("\n5. Generating extended pathway mutation frequency visualisations...")
+    ext_df, cohort_cols, pooled_col, ext_ns = build_extended_pathway_dataframe(DATA_DIR)
+    ext_colors = resolve_colors(cohort_cols + [pooled_col])
+    _plot_extended_pathway_grouped_bars(ext_df, cohort_cols, pooled_col, ext_colors, PLOT_DIR)
+    _plot_extended_pathway_heatmap(ext_df, cohort_cols, pooled_col, PLOT_DIR)
+    _plot_extended_pathway_dumbbell(ext_df, cohort_cols, pooled_col, ext_colors, PLOT_DIR)
 
     print("\n==================================================")
     print("Done! All genomic characterisations generated.")
