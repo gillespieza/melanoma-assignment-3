@@ -15,7 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.stats import mannwhitneyu
+from scipy.stats import mannwhitneyu, spearmanr
 import seaborn as sns
 from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test, multivariate_logrank_test
@@ -266,11 +266,15 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
             )
 
     # Subplot 2: Neoantigen Collinearity (TMB vs TOTAL_NEOANTIGEN)
+    neo_cols = ["SNV_NEOANTIGEN", "INDEL_NEOANTIGEN", "FUSION_NEOANTIGEN", "SPLICE_NEOANTIGEN", "CTA_SELF_NEOANTIGEN"]
     neo_list = []
     for name in ["Liu 2019", "Hugo 2016", "Riaz 2017"]:
-        if "TOTAL_NEOANTIGEN" in cohorts[name].columns:
-            sub_df = cohorts[name][["TMB_NONSYNONYMOUS", "TOTAL_NEOANTIGEN"]].dropna()
+        df_c = cohorts[name]
+        avail_neo = [c for c in neo_cols if c in df_c.columns]
+        if "TMB_NONSYNONYMOUS" in df_c.columns and avail_neo:
+            sub_df = df_c[["TMB_NONSYNONYMOUS"] + avail_neo].dropna().copy()
             if len(sub_df) > 0:
+                sub_df["TOTAL_NEOANTIGEN"] = sub_df[avail_neo].sum(axis=1)
                 neo_list.append(sub_df)
 
     if neo_list:
@@ -378,73 +382,52 @@ def _plot_tcga_survival_stratification(clin_tcga: pd.DataFrame, plot_dir: Path) 
         if mask.sum() > 0:
             kmf.fit(
                 df_surv.loc[mask, "OS_MONTHS"],
-                event_observed=df_surv.loc[mask, "OS_STATUS"],
+                df_surv.loc[mask, "OS_STATUS"],
                 label=f"{subtype} (N={mask.sum()})",
             )
-            kmf.plot_survival_function(ax=axes[0], color=color, linewidth=2.5, ci_show=False)
+            kmf.plot_survival_function(ax=axes[0], color=color, ci_show=False, linewidth=2.5)
 
-    results_mut = multivariate_logrank_test(df_surv["OS_MONTHS"], df_surv["Genomic_Subtype"], df_surv["OS_STATUS"])
+    res = multivariate_logrank_test(df_surv["OS_MONTHS"], df_surv["Genomic_Subtype"], df_surv["OS_STATUS"])
     axes[0].text(
-        0.05,
-        0.08,
-        f"Multivariate Log-rank p = {results_mut.p_value:.4f}",
-        transform=axes[0].transAxes,
-        fontsize=11,
-        fontweight="semibold",
-        bbox=dict(facecolor="white", alpha=0.8, edgecolor="gray"),
+        0.03, 0.05, f"Log-rank p = {res.p_value:.4f}",
+        transform=axes[0].transAxes, fontsize=11, fontweight="bold",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.9, edgecolor="gray"),
     )
-    axes[0].set_title(f"TCGA OS: Stratified by Driver Mutation Subtype (N={len(df_surv)})", fontsize=13, fontweight="bold", pad=10)
-    axes[0].set_xlabel("Time (months)", fontsize=11)
-    axes[0].set_ylabel("Overall Survival Probability", fontsize=11)
-    axes[0].set_ylim(0, 1.05)
-    axes[0].legend(loc="upper right", fontsize=10)
-    axes[0].grid(True, linestyle="--", alpha=0.5)
+    axes[0].set_xlabel("Overall Survival (Months)", fontweight="bold")
+    axes[0].set_ylabel("Survival Probability", fontweight="bold")
+    axes[0].set_title("TCGA-SKCM Overall Survival by Driver Subtype", fontweight="bold", pad=15)
 
-    tcga_tmb_med = df_surv["TMB_NONSYNONYMOUS"].median()
-    df_surv["TMB_Group"] = df_surv["TMB_NONSYNONYMOUS"].apply(lambda x: "High TMB" if x >= tcga_tmb_med else "Low TMB")
+    df_surv["TMB_Group"] = np.where(
+        df_surv["TMB_NONSYNONYMOUS"] >= df_surv["TMB_NONSYNONYMOUS"].median(),
+        "High TMB", "Low TMB",
+    )
+    for group, color in [("High TMB", "#d95f02"), ("Low TMB", "#7570b3")]:
+        mask = df_surv["TMB_Group"] == group
+        kmf.fit(
+            df_surv.loc[mask, "OS_MONTHS"],
+            df_surv.loc[mask, "OS_STATUS"],
+            label=f"{group} (N={mask.sum()})",
+        )
+        kmf.plot_survival_function(ax=axes[1], color=color, ci_show=False, linewidth=2.5)
 
-    mask_high = df_surv["TMB_Group"] == "High TMB"
-    mask_low = df_surv["TMB_Group"] == "Low TMB"
-
-    kmf_h = KaplanMeierFitter()
-    kmf_l = KaplanMeierFitter()
-
-    kmf_h.fit(df_surv.loc[mask_high, "OS_MONTHS"], event_observed=df_surv.loc[mask_high, "OS_STATUS"], label=f"High TMB (N={mask_high.sum()})")
-    kmf_h.plot_survival_function(ax=axes[1], color=RESPONSE_PALETTE["CR/PR"], linewidth=2.5, ci_show=False)
-
-    kmf_l.fit(df_surv.loc[mask_low, "OS_MONTHS"], event_observed=df_surv.loc[mask_low, "OS_STATUS"], label=f"Low TMB (N={mask_low.sum()})")
-    kmf_l.plot_survival_function(ax=axes[1], color=RESPONSE_PALETTE["PD"], linewidth=2.5, ci_show=False)
-
-    results_tmb = logrank_test(
-        df_surv.loc[mask_high, "OS_MONTHS"],
-        df_surv.loc[mask_low, "OS_MONTHS"],
-        df_surv.loc[mask_high, "OS_STATUS"],
-        df_surv.loc[mask_low, "OS_STATUS"],
+    res_tmb = logrank_test(
+        df_surv.loc[df_surv["TMB_Group"] == "High TMB", "OS_MONTHS"],
+        df_surv.loc[df_surv["TMB_Group"] == "Low TMB", "OS_MONTHS"],
+        df_surv.loc[df_surv["TMB_Group"] == "High TMB", "OS_STATUS"],
+        df_surv.loc[df_surv["TMB_Group"] == "Low TMB", "OS_STATUS"],
     )
     axes[1].text(
-        0.05,
-        0.08,
-        f"Log-rank p = {results_tmb.p_value:.4f}",
-        transform=axes[1].transAxes,
-        fontsize=11,
-        fontweight="semibold",
-        bbox=dict(facecolor="white", alpha=0.8, edgecolor="gray"),
+        0.03, 0.05, f"Log-rank p = {res_tmb.p_value:.4f}",
+        transform=axes[1].transAxes, fontsize=11, fontweight="bold",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.9, edgecolor="gray"),
     )
-    axes[1].set_title(f"TCGA OS: Stratified by TMB (Median Split = {tcga_tmb_med:.2f}, N={len(df_surv)})", fontsize=13, fontweight="bold", pad=10)
-    axes[1].set_xlabel("Time (months)", fontsize=11)
-    axes[1].set_ylabel("Overall Survival Probability", fontsize=11)
-    axes[1].set_ylim(0, 1.05)
-    axes[1].legend(loc="upper right", fontsize=10)
-    axes[1].grid(True, linestyle="--", alpha=0.5)
-
-    fig.suptitle(f"TCGA-SKCM Overall Survival by Genomic Features (N={len(df_surv)})", fontsize=16, fontweight="bold", y=0.98)
+    axes[1].set_xlabel("Overall Survival (Months)", fontweight="bold")
+    axes[1].set_ylabel("Survival Probability", fontweight="bold")
+    axes[1].set_title("TCGA-SKCM Overall Survival by TMB Split", fontweight="bold", pad=15)
 
     out_surv_path = plot_dir / "tcga_survival_by_mutation.png"
     save_fig(fig, out_surv_path)
     print(f"Saved TCGA survival stratification plots to {rel_path(out_surv_path)}")
-
-    out_surv_legacy = plot_dir / "km_genomic_features.png"
-    save_fig(fig, out_surv_legacy)
 
 
 # ---------------------------------------------------------------------------
@@ -501,61 +484,58 @@ def _weighted_pooled(row: pd.Series, cohort_names: List[str], ns: Dict[str, int]
     return 100.0 * sum(vals) / sum(weights) if weights else np.nan
 
 
-def compute_cohort_frequencies(config: DatasetConfig, data_dir: Path) -> Tuple[Dict[str, float], int]:
-    """Compute driver/pathway mutation frequencies (%) for one cohort."""
-    cohort_dir = data_dir / "processed" / config.processed_directory
-    mut_path = cohort_dir / "mutations_cleaned.csv"
-    clin_path = cohort_dir / "clin_cleaned.csv"
-
-    if not mut_path.exists():
-        raise FileNotFoundError(f"Missing {rel_path(mut_path)}. Run preprocessing script for {config.cohort_name} first.")
-    if not clin_path.exists():
-        raise FileNotFoundError(f"Missing {rel_path(clin_path)}. Run preprocessing script for {config.cohort_name} first.")
-
-    df_clin = pd.read_csv(clin_path, index_col=0)
-    n_patients = len(df_clin)
-    all_patients = df_clin.index
-
-    df_mut = pd.read_csv(mut_path)
-
-    if "Hugo_Symbol" in df_mut.columns:
-        id_col = find_id_column(df_mut)
-        if "Variant_Classification" in df_mut.columns:
-            df_mut = df_mut[df_mut["Variant_Classification"].isin(NON_SILENT_VARIANT_CLASSIFICATIONS)]
-        mut_wide = df_mut.pivot_table(
-            index=id_col, columns="Hugo_Symbol", values="Hugo_Symbol", aggfunc="count",
-        )
-    else:
-        id_col = find_id_column(df_mut)
-        mut_wide = df_mut.set_index(id_col)
-
-    mut_wide = mut_wide.reindex(all_patients, fill_value=0)
-
-    freqs = {gene: _compute_gene_frequency(mut_wide, [gene], config.cohort_name) for gene in DRIVER_GENES}
-    for pathway, genes in PATHWAY_GENES.items():
-        freqs[pathway] = _compute_gene_frequency(mut_wide, genes, config.cohort_name)
-
-    return freqs, n_patients
-
-
 def build_extended_pathway_dataframe(data_dir: Path) -> Tuple[pd.DataFrame, List[str], str, Dict[str, int]]:
-    """Assemble cohort x gene/pathway frequency table with N-weighted Pooled Trials column."""
+    """Builds extended pathway mutation frequency DataFrame across cohorts."""
     dataset_configs = load_dataset_config(CONFIG_PATH)
-    per_cohort = {config.cohort_name: compute_cohort_frequencies(config, data_dir) for config in dataset_configs}
-    freqs = {name: f for name, (f, n) in per_cohort.items()}
-    ns = {name: n for name, (f, n) in per_cohort.items()}
-    cohort_names = [config.cohort_name for config in dataset_configs]
+    freqs: Dict[str, Dict[str, float]] = {p: {} for p in PATHWAY_GENES}
+    ns: Dict[str, int] = {}
+    cohort_names: List[str] = []
 
-    rows = []
-    for category, key in ROW_ORDER:
-        label = ROW_LABELS.get(key, key)
-        row = {"Category": category, "Gene/Pathway": label}
-        for c in cohort_names:
-            row[c] = freqs[c].get(key)
-        rows.append(row)
+    for config in dataset_configs:
+        name = config.cohort_name
+        cohort_names.append(name)
+        proc_dir = data_dir / "processed" / config.processed_directory
+        mut_csv = proc_dir / "mutations_cleaned.csv"
+        clin_csv = proc_dir / "clin_cleaned.csv"
 
-    df = pd.DataFrame(rows)
+        if not clin_csv.exists():
+            continue
 
+        clin_df = pd.read_csv(clin_csv, index_col="SAMPLE_ID")
+        ns[name] = len(clin_df)
+
+        if not mut_csv.exists():
+            for pathway in PATHWAY_GENES:
+                freqs[pathway][name] = np.nan
+            continue
+
+        mut_df = pd.read_csv(mut_csv)
+        id_col = find_id_column(mut_df, ["SAMPLE_ID", "Tumor_Sample_Barcode", "Sample_ID", "sample_id"])
+        if id_col is None:
+            for pathway in PATHWAY_GENES:
+                freqs[pathway][name] = np.nan
+            continue
+
+        if "Hugo_Symbol" in mut_df.columns:
+            if "Variant_Classification" in mut_df.columns:
+                mut_df = mut_df[mut_df["Variant_Classification"].isin(NON_SILENT_VARIANT_CLASSIFICATIONS)]
+            mut_wide = mut_df.pivot_table(index=id_col, columns="Hugo_Symbol", values="Hugo_Symbol", aggfunc="count", fill_value=0)
+        else:
+            mut_wide = mut_df.set_index(id_col)
+
+        mut_wide = mut_wide.reindex(clin_df.index, fill_value=0)
+
+        for pathway, genes in PATHWAY_GENES.items():
+            freqs[pathway][name] = _compute_gene_frequency(mut_wide, genes, config.cohort_name)
+
+    records = []
+    for pathway, cat in ROW_ORDER:
+        row = {"Category": pathway, "Gene/Pathway": ROW_LABELS.get(cat, cat)}
+        for name in cohort_names:
+            row[name] = freqs.get(cat, {}).get(name, np.nan)
+        records.append(row)
+
+    df = pd.DataFrame(records)
     df[POOLED_LABEL] = df.apply(_weighted_pooled, axis=1, cohort_names=cohort_names, ns=ns)
     ns[POOLED_LABEL] = sum(ns.values())
 
@@ -655,9 +635,6 @@ def _plot_extended_pathway_grouped_bars(
     out_path = out_dir / "extended_pathway_mutation_frequencies.png"
     save_fig(fig, out_path)
     print(f"Saved extended pathway mutation frequencies plot to {rel_path(out_path)}")
-
-    out_legacy = out_dir / "extended_pathway_grouped_bars.png"
-    save_fig(fig, out_legacy)
 
 
 def _plot_extended_pathway_heatmap(
@@ -827,18 +804,16 @@ def _generate_genomic_report(cohorts: Dict[str, pd.DataFrame], report_path: Path
         f.write("---\n\n")
 
         f.write("## 2. Tumor Mutational Burden (TMB) & Neoantigen Load\n\n")
-        f.write(f"Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumor immunogenicity. Below, we present the TMB distribution by cohort.\n\n")
+        f.write(f"Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumor immunogenicity. Below, we present the TMB distribution by response (left panel) alongside the correlation scatter plot illustrating Neoantigen Collinearity with TMB in the pooled trial cohorts ($N={n_trials}$, right panel).\n\n")
         f.write("![TMB Distributions](../../plots/genomic/tmb_distributions_by_cohort.png)\n\n")
-        f.write("TMB Distributions\n\n")
+        f.write("TMB Distributions and Neoantigen Collinearity\n\n")
 
         f.write("### Key Observations\n")
         f.write("* **TMB as a Predictor**: In all three immunotherapy cohorts, responders (CR/PR, bluish green boxes) exhibit a higher pre-treatment TMB distribution than non-responders (PD, vermillion red boxes).\n")
-        f.write(f"* **TCGA Distribution**: The reference cohort shows a classical log-normal TMB distribution with a median of **{tcga_df['TMB_NONSYNONYMOUS'].median():.2f} mutations/Mb**. A substantial proportion of patients lie above the standard FDA clinical cutoff of **10.0 mutations/Mb** for high-TMB status, validating the presence of a strong ultraviolet (UV) signature in cutaneous melanomas.\n")
         f.write("* **Neoantigen Collinearity**: There is a strong linear relationship between nonsynonymous TMB and predicted neoantigen load ($r = 0.756$). The extreme correlation confirms that these two metrics are collinear, making TMB a suitable surrogate for mutational neoantigen burden in downstream modeling.\n\n")
         f.write("---\n\n")
 
         f.write("## 3. Continuous Biomarker Correlation\n\n")
-        f.write("### 3.1. Intra-Cohort Correlation in Liu 2019\n")
         f.write(f"A Spearman rank correlation matrix mapping the relationships between continuous genomic features (somatic mutation and neoantigen subtypes) in the **Liu 2019** cohort ($N={n_liu}$) is presented below.\n\n")
         f.write("![Genomic Biomarker Correlation Matrix](../../plots/genomic/biomarker_correlation_matrix.png)\n\n")
         f.write("Genomic Biomarker Correlation Matrix\n\n")

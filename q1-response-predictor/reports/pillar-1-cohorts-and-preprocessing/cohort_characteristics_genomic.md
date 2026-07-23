@@ -7,12 +7,12 @@ tags:
   - tmb
   - neoantigens
   - comut
-created: 2026-07-23 23:08
+created: 2026-07-23 23:12
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-23 23:08
+updated: 2026-07-23 23:12
 ---
 
 # Genomic Characteristics of Data Cohorts
@@ -57,22 +57,20 @@ _Note: Pre-treatment somatic non-synonymous mutations in MHC Class I machinery (
 
 ## 2. Tumor Mutational Burden (TMB) & Neoantigen Load
 
-Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumor immunogenicity. Below, we present the TMB distribution by cohort.
+Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumor immunogenicity. Below, we present the TMB distribution by response (left panel) alongside the correlation scatter plot illustrating Neoantigen Collinearity with TMB in the pooled trial cohorts ($N=256$, right panel).
 
 ![TMB Distributions](../../plots/genomic/tmb_distributions_by_cohort.png)
 
-TMB Distributions
+TMB Distributions and Neoantigen Collinearity
 
 ### Key Observations
 * **TMB as a Predictor**: In all three immunotherapy cohorts, responders (CR/PR, bluish green boxes) exhibit a higher pre-treatment TMB distribution than non-responders (PD, vermillion red boxes).
-* **TCGA Distribution**: The reference cohort shows a classical log-normal TMB distribution with a median of **14.88 mutations/Mb**. A substantial proportion of patients lie above the standard FDA clinical cutoff of **10.0 mutations/Mb** for high-TMB status, validating the presence of a strong ultraviolet (UV) signature in cutaneous melanomas.
 * **Neoantigen Collinearity**: There is a strong linear relationship between nonsynonymous TMB and predicted neoantigen load ($r = 0.756$). The extreme correlation confirms that these two metrics are collinear, making TMB a suitable surrogate for mutational neoantigen burden in downstream modeling.
 
 ---
 
 ## 3. Continuous Biomarker Correlation
 
-### 3.1. Intra-Cohort Correlation in Liu 2019
 A Spearman rank correlation matrix mapping the relationships between continuous genomic features (somatic mutation and neoantigen subtypes) in the **Liu 2019** cohort ($N=122$) is presented below.
 
 ![Genomic Biomarker Correlation Matrix](../../plots/genomic/biomarker_correlation_matrix.png)
