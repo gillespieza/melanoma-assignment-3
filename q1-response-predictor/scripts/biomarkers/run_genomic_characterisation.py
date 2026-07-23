@@ -557,22 +557,37 @@ def build_extended_pathway_dataframe(data_dir: Path) -> Tuple[pd.DataFrame, List
     return df, cohort_cols, pooled_col, ns
 
 
+def _compute_category_spaced_y_pos(df: pd.DataFrame, category_gap: float = 0.8) -> Tuple[np.ndarray, List[str]]:
+    """Computes Y-axis positions with extra whitespace gaps between distinct categories."""
+    y_pos = []
+    y_labels = []
+    current_y = 0.0
+    prev_cat = None
+
+    for _, row in df.iterrows():
+        cat = row["Category"]
+        if prev_cat is not None and cat != prev_cat:
+            current_y += category_gap
+        y_pos.append(current_y)
+        y_labels.append(f"[{cat}]  {row['Gene/Pathway']}")
+        current_y += 1.0
+        prev_cat = cat
+
+    return np.array(y_pos), y_labels
+
+
 def _plot_extended_pathway_grouped_bars(
     df: pd.DataFrame, cohort_cols: List[str], pooled_col: str, colors: List[str], out_dir: Path
 ) -> None:
-    """Plots grouped horizontal bars of extended pathway mutation frequencies with category hierarchy labels."""
+    """Plots grouped horizontal bars of extended pathway mutation frequencies with category whitespace gaps."""
     all_cols = cohort_cols + [pooled_col]
-    y_labels = [f"[{row['Category']}]  {row['Gene/Pathway']}" for _, row in df.iterrows()]
-    y_pos = np.arange(len(y_labels))
-
-    cat_sizes = df.groupby("Category", sort=False).size()
-    boundaries = np.cumsum(cat_sizes.values)[:-1] - 0.5
+    y_pos, y_labels = _compute_category_spaced_y_pos(df, category_gap=0.8)
 
     n_cohorts = len(all_cols)
     bar_width = 0.8 / n_cohorts
     max_val = np.nanmax(df[all_cols].values.astype(float))
 
-    fig, ax = plt.subplots(figsize=(12, 7.5), dpi=300)
+    fig, ax = plt.subplots(figsize=(12, 8.0), dpi=300)
 
     for i, cohort in enumerate(all_cols):
         values = df[cohort].values
@@ -602,11 +617,11 @@ def _plot_extended_pathway_grouped_bars(
         fontweight="bold", pad=15,
     )
     ax.legend(title="Cohort", frameon=True, facecolor="white", framealpha=0.9, loc="lower right")
-
-    for b in boundaries:
-        ax.axhline(b, color="gray", linestyle="--", alpha=0.5)
-
     ax.set_xlim(0, max_val * 1.25)
+
+    ax.xaxis.grid(True, linestyle=":", color="#E0E0E0", linewidth=0.5, alpha=0.5)
+    ax.yaxis.grid(False)
+    ax.set_axisbelow(True)
 
     out_path = out_dir / "extended_pathway_mutation_frequencies.png"
     save_fig(fig, out_path)
@@ -621,7 +636,7 @@ def _plot_extended_pathway_heatmap(
 ) -> None:
     """Plots heatmap of extended pathway mutation frequencies across cohorts."""
     all_cols = cohort_cols + [pooled_col]
-    fig, ax = plt.subplots(figsize=(10, 7), dpi=300)
+    fig, ax = plt.subplots(figsize=(10, 7.5), dpi=300)
     df_plot = df.copy()
     df_plot["Full_Label"] = [f"[{row['Category']}]  {row['Gene/Pathway']}" for _, row in df_plot.iterrows()]
     heatmap_df = df_plot.set_index("Full_Label")[all_cols]
@@ -648,15 +663,15 @@ def _plot_extended_pathway_heatmap(
 def _plot_extended_pathway_dumbbell(
     df: pd.DataFrame, cohort_cols: List[str], pooled_col: str, colors: List[str], out_dir: Path
 ) -> None:
-    """Plots dumbbell plot showing trial variation vs. pooled benchmark for extended pathways."""
+    """Plots dumbbell plot showing trial variation vs. pooled benchmark for extended pathways with whitespace gaps."""
     trial_colors = dict(zip(cohort_cols, colors[: len(cohort_cols)]))
     pooled_color = get_cohort_color(pooled_col, default="#e41a1c")
     max_val = np.nanmax(df[cohort_cols + [pooled_col]].values.astype(float))
-    y_labels = [f"[{row['Category']}]  {row['Gene/Pathway']}" for _, row in df.iterrows()]
+    y_pos, y_labels = _compute_category_spaced_y_pos(df, category_gap=0.8)
 
-    fig, ax = plt.subplots(figsize=(11, 7), dpi=300)
+    fig, ax = plt.subplots(figsize=(11, 8.0), dpi=300)
     for idx, row in df.iterrows():
-        y = idx
+        y = y_pos[idx]
         trial_vals = [row[c] for c in cohort_cols if pd.notna(row[c])]
         if trial_vals:
             ax.hlines(y, min(trial_vals), max(trial_vals), color="#cccccc", linewidth=4, zorder=1)
@@ -676,7 +691,7 @@ def _plot_extended_pathway_dumbbell(
                 ha="center", va="bottom", fontsize=9, fontweight="bold", color=pooled_color,
             )
 
-    ax.set_yticks(np.arange(len(df)))
+    ax.set_yticks(y_pos)
     ax.set_yticklabels(y_labels, fontweight="bold")
     ax.invert_yaxis()
     ax.set_xlabel("Mutation Frequency (%)", fontweight="bold")
@@ -686,11 +701,10 @@ def _plot_extended_pathway_dumbbell(
         fontweight="bold", pad=15,
     )
     ax.legend(loc="lower right", frameon=True, facecolor="white")
-    ax.set_xlim(-max_val * 0.03, max_val * 1.1)
-    ax.set_title(
-        "Extended Pathway Mutation Rates: Trial Variation vs. Pooled Benchmark",
-        fontweight="bold", pad=15,
-    )
+
+    ax.xaxis.grid(True, linestyle=":", color="#E0E0E0", linewidth=0.5, alpha=0.5)
+    ax.yaxis.grid(False)
+    ax.set_axisbelow(True)
     ax.legend(loc="lower right", frameon=True, facecolor="white")
 
     out_path = out_dir / "extended_pathway_dumbbell.png"
