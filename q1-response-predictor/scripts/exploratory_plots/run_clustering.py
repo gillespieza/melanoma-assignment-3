@@ -22,7 +22,10 @@ from scipy.stats import chi2_contingency
 from sklearn.cluster import AgglomerativeClustering
 import seaborn as sns
 
-# Bootstrap project root resolution for top-level import
+# ---------------------------------------------------------------------------
+# Bootstrap project root resolution for top-level imports
+# ---------------------------------------------------------------------------
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
@@ -31,7 +34,7 @@ from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.signatures import extract_all_signatures
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import find_project_root
+from src.utils.paths import find_project_root, rel_path
 from src.utils.plotting import save_fig
 
 # Module-level Constants
@@ -60,9 +63,13 @@ def _prepare_batch_corrected_signatures(data_dir: Path) -> Tuple[pd.DataFrame, p
     sig_hugo = extract_all_signatures(expr_hugo[common_genes])
     sig_riaz = extract_all_signatures(expr_riaz[common_genes])
 
-    y_liu = clin_liu.loc[sig_liu.index, "response"]
-    y_hugo = clin_hugo.loc[sig_hugo.index, "response"]
-    y_riaz = clin_riaz.loc[sig_riaz.index, "response"]
+    resp_col_l = "RESPONSE_BINARY" if "RESPONSE_BINARY" in clin_liu.columns else "response"
+    resp_col_h = "RESPONSE_BINARY" if "RESPONSE_BINARY" in clin_hugo.columns else "response"
+    resp_col_r = "RESPONSE_BINARY" if "RESPONSE_BINARY" in clin_riaz.columns else "response"
+
+    y_liu = clin_liu.loc[sig_liu.index, resp_col_l]
+    y_hugo = clin_hugo.loc[sig_hugo.index, resp_col_h]
+    y_riaz = clin_riaz.loc[sig_riaz.index, resp_col_r]
 
     sig_all = pd.concat([sig_liu, sig_hugo, sig_riaz], axis=0)
     y_all = pd.concat([y_liu, y_hugo, y_riaz], axis=0)
@@ -73,70 +80,6 @@ def _prepare_batch_corrected_signatures(data_dir: Path) -> Tuple[pd.DataFrame, p
 
     print(f"Corrected signatures matrix shape: {sig_corrected.shape}")
     return sig_corrected, y_all, batches
-
-
-def _plot_clustermap(sig_corrected: pd.DataFrame, y_all: pd.Series, batches: list, plot_dir: Path) -> None:
-    """Renders annotated Seaborn clustermap for patient immune signatures.
-
-    Args:
-        sig_corrected: Batch-corrected signature matrix.
-        y_all: Response label series.
-        batches: List of cohort batch labels.
-        plot_dir: Directory path to export plot artifact.
-    """
-    set_presentation_style()
-
-    cohort_colors_map = {
-        "liu": COHORT_PALETTE["Liu 2019"],
-        "hugo": COHORT_PALETTE["Hugo 2016"],
-        "riaz": COHORT_PALETTE["Riaz 2017"],
-    }
-    col_cohort_colors = pd.Series(batches, index=sig_corrected.index).map(cohort_colors_map)
-
-    response_colors_map = {1.0: RESPONSE_PALETTE["CR/PR"], 0.0: RESPONSE_PALETTE["PD"]}
-    col_response_colors = y_all.map(response_colors_map)
-
-    col_colors = pd.DataFrame({
-        "Cohort": col_cohort_colors,
-        "Response": col_response_colors,
-    })
-
-    sns.set_theme(style="white")
-    g = sns.clustermap(
-        sig_corrected.T,
-        cmap="RdBu_r",
-        z_score=0,
-        metric="euclidean",
-        method="ward",
-        col_colors=col_colors,
-        figsize=(12, 8),
-        cbar_kws={"label": "Z-score expression"},
-        xticklabels=False,
-    )
-
-    g.ax_heatmap.set_xlabel("Patients (N=162)")
-    g.ax_heatmap.set_ylabel("Immune Signatures")
-    plt.suptitle(
-        "Unsupervised Hierarchical Clustering of Patient Immune Signatures\n(Pooled & Batch-Corrected Clinical Cohorts)",
-        y=1.02,
-        fontsize=14,
-        fontweight="bold",
-    )
-
-    legend_elements = [
-        Patch(facecolor=COHORT_PALETTE["Liu 2019"], label="Liu 2019"),
-        Patch(facecolor=COHORT_PALETTE["Hugo 2016"], label="Hugo 2016"),
-        Patch(facecolor=COHORT_PALETTE["Riaz 2017"], label="Riaz 2017"),
-        Patch(facecolor=RESPONSE_PALETTE["CR/PR"], label="Responder (CR/PR)"),
-        Patch(facecolor=RESPONSE_PALETTE["PD"], label="Non-Responder (PD)"),
-    ]
-    g.ax_col_dendrogram.legend(
-        handles=legend_elements, bbox_to_anchor=(1.45, 1), loc="upper right", title="Metadata Legends"
-    )
-
-    clustermap_path = plot_dir / "signature_clustermap.png"
-    save_fig(g.fig, clustermap_path)
-    print(f"Saved Clustermap to {clustermap_path.relative_to(BASE_DIR).as_posix()}")
 
 
 def _evaluate_cluster_associations(sig_corrected: pd.DataFrame, y_all: pd.Series) -> None:
@@ -177,13 +120,7 @@ def main() -> None:
     sig_corrected, y_all, batches = _prepare_batch_corrected_signatures(DATA_DIR)
 
     print("\n==================================================")
-    print("Phase 2: Unsupervised Hierarchical Clustering...")
-    print("==================================================")
-
-    _plot_clustermap(sig_corrected, y_all, batches, PLOT_DIR)
-
-    print("\n==================================================")
-    print("Phase 3: Association of Clusters with Response...")
+    print("Phase 2: Association of Clusters with Response...")
     print("==================================================")
 
     _evaluate_cluster_associations(sig_corrected, y_all)
@@ -199,5 +136,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+            print(f"Logging console output to {rel_path(LOG_PATH)}")
             main()
