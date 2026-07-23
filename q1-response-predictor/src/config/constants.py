@@ -76,12 +76,21 @@ SIGNATURE_GENES = [
     'AKAP5', 'SAMSN1', 'GBP1P1', 'ZNF831', 'KLRK1', 'CD38'
 ]
 
-# Definitions of genes included in specific functional pathways
+# Definitions of genes included in specific functional pathways and immune signatures
 PATHWAY_GENES = {
+    "IFN-gamma Signature": ["IFNG", "CXCL9", "CXCL10", "IDO1", "HLA-DRA", "STAT1"],
+    "Tumor Inflammation Signature (TIS)": [
+        "CCL5", "CD2", "CD3D", "CD3E", "CD27", "CD274", "CMKLR1", "CXCL9",
+        "CXCR6", "GZMB", "GZMK", "HLA-DRA", "HLA-DQA1", "HLA-E", "IDO1",
+        "LAG3", "NKG7", "PDCD1LG2", "PSMB10", "STAT1", "TIGIT",
+    ],
+    "Cytolytic Activity (CYT)": ["GZMA", "PRF1"],
+    "CD8 T-Cell Abundance": ["CD8A", "CD8B"],
+    "Immune Predictive Score (IMPRES)": [
+        "CD274", "VSIR", "CD28", "CD276", "CD86", "TNFRSF4", "CD200",
+        "CTLA4", "PDCD1", "CD80", "TNFSF9", "HAVCR2", "CD27", "CD40", "TNFRSF14",
+    ],
     "Antigen Presentation": ["B2M", "TAP1", "TAP2"],
-    "IFN-gamma Signaling": ["JAK1", "JAK2", "STAT1"],
-    "Immune Checkpoints": ["CD274", "CTLA4", "IDO1"],
-    "Cytolytic Machinery": ["GZMA", "PRF1"],
     "Survival & Proliferation Drivers": ["PTEN", "CDKN2A", "PIK3CA"],
 }
 
