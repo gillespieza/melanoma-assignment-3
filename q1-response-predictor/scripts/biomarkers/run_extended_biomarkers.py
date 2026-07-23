@@ -342,18 +342,6 @@ def _evaluate_neoantigen_load(df_clin_merged: pd.DataFrame) -> List[str]:
     report_section.append(f"| **TOTAL_NEOANTIGEN** | {len(common_idx)} | **{auc_neo:.3f}** | {p_neo_mw:.3e} |")
     report_section.append(f"| **TMB_NONSYNONYMOUS** | {len(common_idx)} | **{auc_tmb:.3f}** | {p_tmb_mw:.3e} |")
     
-    # Plot Neoantigen vs TMB scatter
-    fig, ax = plt.subplots(figsize=(8, 6))
-    sns.regplot(data=df_trials_neo, x='TMB_NONSYNONYMOUS', y='TOTAL_NEOANTIGEN', color=COHORT_PALETTE['Pooled Trials'], ax=ax,
-                scatter_kws={'alpha': 0.6, 'edgecolor': 'w', 's': 70})
-    ax.set_title(f"Neoantigen Load vs. TMB (Merged Trials, r = {r_spearman:.3f})", fontsize=14, weight='bold')
-    ax.set_xlabel("Nonsynonymous TMB (mutations/Mb)")
-    ax.set_ylabel("Predicted Total Neoantigens")
-    plt.tight_layout()
-    neo_plot_path = PLOT_DIR / "extended_neoantigen_tmb.png"
-    save_fig(fig, neo_plot_path)
-    report_section.append("\n![Neoantigen vs TMB](../plots/extended_neoantigen_tmb.png)")
-    
     return report_section
 
 

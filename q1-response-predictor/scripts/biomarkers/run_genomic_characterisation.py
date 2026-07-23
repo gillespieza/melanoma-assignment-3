@@ -818,11 +818,9 @@ def _generate_genomic_report(cohorts: Dict[str, pd.DataFrame], report_path: Path
         f.write("---\n\n")
 
         f.write("## 2. Tumor Mutational Burden (TMB) & Neoantigen Load\n\n")
-        f.write(f"Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumor immunogenicity. Below, we present the TMB distribution (left panel) alongside a scatter plot showing the relationship between nonsynonymous TMB and predicted neoantigen load in the pooled trial cohorts ($N={n_trials}$).\n\n")
+        f.write(f"Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumor immunogenicity. Below, we present the TMB distribution by cohort.\n\n")
         f.write("![TMB Distributions](../../plots/genomic/tmb_distributions_by_cohort.png)\n\n")
         f.write("TMB Distributions\n\n")
-        f.write("![Neoantigen vs TMB](../../plots/biomarkers/extended_neoantigen_tmb.png)\n\n")
-        f.write("Neoantigen vs TMB\n\n")
 
         f.write("### Key Observations\n")
         f.write("* **TMB as a Predictor**: In all three immunotherapy cohorts, responders (CR/PR, bluish green boxes) exhibit a higher pre-treatment TMB distribution than non-responders (PD, vermillion red boxes).\n")

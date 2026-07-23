@@ -7,12 +7,12 @@ tags:
   - tmb
   - neoantigens
   - comut
-created: 2026-07-23 22:49
+created: 2026-07-23 23:05
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-23 22:49
+updated: 2026-07-23 23:05
 ---
 
 # Genomic Characteristics of Data Cohorts
@@ -57,15 +57,11 @@ _Note: Pre-treatment somatic non-synonymous mutations in MHC Class I machinery (
 
 ## 2. Tumor Mutational Burden (TMB) & Neoantigen Load
 
-Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumor immunogenicity. Below, we present the TMB distribution (left panel) alongside a scatter plot showing the relationship between nonsynonymous TMB and predicted neoantigen load in the pooled trial cohorts ($N=256$).
+Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumor immunogenicity. Below, we present the TMB distribution by cohort.
 
 ![TMB Distributions](../../plots/genomic/tmb_distributions_by_cohort.png)
 
 TMB Distributions
-
-![Neoantigen vs TMB](../../plots/biomarkers/extended_neoantigen_tmb.png)
-
-Neoantigen vs TMB
 
 ### Key Observations
 * **TMB as a Predictor**: In all three immunotherapy cohorts, responders (CR/PR, bluish green boxes) exhibit a higher pre-treatment TMB distribution than non-responders (PD, vermillion red boxes).
