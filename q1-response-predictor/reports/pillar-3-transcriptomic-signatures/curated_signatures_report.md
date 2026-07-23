@@ -168,7 +168,7 @@ Somatic mutation rate (TMB) and predicted neoantigen count are highly collinear:
 ![Neoantigen vs TMB Regression](../../plots/biomarkers/extended_neoantigen_tmb.png)
 
 ### 5.2. Orthogonality of Genomic and Transcriptomic Modalities
-We evaluated the Spearman rank correlation ($r$) between genomic load metrics (TMB and Aneuploidy Score) and the five continuous transcriptomic signatures in both TCGA-SKCM ($N = 427$) and the pooled trial cohorts ($N = 195$):
+We evaluated the Spearman rank correlation ($r$) between genomic load metrics—Aneuploidy Score (available in TCGA-SKCM, $N = 427$) and TMB (evaluated in TCGA-SKCM and the pooled trial cohorts, $N = 195$)—against the five continuous transcriptomic signatures:
 
 | Cohort / Feature | IFN-γ | TIS | CD8 T-Cell | CYT | PD-L1 |
 | :--- | :---: | :---: | :---: | :---: | :---: |

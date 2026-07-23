@@ -834,7 +834,7 @@ def _generate_genomic_report(cohorts: Dict[str, pd.DataFrame], report_path: Path
         f.write("* **Neoantigen Subtypes**: Somatic indel neoantigens (`INDEL_NEOANTIGEN`, $r_s = 0.44$ with TMB) and cancer-testis antigens (`CTA_SELF_NEOANTIGEN`, $r_s = 0.22$ with TMB) show much weaker correlations. This suggests they capture distinct biological axes of tumor immunogenicity that are not simply surrogates for total mutational burden.\n\n")
 
         f.write("### 3.2. Genomic Burden vs. Immune Infiltration\n")
-        f.write(f"To understand how tumor genomic features affect the microenvironment, we evaluated how copy-number burden (Aneuploidy Score) and mutational burden (TMB) correlate with continuous transcriptomic immune signatures in both TCGA-SKCM ($N={n_tcga}$) and the pooled trials ($N={n_trials}$).\n\n")
+        f.write(f"To understand how tumor genomic features affect the microenvironment, we evaluated how copy-number burden (Aneuploidy Score, available in TCGA-SKCM, $N={n_tcga}$) and mutational burden (TMB, evaluated in TCGA-SKCM and the pooled trials, $N={n_trials}$) correlate with continuous transcriptomic immune signatures.\n\n")
         f.write("![Genomic Burden vs Immune Heatmap](../../plots/biomarkers/extended_immune_correlations.png)\n\n")
 
         f.write("### Key Observations\n")

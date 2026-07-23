@@ -383,7 +383,7 @@ def _evaluate_aneuploidy_and_tmb(
     print("\nEvaluating Aneuploidy/CNA and TMB vs. Immune Infiltration...")
     report_section = [
         "\n## 3. Aneuploidy, Copy-Number Alterations, & TMB vs. Immune Infiltration",
-        "We evaluated how copy-number burden (aneuploidy score / fraction genome altered) and mutational burden (TMB) correlate with continuous immune signatures. Highly aneuploid tumours are hypothesised to suppress immune infiltration (cold), whereas high TMB tumours are expected to stimulate immune infiltration due to neoantigens (hot).",
+        "We evaluated how copy-number burden (Aneuploidy Score, available in TCGA-SKCM) and mutational burden (TMB, evaluated in TCGA-SKCM and trial cohorts) correlate with continuous immune signatures. Highly aneuploid tumours are hypothesised to suppress immune infiltration (cold), whereas high TMB tumours are expected to stimulate immune infiltration due to neoantigens (hot).",
     ]
     
     sig_names = ['IFN_gamma', 'TIS', 'CD8_Tcell', 'CYT', 'PD_L1']

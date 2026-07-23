@@ -7,12 +7,12 @@ tags:
   - tmb
   - neoantigens
   - comut
-created: 2026-07-23 23:16
+created: 2026-07-23 23:39
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-23 23:16
+updated: 2026-07-23 23:39
 ---
 
 # Genomic Characteristics of Data Cohorts
@@ -83,7 +83,7 @@ Genomic Biomarker Correlation Matrix
 * **Neoantigen Subtypes**: Somatic indel neoantigens (`INDEL_NEOANTIGEN`, $r_s = 0.44$ with TMB) and cancer-testis antigens (`CTA_SELF_NEOANTIGEN`, $r_s = 0.22$ with TMB) show much weaker correlations. This suggests they capture distinct biological axes of tumor immunogenicity that are not simply surrogates for total mutational burden.
 
 ### 3.2. Genomic Burden vs. Immune Infiltration
-To understand how tumor genomic features affect the microenvironment, we evaluated how copy-number burden (Aneuploidy Score) and mutational burden (TMB) correlate with continuous transcriptomic immune signatures in both TCGA-SKCM ($N=428$) and the pooled trials ($N=256$).
+To understand how tumor genomic features affect the microenvironment, we evaluated how copy-number burden (Aneuploidy Score, available in TCGA-SKCM, $N=428$) and mutational burden (TMB, evaluated in TCGA-SKCM and the pooled trials, $N=256$) correlate with continuous transcriptomic immune signatures.
 
 ![Genomic Burden vs Immune Heatmap](../../plots/biomarkers/extended_immune_correlations.png)
 
