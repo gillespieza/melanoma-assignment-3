@@ -1,5 +1,4 @@
-"""
-Genomic Characterisation and Visualisation Script for Melanoma Cohorts.
+"""Genomic Characterisation and Visualisation Script for Melanoma Cohorts.
 
 Performs cross-cohort genomic analyses including driver mutation frequency comparison,
 tumour mutational burden (TMB) distribution benchmarking, neoantigen biomarker correlation
@@ -21,38 +20,41 @@ import seaborn as sns
 from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test, multivariate_logrank_test
 
-# Bootstrap project root resolution for top-level import
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-if str(BASE_DIR) not in sys.path:
-    sys.path.append(str(BASE_DIR))
+# ---------------------------------------------------------------------------
+# Bootstrap project root resolution for top-level imports
+# ---------------------------------------------------------------------------
 
-from src.biology_constants import DRIVER_GENES
+_SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(_SUBPROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SUBPROJECT_ROOT))
+
+from src.config.constants import DRIVER_GENES, GENOMIC_FEATURES, RECIST_RESPONSE_MAP
+from src.config.datasets import DatasetConfig, load_dataset_config
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.styles import (
     COHORT_PALETTE,
     DRIVER_PALETTE,
     RESPONSE_PALETTE,
+    get_cohort_color,
     set_presentation_style,
 )
 from src.utils.logging import TeeStream
-from src.utils.paths import find_project_root
+from src.utils.paths import (
+    CONFIG_DIR,
+    DATA_DIR,
+    LOG_DIR,
+    PLOTS_DIR,
+    SUBPROJECT_ROOT,
+    rel_path,
+)
 from src.utils.plotting import save_fig
 
 # Module-level Constants
-DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
-PLOT_DIR = find_project_root(Path(__file__).resolve()) / "plots" / "genomic"
-LOG_DIR = find_project_root(Path(__file__).resolve()) / "logs"
+CONFIG_PATH = CONFIG_DIR / "datasets.yaml"
+PLOT_DIR = PLOTS_DIR / "genomic"
 LOG_PATH = LOG_DIR / "run_genomic_characterisation.log"
 
 STANDARD_FDA_TMB_CUTOFF = 10.0
-
-RESPONSE_MAP = {
-    "Complete Response": 1,
-    "Partial Response": 1,
-    "Progressive Disease": 0,
-    "Stable Disease": np.nan,
-    "Mixed Response": np.nan,
-}
 
 NEOANTIGEN_COLUMNS = [
     "TMB_NONSYNONYMOUS",
@@ -64,12 +66,12 @@ NEOANTIGEN_COLUMNS = [
 ]
 
 
-def load_tcga_mutations(proc_dir: Path, sample_ids: List[str]) -> pd.DataFrame:
-    """Loads TCGA driver mutation status for specified sample IDs.
+def load_cohort_mutations(proc_dir: Path, sample_ids: List[str]) -> pd.DataFrame:
+    """Loads driver mutation status for specified sample IDs.
 
     Args:
-        proc_dir: Path to the processed TCGA data directory.
-        sample_ids: List of TCGA sample IDs to filter/reindex.
+        proc_dir: Path to the processed cohort directory.
+        sample_ids: List of sample IDs to filter/reindex.
 
     Returns:
         DataFrame containing binary mutation indicator columns for driver genes.
@@ -79,7 +81,7 @@ def load_tcga_mutations(proc_dir: Path, sample_ids: List[str]) -> pd.DataFrame:
     default_df = pd.DataFrame(0, index=sample_ids, columns=mut_cols)
 
     if not mut_path.exists():
-        print(f"Warning: Processed TCGA mutations file not found at {mut_path}")
+        print(f"Warning: Processed mutations file not found at {rel_path(mut_path)}")
         return default_df
 
     df_mut = pd.read_csv(mut_path, index_col="SAMPLE_ID")
@@ -102,55 +104,41 @@ def _prepare_cohort_data(data_dir: Path) -> Dict[str, pd.DataFrame]:
     Returns:
         Dictionary mapping cohort names to clean DataFrames.
     """
-    _, clin_liu = load_liu_2019(data_dir)
-    _, clin_hugo = load_hugo_2016(data_dir)
-    _, clin_riaz = load_riaz_2017(data_dir)
+    dataset_configs = load_dataset_config(CONFIG_PATH)
+    cohort_dfs = {}
 
-    for df in [clin_liu, clin_hugo, clin_riaz]:
-        df["temp_resp"] = df["RESPONSE"].map(RESPONSE_MAP)
-        df.dropna(subset=["temp_resp"], inplace=True)
-        df.drop(columns=["temp_resp"], inplace=True)
+    for config in dataset_configs:
+        name = config.cohort_name
+        proc_dir = data_dir / "processed" / config.processed_directory
+        clin_path = proc_dir / "clin_cleaned.csv"
 
-    tcga_proc_dir = data_dir / "processed" / "skcm_tcga_pan_can_atlas_2018"
-    tcga_clin_path = tcga_proc_dir / "clin_cleaned.csv"
-    if not tcga_clin_path.exists():
-        raise FileNotFoundError(f"Processed TCGA clinical file not found at {tcga_clin_path}. Run preprocessing script first.")
+        if not clin_path.exists():
+            raise FileNotFoundError(f"Processed clinical file not found for {name} at {rel_path(clin_path)}")
 
-    clin_tcga = pd.read_csv(tcga_clin_path)
-    if "sample_id" in clin_tcga.columns:
-        clin_tcga = clin_tcga.rename(columns={"sample_id": "SAMPLE_ID"})
-    clin_tcga = clin_tcga.set_index("SAMPLE_ID")
-    sample_ids_tcga = clin_tcga.index.tolist()
+        df_clin = pd.read_csv(clin_path, index_col="SAMPLE_ID")
 
-    tcga_mut = load_tcga_mutations(tcga_proc_dir, sample_ids_tcga)
-    for col in [f"mut_{g}" for g in DRIVER_GENES]:
-        if col in clin_tcga.columns:
-            clin_tcga = clin_tcga.drop(columns=[col])
-    clin_tcga = clin_tcga.join(tcga_mut)
+        # Join driver mutations if missing
+        if not all(f"mut_{g}" in df_clin.columns for g in DRIVER_GENES):
+            mut_df = load_cohort_mutations(proc_dir, df_clin.index.tolist())
+            for col in mut_df.columns:
+                if col in df_clin.columns:
+                    df_clin = df_clin.drop(columns=[col])
+            df_clin = df_clin.join(mut_df)
 
-    clin_tcga.to_csv(tcga_clin_path)
-    print("Saved updated TCGA clinical file with mutations added.")
+        if name != "TCGA-SKCM":
+            if "RESPONSE_BINARY" in df_clin.columns:
+                df_clin["response"] = df_clin["RESPONSE_BINARY"]
+            elif "RESPONSE" in df_clin.columns:
+                df_clin["temp_resp"] = df_clin["RESPONSE"].map(RECIST_RESPONSE_MAP)
+                df_clin.dropna(subset=["temp_resp"], inplace=True)
+                df_clin["response"] = df_clin["temp_resp"]
+                df_clin.drop(columns=["temp_resp"], inplace=True)
+        else:
+            df_clin = df_clin.dropna(subset=["OS_MONTHS", "OS_STATUS"])
 
-    tcga_expr_path = tcga_proc_dir / "expr_cleaned.csv"
-    df_tcga_expr = pd.read_csv(tcga_expr_path, index_col="SAMPLE_ID")
+        cohort_dfs[name] = df_clin
 
-    clin_tcga.index = clin_tcga.index.str.upper().str[:12]
-    df_tcga_expr.index = df_tcga_expr.index.str.upper().str[:12]
-
-    clin_tcga = clin_tcga.groupby(clin_tcga.index).first()
-    df_tcga_expr = df_tcga_expr.groupby(df_tcga_expr.index).first()
-
-    common_tcga = clin_tcga.index.intersection(df_tcga_expr.index)
-    clin_tcga = clin_tcga.loc[common_tcga]
-    clin_tcga = clin_tcga.dropna(subset=["OS_MONTHS", "OS_STATUS"])
-    print(f"Aligned TCGA-SKCM cohort: N = {len(clin_tcga)} unique patients with expression and survival data.")
-
-    return {
-        "Liu 2019": clin_liu,
-        "Hugo 2016": clin_hugo,
-        "Riaz 2017": clin_riaz,
-        "TCGA-SKCM": clin_tcga,
-    }
+    return cohort_dfs
 
 
 def _plot_mutation_frequencies(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) -> None:
@@ -162,6 +150,7 @@ def _plot_mutation_frequencies(cohorts: Dict[str, pd.DataFrame], plot_dir: Path)
     """
     print("\n1. Calculating driver mutation frequencies...")
     mut_data = []
+    cohort_labels = {}
     for name, df in cohorts.items():
         n = len(df)
         b_mut = df["mut_BRAF"].sum()
@@ -169,25 +158,31 @@ def _plot_mutation_frequencies(cohorts: Dict[str, pd.DataFrame], plot_dir: Path)
         f_mut = df["mut_NF1"].sum()
         t_wt = len(df[(df["mut_BRAF"] == 0) & (df["mut_NRAS"] == 0) & (df["mut_NF1"] == 0)])
 
+        label_n = f"{name} (N={n})"
+        cohort_labels[name] = label_n
+
         mut_data.append({
-            "Cohort": name,
+            "Cohort": label_n,
             "BRAF": (b_mut / n) * 100,
             "NRAS": (n_mut / n) * 100,
             "NF1": (f_mut / n) * 100,
             "Triple-WT": (t_wt / n) * 100,
         })
-        print(f"  {name}: BRAF: {b_mut} ({b_mut / n * 100:.1f}%), NRAS: {n_mut} ({n_mut / n * 100:.1f}%), NF1: {f_mut} ({f_mut / n * 100:.1f}%), Triple-WT: {t_wt} ({t_wt / n * 100:.1f}%)")
+        print(f"  {label_n}: BRAF: {b_mut} ({b_mut / n * 100:.1f}%), NRAS: {n_mut} ({n_mut / n * 100:.1f}%), NF1: {f_mut} ({f_mut / n * 100:.1f}%), Triple-WT: {t_wt} ({t_wt / n * 100:.1f}%)")
 
     df_mut_freq = pd.DataFrame(mut_data)
     df_mut_melt = df_mut_freq.melt(id_vars="Cohort", var_name="Gene", value_name="Frequency")
 
     fig, ax = plt.subplots(figsize=(10, 6))
+
+    cohort_colors = {cohort_labels[name]: get_cohort_color(name) for name in cohorts}
+
     sns.barplot(
         data=df_mut_melt,
         x="Gene",
         y="Frequency",
         hue="Cohort",
-        palette=COHORT_PALETTE,
+        palette=cohort_colors,
         edgecolor="black",
         ax=ax,
     )
@@ -203,7 +198,7 @@ def _plot_mutation_frequencies(cohorts: Dict[str, pd.DataFrame], plot_dir: Path)
 
     out_mut_path = plot_dir / "mutation_frequencies.png"
     save_fig(fig, out_mut_path)
-    print(f"Saved mutation frequencies plot to {out_mut_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved mutation frequencies plot to {rel_path(out_mut_path)}")
 
 
 def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) -> None:
@@ -217,7 +212,8 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
     trial_list = []
     for name in ["Liu 2019", "Hugo 2016", "Riaz 2017"]:
         df = cohorts[name][["TMB_NONSYNONYMOUS", "response"]].dropna().copy()
-        df["Cohort"] = name
+        df["Cohort"] = f"{name} (N={len(df)})"
+        df["Base_Cohort"] = name
         trial_list.append(df)
 
     df_trials_tmb = pd.concat(trial_list, ignore_index=True)
@@ -240,8 +236,9 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
     axes[0].set_title("Pre-treatment TMB by Immunotherapy Response", fontsize=13, fontweight="bold")
     axes[0].legend(loc="upper left")
 
-    for idx, cohort in enumerate(["Liu 2019", "Hugo 2016", "Riaz 2017"]):
-        c_data = df_trials_tmb[df_trials_tmb["Cohort"] == cohort]
+    unique_cohorts = df_trials_tmb["Cohort"].unique()
+    for idx, cohort_label in enumerate(unique_cohorts):
+        c_data = df_trials_tmb[df_trials_tmb["Cohort"] == cohort_label]
         resp = c_data[c_data["response"] == 1.0]["TMB_NONSYNONYMOUS"]
         non_resp = c_data[c_data["response"] == 0.0]["TMB_NONSYNONYMOUS"]
 
@@ -262,11 +259,13 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
 
     clin_tcga = cohorts["TCGA-SKCM"]
     tcga_tmb = clin_tcga["TMB_NONSYNONYMOUS"].dropna()
+    tcga_color = get_cohort_color("TCGA-SKCM")
+
     sns.histplot(
         tcga_tmb,
         kde=True,
         log_scale=True,
-        color=COHORT_PALETTE["TCGA-SKCM"],
+        color=tcga_color,
         ax=axes[1],
         bins=30,
         edgecolor="black",
@@ -280,7 +279,7 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
 
     out_tmb_path = plot_dir / "tmb_distribution.png"
     save_fig(fig, out_tmb_path)
-    print(f"Saved TMB distributions to {out_tmb_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved TMB distributions to {rel_path(out_tmb_path)}")
 
 
 def _plot_biomarker_correlations(clin_liu: pd.DataFrame, plot_dir: Path) -> None:
@@ -308,13 +307,13 @@ def _plot_biomarker_correlations(clin_liu: pd.DataFrame, plot_dir: Path) -> None
             ax=ax,
             annot_kws={"size": 10, "weight": "bold"},
         )
-        ax.set_title("Genomic & Neoantigen Biomarker Spearman Correlation (Liu 2019)", fontsize=13, fontweight="bold", pad=15)
+        ax.set_title(f"Genomic & Neoantigen Biomarker Spearman Correlation (Liu 2019, N={len(corr_df)})", fontsize=13, fontweight="bold", pad=15)
         plt.xticks(rotation=45, ha="right", fontweight="bold")
         plt.yticks(fontweight="bold")
 
         out_corr_path = plot_dir / "biomarker_correlation_heatmap.png"
         save_fig(fig, out_corr_path)
-        print(f"Saved biomarker correlation heatmap to {out_corr_path.relative_to(BASE_DIR).as_posix()}")
+        print(f"Saved biomarker correlation heatmap to {rel_path(out_corr_path)}")
 
 
 def _plot_tcga_survival_stratification(clin_tcga: pd.DataFrame, plot_dir: Path) -> None:
@@ -372,7 +371,7 @@ def _plot_tcga_survival_stratification(clin_tcga: pd.DataFrame, plot_dir: Path) 
         fontweight="semibold",
         bbox=dict(facecolor="white", alpha=0.8, edgecolor="gray"),
     )
-    axes[0].set_title("TCGA OS: Stratified by Driver Mutation Subtype", fontsize=13, fontweight="bold", pad=10)
+    axes[0].set_title(f"TCGA OS: Stratified by Driver Mutation Subtype (N={len(df_surv)})", fontsize=13, fontweight="bold", pad=10)
     axes[0].set_xlabel("Time (months)", fontsize=11)
     axes[0].set_ylabel("Overall Survival Probability", fontsize=11)
     axes[0].set_ylim(0, 1.05)
@@ -409,18 +408,18 @@ def _plot_tcga_survival_stratification(clin_tcga: pd.DataFrame, plot_dir: Path) 
         fontweight="semibold",
         bbox=dict(facecolor="white", alpha=0.8, edgecolor="gray"),
     )
-    axes[1].set_title(f"TCGA OS: Stratified by TMB (Median Split = {tcga_tmb_med:.2f})", fontsize=13, fontweight="bold", pad=10)
+    axes[1].set_title(f"TCGA OS: Stratified by TMB (Median Split = {tcga_tmb_med:.2f}, N={len(df_surv)})", fontsize=13, fontweight="bold", pad=10)
     axes[1].set_xlabel("Time (months)", fontsize=11)
     axes[1].set_ylabel("Overall Survival Probability", fontsize=11)
     axes[1].set_ylim(0, 1.05)
     axes[1].legend(loc="upper right", fontsize=10)
     axes[1].grid(True, linestyle="--", alpha=0.5)
 
-    fig.suptitle("TCGA-SKCM Overall Survival by Genomic Features", fontsize=16, fontweight="bold", y=0.98)
+    fig.suptitle(f"TCGA-SKCM Overall Survival by Genomic Features (N={len(df_surv)})", fontsize=16, fontweight="bold", y=0.98)
 
     out_surv_path = plot_dir / "km_genomic_features.png"
     save_fig(fig, out_surv_path)
-    print(f"Saved TCGA survival stratification plots to {out_surv_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved TCGA survival stratification plots to {rel_path(out_surv_path)}")
 
 
 def main() -> None:
@@ -449,5 +448,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+            print(f"Logging console output to {rel_path(LOG_PATH)}")
             main()
