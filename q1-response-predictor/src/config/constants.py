@@ -85,6 +85,28 @@ PATHWAY_GENES = {
     "Survival & Proliferation Drivers": ["PTEN", "CDKN2A", "PIK3CA"],
 }
 
+# ---------------------------------------------------------------------------
+# Immunological Signatures & Descriptive Display Names
+# ---------------------------------------------------------------------------
+
+IMMUNE_SIGNATURES = [
+    "IFN_gamma",
+    "TIS",
+    "CYT",
+    "CD8_Tcell",
+    "IMPRES",
+    "PD_L1",
+]
+
+IMMUNE_SIGNATURE_LABELS = {
+    "IFN_gamma": "Interferon-Gamma (IFN-γ) 6-Gene Signature",
+    "TIS": "Tumor Inflammation Signature (TIS)",
+    "CYT": "Cytolytic Activity (CYT) Score",
+    "CD8_Tcell": "CD8 T-Cell Abundance Signature",
+    "IMPRES": "Immune Predictive Score (IMPRES)",
+    "PD_L1": "PD-L1 Transcript Proxy",
+}
+
 
 PROTECTED_GENES = {
     # IMPRES genes
