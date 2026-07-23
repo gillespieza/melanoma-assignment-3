@@ -305,20 +305,30 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
     save_fig(fig, out_tmb_legacy)
 
 
-def _plot_biomarker_correlations(clin_liu: pd.DataFrame, plot_dir: Path) -> None:
-    """Generates Spearman correlation heatmap for neoantigen metrics in Liu 2019.
+def _plot_biomarker_correlations(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) -> None:
+    """Generates Spearman correlation heatmap for continuous genomic & neoantigen features across pooled trials.
 
     Args:
-        clin_liu: Clinical DataFrame for Liu 2019 cohort.
+        cohorts: Dictionary of cohort DataFrames.
         plot_dir: Path to directory for saving plot artifacts.
     """
-    print("\n3. Generating biomarker correlation matrix...")
-    available_cols = [c for c in NEOANTIGEN_FEATURES if c in clin_liu.columns]
-    corr_df = clin_liu[available_cols].dropna()
+    print("\n3. Generating biomarker correlation matrix for pooled trials...")
+    neo_cols = ["TMB_NONSYNONYMOUS"] + [c for c in NEOANTIGEN_FEATURES if c != "TMB_NONSYNONYMOUS"]
 
-    if len(corr_df) > 0:
+    pooled_sub_dfs = []
+    for name in ["Liu 2019", "Hugo 2016", "Riaz 2017"]:
+        if name in cohorts:
+            df = cohorts[name]
+            avail = [c for c in neo_cols if c in df.columns]
+            if len(avail) > 1:
+                sub = df[avail].dropna()
+                if len(sub) > 0:
+                    pooled_sub_dfs.append(sub)
+
+    if pooled_sub_dfs:
+        corr_df = pd.concat(pooled_sub_dfs, ignore_index=True)
         corr_matrix = corr_df.corr(method="spearman")
-        fig, ax = plt.subplots(figsize=(8, 6.5))
+        fig, ax = plt.subplots(figsize=(8.5, 7.0))
         sns.heatmap(
             corr_matrix,
             annot=True,
@@ -330,7 +340,7 @@ def _plot_biomarker_correlations(clin_liu: pd.DataFrame, plot_dir: Path) -> None
             ax=ax,
             annot_kws={"size": 10, "weight": "bold"},
         )
-        ax.set_title(f"Genomic & Neoantigen Biomarker Spearman Correlation (Liu 2019, N={len(corr_df)})", fontsize=13, fontweight="bold", pad=15)
+        ax.set_title(f"Genomic & Neoantigen Biomarker Spearman Correlation (Pooled Trials, N={len(corr_df)})", fontsize=13, fontweight="bold", pad=15)
         plt.xticks(rotation=45, ha="right", fontweight="bold")
         plt.yticks(fontweight="bold")
 
@@ -870,7 +880,7 @@ def main() -> None:
     cohorts = _prepare_cohort_data(DATA_DIR)
     _plot_mutation_frequencies(cohorts, PLOT_DIR)
     _plot_tmb_distributions(cohorts, PLOT_DIR)
-    _plot_biomarker_correlations(cohorts["Liu 2019"], PLOT_DIR)
+    _plot_biomarker_correlations(cohorts, PLOT_DIR)
     _plot_tcga_survival_stratification(cohorts["TCGA-SKCM"], PLOT_DIR)
 
     print("\n5. Generating extended pathway mutation frequency visualisations...")
