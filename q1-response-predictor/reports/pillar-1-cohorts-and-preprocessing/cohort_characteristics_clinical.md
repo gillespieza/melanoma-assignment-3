@@ -7,12 +7,12 @@ tags:
   - clinical-analysis
   - cohort-characteristics
   - survival-analysis
-created: 2026-07-23 17:22
+created: 2026-07-23 18:43
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-23 17:22
+updated: 2026-07-23 18:43
 ---
 
 # Clinical Characteristics of Data Cohorts
@@ -102,6 +102,20 @@ The unstratified Kaplan-Meier overall survival curves for each cohort are shown 
 ![[km_os_grid.png]]
 
 _**Overall Survival KM Curves (All Cohorts)**_
+
+---
+
+## Univariate Associations with Response (Forest Plot)
+
+To evaluate whether individual baseline clinical and genomic features predict response to anti-PD-1 therapy, univariate Odds Ratios (OR) and 95% Confidence Intervals (95% CI) were calculated across individual trial cohorts (Liu 2019, Hugo 2016, Riaz 2017) and the pooled immunotherapy trial cohort. Categorical variables were evaluated via Fisher's Exact test, and continuous variables (Age, TMB, SNV Neoantigens, Indel Neoantigens) were evaluated per 1 SD increase via univariate logistic regression.
+
+![Forest Plot of Univariate Odds Ratios](../../plots/clinical/univariate_associations.png)
+
+### Key Takeaways
+1. **Driver Mutations**: *NF1* mutated tumours show elevated odds ratios for response in the pooled trial cohort, while *BRAF* mutations show virtually no univariate association with response.
+2. **Anatomical Stage Trend**: Clinical Stage IV was associated with an OR of 6.06 relative to Stage III in pooled analysis (p = 0.083), reflecting small Stage III representation in checkpoint blockade trial cohorts.
+3. **TMB & Neoantigen Trends**: TMB shows a positive trend with response in the pooled trial cohort (OR = 1.37 per SD increase, p = 0.160), with consistent positive point estimates across Liu 2019 and Hugo 2016.
+4. **Demographics**: Age and Sex show no significant association with immunotherapy response (OR ≈ 0.98 – 1.26), confirming demographic balance across treatment groups.
 
 ---
 
