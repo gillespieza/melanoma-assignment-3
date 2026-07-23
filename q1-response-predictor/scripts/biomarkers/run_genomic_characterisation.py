@@ -192,9 +192,12 @@ def _plot_mutation_frequencies(cohorts: Dict[str, pd.DataFrame], plot_dir: Path)
     for container in ax.containers:
         ax.bar_label(container, fmt="%.1f%%", label_type="edge", fontsize=9, padding=3)
 
-    out_mut_path = plot_dir / "mutation_frequencies.png"
+    out_mut_path = plot_dir / "genomic_driver_frequencies.png"
     save_fig(fig, out_mut_path)
-    print(f"Saved mutation frequencies plot to {rel_path(out_mut_path)}")
+    print(f"Saved genomic driver frequencies plot to {rel_path(out_mut_path)}")
+
+    out_mut_legacy = plot_dir / "mutation_frequencies.png"
+    save_fig(fig, out_mut_legacy)
 
 
 def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) -> None:
@@ -273,9 +276,12 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
     axes[1].set_title(f"TCGA-SKCM Tumour Mutational Burden (TMB) Distribution (N={len(tcga_tmb)})", fontsize=13, fontweight="bold")
     axes[1].legend(loc="upper right")
 
-    out_tmb_path = plot_dir / "tmb_distribution.png"
+    out_tmb_path = plot_dir / "tmb_distributions_by_cohort.png"
     save_fig(fig, out_tmb_path)
     print(f"Saved TMB distributions to {rel_path(out_tmb_path)}")
+
+    out_tmb_legacy = plot_dir / "tmb_distribution.png"
+    save_fig(fig, out_tmb_legacy)
 
 
 def _plot_biomarker_correlations(clin_liu: pd.DataFrame, plot_dir: Path) -> None:
@@ -307,9 +313,12 @@ def _plot_biomarker_correlations(clin_liu: pd.DataFrame, plot_dir: Path) -> None
         plt.xticks(rotation=45, ha="right", fontweight="bold")
         plt.yticks(fontweight="bold")
 
-        out_corr_path = plot_dir / "biomarker_correlation_heatmap.png"
+        out_corr_path = plot_dir / "biomarker_correlation_matrix.png"
         save_fig(fig, out_corr_path)
         print(f"Saved biomarker correlation heatmap to {rel_path(out_corr_path)}")
+
+        out_corr_legacy = plot_dir / "biomarker_correlation_heatmap.png"
+        save_fig(fig, out_corr_legacy)
 
 
 def _plot_tcga_survival_stratification(clin_tcga: pd.DataFrame, plot_dir: Path) -> None:
@@ -413,9 +422,12 @@ def _plot_tcga_survival_stratification(clin_tcga: pd.DataFrame, plot_dir: Path) 
 
     fig.suptitle(f"TCGA-SKCM Overall Survival by Genomic Features (N={len(df_surv)})", fontsize=16, fontweight="bold", y=0.98)
 
-    out_surv_path = plot_dir / "km_genomic_features.png"
+    out_surv_path = plot_dir / "tcga_survival_by_mutation.png"
     save_fig(fig, out_surv_path)
     print(f"Saved TCGA survival stratification plots to {rel_path(out_surv_path)}")
+
+    out_surv_legacy = plot_dir / "km_genomic_features.png"
+    save_fig(fig, out_surv_legacy)
 
 
 def main() -> None:
