@@ -256,8 +256,8 @@ def _plot_univariate_associations(all_results: pd.DataFrame, cohort_counts: Dict
 
     set_presentation_style()
     sns.set_theme(style="whitegrid")
-    fig, ax = plt.subplots(figsize=(13, 10.5))
-    plt.subplots_adjust(left=0.28, right=0.62, top=0.90, bottom=0.16)
+    fig, ax = plt.subplots(figsize=(13, 11))
+    plt.subplots_adjust(left=0.28, right=0.62, top=0.90, bottom=0.20)
 
     ax.set_xscale("log")
     ax.axvline(1.0, color="#37474F", linestyle="--", linewidth=1.5, zorder=1)
@@ -334,8 +334,8 @@ def _plot_univariate_associations(all_results: pd.DataFrame, cohort_counts: Dict
     ax.set_xlabel("Odds Ratio for Immunotherapy Response (log scale)", fontsize=12, labelpad=6, weight="bold")
     ax.set_title(f"Univariate Associations with Immunotherapy Response (Forest Plot, N={n_pooled})", fontsize=15, fontweight="bold", pad=15)
 
-    ax.text(0.95, -0.055, "Favours Responder (OR > 1.0) \u2192", transform=ax.transAxes, ha="right", va="top", color="#555555", fontsize=9.5, style="italic")
-    ax.text(0.05, -0.055, "\u2190 Favours Non-Responder (OR < 1.0)", transform=ax.transAxes, ha="left", va="top", color="#555555", fontsize=9.5, style="italic")
+    ax.text(0.95, -0.088, "Favours Responder (OR > 1.0) \u2192", transform=ax.transAxes, ha="right", va="top", color="#555555", fontsize=9.5, style="italic")
+    ax.text(0.05, -0.088, "\u2190 Favours Non-Responder (OR < 1.0)", transform=ax.transAxes, ha="left", va="top", color="#555555", fontsize=9.5, style="italic")
 
     legend_elements = [
         mlines.Line2D([0], [0], marker="o", color="none", markerfacecolor=get_cohort_color("Pooled Trials"), markeredgecolor="none", markersize=8, label=f"Pooled Trials Benchmark (N={cohort_counts.get('Pooled Trials', 0)})"),
@@ -343,7 +343,7 @@ def _plot_univariate_associations(all_results: pd.DataFrame, cohort_counts: Dict
         mlines.Line2D([0], [0], marker="s", color="none", markerfacecolor=get_cohort_color("Hugo 2016"), markeredgecolor="none", markersize=7, label=f"Hugo 2016 (N={cohort_counts.get('Hugo 2016', 0)})"),
         mlines.Line2D([0], [0], marker="s", color="none", markerfacecolor=get_cohort_color("Riaz 2017"), markeredgecolor="none", markersize=7, label=f"Riaz 2017 (N={cohort_counts.get('Riaz 2017', 0)})"),
     ]
-    ax.legend(handles=legend_elements, loc="upper center", bbox_to_anchor=(0.5, -0.13), ncol=2, frameon=True, facecolor="white", edgecolor="#CCCCCC", fontsize=9.5)
+    ax.legend(handles=legend_elements, loc="upper center", bbox_to_anchor=(0.5, -0.155), ncol=2, frameon=True, facecolor="white", edgecolor="#CCCCCC", fontsize=9.5)
 
     sns.despine(ax=ax, top=True, right=True)
     ax.yaxis.grid(True, linestyle="--", color="#E0E0E0", linewidth=0.5, alpha=0.7)
