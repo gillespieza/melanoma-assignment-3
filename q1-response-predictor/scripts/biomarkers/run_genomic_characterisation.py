@@ -558,7 +558,7 @@ def build_extended_pathway_dataframe(data_dir: Path) -> Tuple[pd.DataFrame, List
 
 
 def _compute_category_spaced_y_pos(
-    df: pd.DataFrame, category_gap: float = 0.6
+    df: pd.DataFrame, category_gap: float = 1.1
 ) -> Tuple[np.ndarray, List[str], Dict[str, float]]:
     """Computes Y-axis positions with extra whitespace gaps and category center positions."""
     y_pos = []
@@ -585,15 +585,15 @@ def _compute_category_spaced_y_pos(
 def _plot_extended_pathway_grouped_bars(
     df: pd.DataFrame, cohort_cols: List[str], pooled_col: str, colors: List[str], out_dir: Path
 ) -> None:
-    """Plots grouped horizontal bars of extended pathway mutation frequencies with right-side category labels."""
+    """Plots grouped horizontal bars of extended pathway mutation frequencies with thicker bars and left legend."""
     all_cols = cohort_cols + [pooled_col]
-    y_pos, y_labels, cat_centers = _compute_category_spaced_y_pos(df, category_gap=0.6)
+    y_pos, y_labels, cat_centers = _compute_category_spaced_y_pos(df, category_gap=1.1)
 
     n_cohorts = len(all_cols)
-    bar_width = 0.92 / n_cohorts
+    bar_width = 1.05 / n_cohorts
     max_val = np.nanmax(df[all_cols].values.astype(float))
 
-    fig, ax = plt.subplots(figsize=(12, 7.5), dpi=300)
+    fig, ax = plt.subplots(figsize=(12.5, 9.0), dpi=300)
 
     for i, cohort in enumerate(all_cols):
         values = df[cohort].values
@@ -615,14 +615,14 @@ def _plot_extended_pathway_grouped_bars(
                 )
 
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(y_labels, fontweight="bold", fontsize=10)
+    ax.set_yticklabels(y_labels, fontweight="bold", fontsize=10.5)
     ax.invert_yaxis()
     ax.set_xlabel("Mutation Frequency (%)", fontweight="bold")
     ax.set_title(
         "Pre-Treatment Somatic Mutation & Pathway Frequencies Across Cohorts",
         fontweight="bold", pad=15,
     )
-    ax.legend(title="Cohort", frameon=True, facecolor="white", framealpha=0.9, loc="lower right")
+    ax.legend(title="Cohort", frameon=True, facecolor="white", framealpha=0.95, loc="lower left")
 
     right_x = max_val * 1.30
     ax.set_xlim(0, right_x * 1.05)
@@ -632,7 +632,7 @@ def _plot_extended_pathway_grouped_bars(
             right_x, center_y, cat_name,
             va="center", ha="right", fontweight="bold", fontsize=10.5,
             color="#222222",
-            bbox=dict(boxstyle="round,pad=0.35", facecolor="#F0F4F8", edgecolor="#B0BEC5", alpha=0.95),
+            bbox=dict(boxstyle="round,pad=0.4", facecolor="#F0F4F8", edgecolor="#B0BEC5", alpha=0.95),
         )
 
     ax.xaxis.grid(True, linestyle="--", color="#B0B0B0", linewidth=0.7, alpha=0.7)
@@ -652,7 +652,7 @@ def _plot_extended_pathway_heatmap(
 ) -> None:
     """Plots heatmap of extended pathway mutation frequencies across cohorts."""
     all_cols = cohort_cols + [pooled_col]
-    fig, ax = plt.subplots(figsize=(10, 7.5), dpi=300)
+    fig, ax = plt.subplots(figsize=(10, 8.0), dpi=300)
     df_plot = df.copy()
     heatmap_df = df_plot.set_index("Gene/Pathway")[all_cols]
 
@@ -682,9 +682,9 @@ def _plot_extended_pathway_dumbbell(
     trial_colors = dict(zip(cohort_cols, colors[: len(cohort_cols)]))
     pooled_color = get_cohort_color(pooled_col, default="#e41a1c")
     max_val = np.nanmax(df[cohort_cols + [pooled_col]].values.astype(float))
-    y_pos, y_labels, cat_centers = _compute_category_spaced_y_pos(df, category_gap=0.6)
+    y_pos, y_labels, cat_centers = _compute_category_spaced_y_pos(df, category_gap=1.1)
 
-    fig, ax = plt.subplots(figsize=(11, 7.5), dpi=300)
+    fig, ax = plt.subplots(figsize=(11.5, 9.0), dpi=300)
     for idx, row in df.iterrows():
         y = y_pos[idx]
         trial_vals = [row[c] for c in cohort_cols if pd.notna(row[c])]
@@ -714,7 +714,7 @@ def _plot_extended_pathway_dumbbell(
         "Extended Pathway Mutation Rates: Trial Variation vs. Pooled Benchmark",
         fontweight="bold", pad=15,
     )
-    ax.legend(loc="lower right", frameon=True, facecolor="white")
+    ax.legend(loc="lower left", frameon=True, facecolor="white", framealpha=0.95)
 
     right_x = max_val * 1.25
     ax.set_xlim(-max_val * 0.03, right_x * 1.05)
@@ -724,7 +724,7 @@ def _plot_extended_pathway_dumbbell(
             right_x, center_y, cat_name,
             va="center", ha="right", fontweight="bold", fontsize=10,
             color="#222222",
-            bbox=dict(boxstyle="round,pad=0.35", facecolor="#F0F4F8", edgecolor="#B0BEC5", alpha=0.95),
+            bbox=dict(boxstyle="round,pad=0.4", facecolor="#F0F4F8", edgecolor="#B0BEC5", alpha=0.95),
         )
 
     ax.xaxis.grid(True, linestyle="--", color="#B0B0B0", linewidth=0.7, alpha=0.7)
