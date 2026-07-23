@@ -80,6 +80,8 @@ SIGNATURE_GENES = [
 PATHWAY_GENES = {
     "Antigen Presentation": ["B2M", "TAP1", "TAP2"],
     "IFN-gamma Signaling": ["JAK1", "JAK2", "STAT1"],
+    "Immune Checkpoints": ["CD274", "CTLA4", "IDO1"],
+    "Cytolytic Machinery": ["GZMA", "PRF1"],
     "Survival & Proliferation Drivers": ["PTEN", "CDKN2A", "PIK3CA"],
 }
 

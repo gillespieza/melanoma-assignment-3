@@ -440,12 +440,24 @@ def _plot_tcga_survival_stratification(clin_tcga: pd.DataFrame, plot_dir: Path) 
 # ---------------------------------------------------------------------------
 
 POOLED_LABEL = "Pooled Trials"
-ROW_LABELS = {"BRAF": "BRAF mutation", "NRAS": "NRAS mutation", "NF1": "NF1 mutation"}
+ROW_LABELS = {
+    "BRAF": "BRAF mutation",
+    "NRAS": "NRAS mutation",
+    "NF1": "NF1 mutation",
+    "Antigen Presentation": "Antigen Presentation (B2M/TAP1/TAP2)",
+    "IFN-gamma Signaling": "IFN-gamma Signaling (JAK1/JAK2/STAT1)",
+    "Immune Checkpoints": "Immune Checkpoints (CD274/CTLA4/IDO1)",
+    "Cytolytic Machinery": "Cytolytic Effectors (GZMA/PRF1)",
+    "Survival & Proliferation Drivers": "Survival & Proliferation (PTEN/CDKN2A/PIK3CA)",
+}
 ROW_ORDER = [
     ("MAPK Drivers", "BRAF"),
     ("MAPK Drivers", "NRAS"),
     ("MAPK Drivers", "NF1"),
+    ("Immune Machinery", "Antigen Presentation"),
     ("Immune Resistance", "IFN-gamma Signaling"),
+    ("Immune Checkpoints", "Immune Checkpoints"),
+    ("Immune Effectors", "Cytolytic Machinery"),
     ("Survival & Proliferation", "Survival & Proliferation Drivers"),
 ]
 
