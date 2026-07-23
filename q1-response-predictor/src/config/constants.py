@@ -143,3 +143,45 @@ PROTECTED_GENES = {
     "NRAS",
     "NF1",
 }
+
+
+# ---------------------------------------------------------------------------
+# Excluded Clinical & Administrative Columns
+# ---------------------------------------------------------------------------
+
+EXCLUDED_CLINICAL_COLS = [
+    # Identifier columns
+    "PATIENT_ID",
+    "SAMPLE_ID",
+    "OTHER_PATIENT_ID",
+    # Administrative & timeline columns
+    "DAYS_LAST_FOLLOWUP",
+    "PERSON_NEOPLASM_CANCER_STATUS",
+    "FORM_COMPLETION_DATE",
+    "DAYS_TO_BIRTH",
+    "DAYS_TO_INITIAL_PATHOLOGIC_DIAGNOSIS",
+    "AJCC_STAGING_EDITION",
+    "INFORMED_CONSENT_VERIFIED",
+    "IN_PANCANPATHWAYS_FREEZE",
+    # Tissue collection & technical repository metadata
+    "TISSUE_SOURCE_SITE",
+    "TISSUE_SOURCE_SITE_CODE",
+    "TISSUE_PROSPECTIVE_COLLECTION_INDICATOR",
+    "TISSUE_RETROSPECTIVE_COLLECTION_INDICATOR",
+    "SOMATIC_STATUS",
+    "MSI_SCORE_MANTIS",
+    "MSI_SENSOR_SCORE",
+    "TBL_SCORE",
+    "SAMPLE_TYPE",
+    "SAMPLE_TYPE_ID",
+    # Redundant constant cancer/cohort labels
+    "CANCER_TYPE",
+    "CANCER_TYPE_ACRONYM",
+    "CANCER_TYPE_DETAILED",
+    "TUMOR_TYPE",
+    "SUBTYPE",
+    "ONCOTREE_CODE",
+    # Post-baseline treatment/event & presentation assessment columns
+    "NEW_TUMOR_EVENT_AFTER_INITIAL_TREATMENT",
+    "PRIMARY_LYMPH_NODE_PRESENTATION_ASSESSMENT",
+]
