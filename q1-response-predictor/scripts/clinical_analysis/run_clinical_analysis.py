@@ -397,10 +397,11 @@ def plot_km_os(
     cohort_color = get_cohort_color(cohort_label)
 
     kmf = KaplanMeierFitter()
+    os_label = f"Survival Curve (N={len(df)})" if len(df) == len(df_clin) else f"OS Subset (n={len(df)})"
     kmf.fit(
         durations=df[time_col],
         event_observed=df[event_col],
-        label=f"Overall Cohort (N={len(df)})",
+        label=os_label,
     )
 
     kmf.plot_survival_function(
@@ -444,7 +445,7 @@ def plot_km_os(
             ),
         )
 
-    ax.set_title(f"{cohort_label} (N={len(df)})", fontsize=13, fontweight="bold")
+    ax.set_title(f"{cohort_label} (N={len(df_clin)})", fontsize=13, fontweight="bold")
     ax.set_xlabel("Time (months)", fontsize=10)
     ax.set_ylabel("Overall Survival Probability", fontsize=10)
     ax.set_ylim(0, 1.05)

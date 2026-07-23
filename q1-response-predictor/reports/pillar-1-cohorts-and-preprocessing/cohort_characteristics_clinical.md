@@ -7,12 +7,12 @@ tags:
   - clinical-analysis
   - cohort-characteristics
   - survival-analysis
-created: 2026-07-23 23:25
+created: 2026-07-23 23:27
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-23 23:25
+updated: 2026-07-23 23:27
 ---
 
 # Clinical Characteristics of Data Cohorts
