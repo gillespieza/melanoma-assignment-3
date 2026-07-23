@@ -28,7 +28,12 @@ _SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(_SUBPROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_SUBPROJECT_ROOT))
 
-from src.config.constants import DRIVER_GENES, GENOMIC_FEATURES, RECIST_RESPONSE_MAP
+from src.config.constants import (
+    DRIVER_GENES,
+    GENOMIC_FEATURES,
+    NEOANTIGEN_FEATURES,
+    RECIST_RESPONSE_MAP,
+)
 from src.config.datasets import DatasetConfig, load_dataset_config
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.styles import (
@@ -55,15 +60,6 @@ PLOT_DIR = PLOTS_DIR / "genomic"
 LOG_PATH = LOG_DIR / "run_genomic_characterisation.log"
 
 STANDARD_FDA_TMB_CUTOFF = 10.0
-
-NEOANTIGEN_COLUMNS = [
-    "TMB_NONSYNONYMOUS",
-    "SNV_NEOANTIGEN",
-    "INDEL_NEOANTIGEN",
-    "FUSION_NEOANTIGEN",
-    "SPLICE_NEOANTIGEN",
-    "CTA_SELF_NEOANTIGEN",
-]
 
 
 def load_cohort_mutations(proc_dir: Path, sample_ids: List[str]) -> pd.DataFrame:
@@ -290,7 +286,7 @@ def _plot_biomarker_correlations(clin_liu: pd.DataFrame, plot_dir: Path) -> None
         plot_dir: Path to directory for saving plot artifacts.
     """
     print("\n3. Generating biomarker correlation matrix...")
-    available_cols = [c for c in NEOANTIGEN_COLUMNS if c in clin_liu.columns]
+    available_cols = [c for c in NEOANTIGEN_FEATURES if c in clin_liu.columns]
     corr_df = clin_liu[available_cols].dropna()
 
     if len(corr_df) > 0:
