@@ -400,7 +400,7 @@ def plot_km_os(
     kmf.fit(
         durations=df[time_col],
         event_observed=df[event_col],
-        label=f"N = {len(df)}",
+        label=f"Overall Cohort (N={len(df)})",
     )
 
     kmf.plot_survival_function(
@@ -444,7 +444,7 @@ def plot_km_os(
             ),
         )
 
-    ax.set_title(cohort_label, fontsize=13, fontweight="bold")
+    ax.set_title(f"{cohort_label} (N={len(df)})", fontsize=13, fontweight="bold")
     ax.set_xlabel("Time (months)", fontsize=10)
     ax.set_ylabel("Overall Survival Probability", fontsize=10)
     ax.set_ylim(0, 1.05)
