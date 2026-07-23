@@ -101,3 +101,26 @@ LOG_DIR = SUBPROJECT_ROOT / "logs"
 REPORTS_DIR = SUBPROJECT_ROOT / "reports"
 MODELS_DIR = SUBPROJECT_ROOT / "models"
 PLOTS_DIR = SUBPROJECT_ROOT / "plots"
+
+
+def format_relative_path(path: Path) -> str:
+    """Formats a path relative to PROJECT_ROOT or SUBPROJECT_ROOT for logging.
+
+    Args:
+        path: Absolute or relative Path object.
+
+    Returns:
+        Posix string representation relative to project root.
+    """
+    path = Path(path).resolve()
+    try:
+        return path.relative_to(PROJECT_ROOT).as_posix()
+    except ValueError:
+        try:
+            return path.relative_to(SUBPROJECT_ROOT).as_posix()
+        except ValueError:
+            return path.as_posix()
+
+
+# Canonical shorthand alias
+rel_path = format_relative_path
