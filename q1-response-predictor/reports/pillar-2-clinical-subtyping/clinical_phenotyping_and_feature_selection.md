@@ -70,6 +70,11 @@ Below is a 2D PCA projection showing clear multi-dimensional separation of the p
 
 ![2D PCA Visualisation of Clusters](../../plots/clinical/pca_clinical_clusters.png)
 
+### Multi-Dimensional Phenotype Fingerprint (Radar Plot)
+Below is the multi-dimensional polar radar fingerprint chart illustrating the comparative profile across clinical, genomic, and survival axes:
+
+![Multi-Dimensional Phenotype Fingerprint](../../plots/clinical/cluster_profile_radar.png)
+
 ## Immunotherapy Response & Overall Survival Validation
 Validation across clinical outcomes demonstrates that unsupervised immune subtyping strongly correlates with clinical benefit:
 
