@@ -7,12 +7,12 @@ tags:
   - tmb
   - neoantigens
   - comut
-created: 2026-07-23 23:14
+created: 2026-07-23 23:16
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-23 23:14
+updated: 2026-07-23 23:16
 ---
 
 # Genomic Characteristics of Data Cohorts
@@ -71,7 +71,8 @@ TMB Distributions and Neoantigen Collinearity
 
 ## 3. Continuous Biomarker Correlation
 
-A Spearman rank correlation matrix mapping the relationships between continuous genomic features (somatic mutation and neoantigen subtypes) in the **Liu 2019** cohort ($N=122$) is presented below.
+### 3.1. Biomarker Correlation in Pooled Trials
+A Spearman rank correlation matrix mapping the relationships between continuous genomic features (somatic mutation and neoantigen subtypes) across the **Pooled Trials** cohort ($N=256$) is presented below.
 
 ![Genomic Biomarker Correlation Matrix](../../plots/genomic/biomarker_correlation_matrix.png)
 

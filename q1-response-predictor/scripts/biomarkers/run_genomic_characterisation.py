@@ -824,7 +824,8 @@ def _generate_genomic_report(cohorts: Dict[str, pd.DataFrame], report_path: Path
         f.write("---\n\n")
 
         f.write("## 3. Continuous Biomarker Correlation\n\n")
-        f.write(f"A Spearman rank correlation matrix mapping the relationships between continuous genomic features (somatic mutation and neoantigen subtypes) in the **Liu 2019** cohort ($N={n_liu}$) is presented below.\n\n")
+        f.write("### 3.1. Biomarker Correlation in Pooled Trials\n")
+        f.write(f"A Spearman rank correlation matrix mapping the relationships between continuous genomic features (somatic mutation and neoantigen subtypes) across the **Pooled Trials** cohort ($N={n_trials}$) is presented below.\n\n")
         f.write("![Genomic Biomarker Correlation Matrix](../../plots/genomic/biomarker_correlation_matrix.png)\n\n")
         f.write("Genomic Biomarker Correlation Matrix\n\n")
 
