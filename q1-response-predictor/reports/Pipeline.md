@@ -1,3 +1,12 @@
+---
+created: 2026-07-23 17:21
+cssclasses:
+  - table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-07-23 17:21
+---
+
 # Data Acquisition, Cleaning, and Merging Pipeline
 
 This report documents the workflow and operations implemented in `download_data.py`, `clean_data.py`, and `src/merge_datasets.py` to fetch, extract, clean, and merge datasets for the melanoma immunotherapy response predictor.

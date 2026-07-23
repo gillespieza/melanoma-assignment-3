@@ -7,66 +7,91 @@ tags:
   - clinical-analysis
   - cohort-characteristics
   - survival-analysis
-created: 2026-07-21 19:30
+created: 2026-07-23 17:22
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-21 19:30
+updated: 2026-07-23 17:22
 ---
 
 # Clinical Characteristics of Data Cohorts
 
-This report provides a comparative summary of the patient demographic, treatment and survival characteristics across the four cohorts analysed in this study:
+This report provides a comparative summary of patient demographic, treatment, survival, and sample attrition characteristics across the four cohorts analysed in this study:
 
 *   **TCGA-SKCM**: Baseline reference cohort with recorded treatment history.
 *   **Liu 2019**: Advanced melanoma trial cohort treated with anti-PD-1 monotherapy.
 *   **Hugo 2016**: Anti-PD-1 clinical trial cohort.
 *   **Riaz 2017**: Anti-PD-1 clinical trial cohort treated with nivolumab.
 
-The demographic and treatment characteristics were calculated from the available clinical cohort data. Survival characteristics were calculated from the cleaned clinical data used in the Kaplan-Meier analysis.
+Demographic and treatment characteristics were calculated dynamically from the processed clinical datasets. Survival characteristics were calculated from cleaned clinical records evaluated in the Kaplan-Meier analysis. Sample attrition details track cohort retention across data preprocessing stages.
 
 _**Table 1: Baseline Patient and Disease Characteristics**_
 
 | Characteristic                | Liu 2019   | Hugo 2016        | Riaz 2017        | TCGA-SKCM        |
 |:------------------------------|:-----------|:-----------------|:-----------------|:-----------------|
-| **N**                         | 122        | 27               | 107              | 448              |
+| **N**                         | 122        | 27               | 107              | 443              |
 |                               |            |                  |                  |                  |
 | **Demographics**              |            |                  |                  |                  |
 | Age, median (IQR)             | N/A        | 61.0 (54.0–68.5) | 56.0 (48.8–63.0) | 57.0 (47.0–70.0) |
-| Female sex, n (%)             | 51 (41.8%) | 8 (29.6%)        | 47 (51.1%)       | 171 (38.2%)      |
+| Female sex, n (%)             | 51 (41.8%) | 8 (29.6%)        | 47 (51.1%)       | 169 (38.1%)      |
 |                               |            |                  |                  |                  |
 | **Treatment**                 |            |                  |                  |                  |
 | ICI agent — Pembrolizumab     | 71 (58.2%) | 0 (0.0%)         | —                | 3 (0.7%)         |
 | ICI agent — Nivolumab         | 51 (41.8%) | 0 (0.0%)         | 0 (0.0%)         | 1 (0.2%)         |
 | Prior anti-CTLA-4             | 0 (0.0%)   | —                | 55 (100.0%)      | —                |
 | Treatment History (TCGA only) | —          | —                | —                |                  |
-| — Radiation Therapy           | —          | —                | —                | 114 (25.4%)      |
-| — Immunotherapy               | —          | —                | —                | 71 (15.8%)       |
-| — Chemotherapy                | —          | —                | —                | 68 (15.2%)       |
-| — Vaccine                     | —          | —                | —                | 22 (4.9%)        |
+| — Radiation Therapy           | —          | —                | —                | 112 (25.3%)      |
+| — Immunotherapy               | —          | —                | —                | 70 (15.8%)       |
+| — Chemotherapy                | —          | —                | —                | 67 (15.1%)       |
+| — Vaccine                     | —          | —                | —                | 22 (5.0%)        |
 | — Targeted Therapy            | —          | —                | —                | 12 (2.7%)        |
 | — Other Therapy               | —          | —                | —                | 7 (1.6%)         |
-| — No recorded treatment       | —          | —                | —                | 244 (54.5%)      |
+| — No recorded treatment       | —          | —                | —                | 241 (54.4%)      |
 |                               |            |                  |                  |                  |
 | **Survival Outcomes**         |            |                  |                  |                  |
-| Median OS, months (95% CI)    | 22.6       | 32.2             | 21.2             | 74.7             |
-| OS events, n (%)              | 62 (50.8%) | 12 (46.2%)       | 63 (62.4%)       | 215 (49.8%)      |
-| Median follow-up, months      | 17.5       | 14.4             | 17.8             | 40.1             |
+| Median OS, months (95% CI)    | 22.6       | 32.2             | 21.2             | 79.0             |
+| OS events, n (%)              | 62 (50.8%) | 12 (46.2%)       | 63 (62.4%)       | 212 (49.6%)      |
+| Median follow-up, months      | 17.5       | 14.4             | 17.8             | 41.6             |
+
+---
+
+## Sample Preprocessing Attrition
+
+The data preprocessing workflow applies quality control, identifier standardisation, and clinical-expression sample alignment. The table below outlines sample retention and attrition rationale for each cohort.
+
+_**Table 2: Sample Attrition Across Preprocessing Steps**_
+
+| Cohort    | Preprocessing Step            |   N Initial |   N Retained |   N Removed | Rationale                                                                                              |
+|:----------|:------------------------------|------------:|-------------:|------------:|:-------------------------------------------------------------------------------------------------------|
+| Liu 2019  | Clinical data loaded          |         122 |          122 |           0 | Merged patient-level and sample-level clinical records.                                                |
+| Liu 2019  | Clinical data harmonised      |         122 |          122 |           0 | Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation. |
+| Liu 2019  | Clinical-expression alignment |         122 |          122 |           0 | Retained samples with matching clinical and expression data.                                           |
+| Hugo 2016 | Clinical data loaded          |          27 |           27 |           0 | Merged patient-level and sample-level clinical records.                                                |
+| Hugo 2016 | Clinical data harmonised      |          27 |           27 |           0 | Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation. |
+| Hugo 2016 | Clinical-expression alignment |          27 |           27 |           0 | Retained samples with matching clinical and expression data.                                           |
+| Riaz 2017 | Clinical data loaded          |         107 |          107 |           0 | Merged patient-level and sample-level clinical records.                                                |
+| Riaz 2017 | Clinical data harmonised      |         107 |          107 |           0 | Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation. |
+| Riaz 2017 | Clinical-expression alignment |         107 |          107 |           0 | Retained samples with matching clinical and expression data.                                           |
+| TCGA-SKCM | Clinical data loaded          |         448 |          448 |           0 | Merged patient-level and sample-level clinical records.                                                |
+| TCGA-SKCM | Clinical data harmonised      |         448 |          448 |           0 | Applied identifier standardisation and clinical data cleaning.                                         |
+| TCGA-SKCM | Clinical-expression alignment |         448 |          443 |           5 | Retained samples with matching clinical and expression data.                                           |
+
+---
 
 ## Key Observations
 
-1. **Cohort Size**: The largest cohort is **TCGA-SKCM** with **N = 448** patients. The TCGA-SKCM cohort serves as a genomic reference population with detailed treatment history. The three IO cohorts are anti-PD-1 clinical trial cohorts.
+1. **Cohort Size**: The largest individual cohort is **TCGA-SKCM** with **N = 443** patients. Across all four cohorts, **N = 699** cleaned clinical samples were harmonised.
 
-2. **Overall Survival**: Median OS was estimated using the Kaplan-Meier survival function. Where the estimated survival probability did not fall below 50% during follow-up, median OS was not reached.
+2. **Sample Attrition**: Preprocessing quality control and clinical-expression alignment evaluated **704** initial records and removed **5** sample(s) across cohorts (**Liu 2019** retained 100% of samples (N = 122); **Hugo 2016** retained 100% of samples (N = 27); **Riaz 2017** retained 100% of samples (N = 107); **TCGA-SKCM** lost **5** sample(s) (448 → 443)).
 
-3. **Follow-up**: **TCGA-SKCM** had the longest median follow-up at **40.1 months**.
+3. **Overall Survival**: Median overall survival was estimated using the Kaplan-Meier survival function. Where the estimated survival probability did not fall below 50% during follow-up, median OS was reported as not reached.
 
-4. **Event Rates**: Observed OS event rates varied between cohorts, reflecting differences in cohort composition, disease stage, treatment context, follow-up duration, and censoring.
+4. **Follow-up Duration**: **TCGA-SKCM** demonstrated the longest median follow-up duration at **41.6 months**.
 
-5. **Missing Data**: Age, sex and treatment variables have different levels of availability across cohorts. These differences should be considered when comparing clinical characteristics across datasets.
+5. **Event Rates**: Observed OS event rates varied between cohorts, reflecting differences in patient composition, disease staging, treatment regimens, follow-up duration, and censoring.
 
-6. **Interpretation**: These unstratified survival estimates provide a descriptive baseline for subsequent molecular and predictive analyses. Cross-cohort comparisons should be interpreted cautiously because the cohorts differ in clinical context and study design.
+6. **Variable Completeness**: Demographic (age, sex) and treatment annotations vary in availability across datasets, requiring careful consideration during multi-cohort synthesis.
 
 ---
 
@@ -95,5 +120,6 @@ Median overall survival was estimated using the Kaplan-Meier survival function. 
 
 Treatment percentages use the number of patients with an available treatment annotation as the denominator where this differs from the total cohort size. TCGA treatment-history categories are based on binary treatment-type indicators and are not necessarily mutually exclusive.
 
-The analysis is descriptive and unstratified. It does not adjust for demographic, clinical, molecular, treatment, or study-specific confounding factors.
+Sample attrition tracking records sample filtering from initial cBioPortal data ingestion through clinical-expression alignment.
 
+The analysis is descriptive and unstratified. It does not adjust for demographic, clinical, molecular, treatment, or study-specific confounding factors.

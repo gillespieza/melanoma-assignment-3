@@ -6,12 +6,6 @@ Generates:
 2. An Obsidian-compatible Markdown clinical characteristics report
    containing dynamically calculated demographic, treatment, survival,
    and sample attrition statistics.
-
-Cohorts:
-    - Liu 2019
-    - Hugo 2016
-    - Riaz 2017
-    - TCGA-SKCM
 """
 
 from __future__ import annotations
@@ -49,6 +43,7 @@ from src.utils.formatting import (
     format_count_percentage,
     format_median,
     format_median_iqr,
+    generate_obsidian_frontmatter,
 )
 from src.utils.logging import TeeStream
 from src.utils.paths import (
@@ -781,22 +776,20 @@ def generate_clinical_report(
         cohort_order=cohort_order,
     )
 
-    report = f"""---
-title: Clinical Characteristics of Data Cohorts
-aliases:
-  - Clinical Cohort Characteristics
-tags:
-  - melanoma
-  - clinical-analysis
-  - cohort-characteristics
-  - survival-analysis
-created: {timestamp}
-cssclasses:
-  - table-small
-obsidianEditingMode: preview
-obsidianUIMode: source
-updated: {timestamp}
----
+    frontmatter = generate_obsidian_frontmatter(
+        title="Clinical Characteristics of Data Cohorts",
+        aliases=["Clinical Cohort Characteristics"],
+        tags=[
+            "melanoma",
+            "clinical-analysis",
+            "cohort-characteristics",
+            "survival-analysis",
+        ],
+        created=timestamp,
+        updated=timestamp,
+    )
+
+    report = f"""{frontmatter}
 
 # Clinical Characteristics of Data Cohorts
 

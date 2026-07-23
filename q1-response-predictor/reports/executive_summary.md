@@ -1,12 +1,10 @@
 ---
-title: Executive Summary
-aliases: 
-tags: 
-created: 2026-07-20 13:44
-cssclasses: table-small
+created: 2026-07-23 17:21
+cssclasses:
+  - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-20 13:55
+updated: 2026-07-23 17:21
 ---
 
 # Executive Summary: Melanoma Immunotherapy Response Predictor

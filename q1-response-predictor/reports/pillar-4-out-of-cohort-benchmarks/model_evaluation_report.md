@@ -1,3 +1,12 @@
+---
+created: 2026-07-23 17:21
+cssclasses:
+  - table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-07-23 17:21
+---
+
 # Model Evaluation Report: LOCO Cross-Cohort Validation
 ## Overview
 This report documents the comprehensive evaluation of all trained models (Logistic Regression, Random Forest, XGBoost, SVM, ElasticNet) using Leave-One-Cohort-Out (LOCO) cross-validation on three independent melanoma immunotherapy cohorts.

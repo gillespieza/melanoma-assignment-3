@@ -163,3 +163,51 @@ def format_median_iqr(
         f"{median:.1f} "
         f"({q1:.1f}–{q3:.1f})"
     )
+
+
+def generate_obsidian_frontmatter(
+    title: str | None = None,
+    aliases: list[str] | None = None,
+    tags: list[str] | None = None,
+    created: str | None = None,
+    updated: str | None = None,
+) -> str:
+    """Generates standard Obsidian-compliant YAML frontmatter for reports.
+
+    Args:
+        title: Optional title for the report.
+        aliases: Optional list of aliases.
+        tags: Optional list of tags.
+        created: Optional creation timestamp (YYYY-MM-DD HH:MM). Defaults to now.
+        updated: Optional update timestamp (YYYY-MM-DD HH:MM). Defaults to now.
+
+    Returns:
+        Formatted YAML frontmatter block starting and ending with '---'.
+    """
+    now_str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
+    created_ts = created or now_str
+    updated_ts = updated or now_str
+
+    lines = ["---"]
+    if title:
+        lines.append(f"title: {title}")
+    if aliases:
+        lines.append("aliases:")
+        for alias in aliases:
+            lines.append(f"  - {alias}")
+    if tags:
+        lines.append("tags:")
+        for tag in tags:
+            lines.append(f"  - {tag}")
+
+    lines.extend([
+        f"created: {created_ts}",
+        "cssclasses:",
+        "  - table-small",
+        "obsidianEditingMode: preview",
+        "obsidianUIMode: source",
+        f"updated: {updated_ts}",
+        "---",
+    ])
+
+    return "\n".join(lines)

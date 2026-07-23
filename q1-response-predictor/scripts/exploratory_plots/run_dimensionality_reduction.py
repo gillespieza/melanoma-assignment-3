@@ -26,6 +26,7 @@ if str(BASE_DIR) not in sys.path:
 
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+from src.utils.formatting import generate_obsidian_frontmatter
 from src.utils.logging import TeeStream
 from src.utils.paths import find_project_root
 from src.utils.plotting import save_fig
@@ -416,10 +417,12 @@ def main() -> None:
     print(f"Saved Trial UMAP plot to {trial_umap_path.relative_to(BASE_DIR).as_posix()}")
 
     report_path = REPORT_DIR / "batch_correction_report.md"
+    frontmatter = generate_obsidian_frontmatter(
+        title="Batch Effect Assessment & Dimensionality Reduction Analysis",
+        tags=["melanoma", "batch-correction", "pca", "umap"],
+    )
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write("---\n")
-        f.write("cssclasses: table-small\n")
-        f.write("---\n")
+        f.write(frontmatter + "\n\n")
         f.write("# Batch Effect Assessment & Dimensionality Reduction Analysis\n\n")
         f.write("When combining transcriptomic datasets across independent clinical studies, technical variations (e.g. sequencing platforms, RNA extraction methods, and library preparation) typically dominate the biological signals. This report documents how technical batch effects were identified and corrected across our melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) and whether global expression profiles separate patients based on therapeutic response. Plot aesthetics and palettes are aligned with the Okabe-Ito color guidelines used across other reports.\n\n")
 

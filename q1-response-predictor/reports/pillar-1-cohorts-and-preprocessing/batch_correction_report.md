@@ -1,6 +1,12 @@
 ---
-cssclasses: table-small
+created: 2026-07-23 17:21
+cssclasses:
+  - table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-07-23 17:21
 ---
+
 # Batch Effect Assessment & Dimensionality Reduction Analysis
 
 When combining transcriptomic datasets across independent clinical studies, technical variations (e.g. sequencing platforms, RNA extraction methods, and library preparation) typically dominate the biological signals. This report documents how technical batch effects were identified and corrected across our melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) and whether global expression profiles separate patients based on therapeutic response. Plot aesthetics and palettes are aligned with the Okabe-Ito color guidelines used across other reports.

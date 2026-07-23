@@ -1,12 +1,10 @@
 ---
-title:
-aliases: 
-tags: 
-created: 2026-07-16 18:38
-cssclasses: table-small
+created: 2026-07-23 17:21
+cssclasses:
+  - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-19 11:48
+updated: 2026-07-23 17:21
 ---
 
 # Genomic Characteristics of Data Cohorts
@@ -23,7 +21,7 @@ This report presents a comparative analysis of the genomic features across the f
 
 The distribution of the three major cutaneous melanoma driver mutations (_BRAF_, _NRAS_, and _NF1_) and the Triple-Wild-Type (Triple-WT) rate is compared across all cohorts below.
 
-![Driver Mutation Frequencies](../../plots/genomic/genomic_driver_frequencies.png)
+![[genomic_driver_frequencies.png]]
 
 Driver Mutation Frequencies
 
