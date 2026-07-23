@@ -107,6 +107,42 @@ IMMUNE_SIGNATURE_LABELS = {
     "PD_L1": "PD-L1 Transcript Proxy",
 }
 
+IMMUNE_SIGNATURE_GENES = {
+    "IFN_gamma": ["IFNG", "CXCL9", "CXCL10", "IDO1", "HLA-DRA", "STAT1"],
+    "TIS": [
+        "CCL5", "CD2", "CD3D", "CD3E", "CD27", "CD274", "CMKLR1", "CXCL9",
+        "CXCR6", "GZMB", "GZMK", "HLA-DRA", "HLA-DQA1", "HLA-E", "IDO1",
+        "LAG3", "NKG7", "PDCD1LG2", "PSMB10", "STAT1", "TIGIT",
+    ],
+    "CYT": ["GZMA", "PRF1"],
+    "CD8_Tcell": ["CD8A", "CD8B"],
+    "IMPRES": [
+        "CD274", "VSIR", "CD28", "CD276", "CD86", "TNFRSF4", "CD200",
+        "CTLA4", "PDCD1", "CD80", "TNFSF9", "HAVCR2", "CD27", "CD40", "TNFRSF14",
+    ],
+    "PD_L1": ["CD274"],
+}
+
+# 15 gene pairs of IMPRES signature (Auslander et al., 2018)
+# Format: (Gene_A, Gene_B). Score += 1 if Gene_A > Gene_B
+IMPRES_PAIRS = [
+    ("CD274", "VSIR"),      # VSIR is also known as C10orf54 or VISTA
+    ("CD28", "CD276"),
+    ("CD86", "TNFRSF4"),
+    ("CD86", "CD200"),
+    ("CTLA4", "TNFRSF4"),
+    ("PDCD1", "TNFRSF4"),
+    ("CD80", "TNFSF9"),
+    ("CD86", "HAVCR2"),
+    ("CD28", "CD86"),
+    ("CD27", "PDCD1"),
+    ("CD40", "CD274"),
+    ("CD40", "CD80"),
+    ("CD40", "CD28"),
+    ("CD40", "PDCD1"),
+    ("TNFRSF14", "CD86"),
+]
+
 
 PROTECTED_GENES = {
     # IMPRES genes
