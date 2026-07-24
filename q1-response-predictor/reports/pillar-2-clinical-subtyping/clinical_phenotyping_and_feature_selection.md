@@ -1,17 +1,17 @@
 ---
-title: Patient Phenotyping via Full-Dataset Immunological & Genomic Clustering
+title: "Patient Phenotyping via Full-Dataset Immunological & Genomic Clustering"
 tags:
   - melanoma
   - clinical-subtyping
   - clustering
   - full-dataset
   - immune-hot-cold
-created: 2026-07-23 17:49
+created: 2026-07-24 14:07
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-23 17:49
+updated: 2026-07-24 14:07
 ---
 
 # Patient Phenotyping via Full-Dataset Immunological & Genomic Clustering
@@ -35,15 +35,15 @@ The average clinical, genomic, and transcriptomic immune signature values for ea
 | CD8_Tcell Signature Score | 6.72 | 3.37 | 4.99 |
 | PD_L1 Signature Score | 4.97 | 3.10 | 3.73 |
 | IMPRES Signature Score | 9.62 | 7.35 | 8.62 |
-| **Therapeutic Response (Trial Subset, N=256)** |  |  |  |
+| **Therapeutic Response (Trial Subset, N=247)** |  |  |  |
 | Response Rate (CR/PR %) | 45 (37.5%) | 14 (27.5%) | 23 (30.3%) |
 | **Prognosis & Survival** |  |  |  |
 | Median Overall Survival | 🟢 103.1 months | 🔴 41.6 months | 🟠 47.4 months |
 
 ## Key Analytical Findings
 
-1. **Prognostic Stratification ($N=699$)**: Hierarchical clustering on within-cohort Z-score standardized features yields a highly statistically significant overall survival separation across the full 4-cohort dataset (Log-Rank $p = 2.29e-05$). Patients in the **Immunologically Hot** cluster achieve a median survival exceeding **100 months** (🟢 103.1 months), more than double that of the **Cold** cluster (🔴 41.6 months).
-2. **Therapeutic Response Alignment ($N=256$)**: Patients in **Cluster 0 (Hot)** demonstrate the highest objective response rate to anti-PD-1 immunotherapy (**45 (37.5%)**), compared to **14 (27.5%)** in **Cluster 1 (Cold)**, validating that unsupervised microenvironment subtyping captures anti-tumor immune responsiveness.
+1. **Prognostic Stratification ($N=699$)**: Hierarchical clustering on within-cohort Z-score standardized features yields a highly statistically significant overall survival separation across the full 4-cohort dataset (Log-Rank $p = 2.29e-05$). Patients in the **Immunologically Hot** cluster achieve a median survival of 🟢 **103.1 months**, substantially longer than the **Cold** cluster (🔴 41.6 months).
+2. **Therapeutic Response Alignment ($N=247$)**: Patients in **Cluster 0 (Hot)** demonstrate the highest objective response rate to anti-PD-1 immunotherapy (**45 (37.5%)**), compared to **14 (27.5%)** in **Cluster 1 (Cold)**, validating that unsupervised microenvironment subtyping captures anti-tumor immune responsiveness.
 3. **Genomic vs. Transcriptomic Decoupling**: High tumor mutational burden alone (**Cluster 2**, mean TMB = 17.6 mut/Mb) yields only an intermediate overall survival trajectory (🟠 47.4 months) in the absence of robust T-cell inflammation, demonstrating that high TMB is insufficient without an active immune microenvironment.
 
 ## Biological Interpretation of Patient Subtypes
@@ -70,15 +70,10 @@ Below is a 2D PCA projection showing clear multi-dimensional separation of the p
 
 ![2D PCA Visualisation of Clusters](../../plots/clinical/pca_clinical_clusters.png)
 
-### Multi-Dimensional Phenotype Fingerprint (Radar Plot)
-Below is the multi-dimensional polar radar fingerprint chart illustrating the comparative profile across clinical, genomic, and survival axes:
-
-![Multi-Dimensional Phenotype Fingerprint](../../plots/clinical/cluster_profile_radar.png)
-
 ## Immunotherapy Response & Overall Survival Validation
 Validation across clinical outcomes demonstrates that unsupervised immune subtyping strongly correlates with clinical benefit:
 
-*   **Therapeutic Response Rate (Trial Cohorts, $N=256$)**: Significant difference in response rate across clusters (Chi-Square p-value = **\(3.58e-01\)**).
+*   **Therapeutic Response Rate (Trial Cohorts, $N=247$)**: Significant difference in response rate across clusters (Chi-Square p-value = **\(3.58e-01\)**).
     ![Response Rate by Cluster](../../plots/clinical/response_by_clinical_cluster.png)
 
 *   **Overall Survival (Full Dataset, $N=699$)**: Highly significant survival separation across patient subtypes (Log-Rank p-value = **\(2.29e-05\)**):

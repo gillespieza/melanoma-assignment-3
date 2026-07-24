@@ -253,7 +253,7 @@ def _plot_cluster_pca(df: pd.DataFrame, pca_coords: np.ndarray, plot_dir: Path) 
             zorder=10,
         )
 
-    ax_pca.set_title("2D PCA Projection of Immunological & Genomic Patient Subtypes (N=699)", fontsize=15, weight="bold", pad=15)
+    ax_pca.set_title(f"2D PCA Projection of Immunological & Genomic Patient Subtypes (N={len(df)})", fontsize=15, weight="bold", pad=15)
     ax_pca.set_xlabel(f"PC1 ({var_explained[0]*100:.1f}% explained variance)", fontsize=13)
     ax_pca.set_ylabel(f"PC2 ({var_explained[1]*100:.1f}% explained variance)", fontsize=13)
 
@@ -320,7 +320,7 @@ def _plot_cluster_survival(df: pd.DataFrame, plot_dir: Path) -> Tuple[float, Dic
         bbox=dict(facecolor="white", alpha=0.8, edgecolor="gray", boxstyle="round,pad=0.5"),
     )
 
-    ax.set_title("Full Dataset OS: Kaplan-Meier of Immunological Subtypes (N=699)", fontsize=16, weight="bold", pad=15)
+    ax.set_title(f"Full Dataset OS: Kaplan-Meier of Immunological Subtypes (N={len(df_surv)})", fontsize=16, weight="bold", pad=15)
     ax.set_xlabel("Overall Survival (Months)", fontsize=13, labelpad=10)
     ax.set_ylabel("Survival Probability", fontsize=13, labelpad=10)
     ax.set_ylim(0, 1.05)
@@ -378,7 +378,7 @@ def _plot_cluster_response(df: pd.DataFrame, plot_dir: Path) -> float:
     p_text = f"Chi-Square p = {p_val:.2e}" if p_val < 0.001 else f"Chi-Square p = {p_val:.3f}"
     ax.text(0.05, 0.92, p_text, transform=ax.transAxes, fontsize=12, weight="bold", bbox=dict(facecolor="white", alpha=0.85, edgecolor="gray"))
 
-    ax.set_title("Immunotherapy Response Rate by Patient Subtype (Trial Cohorts, N=256)", fontsize=14, weight="bold", pad=15)
+    ax.set_title(f"Immunotherapy Response Rate by Patient Subtype (Trial Cohorts, N={len(df_trial)})", fontsize=14, weight="bold", pad=15)
     ax.set_ylabel("Proportion of Patients (%)", fontsize=12)
     ax.set_ylim(0, 105)
     ax.legend(loc="upper right", fontsize=10)
@@ -439,8 +439,9 @@ def _generate_clustering_report(
         vals = [f"{profile_df.loc[profile_df['CLINICAL_CLUSTER'] == c, sig].values[0]:.2f}" for c in range(3)]
         table_rows.append([f"{sig} Signature Score", vals[0], vals[1], vals[2]])
 
-    table_rows.append(["**Therapeutic Response (Trial Subset, N=256)**", "", "", ""])
     trial_df = df[df["IS_TRIAL"] & df["RESPONDER"].notna()]
+    n_trial = len(trial_df)
+    table_rows.append([f"**Therapeutic Response (Trial Subset, N={n_trial})**", "", "", ""])
     resp_rates = []
     for c in range(3):
         sub = trial_df[trial_df["CLINICAL_CLUSTER"] == c]
@@ -486,8 +487,8 @@ def _generate_clustering_report(
         f.write(_df_to_markdown_table(formatted_df) + "\n\n")
 
         f.write("## Key Analytical Findings\n\n")
-        f.write(f"1. **Prognostic Stratification ($N={total_n}$)**: Hierarchical clustering on within-cohort Z-score standardized features yields a highly statistically significant overall survival separation across the full 4-cohort dataset (Log-Rank $p = {km_p_val:.2e}$). Patients in the **Immunologically Hot** cluster achieve a median survival exceeding **100 months** (🟢 {median_survivals[0]}), more than double that of the **Cold** cluster (🔴 {median_survivals[1]}).\n")
-        f.write(f"2. **Therapeutic Response Alignment ($N=256$)**: Patients in **Cluster 0 (Hot)** demonstrate the highest objective response rate to anti-PD-1 immunotherapy (**{resp_rates[0]}**), compared to **{resp_rates[1]}** in **Cluster 1 (Cold)**, validating that unsupervised microenvironment subtyping captures anti-tumor immune responsiveness.\n")
+        f.write(f"1. **Prognostic Stratification ($N={total_n}$)**: Hierarchical clustering on within-cohort Z-score standardized features yields a highly statistically significant overall survival separation across the full 4-cohort dataset (Log-Rank $p = {km_p_val:.2e}$). Patients in the **Immunologically Hot** cluster achieve a median survival of 🟢 **{median_survivals[0]}**, substantially longer than the **Cold** cluster (🔴 {median_survivals[1]}).\n")
+        f.write(f"2. **Therapeutic Response Alignment ($N={n_trial}$)**: Patients in **Cluster 0 (Hot)** demonstrate the highest objective response rate to anti-PD-1 immunotherapy (**{resp_rates[0]}**), compared to **{resp_rates[1]}** in **Cluster 1 (Cold)**, validating that unsupervised microenvironment subtyping captures anti-tumor immune responsiveness.\n")
         f.write(f"3. **Genomic vs. Transcriptomic Decoupling**: High tumor mutational burden alone (**Cluster 2**, mean TMB = {tmb_vals[2]} mut/Mb) yields only an intermediate overall survival trajectory (🟠 {median_survivals[2]}) in the absence of robust T-cell inflammation, demonstrating that high TMB is insufficient without an active immune microenvironment.\n\n")
 
         f.write("## Biological Interpretation of Patient Subtypes\n\n")
@@ -509,14 +510,14 @@ def _generate_clustering_report(
         f.write(f"    *   *Prognosis*: Intermediate survival trajectory (Median OS = 🟠 **{median_survivals[2]}**).\n\n")
 
         f.write("## Subtype Visualisation (2D PCA Projection)\n")
-        f.write("Below is a 2D PCA projection showing clear multi-dimensional separation of the patient subtypes across the $N=699$ full dataset. The 'X' markers denote cluster centroids:\n\n")
+        f.write(f"Below is a 2D PCA projection showing clear multi-dimensional separation of the patient subtypes across the $N={total_n}$ full dataset. The 'X' markers denote cluster centroids:\n\n")
         f.write("![2D PCA Visualisation of Clusters](../../plots/clinical/pca_clinical_clusters.png)\n\n")
 
         f.write("## Immunotherapy Response & Overall Survival Validation\n")
         f.write(f"Validation across clinical outcomes demonstrates that unsupervised immune subtyping strongly correlates with clinical benefit:\n\n")
-        f.write(f"*   **Therapeutic Response Rate (Trial Cohorts, $N=256$)**: Significant difference in response rate across clusters (Chi-Square p-value = **\\({chi2_p_val:.2e}\\)**).\n")
+        f.write(f"*   **Therapeutic Response Rate (Trial Cohorts, $N={n_trial}$)**: Significant difference in response rate across clusters (Chi-Square p-value = **\\({chi2_p_val:.2e}\\)**).\n")
         f.write("    ![Response Rate by Cluster](../../plots/clinical/response_by_clinical_cluster.png)\n\n")
-        f.write(f"*   **Overall Survival (Full Dataset, $N=699$)**: Highly significant survival separation across patient subtypes (Log-Rank p-value = **\\({km_p_val:.2e}\\)**):\n")
+        f.write(f"*   **Overall Survival (Full Dataset, $N={total_n}$)**: Highly significant survival separation across patient subtypes (Log-Rank p-value = **\\({km_p_val:.2e}\\)**):\n")
         f.write("    ![KM Survival of Clinical Clusters](../../plots/clinical/km_clinical_clusters.png)\n")
 
     print(f"Clustering report successfully written to {report_path.relative_to(SUBPROJECT_ROOT).as_posix()}")
