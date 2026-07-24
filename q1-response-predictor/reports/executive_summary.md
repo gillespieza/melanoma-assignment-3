@@ -66,8 +66,8 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 > **Integrated Multi-Cohort Somatic Landscape ($N = 256$)**:
 > The co-mutation landscape (oncoplot) above aligns individual patient somatic mutation profiles in core melanoma driver and resistance genes (rows) with patient-level clinical annotations (Tumour Mutational Burden, RECIST Response, Cohort source, and Sex).
 >
-> * **MAPK Driver Mutual Exclusivity**: High mutual exclusivity is observed between primary drivers *BRAF* (43.1%) and *NRAS* (24.6%), representing distinct, non-overlapping mechanisms of RAS-RAF-MEK-ERK activation.
-> * **Driver Subtype Response Equivalence**: Responders (green) and non-responders (vermillion) are evenly distributed across *BRAF*, *NRAS*, *NF1*, and Triple-WT subtypes, visually demonstrating that driver mutation status alone does not dictate response to anti-PD-1 therapy.
+> * **MAPK Driver Mutual Exclusivity**: High mutual exclusivity is observed between primary drivers `BRAF` (43.1%) and `NRAS` (24.6%), representing distinct, non-overlapping mechanisms of RAS-RAF-MEK-ERK activation.
+> * **Driver Subtype Response Equivalence**: Responders (green) and non-responders (vermillion) are evenly distributed across `BRAF`, `NRAS`, `NRAS`, and Triple-WT subtypes, visually demonstrating that driver mutation status alone does not dictate response to anti-PD-1 therapy.
 > * **Targeted Resistance Genes**: Baseline mutations in primary resistance machinery (*B2M*, *JAK1*, *JAK2*) are rare (<5%) in pre-treatment biopsies, indicating that genetic disruption of antigen presentation and interferon signaling is predominantly an acquired rather than primary resistance mechanism.
 
 ---

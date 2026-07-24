@@ -16,7 +16,10 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Bootstrap project root resolution for top-level import
+# ---------------------------------------------------------------------------
+# Bootstrap project root resolution for top-level imports
+# ---------------------------------------------------------------------------
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))

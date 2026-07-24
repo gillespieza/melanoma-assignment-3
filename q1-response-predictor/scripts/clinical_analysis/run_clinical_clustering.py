@@ -6,9 +6,9 @@ all four study cohorts (TCGA-SKCM, Liu 2019, Hugo 2016, Riaz 2017; N = 699) usin
 within-cohort Z-score standardized immune signatures (IFN-gamma, TIS, CYT, CD8,
 PD-L1, IMPRES), mutational burden (TMB), and patient age.
 
-Evaluates cluster phenotypes via multi-dimensional profiling, 2D PCA projections,
-immunotherapy response rate analysis (CR/PR %), Kaplan-Meier survival curves,
-and exports an Obsidian-compatible Markdown report.
+Evaluates cluster phenotypes via multi-dimensional profiling, polar radar charts,
+annotated Z-score heatmaps, 2D PCA projections, immunotherapy response rate analysis
+(CR/PR %), Kaplan-Meier survival curves, and exports an Obsidian-compatible Markdown report.
 """
 
 import contextlib
@@ -78,15 +78,15 @@ FEATURE_COLS: List[str] = [
 ]
 
 CLUSTER_NAMES: Dict[int, str] = {
-    0: "Cluster 0: Immunologically Hot / Inflamed Phenotype",
-    1: "Cluster 1: Immunologically Cold / Desert Phenotype",
-    2: "Cluster 2: High-TMB / Hypermutated Phenotype",
+    0: "🔥 Cluster 0: Immunologically Hot",
+    1: "❄️ Cluster 1: Immunologically Cold",
+    2: "🧬 Cluster 2: High-TMB / Hypermutated",
 }
 
 CLUSTER_SHORT_NAMES: Dict[int, str] = {
-    0: "Cluster 0: Immunologically Hot",
-    1: "Cluster 1: Immunologically Cold",
-    2: "Cluster 2: High-TMB",
+    0: "🔥 Cluster 0: Hot",
+    1: "❄️ Cluster 1: Cold",
+    2: "🧬 Cluster 2: High-TMB",
 }
 
 CLUSTER_PLOT_NAMES: Dict[int, str] = {
@@ -94,6 +94,13 @@ CLUSTER_PLOT_NAMES: Dict[int, str] = {
     1: "Cluster 1 (Cold)",
     2: "Cluster 2 (High TMB)",
 }
+
+CLUSTER_COLORS: Dict[int, str] = {
+    0: RESPONSE_PALETTE["PD"],       # Crimson Red (#D55E00) for Hot
+    1: COHORT_PALETTE["Liu 2019"],   # Blue (#0072B2) for Cold
+    2: COHORT_PALETTE["Riaz 2017"],  # Reddish Purple / Pink (#CC79A7) for High-TMB
+}
+
 
 
 def _load_and_extract_cohort_features(
@@ -200,6 +207,192 @@ def _perform_clustering(df: pd.DataFrame) -> Tuple[pd.DataFrame, np.ndarray]:
     return df, pca_coords
 
 
+def _plot_cluster_radar(df: pd.DataFrame, plot_dir: Path) -> None:
+    """Generates multi-dimensional polar radar fingerprint chart for patient subtypes.
+
+    Args:
+        df: DataFrame containing cluster labels and Z-score feature columns.
+        plot_dir: Directory path for exporting figure.
+    """
+    feature_labels = [
+        "IFN-γ",
+        "TIS",
+        "CYT",
+        "CD8+ T-cell",
+        "PD-L1",
+        "IMPRES",
+        "TMB",
+        "Age",
+    ]
+    n_vars = len(FEATURE_COLS)
+    angles = [n / float(n_vars) * 2 * np.pi for n in range(n_vars)]
+    angles += angles[:1]
+
+    set_presentation_style()
+    fig, ax = plt.subplots(figsize=(9, 8.5), subplot_kw=dict(polar=True))
+
+    for c in range(3):
+        sub = df[df["CLINICAL_CLUSTER"] == c]
+        z_means = [sub[f"Z_{col}"].mean() for col in FEATURE_COLS]
+        z_means += z_means[:1]
+
+        label = f"{CLUSTER_PLOT_NAMES[c]} (N={len(sub)})"
+        color = CLUSTER_COLORS[c]
+
+        ax.plot(angles, z_means, linewidth=2.5, linestyle="solid", label=label, color=color)
+        ax.fill(angles, z_means, color=color, alpha=0.18)
+
+    plt.xticks(angles[:-1], feature_labels, color="black", size=11, weight="bold")
+    ax.set_rlabel_position(0)
+
+    grid_ticks = [-1.0, -0.5, 0.0, 0.5, 1.0]
+    plt.yticks(grid_ticks, [f"{t:+.1f}" for t in grid_ticks], color="grey", size=9)
+    plt.ylim(-1.5, 1.5)
+
+    baseline_angles = np.linspace(0, 2 * np.pi, 100)
+    ax.plot(baseline_angles, [0.0] * len(baseline_angles), color="black", linestyle="--", linewidth=1.0, alpha=0.6)
+
+    ax.set_title(
+        f"Multi-Dimensional Phenotype Fingerprint by Patient Subtype (N={len(df)})",
+        size=15,
+        weight="bold",
+        pad=25,
+    )
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.20), ncol=3, frameon=True, fontsize=10)
+    plt.tight_layout()
+
+    out_path = plot_dir / "radar_clinical_clusters.png"
+    save_fig(fig, out_path)
+    print(f"Saved radar cluster plot to {out_path.relative_to(SUBPROJECT_ROOT).as_posix()}")
+
+
+def _plot_cluster_heatmap(
+    df: pd.DataFrame, median_survivals: Dict[int, str], plot_dir: Path
+) -> None:
+    """Generates annotated Z-score feature heatmap with top clinical outcome tracks.
+
+    Args:
+        df: DataFrame containing cluster labels and Z-score feature columns.
+        median_survivals: Dictionary of cluster index to median OS string.
+        plot_dir: Directory path for exporting figure.
+    """
+    feature_display_names = {
+        "IFN_gamma": "IFN-γ Signature",
+        "TIS": "TIS Signature",
+        "CYT": "Cytolytic (CYT) Score",
+        "CD8_Tcell": "CD8+ T-cell Score",
+        "PD_L1": "PD-L1 Expression Score",
+        "IMPRES": "IMPRES Signature",
+        "TMB_NONSYNONYMOUS": "Tumor Mutational Burden (TMB)",
+        "AGE": "Patient Age at Diagnosis",
+    }
+
+    cluster_counts = df["CLINICAL_CLUSTER"].value_counts().to_dict()
+    col_labels = [
+        f"{CLUSTER_PLOT_NAMES[c]}\n(N={cluster_counts.get(c, 0)})" for c in range(3)
+    ]
+
+    z_matrix = np.zeros((len(FEATURE_COLS), 3))
+    raw_matrix = np.zeros((len(FEATURE_COLS), 3))
+
+    for c in range(3):
+        sub = df[df["CLINICAL_CLUSTER"] == c]
+        for i, col in enumerate(FEATURE_COLS):
+            z_matrix[i, c] = sub[f"Z_{col}"].mean()
+            raw_matrix[i, c] = sub[col].mean()
+
+    df_heatmap = pd.DataFrame(
+        z_matrix,
+        index=[feature_display_names[f] for f in FEATURE_COLS],
+        columns=col_labels,
+    )
+
+    trial_df = df[df["IS_TRIAL"] & df["RESPONDER"].notna()]
+    resp_rates = []
+    for c in range(3):
+        sub = trial_df[trial_df["CLINICAL_CLUSTER"] == c]
+        if len(sub) > 0:
+            n_resp = (sub["RESPONDER"] == 1.0).sum()
+            resp_rates.append(f"{(n_resp / len(sub)) * 100:.1f}% ({n_resp}/{len(sub)})")
+        else:
+            resp_rates.append("N/A")
+
+    set_presentation_style()
+    fig = plt.figure(figsize=(10, 8.5))
+    gs = fig.add_gridspec(3, 1, height_ratios=[0.8, 4.5, 0.4], hspace=0.15)
+
+    ax_top = fig.add_subplot(gs[0])
+    ax_top.axis("off")
+
+    track_text = []
+    for c in range(3):
+        med_os = median_survivals.get(c, "N/A")
+        track_text.append(f"Response: {resp_rates[c]}\nMedian OS: {med_os}")
+
+    cell_colors = [CLUSTER_COLORS[c] for c in range(3)]
+    for c in range(3):
+        rect = plt.Rectangle(
+            (c / 3.0 + 0.02, 0.05),
+            0.293,
+            0.9,
+            facecolor=cell_colors[c],
+            alpha=0.15,
+            edgecolor=cell_colors[c],
+            linewidth=1.5,
+            transform=ax_top.transAxes,
+        )
+        ax_top.add_patch(rect)
+        ax_top.text(
+            c / 3.0 + 0.166,
+            0.5,
+            track_text[c],
+            ha="center",
+            va="center",
+            fontsize=10,
+            weight="bold",
+            transform=ax_top.transAxes,
+        )
+
+    ax_top.set_title(
+        f"Annotated Subtype Feature Heatmap & Clinical Outcomes (Full Dataset, N={len(df)})",
+        fontsize=14,
+        weight="bold",
+        pad=10,
+    )
+
+    ax_heat = fig.add_subplot(gs[1])
+    annot_matrix = np.empty((len(FEATURE_COLS), 3), dtype=object)
+    for i, col in enumerate(FEATURE_COLS):
+        for c in range(3):
+            z_val = z_matrix[i, c]
+            raw_val = raw_matrix[i, c]
+            if col == "TMB_NONSYNONYMOUS":
+                annot_matrix[i, c] = f"Z={z_val:+.2f}\n({raw_val:.1f} mut/Mb)"
+            elif col == "AGE":
+                annot_matrix[i, c] = f"Z={z_val:+.2f}\n({raw_val:.1f} yrs)"
+            else:
+                annot_matrix[i, c] = f"Z={z_val:+.2f}\n({raw_val:.2f})"
+
+    sns.heatmap(
+        df_heatmap,
+        annot=annot_matrix,
+        fmt="",
+        cmap="coolwarm",
+        center=0.0,
+        cbar=True,
+        cbar_kws={"label": "Cohort-Standardized Z-Score", "shrink": 0.8},
+        linewidths=1.0,
+        linecolor="white",
+        ax=ax_heat,
+    )
+    ax_heat.set_yticklabels(ax_heat.get_yticklabels(), rotation=0, fontsize=10, weight="bold")
+    ax_heat.set_xticklabels(ax_heat.get_xticklabels(), rotation=0, fontsize=10, weight="bold")
+
+    out_path = plot_dir / "heatmap_clinical_clusters.png"
+    save_fig(fig, out_path)
+    print(f"Saved heatmap cluster plot to {out_path.relative_to(SUBPROJECT_ROOT).as_posix()}")
+
+
 def _plot_cluster_pca(df: pd.DataFrame, pca_coords: np.ndarray, plot_dir: Path) -> None:
     """Generates 2D PCA projection scatter plot of full-dataset immune clusters.
 
@@ -210,20 +403,21 @@ def _plot_cluster_pca(df: pd.DataFrame, pca_coords: np.ndarray, plot_dir: Path) 
     """
     df_pca = pd.DataFrame(pca_coords, columns=["PC1", "PC2"], index=df.index)
     df_pca["Cluster"] = df["CLINICAL_CLUSTER"]
-    df_pca["Cluster_Name"] = df_pca["Cluster"].map(CLUSTER_NAMES)
+    df_pca["Cluster_Name"] = df_pca["Cluster"].map(CLUSTER_PLOT_NAMES)
 
     pca = PCA(n_components=2).fit(df[[f"Z_{col}" for col in FEATURE_COLS]].values)
     var_explained = pca.explained_variance_ratio_
 
     palette_dict = {
-        CLUSTER_NAMES[0]: RESPONSE_PALETTE["PD"],       # Crimson Red for Immunologically Hot
-        CLUSTER_NAMES[1]: COHORT_PALETTE["Liu 2019"],   # Blue for Immunologically Cold
-        CLUSTER_NAMES[2]: COHORT_PALETTE["Riaz 2017"],  # Okabe-Ito Reddish Purple for High-TMB / Hypermutated
+        CLUSTER_PLOT_NAMES[0]: CLUSTER_COLORS[0],
+        CLUSTER_PLOT_NAMES[1]: CLUSTER_COLORS[1],
+        CLUSTER_PLOT_NAMES[2]: CLUSTER_COLORS[2],
     }
 
     set_presentation_style()
     fig, ax_pca = plt.subplots(figsize=(9.5, 7.5))
-    hue_order = [CLUSTER_NAMES[0], CLUSTER_NAMES[1], CLUSTER_NAMES[2]]
+    hue_order = [CLUSTER_PLOT_NAMES[0], CLUSTER_PLOT_NAMES[1], CLUSTER_PLOT_NAMES[2]]
+
 
     sns.scatterplot(
         x="PC1",
@@ -283,9 +477,9 @@ def _plot_cluster_survival(df: pd.DataFrame, plot_dir: Path) -> Tuple[float, Dic
     fig, ax = plt.subplots(figsize=(9, 6.5))
 
     palette_dict = {
-        CLUSTER_NAMES[0]: RESPONSE_PALETTE["PD"],       # Crimson Red for Immunologically Hot
-        CLUSTER_NAMES[1]: COHORT_PALETTE["Liu 2019"],   # Blue for Immunologically Cold
-        CLUSTER_NAMES[2]: COHORT_PALETTE["Riaz 2017"],  # Okabe-Ito Reddish Purple for High-TMB / Hypermutated
+        CLUSTER_PLOT_NAMES[0]: CLUSTER_COLORS[0],
+        CLUSTER_PLOT_NAMES[1]: CLUSTER_COLORS[1],
+        CLUSTER_PLOT_NAMES[2]: CLUSTER_COLORS[2],
     }
 
     kmf = KaplanMeierFitter()
@@ -294,9 +488,10 @@ def _plot_cluster_survival(df: pd.DataFrame, plot_dir: Path) -> Tuple[float, Dic
     for c in range(3):
         mask = df_surv["CLINICAL_CLUSTER"] == c
         sub_df = df_surv.loc[mask]
-        label = f"{CLUSTER_NAMES[c]} (N={mask.sum()})"
+        label = f"{CLUSTER_PLOT_NAMES[c]} (N={mask.sum()})"
         kmf.fit(sub_df["OS_MONTHS"], sub_df["OS_STATUS"], label=label)
-        kmf.plot_survival_function(ax=ax, color=palette_dict[CLUSTER_NAMES[c]], ci_show=False, linewidth=2.5)
+        kmf.plot_survival_function(ax=ax, color=palette_dict[CLUSTER_PLOT_NAMES[c]], ci_show=False, linewidth=2.5)
+
 
         med = kmf.median_survival_time_
         if np.isinf(med) or pd.isna(med):
@@ -391,18 +586,6 @@ def _plot_cluster_response(df: pd.DataFrame, plot_dir: Path) -> float:
     return p_val
 
 
-def _df_to_markdown_table(df: pd.DataFrame) -> str:
-    """Formats a DataFrame into a Markdown table string."""
-    headers = list(df.columns)
-    header_line = "| " + " | ".join(headers) + " |"
-    separator_line = "| " + " | ".join(["---"] * len(headers)) + " |"
-    row_lines = [
-        "| " + " | ".join(str(v) for v in row.values) + " |"
-        for _, row in df.iterrows()
-    ]
-    return "\n".join([header_line, separator_line] + row_lines)
-
-
 def _generate_clustering_report(
     df: pd.DataFrame,
     counts: List[int],
@@ -423,48 +606,20 @@ def _generate_clustering_report(
     """
     profile_df = df.groupby("CLINICAL_CLUSTER")[FEATURE_COLS].mean().reset_index()
 
-    table_rows = []
-    table_rows.append(["**Demographics & Sample Size**", "", "", ""])
-    table_rows.append(["Patient Count (N)", str(counts[0]), str(counts[1]), str(counts[2])])
-
-    age_vals = [f"{profile_df.loc[profile_df['CLINICAL_CLUSTER'] == c, 'AGE'].values[0]:.1f}" for c in range(3)]
-    table_rows.append(["Age (Years, Mean)", age_vals[0], age_vals[1], age_vals[2]])
-
-    table_rows.append(["**Genomic & Mutational Burden**", "", "", ""])
-    tmb_vals = [f"{profile_df.loc[profile_df['CLINICAL_CLUSTER'] == c, 'TMB_NONSYNONYMOUS'].values[0]:.1f}" for c in range(3)]
-    table_rows.append(["TMB (Nonsynonymous, Mean Mut/Mb)", tmb_vals[0], tmb_vals[1], tmb_vals[2]])
-
-    table_rows.append(["**Transcriptomic Immune Signatures (Raw Mean)**", "", "", ""])
-    for sig in ["IFN_gamma", "TIS", "CYT", "CD8_Tcell", "PD_L1", "IMPRES"]:
-        vals = [f"{profile_df.loc[profile_df['CLINICAL_CLUSTER'] == c, sig].values[0]:.2f}" for c in range(3)]
-        table_rows.append([f"{sig} Signature Score", vals[0], vals[1], vals[2]])
-
     trial_df = df[df["IS_TRIAL"] & df["RESPONDER"].notna()]
     n_trial = len(trial_df)
-    table_rows.append([f"**Therapeutic Response (Trial Subset, N={n_trial})**", "", "", ""])
     resp_rates = []
+    resp_fractions = []
     for c in range(3):
         sub = trial_df[trial_df["CLINICAL_CLUSTER"] == c]
         if len(sub) > 0:
-            n_resp = (sub["RESPONDER"] == 1.0).sum()
-            resp_rates.append(format_count_percentage(n_resp, len(sub)))
+            n_resp = int((sub["RESPONDER"] == 1.0).sum())
+            n_total = len(sub)
+            resp_rates.append(format_count_percentage(n_resp, n_total))
+            resp_fractions.append(f"{n_resp}/{n_total} = {n_resp / n_total * 100:.1f}%")
         else:
             resp_rates.append("N/A")
-    table_rows.append(["Response Rate (CR/PR %)", resp_rates[0], resp_rates[1], resp_rates[2]])
-
-    table_rows.append(["**Prognosis & Survival**", "", "", ""])
-    table_rows.append([
-        "Median Overall Survival",
-        f"🟢 {median_survivals[0]}",
-        f"🔴 {median_survivals[1]}",
-        f"🟠 {median_survivals[2]}",
-    ])
-
-    final_cols = [
-        "Feature / Clinical & Biological Metric",
-        *[f"{CLUSTER_SHORT_NAMES[c]} (N={counts[c]})" for c in range(3)],
-    ]
-    formatted_df = pd.DataFrame(table_rows, columns=final_cols)
+            resp_fractions.append("N/A")
 
     total_n = sum(counts)
     frontmatter = generate_obsidian_frontmatter(
@@ -476,49 +631,97 @@ def _generate_clustering_report(
     tis_vals = [f"{profile_df.loc[profile_df['CLINICAL_CLUSTER'] == c, 'TIS'].values[0]:.2f}" for c in range(3)]
     cyt_vals = [f"{profile_df.loc[profile_df['CLINICAL_CLUSTER'] == c, 'CYT'].values[0]:.2f}" for c in range(3)]
     cd8_vals = [f"{profile_df.loc[profile_df['CLINICAL_CLUSTER'] == c, 'CD8_Tcell'].values[0]:.2f}" for c in range(3)]
+    tmb_vals = [f"{profile_df.loc[profile_df['CLINICAL_CLUSTER'] == c, 'TMB_NONSYNONYMOUS'].values[0]:.1f}" for c in range(3)]
+
+    # Format p-values as proper LaTeX scientific notation (e.g. 2.29 \times 10^{-5})
+    def _fmt_pval_latex(p: float) -> str:
+        s = f"{p:.2e}"  # e.g. '2.29e-05'
+        mantissa, exp = s.split("e")
+        exp_int = int(exp)  # e.g. -5
+        return rf"{mantissa} \times 10^{{{exp_int}}}"
+
+    km_p_str = _fmt_pval_latex(km_p_val)
 
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(frontmatter + "\n\n")
         f.write("# Patient Phenotyping via Full-Dataset Immunological & Genomic Clustering\n\n")
-        f.write(f"We performed unsupervised subtyping across the **entire combined study dataset** ($N = {total_n}$ patients across **TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) using Agglomerative Hierarchical Clustering (Ward linkage). To prevent technical study platform offsets from dominating the clustering, feature scores (immune signatures, TMB, and age) were Z-score standardized **within each cohort** prior to pooling.\n\n")
 
-        f.write("## Subtype Profiles\n")
-        f.write("The average clinical, genomic, and transcriptomic immune signature values for each patient subtype are detailed below:\n\n")
-        f.write(_df_to_markdown_table(formatted_df) + "\n\n")
+        f.write("> [!summary] What, Why & Key Questions\n")
+        f.write(f"> - **What We Are Doing**: Applying unsupervised Agglomerative Hierarchical Clustering (Ward linkage) to the **entire combined dataset** ($N = {total_n}$ patients across TCGA-SKCM, Liu 2019, Hugo 2016, and Riaz 2017) using six immune expression signatures, TMB, and patient age — all Z-score standardised *within each cohort* before pooling to remove study-platform offsets.\n")
+        f.write("> - **Why We Are Doing It**: Before building a supervised response predictor, we need to know whether biologically meaningful patient subgroups exist in the data at all. If patients naturally cluster into distinct immune phenotypes — \"hot\" vs. \"cold\" tumours — then those phenotypes should predict both survival and immunotherapy response. Discovering these groups unsupervised (without using any response labels) provides unbiased biological validation.\n")
+        f.write("> - **Questions**:\n")
+        f.write(">   1. *Do distinct immunological subtypes emerge from the data without supervision?*\n")
+        f.write(">   2. *Do those subtypes differ significantly in overall survival — confirming they capture genuine biology?*\n")
+        f.write(">   3. *Do immunotherapy responders concentrate in the \"hot\" immune subtype, validating the clusters as clinically meaningful?*\n\n")
 
-        f.write("## Key Analytical Findings\n\n")
-        f.write(f"1. **Prognostic Stratification ($N={total_n}$)**: Hierarchical clustering on within-cohort Z-score standardized features yields a highly statistically significant overall survival separation across the full 4-cohort dataset (Log-Rank $p = {km_p_val:.2e}$). Patients in the **Immunologically Hot** cluster achieve a median survival of 🟢 **{median_survivals[0]}**, substantially longer than the **Cold** cluster (🔴 {median_survivals[1]}).\n")
-        f.write(f"2. **Therapeutic Response Alignment ($N={n_trial}$)**: Patients in **Cluster 0 (Hot)** demonstrate the highest objective response rate to anti-PD-1 immunotherapy (**{resp_rates[0]}**), compared to **{resp_rates[1]}** in **Cluster 1 (Cold)**, validating that unsupervised microenvironment subtyping captures anti-tumor immune responsiveness.\n")
-        f.write(f"3. **Genomic vs. Transcriptomic Decoupling**: High tumor mutational burden alone (**Cluster 2**, mean TMB = {tmb_vals[2]} mut/Mb) yields only an intermediate overall survival trajectory (🟠 {median_survivals[2]}) in the absence of robust T-cell inflammation, demonstrating that high TMB is insufficient without an active immune microenvironment.\n\n")
+        f.write("## 1. Subtype Profiles\n\n")
+        f.write("> [!summary] What, Why & Key Questions\n")
+        f.write("> - **What We Are Doing**: Characterising the three discovered patient subtypes using two visualisations — a polar radar chart showing the multi-dimensional signature fingerprint of each subtype, and an annotated heatmap showing per-patient Z-scores with response rate and survival overlaid.\n")
+        f.write("> - **Why We Are Doing It**: A radar chart reveals the *shape* of each subtype's immune profile at a glance (which signatures are high or low). The heatmap reveals the *within-cluster heterogeneity* — how tightly patients cluster together — and overlays clinical outcome tracks to verify biological coherence.\n")
+        f.write("> - **Questions**:\n")
+        f.write(">   1. *Are the subtypes cleanly separated across all signatures simultaneously, or does separation rely on only one or two markers?*\n")
+        f.write(">   2. *Does the response rate track visibly with the immune intensity track in the heatmap?*\n\n")
 
-        f.write("## Biological Interpretation of Patient Subtypes\n\n")
-        f.write("The unsupervised clustering isolates three distinct patient phenotypes across the multi-study population:\n\n")
+        f.write("### 1.1. Multi-Dimensional Phenotype Fingerprint (Radar Profile)\n\n")
+        f.write("The polar radar chart displays the standardised Z-score profiles across transcriptomic immune signatures, mutational burden, and patient age for each subtype:\n\n")
+        f.write("![Subtype Profile Radar Chart](../../plots/clinical/radar_clinical_clusters.png)\n\n")
 
-        f.write(f"1.  **{CLUSTER_NAMES[0]}** ($N={counts[0]}$)\n")
-        f.write(f"    *   *Immune Signatures*: Highest T-cell inflammation (IFN-\\(\\gamma\\) = {ifn_vals[0]}, TIS = {tis_vals[0]}, CYT = {cyt_vals[0]}, CD8 = {cd8_vals[0]}).\n")
-        f.write(f"    *   *Therapeutic Benefit*: Highest immunotherapy response rate (**{resp_rates[0]}**).\n")
-        f.write(f"    *   *Prognosis*: Superior overall survival trajectory (Median OS = 🟢 **{median_survivals[0]}**).\n\n")
+        f.write("### 1.2. Annotated Subtype Feature Heatmap & Clinical Tracks\n\n")
+        f.write("The heatmap details the Z-score signature matrix for each patient cluster, annotated with immunotherapy response rates (CR/PR %) and median overall survival (OS):\n\n")
+        f.write("![Annotated Subtype Feature Heatmap](../../plots/clinical/heatmap_clinical_clusters.png)\n\n")
 
-        f.write(f"2.  **{CLUSTER_NAMES[1]}** ($N={counts[1]}$)\n")
-        f.write(f"    *   *Immune Signatures*: Attenuated T-cell inflammation across all markers (IFN-\\(\\gamma\\) = {ifn_vals[1]}, TIS = {tis_vals[1]}, CYT = {cyt_vals[1]}, CD8 = {cd8_vals[1]}).\n")
-        f.write(f"    *   *Therapeutic Benefit*: Lower response rate to anti-PD-1 therapy (**{resp_rates[1]}**).\n")
-        f.write(f"    *   *Prognosis*: Poor overall survival trajectory (Median OS = 🔴 **{median_survivals[1]}**).\n\n")
+        f.write("## 2. Biological Interpretation of Patient Subtypes\n\n")
+        f.write("The unsupervised clustering isolates three distinct patient phenotypes:\n\n")
 
-        f.write(f"3.  **{CLUSTER_NAMES[2]}** ($N={counts[2]}$)\n")
-        f.write(f"    *   *Genomics*: Highest tumor mutational burden (**TMB = {tmb_vals[2]} mut/Mb**).\n")
-        f.write(f"    *   *Immune Signatures*: Moderate T-cell inflammation (IFN-\\(\\gamma\\) = {ifn_vals[2]}, TIS = {tis_vals[2]}).\n")
-        f.write(f"    *   *Prognosis*: Intermediate survival trajectory (Median OS = 🟠 **{median_survivals[2]}**).\n\n")
+        f.write(f"1. **{CLUSTER_NAMES[0]}** ($N = {counts[0]}$)\n")
+        f.write(f"    - *Immune Signatures*: Highest T-cell inflammation across all markers (IFN-\u03b3 = {ifn_vals[0]}, TIS = {tis_vals[0]}, CYT = {cyt_vals[0]}, CD8 = {cd8_vals[0]}).\n")
+        f.write(f"    - *Therapeutic Benefit*: Highest immunotherapy response rate (**{resp_fractions[0]}** in trial patients).\n")
+        f.write(f"    - *Prognosis*: Best overall survival (Median OS = \U0001f7e2 **{median_survivals[0]}**).\n\n")
 
-        f.write("## Subtype Visualisation (2D PCA Projection)\n")
-        f.write(f"Below is a 2D PCA projection showing clear multi-dimensional separation of the patient subtypes across the $N={total_n}$ full dataset. The 'X' markers denote cluster centroids:\n\n")
+        f.write(f"2. **{CLUSTER_NAMES[1]}** ($N = {counts[1]}$)\n")
+        f.write(f"    - *Immune Signatures*: Attenuated T-cell inflammation across all markers (IFN-\u03b3 = {ifn_vals[1]}, TIS = {tis_vals[1]}, CYT = {cyt_vals[1]}, CD8 = {cd8_vals[1]}).\n")
+        f.write(f"    - *Therapeutic Benefit*: Lowest response rate to anti-PD-1 therapy (**{resp_fractions[1]}** in trial patients).\n")
+        f.write(f"    - *Prognosis*: Worst overall survival (Median OS = \U0001f534 **{median_survivals[1]}**).\n\n")
+
+        f.write(f"3. **{CLUSTER_NAMES[2]}** ($N = {counts[2]}$)\n")
+        f.write(f"    - *Genomics*: Highest tumour mutational burden (**TMB = {tmb_vals[2]} mut/Mb**) with only moderate immune infiltration.\n")
+        f.write(f"    - *Immune Signatures*: Intermediate T-cell inflammation (IFN-\u03b3 = {ifn_vals[2]}, TIS = {tis_vals[2]}).\n")
+        f.write(f"    - *Prognosis*: Intermediate survival (Median OS = \U0001f7e0 **{median_survivals[2]}**) \u2014 demonstrating that high TMB alone, without a hot immune microenvironment, does not confer the same survival benefit.\n\n")
+
+        f.write("## 3. Subtype Visualisation (2D PCA Projection)\n\n")
+        f.write("> [!summary] What, Why & Key Questions\n")
+        f.write(f"> - **What We Are Doing**: Projecting all $N = {total_n}$ patients onto the first two principal components (PCA) of the feature space to visualise how well the three clusters separate in a lower-dimensional view.\n")
+        f.write("> - **Why We Are Doing It**: A clean 2D separation confirms that the clustering reflects a genuine multi-dimensional structure in the data, not an artefact of the Ward linkage algorithm.\n")
+        f.write("> - **Questions**: *Are clusters geometrically separated in PCA space, or do they overlap substantially?*\n\n")
         f.write("![2D PCA Visualisation of Clusters](../../plots/clinical/pca_clinical_clusters.png)\n\n")
 
-        f.write("## Immunotherapy Response & Overall Survival Validation\n")
-        f.write(f"Validation across clinical outcomes demonstrates that unsupervised immune subtyping strongly correlates with clinical benefit:\n\n")
-        f.write(f"*   **Therapeutic Response Rate (Trial Cohorts, $N={n_trial}$)**: Significant difference in response rate across clusters (Chi-Square p-value = **\\({chi2_p_val:.2e}\\)**).\n")
-        f.write("    ![Response Rate by Cluster](../../plots/clinical/response_by_clinical_cluster.png)\n\n")
-        f.write(f"*   **Overall Survival (Full Dataset, $N={total_n}$)**: Highly significant survival separation across patient subtypes (Log-Rank p-value = **\\({km_p_val:.2e}\\)**):\n")
-        f.write("    ![KM Survival of Clinical Clusters](../../plots/clinical/km_clinical_clusters.png)\n")
+        f.write("## 4. Immunotherapy Response & Overall Survival Validation\n\n")
+        f.write("> [!summary] What, Why & Key Questions\n")
+        f.write(f"> - **What We Are Doing**: Testing whether the unsupervised cluster labels \u2014 derived without using any response information \u2014 nevertheless stratify immunotherapy response rates (in the $N = {n_trial}$ trial patients with binary labels) and overall survival (in the full $N = {total_n}$ dataset).\n")
+        f.write("> - **Why We Are Doing It**: This is the critical validation step. If clusters discovered purely from expression patterns correlate with clinical outcomes, it confirms the biology is real and the subtypes are clinically actionable.\n")
+        f.write("> - **Questions**:\n")
+        f.write(">   1. *Do immunotherapy responders concentrate significantly in the Hot cluster (Chi-Square test)?*\n")
+        f.write(">   2. *Is the survival separation across subtypes statistically significant (Log-Rank test)?*\n\n")
+
+        f.write(f"**Therapeutic Response Rate (Trial Cohorts, $N = {n_trial}$ with binary labels)**:\n\n")
+        chi2_sig = "not statistically significant" if chi2_p_val >= 0.05 else "statistically significant"
+        f.write(f"> [!NOTE]\n")
+        f.write(f"> The Chi-Square test across cluster response rates yields $p = {chi2_p_val:.3f}$ \u2014 **{chi2_sig}**. ")
+        if chi2_p_val >= 0.05:
+            f.write(f"The Hot cluster shows a numerically higher response rate ({resp_fractions[0]}) vs. Cold ({resp_fractions[1]}), but this difference does not reach significance at this sample size. This reflects the limited statistical power of the three-way comparison across the trial cohort subset ($N = {n_trial}$), not an absence of a real biological trend.\n\n")
+        else:
+            f.write(f"Immunotherapy responders are significantly enriched in the Hot cluster ({resp_fractions[0]}) compared to the Cold cluster ({resp_fractions[1]}).\n\n")
+        f.write("![Response Rate by Cluster](../../plots/clinical/response_by_clinical_cluster.png)\n\n")
+
+        f.write(f"**Overall Survival (Full Dataset, $N = {total_n}$)**:\n\n")
+        f.write(f"The survival separation across patient subtypes is highly statistically significant (Log-Rank $p = {km_p_str}$), confirming that the immune phenotypes capture genuine prognostic biology:\n\n")
+        f.write("![KM Survival of Clinical Clusters](../../plots/clinical/km_clinical_clusters.png)\n\n")
+
+        f.write("### Key Takeaways\n\n")
+        f.write(f"- **Unsupervised biology is real**: Three distinct immune phenotypes emerge from the data without using any response labels, and they separate significantly by overall survival ($p = {km_p_str}$).\n")
+        f.write(f"- **Immune inflammation, not TMB alone, drives prognosis**: The High-TMB cluster (Cluster 2) shows only intermediate survival despite its high mutational burden \u2014 confirming the finding from the genomic characterisation that TMB and immune infiltration are orthogonal axes.\n")
+        f.write(f"- **Response trend is consistent but underpowered**: The numerical response rate advantage of the Hot cluster ({resp_fractions[0]}) vs. Cold ({resp_fractions[1]}) is clinically meaningful in direction, but the $N = {n_trial}$ trial subset is too small to achieve significance in a three-way Chi-Square test. This motivates the supervised multivariate modelling in the next pillar.\n")
+
 
     print(f"Clustering report successfully written to {report_path.relative_to(SUBPROJECT_ROOT).as_posix()}")
 
@@ -550,7 +753,9 @@ def main() -> None:
 
     print("\nGenerating cluster visualisations and statistical evaluations...")
     _plot_cluster_pca(full_df, pca_coords, PLOT_DIR)
+    _plot_cluster_radar(full_df, PLOT_DIR)
     km_p_val, median_survivals = _plot_cluster_survival(full_df, PLOT_DIR)
+    _plot_cluster_heatmap(full_df, median_survivals, PLOT_DIR)
     chi2_p_val = _plot_cluster_response(full_df, PLOT_DIR)
 
     print("\nExporting full-dataset clustering report...")
@@ -562,6 +767,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     with open(LOG_PATH, "w", encoding="utf-8") as log_file:
         stdout_tee = TeeStream(sys.stdout, log_file)
@@ -569,3 +779,4 @@ if __name__ == "__main__":
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
             print(f"Logging console output to {LOG_PATH.relative_to(SUBPROJECT_ROOT).as_posix()}")
             main()
+

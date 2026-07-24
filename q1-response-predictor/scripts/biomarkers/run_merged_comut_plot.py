@@ -22,12 +22,18 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-# Bootstrap project root resolution for top-level import
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-if str(BASE_DIR) not in sys.path:
-    sys.path.append(str(BASE_DIR))
+# ---------------------------------------------------------------------------
+# Bootstrap project root resolution for top-level imports
+# ---------------------------------------------------------------------------
 
-from src.biology_constants import MERGED_COMUT_DRIVER_GENES
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = BASE_DIR.parent if (BASE_DIR.parent / "src").exists() else BASE_DIR
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from src.config.constants import MERGED_COMUT_DRIVER_GENES
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
@@ -59,7 +65,7 @@ def load_processed_mutations(mutations_file: Path, target_genes: List[str], samp
         DataFrame containing binary mutation indicator columns.
     """
     if not mutations_file.exists():
-        print(f"Warning: mutation file not found at {mutations_file.relative_to(BASE_DIR).as_posix()}")
+        print(f"Warning: mutation file not found at {mutations_file.relative_to(PROJECT_ROOT).as_posix()}")
         return pd.DataFrame(0, index=sample_ids, columns=target_genes)
 
     df_mut = pd.read_csv(mutations_file, index_col="SAMPLE_ID")
@@ -97,7 +103,7 @@ def _load_and_align_merged_data(data_dir: Path) -> Optional[Tuple[pd.DataFrame, 
     mut_hugo = load_processed_mutations(data_dir / "processed/hugo_2016/mutations_cleaned.csv", MERGED_COMUT_DRIVER_GENES, clin_hugo.index.tolist())
     mut_riaz = load_processed_mutations(data_dir / "processed/riaz_2017/mutations_cleaned.csv", MERGED_COMUT_DRIVER_GENES, clin_riaz.index.tolist())
 
-    clin_cols = ['Cohort', 'response', 'TMB_NONSYNONYMOUS', 'SEX', 'patient_id']
+    clin_cols = ['Cohort', 'RESPONSE_BINARY', 'TMB_NONSYNONYMOUS', 'SEX', 'PATIENT_ID']
     df_clin_merged = pd.concat([
         clin_liu[clin_cols],
         clin_hugo[clin_cols],
@@ -106,11 +112,11 @@ def _load_and_align_merged_data(data_dir: Path) -> Optional[Tuple[pd.DataFrame, 
 
     df_mut_merged = pd.concat([mut_liu, mut_hugo, mut_riaz])
     df_merged = df_clin_merged.join(df_mut_merged)
-    df_merged = df_merged.dropna(subset=['response'])
+    df_merged = df_merged.dropna(subset=['RESPONSE_BINARY'])
 
     print(f"Total merged clinical trial samples aligned for CoMut plot: {len(df_merged)}")
 
-    sort_cols = MERGED_COMUT_DRIVER_GENES + ['response', 'Cohort']
+    sort_cols = MERGED_COMUT_DRIVER_GENES + ['RESPONSE_BINARY', 'Cohort']
     df_sorted = df_merged.sort_values(by=sort_cols, ascending=False)
     sorted_sample_ids = df_sorted.index.tolist()
 
@@ -132,7 +138,7 @@ def _draw_merged_comut_plot(df_sorted: pd.DataFrame, sorted_sample_ids: List[str
         mut_grid[i, :] = df_sorted[g].values
 
     tmb_vals = df_sorted['TMB_NONSYNONYMOUS'].fillna(0).values
-    response_vals = df_sorted['response'].values
+    response_vals = df_sorted['RESPONSE_BINARY'].values
     cohort_vals = df_sorted['Cohort'].map({'Liu 2019': 0, 'Hugo 2016': 1, 'Riaz 2017': 2}).values
     sex_vals = df_sorted['SEX'].map({'Female': 0, 'Male': 1}).fillna(2).values
 
@@ -256,7 +262,7 @@ def _draw_merged_comut_plot(df_sorted: pd.DataFrame, sorted_sample_ids: List[str
         warnings.simplefilter("ignore", UserWarning)
         save_fig(fig, out_path)
 
-    print(f"\nSaved Merged CoMut plot to {out_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"\nSaved Merged CoMut plot to {out_path.relative_to(PROJECT_ROOT).as_posix()}")
 
 
 def main() -> None:
@@ -286,5 +292,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+            print(f"Logging console output to {LOG_PATH.relative_to(PROJECT_ROOT).as_posix()}")
             main()

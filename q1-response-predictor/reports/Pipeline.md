@@ -159,11 +159,11 @@ Once the clean datasets are generated, the characterisation scripts analyze clin
 *   **`scripts/exploratory_plots/run_waffle_chart.py`**: Draws waffle charts representing absolute sample sizes and response status (1 block = 1 patient), saved to `plots/clinical/response_waffle_chart.png`.
 *   **`scripts/exploratory_plots/run_response_km_curves.py`**: Evaluates overall survival stratified by response (Responder vs. Non-Responder) in trials, generating Kaplan-Meier curves and Log-Rank tests saved to `plots/clinical/km_os_by_response.png`.
 *   **`scripts/exploratory_plots/run_forest_plot.py`**: Fits univariate logistic regression models for response across demographics and driver mutations. Generates a standardized forest plot (grey/red/blue color scheme) saved to `plots/clinical/forest_plot_odds_ratios.png`.
-*   **`scripts/clinical_analysis/run_clinical_feature_selection.py`**: Performs univariate Cox hazards modelling and Random Forest Gini feature selection on clinical phenotypes.
+*   **`scripts/clinical_analysis/run_clinical_feature_selection.py`**: Performs univariate and multivariate Cox proportional hazards modelling, Random Forest Gini feature selection, and Logistic Regression odds ratio evaluation across clinical phenotypes.
 
 ### 4.2. Genomic Characterisation
 *   **`scripts/biomarkers/run_genomic_characterisation.py`**: Evaluates baseline genomic properties of TCGA and trials:
-    *   Generates a comparison of driver mutations (*BRAF*, *NRAS*, *NF1*, and Triple-WT) saved to `plots/genomic/mutation_frequencies.png`.
+    *   Generates a comparison of driver mutations (`BRAF`, `NRAS`, `NRAS`, and Triple-WT) saved to `plots/genomic/mutation_frequencies.png`.
     *   Plots pre-treatment TMB distributions (trial boxplots by response, TCGA log-normal histogram) saved to `plots/genomic/tmb_distribution.png`.
     *   Plots a Spearman correlation matrix of somatic mutation and neoantigen loads in Liu 2019 saved to `plots/genomic/biomarker_correlation_heatmap.png`.
     *   Generates Kaplan-Meier curves for TCGA overall survival by driver mutation subtype and TMB median-split saved to `plots/genomic/km_genomic_features.png`.

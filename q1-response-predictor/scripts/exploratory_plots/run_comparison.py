@@ -27,7 +27,10 @@ from sklearn.svm import SVC
 from xgboost import XGBClassifier
 import seaborn as sns
 
-# Bootstrap project root resolution for top-level import
+# ---------------------------------------------------------------------------
+# Bootstrap project root resolution for top-level imports
+# ---------------------------------------------------------------------------
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
