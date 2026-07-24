@@ -92,6 +92,16 @@ graph LR
 | **Feature selection** | Curated signatures over SelectKBest | Data-driven selection captures cohort-specific noise, not transferable immune biology |
 | **Validation strategy** | Report both pooled CV and LOCO | LOCO is the primary evidence layer; pooled CV provides complementary upper-bound estimates |
 
+### Batch Effect Diagnosis & Correction
+
+![PCA Batch Effect Assessment Across Full Cohort](../plots/biomarkers/batch_effect_pca.png)
+
+> [!IMPORTANT]  
+> **Imperative for Batch Effect Evaluation & Correction**:  
+> Panel A demonstrates why raw transcriptomic datasets from different clinical trials cannot simply be merged without prior batch effect evaluation and correction. In the uncorrected principal component space, samples cluster strictly by study cohort of origin (TCGA-SKCM vs. Liu 2019, Hugo 2016, Riaz 2017) rather than biological phenotype or clinical response status. These technical batch effects stem from systemic differences in sequencing platforms, library preparation protocols, and capture kits. Training predictive models directly on uncorrected multi-cohort data causes classifiers to learn study-specific technical noise, leading to catastrophic failure when evaluated on independent patient cohorts.  
+>  
+> Panel B confirms that cohort-independent Z-score standardisation successfully removes these baseline technical offsets, intermixing the cohorts in reduced-dimensional space while preserving genuine biological variance required for cross-cohort response prediction.
+
 ---
 
 ## Known Limitations
