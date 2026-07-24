@@ -222,7 +222,30 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 
 ---
 
-## 2. Co-Mutation & Clinical Landscape
+## 2. Overall Survival & Response Stratification
+
+### Unstratified Overall Survival Across Cohorts
+
+![Overall Survival KM Curves (All Cohorts)](../plots/clinical/km_os_grid.png)
+
+> [!NOTE]
+> **Baseline Overall Survival Trajectories**:
+> The unstratified Kaplan-Meier overall survival curves above illustrate baseline survival timelines across all four cohorts. **TCGA-SKCM** ($N = {stats['tcga']['n']}$) demonstrates the longest median follow-up duration (41.6 months), whereas clinical trial cohorts reflect advanced stage IV melanoma populations undergoing active checkpoint blockade therapy.
+
+### Overall Survival Stratified by Immunotherapy Response
+
+![Overall Survival by Immunotherapy Response (RECIST)](../plots/clinical/km_os_by_response.png)
+
+> [!IMPORTANT]
+> **Prognostic Impact of RECIST Response**:
+> Stratifying overall survival by objective RECIST response status (**Responder** [CR/PR] vs **Non-responder** [PD]) confirms that clinical response to anti-PD-1 therapy is a extraordinarily strong surrogate endpoint for long-term overall survival:
+> * **Liu 2019 ($N = {stats['liu']['n']}$)**: Log-rank $p < 0.0001$. Non-responders exhibit steep early mortality (median OS ~10.5 months), whereas >70% of responders remain alive beyond 50 months of follow-up.
+> * **Hugo 2016 ($N = {stats['hugo']['n']}$)**: Log-rank $p < 0.0001$. Responders show sustained survival extension over non-responders.
+> * **Riaz 2017 ($N = {stats['riaz']['n']}$)**: Log-rank $p < 0.0001$. Profound separation confirming durable survival benefit among anti-PD-1 responders.
+
+---
+
+## 3. Co-Mutation & Clinical Landscape
 
 ![Co-Mutation Landscape (Merged Trials)](../plots/genomic/comut_landscape_merged.png)
 
@@ -236,7 +259,7 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 
 ---
 
-## 3. Batch Effect Evaluation & Correction
+## 4. Batch Effect Evaluation & Correction
 
 ![PCA Batch Effect Assessment Across Full Cohort](../plots/biomarkers/batch_effect_pca.png)
 
@@ -248,7 +271,7 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 
 ---
 
-## 4. Key Findings
+## 5. Key Findings
 
 ### 1. Biological Constraint is Essential for Cross-Study Generalisation
 
@@ -287,7 +310,7 @@ The custom 20-gene overall survival signature derived from TCGA-SKCM ($N = {stat
 
 ---
 
-## 5. Pipeline Architecture Decisions
+## 6. Pipeline Architecture Decisions
 
 ```mermaid
 graph LR
@@ -314,7 +337,7 @@ graph LR
 
 ---
 
-## 6. Known Limitations
+## 7. Known Limitations
 
 1. **Cross-study generalisation remains modest**: LOCO AUCs are typically 0.55–0.68, reflecting fundamental challenges in small-cohort melanoma immunotherapy prediction.
 2. **Missing clinical predictors**: LDH, ECOG performance status, and PD-L1 IHC scores are unavailable in the cBioPortal downloads but are standard clinical predictors in ICI trials.
