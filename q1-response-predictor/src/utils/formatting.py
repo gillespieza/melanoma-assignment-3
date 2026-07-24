@@ -190,7 +190,9 @@ def generate_obsidian_frontmatter(
 
     lines = ["---"]
     if title:
-        lines.append(f"title: {title}")
+        # Strip existing outer quotes if any, then wrap cleanly in double quotes
+        clean_title = title.strip('"\'')
+        lines.append(f'title: "{clean_title}"')
     if aliases:
         lines.append("aliases:")
         for alias in aliases:
