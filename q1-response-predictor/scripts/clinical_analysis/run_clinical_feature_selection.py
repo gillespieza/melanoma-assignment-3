@@ -331,200 +331,6 @@ def _evaluate_tier1_rf_survival(df: pd.DataFrame, plots_dir: Path) -> pd.DataFra
     return df_rf
 
 
-def _evaluate_tier1_rf_response(df: pd.DataFrame, plots_dir: Path) -> pd.DataFrame:
-    """Trains Random Forest Classifier predicting immunotherapy response across trial cohorts.
-
-    Args:
-        df: Merged patient DataFrame.
-        plots_dir: Target plots directory.
-
-    Returns:
-        Sorted DataFrame of response feature importances.
-    """
-    df_trial = df[df["IS_TRIAL"] & df["RESPONDER"].notna()].copy()
-    df_trial["RESPONDER_NUM"] = df_trial["RESPONDER"].map({True: 1.0, False: 0.0, 1.0: 1.0, 0.0: 0.0, "1": 1.0, "0": 0.0})
-
-    feature_cols = [f"Z_{col}" for col in ["IFN_gamma", "TIS", "CYT", "CD8_Tcell", "PD_L1", "IMPRES", "TMB_NONSYNONYMOUS", "AGE"]]
-    for extra in ["SEX_Male", "SEX_Female"]:
-        if extra in df_trial.columns:
-            feature_cols.append(extra)
-
-    X_resp = df_trial[feature_cols].fillna(0.0)
-    y_resp = df_trial["RESPONDER_NUM"].astype(int)
-
-    rf = RandomForestClassifier(n_estimators=500, random_state=42, n_jobs=-1)
-    rf.fit(X_resp, y_resp)
-
-    df_resp = pd.DataFrame({"Feature": feature_cols, "Importance": rf.feature_importances_})
-    df_resp["Formatted_Feature"] = df_resp["Feature"].apply(_format_feature_name)
-    df_resp = df_resp.sort_values(by="Importance", ascending=False).reset_index(drop=True)
-
-    set_presentation_style()
-    fig, ax = plt.subplots(figsize=(10, 6.5))
-    palette = sns.color_palette("Greens_r", n_colors=len(df_resp))
-    sns.barplot(
-        data=df_resp,
-        y="Formatted_Feature",
-        x="Importance",
-        hue="Formatted_Feature",
-        palette=palette,
-        ax=ax,
-        edgecolor="black",
-        linewidth=0.5,
-        legend=False,
-    )
-
-    n_samples = len(df_trial)
-    ax.set_title(f"Tier 1 Random Forest Importance: Immunotherapy Response (Trial Cohorts, N={n_samples})", fontsize=13, fontweight="bold", pad=15)
-    ax.set_xlabel("Mean Decrease in Impurity (Gini Importance)", fontsize=11, fontweight="bold")
-    ax.set_ylabel("")
-
-    for p in ax.patches:
-        width = p.get_width()
-        ax.annotate(
-            f"{width:.4f}",
-            (width, p.get_y() + p.get_height() / 2.0),
-            ha="left",
-            va="center",
-            xytext=(5, 0),
-            textcoords="offset points",
-            fontsize=9.5,
-            color="black",
-        )
-
-    ax.set_xlim(0, df_resp["Importance"].max() * 1.15)
-    out_path = plots_dir / "response_feature_importance.png"
-    save_fig(fig, out_path)
-    print(f"Saved Tier 1 Random Forest response feature importance plot to {rel_path(out_path)}")
-
-    return df_resp
-
-
-def _evaluate_tier1_response_forest_plot(df: pd.DataFrame, plots_dir: Path) -> pd.DataFrame:
-    """Fits univariate Logistic Regression per feature predicting anti-PD-1 response (CR/PR vs PD)
-    and saves an Odds Ratio (OR) Forest Plot across clinical trial cohorts.
-
-    Args:
-        df: Merged patient DataFrame.
-        plots_dir: Target plots directory.
-
-    Returns:
-        Sorted DataFrame of Odds Ratios, confidence intervals, and p-values.
-    """
-    df_trial = df[df["IS_TRIAL"] & df["RESPONDER"].notna()].copy()
-    df_trial["RESPONDER_NUM"] = df_trial["RESPONDER"].map({True: 1.0, False: 0.0, 1.0: 1.0, 0.0: 0.0, "1": 1.0, "0": 0.0})
-
-    feature_cols = [f"Z_{col}" for col in ["IFN_gamma", "TIS", "CYT", "CD8_Tcell", "PD_L1", "IMPRES", "TMB_NONSYNONYMOUS", "AGE"]]
-    for extra in ["SEX_Male"]:
-        if extra in df_trial.columns:
-            feature_cols.append(extra)
-
-    results = []
-
-    for col in feature_cols:
-        sub = df_trial[[col, "RESPONDER_NUM"]].dropna()
-        if len(sub) == 0:
-            continue
-        X = sm.add_constant(sub[col])
-        y = sub["RESPONDER_NUM"]
-        try:
-            logit_mod = sm.Logit(y, X).fit(disp=False)
-            or_val = np.exp(logit_mod.params[col])
-            conf = np.exp(logit_mod.conf_int().loc[col])
-            p_val = logit_mod.pvalues[col]
-            results.append({
-                "Feature": col,
-                "Clean_Feature": col.replace("Z_", ""),
-                "Odds Ratio (OR)": or_val,
-                "OR lower 95%": conf[0],
-                "OR upper 95%": conf[1],
-                "p-value": p_val,
-            })
-        except Exception:
-            continue
-
-    df_or = pd.DataFrame(results)
-    rejected, p_adj = _benjamini_hochberg(df_or["p-value"].values, alpha=0.05)
-    df_or["FDR_adj_p"] = p_adj
-    df_or["Significant_FDR"] = rejected
-    df_or = df_or.sort_values(by="p-value", ascending=True).reset_index(drop=True)
-
-    df_plot = df_or.copy()
-    df_plot["Formatted_Feature"] = df_plot["Feature"].apply(_format_feature_name)
-    df_plot = df_plot.iloc[::-1].reset_index(drop=True)
-
-    set_presentation_style()
-    fig, ax = plt.subplots(figsize=(12, 7.5))
-
-    y_pos = np.arange(len(df_plot))
-    ors = df_plot["Odds Ratio (OR)"].values
-    lowers = df_plot["OR lower 95%"].values
-    uppers = df_plot["OR upper 95%"].values
-    p_vals = df_plot["p-value"].values
-    fdr_vals = df_plot["FDR_adj_p"].values
-
-    point_colors = []
-    for or_v in ors:
-        if or_v > 1.0:
-            point_colors.append(RESPONSE_PALETTE["CR/PR"])  # Okabe-Ito Bluish Green (#009E73) for Favourable Response
-        else:
-            point_colors.append(RESPONSE_PALETTE["PD"])     # Okabe-Ito Vermillion Red (#D55E00) for Unfavourable Response
-
-    ax.axvline(x=1.0, color="#37474F", linestyle="--", linewidth=1.2, alpha=0.7, label="Null Effect (OR = 1.0)")
-
-    for i in range(len(df_plot)):
-        ax.plot([lowers[i], uppers[i]], [y_pos[i], y_pos[i]], color=point_colors[i], linewidth=2.0, alpha=0.85)
-        ax.scatter(ors[i], y_pos[i], color=point_colors[i], s=75, zorder=5, edgecolor="black", linewidth=0.7)
-
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels(df_plot["Formatted_Feature"], fontsize=11, fontweight="bold")
-    ax.set_xscale("log")
-    ax.xaxis.set_major_formatter(ScalarFormatter())
-
-    # Thinner, lighter grey horizontal gridlines
-    ax.yaxis.grid(True, linestyle="--", color="#E0E0E0", linewidth=0.5, alpha=0.7)
-    ax.xaxis.grid(True, linestyle=":", color="#E0E0E0", linewidth=0.5, alpha=0.5)
-    ax.set_axisbelow(True)
-
-    min_val = min(lowers)
-    max_val = max(uppers)
-    ax.set_xlim(max(0.1, min_val * 0.8), max_val * 1.5)
-
-    n_samples = len(df_trial)
-    ax.set_title(f"Tier 1 Immunotherapy Response Odds Ratio Forest Plot (Trial Cohorts, N={n_samples})", fontsize=14, fontweight="bold", pad=15)
-    ax.set_xlabel("Odds Ratio (OR, Log Scale - 95% CI per +1 SD)", fontsize=11, fontweight="bold")
-
-    for i in range(len(df_plot)):
-        or_val = ors[i]
-        p_val = p_vals[i]
-        fdr_val = fdr_vals[i]
-        text_str = f"OR={or_val:.2f} (p={p_val:.1e}, FDR={fdr_val:.1e})"
-        ax.annotate(
-            text_str,
-            (uppers[i], y_pos[i]),
-            xytext=(8, -3),
-            textcoords="offset points",
-            fontsize=9,
-            fontweight="bold" if fdr_val < 0.05 else "normal",
-            color="#222222" if fdr_val < 0.05 else "#666666",
-        )
-
-    legend_handles = [
-        mpatches.Patch(color=RESPONSE_PALETTE["CR/PR"], label="Favourable Response (OR > 1.0)"),
-        mpatches.Patch(color=RESPONSE_PALETTE["PD"], label="Unfavourable Response (OR < 1.0)"),
-        mlines.Line2D([], [], color="#37474F", linestyle="--", linewidth=1.2, label="Null Effect (OR = 1.0)"),
-        mlines.Line2D([], [], color="none", label="*Bold charcoal text: FDR < 0.05"),
-    ]
-    ax.legend(handles=legend_handles, loc="lower right", frameon=True, facecolor="white", edgecolor="#CCCCCC", fontsize=9)
-
-    sns.despine(top=True, right=True)
-    out_path = plots_dir / "response_forest_plot.png"
-    save_fig(fig, out_path)
-    print(f"Saved Tier 1 response forest plot to {rel_path(out_path)}")
-
-    return df_or
-
-
 def _evaluate_tier1_cox(df: pd.DataFrame, plots_dir: Path) -> pd.DataFrame:
     """Fits univariate Cox Proportional Hazards models per feature across multi-cohort dataset.
 
@@ -1256,8 +1062,6 @@ def _evaluate_tier2_tcga_multivariate_cox(
 def _generate_two_tiered_report(
     tier1_df: pd.DataFrame,
     tier1_rf_os: pd.DataFrame,
-    tier1_rf_resp: pd.DataFrame,
-    tier1_resp_or: pd.DataFrame,
     tier1_cph: pd.DataFrame,
     tier1_multi_cph: pd.DataFrame,
     tier1_multi_metrics: Dict[str, float],
@@ -1308,9 +1112,6 @@ def _generate_two_tiered_report(
     top_tier1_multi_p = tier1_multi_cph.iloc[0]["p-value"]
     top_tier1_multi_fdr = tier1_multi_cph.iloc[0]["FDR_adj_p"]
 
-    top_tier1_resp_feat = tier1_rf_resp.iloc[0]["Feature"]
-    top_tier1_resp_imp = tier1_rf_resp.iloc[0]["Importance"]
-
     tcga_n = len(tcga_df)
     tcga_rf_n = y_os_status.notna().sum()
     tcga_cox_n = (y_os_status.notna() & y_os_months.notna() & (y_os_months > 0)).sum()
@@ -1344,7 +1145,6 @@ def _generate_two_tiered_report(
         f.write(f"* **Total Merged Sample Size**: {tier1_total_n} patients across 4 cohorts\n")
         f.write(f"* **Overall Survival Evaluation Cohort**: {tier1_surv_n} patients\n")
         f.write(f"* **Cox Survival Evaluation Cohort**: {tier1_cox_n} patients\n")
-        f.write(f"* **Anti-PD-1 Response Evaluation Cohort**: {tier1_trial_n} trial patients\n")
         f.write(f"* **Univariate FDR-Significant Survival Predictors (FDR < 0.05)**: {tier1_n_sig_fdr} features\n")
         f.write(f"* **Multivariate FDR-Significant Independent Predictors (FDR < 0.05)**: {tier1_multi_sig_fdr} features\n\n")
 
@@ -1359,14 +1159,6 @@ def _generate_two_tiered_report(
         f.write("> **Key Insights on Multivariable Adjustment & Collinearity (Tier 1)**:\n")
         f.write("> * **Transcriptomic Collinearity & Attenuation**: All 6 transcriptomic immune signatures ($\\\\text{IFN-}\\\\gamma$, TIS, CYT, CD8 T-cell, IMPRES, PD-L1) show significant protective association with survival in unadjusted univariate Cox models ($\\\\text{HR} \\\\approx 0.73\\\\text{--}0.82$, $p < 10^{-4}$). However, in joint multivariate modeling, individual signatures attenuate towards the null ($\\\\text{aHR} \\\\to 1.0$) and lose independent significance. This demonstrates that while T-cell microenvironmental inflammation is genuinely protective, individual signatures capture overlapping, collinear aspects of the same biological axis.\n")
         f.write(f"> * **Independent Risk Factor**: **`{_format_feature_name(top_tier1_multi_feat)}`** ($\\\\text{{aHR}} = **{top_tier1_multi_ahr:.2f}**, p = **{top_tier1_multi_p:.2e}**, \\\\text{{FDR}} = **{top_tier1_multi_fdr:.2e}**) remains the sole feature retaining independent statistical significance, confirming that age-related immunosenescence or host fragility confers mortality risk independently of tumour inflammation.\n\n")
-
-        f.write(f"### 1.3. Random Forest Importance for Anti-PD-1 Immunotherapy Response (N={tier1_trial_n})\n")
-        f.write(f"Random Forest feature importance predicting objective response (CR/PR vs PD) across the $N = {tier1_trial_n}$ trial cohort:\n\n")
-        f.write("![Tier 1 Random Forest Response](../../plots/clinical/response_feature_importance.png)\n\n")
-
-        f.write(f"### 1.4. Univariate Forest Plot for Anti-PD-1 Immunotherapy Response (N={tier1_trial_n})\n")
-        f.write(f"Univariate Logistic Regression Odds Ratio (OR) forest plot predicting objective anti-PD-1 response across the $N = {tier1_trial_n}$ trial cohort:\n\n")
-        f.write("![Tier 1 Response Forest Plot](../../plots/clinical/response_forest_plot.png)\n\n")
 
         f.write("## 2. Tier 2: Granular TCGA Pathological & Clinical Staging (N=" + str(tcga_n) + ")\n\n")
         f.write(f"* **TCGA Total Cohort Sample Size**: {tcga_n} patients\n")
@@ -1391,9 +1183,8 @@ def _generate_two_tiered_report(
         f.write("## 3. Key Analytical & Biological Summary\n\n")
         f.write(f"1. **Tier 1 Top Survival Biomarker**: **`{_format_feature_name(top_tier1_cph_feat)}`** is the single strongest protective univariate statistical predictor across all 4 cohorts (Hazard Ratio = **{top_tier1_cph_hr:.2f}**, univariate p-value = **{top_tier1_cph_p:.2e}**, FDR = **{top_tier1_cph_fdr:.2e}**).\n")
         f.write(f"2. **Tier 1 Independent Survival Biomarker**: In joint multivariate modeling ($N = {tier1_cox_n}$), **`{_format_feature_name(top_tier1_multi_feat)}`** remains an independent prognostic predictor of overall survival (Adjusted Hazard Ratio $\\\\text{{aHR}} = **{top_tier1_multi_ahr:.2f}**, p-value = **{top_tier1_multi_p:.2e}**, FDR = **{top_tier1_multi_fdr:.2e}**), controlling for Age, Sex, TMB, and immune signatures (Model C-index = **{tier1_multi_metrics['c_index']:.3f}**).\n")
-        f.write(f"3. **Tier 1 Top Immunotherapy Marker**: **`{_format_feature_name(top_tier1_resp_feat)}`** is the top predictive feature for objective anti-PD-1 response across trial cohorts (Gini Importance = **{top_tier1_resp_imp:.4f}**).\n")
-        f.write(f"4. **Tier 2 Pathological Staging Independence**: **`{_format_feature_name(top_tier2_cph_feat)}`** is the strongest clinical predictor of survival in TCGA (Univariate Hazard Ratio = **{top_tier2_cph_hr:.2f}**, p-value = **{top_tier2_cph_p:.2e}**, FDR = **{top_tier2_cph_fdr:.2e}**), and retains significant independent risk elevation in multivariate Cox regression (Model C-index = **{tier2_multi_metrics['c_index']:.3f}**).\n")
-        f.write(f"5. **Biological Alignment**: Microenvironmental T-cell inflammation signatures ($\\\\text{{IFN-}}\\gamma$, TIS, CYT, CD8, IMPRES) consistently confer significant mortality risk reduction ($\\\\text{{HR}} < 1.0$, $p < 0.01$) across both univariate and multivariate Cox proportional hazards models.\n")
+        f.write(f"3. **Tier 2 Pathological Staging Independence**: **`{_format_feature_name(top_tier2_cph_feat)}`** is the strongest clinical predictor of survival in TCGA (Univariate Hazard Ratio = **{top_tier2_cph_hr:.2f}**, p-value = **{top_tier2_cph_p:.2e}**, FDR = **{top_tier2_cph_fdr:.2e}**), and retains significant independent risk elevation in multivariate Cox regression (Model C-index = **{tier2_multi_metrics['c_index']:.3f}**).\n")
+        f.write(f"4. **Biological Alignment**: Microenvironmental T-cell inflammation signatures ($\\\\text{{IFN-}}\\gamma$, TIS, CYT, CD8, IMPRES) consistently confer significant mortality risk reduction ($\\\\text{{HR}} < 1.0$, $p < 0.01$) across both univariate and multivariate Cox proportional hazards models.\n")
 
     print(f"Two-tiered feature selection report successfully written to {rel_path(report_path)}")
 
@@ -1415,8 +1206,6 @@ def main() -> None:
     print("\n--- Tier 1: Multi-Cohort Feature Selection (N=699) ---")
     tier1_df = _load_tier1_dataset(dataset_configs)
     tier1_rf_os = _evaluate_tier1_rf_survival(tier1_df, PLOT_DIR)
-    tier1_rf_resp = _evaluate_tier1_rf_response(tier1_df, PLOT_DIR)
-    tier1_resp_or = _evaluate_tier1_response_forest_plot(tier1_df, PLOT_DIR)
     tier1_cph = _evaluate_tier1_cox(tier1_df, PLOT_DIR)
     tier1_multi_cph, tier1_multi_metrics = _evaluate_tier1_multivariate_cox(tier1_df, PLOT_DIR)
 
@@ -1451,8 +1240,6 @@ def main() -> None:
     _generate_two_tiered_report(
         tier1_df,
         tier1_rf_os,
-        tier1_rf_resp,
-        tier1_resp_or,
         tier1_cph,
         tier1_multi_cph,
         tier1_multi_metrics,

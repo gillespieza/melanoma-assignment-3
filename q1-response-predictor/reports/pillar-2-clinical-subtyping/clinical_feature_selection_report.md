@@ -8,12 +8,12 @@ tags:
   - random-forest
   - two-tiered
   - multivariate-cox
-created: 2026-07-24 13:51
+created: 2026-07-24 13:53
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-24 13:51
+updated: 2026-07-24 13:53
 ---
 
 # Two-Tiered Clinical & Transcriptomic Feature Selection Report
@@ -28,7 +28,6 @@ This report presents a comprehensive **two-tiered feature selection architecture
 * **Total Merged Sample Size**: 699 patients across 4 cohorts
 * **Overall Survival Evaluation Cohort**: 686 patients
 * **Cox Survival Evaluation Cohort**: 676 patients
-* **Anti-PD-1 Response Evaluation Cohort**: 247 trial patients
 * **Univariate FDR-Significant Survival Predictors (FDR < 0.05)**: 7 features
 * **Multivariate FDR-Significant Independent Predictors (FDR < 0.05)**: 1 features
 
@@ -46,16 +45,6 @@ Contrasting unadjusted Univariate Hazard Ratios ($\\text{HR}$, blue circles) aga
 > **Key Insights on Multivariable Adjustment & Collinearity (Tier 1)**:
 > * **Transcriptomic Collinearity & Attenuation**: All 6 transcriptomic immune signatures ($\\text{IFN-}\\gamma$, TIS, CYT, CD8 T-cell, IMPRES, PD-L1) show significant protective association with survival in unadjusted univariate Cox models ($\\text{HR} \\approx 0.73\\text{--}0.82$, $p < 10^{-4}$). However, in joint multivariate modeling, individual signatures attenuate towards the null ($\\text{aHR} \\to 1.0$) and lose independent significance. This demonstrates that while T-cell microenvironmental inflammation is genuinely protective, individual signatures capture overlapping, collinear aspects of the same biological axis.
 > * **Independent Risk Factor**: **`Patient Age (Z-Score)`** ($\\text{aHR} = **1.33**, p = **5.55e-07**, \\text{FDR} = **4.99e-06**) remains the sole feature retaining independent statistical significance, confirming that age-related immunosenescence or host fragility confers mortality risk independently of tumour inflammation.
-
-### 1.3. Random Forest Importance for Anti-PD-1 Immunotherapy Response (N=247)
-Random Forest feature importance predicting objective response (CR/PR vs PD) across the $N = 247$ trial cohort:
-
-![Tier 1 Random Forest Response](../../plots/clinical/response_feature_importance.png)
-
-### 1.4. Univariate Forest Plot for Anti-PD-1 Immunotherapy Response (N=247)
-Univariate Logistic Regression Odds Ratio (OR) forest plot predicting objective anti-PD-1 response across the $N = 247$ trial cohort:
-
-![Tier 1 Response Forest Plot](../../plots/clinical/response_forest_plot.png)
 
 ## 2. Tier 2: Granular TCGA Pathological & Clinical Staging (N=443)
 
@@ -85,6 +74,5 @@ Contrasting unadjusted Univariate Hazard Ratios ($\\text{HR}$, blue circles) aga
 
 1. **Tier 1 Top Survival Biomarker**: **`IFN-gamma Signature (Z-Score)`** is the single strongest protective univariate statistical predictor across all 4 cohorts (Hazard Ratio = **0.73**, univariate p-value = **5.61e-09**, FDR = **5.05e-08**).
 2. **Tier 1 Independent Survival Biomarker**: In joint multivariate modeling ($N = 676$), **`Patient Age (Z-Score)`** remains an independent prognostic predictor of overall survival (Adjusted Hazard Ratio $\\text{aHR} = **1.33**, p-value = **5.55e-07**, FDR = **4.99e-06**), controlling for Age, Sex, TMB, and immune signatures (Model C-index = **0.623**).
-3. **Tier 1 Top Immunotherapy Marker**: **`TMB Nonsynonymous (Z-Score)`** is the top predictive feature for objective anti-PD-1 response across trial cohorts (Gini Importance = **0.1537**).
-4. **Tier 2 Pathological Staging Independence**: **`Primary Tumour (t) Staging: T4B`** is the strongest clinical predictor of survival in TCGA (Univariate Hazard Ratio = **3.19**, p-value = **3.17e-11**, FDR = **2.44e-09**), and retains significant independent risk elevation in multivariate Cox regression (Model C-index = **0.712**).
-5. **Biological Alignment**: Microenvironmental T-cell inflammation signatures ($\\text{IFN-}\gamma$, TIS, CYT, CD8, IMPRES) consistently confer significant mortality risk reduction ($\\text{HR} < 1.0$, $p < 0.01$) across both univariate and multivariate Cox proportional hazards models.
+3. **Tier 2 Pathological Staging Independence**: **`Primary Tumour (t) Staging: T4B`** is the strongest clinical predictor of survival in TCGA (Univariate Hazard Ratio = **3.19**, p-value = **3.17e-11**, FDR = **2.44e-09**), and retains significant independent risk elevation in multivariate Cox regression (Model C-index = **0.712**).
+4. **Biological Alignment**: Microenvironmental T-cell inflammation signatures ($\\text{IFN-}\gamma$, TIS, CYT, CD8, IMPRES) consistently confer significant mortality risk reduction ($\\text{HR} < 1.0$, $p < 0.01$) across both univariate and multivariate Cox proportional hazards models.
