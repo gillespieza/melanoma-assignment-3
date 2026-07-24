@@ -8,12 +8,12 @@ tags:
   - random-forest
   - two-tiered
   - multivariate-cox
-created: 2026-07-24 13:48
+created: 2026-07-24 13:51
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-24 13:48
+updated: 2026-07-24 13:51
 ---
 
 # Two-Tiered Clinical & Transcriptomic Feature Selection Report
@@ -37,26 +37,22 @@ Random Forest feature importance (500 estimators) trained on the $N = 686$ overa
 
 ![Tier 1 Random Forest OS](../../plots/clinical/clinical_feature_importance.png)
 
-### 1.2. Univariate Cox Proportional Hazards Regression (N=676)
-Univariate Cox Proportional Hazards models fitted across $N = 676$ patients with complete survival duration data:
-
-![Tier 1 Cox Forest Plot](../../plots/clinical/cox_forest_plot.png)
-
-### 1.3. Multivariate Cox Proportional Hazards Regression (N=676)
-Multivariate Cox Proportional Hazards model evaluating joint covariate effects across $N = 676$ multi-cohort patients with complete survival data (Model Concordance Index = **0.623**, Likelihood Ratio Test $p = 2.89e-10$):
-
-![Tier 1 Multivariate Cox Forest Plot](../../plots/clinical/multivariate_cox_forest_plot.png)
-
-#### Comparison of Univariate vs. Multivariate Adjusted Hazard Ratios (Tier 1)
+### 1.2. Univariate vs. Multivariate Cox Hazard Ratio Comparison (N=676)
+Contrasting unadjusted Univariate Hazard Ratios ($\\text{HR}$, blue circles) against multivariable-adjusted Hazard Ratios ($\\text{aHR}$, orange squares) across $N = 676$ multi-cohort patients with complete survival data (Model Concordance Index = **0.623**, Likelihood Ratio Test $p = 2.89e-10$):
 
 ![Tier 1 Univariate vs Multivariate Cox Comparison](../../plots/clinical/tier1_uni_vs_multi_forest_plot.png)
 
-### 1.4. Random Forest Importance for Anti-PD-1 Immunotherapy Response (N=247)
+> [!NOTE]
+> **Key Insights on Multivariable Adjustment & Collinearity (Tier 1)**:
+> * **Transcriptomic Collinearity & Attenuation**: All 6 transcriptomic immune signatures ($\\text{IFN-}\\gamma$, TIS, CYT, CD8 T-cell, IMPRES, PD-L1) show significant protective association with survival in unadjusted univariate Cox models ($\\text{HR} \\approx 0.73\\text{--}0.82$, $p < 10^{-4}$). However, in joint multivariate modeling, individual signatures attenuate towards the null ($\\text{aHR} \\to 1.0$) and lose independent significance. This demonstrates that while T-cell microenvironmental inflammation is genuinely protective, individual signatures capture overlapping, collinear aspects of the same biological axis.
+> * **Independent Risk Factor**: **`Patient Age (Z-Score)`** ($\\text{aHR} = **1.33**, p = **5.55e-07**, \\text{FDR} = **4.99e-06**) remains the sole feature retaining independent statistical significance, confirming that age-related immunosenescence or host fragility confers mortality risk independently of tumour inflammation.
+
+### 1.3. Random Forest Importance for Anti-PD-1 Immunotherapy Response (N=247)
 Random Forest feature importance predicting objective response (CR/PR vs PD) across the $N = 247$ trial cohort:
 
 ![Tier 1 Random Forest Response](../../plots/clinical/response_feature_importance.png)
 
-### 1.5. Univariate Forest Plot for Anti-PD-1 Immunotherapy Response (N=247)
+### 1.4. Univariate Forest Plot for Anti-PD-1 Immunotherapy Response (N=247)
 Univariate Logistic Regression Odds Ratio (OR) forest plot predicting objective anti-PD-1 response across the $N = 247$ trial cohort:
 
 ![Tier 1 Response Forest Plot](../../plots/clinical/response_forest_plot.png)
@@ -75,19 +71,15 @@ Top 20 Random Forest clinical predictors trained on $N = 436$ TCGA patients with
 
 ![Tier 2 TCGA Random Forest](../../plots/clinical/tcga_clinical_feature_importance.png)
 
-### 2.2. Univariate Cox Proportional Hazards Regression for TCGA Attributes (N=427)
-Top 20 Univariate Cox hazard ratios evaluated across $N = 427$ TCGA patients with complete survival duration data:
-
-![Tier 2 TCGA Cox Forest Plot](../../plots/clinical/tcga_cox_forest_plot.png)
-
-### 2.3. Multivariate Cox Proportional Hazards Regression for TCGA Attributes (N=427)
-Multivariate Cox Proportional Hazards model evaluating joint TCGA clinical & pathological attributes across $N = 427$ patients (Model Concordance Index = **0.712**, Likelihood Ratio Test $p = 2.35e-16$):
-
-![Tier 2 TCGA Multivariate Cox Forest Plot](../../plots/clinical/tcga_multivariate_cox_forest_plot.png)
-
-#### Comparison of Univariate vs. Multivariate Adjusted Hazard Ratios (Tier 2 TCGA)
+### 2.2. Univariate vs. Multivariate Cox Hazard Ratio Comparison for TCGA Attributes (N=427)
+Contrasting unadjusted Univariate Hazard Ratios ($\\text{HR}$, blue circles) against multivariable-adjusted Hazard Ratios ($\\text{aHR}$, orange squares) across $N = 427$ TCGA patients (Model Concordance Index = **0.712**, Likelihood Ratio Test $p = 2.35e-16$):
 
 ![Tier 2 TCGA Univariate vs Multivariate Cox Comparison](../../plots/clinical/tcga_uni_vs_multi_forest_plot.png)
+
+> [!NOTE]
+> **Key Insights on Pathological Staging Independence (Tier 2 TCGA)**:
+> * **Independent Pathological Drivers**: Primary Tumour Stage **`Primary Tumour (t) Staging: T4B`** ($\\text{aHR} = 2.47, p = 1.57 \\times 10^{-6}$) and **`Head & Neck Primary Site`** ($\\text{aHR} = 4.34, p = 2.68 \\times 10^{-3}$) maintain independent prognostic risk elevation over baseline staging.
+> * **Attenuated Staging Categories**: N3 nodal staging and AJCC Stage IIIC exhibit significant univariate risk elevation, but attenuate in multivariate modeling as their variance is accounted for by primary T4B invasion and patient age.
 
 ## 3. Key Analytical & Biological Summary
 
