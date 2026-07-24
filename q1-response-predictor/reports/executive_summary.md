@@ -15,7 +15,7 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 
 ---
 
-## Cohort Summary
+## 1. Cohort Summary
 
 ### _Table 1: Study cohorts and their roles. Response rate differences across the three trial cohorts are not statistically significant ($\chi^2\ p = 0.1733$), justifying their pooling for joint analysis._
 
@@ -28,7 +28,21 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 
 ---
 
-## Batch Effect Evaluation & Correction
+## 2. Co-Mutation & Clinical Landscape
+
+![Co-Mutation Landscape (Merged Trials)](../plots/genomic/comut_landscape_merged.png)
+
+> [!NOTE]
+> **Integrated Multi-Cohort Somatic Landscape ($N = 195$)**:
+> The co-mutation landscape (oncoplot) above aligns individual patient somatic mutation profiles in core melanoma driver and resistance genes (rows) with patient-level clinical annotations (Tumour Mutational Burden, RECIST Response, Cohort source, and Sex).
+>
+> * **MAPK Driver Mutual Exclusivity**: High mutual exclusivity is observed between primary drivers *BRAF* (43.1%) and *NRAS* (24.6%), representing distinct, non-overlapping mechanisms of RAS-RAF-MEK-ERK activation.
+> * **Driver Subtype Response Equivalence**: Responders (green) and non-responders (vermillion) are evenly distributed across *BRAF*, *NRAS*, *NF1*, and Triple-WT subtypes, visually demonstrating that driver mutation status alone does not dictate response to anti-PD-1 therapy.
+> * **Targeted Resistance Genes**: Baseline mutations in primary resistance machinery (*B2M*, *JAK1*, *JAK2*) are rare (<5%) in pre-treatment biopsies, indicating that genetic disruption of antigen presentation and interferon signaling is predominantly an acquired rather than primary resistance mechanism.
+
+---
+
+## 3. Batch Effect Evaluation & Correction
 
 ![PCA Batch Effect Assessment Across Full Cohort](../plots/biomarkers/batch_effect_pca.png)
 
@@ -40,7 +54,7 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 
 ---
 
-## Key Findings
+## 4. Key Findings
 
 ### 1. Biological Constraint is Essential for Cross-Study Generalisation
 
@@ -79,7 +93,7 @@ The custom 20-gene overall survival signature derived from TCGA-SKCM ($N = 421$)
 
 ---
 
-## Pipeline Architecture Decisions
+## 5. Pipeline Architecture Decisions
 
 ```mermaid
 graph LR
@@ -106,7 +120,7 @@ graph LR
 
 ---
 
-## Known Limitations
+## 6. Known Limitations
 
 1. **Cross-study generalisation remains modest**: LOCO AUCs are typically 0.55–0.68, reflecting fundamental challenges in small-cohort melanoma immunotherapy prediction.
 2. **Missing clinical predictors**: LDH, ECOG performance status, and PD-L1 IHC scores are unavailable in the cBioPortal downloads but are standard clinical predictors in ICI trials.
