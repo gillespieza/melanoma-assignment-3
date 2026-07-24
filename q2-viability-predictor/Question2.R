@@ -1,11 +1,10 @@
-# ============================================================
 # QUESTION 2: Cell Viability Predictor for BRAF Inhibitors
 # Melanoma cell lines - Dabrafenib and PLX-4720 (a vemurafenib-class drug)
-# Author: Gift
-# ============================================================
+=======================================================================
+
 # ---- STEP 1: Load required packages ----
 library(glmnet)  # provides LASSO regression, used to build our predictive model
-library(readxl) # allows R to read .xlsx Excel files (GDSC2 data comes as Excel)
+library(readxl) # allows R to read .xlsx Excel files 
 
 
 # ---- STEP 2: Set the location of our data files ----
