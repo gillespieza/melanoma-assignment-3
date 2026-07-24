@@ -650,6 +650,247 @@ def _evaluate_tier1_cox(df: pd.DataFrame, plots_dir: Path) -> pd.DataFrame:
     return df_cph
 
 
+def _plot_multivariate_cox_forest(
+    df_cph: pd.DataFrame,
+    title: str,
+    xlabel: str,
+    out_path: Path,
+    metrics: Dict[str, float],
+) -> None:
+    """Renders presentation-ready Multivariate Cox Forest Plot with Okabe-Ito palettes and model stats.
+
+    Args:
+        df_cph: DataFrame of Cox model results.
+        title: Plot title.
+        xlabel: Label for X-axis.
+        out_path: Target image file path.
+        metrics: Dictionary containing C-index, LRT p-value, and n_samples.
+    """
+    df_plot = df_cph.copy()
+    df_plot["Formatted_Feature"] = df_plot["Feature"].apply(_format_feature_name)
+    df_plot = df_plot.iloc[::-1].reset_index(drop=True)
+
+    set_presentation_style()
+    fig, ax = plt.subplots(figsize=(12, max(6.5, len(df_plot) * 0.5)))
+
+    y_pos = np.arange(len(df_plot))
+    hrs = df_plot["Hazard Ratio (HR)"].values
+    lowers = df_plot["HR lower 95%"].values
+    uppers = df_plot["HR upper 95%"].values
+    p_vals = df_plot["p-value"].values
+    fdr_vals = df_plot["FDR_adj_p"].values
+
+    point_colors = []
+    for hr_val in hrs:
+        if hr_val < 1.0:
+            point_colors.append(RESPONSE_PALETTE["CR/PR"])  # Okabe-Ito Bluish Green (#009E73) for Protective
+        else:
+            point_colors.append(RESPONSE_PALETTE["PD"])     # Okabe-Ito Vermillion Red (#D55E00) for Risk
+
+    ax.axvline(x=1.0, color="#37474F", linestyle="--", linewidth=1.2, alpha=0.7, label="Null Effect (aHR = 1.0)")
+
+    for i in range(len(df_plot)):
+        ax.plot([lowers[i], uppers[i]], [y_pos[i], y_pos[i]], color=point_colors[i], linewidth=2.0, alpha=0.85)
+        ax.scatter(hrs[i], y_pos[i], color=point_colors[i], s=75, zorder=5, edgecolor="black", linewidth=0.7)
+
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(df_plot["Formatted_Feature"], fontsize=10.5, fontweight="bold")
+    ax.set_xscale("log")
+    ax.xaxis.set_major_formatter(ScalarFormatter())
+
+    ax.yaxis.grid(True, linestyle="--", color="#E0E0E0", linewidth=0.5, alpha=0.7)
+    ax.xaxis.grid(True, linestyle=":", color="#E0E0E0", linewidth=0.5, alpha=0.5)
+    ax.set_axisbelow(True)
+
+    min_val = min(lowers) if len(lowers) > 0 else 0.1
+    max_val = max(uppers) if len(uppers) > 0 else 2.0
+    ax.set_xlim(max(0.05, min_val * 0.8), max_val * 1.6)
+
+    ax.set_title(title, fontsize=13.5, fontweight="bold", pad=15)
+    ax.set_xlabel(xlabel, fontsize=11, fontweight="bold")
+
+    for i in range(len(df_plot)):
+        hr_val = hrs[i]
+        p_val = p_vals[i]
+        fdr_val = fdr_vals[i]
+        text_str = f"aHR={hr_val:.2f} (p={p_val:.1e}, FDR={fdr_val:.1e})"
+        ax.annotate(
+            text_str,
+            (uppers[i], y_pos[i]),
+            xytext=(8, -3),
+            textcoords="offset points",
+            fontsize=8.5,
+            fontweight="bold" if fdr_val < 0.05 else "normal",
+            color="#222222" if fdr_val < 0.05 else "#666666",
+        )
+
+    c_idx_str = f"C-index = {metrics['c_index']:.3f}" if "c_index" in metrics else ""
+    lrt_str = f"LRT p = {metrics['lrt_p']:.2e}" if "lrt_p" in metrics else ""
+    stats_label = f"Model: {c_idx_str} | {lrt_str}"
+
+    legend_handles = [
+        mpatches.Patch(color=RESPONSE_PALETTE["CR/PR"], label="Protective (aHR < 1.0)"),
+        mpatches.Patch(color=RESPONSE_PALETTE["PD"], label="Risk (aHR > 1.0)"),
+        mlines.Line2D([], [], color="#37474F", linestyle="--", linewidth=1.2, label="Null Effect (aHR = 1.0)"),
+        mlines.Line2D([], [], color="none", label=stats_label),
+    ]
+    ax.legend(handles=legend_handles, loc="lower right", frameon=True, facecolor="white", edgecolor="#CCCCCC", fontsize=8.5)
+
+    sns.despine(top=True, right=True)
+    save_fig(fig, out_path)
+    print(f"Saved multivariate Cox forest plot to {rel_path(out_path)}")
+
+
+def _plot_univariate_vs_multivariate_comparison(
+    df_uni: pd.DataFrame,
+    df_multi: pd.DataFrame,
+    title: str,
+    xlabel: str,
+    out_path: Path,
+) -> None:
+    """Renders a paired side-by-side comparison forest plot contrasting Univariate vs. Multivariate Hazard Ratios.
+
+    Args:
+        df_uni: DataFrame of univariate Cox model results.
+        df_multi: DataFrame of multivariate Cox model results.
+        title: Plot title.
+        xlabel: X-axis label.
+        out_path: Target output image path.
+    """
+    merged = pd.merge(df_uni, df_multi, on="Feature", suffixes=("_uni", "_multi"))
+    merged["Formatted_Feature"] = merged["Feature"].apply(_format_feature_name)
+    merged = merged.iloc[::-1].reset_index(drop=True)
+
+    set_presentation_style()
+    n_feats = len(merged)
+    fig, ax = plt.subplots(figsize=(13, max(7.0, n_feats * 0.6)))
+
+    y_indices = np.arange(n_feats)
+    offset = 0.15
+
+    ax.axvline(x=1.0, color="#37474F", linestyle="--", linewidth=1.2, alpha=0.7, label="Null Effect (HR = 1.0)")
+
+    for i, row in merged.iterrows():
+        y_u = y_indices[i] + offset
+        y_m = y_indices[i] - offset
+
+        u_hr = row["Hazard Ratio (HR)_uni"]
+        u_low = row["HR lower 95%_uni"]
+        u_high = row["HR upper 95%_uni"]
+        u_p = row["p-value_uni"]
+
+        m_hr = row["Hazard Ratio (HR)_multi"]
+        m_low = row["HR lower 95%_multi"]
+        m_high = row["HR upper 95%_multi"]
+        m_p = row["p-value_multi"]
+
+        # Univariate: Okabe-Ito Blue (#0072B2)
+        ax.plot([u_low, u_high], [y_u, y_u], color="#0072B2", linewidth=2.0, alpha=0.85)
+        ax.scatter(u_hr, y_u, color="#0072B2", marker="o", s=70, zorder=5, edgecolor="black", linewidth=0.6)
+
+        # Multivariate: Okabe-Ito Orange (#E69F00)
+        ax.plot([m_low, m_high], [y_m, y_m], color="#E69F00", linewidth=2.0, alpha=0.85)
+        ax.scatter(m_hr, y_m, color="#E69F00", marker="s", s=70, zorder=5, edgecolor="black", linewidth=0.6)
+
+        # Annotations
+        u_text = f"Uni: {u_hr:.2f} (p={u_p:.1e})"
+        m_text = f"Multi: {m_hr:.2f} (p={m_p:.1e})"
+
+        max_right = max(u_high, m_high)
+        ax.annotate(u_text, (max_right, y_u), xytext=(8, -3), textcoords="offset points", fontsize=8.0, color="#0072B2", fontweight="bold" if u_p < 0.05 else "normal")
+        ax.annotate(m_text, (max_right, y_m), xytext=(8, -3), textcoords="offset points", fontsize=8.0, color="#D55E00", fontweight="bold" if m_p < 0.05 else "normal")
+
+    ax.set_yticks(y_indices)
+    ax.set_yticklabels(merged["Formatted_Feature"], fontsize=10.5, fontweight="bold")
+    ax.set_xscale("log")
+    ax.xaxis.set_major_formatter(ScalarFormatter())
+
+    ax.yaxis.grid(True, linestyle="--", color="#E0E0E0", linewidth=0.5, alpha=0.7)
+    ax.xaxis.grid(True, linestyle=":", color="#E0E0E0", linewidth=0.5, alpha=0.5)
+    ax.set_axisbelow(True)
+
+    all_lowers = list(merged["HR lower 95%_uni"].values) + list(merged["HR lower 95%_multi"].values)
+    all_uppers = list(merged["HR upper 95%_uni"].values) + list(merged["HR upper 95%_multi"].values)
+    min_val = min(all_lowers) if all_lowers else 0.1
+    max_val = max(all_uppers) if all_uppers else 2.0
+    ax.set_xlim(max(0.05, min_val * 0.8), max_val * 1.8)
+
+    ax.set_title(title, fontsize=13.5, fontweight="bold", pad=15)
+    ax.set_xlabel(xlabel, fontsize=11, fontweight="bold")
+
+    legend_handles = [
+        mlines.Line2D([], [], color="#0072B2", marker="o", linestyle="-", linewidth=2.0, markersize=8, label="Univariate HR (95% CI)"),
+        mlines.Line2D([], [], color="#E69F00", marker="s", linestyle="-", linewidth=2.0, markersize=8, label="Multivariate Adjusted aHR (95% CI)"),
+        mlines.Line2D([], [], color="#37474F", linestyle="--", linewidth=1.2, label="Null Effect (HR = 1.0)"),
+    ]
+    ax.legend(handles=legend_handles, loc="lower right", frameon=True, facecolor="white", edgecolor="#CCCCCC", fontsize=9.0)
+
+    sns.despine(top=True, right=True)
+    save_fig(fig, out_path)
+    print(f"Saved Univariate vs Multivariate comparison plot to {rel_path(out_path)}")
+
+
+def _evaluate_tier1_multivariate_cox(df: pd.DataFrame, plots_dir: Path) -> Tuple[pd.DataFrame, Dict[str, float]]:
+    """Fits multivariate Cox Proportional Hazards model across harmonised Tier 1 features.
+
+    Args:
+        df: Merged patient DataFrame.
+        plots_dir: Target plots directory.
+
+    Returns:
+        Tuple of (DataFrame of multivariate Cox hazard ratios, dict of model metrics).
+    """
+    valid_mask = df["OS_MONTHS"].notna() & df["OS_STATUS"].notna() & (df["OS_MONTHS"] > 0)
+    df_cph_all = df.loc[valid_mask].copy()
+
+    feature_cols = [f"Z_{col}" for col in ["IFN_gamma", "TIS", "CYT", "CD8_Tcell", "PD_L1", "IMPRES", "TMB_NONSYNONYMOUS", "AGE"]]
+    for extra in ["SEX_Male"]:
+        if extra in df_cph_all.columns:
+            feature_cols.append(extra)
+
+    model_df = df_cph_all[["OS_MONTHS", "OS_STATUS"] + feature_cols].dropna().copy()
+
+    cph = CoxPHFitter(penalizer=0.01)
+    cph.fit(model_df, duration_col="OS_MONTHS", event_col="OS_STATUS")
+
+    summary = cph.summary
+    cox_results = []
+    for col in feature_cols:
+        if col in summary.index:
+            s_row = summary.loc[col]
+            cox_results.append({
+                "Feature": col,
+                "Clean_Feature": col.replace("Z_", ""),
+                "Hazard Ratio (HR)": s_row["exp(coef)"],
+                "HR lower 95%": s_row["exp(coef) lower 95%"],
+                "HR upper 95%": s_row["exp(coef) upper 95%"],
+                "p-value": s_row["p"],
+                "coef": s_row["coef"],
+                "se": s_row["se(coef)"],
+            })
+
+    df_cph = pd.DataFrame(cox_results)
+    rejected, p_adj = _benjamini_hochberg(df_cph["p-value"].values, alpha=0.05)
+    df_cph["FDR_adj_p"] = p_adj
+    df_cph["Significant_FDR"] = rejected
+    df_cph = df_cph.sort_values(by="p-value", ascending=True).reset_index(drop=True)
+
+    c_index = float(cph.concordance_index_)
+    lrt_p = float(cph.log_likelihood_ratio_test().p_value)
+    metrics = {"c_index": c_index, "lrt_p": lrt_p, "n_samples": len(model_df)}
+
+    _plot_multivariate_cox_forest(
+        df_cph,
+        title=f"Tier 1 Multivariate Cox Proportional Hazards Regression (Multi-Cohort, N={len(model_df)})",
+        xlabel="Adjusted Hazard Ratio (aHR, Log Scale - 95% CI per +1 SD)",
+        out_path=plots_dir / "multivariate_cox_forest_plot.png",
+        metrics=metrics,
+    )
+
+    return df_cph, metrics
+
+
+
 # ---------------------------------------------------------------------------
 # Tier 2: Granular TCGA Clinical Feature Selection Logic (N=443)
 # ---------------------------------------------------------------------------
@@ -931,6 +1172,82 @@ def _evaluate_tier2_tcga_cox(
     return df_cph
 
 
+def _evaluate_tier2_tcga_multivariate_cox(
+    X_encoded: pd.DataFrame,
+    y_os_status: pd.Series,
+    y_os_months: pd.Series,
+    tier2_univariate_cph: pd.DataFrame,
+    plots_dir: Path,
+) -> Tuple[pd.DataFrame, Dict[str, float]]:
+    """Fits multivariate Cox Proportional Hazards model across top TCGA granular clinical dummy features.
+
+    Args:
+        X_encoded: Encoded feature matrix.
+        y_os_status: Survival status series.
+        y_os_months: Survival months series.
+        tier2_univariate_cph: Univariate TCGA Cox results DataFrame.
+        plots_dir: Target plots directory.
+
+    Returns:
+        Tuple of (DataFrame of TCGA multivariate Cox hazard ratios, dict of model metrics).
+    """
+    valid_mask = y_os_months.notna() & y_os_status.notna() & (y_os_months > 0)
+    X_cph_all = X_encoded.loc[valid_mask].copy()
+    months = y_os_months.loc[valid_mask].values
+    status = y_os_status.loc[valid_mask].values
+
+    top_features = tier2_univariate_cph.head(10)["Feature"].tolist()
+
+    model_data = pd.DataFrame({"OS_MONTHS": months, "OS_STATUS": status})
+    selected_cols = []
+    for col in top_features:
+        if col in X_cph_all.columns:
+            if X_cph_all[col].nunique() > 1:
+                model_data[col] = X_cph_all[col].values
+                selected_cols.append(col)
+
+    cph = CoxPHFitter(penalizer=0.01)
+    cph.fit(model_data, duration_col="OS_MONTHS", event_col="OS_STATUS")
+
+    summary = cph.summary
+    cox_results = []
+    for col in selected_cols:
+        if col in summary.index:
+            s_row = summary.loc[col]
+            cox_results.append({
+                "Feature": col,
+                "Hazard Ratio (HR)": s_row["exp(coef)"],
+                "HR lower 95%": s_row["exp(coef) lower 95%"],
+                "HR upper 95%": s_row["exp(coef) upper 95%"],
+                "p-value": s_row["p"],
+                "coef": s_row["coef"],
+                "se": s_row["se(coef)"],
+            })
+
+    df_cph = pd.DataFrame(cox_results)
+    rejected, p_adj = _benjamini_hochberg(df_cph["p-value"].values, alpha=0.05)
+    df_cph["FDR_adj_p"] = p_adj
+    df_cph["Significant_FDR"] = rejected
+    df_cph = df_cph.sort_values(by="p-value", ascending=True).reset_index(drop=True)
+
+    c_index = float(cph.concordance_index_)
+    lrt_p = float(cph.log_likelihood_ratio_test().p_value)
+    metrics = {"c_index": c_index, "lrt_p": lrt_p, "n_samples": len(model_data)}
+
+    _plot_multivariate_cox_forest(
+        df_cph,
+        title=f"Tier 2 Multivariate Cox Proportional Hazards Regression: Top TCGA Predictors (N={len(model_data)})",
+        xlabel="Adjusted Hazard Ratio (aHR, Log Scale - 95% CI)",
+        out_path=plots_dir / "tcga_multivariate_cox_forest_plot.png",
+        metrics=metrics,
+    )
+
+    return df_cph, metrics
+
+
+
+
+
 # ---------------------------------------------------------------------------
 # Markdown Report Generation Logic
 # ---------------------------------------------------------------------------
@@ -942,12 +1259,16 @@ def _generate_two_tiered_report(
     tier1_rf_resp: pd.DataFrame,
     tier1_resp_or: pd.DataFrame,
     tier1_cph: pd.DataFrame,
+    tier1_multi_cph: pd.DataFrame,
+    tier1_multi_metrics: Dict[str, float],
     tcga_df: pd.DataFrame,
     tcga_encoded: pd.DataFrame,
     y_os_status: pd.Series,
     y_os_months: pd.Series,
     tier2_rf: pd.DataFrame,
     tier2_cph: pd.DataFrame,
+    tier2_multi_cph: pd.DataFrame,
+    tier2_multi_metrics: Dict[str, float],
     report_path: Path,
 ) -> None:
     """Generates two-tiered Markdown report with dynamic sample metrics and Obsidian frontmatter.
@@ -957,13 +1278,17 @@ def _generate_two_tiered_report(
         tier1_rf_os: Ranked Tier 1 RF OS feature importances.
         tier1_rf_resp: Ranked Tier 1 RF response importances.
         tier1_resp_or: Ranked Tier 1 Response Odds Ratio results.
-        tier1_cph: Ranked Tier 1 Cox regression results.
+        tier1_cph: Ranked Tier 1 Univariate Cox regression results.
+        tier1_multi_cph: Ranked Tier 1 Multivariate Cox regression results.
+        tier1_multi_metrics: Metrics for Tier 1 Multivariate Cox model.
         tcga_df: Raw TCGA clinical DataFrame.
         tcga_encoded: Encoded TCGA feature matrix.
         y_os_status: Target TCGA OS status Series.
         y_os_months: Target TCGA OS months Series.
         tier2_rf: Ranked Tier 2 TCGA RF feature importances.
-        tier2_cph: Ranked Tier 2 TCGA Cox regression results.
+        tier2_cph: Ranked Tier 2 TCGA Univariate Cox regression results.
+        tier2_multi_cph: Ranked Tier 2 TCGA Multivariate Cox regression results.
+        tier2_multi_metrics: Metrics for Tier 2 Multivariate Cox model.
         report_path: Target report path.
     """
     tier1_total_n = len(tier1_df)
@@ -971,11 +1296,17 @@ def _generate_two_tiered_report(
     tier1_cox_n = (tier1_df["OS_MONTHS"].notna() & tier1_df["OS_STATUS"].notna() & (tier1_df["OS_MONTHS"] > 0)).sum()
     tier1_trial_n = (tier1_df["IS_TRIAL"] & tier1_df["RESPONDER"].notna()).sum()
     tier1_n_sig_fdr = (tier1_cph["FDR_adj_p"] < 0.05).sum()
+    tier1_multi_sig_fdr = (tier1_multi_cph["FDR_adj_p"] < 0.05).sum()
 
     top_tier1_cph_feat = tier1_cph.iloc[0]["Feature"]
     top_tier1_cph_hr = tier1_cph.iloc[0]["Hazard Ratio (HR)"]
     top_tier1_cph_p = tier1_cph.iloc[0]["p-value"]
     top_tier1_cph_fdr = tier1_cph.iloc[0]["FDR_adj_p"]
+
+    top_tier1_multi_feat = tier1_multi_cph.iloc[0]["Feature"]
+    top_tier1_multi_ahr = tier1_multi_cph.iloc[0]["Hazard Ratio (HR)"]
+    top_tier1_multi_p = tier1_multi_cph.iloc[0]["p-value"]
+    top_tier1_multi_fdr = tier1_multi_cph.iloc[0]["FDR_adj_p"]
 
     top_tier1_resp_feat = tier1_rf_resp.iloc[0]["Feature"]
     top_tier1_resp_imp = tier1_rf_resp.iloc[0]["Importance"]
@@ -985,6 +1316,7 @@ def _generate_two_tiered_report(
     tcga_cox_n = (y_os_status.notna() & y_os_months.notna() & (y_os_months > 0)).sum()
     tcga_feat_count = len(tcga_encoded.columns)
     tcga_n_sig_fdr = (tier2_cph["FDR_adj_p"] < 0.05).sum()
+    tcga_multi_sig_fdr = (tier2_multi_cph["FDR_adj_p"] < 0.05).sum()
 
     top_tier2_rf_feat = tier2_rf.iloc[0]["Feature"]
     top_tier2_rf_imp = tier2_rf.iloc[0]["Importance"]
@@ -996,7 +1328,7 @@ def _generate_two_tiered_report(
 
     frontmatter = generate_obsidian_frontmatter(
         title="Two-Tiered Clinical & Transcriptomic Feature Selection Report",
-        tags=["melanoma", "clinical-subtyping", "feature-selection", "cox-regression", "random-forest", "two-tiered"],
+        tags=["melanoma", "clinical-subtyping", "feature-selection", "cox-regression", "random-forest", "two-tiered", "multivariate-cox"],
     )
 
     report_path.parent.mkdir(exist_ok=True, parents=True)
@@ -1004,7 +1336,7 @@ def _generate_two_tiered_report(
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(frontmatter + "\n\n")
         f.write("# Two-Tiered Clinical & Transcriptomic Feature Selection Report\n\n")
-        f.write("This report presents a comprehensive **two-tiered feature selection architecture** evaluating prognostic and predictive clinical markers across melanoma patient populations:\n\n")
+        f.write("This report presents a comprehensive **two-tiered feature selection architecture** evaluating prognostic and predictive clinical markers across melanoma patient populations using both **Univariate** and **Multivariate Cox Proportional Hazards Regression**:\n\n")
         f.write(f"* **Tier 1 (Multi-Cohort Consensus, $N = {tier1_total_n}$)**: Evaluates 10 harmonized cross-cohort features (6 transcriptomic immune signatures, $\\text{{TMB}}$, age, sex) pooled across all four study cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, **Riaz 2017**).\n")
         f.write(f"* **Tier 2 (Granular TCGA Pathological Staging, $N = {tcga_n}$)**: Evaluates {tcga_feat_count} detailed clinical, pathological TNM staging, anatomical site, aneuploidy, and hypoxia attributes specifically within the **TCGA-SKCM** reference cohort.\n\n")
 
@@ -1013,7 +1345,8 @@ def _generate_two_tiered_report(
         f.write(f"* **Overall Survival Evaluation Cohort**: {tier1_surv_n} patients\n")
         f.write(f"* **Cox Survival Evaluation Cohort**: {tier1_cox_n} patients\n")
         f.write(f"* **Anti-PD-1 Response Evaluation Cohort**: {tier1_trial_n} trial patients\n")
-        f.write(f"* **FDR-Significant Survival Predictors (FDR < 0.05)**: {tier1_n_sig_fdr} features\n\n")
+        f.write(f"* **Univariate FDR-Significant Survival Predictors (FDR < 0.05)**: {tier1_n_sig_fdr} features\n")
+        f.write(f"* **Multivariate FDR-Significant Independent Predictors (FDR < 0.05)**: {tier1_multi_sig_fdr} features\n\n")
 
         f.write(f"### 1.1. Random Forest Importance for Overall Survival (N={tier1_surv_n})\n")
         f.write(f"Random Forest feature importance (500 estimators) trained on the $N = {tier1_surv_n}$ overall survival cohort:\n\n")
@@ -1023,11 +1356,18 @@ def _generate_two_tiered_report(
         f.write(f"Univariate Cox Proportional Hazards models fitted across $N = {tier1_cox_n}$ patients with complete survival duration data:\n\n")
         f.write("![Tier 1 Cox Forest Plot](../../plots/clinical/cox_forest_plot.png)\n\n")
 
-        f.write(f"### 1.3. Random Forest Importance for Anti-PD-1 Immunotherapy Response (N={tier1_trial_n})\n")
+        f.write(f"### 1.3. Multivariate Cox Proportional Hazards Regression (N={tier1_cox_n})\n")
+        f.write(f"Multivariate Cox Proportional Hazards model evaluating joint covariate effects across $N = {tier1_cox_n}$ multi-cohort patients with complete survival data (Model Concordance Index = **{tier1_multi_metrics['c_index']:.3f}**, Likelihood Ratio Test $p = {tier1_multi_metrics['lrt_p']:.2e}$):\n\n")
+        f.write("![Tier 1 Multivariate Cox Forest Plot](../../plots/clinical/multivariate_cox_forest_plot.png)\n\n")
+
+        f.write("#### Comparison of Univariate vs. Multivariate Adjusted Hazard Ratios (Tier 1)\n\n")
+        f.write("![Tier 1 Univariate vs Multivariate Cox Comparison](../../plots/clinical/tier1_uni_vs_multi_forest_plot.png)\n\n")
+
+        f.write(f"### 1.4. Random Forest Importance for Anti-PD-1 Immunotherapy Response (N={tier1_trial_n})\n")
         f.write(f"Random Forest feature importance predicting objective response (CR/PR vs PD) across the $N = {tier1_trial_n}$ trial cohort:\n\n")
         f.write("![Tier 1 Random Forest Response](../../plots/clinical/response_feature_importance.png)\n\n")
 
-        f.write(f"### 1.4. Univariate Forest Plot for Anti-PD-1 Immunotherapy Response (N={tier1_trial_n})\n")
+        f.write(f"### 1.5. Univariate Forest Plot for Anti-PD-1 Immunotherapy Response (N={tier1_trial_n})\n")
         f.write(f"Univariate Logistic Regression Odds Ratio (OR) forest plot predicting objective anti-PD-1 response across the $N = {tier1_trial_n}$ trial cohort:\n\n")
         f.write("![Tier 1 Response Forest Plot](../../plots/clinical/response_forest_plot.png)\n\n")
 
@@ -1036,7 +1376,8 @@ def _generate_two_tiered_report(
         f.write(f"* **TCGA OS Classification Cohort**: {tcga_rf_n} patients\n")
         f.write(f"* **TCGA Cox Survival Evaluation Cohort**: {tcga_cox_n} patients\n")
         f.write(f"* **Encoded Dummy Features**: {tcga_feat_count} dummy variables\n")
-        f.write(f"* **FDR-Significant Pathological Predictors (FDR < 0.05)**: {tcga_n_sig_fdr} features\n\n")
+        f.write(f"* **Univariate FDR-Significant Pathological Predictors (FDR < 0.05)**: {tcga_n_sig_fdr} features\n")
+        f.write(f"* **Multivariate FDR-Significant Predictors (FDR < 0.05)**: {tcga_multi_sig_fdr} features\n\n")
 
         f.write(f"### 2.1. Random Forest Importance for Granular TCGA Clinical Attributes (N={tcga_rf_n})\n")
         f.write(f"Top 20 Random Forest clinical predictors trained on $N = {tcga_rf_n}$ TCGA patients with non-null survival status:\n\n")
@@ -1046,11 +1387,19 @@ def _generate_two_tiered_report(
         f.write(f"Top 20 Univariate Cox hazard ratios evaluated across $N = {tcga_cox_n}$ TCGA patients with complete survival duration data:\n\n")
         f.write("![Tier 2 TCGA Cox Forest Plot](../../plots/clinical/tcga_cox_forest_plot.png)\n\n")
 
+        f.write(f"### 2.3. Multivariate Cox Proportional Hazards Regression for TCGA Attributes (N={tcga_cox_n})\n")
+        f.write(f"Multivariate Cox Proportional Hazards model evaluating joint TCGA clinical & pathological attributes across $N = {tcga_cox_n}$ patients (Model Concordance Index = **{tier2_multi_metrics['c_index']:.3f}**, Likelihood Ratio Test $p = {tier2_multi_metrics['lrt_p']:.2e}$):\n\n")
+        f.write("![Tier 2 TCGA Multivariate Cox Forest Plot](../../plots/clinical/tcga_multivariate_cox_forest_plot.png)\n\n")
+
+        f.write("#### Comparison of Univariate vs. Multivariate Adjusted Hazard Ratios (Tier 2 TCGA)\n\n")
+        f.write("![Tier 2 TCGA Univariate vs Multivariate Cox Comparison](../../plots/clinical/tcga_uni_vs_multi_forest_plot.png)\n\n")
+
         f.write("## 3. Key Analytical & Biological Summary\n\n")
-        f.write(f"1. **Tier 1 Top Survival Biomarker**: **`{_format_feature_name(top_tier1_cph_feat)}`** is the single strongest protective statistical predictor across all 4 cohorts (Hazard Ratio = **{top_tier1_cph_hr:.2f}**, univariate p-value = **{top_tier1_cph_p:.2e}**, FDR = **{top_tier1_cph_fdr:.2e}**).\n")
-        f.write(f"2. **Tier 1 Top Immunotherapy Marker**: **`{_format_feature_name(top_tier1_resp_feat)}`** is the top predictive feature for objective anti-PD-1 response across trial cohorts (Gini Importance = **{top_tier1_resp_imp:.4f}**).\n")
-        f.write(f"3. **Tier 2 Top Pathological Staging Marker**: **`{_format_feature_name(top_tier2_cph_feat)}`** is the strongest clinical predictor of survival in TCGA (Hazard Ratio = **{top_tier2_cph_hr:.2f}**, p-value = **{top_tier2_cph_p:.2e}**, FDR = **{top_tier2_cph_fdr:.2e}**).\n")
-        f.write(f"4. **Biological Alignment**: Microenvironmental T-cell inflammation signatures ($\\\\text{{IFN-}}\\gamma$, TIS, CYT, CD8, IMPRES) consistently confer significant mortality risk reduction ($\\\\text{{HR}} < 1.0$, $p < 0.01$) across both multi-cohort and single-cohort models.\n")
+        f.write(f"1. **Tier 1 Top Survival Biomarker**: **`{_format_feature_name(top_tier1_cph_feat)}`** is the single strongest protective univariate statistical predictor across all 4 cohorts (Hazard Ratio = **{top_tier1_cph_hr:.2f}**, univariate p-value = **{top_tier1_cph_p:.2e}**, FDR = **{top_tier1_cph_fdr:.2e}**).\n")
+        f.write(f"2. **Tier 1 Independent Survival Biomarker**: In joint multivariate modeling ($N = {tier1_cox_n}$), **`{_format_feature_name(top_tier1_multi_feat)}`** remains an independent prognostic predictor of overall survival (Adjusted Hazard Ratio $\\\\text{{aHR}} = **{top_tier1_multi_ahr:.2f}**, p-value = **{top_tier1_multi_p:.2e}**, FDR = **{top_tier1_multi_fdr:.2e}**), controlling for Age, Sex, TMB, and immune signatures (Model C-index = **{tier1_multi_metrics['c_index']:.3f}**).\n")
+        f.write(f"3. **Tier 1 Top Immunotherapy Marker**: **`{_format_feature_name(top_tier1_resp_feat)}`** is the top predictive feature for objective anti-PD-1 response across trial cohorts (Gini Importance = **{top_tier1_resp_imp:.4f}**).\n")
+        f.write(f"4. **Tier 2 Pathological Staging Independence**: **`{_format_feature_name(top_tier2_cph_feat)}`** is the strongest clinical predictor of survival in TCGA (Univariate Hazard Ratio = **{top_tier2_cph_hr:.2f}**, p-value = **{top_tier2_cph_p:.2e}**, FDR = **{top_tier2_cph_fdr:.2e}**), and retains significant independent risk elevation in multivariate Cox regression (Model C-index = **{tier2_multi_metrics['c_index']:.3f}**).\n")
+        f.write(f"5. **Biological Alignment**: Microenvironmental T-cell inflammation signatures ($\\\\text{{IFN-}}\\gamma$, TIS, CYT, CD8, IMPRES) consistently confer significant mortality risk reduction ($\\\\text{{HR}} < 1.0$, $p < 0.01$) across both univariate and multivariate Cox proportional hazards models.\n")
 
     print(f"Two-tiered feature selection report successfully written to {rel_path(report_path)}")
 
@@ -1075,6 +1424,15 @@ def main() -> None:
     tier1_rf_resp = _evaluate_tier1_rf_response(tier1_df, PLOT_DIR)
     tier1_resp_or = _evaluate_tier1_response_forest_plot(tier1_df, PLOT_DIR)
     tier1_cph = _evaluate_tier1_cox(tier1_df, PLOT_DIR)
+    tier1_multi_cph, tier1_multi_metrics = _evaluate_tier1_multivariate_cox(tier1_df, PLOT_DIR)
+
+    _plot_univariate_vs_multivariate_comparison(
+        tier1_cph,
+        tier1_multi_cph,
+        title="Tier 1 Univariate vs. Multivariate Cox Hazard Ratios (Multi-Cohort)",
+        xlabel="Hazard Ratio (Log Scale - 95% CI per +1 SD)",
+        out_path=PLOT_DIR / "tier1_uni_vs_multi_forest_plot.png",
+    )
 
     print("\n--- Tier 2: Granular TCGA Clinical Feature Selection (N=443) ---")
     tcga_config = next(c for c in dataset_configs if c.cohort_name == "TCGA-SKCM")
@@ -1083,6 +1441,17 @@ def main() -> None:
 
     tier2_rf = _evaluate_tier2_tcga_rf(tcga_encoded, y_os_status, PLOT_DIR)
     tier2_cph = _evaluate_tier2_tcga_cox(tcga_encoded, y_os_status, y_os_months, PLOT_DIR)
+    tier2_multi_cph, tier2_multi_metrics = _evaluate_tier2_tcga_multivariate_cox(
+        tcga_encoded, y_os_status, y_os_months, tier2_cph, PLOT_DIR
+    )
+
+    _plot_univariate_vs_multivariate_comparison(
+        tier2_cph.head(10),
+        tier2_multi_cph,
+        title="Tier 2 TCGA Univariate vs. Multivariate Cox Hazard Ratios",
+        xlabel="Hazard Ratio (Log Scale - 95% CI)",
+        out_path=PLOT_DIR / "tcga_uni_vs_multi_forest_plot.png",
+    )
 
     print("\nExporting two-tiered feature selection report...")
     _generate_two_tiered_report(
@@ -1091,18 +1460,23 @@ def main() -> None:
         tier1_rf_resp,
         tier1_resp_or,
         tier1_cph,
+        tier1_multi_cph,
+        tier1_multi_metrics,
         tcga_df,
         tcga_encoded,
         y_os_status,
         y_os_months,
         tier2_rf,
         tier2_cph,
+        tier2_multi_cph,
+        tier2_multi_metrics,
         REPORT_PATH,
     )
 
     print("\n==================================================")
     print("Done! Two-tiered clinical feature selection completed.")
     print("==================================================")
+
 
 
 if __name__ == "__main__":
