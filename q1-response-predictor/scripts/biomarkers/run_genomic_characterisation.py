@@ -473,7 +473,12 @@ ROW_ORDER = [
 
 def _compute_gene_frequency(mut_wide: pd.DataFrame, genes: List[str], cohort_name: str) -> float:
     """Helper to compute frequency of mutation in a list of genes."""
-    present = [g for g in genes if g in mut_wide.columns]
+    present = []
+    for g in genes:
+        if g in mut_wide.columns:
+            present.append(g)
+        elif f"mut_{g}" in mut_wide.columns:
+            present.append(f"mut_{g}")
     if not present:
         warnings.warn(
             f"{cohort_name}: none of {genes} found in mutation panel -- reporting NaN",
@@ -494,10 +499,18 @@ def _weighted_pooled(row: pd.Series, cohort_names: List[str], ns: Dict[str, int]
     return 100.0 * sum(vals) / sum(weights) if weights else np.nan
 
 
-def build_extended_pathway_dataframe(data_dir: Path) -> Tuple[pd.DataFrame, List[str], str, Dict[str, int]]:
+def build_extended_pathway_dataframe(
+    data_dir: Path,
+) -> Tuple[pd.DataFrame, List[str], str, Dict[str, int]]:
     """Builds extended pathway mutation frequency DataFrame across cohorts."""
     dataset_configs = load_dataset_config(CONFIG_PATH)
-    freqs: Dict[str, Dict[str, float]] = {p: {} for p in PATHWAY_GENES}
+    pathway_genes_extended = {
+        "BRAF": ["BRAF"],
+        "NRAS": ["NRAS"],
+        "NF1": ["NF1"],
+        **PATHWAY_GENES,
+    }
+    freqs: Dict[str, Dict[str, float]] = {p: {} for p in pathway_genes_extended}
     ns: Dict[str, int] = {}
     cohort_names: List[str] = []
 
@@ -515,14 +528,14 @@ def build_extended_pathway_dataframe(data_dir: Path) -> Tuple[pd.DataFrame, List
         ns[name] = len(clin_df)
 
         if not mut_csv.exists():
-            for pathway in PATHWAY_GENES:
+            for pathway in pathway_genes_extended:
                 freqs[pathway][name] = np.nan
             continue
 
         mut_df = pd.read_csv(mut_csv)
         id_col = find_id_column(mut_df, ["SAMPLE_ID", "Tumor_Sample_Barcode", "Sample_ID", "sample_id"])
         if id_col is None:
-            for pathway in PATHWAY_GENES:
+            for pathway in pathway_genes_extended:
                 freqs[pathway][name] = np.nan
             continue
 
@@ -535,7 +548,7 @@ def build_extended_pathway_dataframe(data_dir: Path) -> Tuple[pd.DataFrame, List
 
         mut_wide = mut_wide.reindex(clin_df.index, fill_value=0)
 
-        for pathway, genes in PATHWAY_GENES.items():
+        for pathway, genes in pathway_genes_extended.items():
             freqs[pathway][name] = _compute_gene_frequency(mut_wide, genes, config.cohort_name)
 
     records = []
