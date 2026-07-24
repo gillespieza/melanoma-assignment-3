@@ -640,7 +640,7 @@ def _plot_extended_pathway_grouped_bars(
 
     ax.legend(
         title="Cohort", frameon=True, facecolor="white", framealpha=0.95,
-        loc="lower left", bbox_to_anchor=(0.58, 0.05),
+        loc="lower left", bbox_to_anchor=(0.58, 0.16),
     )
 
     for cat_name, center_y in cat_centers.items():
@@ -657,6 +657,8 @@ def _plot_extended_pathway_grouped_bars(
 
     out_path = out_dir / "extended_pathway_mutation_frequencies.png"
     save_fig(fig, out_path)
+    out_path_legacy = out_dir / "extended_pathway_grouped_bars.png"
+    save_fig(fig, out_path_legacy)
     print(f"Saved extended pathway mutation frequencies plot to {rel_path(out_path)}")
 
 
