@@ -1,12 +1,3 @@
----
-created: 2026-07-23 17:21
-cssclasses:
-  - table-small
-obsidianEditingMode: preview
-obsidianUIMode: source
-updated: 2026-07-23 17:21
----
-
 # Model Evaluation Report: LOCO Cross-Cohort Validation
 ## Overview
 This report documents the comprehensive evaluation of all trained models (Logistic Regression, Random Forest, XGBoost, SVM, ElasticNet) using Leave-One-Cohort-Out (LOCO) cross-validation on three independent melanoma immunotherapy cohorts.
@@ -210,7 +201,7 @@ This section benchmarks models trained on the 11 immune signatures plus 3 binary
 | Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | Hugo 2016 | 27 | 0.415 | 0.481 | 0.429 | 0.538 | 0.500 | 0.462 |
-| Liu 2019 | 104 | 0.551 | 0.538 | 0.417 | 0.643 | 0.500 | 0.455 |
+| Liu 2019 | 104 | 0.609 | 0.625 | 0.500 | 0.732 | 0.615 | 0.552 |
 | Riaz 2017 | 64 | 0.500 | 0.312 | 1.000 | 0.000 | 0.312 | 0.476 |
 
 ![[roc_curves_combined_lr.png]]
@@ -221,9 +212,9 @@ _Figure: ROC curves for Logistic Regression (L1-penalized, GridSearchCV) with co
 
 | Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.423 | 0.407 | 0.214 | 0.615 | 0.375 | 0.273 |
-| Liu 2019 | 104 | 0.574 | 0.596 | 0.271 | 0.875 | 0.650 | 0.382 |
-| Riaz 2017 | 64 | 0.702 | 0.672 | 0.700 | 0.659 | 0.483 | 0.571 |
+| Hugo 2016 | 27 | 0.473 | 0.444 | 0.214 | 0.692 | 0.429 | 0.286 |
+| Liu 2019 | 104 | 0.581 | 0.587 | 0.229 | 0.893 | 0.647 | 0.338 |
+| Riaz 2017 | 64 | 0.688 | 0.672 | 0.750 | 0.636 | 0.484 | 0.588 |
 
 ![[roc_curves_combined_rf.png]]
 
@@ -233,9 +224,9 @@ _Figure: ROC curves for Random Forest (GridSearchCV: n_estimators in [50,100,200
 
 | Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.374 | 0.370 | 0.143 | 0.615 | 0.286 | 0.190 |
-| Liu 2019 | 104 | 0.565 | 0.548 | 0.354 | 0.714 | 0.515 | 0.420 |
-| Riaz 2017 | 64 | 0.645 | 0.547 | 0.650 | 0.500 | 0.371 | 0.473 |
+| Hugo 2016 | 27 | 0.319 | 0.333 | 0.071 | 0.615 | 0.167 | 0.100 |
+| Liu 2019 | 104 | 0.581 | 0.567 | 0.521 | 0.607 | 0.532 | 0.526 |
+| Riaz 2017 | 64 | 0.618 | 0.531 | 0.650 | 0.477 | 0.361 | 0.464 |
 
 ![[roc_curves_combined_xgb.png]]
 
@@ -245,9 +236,9 @@ _Figure: ROC curves for XGBoost (GridSearchCV: n_estimators in [50,100,150], max
 
 | Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.478 | 0.444 | 0.214 | 0.692 | 0.429 | 0.286 |
-| Liu 2019 | 104 | 0.537 | 0.529 | 0.188 | 0.821 | 0.474 | 0.269 |
-| Riaz 2017 | 64 | 0.511 | 0.516 | 0.500 | 0.523 | 0.323 | 0.392 |
+| Hugo 2016 | 27 | 0.434 | 0.444 | 0.214 | 0.692 | 0.429 | 0.286 |
+| Liu 2019 | 104 | 0.657 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 |
+| Riaz 2017 | 64 | 0.717 | 0.719 | 0.500 | 0.818 | 0.556 | 0.526 |
 
 ![[roc_curves_combined_svm.png]]
 
@@ -258,7 +249,7 @@ _Figure: ROC curves for Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0
 | Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | Hugo 2016 | 27 | 0.415 | 0.481 | 0.000 | 1.000 | 0.000 | 0.000 |
-| Liu 2019 | 104 | 0.549 | 0.538 | 0.417 | 0.643 | 0.500 | 0.455 |
+| Liu 2019 | 104 | 0.616 | 0.615 | 0.458 | 0.750 | 0.611 | 0.524 |
 | Riaz 2017 | 64 | 0.500 | 0.312 | 1.000 | 0.000 | 0.312 | 0.476 |
 
 ![[roc_curves_combined_elasticnet.png]]

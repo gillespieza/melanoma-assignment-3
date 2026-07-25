@@ -16,6 +16,54 @@ This supplementary document provides the full, detailed biological rationale, ge
 
 ---
 
+## 0. Mathematical Collapsing Strategies & Preprocessing
+
+To transform high-dimensional, multicollinear gene expression matrices into compact, interpretable predictors, our codebase ([signatures.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py)) employs **three distinct mathematical collapsing strategies** based on the biological intent and literature definition of each signature modality.
+
+### 0.1. Overview of Collapsing Modalities
+
+| Collapsing Strategy | Signatures Applied To | Mathematical Logic | Primary Advantage |
+| :--- | :--- | :--- | :--- |
+| **1. Mean Log-Expression** | IFN-γ, TIS, CYT, CD8 T-Cell | Arithmetic average across $\log_2(\text{TPM} + 1)$ gene values | Smooths gene-level measurement noise and stabilizes co-expressed pathway signals |
+| **2. Pairwise Binary Comparison** | IMPRES | Sum of 15 boolean ratio indicators ($\mathbb{I}[E_{\text{Gene A}} > E_{\text{Gene B}}]$) | Non-linear, scale-free checkpoint balance assessment resistant to normalization offsets |
+| **3. Direct Target Gene Selection** | PD-L1 Proxy | Single gene continuous transcript value ($\log_2[\text{TPM}_{\text{CD274}} + 1]$) | Direct molecular proxy for targeted checkpoint ligand burden |
+
+### 0.2. Strategy 1: Mean Log-Expression (Arithmetic Average)
+Applied to multi-gene co-expression modules (**IFN-γ**, **TIS**, **CYT**, **CD8 T-Cell**):
+
+$$S = \frac{1}{|G_{\text{found}}|} \sum_{g \in G_{\text{found}}} E_g$$
+
+where $E_g = \log_2(\text{TPM}_g + 1)$ represents the log-transformed expression level of gene $g$. 
+
+* **Robustness & Partial Coverage**: If a cohort lacks 1 or 2 non-critical signature genes due to filtering or platform differences, the calculation dynamically divides by $|G_{\text{found}}|$ (the number of successfully matched genes) rather than returning an invalid `NaN`.
+
+### 0.3. Strategy 2: Pairwise Binary Comparison Sum (Non-Linear Checkpoint Ratio Balance)
+Applied to **IMPRES** *(Ausländer et al., 2018)*:
+
+$$S_{\text{raw}} = \sum_{i=1}^{15} \mathbb{I}\left(E_{\text{Gene A}_i} > E_{\text{Gene B}_i}\right)$$
+
+$$S_{\text{final}} = S_{\text{raw}} \times \left(\frac{15}{N_{\text{valid\_pairs}}}\right)$$
+
+where $\mathbb{I}(\cdot)$ is an indicator function evaluating to $1$ if Gene A expression exceeds Gene B expression, and $0$ otherwise.
+
+* **Scale-Free Property**: Because it relies entirely on relative within-sample ranks ($A > B$), IMPRES is inherently invariant to monotonic global scaling or monotonic batch shifts across datasets.
+
+### 0.4. Strategy 3: Direct Target Gene Proxy
+Applied to **PD-L1 Proxy (`CD274`)**:
+
+$$S_{\text{PD-L1}} = \log_2(\text{TPM}_{\text{CD274}} + 1)$$
+
+* Uses automated alias matching (`CD274`, `PD-L1`, `PDL1`) to resolve target column names across heterogeneous study annotations.
+
+### 0.5. Zero-Leakage Cohort-Independent Z-Score Standardisation
+After computing raw continuous signature scores $S_{i, k}$ for patient $i$ in cohort $k$, features are standardized **within each individual study cohort** prior to merging:
+
+$$Z_{i, k} = \frac{S_{i, k} - \mu_{k}}{\sigma_{k}}$$
+
+where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation of study cohort $k$. This step removes sequencing depth and platform scale differences while preserving zero data leakage during cross-validation.
+
+---
+
 ## 1. Interferon-Gamma (IFN-γ) 6-Gene Signature
 
 * **Source**: Ayers et al., 2017 (*Journal of Clinical Investigation*)

@@ -69,7 +69,7 @@ def plot_pr_curves(loco_results, model_name, save_path=None):
     else:
         plt.show()
 
-def plot_confusion_matrices(loco_results, model_name, save_path=None):
+def plot_confusion_matrices(loco_results, model_name, save_path=None, use_optimal_threshold=False):
     """
     Plots confusion matrices for all test cohorts in a grid.
     """
@@ -82,22 +82,31 @@ def plot_confusion_matrices(loco_results, model_name, save_path=None):
     for idx, (cohort, res) in enumerate(loco_results.items()):
         y_true = res['y_true']
         y_pred_prob = res['y_pred_prob']
-        y_pred_class = (y_pred_prob >= 0.5).astype(int)
+        if use_optimal_threshold:
+            threshold = find_optimal_threshold(y_true, y_pred_prob)
+            title_suffix = f" (t={threshold:.2f})"
+        else:
+            threshold = 0.5
+            title_suffix = ""
+            
+        y_pred_class = (y_pred_prob >= threshold).astype(int)
         
         cm = confusion_matrix(y_true, y_pred_class)
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=axes[idx], cbar=False)
-        axes[idx].set_title(f'{cohort}')
+        axes[idx].set_title(f'{cohort}{title_suffix}')
         axes[idx].set_ylabel('True Label')
         axes[idx].set_xlabel('Predicted Label')
         axes[idx].set_xticklabels(['Non-Resp', 'Responder'])
         axes[idx].set_yticklabels(['Non-Resp', 'Responder'])
     
-    plt.suptitle(f'Confusion Matrices ({model_name})', fontsize=14, y=1.02)
+    thresh_label = "Optimal Youden's J Threshold" if use_optimal_threshold else "Default Threshold 0.5"
+    plt.suptitle(f'Confusion Matrices ({model_name}) - {thresh_label}', fontsize=14, y=1.02)
     plt.tight_layout()
     
     if save_path:
         plt.savefig(save_path, bbox_inches='tight', dpi=300)
         plt.close()
+        print(f"Saved confusion matrix plot to {save_path}")
     else:
         plt.show()
 

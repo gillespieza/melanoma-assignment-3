@@ -211,7 +211,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
     with open(report_path, 'w', encoding='utf-8') as f:
         f.writelines(report_lines)
     
-    print(f"\n✓ Model evaluation report saved to: {report_path}")
+    print(f"\n[SUCCESS] Model evaluation report saved to: {report_path}")
     return report_path
 
 def main():
@@ -367,7 +367,8 @@ def main():
         # Let's save curves for all models
         plot_roc_curves(loco_results, model_type.upper(), PLOT_DIR / f"roc_curves_{model_type}.png")
         plot_pr_curves(loco_results, model_type.upper(), PLOT_DIR / f"pr_curves_{model_type}.png")
-        plot_confusion_matrices(loco_results, model_type.upper(), PLOT_DIR / f"confusion_matrices_{model_type}.png")
+        plot_confusion_matrices(loco_results, model_type.upper(), PLOT_DIR / f"confusion_matrices_{model_type}.png", use_optimal_threshold=False)
+        plot_confusion_matrices(loco_results, model_type.upper(), PLOT_DIR / f"confusion_matrices_{model_type}_optimal.png", use_optimal_threshold=True)
 
     print("\n==================================================")
     print("Phase 5: Survival Analysis (Log-rank test)...")

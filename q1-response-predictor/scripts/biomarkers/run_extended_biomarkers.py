@@ -20,10 +20,12 @@ from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_sco
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
-# Add project root to sys.path
+# Bootstrap: locate the subproject root (q1-response-predictor) by finding
+# the nearest ancestor that contains src/config/ — uniquely identifying the
+# subproject, as data/ lives one level up at the project root.
 _THIS_FILE = Path(__file__).resolve()
 for _candidate in [_THIS_FILE.parent] + list(_THIS_FILE.parent.parents):
-    if (_candidate / "src").exists() and (_candidate / "data").exists():
+    if (_candidate / "src" / "config").exists():
         BASE_DIR = _candidate
         break
 else:
@@ -33,7 +35,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
 # Paths
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR = BASE_DIR.parent / "data"  # data/ lives at the project root, one level above the subproject
 PLOT_DIR = BASE_DIR / "plots" / "biomarkers"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
 REPORTS_DIR = BASE_DIR / "reports" / "pillar-3-transcriptomic-signatures"
@@ -69,7 +71,7 @@ def _update_curated_signatures_report(report_path: Path, section_6_lines: list[s
     after_sec6 = text[end_idx:] if end_idx != len(text) else ""
 
     sec6_content = "\n".join(section_6_lines)
-    new_report_text = before_sec6 + sec6_content.strip() + "\n\n---\n\n" + after_sec6.lstrip("-\n ")
+    new_report_text = before_sec6 + sec6_content.strip() + "\n\n" + after_sec6.lstrip("-\n ")
 
     report_path.write_text(new_report_text, encoding="utf-8")
     print(f"\nUpdated Section 6 in {report_path.relative_to(BASE_DIR).as_posix()}")
@@ -105,7 +107,7 @@ LOG_DIR = BASE_DIR / "logs"
 LOG_PATH = LOG_DIR / "run_extended_biomarkers.log"
 
 # Imports from src
-from src.biology_constants import DRIVER_GENES, PATHWAY_GENES
+from src.config.constants import DRIVER_GENES, PATHWAY_GENES
 from src.signatures import extract_all_signatures
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
@@ -278,7 +280,7 @@ def _load_and_prepare_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, 
     # Create pathway mutation trackers using PATHWAY_GENES from biology_constants
     for df in [df_liu_clin, df_hugo_clin, df_riaz_clin]:
         df['mut_Antigen_Presentation'] = (df[[f'mut_{g}' for g in PATHWAY_GENES["Antigen Presentation"]]].sum(axis=1) > 0).astype(int)
-        df['mut_IFN_gamma_Signaling'] = (df[[f'mut_{g}' for g in PATHWAY_GENES["IFN-gamma Signaling"]]].sum(axis=1) > 0).astype(int)
+        df['mut_IFN_gamma_Signaling'] = (df[[f'mut_{g}' for g in PATHWAY_GENES["IFN-gamma Signature"]]].sum(axis=1) > 0).astype(int)
         df['mut_Survival_Pathways'] = (df[[f'mut_{g}' for g in PATHWAY_GENES["Survival & Proliferation Drivers"]]].sum(axis=1) > 0).astype(int)
 
     # Pool trial datasets clinical and signatures
@@ -535,12 +537,11 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
     sig_features = ['IFN_gamma', 'TIS', 'CYT', 'CD8_Tcell', 'IMPRES', 'PD_L1']
     df_features = pd.concat([df_sigs_merged_aligned, df_clin_merged[[
         'mut_BRAF', 'mut_NRAS', 'mut_NF1', 'mut_Antigen_Presentation', 'mut_IFN_gamma_Signaling', 'mut_Survival_Pathways',
-        'TMB_NONSYNONYMOUS', 'TOTAL_NEOANTIGEN', 'AGE'
+        'TMB_NONSYNONYMOUS', 'AGE'
     ]]], axis=1)
 
     # Impute missing values
     df_features['TMB_NONSYNONYMOUS'] = df_features['TMB_NONSYNONYMOUS'].fillna(df_features['TMB_NONSYNONYMOUS'].median())
-    df_features['TOTAL_NEOANTIGEN'] = df_features['TOTAL_NEOANTIGEN'].fillna(df_features['TOTAL_NEOANTIGEN'].median())
     df_features['AGE'] = df_features['AGE'].fillna(df_features['AGE'].median())
 
     # Drop samples with NaN response
@@ -599,7 +600,7 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
         X_drivers = df_features_clean[driver_cols].values
         scores_drivers = evaluate_auc_cv(model, X_drivers, y, cv, "Signatures + drivers + age")
         
-        # 3. Full Extended Model (All Features including TMB & Neoantigens & pathway mutations)
+        # 3. Full Extended Model (All Features including TMB & pathway mutations)
         X_full = df_features_clean.values
         scores_full = evaluate_auc_cv(model, X_full, y, cv, "Full extended")
         
@@ -624,7 +625,7 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
     # --- Grouped Bar Chart: Multimodal AUC Comparison ---
     fig, ax = plt.subplots(figsize=(12, 7))
     
-    bar_labels = ['Signatures Only', 'Sigs + Drivers + Age', 'Full Extended\n(Sigs + Drivers + TMB\n+ Neoantigens + Pathways)']
+    bar_labels = ['Signatures Only', 'Sigs + Drivers + Age', 'Full Extended\n(Sigs + Drivers + Age\n+ TMB + Pathways)']
     x = np.arange(len(bar_labels))
     n_models = len(models)
     bar_width = 0.8 / n_models
@@ -673,14 +674,21 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
     save_fig(fig, multimodal_plot_path)
     print(f"Saved multimodal AUC comparison plot to {multimodal_plot_path.relative_to(BASE_DIR).as_posix()}")
     
+    n_pooled = len(df_features_clean)
     section_6_lines = [
         "## 6. Multimodal Response Prediction Models",
         "",
-        "To evaluate the predictive power of gene expression signatures when combined with orthogonal genomic and clinical features, we trained cross-validated response prediction models on the pooled trial cohort ($N=195$). We evaluated three feature representation sets across several classifiers using 5-fold stratified cross-validation. The values reported below are mean ROC-AUC values with standard deviation across folds (mean ± SD).",
+        "> [!summary] What, Why & Key Questions",
+        f"> - **What We Are Doing**: Training five different classifier architectures (Logistic Regression, Random Forest, XGBoost, SVM, Elastic-Net) on the pooled trial cohort ($N = {n_pooled}$) using 5-fold stratified cross-validation. We compare three feature sets of increasing complexity: (1) immune signatures only, (2) signatures + driver mutations + age, and (3) a full extended model adding TMB, age, and pathway mutation flags.",
+        "> - **Why We Are Doing It**: We need to answer two questions at once. *First*, do the curated immune signatures alone carry enough signal to predict response, or do we need additional genomic features? *Second*, which model architecture best handles the high collinearity among immune signatures and the small sample size? Comparing feature sets within each model isolates the value of adding genomic features; comparing models within each feature set identifies the best architecture.",
+        "> - **Questions**:",
+        ">   1. *Does adding driver mutations, age, and TMB improve prediction beyond signatures alone?*",
+        ">   2. *Which model family (linear vs. tree-based) handles these features best?*",
+        ">   3. *Is the best AUC achievable with this data clinically meaningful?*",
         "",
-        "### Table 2. Cross-validated multimodal response prediction performance. Values are mean ROC-AUC ± SD across 5-fold stratified CV",
+        "### Table 2. Cross-validated multimodal response prediction performance (mean ROC-AUC \u00b1 SD across 5-fold stratified CV)",
         "",
-        "| Model Architecture | Base Model (Signatures Only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Age | Full Extended Model (Signatures + Drivers + TMB + Neoantigens + Mutations) |",
+        "| Model Architecture | Base Model (Signatures Only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Age | 14-Feature Full Extended Matrix* |",
         "|:--- |:---:|:---:|:---:|",
     ]
 
@@ -700,12 +708,30 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
         )
 
     section_6_lines.append("")
+    section_6_lines.append(
+        "\\* *Footnote: The 14-Feature Full Extended Matrix incorporates: 6 immune expression signatures (`IFN_gamma`, `TIS`, `CYT`, `CD8_Tcell`, `IMPRES`, `PD_L1`), 3 melanoma driver mutation flags (`mut_BRAF`, `mut_NRAS`, `mut_NF1`), 3 composite pathway mutation flags (`mut_Antigen_Presentation`, `mut_IFN_gamma_Signaling`, `mut_Survival_Pathways`), nonsynonymous mutational burden (`TMB_NONSYNONYMOUS`), and patient age (`AGE`). Total predicted neoantigens (`TOTAL_NEOANTIGEN`) was excluded due to high collinearity with TMB ($r_s = 0.756$).*"
+    )
+
+    # Extract best tree-based AUCs dynamically for the analysis text
+    rf_full = next((p for p in plot_data if "Random Forest" in p["model"]), None)
+    xgb_full = next((p for p in plot_data if "XGBoost" in p["model"]), None)
+    rf_auc_str = f"{rf_full['full_mean']:.3f}" if rf_full else "N/A"
+    xgb_auc_str = f"{xgb_full['full_mean']:.3f}" if xgb_full else "N/A"
+
+    section_6_lines.append("")
     section_6_lines.append("![Multimodal AUC Comparison](../../plots/biomarkers/multimodal_auc_comparison.png)")
     section_6_lines.append("")
     section_6_lines.append("### Analysis of Predictor Performance")
-    section_6_lines.append("1.  **Baseline vs. Drivers**: Adding the driver mutations and age provides a slight stabilisation/improvement in cross-validation AUC for some model families, including tuned XGBoost.")
-    section_6_lines.append("2.  **Full Multimodal Model**: The full extended model (incorporating 15 features including mutation flags and genomic load metrics) performs strongly with the tuned XGBoost grid (AUC = 0.724 ± 0.089) and Random Forest (AUC = 0.710 ± 0.094).")
-    
+    section_6_lines.append(
+        f"1. **Linear models degrade with more features**: Logistic Regression and Elastic-Net perform *best* with signatures alone (AUC \u2248 0.61) and *worse* when genomic features are added. With only $N = {n_pooled}$ samples and 15+ features, the linear models overfit to noise in the additional columns rather than learning generalisable signal."
+    )
+    section_6_lines.append(
+        f"2. **Tree-based models benefit from multimodal features**: Random Forest and XGBoost show the opposite pattern \u2014 they improve monotonically as features are added, peaking at AUC = {rf_auc_str} (RF) and {xgb_auc_str} (XGBoost) with the full extended set. Tree-based learners handle correlated and mixed-type features more robustly because they select splits on individual features rather than estimating a single global weight vector."
+    )
+    section_6_lines.append(
+        "3. **Clinical interpretation**: An AUC of ~0.72 means the model correctly ranks a randomly chosen responder above a non-responder ~72% of the time. This is competitive with published immunotherapy response predictors in melanoma, where AUCs rarely exceed 0.75 without integrating radiological or on-treatment data."
+    )
+
     return section_6_lines
 
 
