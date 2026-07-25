@@ -27,13 +27,11 @@ if str(BASE_DIR) not in sys.path:
 
 from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import find_project_root, rel_path
+from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, rel_path
 from src.utils.plotting import save_fig
 
 # Module-level Constants
-DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
-PLOT_DIR = find_project_root(Path(__file__).resolve()) / "plots" / "clinical"
-LOG_DIR = find_project_root(Path(__file__).resolve()) / "logs"
+PLOT_DIR = PLOTS_DIR / "clinical"
 LOG_PATH = LOG_DIR / "plot_cluster_profile_visualizations.log"
 
 CLUSTER_PALETTE = {

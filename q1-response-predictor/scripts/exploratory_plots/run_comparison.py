@@ -39,14 +39,11 @@ from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.signatures import extract_all_signatures
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import find_project_root
+from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, REPORTS_DIR
 from src.utils.plotting import save_fig
 
 # Module-level Constants
-DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
-PLOT_DIR = find_project_root(Path(__file__).resolve()) / "plots" / "feature_selection"
-REPORTS_DIR = find_project_root(Path(__file__).resolve()) / "reports"
-LOG_DIR = find_project_root(Path(__file__).resolve()) / "logs"
+PLOT_DIR = PLOTS_DIR / "feature_selection"
 LOG_PATH = LOG_DIR / "run_comparison.log"
 
 
@@ -298,7 +295,7 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
     fig.subplots_adjust(top=0.93, hspace=0.35, wspace=0.20)
 
     save_fig(fig, out_plot_path)
-    print(f"Saved refactored comparison plot to {out_plot_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved refactored comparison plot to {out_plot_path.name}")
 
 
 def _plot_comparison_heatmap(df_results: pd.DataFrame, out_plot_path: Path) -> None:
@@ -370,7 +367,7 @@ def _plot_comparison_heatmap(df_results: pd.DataFrame, out_plot_path: Path) -> N
 
     plt.tight_layout()
     save_fig(fig, out_plot_path)
-    print(f"Saved comparison heatmap to {out_plot_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved comparison heatmap to {out_plot_path.name}")
 
 
 def main() -> None:
@@ -464,5 +461,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+            print(f"Logging console output to {LOG_PATH.name}")
             main()

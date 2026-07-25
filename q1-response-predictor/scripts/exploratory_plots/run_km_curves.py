@@ -29,14 +29,12 @@ if str(BASE_DIR) not in sys.path:
 
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import find_project_root
+from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
 
 # Module-level Constants
-DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
 CLINICAL_FILE = DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018" / "clin_cleaned.csv"
-PLOTS_DIR = find_project_root(Path(__file__).resolve()) / "plots" / "clinical"
-LOG_DIR = find_project_root(Path(__file__).resolve()) / "logs"
+PLOT_DIR = PLOTS_DIR / "clinical"
 LOG_PATH = LOG_DIR / "run_km_curves.log"
 
 
@@ -118,7 +116,7 @@ def _plot_km(
     ax.legend(loc="upper right", frameon=True)
     ax.grid(True, linestyle="--", alpha=0.5)
 
-    out_path = PLOTS_DIR / filename
+    out_path = PLOT_DIR / filename
     save_fig(fig, out_path)
     print(f"Saved plot to {out_path.relative_to(BASE_DIR).as_posix()}")
 
@@ -132,7 +130,7 @@ def main() -> None:
     if not CLINICAL_FILE.exists():
         raise FileNotFoundError(f"Clinical file not found at {CLINICAL_FILE.relative_to(BASE_DIR).as_posix()}")
 
-    PLOTS_DIR.mkdir(exist_ok=True, parents=True)
+    PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
     df = pd.read_csv(CLINICAL_FILE)
     print(f"Loaded clinical data with shape: {df.shape}")

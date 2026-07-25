@@ -37,13 +37,11 @@ from src.config.constants import MERGED_COMUT_DRIVER_GENES
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import find_project_root
+from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
 
 # Module-level Constants
-DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
-PLOT_DIR = find_project_root(Path(__file__).resolve()) / "plots" / "genomic"
-LOG_DIR = find_project_root(Path(__file__).resolve()) / "logs"
+PLOT_DIR = PLOTS_DIR / "genomic"
 LOG_PATH = LOG_DIR / "run_merged_comut_plot.log"
 
 SEX_PALETTE = {

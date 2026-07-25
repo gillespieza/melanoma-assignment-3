@@ -33,13 +33,11 @@ from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.signatures import extract_all_signatures
 from src.styles import RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import find_project_root
+from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
 
 # Module-level Constants
-DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
-SIG_PLOT_DIR = find_project_root(Path(__file__).resolve()) / "plots" / "signatures"
-LOG_DIR = find_project_root(Path(__file__).resolve()) / "logs"
+SIG_PLOT_DIR = PLOTS_DIR / "signatures"
 LOG_PATH = LOG_DIR / "run_extra_plots.log"
 
 

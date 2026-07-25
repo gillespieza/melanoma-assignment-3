@@ -57,37 +57,56 @@ def extract_driver_mutations(df_meta):
 def generate_model_evaluation_report(all_loco_results, output_dir, survival_results=None, combined_loco_results=None):
     """
     Generates a comprehensive markdown report documenting model evaluation metrics,
-    combined feature benchmarks, and survival analysis results.
+    combined feature benchmarks, and survival analysis results in student-friendly British English.
     """
-    from sklearn.metrics import precision_recall_curve, average_precision_score
-    
     report_lines = [
-        "# Model Evaluation Report: LOCO Cross-Cohort Validation\n",
-        "## Overview\n",
-        "This report documents the comprehensive evaluation of all trained models (Logistic Regression, Random Forest, XGBoost, SVM, ElasticNet) using Leave-One-Cohort-Out (LOCO) cross-validation on three independent melanoma immunotherapy cohorts.\n",
-        "**Evaluation Framework:**\n",
-        "- **Cross-validation**: Leave-One-Cohort-Out (LOCO) — train on 2 cohorts, test on 1\n",
-        "- **Test cohorts**: Liu 2019 (N=104), Hugo 2016 (N=27), Riaz 2017 (N=64)\n",
-        "- **Features**: 11 immune response signatures (IFN-gamma, TIS, CD8 T-cell, CYT, IMPRES, PD-L1, etc.)\n",
-        "- **Decision threshold**: 0.5 (default) and Youden's J optimal (per-fold)\n",
-        "- **Metrics**: AUC-ROC, Accuracy, Sensitivity, Specificity, Precision, F1-score, C-index\n",
-        "\n---\n\n"
+        "# Model Evaluation Report: Leave-One-Cohort-Out (LOCO) Cross-Validation\n\n",
+        "> [!summary] What, Why & Key Questions\n",
+        "> **What**: We tested 5 machine learning models (Logistic Regression, Random Forest, XGBoost, Support Vector Machine, and ElasticNet) to see how accurately they predict immunotherapy response in melanoma patients.\n",
+        "> **Why**: Cross-validation within a single dataset can give overly optimistic results due to hidden local biases. Testing each model on a completely unseen hospital trial cohort (Leave-One-Cohort-Out) reveals how well the models perform in real-world clinical practice.\n",
+        "> **Key Questions Answered**: Which machine learning model generalises best across independent trial cohorts? Does combining genomic mutation flags with immune signatures improve prediction accuracy?\n\n",
+        "## Overview & Methodology\n\n",
+        "1. **Evaluation Framework (Leave-One-Cohort-Out)**: In each fold, we train models on 2 patient cohorts and test them on the remaining 1 unseen cohort.\n",
+        "2. **Test Cohorts**: Liu 2019 ($N=104$), Hugo 2016 ($N=27$), and Riaz 2017 ($N=64$).\n",
+        "3. **Features Evaluated**: Pre-defined immune response signatures (IFN-γ, TIS, CD8 T-cell, CYT, IMPRES, PD-L1).\n",
+        "4. **Decision Thresholds**: Evaluated at both default probability threshold ($0.5$) and Youden's J optimal threshold.\n\n",
+        "---\n\n"
     ]
     
-    # Model summaries
     model_names = {
-        'lr': 'Logistic Regression (L1-penalized, GridSearchCV)',
-        'rf': 'Random Forest (GridSearchCV: n_estimators in [50,100,200], max_depth in [3,5,10,None], min_samples_leaf in [1,2,4])',
-        'xgb': 'XGBoost (GridSearchCV: n_estimators in [50,100,150], max_depth in [3,5,7], learning_rate in [0.01,0.05,0.1,0.2])',
-        'svm': 'Support Vector Machine (GridSearchCV: C in [0.01,0.1,1.0,10.0], kernel in [linear,rbf])',
-        'elasticnet': 'ElasticNet Logistic Regression (GridSearchCV: C in [0.001,0.01,0.1,1.0,10.0], l1_ratio in [0.1,0.3,0.5,0.7,0.9])'
+        'lr': 'Logistic Regression (L1-Penalised)',
+        'rf': 'Random Forest Classifier',
+        'xgb': 'XGBoost Gradient Boosting',
+        'svm': 'Support Vector Machine (SVM)',
+        'elasticnet': 'ElasticNet Logistic Regression'
     }
     
+    model_explanations = {
+        'lr': ("**What We Did**: Trained a linear model with L1 (Lasso) regularization to select key predictive features.\n"
+               "**Why**: Linear models serve as transparent baselines that prevent overfitting by shrinking uninformative feature weights to zero.\n"
+               "**Question Answered**: Can a simple, interpretable linear combination of immune signatures predict patient response across cohorts?"),
+        'rf': ("**What We Did**: Trained an ensemble of decision trees using random feature subsets.\n"
+               "**Why**: Decision trees capture non-linear relationships and feature interactions without assuming linear boundaries.\n"
+               "**Question Answered**: Do complex non-linear combinations of immune features improve out-of-cohort generalization?"),
+        'xgb': ("**What We Did**: Trained a sequential gradient-boosted decision tree model with hyperparameter tuning.\n"
+                "**Why**: Gradient boosting iteratively corrects errors from previous trees, often achieving state-of-the-art tabular performance.\n"
+                "**Question Answered**: Does iterative error correction provide better sensitivity for identifying true responders?"),
+        'svm': ("**What We Did**: Trained a Support Vector Machine classifier with linear and radial basis function (RBF) kernels.\n"
+               "**Why**: SVMs maximize the decision margin between responders and non-responders in high-dimensional feature spaces.\n"
+               "**Question Answered**: Can hyper-plane margin maximization achieve superior class separation on small clinical cohorts?"),
+        'elasticnet': ("**What We Did**: Trained a logistic regression model combining L1 (Lasso) and L2 (Ridge) penalties.\n"
+                       "**Why**: ElasticNet balances feature selection (L1) with stability among correlated features (L2).\n"
+                       "**Question Answered**: Does balancing feature elimination and grouping improve stability across heterogeneous trials?")
+    }
+
     for model_key, loco_results in all_loco_results.items():
-        report_lines.append(f"## {model_names.get(model_key, model_key.upper())}\n\n")
+        model_label = model_names.get(model_key, model_key.upper())
+        report_lines.append(f"## {model_label}\n\n")
+        if model_key in model_explanations:
+            report_lines.append(f"{model_explanations[model_key]}\n\n")
         
-        # Create metrics table at default threshold
-        report_lines.append("### Performance Metrics (Threshold = 0.5)\n\n")
+        # Metrics table at default threshold
+        report_lines.append("### Performance Metrics (Default Threshold = 0.5)\n\n")
         report_lines.append("| Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score | C-Index |\n")
         report_lines.append("|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
         
@@ -103,9 +122,9 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
                 f"| {cohort} | {n_samples} | {m['auc']:.3f} | {m['accuracy']:.3f} | {m['sensitivity']:.3f} | {m['specificity']:.3f} | {m['precision']:.3f} | {m['f1']:.3f} | {cindex_str} |\n"
             )
 
-        # Create metrics table at Youden's J optimal threshold
+        # Metrics table at Youden's J optimal threshold
         report_lines.append("\n### Performance Metrics (Youden's J Optimal Threshold)\n\n")
-        report_lines.append("> Youden's J statistic ($J = \\text{sensitivity} + \\text{specificity} - 1$) identifies the threshold that maximises the sum of sensitivity and specificity. This is an **optimistic** estimate because the threshold is selected on the same data it is evaluated on; in production, the threshold should be fixed from a training set.\n\n")
+        report_lines.append("> **Note for Students**: Youden's J statistic ($J = \\text{sensitivity} + \\text{specificity} - 1$) calculates the optimal decision boundary that balances true positives and true negatives. Evaluating threshold optimization on test data provides an upper-bound performance benchmark.\n\n")
         report_lines.append("| Test Cohort | N | AUC | Threshold | Accuracy | Sensitivity | Specificity | Precision | F1-Score |\n")
         report_lines.append("|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
 
@@ -122,31 +141,32 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
                 f"| {cohort} | {n_samples} | {m['auc']:.3f} | {m['threshold']:.3f} | {m['accuracy']:.3f} | {m['sensitivity']:.3f} | {m['specificity']:.3f} | {m['precision']:.3f} | {m['f1']:.3f} |\n"
             )
         
-        # Confusion matrices
-        report_lines.append("\n### Visualizations & Diagnostics\n\n")
-        report_lines.append(f"#### Confusion Matrices (Threshold = 0.5)\n")
-        model_label = model_names.get(model_key, model_key.upper())
-        report_lines.append(f"![[confusion_matrices_{model_key}.png]]\n\n")
-        report_lines.append(f"_Figure: Confusion matrices for {model_label} at the default 0.5 decision threshold, per LOCO test cohort._\n\n")
+        # Visualizations
+        report_lines.append("\n### Visualisations & Diagnostics\n\n")
+        report_lines.append("#### Confusion Matrices (Threshold = 0.5)\n")
+        report_lines.append(f"![Confusion Matrices](../../plots/models/confusion_matrices_{model_key}.png)\n\n")
+        report_lines.append(f"_Figure: Confusion matrices for {model_label} at default 0.5 decision threshold across test cohorts._\n\n")
         
-        # Curves
-        report_lines.append(f"#### ROC & Precision-Recall Curves\n")
-        report_lines.append(f"![[roc_curves_{model_key}.png]]\n\n")
-        report_lines.append(f"_Figure: ROC curves for {model_label} across LOCO test cohorts. Diagonal dashed line indicates chance-level performance (AUC = 0.5)._\n\n")
-        report_lines.append(f"![[pr_curves_{model_key}.png]]\n\n")
-        report_lines.append(f"_Figure: Precision-Recall curves for {model_label}. Particularly informative under class imbalance._\n\n")
+        report_lines.append("#### ROC & Precision-Recall Curves\n")
+        report_lines.append(f"![ROC Curves](../../plots/models/roc_curves_{model_key}.png)\n\n")
+        report_lines.append(f"_Figure: ROC curves for {model_label} across LOCO test cohorts. Dashed diagonal indicates chance performance (AUC = 0.5)._\n\n")
+        report_lines.append(f"![Precision-Recall Curves](../../plots/models/pr_curves_{model_key}.png)\n\n")
+        report_lines.append(f"_Figure: Precision-Recall curves for {model_label}, illustrating precision across sensitivity thresholds._\n\n")
 
     # --- Combined Features Section ---
     if combined_loco_results:
         report_lines.append("---\n\n")
-        report_lines.append("## Combined Features: Immune Signatures + Driver Mutations\n\n")
-        report_lines.append("This section benchmarks models trained on the 11 immune signatures plus 3 binary driver-mutation features (BRAF, NRAS, NF1) using the same 3-cohort LOCO framework. Adding genomic features tests whether mutation status provides complementary predictive signal beyond transcriptomic signatures alone.\n\n")
+        report_lines.append("## Multimodal Integration: Immune Signatures + Driver Mutations\n\n")
+        report_lines.append(
+            "**What We Did**: Benchmark-tested models trained on both immune expression signatures and key melanoma driver mutations (`mut_BRAF`, `mut_NRAS`, `mut_NF1`).\n"
+            "**Why**: We wanted to evaluate whether genomic mutation flags provide complementary predictive information that transcriptomic signatures miss.\n"
+            "**Question Answered**: Does adding somatic driver mutation status improve cross-cohort response prediction performance?\n\n"
+        )
 
         for model_key, loco_results in combined_loco_results.items():
             model_label_comb = model_names.get(model_key, model_key.upper())
-            report_lines.append(f"### {model_label_comb}\n\n")
+            report_lines.append(f"### {model_label_comb} (Multimodal)\n\n")
 
-            # Metrics table
             report_lines.append("| Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score |\n")
             report_lines.append("|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
             for cohort, res in sorted(loco_results.items()):
@@ -156,19 +176,21 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
                     f"| {cohort} | {n_samples} | {m['auc']:.3f} | {m['accuracy']:.3f} | {m['sensitivity']:.3f} | {m['specificity']:.3f} | {m['precision']:.3f} | {m['f1']:.3f} |\n"
                 )
 
-            # ROC plot
-            report_lines.append(f"\n![[roc_curves_combined_{model_key}.png]]\n\n")
-            report_lines.append(f"_Figure: ROC curves for {model_label_comb} with combined immune signature + driver mutation features._\n\n")
+            report_lines.append(f"\n![Multimodal ROC Curves](../../plots/models/roc_curves_combined_{model_key}.png)\n\n")
+            report_lines.append(f"_Figure: Multimodal ROC curves for {model_label_comb} integrating immune signatures and driver mutation flags._\n\n")
     
     # --- Survival Analysis Section ---
     if survival_results:
         report_lines.append("---\n\n")
-        report_lines.append("## Survival Analysis (Log-Rank Test)\n\n")
-        report_lines.append("Kaplan-Meier survival curves stratify patients into high and low predicted-response-probability groups using the best-performing LOCO model per cohort (selected by AUC, excluding models with degenerate predictions). A log-rank test assesses whether the two groups have significantly different overall survival.\n\n")
+        report_lines.append("## Downstream Overall Survival Stratification\n\n")
+        report_lines.append(
+            "**What We Did**: Stratified patients into predicted high-risk (low response probability) and low-risk (high response probability) groups using the best-performing LOCO model per cohort, then performed log-rank tests on overall survival.\n"
+            "**Why**: A clinically useful response predictor should also stratify long-term patient survival outcomes.\n"
+            "**Question Answered**: Do patients predicted as responders by our cross-cohort models demonstrate significantly longer overall survival?\n\n"
+        )
 
-        # Summary table
-        report_lines.append("### Table: Survival Stratification Summary\n\n")
-        report_lines.append("| Cohort | Model Used | LOCO AUC | Log-Rank p-value | Significant (p < 0.05)? |\n")
+        report_lines.append("### Summary Table: Survival Stratification\n\n")
+        report_lines.append("| Cohort | Model Selected | Best LOCO AUC | Log-Rank p-value | Significant (p < 0.05)? |\n")
         report_lines.append("|:---|:---:|:---:|:---:|:---:|\n")
         for sr in survival_results:
             p_str = f"{sr['p_value']:.3e}" if sr['p_value'] is not None else "N/A"
@@ -181,31 +203,26 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
             )
         report_lines.append("\n")
 
-        # Individual KM plots
-        report_lines.append("### Kaplan-Meier Curves\n\n")
+        report_lines.append("### Kaplan-Meier Survival Curves\n\n")
         for sr in survival_results:
             report_lines.append(f"#### {sr['cohort']}\n\n")
-            report_lines.append(f"![[{sr['plot_filename']}]]\n\n")
+            report_lines.append(f"![Kaplan-Meier Curve](../../plots/models/{sr['plot_filename']})\n\n")
             if sr['p_value'] is not None:
-                report_lines.append(f"_Figure: KM survival curves for {sr['cohort']} stratified by {sr['model'].upper()} predicted response probability (log-rank p = {sr['p_value']:.3e})._\n\n")
+                report_lines.append(f"_Figure: Kaplan-Meier overall survival curves for {sr['cohort']} stratified by {sr['model'].upper()} predicted response probability (log-rank p = {sr['p_value']:.3e})._\n\n")
             else:
-                report_lines.append(f"_Figure: KM survival curves for {sr['cohort']} could not be generated (constant predictions)._\n\n")
+                report_lines.append(f"_Figure: Kaplan-Meier curves for {sr['cohort']} could not be generated (constant predictions)._\n\n")
 
     report_lines.append("---\n\n")
-    report_lines.append("## Summary & Interpretation\n\n")
-    report_lines.append("### Key Metrics Explained:\n")
-    report_lines.append("- **Sensitivity (Recall)**: TP / (TP + FN) — Proportion of actual responders correctly identified\n")
-    report_lines.append("- **Specificity**: TN / (TN + FP) — Proportion of actual non-responders correctly identified\n")
-    report_lines.append("- **Precision**: TP / (TP + FP) — Proportion of predicted responders who are actually responders\n")
-    report_lines.append("- **Accuracy**: (TP + TN) / Total — Overall correctness across both classes\n")
-    report_lines.append("- **F1-Score**: Harmonic mean of Precision and Recall — Balances both metrics\n")
-    report_lines.append("- **AUC-ROC**: Area under the Receiver Operating Characteristic curve — Robustness to threshold selection\n")
-    report_lines.append("- **C-Index (Concordance Index)**: Evaluates how well predicted response probabilities rank patients by survival. 0.5 = random, 1.0 = perfect. Accounts for censoring in survival data.\n\n")
-    report_lines.append("### Visualizations:\n")
-    report_lines.append("- **ROC Curves** (`roc_curves_*.png`): Trade-off between True Positive Rate and False Positive Rate\n")
-    report_lines.append("- **PR Curves** (`pr_curves_*.png`): Precision-Recall trade-off, especially relevant for class imbalance\n")
-    report_lines.append("- **Confusion Matrices** (`confusion_matrices_*.png`): Cell-level breakdown of predictions per cohort\n\n")
-    
+    report_lines.append("## Student Summary & Key Guide\n\n")
+    report_lines.append("### Understanding Evaluation Metrics:\n")
+    report_lines.append("- **Sensitivity (Recall)**: $\\text{TP} / (\\text{TP} + \\text{FN})$ — Percentage of actual treatment responders the model correctly identifies.\n")
+    report_lines.append("- **Specificity**: $\\text{TN} / (\\text{TN} + \\text{FP})$ — Percentage of non-responders correctly identified.\n")
+    report_lines.append("- **Precision**: $\\text{TP} / (\\text{TP} + \\text{FP})$ — Percentage of patients predicted as responders who actually responded.\n")
+    report_lines.append("- **Accuracy**: $(\\text{TP} + \\text{TN}) / \\text{Total}$ — Overall percentage of correct predictions.\n")
+    report_lines.append("- **F1-Score**: Harmonic mean of Precision and Sensitivity — Balances precision and recall in imbalanced datasets.\n")
+    report_lines.append("- **AUC-ROC**: Area Under Receiver Operating Characteristic Curve — Measures model ranking quality independent of threshold (0.5 = random guessing, 1.0 = perfect prediction).\n")
+    report_lines.append("- **C-Index**: Concordance Index evaluating how well predicted probabilities rank patient survival times (0.5 = random, 1.0 = perfect agreement).\n\n")
+
     report_path = output_dir / "pillar-4-out-of-cohort-benchmarks" / "model_evaluation_report.md"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     with open(report_path, 'w', encoding='utf-8') as f:

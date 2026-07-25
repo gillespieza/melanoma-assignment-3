@@ -1,17 +1,18 @@
 ---
 title: "Executive Summary: Melanoma Immunotherapy Response Predictor"
+aliases: 
 tags:
-  - melanoma
+  - biomarkers
   - executive-summary
   - immunotherapy
-  - biomarkers
   - machine-learning
+  - melanoma
 created: 2026-07-24 13:45
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-24 13:45
+updated: 2026-07-25 20:08
 ---
 
 # Executive Summary: Melanoma Immunotherapy Response Predictor
@@ -41,16 +42,16 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 
 ![Overall Survival KM Curves (All Cohorts)](../plots/clinical/km_os_grid.png)
 
-> [!NOTE]
-> **Baseline Overall Survival Trajectories**:
+> [!NOTE]  
+> **Baseline Overall Survival Trajectories**:  
 > The unstratified Kaplan-Meier overall survival curves above illustrate baseline survival timelines across all four cohorts. **TCGA-SKCM** ($N = 443$) demonstrates the longest median follow-up duration (41.6 months), whereas clinical trial cohorts reflect advanced stage IV melanoma populations undergoing active checkpoint blockade therapy.
 
 ### Overall Survival Stratified by Immunotherapy Response
 
 ![Overall Survival by Immunotherapy Response (RECIST)](../plots/clinical/km_os_by_response.png)
 
-> [!IMPORTANT]
-> **Prognostic Impact of RECIST Response**:
+> [!IMPORTANT]  
+> **Prognostic Impact of RECIST Response**:  
 > Stratifying overall survival by objective RECIST response status (**Responder** [CR/PR] vs **Non-responder** [PD]) confirms that clinical response to anti-PD-1 therapy is a extraordinarily strong surrogate endpoint for long-term overall survival:
 > * **Liu 2019 ($N = 122$)**: Log-rank $p < 0.0001$. Non-responders exhibit steep early mortality (median OS ~10.5 months), whereas >70% of responders remain alive beyond 50 months of follow-up.
 > * **Hugo 2016 ($N = 27$)**: Log-rank $p < 0.0001$. Responders show sustained survival extension over non-responders.
@@ -62,13 +63,13 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 
 ![Co-Mutation Landscape (Merged Trials)](../plots/genomic/comut_landscape_merged.png)
 
-> [!NOTE]
-> **Integrated Multi-Cohort Somatic Landscape ($N = 256$)**:
+> [!NOTE]  
+> **Integrated Multi-Cohort Somatic Landscape ($N = 256$)**:  
 > The co-mutation landscape (oncoplot) above aligns individual patient somatic mutation profiles in core melanoma driver and resistance genes (rows) with patient-level clinical annotations (Tumour Mutational Burden, RECIST Response, Cohort source, and Sex).
 >
 > * **MAPK Driver Mutual Exclusivity**: High mutual exclusivity is observed between primary drivers `BRAF` (43.1%) and `NRAS` (24.6%), representing distinct, non-overlapping mechanisms of RAS-RAF-MEK-ERK activation.
-> * **Driver Subtype Response Equivalence**: Responders (green) and non-responders (vermillion) are evenly distributed across `BRAF`, `NRAS`, `NRAS`, and Triple-WT subtypes, visually demonstrating that driver mutation status alone does not dictate response to anti-PD-1 therapy.
-> * **Targeted Resistance Genes**: Baseline mutations in primary resistance machinery (*B2M*, *JAK1*, *JAK2*) are rare (<5%) in pre-treatment biopsies, indicating that genetic disruption of antigen presentation and interferon signaling is predominantly an acquired rather than primary resistance mechanism.
+> * **Driver Subtype Response Equivalence**: Responders (green) and non-responders (vermillion) are evenly distributed across `BRAF`, `NRAS`, `NF1`, and Triple-WT subtypes, visually demonstrating that driver mutation status alone does not dictate response to anti-PD-1 therapy.
+> * **Targeted Resistance Genes**: Baseline mutations in primary resistance machinery (_B2M_, _JAK1_, _JAK2_) are rare (<5%) in pre-treatment biopsies, indicating that genetic disruption of antigen presentation and interferon signaling is predominantly an acquired rather than primary resistance mechanism.
 
 ---
 
@@ -144,7 +145,7 @@ graph LR
 |:---|:---|:---|
 | **Batch correction** | Cohort-independent Z-score scaling | Prevents cross-validation data leakage (ComBat requires access to all cohorts simultaneously) |
 | **Transcriptomic features** | 6 curated immune signatures | Biologically interpretable, stable across folds, grounded in known ICI biology |
-| **Genomic features** | TMB + 3 driver mutations (BRAF, NRAS, NF1) | Orthogonal to transcriptomic signatures; TMB is predictive of response but not prognostic of baseline survival |
+| **Genomic features** | TMB + 3 driver mutations (`BRAF`, `NRAS`, `NF1`) | Orthogonal to transcriptomic signatures; TMB is predictive of response but not prognostic of baseline survival |
 | **Feature selection** | Curated signatures over SelectKBest | Data-driven selection captures cohort-specific noise, not transferable immune biology |
 | **Validation strategy** | Report both pooled CV and LOCO | LOCO is the primary evidence layer; pooled CV provides complementary upper-bound estimates |
 
