@@ -1,31 +1,33 @@
 # Q5: Patient Stratification, Cell Deconvolution & Clinical Utility Pipeline
 
-Translating Q1 predictive response models into clinically actionable patient subtypes, cell-type deconvolution metrics, Q3 ODE dynamic simulations, Q4 DepMap/LINCS drug target nominations, and treatability index scoring for advanced melanoma immunotherapy.
+Translating Q1 predictive response models into clinically actionable patient subtypes, cell-type deconvolution metrics, Q2 drug sensitivity predictions, Q3 ODE dynamic simulations, Q4 DepMap/LINCS drug target nominations, and treatability index scoring for advanced melanoma immunotherapy.
 
 ---
 
 ## Executive Summary
 
-This subproject implements **Question 5 (Q5)** of the Melanoma Immunotherapy Assignment (*"Can we identify clinically distinct patient subgroups? Do subgroups require different treatments?"*). It serves as the **master synthesis engine** uniting all 5 project questions into a single bench-to-bedside clinical decision framework:
+This subproject implements **Question 5 (Q5)** of the Melanoma Immunotherapy Assignment (*"Can we identify clinically distinct patient subgroups? Do subgroups require different treatments?"*). It serves as the **master synthesis engine** uniting all 5 project questions (Q1–Q5) into a single bench-to-bedside clinical decision framework:
 
 ```
-   Q1: Response Predictor  ──┐
-                             ├──► Q5: Patient Stratification ──► Discovers 4 Patient Phenotypes
-   Q2: Cell Line Sensitivity─┘    (Immune Hot, Cold, M2-High, Mutant-Driven)
-                                        │
-           ┌────────────────────────────┴────────────────────────────┐
-           ▼                                                         ▼
-   Q3: ODE Dynamic Models                                   Q4: DepMap & LINCS
-   Simulates Tumour Volume T(t)                             Identifies Novel Targets & Drug Perturbagens
-   Trajectories for Each Phenotype                          to Overcome Non-Response
-           │                                                         │
-           └────────────────────────────┬────────────────────────────┘
-                                        ▼
-                         Q5: Treatability Index & Decision Support
-                         (Recommends Specific Combination Therapies)
+   Q1: Patient IO Predictor ──┐
+                              ├──► Q5: Patient Stratification ──► Discovers 4 Patient Phenotypes
+   Q2: Cell Line Sensitivity──┘    (Immune Hot, Cold, M2-High, Mutant-Driven)
+   (Dabrafenib/Dacarbazine)              │
+                                         ┌────────────────────────────┴────────────────────────────┐
+                                         ▼                                                         ▼
+                                 Q3: ODE Dynamic Models                                   Q4: DepMap & LINCS
+                                 Simulates Tumour Volume T(t)                             Identifies Novel Targets & Drug Perturbagens
+                                 Trajectories for Each Phenotype                          to Overcome Non-Response
+                                         │                                                         │
+                                         └────────────────────────────┬────────────────────────────┘
+                                                                      ▼
+                                                       Q5: Treatability Index & Decision Support
+                                                       (Routes Patient to Arm A, Arm B, or Arm C)
 ```
 
 Key features & multi-question integrations in Q5:
+* **Q1 Immunotherapy Prediction**: Inputting patient baseline expression/clinical profiles to predict anti-PD-1/CTLA-4 response probability.
+* **Q2 Cell Viability & Drug Sensitivity**: Integrating Q2 drug response models for standard-of-care targeted therapies (*Dabrafenib*, *Trametinib*) and chemotherapy (*Dacarbazine*) to select specific agents for non-responders.
 * **Cell Count & Deconvolution Analysis**: Quantitative transcriptomic deconvolution of immune cell fractions and integration of a professor-provided **M1/M2 Macrophage Signature Transcript Vector (STV)** ([m1_m2_stv.csv](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/data/config/m1_m2_stv.csv)).
 * **Q3 ODE Dynamic Trajectories**: Parameterising ODE tumour-immune differential equations for each discovered phenotype to plot simulated 180-day tumour volume regression ($T(t)$) under monotherapy vs. combination therapy.
 * **Q4 DepMap & LINCS Target Nominations**: Mapping DepMap CRISPR essentiality targets (*AXL*, *MDM2*, *CSF1R*) and LINCS L1000 perturbational gene signatures to overcome non-response in therapy-resistant phenotypes.
@@ -41,7 +43,7 @@ The analysis is structured into 7 sequential phases executed via standalone scri
                   ┌──────────────────────────────────────────────────────────┐
                   │                    INPUT DATASETS                        │
                   │  • clin_merged.csv, expr_merged.csv, merged_genomic.csv  │
-                  │  • Q1 Serialised Models & Feature Importance Rankings    │
+                  │  • Q1 Serialised Models & Q2 Cell Line Viability Scores  │
                   │  • Professor M1/M2 STV Matrix (data/config/m1_m2_stv.csv)│
                   └────────────────────────────┬─────────────────────────────┘
                                                │
@@ -58,7 +60,7 @@ The analysis is structured into 7 sequential phases executed via standalone scri
                                                │
     Phase 6 ──► [06_clinical_utility.py] ───► Decision Curve Analysis (DCA) & NNT
                                                │
-    Phase 7 ──► [07_treatability_scoring.py] ─► Treatability Index & Q4 DepMap/LINCS Targets
+    Phase 7 ──► [07_treatability_scoring.py] ─► Treatability Index, Q2 Drugs & Q4 Targets
                                                │
                                                ▼
                   ┌──────────────────────────────────────────────────────────┐
@@ -66,7 +68,7 @@ The analysis is structured into 7 sequential phases executed via standalone scri
                   │  • Consolidated Feature Matrix & Patient Clusters CSVs   │
                   │  • 300 DPI Publication Visualisations & Plots             │
                   │  • Detailed Markdown Reports in reports/                 │
-                  └────────────────────────────┴─────────────────────────────┘
+                  └──────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -124,13 +126,13 @@ The analysis is structured into 7 sequential phases executed via standalone scri
   * Computes Number Needed to Treat (NNT) and Positive Predictive Value (PPV).
   * Compares Q1 model performance against standard clinical strategies (*Treat All*, *High TMB*, *PD-L1+*).
 
-### Phase 7: Treatability Index & Q4 DepMap/LINCS Target Nominations
+### Phase 7: Treatability Index, Q2 Drugs & Q4 Target Nominations
 * **Script**: [07_treatability_scoring.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/07_treatability_scoring.py)
 * **Tasks**:
   * Evaluates non-responders for reversible barriers (antigen presentation integrity, IFN-$\gamma$ pathway mutations, CNA burden, and targetable *BRAF/NRAS/PTEN* mutations).
   * Computes per-patient Treatability Index scores ($0 - 1$).
+  * **Q2 Drug Integration**: Connects Q2 cell-line viability and drug sensitivity predictions to select specific targeted agents (Arm B: *Dabrafenib/Trametinib*) or chemotherapy agents (Arm C: *Dacarbazine*).
   * **Q4 DepMap/LINCS Integration**: Maps CRISPR essentiality targets (*AXL*, *MDM2*, *CSF1R*) and LINCS L1000 perturbagens to supply specific combination therapy recommendations for resistant phenotypes.
-  * Defines decision support pathways and pluggable integration points for future Q2 cell-line viability outputs.
 
 ---
 
@@ -139,6 +141,7 @@ The analysis is structured into 7 sequential phases executed via standalone scri
 ```
 q5-patient-stratification/
 ├── README.md                      <- Project documentation (this file)
+├── README_STUDENT_GUIDE.md        <- Biological & statistical study guide
 ├── requirements.txt               <- Q5 additions (umap-learn, dcurves)
 ├── logs/                          <- Pipeline TeeStream execution logs
 ├── models/                        <- Serialised subgroup classifier models
@@ -156,7 +159,7 @@ q5-patient-stratification/
 │   ├── 04_phenotype_characterisation.py <- Subtype annotation & Q3 ODE trajectories
 │   ├── 05_subgroup_models.py     <- Subgroup-specific predictive modeling
 │   ├── 06_clinical_utility.py     <- Decision Curve Analysis (DCA)
-│   ├── 07_treatability_scoring.py <- Treatability index & Q4 DepMap/LINCS targets
+│   ├── 07_treatability_scoring.py <- Treatability index, Q2 drugs & Q4 targets
 │   └── run_q5_pipeline.py         <- Master pipeline orchestrator
 └── src/                           <- Q5-specific Python source package
     ├── __init__.py
@@ -171,7 +174,7 @@ q5-patient-stratification/
 
 ## Execution & Verification
 
-Test end-to-end pipeline execution (including Q3 ODE and Q4 target mapping stubs):
+Test end-to-end pipeline execution (including Q2, Q3, and Q4 integration stubs):
 
 ```bash
 python q5-patient-stratification/scripts/run_q5_pipeline.py
