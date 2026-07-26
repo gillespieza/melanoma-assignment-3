@@ -9,6 +9,10 @@ import contextlib
 from pathlib import Path
 import sys
 
+# ---------------------------------------------------------------------------
+# Bootstrap project root resolution for top-level imports
+# ---------------------------------------------------------------------------
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
     if (parent / "src").is_dir() and (parent / "data").is_dir():
