@@ -29,6 +29,10 @@ for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
 if str(SUBPROJECT_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(SUBPROJECT_ROOT / "src"))
 
+q1_root = SCRIPT_DIR.parent.parent / "q1-response-predictor"
+if q1_root.exists() and str(q1_root) not in sys.path:
+    sys.path.insert(0, str(q1_root))
+
 # ---------------------------------------------------------------------------
 # Project Imports
 # ---------------------------------------------------------------------------
@@ -54,34 +58,61 @@ STV_PATH = DATA_DIR / "config" / "m1_m2_stv.csv"
 
 
 def load_processed_datasets() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Load preprocessed clinical, expression, and genomic DataFrames.
+    """Load and validate preprocessed multi-modal clinical, transcriptomic, and genomic datasets.
+
+    Imports harmonised patient cohorts (Liu 2019, Riaz 2017, Hugo 2016, TCGA-SKCM) from
+    data/processed/merged/immunotherapy/. 
+    
+    Performs path verification, indexes expression matrices by SAMPLE_ID for efficient joining, 
+    deduplicates genomic mutation features, and handles missing files via defensive error handling.
 
     Returns:
-        Tuple containing (df_clin, df_expr, df_genomic).
+        Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+            - df_clin: Patient clinical metadata, overall survival, and binary response labels (N=326).
+            - df_expr: Transposed gene expression matrix (samples as rows, 19,757 log2(TPM+1) genes as columns).
+            - df_genomic: Driver mutation binary indicators (BRAF, NRAS, NF1, Triple-WT) and TMB counts.
+
+    Raises:
+        FileNotFoundError: If essential clinical or expression merged files are missing.
     """
+    # ---------------------------------------------------------------------------
+    # Step 1: Define canonical file paths to preprocessed cohort matrices
+    # ---------------------------------------------------------------------------
     clin_file = INPUT_DIR / "clin_merged.csv"
     expr_file = INPUT_DIR / "expr_merged.csv"
     genomic_file = INPUT_DIR / "merged_genomic.csv"
 
+    # Defensive check: ensure critical prerequisite files exist before proceeding
     if not clin_file.exists():
-        raise FileNotFoundError(f"Missing clinical data file at {rel_path(clin_file)}")
+        raise FileNotFoundError(f"Missing clinical data file at {rel_path(clin_file)}. Ensure preprocessing pipeline has run.")
     if not expr_file.exists():
-        raise FileNotFoundError(f"Missing expression data file at {rel_path(expr_file)}")
+        raise FileNotFoundError(f"Missing expression data file at {rel_path(expr_file)}. Ensure preprocessing pipeline has run.")
 
+    # ---------------------------------------------------------------------------
+    # Step 2: Load merged clinical metadata and response labels
+    # ---------------------------------------------------------------------------
     df_clin = pd.read_csv(clin_file)
     print(f"Loaded clinical dataset: {len(df_clin)} patients from {rel_path(clin_file)}")
 
+    # ---------------------------------------------------------------------------
+    # Step 3: Load RNA-seq expression matrix and index by sample identifier
+    # ---------------------------------------------------------------------------
     df_expr = pd.read_csv(expr_file)
     if "SAMPLE_ID" in df_expr.columns:
+        # Set SAMPLE_ID as index so rows correspond to individual patient samples
         df_expr = df_expr.set_index("SAMPLE_ID")
     print(f"Loaded expression matrix: {df_expr.shape[0]} samples x {df_expr.shape[1]} genes")
 
+    # ---------------------------------------------------------------------------
+    # Step 4: Load genomic driver mutation indicators and TMB (if available)
+    # ---------------------------------------------------------------------------
     if genomic_file.exists():
         df_genomic = pd.read_csv(genomic_file)
-        # Deduplicate columns if any duplicate mut_ names exist
-        df_genomic = df_genomic.loc[:, ~df_genomic.columns.duplicated()]
+        # Deduplicate columns by stripping pandas duplicate suffixes (.1, .2) and keeping first occurrence
+        df_genomic = df_genomic.loc[:, ~df_genomic.columns.str.replace(r"\.\d+$", "", regex=True).duplicated(keep="first")]
         print(f"Loaded genomic dataset: {len(df_genomic)} rows from {rel_path(genomic_file)}")
     else:
+        # Fallback to empty DataFrame if genomic MAF file is absent
         df_genomic = pd.DataFrame()
         print("Genomic file not found; using empty DataFrame fallback.")
 
@@ -89,50 +120,77 @@ def load_processed_datasets() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
 
 
 def extract_immune_signatures(df_expr: pd.DataFrame) -> pd.DataFrame:
-    """Compute core immune signatures (`TIS`, `CYT`, `IFN_gamma`, `CD8_Tcell`, `IMPRES`, `CD274`).
+    """Compute core transcriptomic immune signatures from bulk RNA-seq expression profiles.
+
+    First attempts to import and run the shared project-wide signature extraction module
+    `src.signatures` (from Question 1). If unavailable, provides a robust, self-contained fallback
+    that calculates published immune proxies:
+    - **PD-L1 Expression**: Single-gene marker `CD274` (or `PDL1`).
+    - **Tumour Inflammation Signature (TIS)**: Ayers et al. 18-gene IFN-gamma responsive microenvironment score.
+    - **Cytolytic Index (CYT)**: Rooney et al. Geometric/arithmetic mean of granzyme A (`GZMA`) and perforin 1 (`PRF1`).
+    - **Interferon-Gamma Response (IFN_gamma)**: Expression average across canonical STAT1/CXCL9/CXCL10 signaling genes.
+    - **CD8+ T-Cell Density**: Average expression of lineage markers `CD8A` and `CD8B`.
 
     Args:
-        df_expr: Expression DataFrame (samples x genes).
+        df_expr (pd.DataFrame): Normalized gene expression matrix (samples as rows, genes as columns).
 
     Returns:
-        DataFrame containing computed immune signatures.
+        pd.DataFrame: Calculated immune signature scores indexed by sample identifier.
     """
-    # Attempt import from Q1 signatures module
-    q1_sig_path = PROJECT_ROOT / "q1-response-predictor" / "src"
-    if str(q1_sig_path) not in sys.path:
-        sys.path.insert(0, str(q1_sig_path))
+    # ---------------------------------------------------------------------------
+    # Step 1: Attempt import of central Question 1 signature extraction module
+    # ---------------------------------------------------------------------------
+    q1_root = PROJECT_ROOT / "q1-response-predictor"
+    q1_src_path = q1_root / "src"
+
+    # Add q1 root so `from src.config.constants import ...` inside signatures.py resolves
+    if str(q1_root) not in sys.path:
+        sys.path.insert(0, str(q1_root))
+    if str(q1_src_path) not in sys.path:
+        sys.path.insert(0, str(q1_src_path))
 
     try:
         from signatures import extract_all_signatures
         df_sig = extract_all_signatures(df_expr)
         print("Extracted core immune signatures using shared Q1 signature module.")
     except Exception as err:
+        # Fallback executed if Q1 module is unimportable or raises an exception
         print(f"Q1 signature module fallback (Reason: {err}). Computing signatures locally.")
         df_sig = pd.DataFrame(index=df_expr.index)
 
-        # Local fallback signature calculations
+        # ---------------------------------------------------------------------------
+        # Step 2: Fallback PD-L1 single-gene biomarker extraction
+        # ---------------------------------------------------------------------------
         if "CD274" in df_expr.columns:
             df_sig["PD_L1"] = df_expr["CD274"]
         elif "PDL1" in df_expr.columns:
             df_sig["PD_L1"] = df_expr["PDL1"]
 
-        # TIS proxy (mean of available TIS marker genes)
+        # ---------------------------------------------------------------------------
+        # Step 3: Fallback Tumour Inflammation Signature (TIS) proxy calculation
+        # ---------------------------------------------------------------------------
         tis_markers = ["CD274", "PDCD1", "STAT1", "HLA-DRA", "CXCL9", "CXCL10", "IDO1"]
         tis_found = [g for g in tis_markers if g in df_expr.columns]
         if tis_found:
             df_sig["TIS"] = df_expr[tis_found].mean(axis=1)
 
-        # CYT proxy (mean of PRF1 and GZMA)
+        # ---------------------------------------------------------------------------
+        # Step 4: Fallback Cytolytic Index (CYT) calculation (PRF1 + GZMA mean)
+        # ---------------------------------------------------------------------------
         cyt_found = [g for g in ["PRF1", "GZMA"] if g in df_expr.columns]
         if cyt_found:
             df_sig["CYT"] = df_expr[cyt_found].mean(axis=1)
 
-        # IFN-gamma proxy
+        # ---------------------------------------------------------------------------
+        # Step 5: Fallback IFN-gamma pathway activation proxy calculation
+        # ---------------------------------------------------------------------------
         ifng_found = [g for g in ["IFNG", "STAT1", "IDO1", "CXCL9", "CXCL10"] if g in df_expr.columns]
         if ifng_found:
             df_sig["IFN_gamma"] = df_expr[ifng_found].mean(axis=1)
 
-        # CD8 T-cell proxy
+        # ---------------------------------------------------------------------------
+        # Step 6: Fallback CD8 T-cell lineage abundance proxy calculation
+        # ---------------------------------------------------------------------------
         cd8_found = [g for g in ["CD8A", "CD8B"] if g in df_expr.columns]
         if cd8_found:
             df_sig["CD8_Tcell"] = df_expr[cd8_found].mean(axis=1)

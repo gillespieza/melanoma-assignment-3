@@ -38,6 +38,7 @@ Whenever generating plots, figures, web artifacts, or presentation reports for t
 - **Aspect Ratio**: Prefer 16:9 widescreen proportions (`figsize=(11, 6)` or `figsize=(12, 7)`) when figures are intended for slides.
 - **Typography**: Clean `sans-serif` font with bold axis labels and clear title hierarchy.
 - **Labels & Annotations**: On presentation slides, prefer direct data labels on bars/markers over forcing audience grid tracing.
+- **Gridlines**: Set gridlines to thin, light gray (`grid.color: '#E5E7EB'`, `grid.linewidth: 0.5`, `grid.alpha: 0.6`) in `set_presentation_style()` so gridlines never distract from data visualisations.
 - **Image Preference over Tables**: For presentation and reporting purposes, always prefer generating and embedding high-resolution (300 DPI) visual plots and figures over static tabular data.
 - **Python Imports**: Import central color palettes from `src.styles` (`from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style`).
 
