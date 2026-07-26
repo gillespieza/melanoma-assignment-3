@@ -86,6 +86,9 @@ Build a binary immunotherapy response predictor (CR/PR vs. PD) for cutaneous mel
 >  
 > Panel B confirms that cohort-independent Z-score standardisation successfully removes these baseline technical offsets (PC1: 15.4%, PC2: 7.2%), intermixing the cohorts in reduced-dimensional space while preserving genuine biological variance required for cross-cohort response prediction.
 
+> [!NOTE] 
+> **A second, coarser scaling step also exists at model-fit time.** The cohort-independent Z-scoring shown above is applied once, upstream, to raw signature scores before any train/test split. A separate `StandardScaler`, fit on the pooled *training* cohorts within each LOCO fold (`run_loco_cv()` in `src/models.py`), is applied afterward. This introduces no test-set leakage, but it is a distinct step from the per-cohort Z-scoring described here — see [batch_correction_report.md §4.1](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-1-cohorts-and-preprocessing/batch_correction_report.md) for the full two-stage explanation.
+
 ---
 
 ## 5. Key Findings
@@ -102,17 +105,18 @@ By contrast, the 6 curated immune signatures (IFN-$\gamma$, TIS, CYT, IMPRES, CD
 
 Tumour Mutational Burden and transcriptomic immune signatures are essentially uncorrelated (Spearman $r \approx -0.09$ to $0.16$). A tumour can be high-TMB but immunologically cold, or low-TMB but inflamed. This validates the multimodal model design: combining both feature types captures independent biological axes of treatment response.
 
-### 3. Support Vector Machines (SVM) Achieve Superior Out-of-Cohort Generalisation
+### 3. Tree-Based Models Outperform Linear Models on Multimodal Features
 
 #### _Table 2: Model performance under pooled cross-validation and strict Leave-One-Cohort-Out (LOCO) validation. SVM achieves top out-of-cohort performance on Riaz 2017 (AUC = 0.717) and Liu 2019 (AUC = 0.657)._
 
-| Model | Pooled 5-Fold CV AUC | Best LOCO AUC (Cohort) |
-|:---|:---:|:---:|
-| **Support Vector Machine (SVM)** | **0.718 ± 0.082** | **0.717** (Riaz 2017) / **0.657** (Liu 2019) |
-| **Random Forest** | 0.710 ± 0.094 | 0.678 (Riaz 2017) / 0.580 (Liu 2019) |
-| **ElasticNet Logistic Regression** | 0.618 ± 0.065 | 0.616 (Liu 2019) / 0.500 (Riaz 2017) |
-| **L1 Logistic Regression** | 0.615 ± 0.062 | 0.609 (Liu 2019) / 0.500 (Riaz 2017) |
-| **XGBoost Gradient Boosting** | 0.724 ± 0.089 | 0.618 (Riaz 2017) / 0.581 (Liu 2019) |
+
+| Model                      | Pooled 5-Fold CV AUC | Best LOCO AUC (Cohort) |
+|:-------------------------- |:-------------------- |:---------------------- |
+| **SVM**                    | **0.718 ± 0.082**    | **0.717** (Riaz 2017)  |
+| **XGBoost**                | **0.724 ± 0.089**    | 0.618 (Riaz 2017)      |
+| **Random Forest**          | **0.710 ± 0.094**    | 0.678 (Riaz 2017)      |
+| **L1 Logistic Regression** | 0.615 ± 0.062        | 0.609 (Liu 2019)       |
+| **Elastic Net**            | 0.618 ± 0.065        | 0.616 (Liu 2019)       |
 
 > [!important] Performance Gap Between Pooled CV and LOCO  
 > Pooled 5-fold CV estimates (~0.71–0.72 AUC) substantially overestimate out-of-cohort performance. Strict LOCO validation, where an entire cohort is held out, yields AUCs in the 0.43–0.72 range, reflecting the true difficulty of cross-study generalisation with small clinical trial datasets ($N = 27\text{--}122$). SVM demonstrates superior margin-based stability across heterogeneous study cohorts.

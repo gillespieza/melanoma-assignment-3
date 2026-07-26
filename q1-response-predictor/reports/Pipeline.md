@@ -163,7 +163,7 @@ Once the clean datasets are generated, the characterisation scripts analyze clin
 
 ### 4.2. Genomic Characterisation
 *   **`scripts/biomarkers/run_genomic_characterisation.py`**: Evaluates baseline genomic properties of TCGA and trials:
-    *   Generates a comparison of driver mutations (`BRAF`, `NRAS`, `NRAS`, and Triple-WT) saved to `plots/genomic/mutation_frequencies.png`.
+    *   Generates a comparison of driver mutations (`BRAF`, `NRAS`, `NF1`, and Triple-WT) saved to `plots/genomic/mutation_frequencies.png`.
     *   Plots pre-treatment TMB distributions (trial boxplots by response, TCGA log-normal histogram) saved to `plots/genomic/tmb_distribution.png`.
     *   Plots a Spearman correlation matrix of somatic mutation and neoantigen loads in Liu 2019 saved to `plots/genomic/biomarker_correlation_heatmap.png`.
     *   Generates Kaplan-Meier curves for TCGA overall survival by driver mutation subtype and TMB median-split saved to `plots/genomic/km_genomic_features.png`.
@@ -197,7 +197,8 @@ The pipeline outputs processed data, figures, and reports to their respective di
 *   **Genomic Characterisation**: Mutation landscapes, TMB distributions, correlation heatmaps, merged Co-Mutation oncoplots, and TCGA survival curves in `plots/genomic/` and `plots/biomarkers/`.
 *   **Model Performance**: ROC and PR curves in `plots/models/`.
 
-### Reporting Outputs (`reports/`)
+### Reporting & Inference Outputs (`reports/` and `predictor.py`)
+*   **`predictor.py`**: Standalone single-patient SVM response predictor CLI & Python API.
 *   **`README.md`**: Consolidated sitemap and 4-pillar documentation guide for the reports suite.
 *   **`pillar-1-cohorts-and-preprocessing/`**:
     *   `cohort_characteristics_clinical.md`: Baseline report detailing clinical patient demographics, treatment histories, response distributions, survival curves, and forest plots.
@@ -208,6 +209,7 @@ The pipeline outputs processed data, figures, and reports to their respective di
 *   **`pillar-3-transcriptomic-signatures/`**:
     *   `curated_signatures_report.md`: Consolidated report detailing gene signature implementation (IFN-$\gamma$, TIS, CYT, IMPRES, CD8, TCGA OS), signature scaling, biomarker orthogonality, 5-fold CV multimodal response predictor evaluation, and LOCO model validation.
 *   **`pillar-4-out-of-cohort-benchmarks/`**:
+    *   `model_evaluation_report.md`: Benchmark report detailing Leave-One-Cohort-Out (LOCO) cross-validation across all 5 classifiers (LR, RF, XGB, SVM, ElasticNet), ROC/PR curves, Youden thresholding, and downstream overall survival stratification.
     *   `transcriptomic_feature_selection_results.md`: Benchmark report detailing response-based `SelectKBest` feature selection ($k=20, 100, 200$) vs. signatures across LOCO cross-validation, TCGA Cox 20-gene survival signature derivation, and InterPro domain annotations.
 
 
