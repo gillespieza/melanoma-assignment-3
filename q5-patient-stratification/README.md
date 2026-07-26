@@ -30,7 +30,7 @@ Key features & multi-question integrations in Q5:
 * **Q2 Cell Viability & Drug Sensitivity**: Integrating Q2 drug response models for standard-of-care targeted therapies (*Dabrafenib*, *Trametinib*) and chemotherapy (*Dacarbazine*) to select specific agents for non-responders.
 * **Cell Count & Deconvolution Analysis**: Quantitative transcriptomic deconvolution of immune cell fractions and integration of a professor-provided **M1/M2 Macrophage Signature Transcript Vector (STV)** ([m1_m2_stv.csv](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/data/config/m1_m2_stv.csv)).
 * **Q3 ODE Dynamic Trajectories**: Parameterising ODE tumour-immune differential equations for each discovered phenotype to plot simulated 180-day tumour volume regression ($T(t)$) under monotherapy vs. combination therapy.
-* **Q4 DepMap & LINCS Target Nominations**: Mapping DepMap CRISPR essentiality targets (*AXL*, *MDM2*, *CSF1R*) and LINCS L1000 perturbational gene signatures to overcome non-response in therapy-resistant phenotypes.
+* **Q4 DepMap & LINCS Target Nominations**: Mapping DepMap CRISPR essentiality targets (`AXL`, `MDM2`, `CSF1R`) and LINCS L1000 perturbational gene signatures to overcome non-response in therapy-resistant phenotypes.
 * **Clinical Utility & Treatability Scoring**: Decision Curve Analysis (DCA), NNT calculations, and scoring non-responders for reversible biological barriers to recommend combination interventions.
 
 ---
@@ -68,7 +68,7 @@ The analysis is structured into 7 sequential phases executed via standalone scri
                   │  • Consolidated Feature Matrix & Patient Clusters CSVs   │
                   │  • 300 DPI Publication Visualisations & Plots             │
                   │  • Detailed Markdown Reports in reports/                 │
-                  └──────────────────────────────────────────────────────────┘
+                  └────────────────────────────┴─────────────────────────────┘
 ```
 
 ---
@@ -79,7 +79,7 @@ The analysis is structured into 7 sequential phases executed via standalone scri
 * **Script**: [01_load_and_prepare.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/01_load_and_prepare.py)
 * **Tasks**:
   * Loads multi-cohort processed data from `data/processed/merged/immunotherapy/`.
-  * Computes core immune signatures: IFN-$\gamma$, TIS, CYT, CD8 T-cell, IMPRES, and PD-L1 expression.
+  * Computes core immune signatures: IFN-$\gamma$, TIS, CYT, CD8 T-cell, IMPRES, and `CD274` (PD-L1) expression.
   * Calculates M1 and M2 macrophage scores using the professor's 14,837-gene STV matrix ([m1_m2_stv.csv](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/data/config/m1_m2_stv.csv)) and derives the M1/M2 ratio (`M1 / (M1 + M2)`).
   * Performs transcriptomic cell-type deconvolution (estimating CD8+ T cells, CD4+ T cells, M1/M2 macrophages, NK cells, B cells, and CAFs).
   * Exports unified matrix to `data/processed/q5/feature_matrix.csv`.
@@ -87,9 +87,9 @@ The analysis is structured into 7 sequential phases executed via standalone scri
 ### Phase 2: Deep Feature Interpretation
 * **Script**: [02_feature_analysis.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/02_feature_analysis.py)
 * **Tasks**:
-  * Conducts Mann-Whitney U testing (continuous features) and Fisher's exact / Chi-Square testing (categorical mutations/subtypes) against immunotherapy response.
+  * Conducts Mann-Whitney U testing (continuous features) and Fisher's exact / Chi-Square testing (categorical mutations/subtypes like `BRAF`, `NRAS`, `NF1`) against immunotherapy response.
   * Determines optimal decision cutoffs using Youden's J statistic.
-  * Tests pairwise logistic regression feature interaction terms (e.g. *TIS $\times$ BRAF*).
+  * Tests pairwise logistic regression feature interaction terms (e.g. `TIS` $\times$ `BRAF`).
   * Generates feature credibility matrices combining Q1 model importance, effect sizes, and cohort consistency.
 
 ### Phase 3: Unsupervised Patient Stratification
@@ -124,15 +124,15 @@ The analysis is structured into 7 sequential phases executed via standalone scri
 * **Tasks**:
   * Calculates Net Benefit across threshold probabilities ($0.1 - 0.9$) for Decision Curve Analysis (DCA).
   * Computes Number Needed to Treat (NNT) and Positive Predictive Value (PPV).
-  * Compares Q1 model performance against standard clinical strategies (*Treat All*, *High TMB*, *PD-L1+*).
+  * Compares Q1 model performance against standard clinical strategies (*Treat All*, *High TMB*, `CD274` / PD-L1+).
 
 ### Phase 7: Treatability Index, Q2 Drugs & Q4 Target Nominations
 * **Script**: [07_treatability_scoring.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/07_treatability_scoring.py)
 * **Tasks**:
-  * Evaluates non-responders for reversible barriers (antigen presentation integrity, IFN-$\gamma$ pathway mutations, CNA burden, and targetable *BRAF/NRAS/PTEN* mutations).
+  * Evaluates non-responders for reversible barriers (antigen presentation integrity, IFN-$\gamma$ pathway mutations, CNA burden, and targetable `BRAF`, `NRAS`, `PTEN` mutations).
   * Computes per-patient Treatability Index scores ($0 - 1$).
   * **Q2 Drug Integration**: Connects Q2 cell-line viability and drug sensitivity predictions to select specific targeted agents (Arm B: *Dabrafenib/Trametinib*) or chemotherapy agents (Arm C: *Dacarbazine*).
-  * **Q4 DepMap/LINCS Integration**: Maps CRISPR essentiality targets (*AXL*, *MDM2*, *CSF1R*) and LINCS L1000 perturbagens to supply specific combination therapy recommendations for resistant phenotypes.
+  * **Q4 DepMap/LINCS Integration**: Maps CRISPR essentiality targets (`AXL`, `MDM2`, `CSF1R`) and LINCS L1000 perturbagens to supply specific combination therapy recommendations for resistant phenotypes.
 
 ---
 
