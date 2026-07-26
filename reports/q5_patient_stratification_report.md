@@ -112,14 +112,14 @@ Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
 
 ### Youden Optimal Decision Threshold Metrics
 
-| Biomarker Feature   |   Optimal Cutoff |   Youden J | Sensitivity   | Specificity   |   AUC-ROC |
-|:--------------------|-----------------:|-----------:|:--------------|:--------------|----------:|
-| `TIS`               |            0.191 |      0.184 | 57.3%         | 61.1%         |     0.585 |
-| `CYT`               |            0.621 |      0.205 | 32.9%         | 87.6%         |     0.583 |
-| `IFN_gamma`         |            0.439 |      0.170 | 42.7%         | 74.3%         |     0.575 |
-| `CD8_T_cells`       |            0.069 |      0.184 | 67.1%         | 51.3%         |     0.584 |
-| `B_cells`           |            0.430 |      0.306 | 53.7%         | 77.0%         |     0.632 |
-| `M1_M2_Ratio`       |            1.076 |      0.034 | 6.1%          | 97.3%         |     0.442 |
+| Biomarker Feature   | Optimal Cutoff   | Youden J   | Sensitivity   | Specificity   | AUC-ROC   |
+|:--------------------|:-----------------|:-----------|:--------------|:--------------|:----------|
+| `TIS`               | 0.191            | 0.184      | 57.3%         | 61.1%         | 0.585     |
+| `CYT`               | 0.621            | 0.205      | 32.9%         | 87.6%         | 0.583     |
+| `IFN_gamma`         | 0.439            | 0.170      | 42.7%         | 74.3%         | 0.575     |
+| `CD8_T_cells`       | 0.069            | 0.184      | 67.1%         | 51.3%         | 0.584     |
+| **`B_cells`**       | **0.430**        | **0.306**  | **53.7%**     | **77.0%**     | **0.632** |
+| `M1_M2_Ratio`       | 1.076            | 0.034      | 6.1%          | 97.3%         | 0.442     |
 
 ### Key Takeaways
 - **Strongest Univariate Predictor**: `B_cells` demonstrates the strongest univariate separation of clinical response (AUC = 0.632).

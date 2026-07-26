@@ -236,13 +236,16 @@ def main() -> None:
     if not df_youden.empty:
         summary_youden = []
         for _, row in df_youden.iterrows():
+            is_top = (row["Feature"] == "B_cells")
+            pfx = "**" if is_top else ""
+            sfx = "**" if is_top else ""
             summary_youden.append({
-                "Biomarker Feature": f"`{row['Feature']}`",
-                "Optimal Cutoff": f"{row['Optimal_Threshold']:.3f}",
-                "Youden J": f"{row['Youden_J']:.3f}",
-                "Sensitivity": f"{row['Sensitivity']*100:.1f}%",
-                "Specificity": f"{row['Specificity']*100:.1f}%",
-                "AUC-ROC": f"{row['AUC_ROC']:.3f}",
+                "Biomarker Feature": f"{pfx}`{row['Feature']}`{sfx}",
+                "Optimal Cutoff": f"{pfx}{row['Optimal_Threshold']:.3f}{sfx}",
+                "Youden J": f"{pfx}{row['Youden_J']:.3f}{sfx}",
+                "Sensitivity": f"{pfx}{row['Sensitivity']*100:.1f}%{sfx}",
+                "Specificity": f"{pfx}{row['Specificity']*100:.1f}%{sfx}",
+                "AUC-ROC": f"{pfx}{row['AUC_ROC']:.3f}{sfx}",
             })
         doc_sections.append("### Youden Optimal Decision Threshold Metrics\n")
         doc_sections.append(format_markdown_table(pd.DataFrame(summary_youden)) + "\n")
