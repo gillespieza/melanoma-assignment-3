@@ -2,8 +2,6 @@
 
 A comprehensive, student-focused reference explaining the **biology**, **statistics**, **machine learning**, and **dataset logic** behind Question 5.
 
----
-
 ## Table of Contents
 1. [The Clinical Problem & Project Goal](#1-the-clinical-problem--project-goal)
 2. [Biological Concepts Explained](#2-biological-concepts-explained)
@@ -18,8 +16,6 @@ A comprehensive, student-focused reference explaining the **biology**, **statist
 4. [Dataset Strategy: `merged/immunotherapy` vs. `merged/full`](#4-dataset-strategy-mergedimmunotherapy-vs-mergedfull)
 5. [The 3-Arm Decision Tree Architecture](#5-the-3-arm-decision-tree-architecture)
 
----
-
 ## 1. The Clinical Problem & Project Goal
 
 In cutaneous melanoma, patients diagnosed with advanced (Stage III/IV) disease have three main treatment avenues:
@@ -33,8 +29,6 @@ If immunotherapy is given indiscriminately to all patients, only $\sim 35–40\%
 
 ### The Q5 Objective
 Question 5 builds a **biomarker-guided decision support system**. By inspecting a patient's baseline molecular profile (gene expression signatures, M1/M2 ratio, driver mutations like `BRAF`, `NRAS`, `NF1`, and mutational burden), the pipeline determines whether the patient will respond to Immunotherapy (Arm A), should switch to Targeted Therapy (Arm B), or requires Combination/Chemotherapy (Arm C).
-
----
 
 ## 2. Biological Concepts Explained
 
@@ -63,9 +57,10 @@ Non-response to checkpoint blockade typically stems from four biological barrier
 1. **Antigen Presentation Defect**: Loss-of-function mutations or silencing in $\beta_2$-microglobulin (`B2M`) or transporter genes (`TAP1`, `TAP2`, `HLA-A`, `HLA-B`, `HLA-C`) prevent HLA class I molecules from displaying tumour neoantigens on the cell surface.
 2. **IFN-$\gamma$ Pathway Resistance**: Loss of `JAK1`, `JAK2`, `STAT1`, or `STAT3` prevents tumour cells from responding to interferon-gamma, making them insensitive to T-cell killing.
 3. **Immunosuppressive Stroma**: High expression of `IDO1`, `TGFB1`, or `ARG1` creates a metabolic barrier that depletes essential amino acids (tryptophan, arginine) needed for T-cell survival.
-4. **Copy Number Alteration (CNA) Burden**: High chromosomal instability / aneuploidy physically disrupts T-cell infiltration into the tumour core.
+4. **Copy Number Alteration (CNA) Burden & Proxy Strategy**: High chromosomal instability / aneuploidy physically disrupts T-cell infiltration.
 
----
+> [!NOTE]
+> **Methodological Choice: iAtlas Harmonisation vs. CNA Availability**: Unharmonised cBioPortal downloads for trial cohorts (Liu 2019, Hugo 2016, Riaz 2017) do not contain GISTIC CNA files. Attempting to use unharmonised RNA-seq to gain CNA for TCGA alone would introduce severe cross-cohort batch artifacts. By using iAtlas harmonised expression data, cross-cohort batch effects are eliminated. Chromosomal instability is represented via WES-derived Tumour Mutational Burden (TMB), while gene loss (`PTEN`, `CDKN2A`) is captured via combined mutation status and transcript abundance.
 
 ## 3. Statistical & Machine Learning Concepts Explained
 
@@ -119,8 +114,6 @@ $$\text{Net Benefit} = \frac{\text{True Positives}}{N} - \left( \frac{\text{Fals
   $$\text{NNT} = \frac{1}{\text{Absolute Risk Reduction}}$$
 * **Positive Predictive Value (PPV)**: The probability that a patient predicted as "Responder" actually achieves clinical response ($CR/PR$).
 
----
-
 ## 4. Dataset Strategy: `merged/immunotherapy` vs. `merged/full`
 
 Understanding why we use two merged datasets resolves common confusion:
@@ -149,8 +142,6 @@ Understanding why we use two merged datasets resolves common confusion:
 
 2. **Why Deploy on `merged/full` ($N=699$)**:
    When a random new patient arrives at the clinic, we do not know if they will respond to immunotherapy. `merged/full` represents the general, unselected melanoma population where Q5's 3-arm decision tree assigns patients to Immunotherapy, Targeted Therapy, or Chemotherapy.
-
----
 
 ## 5. The 3-Arm Decision Tree Architecture
 

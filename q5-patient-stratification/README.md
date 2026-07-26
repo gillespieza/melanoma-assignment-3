@@ -2,8 +2,6 @@
 
 Translating Q1 predictive response models into clinically actionable patient subtypes, cell-type deconvolution metrics, Q2 drug sensitivity predictions, Q3 ODE dynamic simulations, Q4 DepMap/LINCS drug target nominations, and treatability index scoring for advanced melanoma immunotherapy.
 
----
-
 ## Executive Summary
 
 This subproject implements **Question 5 (Q5)** of the Melanoma Immunotherapy Assignment (*"Can we identify clinically distinct patient subgroups? Do subgroups require different treatments?"*). It serves as the **master synthesis engine** uniting all 5 project questions (Q1–Q5) into a single bench-to-bedside clinical decision framework:
@@ -33,7 +31,8 @@ Key features & multi-question integrations in Q5:
 * **Q4 DepMap & LINCS Target Nominations**: Mapping DepMap CRISPR essentiality targets (`AXL`, `MDM2`, `CSF1R`) and LINCS L1000 perturbational gene signatures to overcome non-response in therapy-resistant phenotypes.
 * **Clinical Utility & Treatability Scoring**: Decision Curve Analysis (DCA), NNT calculations, and scoring non-responders for reversible biological barriers to recommend combination interventions.
 
----
+> [!NOTE]
+> **Data Harmonisation & CNA Strategy Note**: To eliminate cross-cohort RNA-seq batch artifacts across trial cohorts (Liu 2019, Hugo 2016, Riaz 2017), iAtlas harmonised data was selected over unharmonised packages. Because unharmonised cBioPortal downloads for trial cohorts lack GISTIC Copy Number Alteration (CNA) matrices, genomic burden is represented via WES-derived Tumour Mutational Burden (TMB), while gene loss (`PTEN`, `CDKN2A`) is captured via integrated mutation status and transcript abundance.
 
 ## Workflow & Implementation Architecture
 
@@ -70,8 +69,6 @@ The analysis is structured into 7 sequential phases executed via standalone scri
                   │  • Detailed Markdown Reports in reports/                 │
                   └────────────────────────────┴─────────────────────────────┘
 ```
-
----
 
 ## Step-by-Step Analytical Phases
 
@@ -129,12 +126,10 @@ The analysis is structured into 7 sequential phases executed via standalone scri
 ### Phase 7: Treatability Index, Q2 Drugs & Q4 Target Nominations
 * **Script**: [07_treatability_scoring.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/07_treatability_scoring.py)
 * **Tasks**:
-  * Evaluates non-responders for reversible barriers (antigen presentation integrity, IFN-$\gamma$ pathway mutations, CNA burden, and targetable `BRAF`, `NRAS`, `PTEN` mutations).
+  * Evaluates non-responders for reversible barriers (antigen presentation integrity, IFN-$\gamma$ pathway mutations, TMB/proliferation burden, and targetable `BRAF`, `NRAS`, `PTEN` mutations).
   * Computes per-patient Treatability Index scores ($0 - 1$).
   * **Q2 Drug Integration**: Connects Q2 cell-line viability and drug sensitivity predictions to select specific targeted agents (Arm B: *Dabrafenib/Trametinib*) or chemotherapy agents (Arm C: *Dacarbazine*).
   * **Q4 DepMap/LINCS Integration**: Maps CRISPR essentiality targets (`AXL`, `MDM2`, `CSF1R`) and LINCS L1000 perturbagens to supply specific combination therapy recommendations for resistant phenotypes.
-
----
 
 ## Directory & File Map
 
@@ -142,6 +137,7 @@ The analysis is structured into 7 sequential phases executed via standalone scri
 q5-patient-stratification/
 ├── README.md                      <- Project documentation (this file)
 ├── README_STUDENT_GUIDE.md        <- Biological & statistical study guide
+├── README_ELI10.md                <- Plain-English concept summary
 ├── requirements.txt               <- Q5 additions (umap-learn, dcurves)
 ├── logs/                          <- Pipeline TeeStream execution logs
 ├── models/                        <- Serialised subgroup classifier models
@@ -169,8 +165,6 @@ q5-patient-stratification/
     ├── feature_analysis.py        <- MW-U, Fisher's, & interaction statistics
     └── clinical_utility.py        <- DCA net benefit & NNT calculators
 ```
-
----
 
 ## Execution & Verification
 

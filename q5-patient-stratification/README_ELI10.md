@@ -2,8 +2,6 @@
 
 A simple, intuitive guide to understanding **Question 5**: What we are building, why we use specific datasets, and how our smart clinical decision engine works.
 
----
-
 ## 1. The Big Picture: The Medical Puzzle 🧩
 
 Imagine a hospital waiting room filled with **100 new skin cancer (melanoma) patients**. 
@@ -20,8 +18,6 @@ If doctors give **Immunotherapy to every single patient**, it only works for abo
 ### Our Goal in Q5 🎯
 We are building a smart **"Sorting Hat" (Clinical Decision Engine)**. When a new patient arrives at the clinic, our software looks at their tumour's DNA, RNA expression, and immune cells, and tells the oncologist:
 > *"This specific patient has an 80% chance of responding to Immunotherapy (Arm A), while that patient should go straight to Targeted Therapy (Arm B)!"*
-
----
 
 ## 2. Why We Use Two Different Datasets: The "Training School" vs. "Real World" 🏫
 
@@ -49,7 +45,8 @@ Think of it like **training a sniffer dog**:
    * **Why**: Once our AI finishes "Training School", we test its treatment selection logic on a real-world, unselected group of 699 melanoma patients (including those with untreated primary tumours or on other therapies). 
    * The decision engine sorts all 699 patients into Arm A (Immunotherapy), Arm B (Targeted Therapy), or Arm C (Chemotherapy / Combination).
 
----
+> [!NOTE]
+> **Data Harmonisation & DNA Chromosome Note**: We use iAtlas harmonised data to keep gene expression measurements identical across all datasets without technical noise. Because raw trial datasets lack Copy Number Alteration (CNA) chromosome maps, we track DNA instability via Tumour Mutational Burden (TMB) and inspect gene loss (`PTEN`, `CDKN2A`) via gene mutation + mRNA expression levels.
 
 ## 3. The Macrophage Scorecard: Good Cops vs. Bad Cops 🚓
 
@@ -63,8 +60,6 @@ The project uses a special 14,837-gene scorecard ([m1_m2_stv.csv](file:///c:/Use
 
 * **High M1 / Low M2**: Tumour is filled with "Good Cops" $\rightarrow$ **High response to Immunotherapy!**
 * **Low M1 / High M2**: Tumour is guarded by "Double Agents" $\rightarrow$ Immunotherapy alone will fail, but **adding an M2-blocking helper drug** can convert the patient into a responder!
-
----
 
 ## 4. How the "Sorting Hat" Decision Flow Works 🧙‍♂️
 
@@ -92,8 +87,6 @@ When any random new patient enters the clinic, Q5 runs them through a simple 3-s
                └── NO  ──► 🔴 RECOMMEND ARM C: Chemotherapy (Dacarbazine) / Clinical Trial
 ```
 
----
-
 ## 5. How All 5 Assignment Questions Fit Together 🧩
 
 Each of the 5 project questions answers one piece of the puzzle:
@@ -103,8 +96,6 @@ Each of the 5 project questions answers one piece of the puzzle:
 * ⏱️ **Q3 (The Time-Travel Simulator - ODEs)**: Simulates a graph showing how tumour size ($T(t)$) shrinks or grows over 180 days under different treatments.
 * 🎯 **Q4 (The Drug Hunter - DepMap & LINCS)**: Mines databases to find new secret-weapon drugs to wake up "cold" tumours.
 * 🧠 **Q5 (The Master Brain)**: Combines Q1, Q2, Q3, and Q4 into one clean, easy-to-use clinical recommendation tool for doctors!
-
----
 
 ## Summary Checklist 
 
