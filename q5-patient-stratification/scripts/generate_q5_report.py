@@ -261,9 +261,9 @@ def main() -> None:
 
     doc_sections.append(
         "### Key Takeaways\n"
-        f"- **Strongest Univariate Predictor**: {top_feat_str} demonstrates the strongest univariate separation of clinical response (AUC = {top_auc_val}).\n"
-        "- **Non-Linear Decision Cutoffs**: Youden optimization identifies clinical threshold cutoffs that maximize combined sensitivity and specificity.\n"
-        "- **Genomic Synergy**: Interaction modeling proves that transcriptomic immune inflammation and `BRAF` mutation status interact non-additively.\n"
+        f"- **Best Single Marker**: {top_feat_str} is the single best individual marker for telling responders and non-responders apart (AUC = {top_auc_val}).\n"
+        "- **Clear Decision Cutoffs**: Youden cutoffs give us simple numerical score targets (like `0.430` for `B_cells`) to best balance catching true responders while avoiding false alarms.\n"
+        "- **Gene-Immune Interaction**: A high immune score works differently depending on whether the patient has a `BRAF` mutation, proving that single markers aren't enough on their own.\n"
     )
 
     # Section 3: Phase 3 Unsupervised Phenotype Stratification

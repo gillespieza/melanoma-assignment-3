@@ -9,12 +9,12 @@ tags:
   - patient-stratification
   - melanoma
   - immunotherapy
-created: 2026-07-26 18:54
+created: 2026-07-26 18:55
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-26 18:54
+updated: 2026-07-26 18:55
 ---
 
 # Q5: Biomarker-Guided Patient Stratification Report (N = 326)
@@ -122,9 +122,9 @@ Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
 | `M1_M2_Ratio`       | 1.076            | 0.034      | 6.1%          | 97.3%         | 0.442     |
 
 ### Key Takeaways
-- **Strongest Univariate Predictor**: `B_cells` demonstrates the strongest univariate separation of clinical response (AUC = 0.632).
-- **Non-Linear Decision Cutoffs**: Youden optimization identifies clinical threshold cutoffs that maximize combined sensitivity and specificity.
-- **Genomic Synergy**: Interaction modeling proves that transcriptomic immune inflammation and `BRAF` mutation status interact non-additively.
+- **Best Single Marker**: `B_cells` is the single best individual marker for telling responders and non-responders apart (AUC = 0.632).
+- **Clear Decision Cutoffs**: Youden cutoffs give us simple numerical score targets (like `0.430` for `B_cells`) to best balance catching true responders while avoiding false alarms.
+- **Gene-Immune Interaction**: A high immune score works differently depending on whether the patient has a `BRAF` mutation, proving that single markers aren't enough on their own.
 
 ## 3. Phase 3: Unsupervised Phenotype Stratification (N = 326)
 
