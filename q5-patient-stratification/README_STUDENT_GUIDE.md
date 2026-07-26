@@ -25,14 +25,14 @@ A comprehensive, student-focused reference explaining the **biology**, **statist
 In cutaneous melanoma, patients diagnosed with advanced (Stage III/IV) disease have three main treatment avenues:
 
 1. **Arm A — Immunotherapy**: Immune Checkpoint Inhibitors (ICI) such as Anti-PD-1 (*Nivolumab*, *Pembrolizumab*) or Anti-CTLA-4 (*Ipilimumab*). These drugs release the molecular "brakes" on cytotoxic CD8+ T cells so they can destroy tumour cells.
-2. **Arm B — Targeted Therapy**: Small-molecule kinase inhibitors (BRAF inhibitor *Dabrafenib* + MEK inhibitor *Trametinib*). These selectively block hyperactive MAPK pathway signaling in tumours harboring a **_BRAF_ V600E/K mutation**.
+2. **Arm B — Targeted Therapy**: Small-molecule kinase inhibitors (BRAF inhibitor *Dabrafenib* + MEK inhibitor *Trametinib*). These selectively block hyperactive MAPK pathway signaling in tumours harboring a **`BRAF` V600E/K mutation**.
 3. **Arm C — Chemotherapy & Combination Therapy**: Cytotoxic chemotherapy (*Dacarbazine*) or combination regimens (e.g., M2-macrophage depletion / epigenetic priming combined with anti-PD-1).
 
 ### The Challenge
 If immunotherapy is given indiscriminately to all patients, only $\sim 35–40\%$ respond. For non-responders, time is wasted while the tumour progresses, and patients experience severe immune-related adverse events.
 
 ### The Q5 Objective
-Question 5 builds a **biomarker-guided decision support system**. By inspecting a patient's baseline molecular profile (gene expression signatures, M1/M2 ratio, driver mutations, and mutational burden), the pipeline determines whether the patient will respond to Immunotherapy (Arm A), should switch to Targeted Therapy (Arm B), or requires Combination/Chemotherapy (Arm C).
+Question 5 builds a **biomarker-guided decision support system**. By inspecting a patient's baseline molecular profile (gene expression signatures, M1/M2 ratio, driver mutations like `BRAF`, `NRAS`, `NF1`, and mutational burden), the pipeline determines whether the patient will respond to Immunotherapy (Arm A), should switch to Targeted Therapy (Arm B), or requires Combination/Chemotherapy (Arm C).
 
 ---
 
@@ -40,15 +40,15 @@ Question 5 builds a **biomarker-guided decision support system**. By inspecting 
 
 ### Immune Checkpoints & T-Cell Infiltration
 * **CD8+ Cytotoxic T Cells**: The primary immune effector cells capable of killing cancer cells.
-* **PD-1 ($PDCD1$) & PD-L1 ($CD274$)**: PD-1 is a receptor expressed on T cells. Tumours express PD-L1, which binds to PD-1 and sends an inhibitory "don't kill me" signal to the T cell. Anti-PD-1 antibodies block this binding, restoring T-cell cytotoxicity.
+* **PD-1 (`PDCD1`) & PD-L1 (`CD274`)**: PD-1 is a receptor expressed on T cells. Tumours express PD-L1 (`CD274`), which binds to PD-1 (`PDCD1`) and sends an inhibitory "don't kill me" signal to the T cell. Anti-PD-1 antibodies block this binding, restoring T-cell cytotoxicity.
 * **Tumour Inflammation Signature (TIS)**: An 18-gene expression signature measuring pre-existing adaptive immune suppression and active IFN-$\gamma$ signaling in the tumour microenvironment.
-* **Cytolytic Index (CYT)**: Defined as the geometric mean of Perforin 1 ($PRF1$) and Granzyme A ($GZMA$) transcript levels, quantifying active cytotoxic T-cell and NK-cell killing.
+* **Cytolytic Index (CYT)**: Defined as the geometric mean of Perforin 1 (`PRF1`) and Granzyme A (`GZMA`) transcript levels, quantifying active cytotoxic T-cell and NK-cell killing.
 
 ### Macrophage Polarisation (M1 vs. M2) & Professor STV
 Tumour-Associated Macrophages (TAMs) exist along a functional spectrum:
 
-* **M1 Macrophages (Pro-inflammatory / Antitumour)**: Produce pro-inflammatory cytokines ($TNF$, $IL12B$, $CXCL10$) and assist T cells in tumour destruction.
-* **M2 Macrophages (Anti-inflammatory / Pro-tumour)**: Produce immunosuppressive factors ($IL10$, $TGFB1$, $ARG1$), stimulate angiogenesis, and recruit regulatory T cells (Tregs), blocking anti-PD-1 efficacy.
+* **M1 Macrophages (Pro-inflammatory / Antitumour)**: Produce pro-inflammatory cytokines (`TNF`, `IL12B`, `CXCL10`) and assist T cells in tumour destruction.
+* **M2 Macrophages (Anti-inflammatory / Pro-tumour)**: Produce immunosuppressive factors (`IL10`, `TGFB1`, `ARG1`), stimulate angiogenesis, and recruit regulatory T cells (Tregs), blocking anti-PD-1 efficacy.
 
 #### The Professor's M1/M2 STV Matrix ([m1_m2_stv.csv](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/data/config/m1_m2_stv.csv))
 Your professor provided a linear **Signature Transcript Vector (STV)** containing 14,837 gene weights ($W_g$). For patient $i$ with $\log_2$-transformed expression $E_{i,g}$:
@@ -60,9 +60,9 @@ $$\text{STV Score}_i = \sum_{g=1}^{14837} W_g \cdot E_{i,g}$$
 
 ### Mechanisms of Immunotherapy Resistance
 Non-response to checkpoint blockade typically stems from four biological barriers:
-1. **Antigen Presentation Defect**: Loss-of-function mutations or silencing in $\beta_2$-microglobulin ($B2M$) or transporter genes ($TAP1$, $TAP2$) prevent HLA class I molecules from displaying tumour neoantigens on the cell surface.
-2. **IFN-$\gamma$ Pathway Resistance**: Loss of $JAK1$, $JAK2$, or $STAT1$ prevents tumour cells from responding to interferon-gamma, making them insensitive to T-cell killing.
-3. **Immunosuppressive Stroma**: High expression of $IDO1$, $TGFB1$, or $ARG1$ creates a metabolic barrier that depletes essential amino acids (tryptophan, arginine) needed for T-cell survival.
+1. **Antigen Presentation Defect**: Loss-of-function mutations or silencing in $\beta_2$-microglobulin (`B2M`) or transporter genes (`TAP1`, `TAP2`, `HLA-A`, `HLA-B`, `HLA-C`) prevent HLA class I molecules from displaying tumour neoantigens on the cell surface.
+2. **IFN-$\gamma$ Pathway Resistance**: Loss of `JAK1`, `JAK2`, `STAT1`, or `STAT3` prevents tumour cells from responding to interferon-gamma, making them insensitive to T-cell killing.
+3. **Immunosuppressive Stroma**: High expression of `IDO1`, `TGFB1`, or `ARG1` creates a metabolic barrier that depletes essential amino acids (tryptophan, arginine) needed for T-cell survival.
 4. **Copy Number Alteration (CNA) Burden**: High chromosomal instability / aneuploidy physically disrupts T-cell infiltration into the tumour core.
 
 ---
@@ -76,7 +76,7 @@ To evaluate individual biomarkers ($X$) against binary response ($Y \in \{0, 1\}
 * **Cohen's $d$ (Effect Size)**: Quantifies the standardized mean difference between groups:
   $$d = \frac{\bar{X}_1 - \bar{X}_0}{s_{\text{pooled}}}$$
   Values of $d > 0.8$ indicate large biological effect sizes.
-* **Fisher's Exact Test (Categorical Features)**: Used for contingency tables (e.g., _BRAF_ mutation status vs. Response) to calculate exact $p$-values, Odds Ratios (OR), and 95% confidence intervals.
+* **Fisher's Exact Test (Categorical Features)**: Used for contingency tables (e.g., `BRAF` mutation status vs. Response) to calculate exact $p$-values, Odds Ratios (OR), and 95% confidence intervals.
 * **Youden's J Statistic (Optimal Threshold)**: Identifies the numeric cutoff $c^*$ on a continuous feature that maximizes diagnostic accuracy:
   $$J(c) = \text{Sensitivity}(c) + \text{Specificity}(c) - 1$$
   The cutoff $c^*$ corresponding to $\max J(c)$ is used to discretize continuous signatures into clinical high/low categories.
@@ -86,7 +86,7 @@ To test whether two features act synergistically:
 
 $$\text{logit}(P(Y=1)) = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 (X_1 \cdot X_2)$$
 
-A statistically significant interaction coefficient ($\beta_3 \ne 0, p < 0.05$) indicates that the predictive effect of feature $X_1$ (e.g., TIS score) depends on the status of feature $X_2$ (e.g., _BRAF_ mutation status).
+A statistically significant interaction coefficient ($\beta_3 \ne 0, p < 0.05$) indicates that the predictive effect of feature $X_1$ (e.g., TIS score) depends on the status of feature $X_2$ (e.g., `BRAF` mutation status).
 
 ### Unsupervised Clustering
 
@@ -168,7 +168,7 @@ The master decision engine routes patients through three sequential evaluation g
                └── NO  ──► Proceed to Gate 2
                                       │
                                       ▼
-             [Gate 2] Is the BRAF Gene Broken? (V600 Mutation)
+             [Gate 2] Is the `BRAF` Gene Broken? (`BRAF` V600 Mutation)
                ├── YES ──► 🔵 ARM B: Targeted Therapy (Dabrafenib + Trametinib)
                └── NO  ──► Proceed to Gate 3
                                       │

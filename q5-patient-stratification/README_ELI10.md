@@ -10,8 +10,8 @@ Imagine a hospital waiting room filled with **100 new skin cancer (melanoma) pat
 
 Doctors currently have **three main weapons (treatment options)** to fight melanoma:
 
-1. **Arm A — Immunotherapy**: Giving drugs (anti-PD-1) that wake up the body's own immune system "soldier" cells (T-cells) so they hunt down and destroy cancer cells.
-2. **Arm B — Targeted Therapy**: Using precision "sniper" drugs (BRAF/MEK inhibitors) that switch off a specific broken gene (*BRAF* mutation) inside the tumour.
+1. **Arm A — Immunotherapy**: Giving drugs (`CD274` / anti-PD-1) that wake up the body's own immune system "soldier" cells (T-cells) so they hunt down and destroy cancer cells.
+2. **Arm B — Targeted Therapy**: Using precision "sniper" drugs (BRAF/MEK inhibitors) that switch off a specific broken gene (`BRAF` mutation) inside the tumour.
 3. **Arm C — Chemotherapy & Combination Therapy**: Using chemotherapy (dacarbazine) or adding a helper drug to "reset" the tumour environment.
 
 ### The Problem ⚠️
@@ -23,7 +23,7 @@ We are building a smart **"Sorting Hat" (Clinical Decision Engine)**. When a new
 
 ---
 
-## 2. Why We Use Two Different Datasets: The "Training School" vs. "Real World" 🏫 hospital
+## 2. Why We Use Two Different Datasets: The "Training School" vs. "Real World" 🏫
 
 You might wonder: *Why do we have two datasets (`merged/immunotherapy` with 326 patients, and `merged/full` with 699 patients)?*
 
@@ -82,7 +82,7 @@ When any random new patient enters the clinic, Q5 runs them through a simple 3-s
                └── NO  ──► Proceed to Step 2
                                       │
                                       ▼
-             [Step 2] Is the BRAF Gene Broken? (V600 Mutation)
+             [Step 2] Is the `BRAF` Gene Broken? (`BRAF` V600 Mutation)
                ├── YES ──► 🔵 RECOMMEND ARM B: Targeted Therapy (Dabrafenib + Trametinib)
                └── NO  ──► Proceed to Step 3
                                       │
