@@ -197,7 +197,7 @@ def plot_youden_roc(df: pd.DataFrame, df_cutoffs: pd.DataFrame, save_path: Path)
     """Generate 300 DPI ROC curves with marked Youden optimal cutoffs."""
     fig, ax = plt.subplots(figsize=(11, 6), dpi=300)
 
-    colors = ["#0072B2", "#009E73", "#CC79A7", "#E69F00"]
+    colors = ["#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"]
     valid_df = df.dropna(subset=["RESPONSE_BINARY"]).copy()
     y_true = valid_df["RESPONSE_BINARY"].values
 
@@ -466,7 +466,7 @@ def main() -> None:
     print(f"Saved univariate association results to {rel_path(assoc_file)}")
 
     # 2. Compute Youden optimal cutoffs
-    target_feats = [c for c in ["TIS", "CYT", "M1_M2_Ratio", "CD8_T_cells"] if c in df_feat.columns]
+    target_feats = [c for c in ["TIS", "CYT", "IFN_gamma", "CD8_T_cells", "B_cells", "M1_M2_Ratio"] if c in df_feat.columns]
     df_cutoffs = compute_youden_cutoffs(df_feat, target_feats)
     cutoffs_file = OUTPUT_DIR / "youden_cutoffs.csv"
     df_cutoffs.to_csv(cutoffs_file, index=False)

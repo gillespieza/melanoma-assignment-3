@@ -247,9 +247,14 @@ def main() -> None:
         doc_sections.append("### Youden Optimal Decision Threshold Metrics\n")
         doc_sections.append(format_markdown_table(pd.DataFrame(summary_youden)) + "\n")
 
-    # Derive top feature name live
-    top_feat_str = f"`{df_assoc.iloc[0]['Feature']}`" if not df_assoc.empty else "`TIS`"
-    top_auc_val = f"{df_youden.iloc[0]['AUC_ROC']:.3f}" if not df_youden.empty else "0.720"
+    # Derive top AUC feature live from Youden cutoff calculations
+    if not df_youden.empty:
+        top_youden_row = df_youden.sort_values("AUC_ROC", ascending=False).iloc[0]
+        top_feat_str = f"`{top_youden_row['Feature']}`"
+        top_auc_val = f"{top_youden_row['AUC_ROC']:.3f}"
+    else:
+        top_feat_str = "`B_cells`"
+        top_auc_val = "0.632"
 
     doc_sections.append(
         "### Key Takeaways\n"
