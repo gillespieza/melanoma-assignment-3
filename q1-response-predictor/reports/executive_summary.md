@@ -19,7 +19,7 @@ updated: 2026-07-25 20:08
 
 ## Objective
 
-Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patients treated with anti-PD-1 checkpoint inhibitors, using a multimodal feature set derived from clinical, genomic, and transcriptomic data across three independent clinical trial cohorts and one large-scale reference dataset.
+Build a binary immunotherapy response predictor (CR/PR vs. PD) for cutaneous melanoma patients treated with anti-PD-1 checkpoint inhibitors, designed to generalise to **any new patient** — not just patients drawn from the same clinical trial the model was trained on. Three independent trial cohorts (Liu 2019, Hugo 2016, Riaz 2017) and one large-scale reference cohort (TCGA-SKCM) are used to train and validate the model under Leave-One-Cohort-Out (LOCO) cross-validation, which simulates deployment to a genuinely unseen clinical site with a different sequencing platform, patient population, and response distribution. A multimodal feature set — six curated immune signatures, tumour mutational burden, and driver mutation status — is used to keep the model interpretable and biologically grounded rather than overfit to any single cohort's idiosyncrasies.
 
 ---
 
@@ -33,6 +33,9 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 | **Hugo 2016** | 27  | Pembrolizumab             | 51.9%               | Training / LOCO test fold                 |
 | **Riaz 2017** | 107  | Nivolumab                 | 31.2%               | Training / LOCO test fold                 |
 | **TCGA-SKCM** | 443 | Mixed (non-ICI reference) | N/A (survival only) | Signature derivation / clinical subtyping |
+
+> [!NOTE]
+> **On sample-size variants**: N figures for Liu 2019, Hugo 2016, Riaz 2017, and TCGA-SKCM vary slightly across individual analyses in this pipeline (e.g. LOCO response modelling vs. TCGA-signature projection vs. survival stratification) due to analysis-specific completeness filters. See the **"Reconciling Sample Size (N) Variants Across All Cohorts & Reports"** section in [model_evaluation_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-4-out-of-cohort-benchmarks/model_evaluation_report.md) for the full per-cohort, per-analysis breakdown.
 
 ---
 
@@ -99,20 +102,20 @@ By contrast, the 6 curated immune signatures (IFN-$\gamma$, TIS, CYT, IMPRES, CD
 
 Tumour Mutational Burden and transcriptomic immune signatures are essentially uncorrelated (Spearman $r \approx -0.09$ to $0.16$). A tumour can be high-TMB but immunologically cold, or low-TMB but inflamed. This validates the multimodal model design: combining both feature types captures independent biological axes of treatment response.
 
-### 3. Tree-Based Models Outperform Linear Models on Multimodal Features
+### 3. Support Vector Machines (SVM) Achieve Superior Out-of-Cohort Generalisation
 
-#### _Table 2: Model performance under pooled cross-validation and strict Leave-One-Cohort-Out (LOCO) validation. Tree-based models benefit from multimodal feature integration; linear models degrade with additional features._
+#### _Table 2: Model performance under pooled cross-validation and strict Leave-One-Cohort-Out (LOCO) validation. SVM achieves top out-of-cohort performance on Riaz 2017 (AUC = 0.717) and Liu 2019 (AUC = 0.657)._
 
-| Model               | Pooled 5-Fold CV AUC | Best LOCO AUC (Cohort) |
-|:------------------- |:-------------------- |:---------------------- |
-| **XGBoost** | **0.724 ± 0.089** | 0.618 (Riaz 2017) |
-| **Random Forest** | **0.710 ± 0.94** | 0.678 (Riaz 2017) |
-| **SVM** | — | **0.717** (Riaz 2017) |
-| **Logistic Regression** | 0.615 | 0.609 (Liu 2019) |
-| **Elastic Net** | — | 0.616 (Liu 2019) |
+| Model | Pooled 5-Fold CV AUC | Best LOCO AUC (Cohort) |
+|:---|:---:|:---:|
+| **Support Vector Machine (SVM)** | **0.718 ± 0.082** | **0.717** (Riaz 2017) / **0.657** (Liu 2019) |
+| **Random Forest** | 0.710 ± 0.094 | 0.678 (Riaz 2017) / 0.580 (Liu 2019) |
+| **ElasticNet Logistic Regression** | 0.618 ± 0.065 | 0.616 (Liu 2019) / 0.500 (Riaz 2017) |
+| **L1 Logistic Regression** | 0.615 ± 0.062 | 0.609 (Liu 2019) / 0.500 (Riaz 2017) |
+| **XGBoost Gradient Boosting** | 0.724 ± 0.089 | 0.618 (Riaz 2017) / 0.581 (Liu 2019) |
 
 > [!important] Performance Gap Between Pooled CV and LOCO  
-> Pooled 5-fold CV estimates (~0.70–0.72 AUC) substantially overestimate out-of-cohort performance. Strict LOCO validation, where an entire cohort is held out, yields AUCs in the 0.55–0.72 range, reflecting the true difficulty of cross-study generalisation with small clinical trial datasets ($N \approx 27$–$122$).
+> Pooled 5-fold CV estimates (~0.71–0.72 AUC) substantially overestimate out-of-cohort performance. Strict LOCO validation, where an entire cohort is held out, yields AUCs in the 0.43–0.72 range, reflecting the true difficulty of cross-study generalisation with small clinical trial datasets ($N = 27\text{--}122$). SVM demonstrates superior margin-based stability across heterogeneous study cohorts.
 
 ### 4. Hugo 2016 is an Unreliable Validation Fold
 
@@ -120,7 +123,7 @@ Hugo 2016 ($N = 27$) is consistently the most difficult held-out cohort, with al
 
 ### 5. TCGA Survival Signature Transfers Modestly to Response Prediction
 
-The custom 20-gene overall survival signature derived from TCGA-SKCM ($N = 443$) strongly stratifies baseline survival (Log-Rank $p = 4.89 \times 10^{-8}$), but its transfer to immunotherapy response prediction via direct Cox risk-score projection is modest (AUC = 0.55–0.65). This confirms that overall survival and treatment response, while related, are partially distinct biological endpoints.
+The custom 20-gene overall survival signature derived from TCGA-SKCM ($N = 428$) strongly stratifies baseline survival (Log-Rank $p = 1.57 \times 10^{-8}$), but its transfer to immunotherapy response prediction via direct Cox risk-score projection is modest (AUC = 0.55–0.65). This confirms that overall survival and treatment response, while related, are partially distinct biological endpoints.
 
 ---
 

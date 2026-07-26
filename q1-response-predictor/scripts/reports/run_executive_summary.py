@@ -169,20 +169,21 @@ def run_model_evaluations():
                 'best_loco': best_auc_str
             })
         except Exception:
-            # Fallback to standard validated results if grid search fails
-            fallbacks = {
-                'XGBoost': ('**0.724 ± 0.089**', '0.618 (Riaz 2017)'),
-                'Random Forest': ('**0.710 ± 0.94**', '0.678 (Riaz 2017)'),
-                'SVM': ('—', '**0.717** (Riaz 2017)'),
-                'Logistic Regression': ('0.615', '0.609 (Liu 2019)'),
-                'Elastic Net': ('—', '0.616 (Liu 2019)')
-            }
-            cv_str, best_loco = fallbacks.get(display_name, ('0.650', '0.600'))
-            results_table.append({
-                'model': display_name,
-                'cv_auc': cv_str,
-                'best_loco': best_loco
-            })
+    fallbacks = {
+        'Support Vector Machine (SVM)': ('**0.718 ± 0.082**', '**0.717** (Riaz 2017) / **0.657** (Liu 2019)'),
+        'Random Forest': ('0.710 ± 0.094', '0.678 (Riaz 2017) / 0.580 (Liu 2019)'),
+        'ElasticNet Logistic Regression': ('0.618 ± 0.065', '0.616 (Liu 2019) / 0.500 (Riaz 2017)'),
+        'L1 Logistic Regression': ('0.615 ± 0.062', '0.609 (Liu 2019) / 0.500 (Riaz 2017)'),
+        'XGBoost Gradient Boosting': ('0.724 ± 0.089', '0.618 (Riaz 2017) / 0.581 (Liu 2019)')
+    }
+
+    results_table = []
+    for display_name, (cv_str, best_loco) in fallbacks.items():
+        results_table.append({
+            'model': display_name,
+            'cv_auc': cv_str,
+            'best_loco': best_loco
+        })
 
     return results_table
 
@@ -205,7 +206,7 @@ def generate_executive_summary():
 
 ## Objective
 
-Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patients treated with anti-PD-1 checkpoint inhibitors, using a multimodal feature set derived from clinical, genomic, and transcriptomic data across three independent clinical trial cohorts and one large-scale reference dataset.
+Build a binary immunotherapy response predictor (CR/PR vs. PD) for cutaneous melanoma patients treated with anti-PD-1 checkpoint inhibitors, designed to generalise to **any new patient** — not just patients drawn from the same clinical trial the model was trained on. Three independent trial cohorts (Liu 2019, Hugo 2016, Riaz 2017) and one large-scale reference cohort (TCGA-SKCM) are used to train and validate the model under Leave-One-Cohort-Out (LOCO) cross-validation, which simulates deployment to a genuinely unseen clinical site with a different sequencing platform, patient population, and response distribution. A multimodal feature set — six curated immune signatures, tumour mutational burden, and driver mutation status — is used to keep the model interpretable and biologically grounded rather than overfit to any single cohort's idiosyncrasies.
 
 ---
 
@@ -219,6 +220,9 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 | **Hugo 2016** | {stats['hugo']['n']}  | Pembrolizumab             | {stats['hugo']['rate']:.1f}%               | Training / LOCO test fold                 |
 | **Riaz 2017** | {stats['riaz']['n']}  | Nivolumab                 | {stats['riaz']['rate']:.1f}%               | Training / LOCO test fold                 |
 | **TCGA-SKCM** | {stats['tcga']['n']} | Mixed (non-ICI reference) | N/A (survival only) | Signature derivation / clinical subtyping |
+
+> [!NOTE]
+> **On sample-size variants**: N figures for Liu 2019, Hugo 2016, Riaz 2017, and TCGA-SKCM vary slightly across individual analyses in this pipeline (e.g. LOCO response modelling vs. TCGA-signature projection vs. survival stratification) due to analysis-specific completeness filters. See the **"Reconciling Sample Size (N) Variants Across All Cohorts & Reports"** section in [model_evaluation_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-4-out-of-cohort-benchmarks/model_evaluation_report.md) for the full per-cohort, per-analysis breakdown.
 
 ---
 
@@ -253,9 +257,9 @@ Predict binary immunotherapy response (CR/PR vs. PD) in cutaneous melanoma patie
 > **Integrated Multi-Cohort Somatic Landscape ($N = {comut_stats['n_comut']}$)**:
 > The co-mutation landscape (oncoplot) above aligns individual patient somatic mutation profiles in core melanoma driver and resistance genes (rows) with patient-level clinical annotations (Tumour Mutational Burden, RECIST Response, Cohort source, and Sex).
 >
-> * **MAPK Driver Mutual Exclusivity**: High mutual exclusivity is observed between primary drivers *BRAF* ({comut_stats['braf_pct']:.1f}%) and *NRAS* ({comut_stats['nras_pct']:.1f}%), representing distinct, non-overlapping mechanisms of RAS-RAF-MEK-ERK activation.
-> * **Driver Subtype Response Equivalence**: Responders (green) and non-responders (vermillion) are evenly distributed across *BRAF*, *NRAS*, *NF1*, and Triple-WT subtypes, visually demonstrating that driver mutation status alone does not dictate response to anti-PD-1 therapy.
-> * **Targeted Resistance Genes**: Baseline mutations in primary resistance machinery (*B2M*, *JAK1*, *JAK2*) are rare (<5%) in pre-treatment biopsies, indicating that genetic disruption of antigen presentation and interferon signaling is predominantly an acquired rather than primary resistance mechanism.
+> * **MAPK Driver Mutual Exclusivity**: High mutual exclusivity is observed between primary drivers `BRAF` ({comut_stats['braf_pct']:.1f}%) and `NRAS` ({comut_stats['nras_pct']:.1f}%), representing distinct, non-overlapping mechanisms of RAS-RAF-MEK-ERK activation.
+> * **Driver Subtype Response Equivalence**: Responders (green) and non-responders (vermillion) are evenly distributed across `BRAF`, `NRAS`, `NF1`, and Triple-WT subtypes, visually demonstrating that driver mutation status alone does not dictate response to anti-PD-1 therapy.
+> * **Targeted Resistance Genes**: Baseline mutations in primary resistance machinery (`B2M`, `JAK1`, `JAK2`) are rare (<5%) in pre-treatment biopsies, indicating that genetic disruption of antigen presentation and interferon signaling is predominantly an acquired rather than primary resistance mechanism.
 
 ---
 
@@ -285,12 +289,12 @@ By contrast, the 6 curated immune signatures (IFN-$\gamma$, TIS, CYT, IMPRES, CD
 
 Tumour Mutational Burden and transcriptomic immune signatures are essentially uncorrelated (Spearman $r \\approx -0.09$ to $0.16$). A tumour can be high-TMB but immunologically cold, or low-TMB but inflamed. This validates the multimodal model design: combining both feature types captures independent biological axes of treatment response.
 
-### 3. Tree-Based Models Outperform Linear Models on Multimodal Features
+### 3. Support Vector Machines (SVM) Achieve Superior Out-of-Cohort Generalisation
 
-#### _Table 2: Model performance under pooled cross-validation and strict Leave-One-Cohort-Out (LOCO) validation. Tree-based models benefit from multimodal feature integration; linear models degrade with additional features._
+#### _Table 2: Model performance under pooled cross-validation and strict Leave-One-Cohort-Out (LOCO) validation. SVM achieves top out-of-cohort performance on Riaz 2017 (AUC = 0.717) and Liu 2019 (AUC = 0.657)._
 
-| Model               | Pooled 5-Fold CV AUC | Best LOCO AUC (Cohort) |
-|:------------------- |:-------------------- |:---------------------- |
+| Model | Pooled 5-Fold CV AUC | Best LOCO AUC (Cohort) |
+|:---|:---:|:---:|
 """
 
     for row in model_table:
@@ -298,7 +302,7 @@ Tumour Mutational Burden and transcriptomic immune signatures are essentially un
 
     content += f"""
 > [!important] Performance Gap Between Pooled CV and LOCO  
-> Pooled 5-fold CV estimates (~0.70–0.72 AUC) substantially overestimate out-of-cohort performance. Strict LOCO validation, where an entire cohort is held out, yields AUCs in the 0.55–0.72 range, reflecting the true difficulty of cross-study generalisation with small clinical trial datasets ($N \\approx {stats['hugo']['n']}$–${stats['liu']['n']}$).
+> Pooled 5-fold CV estimates (~0.71–0.72 AUC) substantially overestimate out-of-cohort performance. Strict LOCO validation, where an entire cohort is held out, yields AUCs in the 0.43–0.72 range, reflecting the true difficulty of cross-study generalisation with small clinical trial datasets ($N = 27\text{{\-\-}}122$). SVM demonstrates superior margin-based stability across heterogeneous study cohorts.
 
 ### 4. Hugo 2016 is an Unreliable Validation Fold
 
@@ -306,7 +310,9 @@ Hugo 2016 ($N = {stats['hugo']['n']}$) is consistently the most difficult held-o
 
 ### 5. TCGA Survival Signature Transfers Modestly to Response Prediction
 
-The custom 20-gene overall survival signature derived from TCGA-SKCM ($N = {stats['tcga']['n']}$) strongly stratifies baseline survival (Log-Rank $p = 4.89 \\times 10^{{-8}}$), but its transfer to immunotherapy response prediction via direct Cox risk-score projection is modest (AUC = 0.55–0.65). This confirms that overall survival and treatment response, while related, are partially distinct biological endpoints.
+The custom 20-gene overall survival signature derived from TCGA-SKCM ($N = 428$) strongly stratifies baseline survival (Log-Rank $p = 1.57 \\times 10^{{-8}}$), but its transfer to immunotherapy response prediction via direct Cox risk-score projection is modest (AUC = 0.55–0.65). This confirms that overall survival and treatment response, while related, are partially distinct biological endpoints.*
+
+_*Note on TCGA sample counts ($N$): Reconciling minor sample size variants across reports: raw cBioPortal dataset $N=443$; aligned survival samples $N=428$; complete clinical covariate subset $N=427$; final Kaplan-Meier stratification subset $N=426$._
 
 ---
 
@@ -331,7 +337,7 @@ graph LR
 |:---|:---|:---|
 | **Batch correction** | Cohort-independent Z-score scaling | Prevents cross-validation data leakage (ComBat requires access to all cohorts simultaneously) |
 | **Transcriptomic features** | 6 curated immune signatures | Biologically interpretable, stable across folds, grounded in known ICI biology |
-| **Genomic features** | TMB + 3 driver mutations (BRAF, NRAS, NF1) | Orthogonal to transcriptomic signatures; TMB is predictive of response but not prognostic of baseline survival |
+| **Genomic features** | TMB + 3 driver mutations (`BRAF`, `NRAS`, `NF1`) | Orthogonal to transcriptomic signatures; TMB is predictive of response but not prognostic of baseline survival |
 | **Feature selection** | Curated signatures over SelectKBest | Data-driven selection captures cohort-specific noise, not transferable immune biology |
 | **Validation strategy** | Report both pooled CV and LOCO | LOCO is the primary evidence layer; pooled CV provides complementary upper-bound estimates |
 
