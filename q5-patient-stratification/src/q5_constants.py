@@ -6,6 +6,10 @@ Q3 ODE simulation initial conditions, and Q4 DepMap/LINCS drug target mappings.
 
 from typing import Dict, List
 
+# ---------------------------------------------------------------------------
+# Module-level Constants & Definitions
+# ---------------------------------------------------------------------------
+
 # Features utilized for patient clustering
 PHENOTYPE_FEATURES: List[str] = [
     "IFNG_Signaling",

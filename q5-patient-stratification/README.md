@@ -7,20 +7,22 @@ Translating Q1 predictive response models into clinically actionable patient sub
 This subproject implements **Question 5 (Q5)** of the Melanoma Immunotherapy Assignment (*"Can we identify clinically distinct patient subgroups? Do subgroups require different treatments?"*). It serves as the **master synthesis engine** uniting all 5 project questions (Q1–Q5) into a single bench-to-bedside clinical decision framework:
 
 ```
-   Q1: Patient IO Predictor ──┐
-                              ├──► Q5: Patient Stratification ──► Discovers 4 Patient Phenotypes
-   Q2: Cell Line Sensitivity──┘    (Immune Hot, Cold, M2-High, Mutant-Driven)
-   (Dabrafenib/Dacarbazine)              │
-                                         ┌────────────────────────────┴────────────────────────────┐
-                                         ▼                                                         ▼
-                                 Q3: ODE Dynamic Models                                   Q4: DepMap & LINCS
-                                 Simulates Tumour Volume T(t)                             Identifies Novel Targets & Drug Perturbagens
-                                 Trajectories for Each Phenotype                          to Overcome Non-Response
-                                         │                                                         │
-                                         └────────────────────────────┬────────────────────────────┘
-                                                                      ▼
-                                                       Q5: Treatability Index & Decision Support
-                                                       (Routes Patient to Arm A, Arm B, or Arm C)
+┌───────────────────────────┐     ┌───────────────────────────┐
+│ Q1: Patient IO Predictor  │     │ Q2: Cell Line Sensitivity │
+└─────────────┬─────────────┘     └─────────────┬─────────────┘
+              │                                 │
+              └────────────────┬────────────────┘
+                               ▼
+                Q5: Patient Stratification (Subtypes)
+                               │
+               ┌───────────────┴───────────────┐
+               ▼                               ▼
+     Q3: ODE Dynamic Models           Q4: DepMap & LINCS
+     Simulates Trajectories T(t)      Identifies Novel Targets
+               │                               │
+               └───────────────┬───────────────┘
+                               ▼
+             Q5: Treatability & Decision Support
 ```
 
 Key features & multi-question integrations in Q5:
@@ -39,35 +41,29 @@ Key features & multi-question integrations in Q5:
 The analysis is structured into 7 sequential phases executed via standalone scripts and orchestrated by a master pipeline:
 
 ```
-                  ┌──────────────────────────────────────────────────────────┐
-                  │                    INPUT DATASETS                        │
-                  │  • clin_merged.csv, expr_merged.csv, merged_genomic.csv  │
-                  │  • Q1 Serialised Models & Q2 Cell Line Viability Scores  │
-                  │  • Macrophage STV Matrix (data/config/m1_m2_stv.csv)     │
-                  └────────────┬─────────────────────────────┘
-                               │
-                               ▼
-    Phase 1 ──► [01_load_and_prepare.py] ────► Load data, extract signatures & M1/M2 STV
-                               │
-    Phase 2 ──► [02_feature_analysis.py] ───► Univariate associations & interaction tests
-                               │
-    Phase 3 ──► [03_cluster_patients.py] ───► Unsupervised K-Means/Ward & UMAP projection
-                               │
-    Phase 4 ──► [04_phenotype_characterisation.py] ─► Annotate phenotypes & Q3 ODE Trajectories
-                               │
-    Phase 5 ──► [05_subgroup_models.py] ───► Train subgroup-specific predictive models
-                               │
-    Phase 6 ──► [06_clinical_utility.py] ───► Decision Curve Analysis (DCA) & NNT
-                               │
-    Phase 7 ──► [07_treatability_scoring.py] ─► Treatability Index, Q2 Drugs & Q4 Targets
-                               │
-                               ▼
-                  ┌──────────────────────────────────────────────────────────┐
-                  │                    OUTPUT ARTIFACTS                      │
-                  │  • Consolidated Feature Matrix & Patient Clusters CSVs   │
-                  │  • 300 DPI Publication Visualisations & Plots             │
-                  │  • Detailed Markdown Reports in reports/                 │
-                  └────────────────────────────┴─────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                    INPUT DATASETS                      │
+│ • clin_merged.csv, expr_merged.csv, merged_genomic.csv │
+│ • Q1 Models & Q2 Cell Line Viability Scores            │
+│ • Macrophage STV Matrix (data/config/m1_m2_stv.csv)    │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼
+    Phase 1 ──► [01_load_and_prepare.py]
+    Phase 2 ──► [02_feature_analysis.py]
+    Phase 3 ──► [03_cluster_patients.py]
+    Phase 4 ──► [04_phenotype_characterisation.py]
+    Phase 5 ──► [05_subgroup_models.py]
+    Phase 6 ──► [06_clinical_utility.py]
+    Phase 7 ──► [07_treatability_scoring.py]
+                            │
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                    OUTPUT ARTIFACTS                    │
+│ • Feature Matrix & Patient Clusters CSVs               │
+│ • 300 DPI Publication Visualisations & Plots           │
+│ • Detailed Markdown Reports in reports/               │
+└────────────────────────────────────────────────────────┘
 ```
 
 ## Step-by-Step Analytical Phases
@@ -121,7 +117,7 @@ The analysis is structured into 7 sequential phases executed via standalone scri
 * **Tasks**:
   * Calculates Net Benefit across threshold probabilities ($0.1 - 0.9$) for Decision Curve Analysis (DCA).
   * Computes Number Needed to Treat (NNT) and Positive Predictive Value (PPV).
-  * Compares Q1 model performance against standard clinical strategies (*Treat All*, *High TMB*, `CD274` / PD-L1+).
+  * Compares Q1 model performance against standard clinical benchmarks (*Treat All*, *High TMB*, `CD274` / PD-L1+).
 
 ### Phase 7: Treatability Index, Q2 Drugs & Q4 Target Nominations
 * **Script**: [07_treatability_scoring.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/07_treatability_scoring.py)
@@ -135,7 +131,7 @@ The analysis is structured into 7 sequential phases executed via standalone scri
 
 ```
 q5-patient-stratification/
-├── README.md                      <- Project documentation (this file)
+├── README.md                      <- Project documentation
 ├── README_STUDENT_GUIDE.md        <- Biological & statistical study guide
 ├── README_ELI10.md                <- Plain-English concept summary
 ├── requirements.txt               <- Q5 additions (umap-learn, dcurves)
@@ -143,26 +139,26 @@ q5-patient-stratification/
 ├── models/                        <- Serialised subgroup classifier models
 ├── plots/                         <- 300 DPI publication-ready figures
 │   ├── clustering/                <- UMAP, silhouette, and elbow plots
-│   ├── phenotypes/                <- Radar charts, KM curves, and Q3 ODE T(t) plots
+│   ├── phenotypes/                <- Radar charts, KM curves, & ODE plots
 │   ├── clinical_utility/          <- Decision curves and NNT charts
-│   └── feature_analysis/          <- Univariate volcano & interaction plots
+│   └── feature_analysis/          <- Volcano & interaction plots
 ├── reports/                       <- Detailed markdown analysis reports
 ├── scratch/                       <- Temporary exploratory scripts
 ├── scripts/
-│   ├── 01_load_and_prepare.py     <- Data loading, signature & STV computation
-│   ├── 02_feature_analysis.py     <- Association testing & Youden thresholds
+│   ├── 01_load_and_prepare.py     <- Data loading & signature extraction
+│   ├── 02_feature_analysis.py     <- Association testing & Youden cutoffs
 │   ├── 03_cluster_patients.py     <- K-Means/Ward clustering & UMAP
-│   ├── 04_phenotype_characterisation.py <- Subtype annotation & Q3 ODE trajectories
-│   ├── 05_subgroup_models.py     <- Subgroup-specific predictive modeling
+│   ├── 04_phenotype_characterisation.py <- Subtype annotation & Q3 ODE
+│   ├── 05_subgroup_models.py     <- Subgroup predictive modeling
 │   ├── 06_clinical_utility.py     <- Decision Curve Analysis (DCA)
-│   ├── 07_treatability_scoring.py <- Treatability index, Q2 drugs & Q4 targets
+│   ├── 07_treatability_scoring.py <- Treatability index, Q2 & Q4
 │   └── run_q5_pipeline.py         <- Master pipeline orchestrator
 └── src/                           <- Q5-specific Python source package
     ├── __init__.py
-    ├── q5_constants.py            <- Feature sets, Q3 ODE params & Q4 target maps
-    ├── clustering.py              <- Clustering & GAP statistic algorithms
-    ├── phenotyping.py             <- Subtype profiling & radar chart utilities
-    ├── feature_analysis.py        <- MW-U, Fisher's, & interaction statistics
+    ├── q5_constants.py            <- Feature sets & Q3/Q4 maps
+    ├── clustering.py              <- Clustering & GAP statistic
+    ├── phenotyping.py             <- Subtype profiling & radar charts
+    ├── feature_analysis.py        <- MW-U & Fisher's statistics
     └── clinical_utility.py        <- DCA net benefit & NNT calculators
 ```
 

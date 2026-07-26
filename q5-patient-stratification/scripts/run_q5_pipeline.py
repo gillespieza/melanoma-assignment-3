@@ -23,8 +23,16 @@ for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+# ---------------------------------------------------------------------------
+# Project Imports
+# ---------------------------------------------------------------------------
+
 from src.utils.logging import TeeStream
 from src.utils.paths import PROJECT_ROOT, SUBPROJECT_ROOT, rel_path
+
+# ---------------------------------------------------------------------------
+# Module-level Constants & Definitions
+# ---------------------------------------------------------------------------
 
 LOG_DIR = SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "q5_pipeline.log"

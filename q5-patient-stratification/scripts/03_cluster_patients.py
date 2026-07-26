@@ -21,9 +21,17 @@ for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
             sys.path.insert(0, str(parent))
         break
 
+# ---------------------------------------------------------------------------
+# Project Imports
+# ---------------------------------------------------------------------------
+
 from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import PROJECT_ROOT, SUBPROJECT_ROOT, rel_path
+
+# ---------------------------------------------------------------------------
+# Module-level Constants & Definitions
+# ---------------------------------------------------------------------------
 
 LOG_DIR = SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "03_cluster_patients.log"

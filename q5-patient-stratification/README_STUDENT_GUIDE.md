@@ -119,22 +119,27 @@ $$\text{Net Benefit} = \frac{\text{True Positives}}{N} - \left( \frac{\text{Fals
 Understanding why we use two merged datasets resolves common confusion:
 
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│              merged/immunotherapy (N = 326 Patients)                     │
-│  • Cohorts: Liu 2019 (122), Riaz 2017 (107), TCGA-IO (70), Hugo 2016 (27) │
-│  • Property: Every patient received anti-PD-1 / anti-CTLA-4 immunotherapy  │
-│  • Labels: 100% annotated with ground-truth Response (y ∈ {0, 1})         │
-│  • Purpose: Model Training, Phenotype Discovery, & Validation            │
-└──────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                  merged/full (N = 699 Patients)                          │
-│  • Cohorts: TCGA-SKCM Full (443), Liu (122), Riaz (107), Hugo (27)        │
-│  • Property: Includes 373 unselected TCGA primary/surgical patients       │
-│  • Labels: Response labels missing (NaN) for non-immunotherapy patients  │
-│  • Purpose: Real-world 3-Arm Treatment Selection Simulation              │
-└──────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│     merged/immunotherapy (N = 326 Patients)      │
+├──────────────────────────────────────────────────┤
+│ • Cohorts: Liu (122), Riaz (107), TCGA-IO (70),  │
+│   Hugo 2016 (27)                                 │
+│ • Property: Every patient received anti-PD-1/    │
+│   anti-CTLA-4 immunotherapy                      │
+│ • Labels: 100% annotated with Response (y ∈ {0,1})│
+│ • Purpose: Model Training & Phenotype Discovery  │
+└─────────────────────────┬────────────────────────┘
+                          │
+                          ▼
+┌──────────────────────────────────────────────────┐
+│          merged/full (N = 699 Patients)          │
+├──────────────────────────────────────────────────┤
+│ • Cohorts: TCGA-SKCM Full (443), Liu (122),      │
+│   Riaz (107), Hugo (27)                          │
+│ • Property: Includes 373 unselected primary      │
+│   surgical patients                              │
+│ • Purpose: 3-Arm Treatment Selection Simulation  │
+└──────────────────────────────────────────────────┘
 ```
 
 1. **Why Train on `merged/immunotherapy` ($N=326$)**:
@@ -148,25 +153,25 @@ Understanding why we use two merged datasets resolves common confusion:
 The master decision engine routes patients through three sequential evaluation gates:
 
 ```
-                  ┌────────────────────────────────────────┐
-                  │          RANDOM NEW PATIENT            │
-                  │   (Tumour Gene Expression & DNA)       │
-                  └───────────────────┬────────────────────┘
-                                      │
-                                      ▼
-             [Gate 1] Is Immunotherapy Chance High? (>70% prob)
-               ├── YES ──► 🟢 ARM A: Immunotherapy Monotherapy (Anti-PD-1)
-               └── NO  ──► Proceed to Gate 2
-                                      │
-                                      ▼
-             [Gate 2] Is the `BRAF` Gene Broken? (`BRAF` V600 Mutation)
-               ├── YES ──► 🔵 ARM B: Targeted Therapy (Dabrafenib + Trametinib)
-               └── NO  ──► Proceed to Gate 3
-                                      │
-                                      ▼
-             [Gate 3] Treatability Index & Q4 Target Nomination
-               ├── High Treatability (Reversible Barrier) ──► 🟡 COMBINATION (Helper Drug + IO)
-               └── Low Treatability (High Resistance)     ──► 🔴 ARM C: Chemotherapy (Dacarbazine) / Trial
+             ┌────────────────────────────────────┐
+             │         RANDOM NEW PATIENT         │
+             │   (Tumour Gene Expression & DNA)   │
+             └─────────────────┬──────────────────┘
+                               │
+                               ▼
+        [Gate 1] Is Immunotherapy Chance High (>70%)?
+          ├── YES ──► 🟢 ARM A: Immunotherapy Monotherapy
+          └── NO  ──► Proceed to Gate 2
+                               │
+                               ▼
+        [Gate 2] Is `BRAF` Broken (`BRAF` V600 Mutation)?
+          ├── YES ──► 🔵 ARM B: Targeted Therapy
+          └── NO  ──► Proceed to Gate 3
+                               │
+                               ▼
+        [Gate 3] Treatability Index & Target Nomination
+          ├── High Treatability ──► 🟡 COMBINATION (Helper + IO)
+          └── Low Treatability  ──► 🔴 ARM C: Chemotherapy / Trial
 ```
 
 ### Summary of Script Mapping

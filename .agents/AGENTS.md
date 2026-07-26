@@ -58,6 +58,13 @@ When fixing code smells or refactoring code in this repository, follow these gui
     - **Docstrings**: Ensure every module, class, and function has a clear docstring summarizing its purpose, arguments, and return values (using standard conventions like Google or NumPy style).
     - **Inline Comments**: Explain *why* you are doing something, not *what* you are doing. The code itself should explain the *what* through descriptive variable and function names.
     - **Block Comments**: Use block comments to explain complex algorithms, data transformations, edge cases, or significant biological assumptions immediately preceding the relevant code block.
+    - **Section Headings in Code**: Format major script sections and module definitions using 75-character dashed comment headers:
+      ```python
+      # ---------------------------------------------------------------------------
+      # Section Title / Description
+      # ---------------------------------------------------------------------------
+      ```
+      Use this standard structure for top-level bootstrap blocks (`# Bootstrap project root resolution for top-level imports`), project import blocks (`# Project Imports`), and constant blocks (`# Module-level Constants & Definitions`).
 7.  **Duplicate Code (DRY)**: Identify duplicated logic across files or methods and consolidate it into shared utility functions or base classes.
 8.  **Reusable Logic Extraction & Utility Helper Enforcement**:
     - Reusable logic belongs in `src/utils/` or `src/config/`, never re-implemented inline in analysis scripts.

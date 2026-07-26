@@ -26,15 +26,24 @@ You might wonder: *Why do we have two datasets (`merged/immunotherapy` with 326 
 Think of it like **training a sniffer dog**:
 
 ```
- ┌──────────────────────────────────────────┐    ┌──────────────────────────────────────────┐
- │  DATASET 1: merged/immunotherapy (N=326) │    │       DATASET 2: merged/full (N=699)     │
- │        "THE TRAINING SCHOOL"             │    │        "THE REAL-WORLD HOSPITAL"         │
- ├──────────────────────────────────────────┤    ├──────────────────────────────────────────┤
- │ • Every patient GOT Immunotherapy        │    │ • ALL melanoma patients (including       │
- │ • We KNOW if it worked (Responder) or    │    │   surgery, chemo, and targeted arms)     │
- │   failed (Non-Responder)                 │    │ • Used to test how our "Sorting Hat"     │
- │ • Used to TRAIN our AI to spot patterns  │    │   sorts an unselected hospital cohort    │
- └──────────────────────────────────────────┘    └──────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│     DATASET 1: merged/immunotherapy (N=326)      │
+│             "THE TRAINING SCHOOL"                │
+├──────────────────────────────────────────────────┤
+│ • Every patient received Immunotherapy           │
+│ • We KNOW if treatment succeeded or failed       │
+│ • Used to TRAIN AI to spot response patterns     │
+└──────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌──────────────────────────────────────────────────┐
+│          DATASET 2: merged/full (N=699)          │
+│           "THE REAL-WORLD HOSPITAL"              │
+├──────────────────────────────────────────────────┤
+│ • ALL melanoma patients (unselected population)  │
+│ • Includes surgery, chemo, and targeted arms     │
+│ • Used to TEST "Sorting Hat" treatment selection │
+└──────────────────────────────────────────────────┘
 ```
 
 1. **Dataset 1: `merged/immunotherapy` (326 Patients = The Training School)**
@@ -66,25 +75,25 @@ The project uses a special 14,837-gene scorecard ([m1_m2_stv.csv](file:///c:/Use
 When any random new patient enters the clinic, Q5 runs them through a simple 3-step decision tree:
 
 ```
-                  ┌────────────────────────────────────────┐
-                  │          RANDOM NEW PATIENT            │
-                  │   (Tumour Gene Expression & DNA)       │
-                  └───────────────────┬────────────────────┘
-                                      │
-                                      ▼
-             [Step 1] Is Immunotherapy Chance High? (>70%)
-               ├── YES ──► 🟢 RECOMMEND ARM A: Immunotherapy (Anti-PD-1)
-               └── NO  ──► Proceed to Step 2
-                                      │
-                                      ▼
-             [Step 2] Is the `BRAF` Gene Broken? (`BRAF` V600 Mutation)
-               ├── YES ──► 🔵 RECOMMEND ARM B: Targeted Therapy (Dabrafenib + Trametinib)
-               └── NO  ──► Proceed to Step 3
-                                      │
-                                      ▼
-             [Step 3] Can We Fix the Immune Barrier? (Treatability Index)
-               ├── YES ──► 🟡 RECOMMEND COMBINATION (Helper Drug + Immunotherapy)
-               └── NO  ──► 🔴 RECOMMEND ARM C: Chemotherapy (Dacarbazine) / Clinical Trial
+             ┌────────────────────────────────────┐
+             │         RANDOM NEW PATIENT         │
+             │   (Tumour Gene Expression & DNA)   │
+             └─────────────────┬──────────────────┘
+                               │
+                               ▼
+        [Step 1] Is Immunotherapy Chance High (>70%)?
+          ├── YES ──► 🟢 ARM A: Immunotherapy (Anti-PD-1)
+          └── NO  ──► Proceed to Step 2
+                               │
+                               ▼
+        [Step 2] Is the `BRAF` Gene Broken (`BRAF` V600)?
+          ├── YES ──► 🔵 ARM B: Targeted Therapy
+          └── NO  ──► Proceed to Step 3
+                               │
+                               ▼
+        [Step 3] Can We Fix Immune Barrier (Treatability)?
+          ├── YES ──► 🟡 COMBINATION (Helper Drug + IO)
+          └── NO  ──► 🔴 ARM C: Chemotherapy / Trial
 ```
 
 ## 5. How All 5 Assignment Questions Fit Together 🧩
@@ -101,9 +110,9 @@ Each of the 5 project questions answers one piece of the puzzle:
 
 | Concept | Plain-English Meaning | Why It Matters |
 | :--- | :--- | :--- |
-| **`merged/immunotherapy` ($N=326$)** | The "Training School" dataset | Teaches the AI what immunotherapy response looks like |
-| **`merged/full` ($N=699$)** | The "Real Hospital" dataset | Tests how the AI sorts an unselected population |
-| **Macrophage STV** | Good Cop vs. Bad Cop score | Identifies patients who need an M2-blocking drug |
+| **`merged/immunotherapy` ($N=326$)** | The "Training School" dataset | Teaches AI what immunotherapy response looks like |
+| **`merged/full` ($N=699$)** | The "Real Hospital" dataset | Tests how AI sorts an unselected population |
+| **Macrophage STV** | Good Cop vs. Bad Cop score | Identifies patients needing M2-blocking drugs |
 | **Q3 ODEs** | Tumour growth time-machine | Shows predicted tumour shrinkage over 180 days |
-| **Q4 DepMap/LINCS** | Novel drug target finder | Recommends helper drugs for therapy-resistant patients |
-| **Q5 Engine** | The Master Sorting Hat | Assigns every patient to Arm A, Arm B, or Arm C |
+| **Q4 DepMap/LINCS** | Novel drug target finder | Recommends helper drugs for resistant patients |
+| **Q5 Engine** | Master Sorting Hat | Assigns patients to Arm A, Arm B, or Arm C |
