@@ -9,24 +9,20 @@ import importlib
 from pathlib import Path
 import sys
 
-def find_project_root(current_dir: Path) -> Path:
-    """Walk upward to find project root directory containing src and data."""
-    for parent in [current_dir] + list(current_dir.parents):
-        if (parent / "src").is_dir() and (parent / "data").is_dir():
-            return parent
-    return current_dir.resolve().parents[1]
+SCRIPT_DIR = Path(__file__).resolve().parent
+for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
+    if (parent / "src").is_dir() and (parent / "data").is_dir():
+        if str(parent) not in sys.path:
+            sys.path.insert(0, str(parent))
+        break
 
-BASE_DIR = find_project_root(Path(__file__).resolve().parent)
-SUBPROJECT_DIR = Path(__file__).resolve().parent.parent
-
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
-if str(SUBPROJECT_DIR / "scripts") not in sys.path:
-    sys.path.insert(0, str(SUBPROJECT_DIR / "scripts"))
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
 
 from src.utils.logging import TeeStream
+from src.utils.paths import PROJECT_ROOT, SUBPROJECT_ROOT, rel_path
 
-LOG_DIR = BASE_DIR / "logs"
+LOG_DIR = SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "q5_pipeline.log"
 
 SCRIPTS = [
@@ -44,6 +40,8 @@ def main() -> None:
     """Orchestrate end-to-end Q5 pipeline execution."""
     print("=" * 80)
     print("STARTING Q5 PATIENT STRATIFICATION PIPELINE")
+    print(f"Project Root: {rel_path(PROJECT_ROOT)}")
+    print(f"Subproject Root: {rel_path(SUBPROJECT_ROOT)}")
     print("=" * 80)
 
     for script_label, mod_name in SCRIPTS:
@@ -68,5 +66,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+            print(f"Logging console output to {rel_path(LOG_PATH)}")
             main()

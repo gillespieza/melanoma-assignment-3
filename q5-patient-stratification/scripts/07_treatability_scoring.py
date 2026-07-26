@@ -10,21 +10,18 @@ import contextlib
 from pathlib import Path
 import sys
 
-def find_project_root(current_dir: Path) -> Path:
-    """Walk upward to find project root directory containing src and data."""
-    for parent in [current_dir] + list(current_dir.parents):
-        if (parent / "src").is_dir() and (parent / "data").is_dir():
-            return parent
-    return current_dir.resolve().parents[1]
-
-BASE_DIR = find_project_root(Path(__file__).resolve().parent)
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
+SCRIPT_DIR = Path(__file__).resolve().parent
+for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
+    if (parent / "src").is_dir() and (parent / "data").is_dir():
+        if str(parent) not in sys.path:
+            sys.path.insert(0, str(parent))
+        break
 
 from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
+from src.utils.paths import PROJECT_ROOT, SUBPROJECT_ROOT, rel_path
 
-LOG_DIR = BASE_DIR / "logs"
+LOG_DIR = SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "07_treatability_scoring.log"
 
 set_presentation_style()
@@ -39,7 +36,7 @@ def integrate_q4_depmap_lincs_targets() -> None:
 
 def main() -> None:
     """Main execution function for treatability scoring."""
-    print("Running 07_treatability_scoring.py (Q4 DepMap/LINCS Integrated)")
+    print(f"Running 07_treatability_scoring.py (Q4 DepMap/LINCS Integrated, Project root: {rel_path(PROJECT_ROOT)})")
     integrate_q4_depmap_lincs_targets()
     print("Treatability scoring complete.")
 
@@ -50,5 +47,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+            print(f"Logging console output to {rel_path(LOG_PATH)}")
             main()

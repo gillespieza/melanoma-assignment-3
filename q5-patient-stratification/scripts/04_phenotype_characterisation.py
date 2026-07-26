@@ -10,21 +10,18 @@ import contextlib
 from pathlib import Path
 import sys
 
-def find_project_root(current_dir: Path) -> Path:
-    """Walk upward to find project root directory containing src and data."""
-    for parent in [current_dir] + list(current_dir.parents):
-        if (parent / "src").is_dir() and (parent / "data").is_dir():
-            return parent
-    return current_dir.resolve().parents[1]
-
-BASE_DIR = find_project_root(Path(__file__).resolve().parent)
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
+SCRIPT_DIR = Path(__file__).resolve().parent
+for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
+    if (parent / "src").is_dir() and (parent / "data").is_dir():
+        if str(parent) not in sys.path:
+            sys.path.insert(0, str(parent))
+        break
 
 from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
+from src.utils.paths import PROJECT_ROOT, SUBPROJECT_ROOT, rel_path
 
-LOG_DIR = BASE_DIR / "logs"
+LOG_DIR = SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "04_phenotype_characterisation.log"
 
 set_presentation_style()
@@ -39,7 +36,7 @@ def simulate_q3_ode_trajectories() -> None:
 
 def main() -> None:
     """Main execution function for phenotype characterisation."""
-    print("Running 04_phenotype_characterisation.py (Q3 ODE Integrated)")
+    print(f"Running 04_phenotype_characterisation.py (Q3 ODE Integrated, Project root: {rel_path(PROJECT_ROOT)})")
     simulate_q3_ode_trajectories()
     print("Phenotype characterisation complete.")
 
@@ -50,5 +47,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+            print(f"Logging console output to {rel_path(LOG_PATH)}")
             main()
