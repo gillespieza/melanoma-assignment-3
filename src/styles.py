@@ -45,8 +45,19 @@ PHENOTYPE_PALETTE = {
     "M2 Immunosuppressive": "#CC79A7",
     "M2 Immunosuppressive (High M2 Macrophages & CAFs)": "#CC79A7",
     "Mutant-Driven": "#E69F00",                                                   # Orange (MAPK Mutation Driven)
-    "Mutant-Driven (MAPK Activated, BRAF/NRAS Mut)": "#E69F00",
 }
+
+from matplotlib.colors import LinearSegmentedColormap
+
+
+def get_okabe_ito_diverging_cmap():
+    """Returns a colorblind-safe Okabe-Ito continuous diverging colormap for heatmaps.
+
+    Maps negative values (e.g. beta < 0) to Okabe-Ito Vermillion Red (#D55E00), neutral values to
+    light gray (#FAFAFA), and positive values (e.g. beta > 0) to Okabe-Ito Bluish Green (#009E73).
+    """
+    colors = ["#D55E00", "#FAFAFA", "#009E73"]
+    return LinearSegmentedColormap.from_list("OkabeItoDiverging", colors, N=256)
 
 
 def set_presentation_style(font_scale: float = 1.0, dpi: int = 300):
@@ -67,6 +78,9 @@ def set_presentation_style(font_scale: float = 1.0, dpi: int = 300):
         'savefig.dpi': dpi,
         'savefig.bbox': 'tight',
         'figure.autolayout': True,
+        'grid.color': '#E5E7EB',
+        'grid.linewidth': 0.5,
+        'grid.alpha': 0.6,
     })
 
 
