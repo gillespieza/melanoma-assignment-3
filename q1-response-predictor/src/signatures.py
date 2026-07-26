@@ -126,3 +126,18 @@ def extract_all_signatures(df_expr):
     # Drop rows that are completely NaN (e.g. if no genes were found)
     df_sig = df_sig.dropna(how='all')
     return df_sig
+
+def zscore_df(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Standardises numeric columns of a DataFrame to zero mean and unit variance per column.
+    """
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    df_scaled = df.copy()
+    for col in numeric_cols:
+        std = df[col].std()
+        if std == 0 or pd.isna(std):
+            df_scaled[col] = 0.0
+        else:
+            df_scaled[col] = (df[col] - df[col].mean()) / std
+    return df_scaled
+
