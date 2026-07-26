@@ -8,7 +8,7 @@ A comprehensive, student-focused reference explaining the **biology**, **statist
 1. [The Clinical Problem & Project Goal](#1-the-clinical-problem--project-goal)
 2. [Biological Concepts Explained](#2-biological-concepts-explained)
    - [Immune Checkpoints & T-Cell Infiltration](#immune-checkpoints--t-cell-infiltration)
-   - [Macrophage Polarisation (M1 vs. M2) & Professor STV](#macrophage-polarisation-m1-vs-m2--professor-stv)
+   - [Macrophage Polarisation (M1 vs. M2) & Macrophage STV](#macrophage-polarisation-m1-vs-m2--macrophage-stv)
    - [Mechanisms of Immunotherapy Resistance](#mechanisms-of-immunotherapy-resistance)
 3. [Statistical & Machine Learning Concepts Explained](#3-statistical--machine-learning-concepts-explained)
    - [Univariate Association Testing & Youden Cutoffs](#univariate-association-testing--youden-cutoffs)
@@ -44,14 +44,14 @@ Question 5 builds a **biomarker-guided decision support system**. By inspecting 
 * **Tumour Inflammation Signature (TIS)**: An 18-gene expression signature measuring pre-existing adaptive immune suppression and active IFN-$\gamma$ signaling in the tumour microenvironment.
 * **Cytolytic Index (CYT)**: Defined as the geometric mean of Perforin 1 (`PRF1`) and Granzyme A (`GZMA`) transcript levels, quantifying active cytotoxic T-cell and NK-cell killing.
 
-### Macrophage Polarisation (M1 vs. M2) & Professor STV
+### Macrophage Polarisation (M1 vs. M2) & Macrophage STV
 Tumour-Associated Macrophages (TAMs) exist along a functional spectrum:
 
 * **M1 Macrophages (Pro-inflammatory / Antitumour)**: Produce pro-inflammatory cytokines (`TNF`, `IL12B`, `CXCL10`) and assist T cells in tumour destruction.
 * **M2 Macrophages (Anti-inflammatory / Pro-tumour)**: Produce immunosuppressive factors (`IL10`, `TGFB1`, `ARG1`), stimulate angiogenesis, and recruit regulatory T cells (Tregs), blocking anti-PD-1 efficacy.
 
-#### The Professor's M1/M2 STV Matrix ([m1_m2_stv.csv](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/data/config/m1_m2_stv.csv))
-Your professor provided a linear **Signature Transcript Vector (STV)** containing 14,837 gene weights ($W_g$). For patient $i$ with $\log_2$-transformed expression $E_{i,g}$:
+#### The Macrophage STV Matrix ([m1_m2_stv.csv](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/data/config/m1_m2_stv.csv))
+The project utilizes a linear **Signature Transcript Vector (STV)** containing 14,837 gene weights ($W_g$). For patient $i$ with $\log_2$-transformed expression $E_{i,g}$:
 
 $$\text{STV Score}_i = \sum_{g=1}^{14837} W_g \cdot E_{i,g}$$
 
@@ -180,7 +180,7 @@ The master decision engine routes patients through three sequential evaluation g
 
 ### Summary of Script Mapping
 
-* **[scripts/01_load_and_prepare.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/01_load_and_prepare.py)**: Loads data, extracts signatures, applies Prof STV, computes deconvolution.
+* **[scripts/01_load_and_prepare.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/01_load_and_prepare.py)**: Loads data, extracts signatures, applies Macrophage STV, computes deconvolution.
 * **[scripts/02_feature_analysis.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/02_feature_analysis.py)**: Runs MW-U, Fisher's, Youden cutoffs, and interaction tests.
 * **[scripts/03_cluster_patients.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/03_cluster_patients.py)**: Performs K-Means/Ward scaling, silhouette/GAP evaluation, and UMAP projection.
 * **[scripts/04_phenotype_characterisation.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/04_phenotype_characterisation.py)**: Annotates phenotypes (*Immune Hot*, *Cold*, *M2-High*, *Mutant-Driven*), KM survival, and Q3 ODE trajectories.

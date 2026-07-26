@@ -51,15 +51,15 @@ Think of it like **training a sniffer dog**:
 
 ---
 
-## 3. The Professor's M1/M2 Scorecard: Good Cops vs. Bad Cops 🚓
+## 3. The Macrophage Scorecard: Good Cops vs. Bad Cops 🚓
 
 Inside a tumour, there are immune cells called **macrophages**. But they act like two completely different police officers:
 
 * 👮 **M1 Macrophages ("Good Cops")**: Pro-inflammatory cells that actively attack and kill tumour cells.
 * 🦹 **M2 Macrophages ("Double Agents")**: Anti-inflammatory cells that protect the tumour from T-cells and help it grow.
 
-### What is the Professor's M1/M2 STV?
-Your professor provided a special 14,837-gene scorecard ([m1_m2_stv.csv](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/data/config/m1_m2_stv.csv)). We use this matrix to calculate an **M1/M2 Ratio** (`M1 / (M1 + M2)`) for every patient:
+### What is the Macrophage STV?
+The project uses a special 14,837-gene scorecard ([m1_m2_stv.csv](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/data/config/m1_m2_stv.csv)). We use this matrix to calculate an **M1/M2 Ratio** (`M1 / (M1 + M2)`) for every patient:
 
 * **High M1 / Low M2**: Tumour is filled with "Good Cops" $\rightarrow$ **High response to Immunotherapy!**
 * **Low M1 / High M2**: Tumour is guarded by "Double Agents" $\rightarrow$ Immunotherapy alone will fail, but **adding an M2-blocking helper drug** can convert the patient into a responder!
@@ -112,7 +112,7 @@ Each of the 5 project questions answers one piece of the puzzle:
 | :--- | :--- | :--- |
 | **`merged/immunotherapy` ($N=326$)** | The "Training School" dataset | Teaches the AI what immunotherapy response looks like |
 | **`merged/full` ($N=699$)** | The "Real Hospital" dataset | Tests how the AI sorts an unselected population |
-| **M1/M2 STV** | Good Cop vs. Bad Cop score | Identifies patients who need an M2-blocking drug |
+| **Macrophage STV** | Good Cop vs. Bad Cop score | Identifies patients who need an M2-blocking drug |
 | **Q3 ODEs** | Tumour growth time-machine | Shows predicted tumour shrinkage over 180 days |
 | **Q4 DepMap/LINCS** | Novel drug target finder | Recommends helper drugs for therapy-resistant patients |
 | **Q5 Engine** | The Master Sorting Hat | Assigns every patient to Arm A, Arm B, or Arm C |

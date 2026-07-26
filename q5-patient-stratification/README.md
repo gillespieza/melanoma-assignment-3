@@ -28,7 +28,7 @@ This subproject implements **Question 5 (Q5)** of the Melanoma Immunotherapy Ass
 Key features & multi-question integrations in Q5:
 * **Q1 Immunotherapy Prediction**: Inputting patient baseline expression/clinical profiles to predict anti-PD-1/CTLA-4 response probability.
 * **Q2 Cell Viability & Drug Sensitivity**: Integrating Q2 drug response models for standard-of-care targeted therapies (*Dabrafenib*, *Trametinib*) and chemotherapy (*Dacarbazine*) to select specific agents for non-responders.
-* **Cell Count & Deconvolution Analysis**: Quantitative transcriptomic deconvolution of immune cell fractions and integration of a professor-provided **M1/M2 Macrophage Signature Transcript Vector (STV)** ([m1_m2_stv.csv](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/data/config/m1_m2_stv.csv)).
+* **Cell Count & Deconvolution Analysis**: Quantitative transcriptomic deconvolution of immune cell fractions and integration of a **Macrophage Signature Transcript Vector (STV)** ([m1_m2_stv.csv](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/data/config/m1_m2_stv.csv)).
 * **Q3 ODE Dynamic Trajectories**: Parameterising ODE tumour-immune differential equations for each discovered phenotype to plot simulated 180-day tumour volume regression ($T(t)$) under monotherapy vs. combination therapy.
 * **Q4 DepMap & LINCS Target Nominations**: Mapping DepMap CRISPR essentiality targets (`AXL`, `MDM2`, `CSF1R`) and LINCS L1000 perturbational gene signatures to overcome non-response in therapy-resistant phenotypes.
 * **Clinical Utility & Treatability Scoring**: Decision Curve Analysis (DCA), NNT calculations, and scoring non-responders for reversible biological barriers to recommend combination interventions.
@@ -44,25 +44,25 @@ The analysis is structured into 7 sequential phases executed via standalone scri
                   │                    INPUT DATASETS                        │
                   │  • clin_merged.csv, expr_merged.csv, merged_genomic.csv  │
                   │  • Q1 Serialised Models & Q2 Cell Line Viability Scores  │
-                  │  • Professor M1/M2 STV Matrix (data/config/m1_m2_stv.csv)│
-                  └────────────────────────────┬─────────────────────────────┘
-                                               │
-                                               ▼
+                  │  • Macrophage STV Matrix (data/config/m1_m2_stv.csv)     │
+                  └────────────┬─────────────────────────────┘
+                               │
+                               ▼
     Phase 1 ──► [01_load_and_prepare.py] ────► Load data, extract signatures & M1/M2 STV
-                                               │
+                               │
     Phase 2 ──► [02_feature_analysis.py] ───► Univariate associations & interaction tests
-                                               │
+                               │
     Phase 3 ──► [03_cluster_patients.py] ───► Unsupervised K-Means/Ward & UMAP projection
-                                               │
+                               │
     Phase 4 ──► [04_phenotype_characterisation.py] ─► Annotate phenotypes & Q3 ODE Trajectories
-                                               │
+                               │
     Phase 5 ──► [05_subgroup_models.py] ───► Train subgroup-specific predictive models
-                                               │
+                               │
     Phase 6 ──► [06_clinical_utility.py] ───► Decision Curve Analysis (DCA) & NNT
-                                               │
+                               │
     Phase 7 ──► [07_treatability_scoring.py] ─► Treatability Index, Q2 Drugs & Q4 Targets
-                                               │
-                                               ▼
+                               │
+                               ▼
                   ┌──────────────────────────────────────────────────────────┐
                   │                    OUTPUT ARTIFACTS                      │
                   │  • Consolidated Feature Matrix & Patient Clusters CSVs   │
@@ -80,7 +80,7 @@ The analysis is structured into 7 sequential phases executed via standalone scri
 * **Tasks**:
   * Loads multi-cohort processed data from `data/processed/merged/immunotherapy/`.
   * Computes core immune signatures: IFN-$\gamma$, TIS, CYT, CD8 T-cell, IMPRES, and `CD274` (PD-L1) expression.
-  * Calculates M1 and M2 macrophage scores using the professor's 14,837-gene STV matrix ([m1_m2_stv.csv](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/data/config/m1_m2_stv.csv)) and derives the M1/M2 ratio (`M1 / (M1 + M2)`).
+  * Calculates M1 and M2 macrophage scores using the 14,837-gene Macrophage STV matrix ([m1_m2_stv.csv](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/data/config/m1_m2_stv.csv)) and derives the M1/M2 ratio (`M1 / (M1 + M2)`).
   * Performs transcriptomic cell-type deconvolution (estimating CD8+ T cells, CD4+ T cells, M1/M2 macrophages, NK cells, B cells, and CAFs).
   * Exports unified matrix to `data/processed/q5/feature_matrix.csv`.
 
