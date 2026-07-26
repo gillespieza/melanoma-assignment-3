@@ -227,5 +227,9 @@ data/**
 data/processed/**/expr_cleaned.csv
 data/processed/**/expr_merged.csv
 
+# Exclude scratch folders
+scratch/
+**/scratch/
+
 # Agent stuff
 .agents
