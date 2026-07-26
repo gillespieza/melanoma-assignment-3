@@ -15,6 +15,7 @@ A comprehensive, student-focused reference explaining the **biology**, **statist
    - [Decision Curve Analysis (DCA), NNT & PPV](#decision-curve-analysis-dca-nnt--ppv)
 4. [Dataset Strategy: `merged/immunotherapy` vs. `merged/full`](#4-dataset-strategy-mergedimmunotherapy-vs-mergedfull)
 5. [The 3-Arm Decision Tree Architecture](#5-the-3-arm-decision-tree-architecture)
+6. [Step-by-Step Analytical Phases (Student Overview)](#6-step-by-step-analytical-phases-student-overview)
 
 ## 1. The Clinical Problem & Project Goal
 
@@ -183,3 +184,35 @@ The master decision engine routes patients through three sequential evaluation g
 * **[scripts/05_subgroup_models.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/05_subgroup_models.py)**: Trains subgroup-specific models using LOCO cross-validation.
 * **[scripts/06_clinical_utility.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/06_clinical_utility.py)**: Computes DCA net benefit curves, NNT, and PPV.
 * **[scripts/07_treatability_scoring.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/07_treatability_scoring.py)**: Scores treatability index, maps Q4 DepMap/LINCS drug targets, and constructs the 3-arm decision tree.
+
+## 6. Step-by-Step Analytical Phases (Student Overview)
+
+A simple overview explaining what each script in the pipeline does and why:
+
+1. **Phase 1: Feature Matrix & Deconvolution Preparation (`01_load_and_prepare.py`)**
+   * **Goal**: Assemble all patient data into one clean master table (`feature_matrix.csv`).
+   * **What it does**: Loads RNA-seq expression and clinical data, calculates core immune signatures (`TIS`, `CYT`, `CD8_T_cell`, `IMPRES`, `CD274`), computes the Macrophage STV score (`M1_M2_Ratio`), and estimates immune cell fractions via transcriptomic deconvolution.
+
+2. **Phase 2: Deep Feature Interpretation (`02_feature_analysis.py`)**
+   * **Goal**: Identify which individual biomarkers and gene combinations best separate Responders from Non-Responders.
+   * **What it does**: Runs Mann-Whitney U tests for continuous signature scores, Fisher's exact tests for driver mutations (`BRAF`, `NRAS`, `NF1`), calculates optimal Youden decision thresholds, and tests logistic regression interaction terms (e.g. `TIS` $\times$ `BRAF`).
+
+3. **Phase 3: Unsupervised Patient Stratification (`03_cluster_patients.py`)**
+   * **Goal**: Discover natural patient subgroups (clusters) without bias.
+   * **What it does**: Standardizes continuous features, runs K-Means and Hierarchical Agglomerative (Ward) clustering, validates cluster quality using Silhouette scores and GAP statistics, and projects patient profiles into 2D UMAP space.
+
+4. **Phase 4: Biological Phenotype Characterisation & Q3 ODE Integration (`04_phenotype_characterisation.py`)**
+   * **Goal**: Give each cluster a biological identity and simulate long-term tumour size trajectories.
+   * **What it does**: Maps clusters to 4 clinical phenotypes (*Immune Hot*, *Immune Cold*, *Immunosuppressive M2-High*, *Mutant-Driven*), calculates Kaplan-Meier survival curves, and inputs phenotype-specific effector cell counts into Q3 Ordinary Differential Equation (ODE) models to simulate 180-day tumour volume $T(t)$ regression.
+
+5. **Phase 5: Subgroup-Specific Predictive Models (`05_subgroup_models.py`)**
+   * **Goal**: Test if custom AI models built for specific patient phenotypes outperform a single global model.
+   * **What it does**: Fits separate subgroup classifiers within each phenotype and evaluates Leave-One-Cohort-Out (LOCO) cross-validation performance against the global Q1 model.
+
+6. **Phase 6: Clinical Utility & Decision Impact Analysis (`06_clinical_utility.py`)**
+   * **Goal**: Prove whether using our model to guide treatment decisions actually improves real-world patient outcomes.
+   * **What it does**: Performs Decision Curve Analysis (DCA) to calculate Net Benefit across probability thresholds ($0.1–0.9$), computes Number Needed to Treat (NNT), and evaluates Positive Predictive Value (PPV) against standard benchmarks (*Treat All*, *High TMB*, `CD274` / PD-L1+).
+
+7. **Phase 7: Treatability Index, Q2 Drugs & Q4 Target Nominations (`07_treatability_scoring.py`)**
+   * **Goal**: Build the final 3-arm clinical decision tree and recommend helper drugs for resistant tumours.
+   * **What it does**: Calculates per-patient Treatability Index scores, integrates Q2 cell line drug sensitivity for Arm B (*Dabrafenib/Trametinib*) and Arm C (*Dacarbazine*), and maps Q4 DepMap essentiality targets (`AXL`, `MDM2`, `CSF1R`) and LINCS perturbagens to suggest combination regimens for non-responders.

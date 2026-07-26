@@ -24,6 +24,12 @@ Whenever generating plots, figures, web artifacts, or presentation reports for t
 - **NF1**: `#009E73` (Okabe-Ito Bluish Green)
 - **Triple-WT**: `#CC79A7` (Okabe-Ito Reddish Purple)
 
+### Biological Phenotype Subtypes (`PHENOTYPE_PALETTE`)
+- **Immune Hot**: `#D55E00` (Crimson / Vermillion Red)
+- **Immune Cold**: `#0072B2` (Okabe-Ito Blue)
+- **Immunosuppressive M2-High**: `#CC79A7` (Okabe-Ito Reddish Purple)
+- **Mutant-Driven**: `#E69F00` (Okabe-Ito Orange)
+
 ---
 
 ## 2. Matplotlib & Seaborn Defaults
@@ -32,6 +38,7 @@ Whenever generating plots, figures, web artifacts, or presentation reports for t
 - **Aspect Ratio**: Prefer 16:9 widescreen proportions (`figsize=(11, 6)` or `figsize=(12, 7)`) when figures are intended for slides.
 - **Typography**: Clean `sans-serif` font with bold axis labels and clear title hierarchy.
 - **Labels & Annotations**: On presentation slides, prefer direct data labels on bars/markers over forcing audience grid tracing.
+- **Image Preference over Tables**: For presentation and reporting purposes, always prefer generating and embedding high-resolution (300 DPI) visual plots and figures over static tabular data.
 - **Python Imports**: Import central color palettes from `src.styles` (`from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style`).
 
 ---
@@ -81,7 +88,8 @@ When fixing code smells or refactoring code in this repository, follow these gui
 9.  **Never Hardcode Values That Exist in Data, Configs, or Utilities**:
     - Never hardcode file/directory paths, dataset configurations, cohort names, or metadata values when they can be retrieved directly from `src/utils/paths.py`, `src/config/datasets.py` (`load_dataset_config()`, `datasets.yaml`), `src/config/constants.py`, or `src/biology_constants.py`.
     - Always use the helper functions established in `src/utils/` instead of re-writing custom path manipulation, YAML frontmatter formatting, figure saving, or log handling.
-    - If a number (a percentage, a sample size N, a p-value, a column name) can be computed from files already in `data/raw/` or `data/processed/`, compute it live instead of typing it into the script. This applies to:
+    - **MANDATORY FOR MARKDOWN REPORTS**: Every single reported number (sample size $N$, percentage, response rate, median, IQR, p-value, AUC, feature count, cluster count) appearing in generated markdown reports (headers, callouts, body text, tables, bullet points, key takeaways) MUST be computed on the fly from the live DataFrame/evaluation objects at runtime. NEVER hardcode numeric literals in report generation strings or templates.
+    - This applies to:
       - **Cohort mutation/response frequencies**: Compute from `data/processed/<cohort>/mutations_cleaned.csv` and `clin_cleaned.csv`.
       - **Sample counts (N)**: Use `len(df_clin)`, `len(df)`, or `len(df_valid)`—NEVER bake a literal patient count integer into a string, plot title, subplot header, legend label, axis text, or markdown heading (e.g. don't write `"Liu 2019 (N=104)"` or `"Overall Survival (N=699)"` as fixed literals; construct them dynamically as `f"Liu 2019 (N={len(df_clin)})"` and `f"Overall Survival (N={len(df_valid)})"`).
       - **Markdown Text & Plot Titles/Legends/Axes**: Every patient count or sample size $N$ appearing in generated markdown reports (body text, paragraphs, bullet points, headers, callout boxes, tables, figure captions) and plot elements (titles, subplot headers, legends, axis labels, text annotations) MUST be generated dynamically from the underlying DataFrame or evaluation variable at runtime.
@@ -126,4 +134,10 @@ When fixing code smells or refactoring code in this repository, follow these gui
     - Call `set_presentation_style()` once at module load in any script that produces figures, rather than setting `plt.rcParams` locally.
 13. **Functions and Closures**: Any block of logic used more than once, or that has its own clear single responsibility distinct from its enclosing function, should be its own named function — not a nested closure, not inlined. Nested closures are acceptable only when they capture enclosing-scope variables essential to their one-time use and aren't reused elsewhere.
 14. **Error Handling**: Avoid bare `except:` clauses. Always catch specific exceptions (e.g., `except KeyError:`) and provide actionable error messages that explain how the user can fix the issue (e.g., `raise FileNotFoundError("Missing clin_cleaned.csv in data/processed/. Run preprocessing script first.")`).
+15. **Graduate Student Report Style & Structure**: All generated markdown reports must be pitched at a graduate student level (rigorous, educational, explaining statistical and biological concepts). Every major report section MUST contain:
+    - An Obsidian callout box (`> [!NOTE]` or `> [!INFO]`) explicitly detailing:
+      1. **What is being done**
+      2. **Why we are doing it**
+      3. **What question it answers**
+    - A **Key Takeaways** subsection summarizing the core scientific/clinical insights.
 
