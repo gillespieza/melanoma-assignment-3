@@ -1,11 +1,10 @@
-import { Activity, ShieldCheck, Users, User, SlidersHorizontal } from "lucide-react";
+import { Activity, Users, User } from "lucide-react";
 
-export type ViewKey = "cohort" | "patient" | "archetypes";
+export type ViewKey = "cohort" | "patient";
 
 const TABS: { key: ViewKey; label: string; icon: typeof Users }[] = [
   { key: "cohort", label: "Cohort", icon: Users },
   { key: "patient", label: "Patient", icon: User },
-  { key: "archetypes", label: "Archetypes", icon: SlidersHorizontal },
 ];
 
 export default function Header({
@@ -58,9 +57,6 @@ export default function Header({
         </nav>
 
         <div className="ml-auto flex items-center gap-4">
-          <div className="hidden items-center gap-1.5 rounded-full border border-clinical-border bg-clinical-bg px-3 py-1 text-[11px] font-semibold text-clinical-tealdark sm:flex">
-            <ShieldCheck size={13} /> Decision support · not a directive
-          </div>
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-clinical-blue/10 text-[12px] font-bold text-clinical-bluedark">
               AG

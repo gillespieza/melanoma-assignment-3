@@ -94,6 +94,11 @@ export interface CohortPatient {
   // --- Q1 / Q4 ---
   q1: Q1Prediction | null;
   q4: Q4Block;
+
+  /** Set only by the what-if explorer. TCGA records no LDH, so the engine
+   *  normally infers rapid-control pressure from stage IV; supplying a value
+   *  here lets a clinician pose the "what if their LDH were high?" question. */
+  ldhOverride?: "Normal" | "Elevated" | "High";
 }
 
 // --- Q1 cohort-level validation (the ICI trials, which have real labels) -----

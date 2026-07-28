@@ -18,6 +18,7 @@ export interface WhatIfEdits {
   nras?: NrasCall;
   pdl1Pct?: number;
   stageBand?: string;
+  ldh?: "Normal" | "Elevated" | "High";
 }
 
 export const NO_EDITS: WhatIfEdits = {};
@@ -33,6 +34,8 @@ export function changedFields(patient: CohortPatient, edits: WhatIfEdits): strin
   if (edits.nras !== undefined && edits.nras !== patient.nras) out.push("NRAS");
   if (edits.pdl1Pct !== undefined && edits.pdl1Pct !== patient.pdl1Pct) out.push("PD-L1");
   if (edits.stageBand !== undefined && edits.stageBand !== patient.stageBand) out.push("Stage");
+  // TCGA records no LDH, so any value at all is an addition to the real record.
+  if (edits.ldh !== undefined) out.push("LDH");
   return out;
 }
 
@@ -81,6 +84,7 @@ export function applyWhatIf(
     pdl1Pct,
     stageBand,
     stage: stageBand === patient.stageBand ? patient.stage : stageBand,
+    ldhOverride: edits.ldh,
   };
 
   if (!curvesInvalid) {

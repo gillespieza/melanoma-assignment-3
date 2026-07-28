@@ -2,15 +2,10 @@ import type { RankedOption, TherapyArm, TherapyKey } from "../data/types";
 import { KM_FACTS } from "../data/model";
 
 // ---------------------------------------------------------------------------
-// Shared scoring core.
-//
-// Both entry points run through this:
-//   - decisionEngine.triage()      the 3 editable archetypes (no real Q1 row)
-//   - integrationEngine.integrate() the 421 real TCGA cohort patients
-//
-// Keeping one core means a cohort patient and a hand-edited archetype with the
-// same profile always produce the same recommendation — which is the whole point
-// of the live-editing demo.
+// Shared scoring core, used by integrationEngine.integrate() for every patient —
+// real or edited in the what-if explorer. Keeping the maths in one place means a
+// hypothetical profile and a real patient with the same values always produce the
+// same recommendation, which is what makes the live-editing demo trustworthy.
 //
 // Clinical framing: DECISION SUPPORT. Ranked, evidence-anchored options; the
 // consultant confirms the plan.

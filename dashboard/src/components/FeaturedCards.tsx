@@ -1,4 +1,4 @@
-import { Sparkles, ArrowRight, SlidersHorizontal } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
 import type { CohortRow } from "./CohortTable";
 import { Panel, Pill } from "./ui";
 
@@ -71,11 +71,9 @@ export function pickFeatured(rows: CohortRow[]): { archetype: Archetype; row: Co
 export default function FeaturedCards({
   rows,
   onOpen,
-  onOpenArchetypes,
 }: {
   rows: CohortRow[];
   onOpen: (id: string) => void;
-  onOpenArchetypes: () => void;
 }) {
   const featured = pickFeatured(rows);
   if (!featured.length) return null;
@@ -85,14 +83,6 @@ export default function FeaturedCards({
       title="Featured Cases"
       subtitle="Real cohort patients that cleanly show each clinical archetype"
       icon={<Sparkles size={16} />}
-      right={
-        <button
-          onClick={onOpenArchetypes}
-          className="flex items-center gap-1.5 rounded-lg border border-clinical-border px-2.5 py-1.5 text-[11.5px] font-bold text-clinical-ink transition hover:border-clinical-teal hover:text-clinical-tealdark"
-        >
-          <SlidersHorizontal size={13} /> Editable archetypes
-        </button>
-      }
     >
       <div className="grid gap-3 lg:grid-cols-3">
         {featured.map(({ archetype, row }, i) => (

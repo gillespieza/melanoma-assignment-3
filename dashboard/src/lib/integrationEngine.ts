@@ -60,8 +60,10 @@ const FAVOURABLE = 0.5;
 /**
  * Rapid-control pressure. TCGA has no LDH, so stage IV stands in for it — and we
  * say so in the decision path rather than implying a lab value we don't have.
+ * The what-if explorer can supply an explicit LDH, which then takes precedence.
  */
 function hasRapidControlPressure(p: CohortPatient): boolean {
+  if (p.ldhOverride) return p.ldhOverride !== "Normal";
   return p.stageBand === "IV";
 }
 
@@ -211,9 +213,11 @@ function buildPath(
     {
       id: "stage",
       label: p.stage === "Unknown" ? "Stage not recorded" : `Stage ${p.stage}`,
-      detail: ctx.highLdh
-        ? "Stage IV — rapid-control pressure (LDH not recorded in TCGA)"
-        : "No rapid-control pressure recorded",
+      detail: p.ldhOverride
+        ? `LDH ${p.ldhOverride.toLowerCase()}${ctx.highLdh ? " — rapid-control pressure" : ""}`
+        : ctx.highLdh
+          ? "Stage IV — rapid-control pressure (LDH not recorded in TCGA)"
+          : "No rapid-control pressure recorded",
     },
     {
       id: "braf",
