@@ -25,17 +25,29 @@ function Field({ label, value, muted }: { label: string; value: string; muted?: 
   );
 }
 
-export default function PatientPassport({ patient }: { patient: CohortPatient }) {
+export default function PatientPassport({
+  patient,
+  modified = [],
+}: {
+  patient: CohortPatient;
+  /** Fields the clinician has changed in the what-if explorer. */
+  modified?: string[];
+}) {
   const band = pdl1Band(patient.pdl1Pct);
   const brafMut = patient.braf !== "WT";
 
   return (
     <Panel
       title={patient.id}
-      subtitle={`TCGA-SKCM · sample ${patient.sampleId}`}
+      subtitle={
+        modified.length
+          ? `Hypothetical variant — ${modified.join(", ")} edited`
+          : `TCGA-SKCM · sample ${patient.sampleId}`
+      }
       icon={<IdCard size={16} />}
       right={
         <div className="flex flex-wrap items-center justify-end gap-1.5">
+          {modified.length > 0 && <Pill tone="amber">Modified</Pill>}
           <Pill tone={brafMut ? "blue" : "neutral"}>
             <Dna size={11} /> BRAF {brafMut ? "V600" : "WT"}
           </Pill>

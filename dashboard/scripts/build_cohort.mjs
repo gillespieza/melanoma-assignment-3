@@ -28,6 +28,10 @@ const PATHS = {
   checkpoint: resolve(REPO, "q3-ode-model/outputs/results/checkpoint_tumour_simulations.csv"),
   clinical: resolve(REPO, "data/processed/skcm_tcga_pan_can_atlas_2018/clin_cleaned.csv"),
   q1: resolve(DASHBOARD, "public/q1_predictions.csv"),
+  // Per-patient TCGA response scores from the Q1 workstream (origin/main:
+  // data/processed/patient_predicted_response_scores.csv). One ensemble score
+  // per patient — no per-model breakdown — so the lane shows the gauge only.
+  q1Tcga: resolve(DASHBOARD, "public/q1_tcga_scores.csv"),
   out: resolve(DASHBOARD, "public/cohort.json"),
 };
 
@@ -286,6 +290,33 @@ function deriveQ4(p) {
 
 // ---- Q1 ---------------------------------------------------------------------
 
+/**
+ * Per-patient TCGA scores from the Q1 workstream. Duplicated patient IDs are
+ * averaged rather than silently taking the first row.
+ */
+function buildTcgaScores(rows) {
+  const grouped = new Map();
+  for (const r of rows) {
+    if (!/tcga/i.test(r.COHORT ?? "")) continue;
+    const score = num(r.PREDICTED_RESPONSE_SCORE);
+    if (score === null) continue;
+    if (!grouped.has(r.PATIENT_ID)) grouped.set(r.PATIENT_ID, []);
+    grouped.get(r.PATIENT_ID).push(score);
+  }
+  const out = new Map();
+  for (const [id, scores] of grouped) {
+    out.set(id, {
+      pResponse: round(scores.reduce((a, b) => a + b, 0) / scores.length),
+      perModel: { lr: null, rf: null, xgb: null, svm: null, enet: null },
+      features: Object.fromEntries(Q1_FEATURES.map((f) => [f, null])),
+      cohort: "TCGA-SKCM",
+      // The lane uses this to show the gauge without empty per-model bars.
+      detail: "ensemble-only",
+    });
+  }
+  return out;
+}
+
 function buildQ1(rows) {
   if (!rows.length) return { byPatient: new Map(), validation: null, nTcga: 0 };
 
@@ -395,8 +426,17 @@ function main() {
   const clinByPatient = new Map(clinical.map((r) => [r.PATIENT_ID, r]));
 
   const q1Csv = existsSync(PATHS.q1) ? readCsv(PATHS.q1) : [];
-  const { byPatient: q1ByPatient, validation: q1Validation, nTcga } = buildQ1(q1Csv);
+  const { byPatient: q1FromInfer, validation: q1Validation } = buildQ1(q1Csv);
   if (!q1Csv.length) console.warn("  note: public/q1_predictions.csv absent — q1 will be null");
+
+  // Per-patient TCGA scores take precedence; q1_infer.py output fills in if it
+  // ever gains TCGA rows of its own (which carry the richer per-model detail).
+  const tcgaScores = existsSync(PATHS.q1Tcga) ? buildTcgaScores(readCsv(PATHS.q1Tcga)) : new Map();
+  const q1ByPatient = new Map([...tcgaScores, ...q1FromInfer]);
+  const nTcga = q1ByPatient.size;
+  if (!tcgaScores.size) {
+    console.warn("  note: public/q1_tcga_scores.csv absent — per-patient Q1 unavailable");
+  }
 
   // Pass 1 — assemble what we can per patient.
   const draft = [];
@@ -488,11 +528,9 @@ function main() {
       q1Validation,
       q1Note:
         nTcga > 0
-          ? "Per-patient Q1 probabilities available for the TCGA twin cohort."
-          : "Q1 models scored the labelled ICI trial cohorts only. The TCGA twin cohort is not " +
-            "yet scorable: its cleaned expression matrix lacks the IMPRES co-stimulatory gene " +
-            "partners and is on a different normalisation scale from the training cohorts. " +
-            "Q1 therefore appears as cohort-level validation, not a per-patient probability.",
+          ? "Per-patient Q1 response scores available for the TCGA twin cohort."
+          : "Q1 models scored the labelled ICI trial cohorts only, so Q1 appears as cohort-level " +
+            "validation rather than a per-patient probability.",
     },
     patients,
   };

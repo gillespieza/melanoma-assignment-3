@@ -76,6 +76,21 @@ export default function App() {
 
   const rows = useMemo(() => (cohort ? buildRows(cohort.patients) : []), [cohort]);
 
+  /** Percentile of each patient's Q1 P(response) across the cohort. */
+  const q1Ranks = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!cohort) return map;
+    const scored = cohort.patients.filter((p) => p.q1);
+    const sorted = scored.map((p) => p.q1!.pResponse).sort((a, b) => a - b);
+    for (const p of scored) {
+      const v = p.q1!.pResponse;
+      const below = sorted.filter((s) => s < v).length;
+      const ties = sorted.filter((s) => s === v).length;
+      map.set(p.id, Math.round(((below + ties / 2) / sorted.length) * 100));
+    }
+    return map;
+  }, [cohort]);
+
   const selectedIndex = cohort ? cohort.patients.findIndex((p) => p.id === selectedId) : -1;
   const selectedPatient = selectedIndex >= 0 ? cohort!.patients[selectedIndex] : null;
 
@@ -107,6 +122,7 @@ export default function App() {
           <PatientView
             patient={selectedPatient}
             meta={cohort.meta}
+            q1Rank={q1Ranks.get(selectedPatient.id) ?? null}
             onBack={() => setView("cohort")}
             onStep={stepPatient}
             position={{ index: selectedIndex, total: cohort.patients.length }}
