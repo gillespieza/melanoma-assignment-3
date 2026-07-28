@@ -1,4 +1,4 @@
-# OncoTwin™ — Melanoma Digital-Twin Decision Support (Q5)
+# Melanoma Digital Twin — Multi-Method Treatment Decision Support (Q5)
 
 A clinician-facing decision-support cockpit for the Melanoma Digital Twin project
 (UCD AI in Personalised Medicine). It is the **visual representation of Q5**: the
@@ -29,7 +29,7 @@ npm run typecheck  # tsc --noEmit
 
 Requires Node 18+ (tested on Node 22).
 
-## The three views
+## The two views
 
 Switch between them in the header; the URL hash tracks the view, so a patient is
 linkable (`#/patient/TCGA-3N-A9WC`) and survives a refresh.
@@ -52,11 +52,16 @@ Open any patient and press **Run Digital-Twin Simulation**. The ODE module seque
 plays, then the integrated recommendation, the methods-agreement badge and the ranked
 options appear.
 
-Above them sits the **what-if explorer**: change BRAF, NRAS, stage or PD-L1 and every
+Above them sits the **what-if explorer**: change BRAF, NRAS, stage, LDH or PD-L1 and every
 method re-runs instantly, so you can show what *would* have been recommended had the
 biology been different. An edited patient is badged **Modified** throughout, and because
 their real ODE curves no longer apply, the twin falls back to the matching cohort-average
 sweep — stated on screen, never silently.
+
+LDH is the one field TCGA does not record at all. Supplying it overrides the stage-IV
+proxy the engine otherwise uses for rapid-control pressure, which is what lets you
+demonstrate the classic "high LDH pushes a BRAF-mutant patient toward targeted therapy"
+trade-off on a real patient.
 
 Method detail sits behind tabs so only one is on screen at a time:
 
@@ -80,11 +85,6 @@ Worth being precise about, because it is a fair question to be asked:
 
 That split is normal for deployed clinical software — you serve model outputs, you do not
 re-solve an ODE in a browser tab.
-
-### 3 · Archetypes — the editable workbench
-
-The original three hand-built patients with live-editable clinical and molecular
-fields. Editing any field re-runs the logic immediately. Kept for the scripted demo.
 
 ## Where the numbers come from
 
@@ -135,24 +135,24 @@ dashboard/
 ├── scripts/build_cohort.mjs        # generates public/cohort.json from real outputs
 ├── public/
 │   ├── cohort.json                 # the single file the app consumes
-│   └── q1_predictions.csv          # Q1 model output
+│   ├── q1_predictions.csv          # Q1 trial-cohort output
+│   └── q1_tcga_scores.csv          # Q1 per-patient TCGA scores
 ├── src/
 │   ├── App.tsx                     # view routing + cohort loading
 │   ├── data/
 │   │   ├── types.ts                # clinical + molecular domain types
 │   │   ├── cohort.ts               # CohortPatient types + loadCohort()
-│   │   ├── patients.ts             # the 3 editable archetypes
 │   │   └── model.ts                # REAL q3 group dose-response + KM facts
 │   ├── lib/
-│   │   ├── scoring.ts              # shared scoring core (both engines run through it)
-│   │   ├── decisionEngine.ts       # archetype path
-│   │   ├── integrationEngine.ts    # Q5 cohort path + methods agreement
+│   │   ├── scoring.ts              # the scoring core
+│   │   ├── integrationEngine.ts    # Q5 integration + methods agreement
+│   │   ├── whatIf.ts               # what-if edits + honest curve fallback
 │   │   └── forecast.ts             # 12-month forecast + survival curves
 │   └── components/                 # cohort table, lanes, charts, agreement badge, sign-off
 ```
 
-Both engines share `scoring.ts`, so a cohort patient and a hand-edited archetype with
-the same profile always produce the same recommendation.
+Real and hypothetical patients both run through `scoring.ts`, so an edited profile and a
+real patient with the same values always produce the same recommendation.
 
 ## Tech
 

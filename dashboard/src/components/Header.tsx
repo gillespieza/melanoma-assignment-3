@@ -24,10 +24,10 @@ export default function Header({
         </div>
         <div className="leading-tight">
           <div className="text-[15px] font-extrabold tracking-tight text-clinical-ink">
-            OncoTwin<span className="text-clinical-teal">™</span>
+            Melanoma Digital Twin
           </div>
           <div className="text-[11px] font-medium text-clinical-muted">
-            Melanoma Digital-Twin Decision Support
+            Multi-method treatment decision support
           </div>
         </div>
 
