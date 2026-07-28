@@ -26,6 +26,9 @@ export interface Q1Prediction {
   perModel: Record<"lr" | "rf" | "xgb" | "svm" | "enet", number | null>;
   features: Q1Features;
   cohort: string;
+  /** "ensemble-only" when the source supplied a single score with no per-model
+   *  or signature breakdown — the lane then shows the gauge alone. */
+  detail?: "ensemble-only" | "full";
 }
 
 export interface Q4Flag {

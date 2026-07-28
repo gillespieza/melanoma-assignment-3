@@ -46,18 +46,40 @@ Above the table, three **featured cases** are picked at render time from the rea
 cohort because they cleanly exhibit the classic archetypes (BRAF-mut/PD-L1-low,
 BRAF-WT/PD-L1-high, BRAF-mut/PD-L1-high). Below it sits the Q1 model-accuracy panel.
 
-### 2 · Patient — the full multi-method story
+### 2 · Patient — run the twin, then explore it
 
-One vertical stack, method by method, with the recommendation arriving **last**:
+Open any patient and press **Run Digital-Twin Simulation**. The ODE module sequence
+plays, then the integrated recommendation, the methods-agreement badge and the ranked
+options appear.
 
-| Lane | What it shows |
-|------|---------------|
-| Passport | Demographics, staging, follow-up, molecular chips — all real TCGA fields |
-| **Q1** · statistical | P(response) gauge, per-model bars, the six signature scores |
-| **Q2** · experimental | RPPA proteomic validation + the ML-vs-ODE benchmark |
-| **Q3** · mechanistic | The patient's own dose-response sweep, 12-month forecast, survival |
-| **Q4** · resistance | Escape mechanisms flagged and salvage targets to hold in reserve |
-| **Q5** · integration | Methods-agreement badge, ranked options, decision path, sign-off |
+Above them sits the **what-if explorer**: change BRAF, NRAS, stage or PD-L1 and every
+method re-runs instantly, so you can show what *would* have been recommended had the
+biology been different. An edited patient is badged **Modified** throughout, and because
+their real ODE curves no longer apply, the twin falls back to the matching cohort-average
+sweep — stated on screen, never silently.
+
+Method detail sits behind tabs so only one is on screen at a time:
+
+| Tab | What it shows |
+|-----|---------------|
+| **Q1** · ML predictor | P(response) gauge, cohort percentile, per-model bars where available |
+| **Q2** · Validation | RPPA proteomic validation + the ML-vs-ODE benchmark |
+| **Q3** · Digital twin | The patient's own dose-response sweep, 12-month forecast, survival |
+| **Q4** · Resistance | Escape mechanisms flagged and salvage targets to hold in reserve |
+| **Decision path** | Stage → BRAF → PD-L1 → methods agreement → recommendation |
+
+### What is computed live, and what is not
+
+Worth being precise about, because it is a fair question to be asked:
+
+- **Live, in the browser:** the entire Q5 layer — arm scoring, ranking, tiering, the
+  methods-agreement calculation, the decision path, and the forecast/survival curves.
+  Every what-if edit genuinely re-runs all of it.
+- **Precomputed:** the Q3 ODE solutions (solved in Python for all 421 patients) and the
+  Q1 model predictions (scikit-learn models that cannot run in a web page).
+
+That split is normal for deployed clinical software — you serve model outputs, you do not
+re-solve an ODE in a browser tab.
 
 ### 3 · Archetypes — the editable workbench
 
@@ -74,7 +96,8 @@ generated file, `public/cohort.json`, built by `scripts/build_cohort.mjs` from:
 | `q3-ode-model/outputs/results/tumour_burden_simulations.csv` | BRAF-inhibitor dose sweep |
 | `q3-ode-model/outputs/results/checkpoint_tumour_simulations.csv` | Anti-PD-1 sweep, CD274, PDCD1 |
 | `data/processed/skcm_tcga_pan_can_atlas_2018/clin_cleaned.csv` | Age, sex, stage, TMB, survival |
-| `public/q1_predictions.csv` | Q1 per-model + ensemble probabilities |
+| `public/q1_predictions.csv` | Q1 per-model + ensemble probabilities (trial cohorts) |
+| `public/q1_tcga_scores.csv` | Q1 per-patient TCGA response scores (from `origin/main`) |
 | `q3-ode-model/outputs/results/survival_summary.txt` | KM medians (in `src/data/model.ts`) |
 
 The generator is idempotent — re-run it any time.
@@ -94,17 +117,16 @@ Being precise about this matters more than the numbers looking good:
 
 ### Two honest caveats the UI surfaces
 
-1. **Q1 has not scored the TCGA cohort.** The models were trained on ICI trial data;
-   the cleaned TCGA expression matrix lacks the IMPRES co-stimulatory gene partners
-   and sits on a different normalisation scale, so scoring it would be unfaithful.
-   The Q1 lane therefore shows a designed *awaiting inference* state rather than a
-   fabricated probability, and the statistical side of the agreement badge falls back
-   to a **measured checkpoint-biomarker composite** (PD-L1, PD-1, TMB percentiles),
-   labelled as such everywhere it appears. When real per-patient Q1 lands in
-   `q1_predictions.csv`, re-running the generator lights the lane up with no code change.
+1. **Q1 supplies one ensemble score per TCGA patient, not the per-model breakdown.**
+   All 421 patients carry a real Q1 P(response) from the Q1 workstream's
+   `patient_predicted_response_scores.csv`. That file has a single score per patient, so
+   the Q1 lane shows the gauge and cohort percentile but not the five per-model bars.
+   If `q1_infer.py` ever produces TCGA rows with the full breakdown, the generator prefers
+   those automatically and the bars appear with no code change.
 2. **~21% of twins are uninformative.** For 93 of 421 patients the ODE settles at a
    numerically-zero tumour compartment. That is *not* drug resistance — the model has
-   nothing to say — so those patients are flagged rather than shown as 0% response.
+   nothing to say — so those patients are flagged rather than shown as 0% response, and
+   the agreement badge reports "single method" instead of inventing a comparison.
 
 ## Project structure
 
