@@ -27,32 +27,36 @@ Recharts); all model outputs are baked into data files, no live backend.
 | `05_BUILD_PLAN.md` | Ordered task list with acceptance criteria + verification steps |
 | `06_DECISIONS.md` | Every decision locked so far (so nothing gets re-litigated) |
 
-## Current status (as of this handoff)
+## Current status — BUILD PLAN COMPLETE
 
-- **Branch:** `the-dashboard` (off `q5-treatment-triage`). Work is committed locally, not pushed.
-- **Built and working:** a v1 dashboard that tells the **Q3-only** story — 3 hardcoded
-  patients, live intake form, ODE simulation overlay, ranked options, tumour-burden
-  forecast, survival chart, decision tree, consultant sign-off. It typechecks, builds,
-  and runs (`npm run dev`). This is the foundation to extend, NOT to throw away.
-- **The pivot (this is the job):** rebuild it into the **multi-method, all-421-patient**
-  version described in these docs.
-- **Q1 data — PARTIALLY DELIVERED.** `dashboard/public/q1_predictions.csv` now EXISTS with
-  **256 genuine predictions** across the ICI trial cohorts (Liu 122, Riaz 107, Hugo 27),
-  each WITH a real `actual_response` label → enables a real "model accuracy / AUC" panel.
-  **BUT the 421 TCGA twin cohort did NOT score** (TCGA cleaning didn't complete), and the
-  trial IDs (`LIU_PATIENT1`…) don't join to the Q3 TCGA IDs (`TCGA-3N-A9WB`). So:
-    - Q1 as a **validation/accuracy panel** (trial cohorts, real labels) → ready to build now.
-    - Q1 as a **per-TCGA-patient probability** in the twin cohort → still pending; needs the
-      user to finish cleaning TCGA (`data/processed/skcm_tcga_pan_can_atlas_2018/expr_cleaned.csv`)
-      and re-run `q1_infer.py`. See `03_DATA_SCHEMAS.md` and `06_DECISIONS.md`.
+The multi-method v2 described in these docs is **built, verified and committed** on
+`the-dashboard`. Steps 0–7 of `05_BUILD_PLAN.md` are all done and their acceptance
+checks pass. What exists now:
+
+- `scripts/build_cohort.mjs` → `public/cohort.json` (421 patients, real Q3 + TCGA clinical).
+- Three views: **Cohort** (filterable table + featured real cases + Q1 accuracy panel),
+  **Patient** (Q1→Q2→Q3→Q4→Q5 lanes), **Archetypes** (the original editable v1 workbench).
+- `lib/scoring.ts` shared core, with `decisionEngine` (archetypes) and
+  `integrationEngine` (cohort + methods agreement) both running through it.
+- Typecheck clean, production build succeeds, engine sanity-checked over all 421 patients
+  (8/8 assertions pass), rendering verified by screenshot in a real browser engine.
+
+**Q1 is still cohort-level only, and that is now understood rather than pending.**
+Re-running `q1_infer.py` against the (now present) TCGA expression matrix still fails:
+the matrix is missing every IMPRES co-stimulatory gene partner, and its normalisation
+scale differs from the training cohorts. See the root-cause section in `06_DECISIONS.md`.
+The Q1 lane shows a designed "awaiting inference" state and lights up automatically if
+real per-patient rows ever appear in `q1_predictions.csv`.
 
 ## How to work in the next session
 
-1. Read `01`–`06` in order (they're short).
-2. Confirm whether `dashboard/public/q1_predictions.csv` exists yet.
-   - If yes → wire the real Q1 numbers in.
-   - If no → build everything else; leave the Q1 slot gated (it auto-lights-up when the file lands).
-3. Work through `05_BUILD_PLAN.md` top to bottom. Each task has an acceptance check.
+1. Read `06_DECISIONS.md` first — it now carries the root-cause analysis and decisions
+   D10–D15 taken during the build.
+2. If the goal is genuine per-patient Q1: that is **Q1-pipeline work**, not dashboard work
+   (fix the TCGA gene panel + normalisation, then re-run `q1_infer.py` and
+   `node scripts/build_cohort.mjs`). The front end needs no changes.
+3. If the goal is dashboard polish: run the app, then work from the quality checklist in
+   `04_DESIGN_SYSTEM.md`.
 4. Always finish with the verification step (typecheck + build + engine sanity + dev-server smoke test).
 
 ## Run commands

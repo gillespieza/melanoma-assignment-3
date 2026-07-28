@@ -9,13 +9,12 @@ import {
   ReferenceLine,
   Legend,
 } from "recharts";
-import type { PatientInput } from "../data/types";
-import { buildForecast } from "../lib/forecast";
+import type { Forecast } from "../lib/forecast";
 import { Panel, Pill } from "./ui";
 import { LineChart as LineIcon } from "lucide-react";
 
-export default function TumourForecastChart({ patient }: { patient: PatientInput }) {
-  const { data, hasTargeted, hasCombo } = buildForecast(patient);
+export default function TumourForecastChart({ forecast }: { forecast: Forecast }) {
+  const { data, hasTargeted, hasCombo } = forecast;
 
   return (
     <Panel
@@ -66,7 +65,7 @@ export default function TumourForecastChart({ patient }: { patient: PatientInput
               labelFormatter={(m) => `Month ${m}`}
             />
             <Legend wrapperStyle={{ fontSize: 12, paddingTop: 6 }} />
-            <Line
+            <Line isAnimationActive={false}
               type="monotone"
               dataKey="baseline"
               name="No systemic therapy"
@@ -75,7 +74,7 @@ export default function TumourForecastChart({ patient }: { patient: PatientInput
               strokeWidth={2}
               dot={false}
             />
-            <Line
+            <Line isAnimationActive={false}
               type="monotone"
               dataKey="immuno"
               name="Immunotherapy (anti-PD-1)"
@@ -84,7 +83,7 @@ export default function TumourForecastChart({ patient }: { patient: PatientInput
               dot={false}
             />
             {hasTargeted && (
-              <Line
+              <Line isAnimationActive={false}
                 type="monotone"
                 dataKey="targeted"
                 name="Targeted (BRAF/MEK)"
@@ -95,7 +94,7 @@ export default function TumourForecastChart({ patient }: { patient: PatientInput
               />
             )}
             {hasCombo && (
-              <Line
+              <Line isAnimationActive={false}
                 type="monotone"
                 dataKey="combo"
                 name="Combination / sequencing"
