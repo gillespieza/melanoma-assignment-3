@@ -1,5 +1,5 @@
-"""
-Centralized Visualization Styles and Color Palettes for Melanoma Assignment 3.
+"""Centralized Visualization Styles and Color Palettes for Melanoma Assignment 3.
+
 Based on the Okabe-Ito Palette System - The universal gold standard for scientific publications (Cell, Nature, Science)
 ensuring 100% colorblind-safe accessibility across deuteranopia, protanopia, and tritanopia.
 """
@@ -10,15 +10,10 @@ import seaborn as sns
 # Study Cohort Color Mappings (Okabe-Ito Gold Standard System)
 COHORT_PALETTE = {
     "Liu 2019": "#0072B2",               # Okabe-Ito Blue
-    "Liu 2019 (N=104)": "#0072B2",
     "Hugo 2016": "#E69F00",               # Okabe-Ito Orange
-    "Hugo 2016 (N=27)": "#E69F00",
     "Riaz 2017": "#CC79A7",               # Okabe-Ito Reddish Purple
-    "Riaz 2017 (N=64)": "#CC79A7",
     "TCGA-SKCM": "#37474F",               # Dark Slate Charcoal Reference
-    "TCGA-SKCM (N=426)": "#37474F",
     "Pooled Trials": "#009E73",           # Okabe-Ito Bluish Green Benchmark
-    "Pooled Trials (N=195)": "#009E73",
 }
 
 # Clinical Response Mappings (Okabe-Ito Status Palette)
@@ -40,10 +35,34 @@ DRIVER_PALETTE = {
     "Triple-WT": "#CC79A7",               # Okabe-Ito Reddish Purple
 }
 
+# Biological Phenotype Subtype Mappings (Okabe-Ito Scientific Standards)
+PHENOTYPE_PALETTE = {
+    "Immune Hot": "#D55E00",                                                      # Crimson Red (Hot Inflamed)
+    "Immune Hot (High TIS & CYT, Inflamed Microenvironment)": "#D55E00",
+    "Immune Cold": "#0072B2",                                                     # Okabe-Ito Blue (Cold / Excluded)
+    "Immune Cold (Low TIS & Infiltration, Desert)": "#0072B2",
+    "Immunosuppressive M2-High": "#CC79A7",                                        # Reddish Purple (M2 Macrophage)
+    "M2 Immunosuppressive": "#CC79A7",
+    "M2 Immunosuppressive (High M2 Macrophages & CAFs)": "#CC79A7",
+    "Mutant-Driven": "#E69F00",                                                   # Orange (MAPK Mutation Driven)
+}
+
+from matplotlib.colors import LinearSegmentedColormap
+
+
+def get_okabe_ito_diverging_cmap():
+    """Returns a colorblind-safe Okabe-Ito continuous diverging colormap for heatmaps.
+
+    Maps negative values (e.g. beta < 0) to Okabe-Ito Vermillion Red (#D55E00), neutral values to
+    light gray (#FAFAFA), and positive values (e.g. beta > 0) to Okabe-Ito Bluish Green (#009E73).
+    """
+    colors = ["#D55E00", "#FAFAFA", "#009E73"]
+    return LinearSegmentedColormap.from_list("OkabeItoDiverging", colors, N=256)
+
 
 def set_presentation_style(font_scale: float = 1.0, dpi: int = 300):
-    """
-    Applies project-wide Matplotlib and Seaborn style configurations tailored for
+    """Applies project-wide Matplotlib and Seaborn style configurations tailored for
+
     presentation slides and report figures using Okabe-Ito publication standards.
     """
     sns.set_theme(style="whitegrid", font="sans-serif")
@@ -59,6 +78,9 @@ def set_presentation_style(font_scale: float = 1.0, dpi: int = 300):
         'savefig.dpi': dpi,
         'savefig.bbox': 'tight',
         'figure.autolayout': True,
+        'grid.color': '#E5E7EB',
+        'grid.linewidth': 0.5,
+        'grid.alpha': 0.6,
     })
 
 
