@@ -51,7 +51,7 @@ export default function App() {
       .then((c) => {
         if (cancelled) return;
         setCohort(c);
-        console.info(`OncoTwin: loaded ${c.patients.length} cohort patients (${c.meta.nQ1Tcga} with Q1)`);
+        console.info(`Loaded ${c.patients.length} cohort patients (${c.meta.nQ1Tcga} with Q1)`);
       })
       .catch((e: unknown) => {
         if (!cancelled) setLoadError(e instanceof Error ? e.message : String(e));
@@ -124,7 +124,8 @@ export default function App() {
         )}
 
         <footer className="mt-8 border-t border-clinical-border pt-4 text-center text-[11px] text-clinical-muted">
-          OncoTwin™ · UCD AI in Personalised Medicine · research demonstrator, not a medical device
+          Melanoma Digital Twin · UCD AI in Personalised Medicine · research demonstrator, not a
+          medical device
         </footer>
       </main>
     </div>
