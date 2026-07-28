@@ -42,6 +42,11 @@ const EVIDENCE: Evidence[] = [
       "times as many inputs — the biology is doing real work, not curve-fitting.",
     stat: "ODE AUC 0.666 ± 0.074 vs RF 0.686 ± 0.046",
   },
+  // TO WIRE IN when the cell-line data arrives: flip this to
+  // status: "established" and fill `stat` with the real correlation
+  // (n, coefficient, p-value). See docs/07_SESSION_LOG.md §4 — it covers both
+  // the quick headline-stat route and the fuller per-cell-line CSV route.
+  // Do NOT invent a statistic; the pending card is the honest fallback.
   {
     status: "pending",
     claim: "Cell-line drug-response validation of the Q1 signature",

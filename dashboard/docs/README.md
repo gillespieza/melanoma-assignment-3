@@ -26,6 +26,7 @@ Recharts); all model outputs are baked into data files, no live backend.
 | `04_DESIGN_SYSTEM.md` | Clinical-white theme tokens, component conventions, the "$100M professional" bar |
 | `05_BUILD_PLAN.md` | Ordered task list with acceptance criteria + verification steps |
 | `06_DECISIONS.md` | Every decision locked so far (so nothing gets re-litigated) |
+| `07_SESSION_LOG.md` | **Current state, git/deploy setup, and how to wire in the Q2 cell-line data** |
 
 ## Current status — BUILD PLAN COMPLETE
 
