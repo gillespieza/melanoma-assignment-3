@@ -8,24 +8,44 @@ import {
   Tooltip,
   ReferenceLine,
 } from "recharts";
-import type { PatientInput } from "../data/types";
-import { buildSurvival } from "../lib/forecast";
+import type { Survival } from "../lib/forecast";
 import { KM_FACTS } from "../data/model";
 import { Panel, Stat } from "./ui";
 import { HeartPulse } from "lucide-react";
 
-export default function SurvivalChart({ patient }: { patient: PatientInput }) {
-  const { points, recMedian, altMedian } = buildSurvival(patient);
+export default function SurvivalChart({ survival }: { survival: Survival }) {
+  const { points, recMedian, altMedian, altLabel } = survival;
+  const hasAlt = altMedian !== null;
 
   return (
     <Panel
       title="Predicted Overall Survival"
-      subtitle="Kaplan–Meier projection · recommended vs next-best lane"
+      subtitle={
+        hasAlt
+          ? "Kaplan–Meier projection · recommended vs next-best lane"
+          : "Kaplan–Meier projection · only one lane is eligible for this patient"
+      }
       icon={<HeartPulse size={16} />}
     >
       <div className="mb-3 grid grid-cols-2 gap-2.5">
         <Stat label="Median OS · recommended" value={recMedian} unit="mo" tone="teal" />
-        <Stat label="Median OS · alternative" value={altMedian} unit="mo" tone="blue" />
+        {hasAlt ? (
+          <Stat
+            label={`Median OS · ${altLabel ?? "alternative"}`}
+            value={altMedian}
+            unit="mo"
+            tone="blue"
+          />
+        ) : (
+          <div className="rounded-xl border border-dashed border-clinical-border bg-clinical-bg px-3.5 py-2.5">
+            <div className="text-[10.5px] font-semibold uppercase tracking-wide text-clinical-muted">
+              Alternative lane
+            </div>
+            <div className="text-[13px] font-bold leading-tight text-clinical-muted">
+              None eligible
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="h-[210px] w-full">
@@ -55,7 +75,7 @@ export default function SurvivalChart({ patient }: { patient: PatientInput }) {
               tick={{ fontSize: 11, fill: "#5b6b7c" }}
               tickLine={false}
               axisLine={false}
-              width={40}
+              width={48}
               tickFormatter={(v) => `${v}%`}
             />
             <ReferenceLine y={50} stroke="#cbd5e1" strokeDasharray="4 4" />
@@ -68,7 +88,7 @@ export default function SurvivalChart({ patient }: { patient: PatientInput }) {
               formatter={(v: number) => `${v}% alive`}
               labelFormatter={(m) => `Month ${m}`}
             />
-            <Area
+            <Area isAnimationActive={false}
               type="monotone"
               dataKey="recommended"
               name="Recommended"
@@ -76,15 +96,19 @@ export default function SurvivalChart({ patient }: { patient: PatientInput }) {
               strokeWidth={3}
               fill="url(#recFill)"
             />
-            <Area
-              type="monotone"
-              dataKey="alternative"
-              name="Alternative"
-              stroke="#2563eb"
-              strokeWidth={2}
-              strokeDasharray="5 4"
-              fill="transparent"
-            />
+            {hasAlt && (
+              <Area
+                isAnimationActive={false}
+                type="monotone"
+                dataKey="alternative"
+                name={altLabel ?? "Alternative"}
+                stroke="#2563eb"
+                strokeWidth={2}
+                strokeDasharray="5 4"
+                fill="transparent"
+                connectNulls
+              />
+            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>

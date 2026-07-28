@@ -1,6 +1,22 @@
-import { Activity, ShieldCheck } from "lucide-react";
+import { Activity, ShieldCheck, Users, User, SlidersHorizontal } from "lucide-react";
 
-export default function Header() {
+export type ViewKey = "cohort" | "patient" | "archetypes";
+
+const TABS: { key: ViewKey; label: string; icon: typeof Users }[] = [
+  { key: "cohort", label: "Cohort", icon: Users },
+  { key: "patient", label: "Patient", icon: User },
+  { key: "archetypes", label: "Archetypes", icon: SlidersHorizontal },
+];
+
+export default function Header({
+  view,
+  onChange,
+  patientEnabled,
+}: {
+  view: ViewKey;
+  onChange: (v: ViewKey) => void;
+  patientEnabled: boolean;
+}) {
   return (
     <header className="sticky top-0 z-30 border-b border-clinical-border bg-white/85 backdrop-blur">
       <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-6 py-3">
@@ -16,20 +32,29 @@ export default function Header() {
           </div>
         </div>
 
-        <nav className="ml-6 hidden items-center gap-1 md:flex">
-          {["Triage", "Cohort", "Trials", "Audit"].map((t, i) => (
-            <span
-              key={t}
-              className={
-                "rounded-md px-3 py-1.5 text-[13px] font-semibold " +
-                (i === 0
-                  ? "bg-clinical-bg text-clinical-ink"
-                  : "text-clinical-muted hover:text-clinical-ink")
-              }
-            >
-              {t}
-            </span>
-          ))}
+        <nav className="ml-6 hidden items-center gap-1 md:flex" aria-label="View">
+          {TABS.map(({ key, label, icon: Icon }) => {
+            const disabled = key === "patient" && !patientEnabled;
+            const active = view === key;
+            return (
+              <button
+                key={key}
+                onClick={() => !disabled && onChange(key)}
+                disabled={disabled}
+                title={disabled ? "Select a patient from the cohort first" : undefined}
+                className={
+                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-semibold transition " +
+                  (active
+                    ? "bg-clinical-bg text-clinical-ink"
+                    : disabled
+                      ? "cursor-not-allowed text-clinical-border"
+                      : "text-clinical-muted hover:bg-clinical-bg/70 hover:text-clinical-ink")
+                }
+              >
+                <Icon size={14} /> {label}
+              </button>
+            );
+          })}
         </nav>
 
         <div className="ml-auto flex items-center gap-4">

@@ -42,9 +42,43 @@ Locked decisions — do not re-litigate in the next session.
 - **TCGA did NOT score** → no per-patient Q1 for the 421 twin cohort yet. Trial IDs
   (`LIU_PATIENT1`) don't join to Q3 TCGA IDs.
 
-## Open questions for the user (ask early next session)
-- Do you want to finish cleaning TCGA and re-run `q1_infer.py` so the twin cohort gets
-  per-patient Q1 probabilities? (Needed for a true per-TCGA-patient Q1×Q3 agreement badge.)
-  If not, Q1 becomes a **cohort-level validation/accuracy panel** and the per-patient
-  agreement is computed from Q3 + molecular signature only.
-- Feature the "our AI predicts response at AUC ≈ 0.6–0.7 on held-out trials" panel prominently?
+## Q1 × TCGA — root cause found (dashboard build session)
+
+The earlier assumption that TCGA "just needs cleaning to finish" is **wrong**.
+`data/processed/skcm_tcga_pan_can_atlas_2018/expr_cleaned.csv` now exists (443 samples ×
+3003 genes) and `q1_infer.py` was re-run against it. It still reports *"no scorable
+samples"*, for two independent reasons:
+
+1. **Missing genes.** The matrix was reduced to ~3000 features, and while 25 of the 40
+   signature genes survive (as unmapped Entrez IDs — `entrez_to_symbol_cache.json` does
+   not cover them), **all of the IMPRES co-stimulatory partners are absent**: CD28, CD86,
+   CD80, CD40, CD200, CD276, TNFRSF4, TNFRSF14, TNFSF9, HAVCR2, VSIR (plus STAT1, CMKLR1,
+   HLA-E, PSMB10). Zero of the 15 IMPRES pairs are computable, so IMPRES — one of the six
+   required model features — cannot be produced at all.
+2. **Scale mismatch.** TCGA values run 0–21.7 (median 4.61); the trial cohorts the scaler
+   was fit on run 0–4.4 (median 1.74). Even with every gene present, pushing TCGA through
+   `final_scaler.pkl` would produce meaningless probabilities.
+
+**To actually unblock it:** re-run TCGA cleaning retaining the full signature gene panel
+(mapping Entrez → symbol), and harmonise normalisation with the training cohorts — or
+re-fit the scaler/models on a jointly-normalised matrix. This is Q1-pipeline work, not
+dashboard work. Until then, fabricating per-patient Q1 would violate D4.
+
+## Decisions taken during the dashboard build
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| D10 | Q1 appears as a **cohort-level accuracy panel**; the per-patient lane shows a designed "awaiting inference" state | D4 — no fabricated Q1 numbers. Lane auto-fills when real data lands. |
+| D11 | The statistical side of the agreement badge falls back to a **measured checkpoint-biomarker composite** (PD-L1 + PD-1 + TMB percentiles), always labelled as such | Keeps the multi-method story real using measured data, never implying it is Q1 output |
+| D12 | Patients whose ODE baseline is < 1e-3 are flagged **"twin below model resolution"**, not shown as 0% response | 93/421 patients. "The model can't say" and "the drug won't work" are clinically different claims |
+| D13 | Reduction percentiles ranked among informative twins put the mechanistic read-out on the same 0–100 scale as the statistical one | Makes the concordance number principled rather than an arbitrary normalisation |
+| D14 | Chart/entry animations are CSS or disabled, not JS-driven visibility | Content that only becomes visible once a JS animation completes can render blank; unacceptable for a projected live demo |
+| D15 | Hash routing (`#/patient/<id>`) | Linkable patients + survives refresh mid-demo. No storage APIs, no router dependency. |
+
+## Open questions for the user
+- Do you want to invest in fixing the TCGA expression matrix (see root cause above) so the
+  twin cohort gets genuine per-patient Q1 probabilities and a true Q1×Q3 agreement badge?
+- Feature the Q1 accuracy panel prominently? It is currently on the cohort landing view.
+  Note the honest reading: AUC 0.593 overall, 0.766 in Riaz, 0.451 in the small Hugo set,
+  and the models are poorly calibrated (most patients pushed above 0.5 against a 42%
+  true response rate). The panel states this plainly rather than showing only the best number.
