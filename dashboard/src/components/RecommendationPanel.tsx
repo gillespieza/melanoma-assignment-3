@@ -148,9 +148,7 @@ export default function RecommendationPanel({
   return (
     <Panel
       title="Ranked Treatment Options"
-      subtitle="Model-ranked · the consultant confirms the final plan"
       icon={<Stethoscope size={16} />}
-      right={<Pill tone="amber">Awaiting sign-off</Pill>}
     >
       <div className="grid gap-3 lg:grid-cols-3">
         {options.map((opt) => (

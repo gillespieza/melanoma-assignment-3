@@ -1,5 +1,4 @@
-import type { PatientInput, RankedOption } from "../data/types";
-import { triage } from "./decisionEngine";
+import type { RankedOption } from "../data/types";
 
 // ---------------------------------------------------------------------------
 // Builds the 12-month "Tumour Burden Forecast" and the survival curves.
@@ -68,9 +67,8 @@ export interface Forecast {
 }
 
 /**
- * The shared core: builds the forecast from ranked options alone, so archetypes
- * (decisionEngine) and real cohort patients (integrationEngine) render the same
- * chart from the same code path.
+ * Builds the forecast from ranked options alone, so it stays decoupled from
+ * however those options were produced.
  */
 export function forecastFromOptions(options: RankedOption[]): Forecast {
   const opt = (key: string) => options.find((o) => o.arm.key === key)!;
@@ -95,10 +93,6 @@ export function forecastFromOptions(options: RankedOption[]): Forecast {
   }));
 
   return { data, hasTargeted, hasCombo };
-}
-
-export function buildForecast(p: PatientInput): Forecast {
-  return forecastFromOptions(triage(p).options);
 }
 
 // ---- Survival (KM-style step curves) --------------------------------------
@@ -147,10 +141,6 @@ export function survivalFromOptions(options: RankedOption[]): Survival {
     altMedian: alt ? alt.medianOsMonths : null,
     altLabel: alt ? alt.arm.label : null,
   };
-}
-
-export function buildSurvival(p: PatientInput): Survival {
-  return survivalFromOptions(triage(p).options);
 }
 
 function round(n: number): number {

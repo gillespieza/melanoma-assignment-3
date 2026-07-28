@@ -72,6 +72,8 @@ export default function WhatIfBar({
   const nras = edits.nras ?? patient.nras;
   const pdl1 = edits.pdl1Pct ?? patient.pdl1Pct;
   const stage = edits.stageBand ?? patient.stageBand;
+  // TCGA has no LDH, so "Normal" is the neutral starting point, not a record.
+  const ldh = edits.ldh ?? "Normal";
 
   const set = (patch: WhatIfEdits) => onChange({ ...edits, ...patch });
 
@@ -126,6 +128,17 @@ export default function WhatIfBar({
           modified={changed.includes("Stage")}
           options={STAGES.map((s) => ({ value: s, label: s }))}
           onChange={(v) => set({ stageBand: v })}
+        />
+        <Segmented
+          label="LDH"
+          value={ldh}
+          modified={changed.includes("LDH")}
+          options={[
+            { value: "Normal" as const, label: "Normal" },
+            { value: "Elevated" as const, label: "Elevated" },
+            { value: "High" as const, label: "High" },
+          ]}
+          onChange={(v) => set({ ldh: v })}
         />
 
         <div className="min-w-[190px] flex-1">
