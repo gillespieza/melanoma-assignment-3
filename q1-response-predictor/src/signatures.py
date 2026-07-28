@@ -1,25 +1,6 @@
 import pandas as pd
 import numpy as np
-
-# 15 gene pairs of IMPRES signature (Auslander et al., 2018)
-# Format: (Gene_A, Gene_B). Score += 1 if Gene_A > Gene_B
-IMPRES_PAIRS = [
-    ("CD274", "VSIR"),      # VSIR is also known as C10orf54 or VISTA
-    ("CD28", "CD276"),
-    ("CD86", "TNFRSF4"),
-    ("CD86", "CD200"),
-    ("CTLA4", "TNFRSF4"),
-    ("PDCD1", "TNFRSF4"),
-    ("CD80", "TNFSF9"),
-    ("CD86", "HAVCR2"),
-    ("CD28", "CD86"),
-    ("CD27", "PDCD1"),
-    ("CD40", "CD274"),
-    ("CD40", "CD80"),
-    ("CD40", "CD28"),
-    ("CD40", "CD274"),
-    ("TNFRSF14", "CD86")
-]
+from src.config.constants import IMMUNE_SIGNATURE_GENES, IMPRES_PAIRS
 
 # Aliases for genes that might have different names in different datasets
 GENE_ALIASES = {
@@ -48,7 +29,7 @@ def compute_ifn_gamma(df_expr):
     """
     IFN-gamma 6-gene signature (Ayers et al., 2017)
     """
-    genes = ["IFNG", "CXCL9", "CXCL10", "IDO1", "HLA-DRA", "STAT1"]
+    genes = IMMUNE_SIGNATURE_GENES["IFN_gamma"]
     found_genes = [find_gene(df_expr.columns, g) for g in genes]
     found_genes = [g for g in found_genes if g is not None]
     
@@ -61,11 +42,7 @@ def compute_tis(df_expr):
     """
     Tumor Inflammation Signature (TIS) 18-gene signature (Ayers et al., 2017)
     """
-    genes = [
-        "CCL5", "CD2", "CD3D", "CD3E", "CD27", "CD274", "CMKLR1", "CXCL9", 
-        "CXCR6", "GZMB", "GZMK", "HLA-DRA", "HLA-DQA1", "HLA-E", "IDO1", 
-        "LAG3", "NKG7", "PDCD1LG2", "PSMB10", "STAT1", "TIGIT"
-    ]
+    genes = IMMUNE_SIGNATURE_GENES["TIS"]
     found_genes = [find_gene(df_expr.columns, g) for g in genes]
     found_genes = [g for g in found_genes if g is not None]
     
@@ -78,7 +55,7 @@ def compute_cyt(df_expr):
     """
     Cytolytic activity score (Rooney et al., 2015): mean of GZMA and PRF1
     """
-    genes = ["GZMA", "PRF1"]
+    genes = IMMUNE_SIGNATURE_GENES["CYT"]
     found_genes = [find_gene(df_expr.columns, g) for g in genes]
     found_genes = [g for g in found_genes if g is not None]
     
@@ -91,7 +68,7 @@ def compute_cd8_tcell(df_expr):
     """
     CD8 T-cell signature (CD8A, CD8B)
     """
-    genes = ["CD8A", "CD8B"]
+    genes = IMMUNE_SIGNATURE_GENES["CD8_Tcell"]
     found_genes = [find_gene(df_expr.columns, g) for g in genes]
     found_genes = [g for g in found_genes if g is not None]
     
@@ -149,3 +126,18 @@ def extract_all_signatures(df_expr):
     # Drop rows that are completely NaN (e.g. if no genes were found)
     df_sig = df_sig.dropna(how='all')
     return df_sig
+
+def zscore_df(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Standardises numeric columns of a DataFrame to zero mean and unit variance per column.
+    """
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    df_scaled = df.copy()
+    for col in numeric_cols:
+        std = df[col].std()
+        if std == 0 or pd.isna(std):
+            df_scaled[col] = 0.0
+        else:
+            df_scaled[col] = (df[col] - df[col].mean()) / std
+    return df_scaled
+

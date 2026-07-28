@@ -1,0 +1,4 @@
+cohort,step,n_before,n_after,n_removed,reason
+TCGA-SKCM,Clinical data loaded,448,448,0,Merged patient-level and sample-level clinical records.
+TCGA-SKCM,Clinical data harmonised,448,448,0,Applied identifier standardisation and clinical data cleaning.
+TCGA-SKCM,Clinical-expression alignment,448,443,5,Retained samples with matching clinical and expression data.

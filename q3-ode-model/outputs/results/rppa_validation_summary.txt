@@ -1,0 +1,21 @@
+ODE vs RPPA Validation — TCGA-SKCM Melanoma
+==================================================
+Patients with both ODE and RPPA data: 310
+ODE readout: baseline pERK (dose BRAFi_0.010)
+
+ODE pERK vs pERK (measured)  [PRIMARY]:
+  Pearson  r = 0.175, p = 2.033e-03
+  Spearman r = 0.164, p = 3.761e-03
+  SIGNIFICANT (positive association)
+
+ODE pERK vs pMEK (measured)  [secondary]:
+  Pearson  r = -0.031, p = 5.819e-01
+  Spearman r = 0.038, p = 5.099e-01
+  not significant (negative association)
+
+Subtype means (ODE-predicted / measured pERK):
+  WT   : ODE +165.792   measured -0.377   (n=92)
+  BRAF : ODE +193.288   measured -0.525   (n=141)
+  NRAS : ODE +264.745   measured +0.135   (n=77)
+NRAS-mutant vs rest, measured pERK: Mann-Whitney p = 3.156e-09 (higher in NRAS)
+Both model and RPPA agree NRAS-mutant tumours have the highest pERK.

@@ -1,0 +1,29 @@
+ODE Model — Survival Analysis Summary (TCGA-SKCM Melanoma)
+============================================================
+
+pERK:
+  Optimal vemurafenib dose : BRAFi_0.560
+  Cox PH p-value           : 1.7752e-01
+  KM threshold             : 195.2346
+  Log-rank p-value         : 2.4519e-02
+  High group n=177 (median OS 68.1 mo), Low group n=244 (median OS 103.1 mo)
+  Observed direction       : High pERK -> WORSE survival
+
+tumour burden:
+  Optimal vemurafenib dose : BRAFi_0.230
+  Cox PH p-value           : 1.4813e-03
+  KM threshold             : 0.5363
+  Log-rank p-value         : 1.2923e-03
+  High group n=79 (median OS 50.1 mo), Low group n=342 (median OS 103.1 mo)
+  Observed direction       : High tumour burden -> WORSE survival
+
+Interpretation:
+  A log-rank p < 0.05 means the ODE readout separates melanoma patients by
+  survival; the observed direction for each readout is stated above and is
+  read directly from the data, not assumed.
+   * Mechanistic pERK reflects MAPK-pathway output, which is greatest in
+     NRAS-mutant tumours — the worst-prognosis SKCM subtype — so elevated
+     pERK tracks more aggressive disease.
+   * Modelled tumour burden integrates proliferation against immune control;
+     high residual burden marks aggressive, immune-cold disease.
+  Both readouts are prognostic.

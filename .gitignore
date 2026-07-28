@@ -220,11 +220,19 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-
-# Data folders: ignore everything, then whitelist documentation
+# Data folders: ignore everything, then whitelist documentation and lightweight CSVs
 data/**
 !data/**/
 !data/**/*.md
+!data/**/*.csv
+
+# Exclude large expression matrix CSVs (>50MB) from git
+data/processed/**/expr_cleaned.csv
+data/processed/**/expr_merged.csv
+
+# Exclude scratch folders
+scratch/
+**/scratch/
 
 # Agent stuff
 .agents

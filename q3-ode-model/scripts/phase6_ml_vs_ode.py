@@ -1,7 +1,7 @@
 """
 Phase 6: Mechanistic ODE vs Machine Learning
 ============================================
-Asks whether the interpretable, 2-feature "ODE digital twin" competes with
+Asks whether the interpretable, 3-feature "ODE digital twin" competes with
 black-box ML models trained on raw data for predicting melanoma survival.
 
 Task: binary classification of 2-year overall survival in TCGA-SKCM
@@ -10,15 +10,17 @@ Task: binary classification of 2-year overall survival in TCGA-SKCM
     (patients censored before 24 months are dropped — ambiguous outcome)
 
 Models compared by 5-fold cross-validated ROC-AUC:
-    1. ODE mechanistic : LogisticRegression on TWO ODE outputs only
-                         (baseline pERK + tumour burden at max vemurafenib dose)
+    1. ODE mechanistic : LogisticRegression on THREE ODE outputs only
+                         (baseline pERK; tumour burden at max vemurafenib dose;
+                          tumour burden at max anti-PD-1 dose, Module D)
     2. Neural network  : MLP on the 10 pathway genes (+ BRAF/NRAS flags)
     3. Random forest   : RF on the 10 pathway genes (+ BRAF/NRAS flags)
     4. Logistic (genes): linear baseline on the same raw features
 
-The ML models see far more inputs (12 features) than the ODE (2). If the ODE
+The ML models see far more inputs (12 features) than the ODE (3). If the ODE
 score keeps up, that is the point: a mechanistic model compresses the biology
-into a couple of interpretable numbers.
+into a few interpretable numbers — now covering both the targeted-therapy arm
+(BRAFi) and the immunotherapy arm (anti-PD-1, Module D) of the Q5 decision.
 
 Output:
     results/ml_vs_ode_comparison.csv
@@ -42,8 +44,9 @@ from sklearn.pipeline import Pipeline
 # ─── Paths ────────────────────────────────────────────────────────────────────
 BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_FILE   = os.path.join(BASE_DIR, "data", "melanoma_params_full.csv")
-PERK_FILE   = os.path.join(BASE_DIR, "results", "pERK_simulations.csv")
-TUMOUR_FILE = os.path.join(BASE_DIR, "results", "tumour_burden_simulations.csv")
+PERK_FILE       = os.path.join(BASE_DIR, "results", "pERK_simulations.csv")
+TUMOUR_FILE     = os.path.join(BASE_DIR, "results", "tumour_burden_simulations.csv")
+CHECKPOINT_FILE = os.path.join(BASE_DIR, "results", "checkpoint_tumour_simulations.csv")
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
 PLOTS_DIR   = os.path.join(BASE_DIR, "plots")
 os.makedirs(PLOTS_DIR, exist_ok=True)
@@ -56,17 +59,22 @@ print("  Phase 6: Mechanistic ODE vs Machine Learning (TCGA-SKCM)")
 print("=" * 65)
 
 # ─── Assemble data ────────────────────────────────────────────────────────────
-df   = pd.read_csv(DATA_FILE)
-perk = pd.read_csv(PERK_FILE)
-tum  = pd.read_csv(TUMOUR_FILE)
+df    = pd.read_csv(DATA_FILE)
+perk  = pd.read_csv(PERK_FILE)
+tum   = pd.read_csv(TUMOUR_FILE)
+ckpt  = pd.read_csv(CHECKPOINT_FILE)
 
-# ODE-derived features (the whole "digital twin" reduced to two numbers)
+# ODE-derived features (the whole "digital twin" reduced to three numbers:
+# baseline signalling, targeted-therapy response, immunotherapy response)
 df = df.merge(perk[["SAMPLE_ID", "BRAFi_0.010"]], on="SAMPLE_ID")
 df = df.merge(tum[["SAMPLE_ID", "BRAFi_1.000"]], on="SAMPLE_ID")
+df = df.merge(ckpt[["SAMPLE_ID", "antiPD1_1.000"]], on="SAMPLE_ID")
 df = df.rename(columns={"BRAFi_0.010": "ode_pERK_baseline",
-                        "BRAFi_1.000": "ode_tumour_maxdose"})
+                        "BRAFi_1.000": "ode_tumour_maxdose",
+                        "antiPD1_1.000": "ode_checkpoint_maxdose"})
 df["ode_pERK_baseline"] = df["ode_pERK_baseline"].clip(lower=0)
 df["ode_tumour_maxdose"] = df["ode_tumour_maxdose"].clip(lower=0)
+df["ode_checkpoint_maxdose"] = df["ode_checkpoint_maxdose"].clip(lower=0)
 
 # 2-year survival target
 df["is_dead"] = (df["OS_STATUS"] == "1:DECEASED").astype(int)
@@ -81,14 +89,14 @@ print(f"  Survived > 2 yr: {int(clean['y'].sum())}  |  "
       f"Died <= 2 yr: {len(clean) - int(clean['y'].sum())}")
 
 # Feature matrices
-X_ode   = clean[["ode_pERK_baseline", "ode_tumour_maxdose"]].values
+X_ode   = clean[["ode_pERK_baseline", "ode_tumour_maxdose", "ode_checkpoint_maxdose"]].values
 gene_cols = MODEL_GENES + ["BRAF_MUT", "NRAS_MUT"]
 X_genes = clean[gene_cols].values
 y       = clean["y"].values
 
 # ─── Models ───────────────────────────────────────────────────────────────────
 models = {
-    'ODE "Digital Twin"\n(2 ODE outputs)': (
+    'ODE "Digital Twin"\n(3 ODE outputs)': (
         Pipeline([("sc", StandardScaler()),
                   ("lr", LogisticRegression(class_weight="balanced", max_iter=1000))]),
         X_ode),
@@ -154,7 +162,7 @@ print(f"  Saved: {os.path.join(PLOTS_DIR, 'ml_vs_ode_comparison.pdf')}")
 best = results.loc[results["mean_auc"].idxmax(), "model"]
 ode_auc = results.loc[results["model"].str.startswith("ODE"), "mean_auc"].iloc[0]
 print(f"\n  Best model: {best}")
-print(f"  ODE digital twin AUC = {ode_auc:.3f} using only 2 interpretable features")
+print(f"  ODE digital twin AUC = {ode_auc:.3f} using only 3 interpretable features")
 
 print("\n" + "=" * 65)
 print("  Phase 6 COMPLETE — Pipeline finished!")

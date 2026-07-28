@@ -1,0 +1,4 @@
+cohort,step,n_before,n_after,n_removed,reason
+Hugo 2016,Clinical data loaded,27,27,0,Merged patient-level and sample-level clinical records.
+Hugo 2016,Clinical data harmonised,27,27,0,"Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation."
+Hugo 2016,Clinical-expression alignment,27,27,0,Retained samples with matching clinical and expression data.

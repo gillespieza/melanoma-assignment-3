@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score
+from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score, confusion_matrix
 from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test
+from lifelines.utils import concordance_index
 
 def plot_roc_curves(loco_results, model_name, save_path=None):
     """
@@ -67,6 +68,141 @@ def plot_pr_curves(loco_results, model_name, save_path=None):
         plt.close()
     else:
         plt.show()
+
+def plot_confusion_matrices(loco_results, model_name, save_path=None, use_optimal_threshold=False):
+    """
+    Plots confusion matrices for all test cohorts in a grid.
+    """
+    n_cohorts = len(loco_results)
+    fig, axes = plt.subplots(1, n_cohorts, figsize=(5*n_cohorts, 4))
+    
+    if n_cohorts == 1:
+        axes = [axes]
+    
+    for idx, (cohort, res) in enumerate(loco_results.items()):
+        y_true = res['y_true']
+        y_pred_prob = res['y_pred_prob']
+        if use_optimal_threshold:
+            threshold = find_optimal_threshold(y_true, y_pred_prob)
+            title_suffix = f" (t={threshold:.2f})"
+        else:
+            threshold = 0.5
+            title_suffix = ""
+            
+        y_pred_class = (y_pred_prob >= threshold).astype(int)
+        
+        cm = confusion_matrix(y_true, y_pred_class)
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=axes[idx], cbar=False)
+        axes[idx].set_title(f'{cohort}{title_suffix}')
+        axes[idx].set_ylabel('True Label')
+        axes[idx].set_xlabel('Predicted Label')
+        axes[idx].set_xticklabels(['Non-Resp', 'Responder'])
+        axes[idx].set_yticklabels(['Non-Resp', 'Responder'])
+    
+    thresh_label = "Optimal Youden's J Threshold" if use_optimal_threshold else "Default Threshold 0.5"
+    plt.suptitle(f'Confusion Matrices ({model_name}) - {thresh_label}', fontsize=14, y=1.02)
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path, bbox_inches='tight', dpi=300)
+        plt.close()
+        print(f"Saved confusion matrix plot to {save_path}")
+    else:
+        plt.show()
+
+def find_optimal_threshold(y_true: np.ndarray, y_pred_prob: np.ndarray) -> float:
+    """Finds the decision threshold that maximises Youden's J statistic.
+
+    Youden's J = sensitivity + specificity - 1, equivalent to the point
+    on the ROC curve furthest from the chance diagonal.
+
+    Args:
+        y_true: Binary ground-truth labels (0/1).
+        y_pred_prob: Predicted probabilities for the positive class.
+
+    Returns:
+        Optimal threshold (float). Falls back to 0.5 if both classes are
+        not present in y_true.
+    """
+    if len(np.unique(y_true)) < 2:
+        return 0.5
+
+    fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
+    j_scores = tpr - fpr  # Youden's J = TPR - FPR = sensitivity + specificity - 1
+    best_idx = np.argmax(j_scores)
+    return float(thresholds[best_idx])
+
+
+def calculate_extended_metrics(y_true, y_pred_prob, threshold=0.5):
+    """
+    Calculates extended metrics including specificity at a given threshold.
+
+    Args:
+        y_true: Binary ground-truth labels (0/1).
+        y_pred_prob: Predicted probabilities for the positive class.
+        threshold: Decision threshold for converting probabilities to
+            class labels. Defaults to 0.5.
+
+    Returns:
+        dict with keys: auc, accuracy, precision, sensitivity, specificity,
+        f1, tp, tn, fp, fn, threshold.
+    """
+    y_pred_class = (y_pred_prob >= threshold).astype(int)
+
+    from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
+
+    # Calculate confusion matrix
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred_class).ravel()
+
+    # Calculate metrics
+    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else np.nan
+    specificity = tn / (tn + fp) if (tn + fp) > 0 else np.nan
+
+    metrics = {
+        'auc': roc_auc_score(y_true, y_pred_prob) if len(np.unique(y_true)) > 1 else np.nan,
+        'accuracy': accuracy_score(y_true, y_pred_class),
+        'precision': precision_score(y_true, y_pred_class, zero_division=0),
+        'sensitivity': sensitivity,
+        'specificity': specificity,
+        'f1': f1_score(y_true, y_pred_class, zero_division=0),
+        'tp': tp,
+        'tn': tn,
+        'fp': fp,
+        'fn': fn,
+        'threshold': threshold,
+    }
+    return metrics
+
+def calculate_cindex(y_pred_prob, duration, event_observed):
+    """
+    Calculates C-index (concordance index) for survival prediction.
+    
+    Parameters:
+        y_pred_prob: predicted probabilities (higher = better predicted response/survival)
+        duration: survival time in months
+        event_observed: 1 if event occurred, 0 if censored
+    
+    Returns:
+        float: C-index score (0.5 = random, 1.0 = perfect)
+    """
+    try:
+        # Filter out samples with missing survival data
+        valid_idx = (~np.isnan(duration)) & (~np.isnan(event_observed)) & (~np.isnan(y_pred_prob))
+        
+        if valid_idx.sum() < 2:
+            return np.nan
+        
+        duration_valid = duration[valid_idx].astype(float)
+        event_valid = event_observed[valid_idx].astype(bool)
+        pred_valid = y_pred_prob[valid_idx].astype(float)
+        
+        # Calculate C-index
+        cindex = concordance_index(duration_valid, -pred_valid, event_valid)
+        
+        return cindex
+    except Exception as e:
+        print(f"Warning: C-index calculation failed: {e}")
+        return np.nan
 
 def run_survival_analysis(df_clin, y_pred_prob, time_col='os_months', status_col='os_status', save_path=None):
     """
