@@ -233,3 +233,6 @@ scratch/
 
 # Agent stuff
 .agents
+
+.DS_Store
+*.bak
