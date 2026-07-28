@@ -82,6 +82,11 @@ export default function App() {
   const selectedIndex = cohort ? cohort.patients.findIndex((p) => p.id === selectedId) : -1;
   const selectedPatient = selectedIndex >= 0 ? cohort!.patients[selectedIndex] : null;
 
+  const goHome = () => {
+    setView("cohort");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const openPatient = (id: string) => {
     setSelectedId(id);
     setView("patient");
@@ -97,9 +102,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-clinical-bg">
-      <Header view={view} onChange={setView} patientEnabled={selectedPatient !== null} />
+      <Header
+        view={view}
+        onChange={setView}
+        onHome={goHome}
+        patientEnabled={selectedPatient !== null}
+      />
 
-      <main className="mx-auto max-w-[1400px] px-6 py-6">
+      <main className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 sm:py-6">
         {loadError ? (
           <LoadErrorState message={loadError} />
         ) : !cohort ? (
@@ -156,10 +166,12 @@ function CohortHeadline({
   ];
 
   return (
-    <div className="rounded-2xl border border-clinical-border bg-white px-5 py-4 shadow-card">
-      <div className="flex flex-wrap items-start gap-4">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-[17px] font-extrabold tracking-tight text-clinical-ink">
+    <div className="rounded-2xl border border-clinical-border bg-white px-4 py-4 shadow-card sm:px-5">
+      {/* Stacked by default; the tiles only sit alongside the text once there is
+          genuinely room for both, otherwise they overflow on narrow screens. */}
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
+        <div className="min-w-0 xl:flex-1">
+          <h1 className="text-[16px] font-extrabold tracking-tight text-clinical-ink sm:text-[17px]">
             Melanoma cohort · multi-method triage
           </h1>
           <p className="mt-1 max-w-3xl text-[12.5px] leading-relaxed text-clinical-muted">
@@ -169,16 +181,16 @@ function CohortHeadline({
             the ones worth a consultant&apos;s attention.
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <div className="grid shrink-0 grid-cols-2 gap-2.5 sm:grid-cols-4">
           {tiles.map((t) => (
             <div
               key={t.label}
-              className="rounded-xl border border-clinical-border bg-clinical-bg px-3.5 py-2.5"
+              className="min-w-0 rounded-xl border border-clinical-border bg-clinical-bg px-3 py-2.5 sm:px-3.5"
             >
-              <div className="text-[10px] font-bold uppercase tracking-wide text-clinical-muted">
+              <div className="truncate text-[10px] font-bold uppercase tracking-wide text-clinical-muted">
                 {t.label}
               </div>
-              <div className={"tabular text-[22px] font-extrabold leading-tight " + t.tone}>
+              <div className={"tabular text-[20px] font-extrabold leading-tight sm:text-[22px] " + t.tone}>
                 {t.value}
               </div>
             </div>

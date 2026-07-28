@@ -39,11 +39,12 @@ const METHODS = [
 
 export default function MethodsStrip() {
   return (
-    <div className="flex flex-wrap items-stretch gap-1.5">
+    // One per row on phones, widening to all five in a line on large screens.
+    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {METHODS.map((m, i) => {
         const { icon: Icon } = m;
         return (
-          <div key={m.name} className="flex flex-1 items-stretch gap-1.5">
+          <div key={m.name} className="flex items-stretch gap-1.5">
             <div
               className={
                 "flex-1 rounded-xl border px-3 py-2.5 " +
@@ -55,13 +56,16 @@ export default function MethodsStrip() {
               <div className="flex items-center gap-1.5">
                 <Icon
                   size={14}
-                  className={m.isDestination ? "text-clinical-tealdark" : "text-clinical-muted"}
+                  className={
+                    "shrink-0 " +
+                    (m.isDestination ? "text-clinical-tealdark" : "text-clinical-muted")
+                  }
                 />
                 <span className="text-[12.5px] font-bold leading-tight text-clinical-ink">
                   {m.name}
                 </span>
                 {m.isDestination && (
-                  <span className="ml-auto rounded-full bg-clinical-tealdark px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-white">
+                  <span className="ml-auto shrink-0 whitespace-nowrap rounded-full bg-clinical-tealdark px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-white">
                     You are here
                   </span>
                 )}
@@ -69,6 +73,7 @@ export default function MethodsStrip() {
               <div className="mt-1 text-[11px] leading-snug text-clinical-muted">{m.detail}</div>
             </div>
 
+            {/* The connectors only make sense when the tiles are actually in a row. */}
             {i < METHODS.length - 1 && (
               <div className="hidden shrink-0 items-center xl:flex">
                 <ChevronRight size={14} className="text-clinical-border" />
