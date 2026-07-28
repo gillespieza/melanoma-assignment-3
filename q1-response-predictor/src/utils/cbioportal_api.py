@@ -1,265 +1,639 @@
+"""Client utilities for the cBioPortal REST API.
+
+Provides:
+- resilient GET and POST requests with retry handling
+- study and molecular-profile discovery
+- clinical and molecular data retrieval
+- conversion of cBioPortal API records into pandas DataFrames
+
+Dataset-specific configuration, including study IDs, should be defined
+outside this module.
+"""
+
+from __future__ import annotations
+
 import time
-import requests
+from typing import Any, Optional
+
 import pandas as pd
-from pathlib import Path
-from typing import List, Any, Optional
+import requests
 
-# cBioPortal REST API v2 client setup
-BASE_URL = "https://www.cbioportal.org/api"
-_SESSION = requests.Session()
-_SESSION.headers.update({"Accept": "application/json"})
 
-def _get(
-    endpoint: str,
-    params: Optional[dict] = None,
-    retries: int = 5,
-    timeout: int = 60,
-) -> Any:
+# ---------------------------------------------------------------------------
+# API configuration
+# ---------------------------------------------------------------------------
+
+CBIOPORTAL_BASE_URL = "https://www.cbioportal.org/api"
+
+DEFAULT_TIMEOUT_SECONDS = 60
+DEFAULT_POST_TIMEOUT_SECONDS = 120
+DEFAULT_MAX_ATTEMPTS = 5
+DEFAULT_RETRY_DELAY_SECONDS = 2.0
+
+TRANSIENT_STATUS_CODES = {
+    429,  # Too Many Requests
+    502,  # Bad Gateway
+    503,  # Service Unavailable
+    504,  # Gateway Timeout
+}
+
+DEFAULT_PAGE_SIZE = 100_000
+MOLECULAR_DATA_CHUNK_SIZE = 100
+
+
+# ---------------------------------------------------------------------------
+# API client
+# ---------------------------------------------------------------------------
+
+
+class CbioPortalClient:
+    """Small resilient client for the cBioPortal REST API.
+
+    A persistent requests session is used so that connections can be reused
+    across requests.
     """
-    Make a GET request to the cBioPortal API with retry logic.
-    """
-    _TRANSIENT_STATUS = {429, 502, 503, 504}
-    url = f"{BASE_URL}/{endpoint.lstrip('/')}"
-    last_exc = None
 
-    for attempt in range(retries):
-        try:
-            response = _SESSION.get(url, params=params, timeout=timeout)
-            response.raise_for_status()
-            return response.json()
-        except (requests.ConnectionError, requests.Timeout) as exc:
-            last_exc = exc
-        except requests.HTTPError as exc:
-            if exc.response is not None and exc.response.status_code in _TRANSIENT_STATUS:
-                last_exc = exc
-            else:
-                raise
-        if attempt < retries - 1:
-            time.sleep(2 ** attempt)
+    def __init__(
+        self,
+        base_url: str = CBIOPORTAL_BASE_URL,
+        timeout: int = DEFAULT_TIMEOUT_SECONDS,
+        max_attempts: int = DEFAULT_MAX_ATTEMPTS,
+        retry_delay: float = DEFAULT_RETRY_DELAY_SECONDS,
+    ) -> None:
+        """Initialises the API client.
 
-    raise last_exc
+        Args:
+            base_url: Base URL of the cBioPortal API.
+            timeout: Default request timeout in seconds.
+            max_attempts: Maximum number of attempts for transient failures.
+            retry_delay: Base delay between retry attempts.
+        """
+        self.base_url = base_url.rstrip("/")
+        self.timeout = timeout
+        self.max_attempts = max_attempts
+        self.retry_delay = retry_delay
 
-def _post(
-    endpoint: str,
-    json_body: Any = None,
-    params: Optional[dict] = None,
-    retries: int = 5,
-    timeout: int = 120,
-) -> Any:
-    """
-    Make a POST request to the cBioPortal API with retry logic.
-    """
-    _TRANSIENT_STATUS = {429, 502, 503, 504}
-    url = f"{BASE_URL}/{endpoint.lstrip('/')}"
-    last_exc = None
+        self.session = requests.Session()
+        self.session.headers.update(
+            {
+                "Accept": "application/json",
+            }
+        )
 
-    for attempt in range(retries):
-        try:
-            response = _SESSION.post(url, json=json_body, params=params, timeout=timeout)
-            response.raise_for_status()
-            return response.json()
-        except (requests.ConnectionError, requests.Timeout) as exc:
-            last_exc = exc
-        except requests.HTTPError as exc:
-            if exc.response is not None and exc.response.status_code in _TRANSIENT_STATUS:
-                last_exc = exc
-            else:
-                raise
-        if attempt < retries - 1:
-            time.sleep(2 ** attempt)
+    def _build_url(
+        self,
+        endpoint: str,
+    ) -> str:
+        """Builds a complete API URL from an endpoint."""
+        return f"{self.base_url}/{endpoint.lstrip('/')}"
 
-    raise last_exc
+    def _request(
+        self,
+        method: str,
+        endpoint: str,
+        *,
+        params: Optional[dict[str, Any]] = None,
+        json_body: Optional[Any] = None,
+        timeout: Optional[int] = None,
+    ) -> Any:
+        """Executes a resilient HTTP request.
 
-def get_study(study_id: str) -> Optional[dict]:
-    """
-    Return metadata for a specific study, or None if the study ID is not found.
+        Retries connection errors, timeouts, and transient HTTP responses.
+        Non-transient HTTP errors are raised immediately.
+
+        Args:
+            method: HTTP method, such as ``GET`` or ``POST``.
+            endpoint: API endpoint.
+            params: Optional query parameters.
+            json_body: Optional JSON request body.
+            timeout: Optional request-specific timeout.
+
+        Returns:
+            Decoded JSON response.
+
+        Raises:
+            requests.RequestException: If the request fails.
+            RuntimeError: If all retry attempts fail.
+        """
+        url = self._build_url(endpoint)
+        request_timeout = timeout or self.timeout
+        last_exception: Optional[Exception] = None
+
+        for attempt in range(1, self.max_attempts + 1):
+            try:
+                response = self.session.request(
+                    method=method,
+                    url=url,
+                    params=params,
+                    json=json_body,
+                    timeout=request_timeout,
+                )
+
+                response.raise_for_status()
+                return response.json()
+
+            except (
+                requests.ConnectionError,
+                requests.Timeout,
+            ) as error:
+                last_exception = error
+
+            except requests.HTTPError as error:
+                response = error.response
+
+                if (
+                    response is None
+                    or response.status_code not in TRANSIENT_STATUS_CODES
+                ):
+                    raise
+
+                last_exception = error
+
+            if attempt < self.max_attempts:
+                delay = self.retry_delay * (2 ** (attempt - 1))
+
+                print(
+                    f"cBioPortal request failed "
+                    f"(attempt {attempt}/{self.max_attempts}). "
+                    f"Retrying in {delay:.1f} seconds..."
+                )
+
+                time.sleep(delay)
+
+        raise RuntimeError(
+            f"cBioPortal request failed after "
+            f"{self.max_attempts} attempts: "
+            f"{method} {url}"
+        ) from last_exception
+
+    def get(
+        self,
+        endpoint: str,
+        params: Optional[dict[str, Any]] = None,
+        timeout: Optional[int] = None,
+    ) -> Any:
+        """Executes a GET request."""
+        return self._request(
+            "GET",
+            endpoint,
+            params=params,
+            timeout=timeout,
+        )
+
+    def post(
+        self,
+        endpoint: str,
+        json_body: Optional[Any] = None,
+        params: Optional[dict[str, Any]] = None,
+        timeout: Optional[int] = None,
+    ) -> Any:
+        """Executes a POST request."""
+        return self._request(
+            "POST",
+            endpoint,
+            params=params,
+            json_body=json_body,
+            timeout=timeout,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Study and molecular-profile utilities
+# ---------------------------------------------------------------------------
+
+
+def get_study(
+    client: CbioPortalClient,
+    study_id: str,
+) -> Optional[dict[str, Any]]:
+    """Returns metadata for a study.
+
+    Args:
+        client: cBioPortal API client.
+        study_id: cBioPortal study identifier.
+
+    Returns:
+        Study metadata, or ``None`` if the study does not exist.
     """
     try:
-        return _get(f"/studies/{study_id}")
-    except requests.HTTPError as exc:
-        if exc.response is not None and exc.response.status_code == 404:
+        return client.get(f"/studies/{study_id}")
+
+    except requests.HTTPError as error:
+        if (
+            error.response is not None
+            and error.response.status_code == 404
+        ):
             return None
+
         raise
 
-def get_molecular_profiles(study_id: str) -> list[dict]:
-    """
-    Return a list of molecular profiles (data types) available for a study.
-    """
-    return _get(f"/studies/{study_id}/molecular-profiles")
 
-def resolve_profile_id(study_id: str, data_type: str) -> Optional[str]:
-    """
-    Find the best molecular profile ID for a given canonical data type.
-    """
-    profiles = get_molecular_profiles(study_id)
-    alt_types = {"rnaseq": ["MRNA_EXPRESSION"], "cna": ["COPY_NUMBER_ALTERATION"]}.get(data_type, [])
+def get_molecular_profiles(
+    client: CbioPortalClient,
+    study_id: str,
+) -> list[dict[str, Any]]:
+    """Returns molecular profiles available for a study."""
+    return client.get(
+        f"/studies/{study_id}/molecular-profiles"
+    )
 
-    candidates = [p for p in profiles if p.get("molecularAlterationType", "") in alt_types]
+
+def resolve_profile_id(
+    client: CbioPortalClient,
+    study_id: str,
+    data_type: str,
+) -> Optional[str]:
+    """Finds the best molecular profile for a data type.
+
+    Currently supports:
+    - ``rnaseq``
+    - ``cna``
+
+    Args:
+        client: cBioPortal API client.
+        study_id: cBioPortal study identifier.
+        data_type: Canonical data type.
+
+    Returns:
+        Molecular profile ID, or ``None`` if no suitable profile exists.
+    """
+    profile_types = {
+        "rnaseq": {"MRNA_EXPRESSION"},
+        "cna": {"COPY_NUMBER_ALTERATION"},
+    }
+
+    preferred_profiles = {
+        "rnaseq": ("rna_seq_v2_mrna",),
+        "cna": ("gistic",),
+    }
+
+    valid_types = profile_types.get(data_type, set())
+
+    if not valid_types:
+        raise ValueError(
+            f"Unsupported molecular data type: {data_type}"
+        )
+
+    profiles = get_molecular_profiles(
+        client,
+        study_id,
+    )
+
+    candidates = [
+        profile
+        for profile in profiles
+        if profile.get("molecularAlterationType")
+        in valid_types
+    ]
+
     if not candidates:
         return None
 
-    # Preferred profiles
-    prefs = {"rnaseq": ["rna_seq_v2_mrna"], "cna": ["gistic"]}.get(data_type, [])
-    for pref in prefs:
-        for c in candidates:
-            pid = c["molecularProfileId"]
-            if data_type == "rnaseq" and "zscores" in pid.lower():
+    for preferred in preferred_profiles.get(
+        data_type,
+        (),
+    ):
+        for candidate in candidates:
+            profile_id = candidate.get(
+                "molecularProfileId",
+                "",
+            )
+
+            if (
+                data_type == "rnaseq"
+                and "zscore" in profile_id.lower()
+            ):
                 continue
-            if pref.lower() in pid.lower():
-                return pid
+
+            if preferred.lower() in profile_id.lower():
+                return profile_id
 
     if data_type == "rnaseq":
-        non_zscore = [c for c in candidates if "zscore" not in c["molecularProfileId"].lower()]
+        non_zscore = [
+            candidate
+            for candidate in candidates
+            if "zscore"
+            not in candidate.get(
+                "molecularProfileId",
+                "",
+            ).lower()
+        ]
+
         if non_zscore:
-            return non_zscore[0]["molecularProfileId"]
+            return non_zscore[0][
+                "molecularProfileId"
+            ]
 
     return candidates[0]["molecularProfileId"]
 
-def get_sample_ids(study_id: str) -> list[str]:
-    """Return all sample IDs for a study."""
-    samples = _get(f"/studies/{study_id}/samples", params={"projection": "ID", "pageSize": 10_000})
-    return [s["sampleId"] for s in samples]
 
-def get_clinical_data(study_id: str, clinical_data_type: str = "SAMPLE") -> list[dict]:
+# ---------------------------------------------------------------------------
+# Data retrieval
+# ---------------------------------------------------------------------------
+
+
+def get_sample_ids(
+    client: CbioPortalClient,
+    study_id: str,
+) -> list[str]:
+    """Returns all sample IDs for a study."""
+    samples = client.get(
+        f"/studies/{study_id}/samples",
+        params={
+            "projection": "ID",
+            "pageSize": DEFAULT_PAGE_SIZE,
+        },
+    )
+
+    return [
+        sample["sampleId"]
+        for sample in samples
+        if "sampleId" in sample
+    ]
+
+
+def get_clinical_data(
+    client: CbioPortalClient,
+    study_id: str,
+    clinical_data_type: str = "SAMPLE",
+) -> list[dict[str, Any]]:
+    """Fetches sample- or patient-level clinical data.
+
+    Args:
+        client: cBioPortal API client.
+        study_id: cBioPortal study identifier.
+        clinical_data_type: ``SAMPLE`` or ``PATIENT``.
+
+    Returns:
+        Clinical data records.
     """
-    Fetch clinical data (SAMPLE or PATIENT level) for a study.
-    """
-    return _get(
+    clinical_data_type = clinical_data_type.upper()
+
+    if clinical_data_type not in {
+        "SAMPLE",
+        "PATIENT",
+    }:
+        raise ValueError(
+            "clinical_data_type must be 'SAMPLE' "
+            "or 'PATIENT'."
+        )
+
+    return client.get(
         f"/studies/{study_id}/clinical-data",
         params={
             "clinicalDataType": clinical_data_type,
             "projection": "DETAILED",
-            "pageSize": 100_000,
+            "pageSize": DEFAULT_PAGE_SIZE,
             "pageNumber": 0,
         },
     )
 
-def get_molecular_data(molecular_profile_id: str, sample_ids: list[str]) -> list[dict]:
-    """
-    Fetch molecular data (expression) for a given profile.
-    """
-    all_records = []
-    chunk_size = 100
-    total_samples = len(sample_ids)
 
-    for i in range(0, total_samples, chunk_size):
-        chunk = sample_ids[i:i + chunk_size]
-        body = {"sampleIds": chunk}
-        records = _post(
-            f"/molecular-profiles/{molecular_profile_id}/molecular-data/fetch",
-            json_body=body,
-            params={"projection": "SUMMARY"},
+def get_molecular_data(
+    client: CbioPortalClient,
+    molecular_profile_id: str,
+    sample_ids: list[str],
+    chunk_size: int = MOLECULAR_DATA_CHUNK_SIZE,
+) -> list[dict[str, Any]]:
+    """Fetches molecular data in batches.
+
+    Args:
+        client: cBioPortal API client.
+        molecular_profile_id: Molecular profile identifier.
+        sample_ids: Sample IDs to retrieve.
+        chunk_size: Number of samples per API request.
+
+    Returns:
+        Molecular data records.
+    """
+    if chunk_size <= 0:
+        raise ValueError(
+            "chunk_size must be greater than zero."
         )
+
+    if not sample_ids:
+        return []
+
+    all_records: list[dict[str, Any]] = []
+
+    total_chunks = (
+        len(sample_ids) + chunk_size - 1
+    ) // chunk_size
+
+    for chunk_number, start in enumerate(
+        range(
+            0,
+            len(sample_ids),
+            chunk_size,
+        ),
+        start=1,
+    ):
+        sample_chunk = sample_ids[
+            start:start + chunk_size
+        ]
+
+        records = client.post(
+            f"/molecular-profiles/{molecular_profile_id}"
+            "/molecular-data/fetch",
+            json_body={
+                "sampleIds": sample_chunk,
+            },
+            params={
+                "projection": "SUMMARY",
+            },
+            timeout=DEFAULT_POST_TIMEOUT_SECONDS,
+        )
+
         all_records.extend(records)
-        print(f"  Fetched molecular data chunk {i // chunk_size + 1} of {-(-total_samples // chunk_size)}...")
+
+        print(
+            f"  Fetched molecular data chunk "
+            f"{chunk_number} of {total_chunks}..."
+        )
 
     return all_records
 
-def build_clinical_df(sample_records: List[dict], patient_records: List[dict]) -> pd.DataFrame:
-    """
-    Pivot long-format clinical API records into a wide table.
+
+# ---------------------------------------------------------------------------
+# DataFrame construction
+# ---------------------------------------------------------------------------
+
+
+def build_clinical_df(
+    sample_records: list[dict[str, Any]],
+    patient_records: list[dict[str, Any]],
+) -> pd.DataFrame:
+    """Converts long-format clinical records into a wide DataFrame.
+
+    Sample-level clinical data are used as the primary table. Patient-level
+    data are merged onto the sample-level records using ``PATIENT_ID``.
     """
     if not sample_records:
-        raise ValueError("No sample-level clinical data returned from API")
-
-    sample_df = pd.DataFrame(sample_records)
-    sample_wide = sample_df.pivot_table(
-        index="sampleId",
-        columns="clinicalAttributeId",
-        values="value",
-        aggfunc="first",
-    ).reset_index()
-    sample_wide.columns.name = None
-    sample_wide = sample_wide.rename(columns={"sampleId": "SAMPLE_ID"})
-
-    if "patientId" in sample_df.columns:
-        patient_map = (
-            sample_df[["sampleId", "patientId"]]
-            .drop_duplicates()
-            .rename(columns={"sampleId": "SAMPLE_ID", "patientId": "PATIENT_ID"})
+        raise ValueError(
+            "No sample-level clinical data returned from API."
         )
-        sample_wide = sample_wide.merge(patient_map, on="SAMPLE_ID", how="left")
 
-    if patient_records:
-        patient_df = pd.DataFrame(patient_records)
-        patient_wide = patient_df.pivot_table(
-            index="patientId",
+    sample_df = pd.DataFrame(
+        sample_records
+    )
+
+    required_columns = {
+        "sampleId",
+        "clinicalAttributeId",
+        "value",
+    }
+
+    missing_columns = (
+        required_columns
+        - set(sample_df.columns)
+    )
+
+    if missing_columns:
+        raise ValueError(
+            "Sample clinical data are missing "
+            f"required columns: {missing_columns}"
+        )
+
+    sample_wide = (
+        sample_df
+        .pivot_table(
+            index="sampleId",
             columns="clinicalAttributeId",
             values="value",
             aggfunc="first",
-        ).reset_index()
+        )
+        .reset_index()
+    )
+
+    sample_wide.columns.name = None
+
+    sample_wide = sample_wide.rename(
+        columns={
+            "sampleId": "SAMPLE_ID",
+        }
+    )
+
+    if {
+        "sampleId",
+        "patientId",
+    }.issubset(sample_df.columns):
+        patient_map = (
+            sample_df[
+                [
+                    "sampleId",
+                    "patientId",
+                ]
+            ]
+            .drop_duplicates()
+            .rename(
+                columns={
+                    "sampleId": "SAMPLE_ID",
+                    "patientId": "PATIENT_ID",
+                }
+            )
+        )
+
+        sample_wide = sample_wide.merge(
+            patient_map,
+            on="SAMPLE_ID",
+            how="left",
+        )
+
+    if patient_records:
+        patient_df = pd.DataFrame(
+            patient_records
+        )
+
+        patient_wide = (
+            patient_df
+            .pivot_table(
+                index="patientId",
+                columns="clinicalAttributeId",
+                values="value",
+                aggfunc="first",
+            )
+            .reset_index()
+        )
+
         patient_wide.columns.name = None
-        patient_wide = patient_wide.rename(columns={"patientId": "PATIENT_ID"})
+
+        patient_wide = patient_wide.rename(
+            columns={
+                "patientId": "PATIENT_ID",
+            }
+        )
 
         if "PATIENT_ID" in sample_wide.columns:
             sample_wide = sample_wide.merge(
                 patient_wide,
                 on="PATIENT_ID",
                 how="left",
-                suffixes=("", "_PATIENT"),
+                suffixes=(
+                    "",
+                    "_PATIENT",
+                ),
             )
 
     return sample_wide
 
-def build_molecular_df(records: List[dict]) -> pd.DataFrame:
-    """
-    Pivot molecular data API records into a wide samples x genes matrix.
+
+def build_molecular_df(
+    records: list[dict[str, Any]],
+) -> pd.DataFrame:
+    """Converts molecular API records into a wide DataFrame.
+
+    Returns:
+        DataFrame with samples as rows and genes as columns.
     """
     if not records:
-        return pd.DataFrame(columns=["SAMPLE_ID"])
+        return pd.DataFrame(
+            columns=["SAMPLE_ID"]
+        )
 
-    rows = []
-    for r in records:
-        gene_symbol = r.get("gene", {}).get("hugoGeneSymbol") or str(r.get("entrezGeneId", ""))
-        rows.append({
-            "SAMPLE_ID": r["sampleId"],
-            "gene": gene_symbol,
-            "value": r.get("value"),
-        })
+    rows: list[dict[str, Any]] = []
+
+    for record in records:
+        gene = record.get(
+            "gene",
+            {},
+        )
+
+        gene_symbol = (
+            gene.get("hugoGeneSymbol")
+            or str(
+                record.get(
+                    "entrezGeneId",
+                    "",
+                )
+            )
+        )
+
+        rows.append(
+            {
+                "SAMPLE_ID": record["sampleId"],
+                "gene": gene_symbol,
+                "value": record.get("value"),
+            }
+        )
 
     long_df = pd.DataFrame(rows)
-    long_df["value"] = pd.to_numeric(long_df["value"], errors="coerce")
 
-    wide_df = long_df.pivot_table(
-        index="SAMPLE_ID",
-        columns="gene",
-        values="value",
-        aggfunc="first",
-    ).reset_index()
+    long_df["value"] = pd.to_numeric(
+        long_df["value"],
+        errors="coerce",
+    )
+
+    wide_df = (
+        long_df
+        .pivot_table(
+            index="SAMPLE_ID",
+            columns="gene",
+            values="value",
+            aggfunc="first",
+        )
+        .reset_index()
+    )
+
     wide_df.columns.name = None
 
     return wide_df
-
-def download_raw_tcga_skcm(output_dir: Path, study_id: str = "skcm_tcga_pan_can_atlas_2018"):
-    """
-    Downloads raw TCGA-SKCM clinical and RNA-seq data from cBioPortal REST API.
-
-    @param Path output_dir The base data directory (e.g. DATA_DIR).
-    @param str study_id The cBioPortal study ID (default is skcm_tcga_pan_can_atlas_2018).
-    @return None
-    """
-    raw_dir = output_dir / "raw" / study_id
-    raw_dir.mkdir(parents=True, exist_ok=True)
-
-    print(f"Fetching sample list for {study_id}...")
-    sample_ids = get_sample_ids(study_id)
-    print(f"Found {len(sample_ids)} samples.")
-
-    print("Fetching clinical sample and patient data...")
-    sample_clin = get_clinical_data(study_id, "SAMPLE")
-    patient_clin = get_clinical_data(study_id, "PATIENT")
-    raw_clin_df = build_clinical_df(sample_clin, patient_clin)
-
-    raw_clin_df.to_csv(raw_dir / "clinical.csv", index=False)
-    print(f"Saved raw clinical records: {len(raw_clin_df)} samples.")
-
-    print("Fetching RNA-seq expression data (this may take a few minutes)...")
-    profile_id = resolve_profile_id(study_id, "rnaseq")
-    if not profile_id:
-        raise ValueError("Could not resolve RNA-seq profile ID.")
-    
-    records = get_molecular_data(profile_id, sample_ids)
-    raw_rnaseq_df = build_molecular_df(records)
-
-    raw_rnaseq_df.to_csv(raw_dir / "rnaseq.csv", index=False)
-    print(f"Saved raw RNA-seq records: {len(raw_rnaseq_df)} samples.")
