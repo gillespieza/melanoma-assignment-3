@@ -3,6 +3,7 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 import Header, { type ViewKey } from "./components/Header";
 import CohortTable, { buildRows } from "./components/CohortTable";
 import FeaturedCards from "./components/FeaturedCards";
+import MethodsStrip from "./components/MethodsStrip";
 import PatientView from "./components/PatientView";
 import Q1ValidationPanel from "./components/Q1ValidationPanel";
 import { Panel } from "./components/ui";
@@ -115,6 +116,7 @@ export default function App() {
         ) : (
           <div className="space-y-4">
             <CohortHeadline cohort={cohort} rows={rows} />
+            <MethodsStrip />
             <FeaturedCards rows={rows} onOpen={openPatient} />
             <CohortTable rows={rows} onOpen={openPatient} />
             {cohort.meta.q1Validation && (
