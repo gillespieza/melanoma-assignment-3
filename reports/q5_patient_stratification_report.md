@@ -9,12 +9,12 @@ tags:
   - patient-stratification
   - melanoma
   - immunotherapy
-created: 2026-07-29 12:46
+created: 2026-07-29 12:48
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-29 12:46
+updated: 2026-07-29 12:48
 ---
 
 # Q5: Biomarker-Guided Patient Stratification Report (N = 326)
@@ -197,7 +197,7 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 
 > [!INFO] Figure Interpretation: Q3 ODE Trajectory Simulations
 > - **What this plot shows**: Dynamic 180-day relative tumour volume $T(t)/K$ trajectories simulated using the Kuznetsov-de Pillis ODE system parameterised by cluster biomarker means.
-> - **Complete Regression ($T(180) \to 0.00$)**: *Immune Hot* (solid crimson) achieves rapid clearance by Day 60. *Mutant-Driven* (solid orange) achieves clearance by Day 90–120.
+> - **Complete Regression ($T(180) \to 0.00$)**: *Immune Hot* (solid crimson) achieves complete tumour burden clearance by Day 60. *Mutant-Driven* (solid orange) achieves complete tumour burden clearance by Day 90–120.
 > - **Resistance & Combination Rescue**: *M2 Immunosuppressive* under anti-PD-1 monotherapy (solid purple) experiences uncontrolled growth ($T(180) = 0.94$). Adding an M2-depleting agent (dashed purple) restores T-cell killing efficiency ($c \to 0.40$), driving complete tumor regression ($T(180) \to 0.00$).
 
 ### Overall Survival Stratification by ODE Checkpoint Tumour Burden
