@@ -15,11 +15,15 @@ import sys
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+SUBPROJECT_ROOT = SCRIPT_DIR.parent
 for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
     if (parent / "src").is_dir() and (parent / "data").is_dir():
         if str(parent) not in sys.path:
             sys.path.insert(0, str(parent))
         break
+
+if str(SUBPROJECT_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(SUBPROJECT_ROOT / "src"))
 
 # ---------------------------------------------------------------------------
 # Project Imports
@@ -33,7 +37,7 @@ from scipy.integrate import solve_ivp
 
 from src.styles import PHENOTYPE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, SUBPROJECT_ROOT, rel_path
+from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions

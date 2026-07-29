@@ -56,18 +56,14 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 OUTPUT_REPORT_PATH = REPORTS_DIR / "q5_patient_stratification_report.md"
 
 # Phase Plot Paths
-# NOTE: 01_load_and_prepare.py uses SCRIPT_DIR.parent (= q5-patient-stratification/) as its own
-# subproject root, so Phase 1 output lands in SUBPROJECT_ROOT/plots/phenotypes/.
-# 04_phenotype_characterisation.py imports SUBPROJECT_ROOT from src.utils.paths which resolves to
-# PROJECT_ROOT, so Phase 4 outputs land in PROJECT_ROOT/plots/phenotypes/.
 PHASE1_VIOLIN_PATH = SUBPROJECT_ROOT / "plots" / "phenotypes" / "baseline_response_violins.png"
-PHASE4_BOXPLOT_PATH = PROJECT_ROOT / "plots" / "phenotypes" / "baseline_signature_boxplots.png"
+PHASE4_BOXPLOT_PATH = SUBPROJECT_ROOT / "plots" / "phenotypes" / "baseline_signature_boxplots.png"
 PHASE2_VOLCANO_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "biomarker_volcano_plot.png"
 PHASE2_ROC_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "youden_roc_curves.png"
 PHASE2_INTERACTION_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "genomic_interaction_tis_braf.png"
 PHASE2_MATRIX_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "genomic_immune_interaction_matrix.png"
 PHASE3_CLUSTER_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "clustering" / "umap_clusters.png"
-PHASE4_ODE_PLOT_PATH = PROJECT_ROOT / "plots" / "phenotypes" / "ode_trajectories.png"
+PHASE4_ODE_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "phenotypes" / "ode_trajectories.png"
 
 # Q3 ODE Plot Paths
 Q3_KM_CHECKPOINT_PATH = PROJECT_ROOT / "q3-ode-model" / "outputs" / "plots" / "km_checkpoint_tumour_burden.png"

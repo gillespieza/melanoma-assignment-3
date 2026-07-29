@@ -9,12 +9,12 @@ tags:
   - patient-stratification
   - melanoma
   - immunotherapy
-created: 2026-07-29 12:13
+created: 2026-07-29 12:17
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-29 12:13
+updated: 2026-07-29 12:17
 ---
 
 # Q5: Biomarker-Guided Patient Stratification Report (N = 326)
@@ -176,7 +176,7 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 
 ### Baseline Biomarker Profile Distribution
 
-![Biomarker Profile Boxplots](plots/phenotypes/baseline_signature_boxplots.png)
+![Biomarker Profile Boxplots](q5-patient-stratification/plots/phenotypes/baseline_signature_boxplots.png)
 
 > [!INFO] Figure Interpretation: Biomarker Z-Score Fingerprints
 > - **What this plot shows**: Standardized Z-scores across core microenvironment signatures (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`) for all four patient clusters.
@@ -184,7 +184,7 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 
 ### Mechanistic Q3 ODE Tumour Volume Trajectories T(t)
 
-![Q3 ODE Tumour Trajectories](plots/phenotypes/ode_trajectories.png)
+![Q3 ODE Tumour Trajectories](q5-patient-stratification/plots/phenotypes/ode_trajectories.png)
 
 > [!INFO] Figure Interpretation: Q3 ODE Trajectory Simulations
 > - **What this plot shows**: Dynamic 180-day relative tumour volume $T(t)/K$ trajectories simulated using the Kuznetsov-de Pillis ODE system parameterised by cluster biomarker means.
