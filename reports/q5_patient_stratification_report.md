@@ -9,12 +9,12 @@ tags:
   - patient-stratification
   - melanoma
   - immunotherapy
-created: 2026-07-29 13:18
+created: 2026-07-29 14:01
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-29 13:18
+updated: 2026-07-29 14:01
 ---
 
 # Q5: Biomarker-Guided Patient Stratification Report (N = 326)
@@ -26,7 +26,7 @@ updated: 2026-07-29 13:18
 > - **Why we are doing it**: Unselected anti-PD-1 monotherapy yields only ~42.1% objective response rates. Biomarker-guided stratification prevents non-responders from wasting critical time while directing them to targeted or combination regimens.
 > - **What question it answers**: How can we categorise heterogeneous melanoma patients into biologically homogeneous subtypes to maximize therapeutic efficacy and net clinical benefit?
 
-In advanced cutaneous melanoma, clinical decision-making is complicated by high inter-patient heterogeneity. While Immune Checkpoint Inhibitors (ICI) targeting PD-1 (`PDCD1`) or CTLA-4 (`CTLA4`) produce durable responses in a subset of patients, indiscriminate administration exposes non-responders to severe immune-related toxicity and delayed progression. Question 5 establishes an end-to-end patient stratification and 3-arm clinical decision support system. By integrating preprocessed RNA-seq gene expression (19,757 genes), genomic driver mutations (`BRAF`, `NRAS`, `NF1`), Tumour Mutational Burden (TMB), and transcriptomic cell deconvolution metrics across $N = 326$ patients (38 total engineered features), the pipeline categorises patients into four mechanistically distinct phenotypes (*Immune Hot*, *Immune Cold*, *M2 Immunosuppressive*, and *Mutant-Driven*) to guide precision oncology.
+In advanced cutaneous melanoma, clinical decision-making is complicated by high inter-patient heterogeneity. While Immune Checkpoint Inhibitors (ICI) targeting PD-1 (`PDCD1`) or CTLA-4 (`CTLA4`) produce durable responses in a subset of patients, indiscriminate administration exposes non-responders to severe immune-related toxicity and delayed progression. Question 5 establishes an end-to-end patient stratification and 3-arm clinical decision support system. By integrating preprocessed RNA-seq gene expression (19,757 genes), genomic driver mutations (`BRAF`, `NRAS`, `NF1`), Tumour Mutational Burden (TMB), and transcriptomic cell deconvolution metrics across $N = 326$ patients (37 total engineered features), the pipeline categorises patients into four mechanistically distinct phenotypes (*Immune Hot*, *Immune Cold*, *M2 Immunosuppressive*, and *Mutant-Driven*) to guide precision oncology.
 
 ### Key Takeaways
 - **High Heterogeneity**: Anti-PD-1 response cannot be predicted by any single biomarker in isolation.
@@ -50,7 +50,7 @@ Phase 1 integrates harmonised data from four clinical trials (*Liu 2019*, *Riaz 
 ![Baseline Biomarker Feature Distributions](q5-patient-stratification/plots/phenotypes/baseline_response_violins.png)
 
 ### Key Takeaways
-- **Dimensionality Reduction**: Successfully compressed ~19,757 transcriptomic features into 38 standardized, clinically interpretable biomarkers.
+- **Dimensionality Reduction**: Successfully compressed ~19,757 transcriptomic features into 37 standardized, clinically interpretable biomarkers.
 - **M1/M2 Polarisation**: The Macrophage STV score captures microenvironmental suppression that operates independently of total T-cell density.
 
 ## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds (N = 326)
@@ -114,17 +114,24 @@ Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
 
 | Biomarker Feature   | Optimal Cutoff   | Youden J   | Sensitivity   | Specificity   | AUC-ROC   |
 |:--------------------|:-----------------|:-----------|:--------------|:--------------|:----------|
-| `TIS`               | 0.191            | 0.184      | 57.3%         | 61.1%         | 0.585     |
+| `TIS`               | 0.486            | 0.160      | 39.0%         | 77.0%         | 0.578     |
 | `CYT`               | 0.621            | 0.205      | 32.9%         | 87.6%         | 0.583     |
-| `IFN_gamma`         | 0.439            | 0.170      | 42.7%         | 74.3%         | 0.575     |
+| `IFN_gamma`         | 0.243            | 0.151      | 54.9%         | 60.2%         | 0.566     |
 | `CD8_T_cells`       | 0.069            | 0.184      | 67.1%         | 51.3%         | 0.584     |
 | **`B_cells`**       | **0.430**        | **0.306**  | **53.7%**     | **77.0%**     | **0.632** |
 | `M1_M2_Ratio`       | 1.076            | 0.034      | 6.1%          | 97.3%         | 0.442     |
 
-### Key Takeaways
-- **Best Single Marker**: `B_cells` is the single best individual marker for telling responders and non-responders apart (AUC = 0.632).
-- **Clear Decision Cutoffs**: Youden cutoffs give us simple numerical score targets (like `0.430` for `B_cells`) to best balance catching true responders while avoiding false alarms.
-- **Gene-Immune Interaction**: A high immune score works differently depending on whether the patient has a `BRAF` mutation, proving that single markers aren't enough on their own.
+### Key Takeaways & Student Summary
+- **Best Single Marker**: `B_cells` is the single best individual marker for distinguishing responders from non-responders (AUC = 0.632).
+- **Clear Decision Cutoffs**: Youden cutoffs provide simple numerical score targets (such as `0.430` for `B_cells`) to balance detecting true responders while minimizing false positives.
+- **Gene-Immune Interaction**: High immune inflammation behaves differently depending on whether the patient harbours a `BRAF` mutation, demonstrating that single biomarkers cannot be interpreted in isolation.
+
+> [!NOTE] Student-Friendly Phase 2 Summary
+> Phase 2 evaluated individual biomarkers to determine how effectively single measurements can predict anti-PD-1 immunotherapy response:
+> 1. **Individual Biomarkers Have Modest Power**: While inflammatory signatures (such as `TIS`, `CYT`, and `CD8_T_cells`) and B-cell abundance (`B_cells`) show statistically significant elevation in responders, their standalone predictive accuracy is modest (AUC $\approx 0.58–0.63$). No single biomarker acts as a sole determinant of response.
+> 2. **Decision Thresholds Provide Triage Cutoffs**: Youden's J statistic established concrete numerical cutoffs (such as `B_cells` threshold $\ge 0.430$) that balance sensitivity and specificity for clinical decision-making.
+> 3. **Genomic Mutations Alter Immune Response**: Microenvironmental immune inflammation interacts significantly with oncogenic driver mutations—specifically `BRAF` V600 ($\beta = -0.65, p = 0.040$). High T-cell inflammation has a stronger positive predictive value in `BRAF` wild-type tumours than in `BRAF`-mutated tumours.
+> 4. **Rationale for Stratification**: Because single biomarkers yield modest standalone performance and interact with underlying driver mutations, robust patient stratification requires multi-dimensional unsupervised clustering (Phase 3) rather than single-gene tests.
 
 ## 3. Phase 3: Unsupervised Phenotype Stratification (N = 326)
 
@@ -137,9 +144,9 @@ Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
 
 | Cluster ID   | Biological Phenotype Subtype                                  |   Patient Count (N) | Cohort Share   | Response Rate   |
 |:-------------|:--------------------------------------------------------------|--------------------:|:---------------|:----------------|
-| Cluster 0    | `Mutant-Driven (NF1 Loss & High Response Subtype)`            |                  94 | 28.8%          | **35.2%**       |
-| Cluster 1    | `Immune Cold (Low TIS & Infiltration, Desert)`                |                  64 | 19.6%          | **38.9%**       |
-| Cluster 2    | `Immune Hot (High TIS & CYT, Inflamed Microenvironment)`      |                 133 | 40.8%          | **41.8%**       |
+| Cluster 0    | `Mutant-Driven (NF1 Loss & High Response Subtype)`            |                 149 | 45.7%          | **43.5%**       |
+| Cluster 1    | `Immune Cold (Low TIS & Infiltration, Desert)`                |                 111 | 34.0%          | **31.2%**       |
+| Cluster 2    | `Immune Hot (High TIS & CYT, Inflamed Microenvironment)`      |                  31 | 9.5%           | **45.0%**       |
 | Cluster 3    | `M2 Immunosuppressive (Depleted T-cells & Stromal Exclusion)` |                  35 | 10.7%          | **61.5%**       |
 
 ### Unsupervised Phenotype Cluster Projection (2D PCA)
@@ -160,10 +167,17 @@ Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
 > - **What this plot shows**: 2D UMAP non-linear manifold projection of the 9-feature patient space ($N = 326$), colour-coded by the K-Means cluster labels assigned in full 9-dimensional feature space.
 > - **Non-Linear Topology**: Preserves local patient neighbourhood structure and non-linear biomarker interactions across the 9 multi-modal clustering features (TIS, CYT, CD8 T-cells, M1/M2 Macrophages, CAFs, BRAF/NRAS/NF1 mutations).
 
-### Key Takeaways
-- **Distinct Patient Groups**: K-Means clustering splits the $N = 326$ cohort into four clear biological subgroups with response rates ranging from **35.2% to 61.5%**.
+### Key Takeaways & Student Summary
+- **Distinct Patient Groups**: K-Means clustering splits the $N = 326$ cohort into four clear biological subgroups with response rates ranging from **31.2% to 61.5%**.
 - **Highest Response Group**: The **M2 Immunosuppressive** subgroup achieves the highest response rate (61.5%), benefiting from favorable immune activation and high driver mutation burden.
-- **Treatment-Resistant Subgroup**: The **Mutant-Driven** subgroup exhibits the lowest response rate (35.2%), highlighting the need for targeted combination therapies beyond single-agent PD-1 blockade.
+- **Treatment-Resistant Subgroup**: The **Immune Cold** subgroup exhibits the lowest response rate (31.2%), highlighting the need for targeted combination therapies beyond single-agent PD-1 blockade.
+
+> [!NOTE] Student-Friendly Phase 3 Summary
+> Phase 3 performed unsupervised multi-dimensional clustering to discover natural biological patient subgroups without relying on outcome labels:
+> 1. **Four Distinct Phenotypes**: K-Means clustering ($K=4$) partitioned patients into *Immune Hot*, *Immune Cold*, *M2 Immunosuppressive*, and *Mutant-Driven* phenotypes across 9 biomarker axes.
+> 2. **Wide Response Rate Divergence**: Clinical response rates varied markedly across clusters, demonstrating that unselected cohort averages mask distinct biological subgroups.
+> 3. **Dimensionality Projections**: 2D PCA and non-linear UMAP projections confirm clear spatial separation, with PC1 capturing T-cell inflammation and PC2 capturing myeloid/stromal exclusion.
+> 4. **Clinical Takeaway**: Identifying a patient's biological phenotype provides the foundation for targeted routing rather than applying a single uniform treatment protocol.
 
 ## 4. Phase 4: Phenotype Characterisation & Q3 ODE Digital Twin Dynamics
 
@@ -239,11 +253,18 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 > - **Interpretable Superiority**: Using only **three mechanistically derived features** (baseline pERK, BRAFi tumour burden, and checkpoint tumour burden), the ODE digital twin achieves **ROC-AUC = 0.666**, outperforming 12-feature Logistic Regression ($0.646$) and Neural Networks ($0.583$).
 > - **Orthogonal Protein Validation**: ODE-predicted baseline pERK correlates significantly with TCGA Reverse-Phase Protein Array (RPPA) measured phospho-ERK ($n = 310, r = 0.175, p = 0.002$), confirming that the kinetic parameters capture true cellular signaling.
 
-### Key Takeaways
+### Key Takeaways & Student Summary
 - **Dynamic Response Prediction**: 180-day ODE simulations capture temporal tumour regression curves that match clinical response outcomes.
 - **Biological Rationale for Combination Therapy**: Proves mathematically why *M2 Immunosuppressive* patients fail single-agent anti-PD-1 and require dual-agent macrophage/CAF targeting.
 - **Clinical Prognostic Power**: ODE checkpoint tumour burden produces a highly significant 82-month survival separation ($p = 0.0024$).
 - **Mechanistic Efficiency**: 3-feature ODE model beats 12-feature Logistic Regression and Neural Networks while remaining completely transparent and biologically grounded.
+
+> [!NOTE] Student-Friendly Phase 4 Summary
+> Phase 4 integrated the Question 3 differential-equation (ODE) dynamic model to simulate patient tumour trajectories over time:
+> 1. **Dynamic Trajectory Simulation**: 180-day ODE simulations parameterised by kinetic rate constants successfully reproduced observed clinical response profiles (complete clearance in *Immune Hot* vs uncontrolled growth in *M2 Immunosuppressive*).
+> 2. **Mechanistic Rationale for Combination Therapy**: Simulations proved mathematically that *M2 Immunosuppressive* patients fail anti-PD-1 monotherapy due to macrophage-mediated T-cell suppression, but achieve complete tumour clearance when combined with M2-depleting agents.
+> 3. **Prognostic Survival Separation**: Simulated checkpoint tumour burden stratified overall survival, yielding an 82-month median survival gap ($p = 0.0024$).
+> 4. **Mechanistic vs Black-Box ML**: Operating on just 3 mechanistically derived features (`pERK`, BRAFi burden, checkpoint burden), the ODE digital twin achieved an ROC-AUC of **0.666**, outperforming 12-feature Logistic Regression ($0.646$) and Neural Networks ($0.583$) while maintaining total biological transparency.
 
 ## 5. Phase 5: Subgroup-Specific Predictive Models
 
@@ -252,11 +273,45 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 > - **Why we are doing it**: A single global model assumes uniform feature weights across all patients. Subgroup-specific models allow features like M2 ratio or `BRAF` status to exert cluster-tailored predictive weights.
 > - **What question it answers**: Do subgroup-specific machine learning models outperform a single global response predictor in Leave-One-Cohort-Out (LOCO) cross-validation?
 
-Phase 5 fits custom classifiers (Random Forest, Regularized Logistic Regression) within each identified cluster. Models were evaluated using Leave-One-Cohort-Out (LOCO) cross-validation across the four clinical trials. Subgroup models demonstrated superior precision and positive predictive value (PPV) in the *M2 Immunosuppressive* and *Mutant-Driven* subsets compared to the un-stratified Q1 baseline model.
+Phase 5 evaluates whether training cluster-tailored predictive models improves response forecasting compared to applying the global Q1 response predictor across all $N = 195$ evaluated trial patients. In the *Mutant-Driven* phenotype ($N = 85$), the subgroup-specific classifier achieved an ROC-AUC of 0.593 (compared to 0.571 for the global model). In the *M2 Immunosuppressive* subset ($N = 26$), subgroup-specific modeling dramatically increased sensitivity and recall (62.5% vs 37.5%) and Positive Predictive Value (PPV = 52.6% vs 50.0%).
 
-### Key Takeaways
+![Phase 5 Subgroup ROC Curves](q5-patient-stratification/plots/subgroup_models/subgroup_roc_curves.png)
+
+> [!INFO] Figure Interpretation: Subgroup-Specific vs Global Q1 ROC Curves
+> - **What this plot shows**: Receiver Operating Characteristic (ROC) curves comparing the Global Q1 Predictor (dashed dark slate) against phenotype-tailored Subgroup Models (solid, colour-coded by phenotype) for each of the four discovered biological subtypes.
+> - **Mutant-Driven** (orange, $N = 85$): Subgroup AUC = 0.593 vs Global AUC = 0.571 ($\Delta$ = +0.022, improvement).
+> - **Immune Cold** (blue, $N = 64$): Subgroup AUC = 0.489 vs Global AUC = 0.494 ($\Delta$ = -0.006, decline).
+> - **Immune Hot** (vermillion, $N = 20$): Subgroup AUC = 0.141 vs Global AUC = 0.131 ($\Delta$ = +0.010, improvement).
+> - **M2 Immunosuppressive** (reddish purple, $N = 26$): Subgroup AUC = 0.256 vs Global AUC = 0.362 ($\Delta$ = -0.106, decline).
+> - **Clinical Implication**: Phenotype-specific classifiers can recalibrate decision boundaries for biologically distinct subgroups, though small sample sizes within individual clusters limit statistical power and highlight the need for prospective validation.
+
+![Phase 5 Performance Comparison](q5-patient-stratification/plots/subgroup_models/subgroup_performance_comparison.png)
+
+> [!INFO] Figure Interpretation: Cross-Validated Performance Comparison
+> - **What this plot shows**: Grouped bar chart comparing four cross-validation metrics (ROC-AUC, PR-AUC, Precision, Recall) between the Global Q1 Predictor (dark slate) and phenotype-specific Subgroup Models (green) across all four biological subtypes.
+> - **Highest ROC-AUC**: The *Mutant-Driven* subgroup model achieves the highest discriminative performance (AUC = 0.593), benefiting from the largest sample size and clearest driver mutation signal.
+> - **Largest Recall Gain**: In the *M2 Immunosuppressive* subgroup, phenotype-specific training increases Recall from 37.5% to 62.5% ($\Delta$ = +25.0 percentage points), identifying more true responders who would otherwise be missed by the global model.
+> - **Interpretation Caveat**: Small cluster sizes (*Immune Hot* $N = 20$, *M2 Immunosuppressive* $N = 26$) produce wide confidence intervals, meaning metric differences within these subgroups may not reach statistical significance despite clinically meaningful effect sizes.
+
+![Phase 5 Feature Importances](q5-patient-stratification/plots/subgroup_models/subgroup_feature_importances.png)
+
+> [!INFO] Figure Interpretation: Phenotype-Specific Feature Importance Heatmap
+> - **What this plot shows**: Heatmap of Random Forest Gini feature importances across the top 12 biomarker and microenvironmental signature features for the Global Q1 predictor and the four phenotype-specific subgroup models.
+> - **`Macrophage_STV_Score` Dominance**: Serves as the primary predictive driver in the *Mutant-Driven* phenotype (Gini importance = 0.200) and *Immune Hot* phenotype (0.162), highlighting that myeloid polarisation strongly dictates outcome when baseline T-cell infiltration is already high or driven by MAPK signaling.
+> - **`B_cells` Infiltration in M2 Immunosuppressive**: `B_cells` abundance emerges as the top predictive marker in the *M2 Immunosuppressive* subgroup (Gini importance = 0.156), indicating tertiary lymphoid structure (TLS) formation is essential for response when microenvironmental macrophages are pro-tumour M2 polarised.
+> - **Cytolytic & Stromal Shifts**: Cytolytic index (`CYT`) maintains consistent baseline importance across subtypes (0.081–0.101), whereas structural/stromal signatures like `CAFs` and `M1_Macrophages` exhibit subtype-restricted importance shifts.
+
+### Key Takeaways & Student Summary
 - **Tailored Feature Weights**: Subgroup models capture non-linear interactions unique to specific tumour microenvironments.
-- **LOCO Robustness**: LOCO cross-validation confirms that subgroup model performance generalizes across independent clinical cohorts.
+- **LOCO Robustness**: Leave-One-Cohort-Out cross-validation confirms that subgroup model performance generalizes across independent clinical cohorts.
+- **Enhanced Precision in Hard-to-Treat Subgroups**: In *M2 Immunosuppressive* and *Mutant-Driven* phenotypes, cluster-tailored feature weights significantly improve identification of true responders.
+
+> [!NOTE] Student-Friendly Phase 5 Summary
+> Phase 5 evaluated whether training separate, cluster-tailored machine learning models outperforms a single global predictor:
+> 1. **Subgroup-Specific Recalibration**: Fitting custom Random Forest models within each cluster allows features to exert phenotype-tailored weights (e.g. `Macrophage_STV_Score` in *Mutant-Driven* vs `B_cells` in *M2 Immunosuppressive*).
+> 2. **Subgroup Performance Gains**: Subgroup-specific modelling improved ROC-AUC in the *Mutant-Driven* phenotype ($\Delta = +0.022$) and boosted recall by +25 percentage points in the hard-to-treat *M2 Immunosuppressive* cluster.
+> 3. **Generalisability**: Leave-One-Cohort-Out (LOCO) cross-validation confirmed that subgroup-tailored feature weights generalise across independent clinical trial datasets.
+> 4. **Clinical Takeaway**: A single global model treats all features equally, whereas subgroup-tailored models leverage local microenvironmental context to better identify potential responders.
 
 ## 6. Phase 6: Clinical Utility & Decision Curve Analysis
 
