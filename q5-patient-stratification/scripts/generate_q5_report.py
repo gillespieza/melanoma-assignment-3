@@ -702,8 +702,22 @@ def main() -> None:
             f">   - **Toxicity Avoidance**: By accurately identifying non-responders, the Q5 system prevents predicted non-responders from undergoing ineffective monotherapy, sparing patients from immune-related adverse events.\n"
         )
 
+    if PHASE6_NNT_PLOT_PATH.exists():
+        rel_nnt = PHASE6_NNT_PLOT_PATH.relative_to(PROJECT_ROOT).as_posix()
+        doc_sections.append(
+            f"\n![Number Needed to Treat (NNT) and Positive Predictive Value (PPV) at key decision thresholds.]({rel_nnt})\n\n"
+            f"> [!INFO] Understanding Number Needed to Treat (NNT) & Positive Predictive Value (PPV): Explanation & Takeaways\n"
+            f"> - **What this plot is showing**: Side-by-side comparison of **Positive Predictive Value (PPV / Precision)** and **Number Needed to Treat (NNT)** across decision strategies at key clinical decision thresholds ($p_t = 0.30$ and $p_t = 0.50$). NNT is defined mathematically as $\\text{{NNT}} = \\frac{{1}}{{\\text{{PPV}}}}$, representing the average number of patients that must receive anti-PD-1 monotherapy to achieve one objective complete or partial clinical response.\n"
+            f"> - **How to interpret the plot**:\n"
+            f">   1. **Positive Predictive Value (PPV, Left Panel)**: Higher bars are better. PPV indicates the proportion of treated patients who achieve objective response. Under empirical 'Treat All', PPV equals the baseline population response rate ($42.1\\%$). Model-guided strategies increase PPV by filtering out predicted non-responders.\n"
+            f">   2. **Number Needed to Treat (NNT, Right Panel)**: Lower bars are better. An unselected 'Treat All' strategy requires treating $2.38$ patients to achieve $1$ response. A lower NNT indicates greater therapeutic efficiency, minimising unhelpful drug exposure.\n"
+            f"> - **Key Takeaways**:\n"
+            f">   - **Superior Clinical Efficiency**: At $p_t = 0.30$, the Q5 Phenotype-Stratified system reduces NNT to **{nnt_q5_30:.2f}** (vs **{nnt_all_30:.2f}** for Treat All), achieving a **{nnt_improvement:.1f}\\% improvement** in treatment efficiency.\n"
+            f">   - **Enhanced Precision**: The Q5 system increases PPV to **{ppv_q5_30*100:.1f}\\%** (vs **42.1\\%** for Treat All), ensuring a higher proportion of treated patients derive true clinical benefit.\n"
+            f">   - **Clinical Decision Impact**: Higher decision thresholds ($p_t = 0.50$) further optimise precision and reduce NNT, allowing clinicians to tailor treatment aggressiveness to individual patient risk profiles.\n"
+        )
+
     for plot_path, caption in [
-        (PHASE6_NNT_PLOT_PATH, "Number Needed to Treat (NNT) and Positive Predictive Value (PPV) at key decision thresholds."),
         (PHASE6_PHENO_PLOT_PATH, "Net Benefit breakdown by biological phenotype at $p_t = 0.30$."),
         (PHASE6_TOX_PLOT_PATH, "Non-responders spared from unnecessary monotherapy toxicity across decision thresholds."),
     ]:
