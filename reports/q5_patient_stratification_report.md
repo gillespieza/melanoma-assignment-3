@@ -198,7 +198,7 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 > [!INFO] Figure Interpretation: Q3 ODE Trajectory Simulations
 > - **What this plot shows**: Dynamic 180-day relative tumour volume $T(t)/K$ trajectories simulated using the Kuznetsov-de Pillis ODE system parameterised by cluster biomarker means.
 > - **Complete Regression ($T(180) \to 0.00$)**: *Immune Hot* (solid crimson) achieves complete tumour burden clearance by Day 60. *Mutant-Driven* (solid orange) achieves complete tumour burden clearance by Day 90–120.
-> - **Resistance & Combination Rescue**: *M2 Immunosuppressive* under anti-PD-1 monotherapy (solid purple) experiences uncontrolled growth ($T(180) = 0.94$). Adding an M2-depleting agent (dashed purple) restores T-cell killing efficiency ($c \to 0.40$), driving complete tumor regression ($T(180) \to 0.00$).
+> - **Resistance & Combination Rescue**: *M2 Immunosuppressive* under anti-PD-1 monotherapy (solid purple) experiences uncontrolled growth ($T(180) = 0.94$). Adding an M2-depleting agent (dashed purple) restores T-cell killing efficiency ($c \to 0.40$), driving complete tumour regression ($T(180) \to 0.00$).
 
 ### Overall Survival Stratification by ODE Checkpoint Tumour Burden
 
@@ -227,7 +227,7 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 > - **Orthogonal Protein Validation**: ODE-predicted baseline pERK correlates significantly with TCGA Reverse-Phase Protein Array (RPPA) measured phospho-ERK ($n = 310, r = 0.175, p = 0.002$), confirming that the kinetic parameters capture true cellular signaling.
 
 ### Key Takeaways
-- **Dynamic Response Prediction**: 180-day ODE simulations capture temporal tumor regression curves that match clinical response outcomes.
+- **Dynamic Response Prediction**: 180-day ODE simulations capture temporal tumour regression curves that match clinical response outcomes.
 - **Biological Rationale for Combination Therapy**: Proves mathematically why *M2 Immunosuppressive* patients fail single-agent anti-PD-1 and require dual-agent macrophage/CAF targeting.
 - **Clinical Prognostic Power**: ODE checkpoint tumour burden produces a highly significant 82-month survival separation ($p = 0.0024$).
 - **Mechanistic Efficiency**: 3-feature ODE model beats 12-feature Logistic Regression and Neural Networks while remaining completely transparent and biologically grounded.

@@ -393,7 +393,7 @@ def main() -> None:
             "> [!INFO] Figure Interpretation: Q3 ODE Trajectory Simulations\n"
             "> - **What this plot shows**: Dynamic 180-day relative tumour volume $T(t)/K$ trajectories simulated using the Kuznetsov-de Pillis ODE system parameterised by cluster biomarker means.\n"
             "> - **Complete Regression ($T(180) \\to 0.00$)**: *Immune Hot* (solid crimson) achieves complete tumour burden clearance by Day 60. *Mutant-Driven* (solid orange) achieves complete tumour burden clearance by Day 90–120.\n"
-            "> - **Resistance & Combination Rescue**: *M2 Immunosuppressive* under anti-PD-1 monotherapy (solid purple) experiences uncontrolled growth ($T(180) = 0.94$). Adding an M2-depleting agent (dashed purple) restores T-cell killing efficiency ($c \\to 0.40$), driving complete tumor regression ($T(180) \\to 0.00$).\n"
+            "> - **Resistance & Combination Rescue**: *M2 Immunosuppressive* under anti-PD-1 monotherapy (solid purple) experiences uncontrolled growth ($T(180) = 0.94$). Adding an M2-depleting agent (dashed purple) restores T-cell killing efficiency ($c \\to 0.40$), driving complete tumour regression ($T(180) \\to 0.00$).\n"
         )
 
     if Q3_KM_CHECKPOINT_PATH.exists():
@@ -429,7 +429,7 @@ def main() -> None:
 
     doc_sections.append(
         "### Key Takeaways\n"
-        "- **Dynamic Response Prediction**: 180-day ODE simulations capture temporal tumor regression curves that match clinical response outcomes.\n"
+        "- **Dynamic Response Prediction**: 180-day ODE simulations capture temporal tumour regression curves that match clinical response outcomes.\n"
         "- **Biological Rationale for Combination Therapy**: Proves mathematically why *M2 Immunosuppressive* patients fail single-agent anti-PD-1 and require dual-agent macrophage/CAF targeting.\n"
         "- **Clinical Prognostic Power**: ODE checkpoint tumour burden produces a highly significant 82-month survival separation ($p = 0.0024$).\n"
         "- **Mechanistic Efficiency**: 3-feature ODE model beats 12-feature Logistic Regression and Neural Networks while remaining completely transparent and biologically grounded.\n"
