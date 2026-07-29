@@ -134,26 +134,31 @@ csv_path = os.path.join(RESULTS_DIR, "ml_vs_ode_comparison.csv")
 results.to_csv(csv_path, index=False)
 
 # ─── Plot ─────────────────────────────────────────────────────────────────────
+sys.path.insert(0, BASE_DIR)
+from src.styles import set_presentation_style
+set_presentation_style(dpi=300)
+
 names = list(models.keys())
 means = [r["mean_auc"] for r in rows]
 stds  = [r["std_auc"] for r in rows]
-colors = ["#DC2626", "#9CA3AF", "#6B7280", "#4B5563"]  # ODE red, ML greys
+colors = ["#0072B2", "#B0BEC5", "#37474F", "#78909C"]  # Okabe-Ito Blue for ODE, Slate/Grey for ML
 
-fig, ax = plt.subplots(figsize=(9, 6))
-bars = ax.bar(names, means, yerr=stds, capsize=7, color=colors,
-              alpha=0.9, edgecolor="black")
-ax.axhline(0.5, color="black", ls="--", lw=1, label="Random chance (0.5)")
-ax.set_ylabel("ROC-AUC (5-fold CV)\nhigher is better", fontsize=12)
+fig, ax = plt.subplots(figsize=(9, 6), dpi=300)
+bars = ax.bar(names, means, yerr=stds, capsize=6, color=colors,
+              alpha=0.9, edgecolor="#1E293B", linewidth=1.2,
+              error_kw={"elinewidth": 1.5, "ecolor": "#1E293B"})
+ax.axhline(0.5, color="#D55E00", ls="--", lw=1.5, label="Random chance (0.5)")
+ax.set_ylabel("ROC-AUC (5-fold CV)\nhigher is better", fontsize=12, fontweight="bold")
 ax.set_title("Mechanistic ODE vs Machine Learning\nPredicting 2-Year Survival — "
-             "TCGA-SKCM Melanoma", fontsize=13, fontweight="bold")
+             "TCGA-SKCM Melanoma", fontsize=13, fontweight="bold", pad=15)
 ax.set_ylim(0.4, max(0.75, max(means) + 0.1))
 for bar, m in zip(bars, means):
     ax.text(bar.get_x() + bar.get_width() / 2, m + 0.012, f"{m:.3f}",
             ha="center", va="bottom", fontsize=11, fontweight="bold")
-ax.legend()
+ax.legend(loc="upper right", frameon=True, facecolor="white", edgecolor="#CCCCCC")
 plt.tight_layout()
 fig.savefig(os.path.join(PLOTS_DIR, "ml_vs_ode_comparison.pdf"), bbox_inches="tight")
-fig.savefig(os.path.join(PLOTS_DIR, "ml_vs_ode_comparison.png"), dpi=150, bbox_inches="tight")
+fig.savefig(os.path.join(PLOTS_DIR, "ml_vs_ode_comparison.png"), dpi=300, bbox_inches="tight")
 plt.close(fig)
 
 print(f"\n  Saved: {csv_path}")
