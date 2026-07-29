@@ -484,7 +484,7 @@ def plot_net_benefit_by_phenotype(
     ax.set_title(f"Clinical Net Benefit Breakdown across Phenotypes (Decision Threshold p_t = {pt:.2f})", fontsize=13, fontweight="bold", pad=12)
     ax.set_xlabel("Biological Phenotype Subgroup", fontsize=11, fontweight="bold")
     ax.set_ylabel("Net Clinical Benefit", fontsize=11, fontweight="bold")
-    ax.legend(loc="upper right", frameon=True, facecolor="white", edgecolor="#E5E7EB", fontsize=10)
+    ax.legend(loc="upper left", frameon=True, facecolor="white", edgecolor="#E5E7EB", fontsize=10)
     ax.grid(True, axis="y", color="#E5E7EB", linewidth=0.5, alpha=0.6)
 
     for p in ax.patches:
