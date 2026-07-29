@@ -32,18 +32,17 @@ set_presentation_style()
 
 # Phenotype Cluster Index Colors matching PHENOTYPE_PALETTE
 CLUSTER_PALETTE = {
-    0: PHENOTYPE_PALETTE["Immune Hot"],                 # Crimson Red (#D55E00)
+    0: PHENOTYPE_PALETTE["Mutant-Driven"],              # Okabe-Ito Orange (#E69F00)
     1: PHENOTYPE_PALETTE["Immune Cold"],                # Okabe-Ito Blue (#0072B2)
-    2: PHENOTYPE_PALETTE["Immunosuppressive M2-High"],  # Okabe-Ito Reddish Purple (#CC79A7)
-    3: PHENOTYPE_PALETTE["Mutant-Driven"],              # Okabe-Ito Orange (#E69F00)
+    2: PHENOTYPE_PALETTE["Immune Hot"],                 # Crimson Red (#D55E00)
+    3: PHENOTYPE_PALETTE["Immunosuppressive M2-High"],  # Okabe-Ito Reddish Purple (#CC79A7)
 }
 
 
 def prepare_clustering_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, np.ndarray]:
-    """Select and standardize numeric immune & microenvironment features for clustering."""
+    """Select and standardize multi-modal immune microenvironment and driver mutation features for patient clustering."""
     feature_cols = [
-        c for c in ["TIS", "CYT", "IFN_gamma", "CD8_Tcell", "PD_L1", "M1_M2_Ratio",
-                    "M1_score", "M2_score", "CD8_T_cells", "M1_Macrophages", "M2_Macrophages", "CAFs"]
+        c for c in ["TIS", "CYT", "CD8_T_cells", "M1_Macrophages", "M2_Macrophages", "CAFs", "mut_BRAF", "mut_NRAS", "mut_NF1"]
         if c in df.columns
     ]
     df_clean = df.dropna(subset=feature_cols).copy()

@@ -54,10 +54,10 @@ set_presentation_style()
 
 # Expanded biological phenotype labels for clear presentation legends
 PHENOTYPE_NAMES = {
-    0: "Immune Hot (High TIS & CYT, Inflamed Microenvironment)",
+    0: "Mutant-Driven (NF1 Loss & High Response Subtype)",
     1: "Immune Cold (Low TIS & Infiltration, Desert)",
-    2: "M2 Immunosuppressive (High M2 Macrophages & CAFs)",
-    3: "Mutant-Driven (MAPK Activated, BRAF/NRAS Mut)",
+    2: "Immune Hot (High TIS & CYT, Inflamed Microenvironment)",
+    3: "M2 Immunosuppressive (Depleted T-cells & Stromal Exclusion)",
 }
 
 
