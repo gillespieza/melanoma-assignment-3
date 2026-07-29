@@ -182,7 +182,7 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
     ax.set_ylabel("Relative Tumour Volume T(t) / K", fontsize=12, fontweight="bold")
     ax.set_ylim(-0.05, 1.05)
     ax.axhline(0, color="#37474F", linestyle=":", linewidth=1.0, alpha=0.7)
-    ax.legend(title="Phenotype & Therapy Arm", loc="center right", frameon=True, fontsize=9.5)
+    ax.legend(title="Phenotype & Therapy Arm", loc="lower right", bbox_to_anchor=(0.98, 0.12), frameon=True, fontsize=9.0)
 
     plt.tight_layout()
     save_path.parent.mkdir(parents=True, exist_ok=True)
