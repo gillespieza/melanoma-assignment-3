@@ -1,700 +1,700 @@
-COHORT,PATIENT_ID,PREDICTED_RESPONSE_SCORE,ACTUAL_RESPONSE,TREATMENT_RECEIVED
-Riaz 2017,RIAZ_PT18,0.7555,Responder,Nivolumab
-Riaz 2017,RIAZ_PT101,0.7526,Responder,Nivolumab
-Riaz 2017,RIAZ_PT101,0.7497,Responder,Nivolumab
-Hugo 2016,HUGO_PT38,0.7374,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D3-A51E,0.7372,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-EE-A2GK,0.7314,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-D3-A2JB,0.7307,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FS-A1Z4,0.7305,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-DA-A1IB,0.7207,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-FS-A1ZW,0.7206,N/A (Untreated Cohort),Immunotherapy
-Riaz 2017,RIAZ_PT77,0.718,Unknown,Nivolumab
-TCGA-SKCM,TCGA-RP-A693,0.7122,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT125,0.7082,Responder,Nivolumab
-TCGA-SKCM,TCGA-YD-A9TA,0.6991,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A3AA,0.6933,N/A (Untreated Cohort),Vaccine
-TCGA-SKCM,TCGA-EE-A2ME,0.6907,N/A (Untreated Cohort),Vaccine
-TCGA-SKCM,TCGA-ER-A19A,0.6892,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-ER-A197,0.6832,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D9-A3Z1,0.6828,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2MJ,0.6822,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A51H,0.677,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-EE-A3JD,0.6764,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A2JO,0.6724,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EE-A2MC,0.6716,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A181,0.6713,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2MG,0.6703,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy, Vaccine"
-TCGA-SKCM,TCGA-FS-A1Z0,0.6684,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2MU,0.6673,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EE-A3JH,0.6643,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A5VV,0.6616,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2GH,0.6609,N/A (Untreated Cohort),Vaccine
-TCGA-SKCM,TCGA-ER-A2NG,0.6564,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
-Riaz 2017,RIAZ_PT65,0.655,Unknown,Nivolumab
-TCGA-SKCM,TCGA-EE-A29M,0.6545,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-ER-A19P,0.6523,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT87,0.6518,Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT149,0.6513,Unknown,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A29T,0.6499,N/A (Untreated Cohort),Targeted Molecular Therapy
-Hugo 2016,HUGO_PT29,0.6474,Non-Responder,Pembrolizumab
-Hugo 2016,HUGO_PT23,0.647,Non-Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT126,0.6469,Responder,Nivolumab
-TCGA-SKCM,TCGA-EE-A2GL,0.6452,N/A (Untreated Cohort),"Radiation Therapy, Vaccine"
-TCGA-SKCM,TCGA-FS-A1ZT,0.6412,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-ER-A19O,0.635,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-D9-A149,0.6346,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT169,0.6336,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-FR-A3YN,0.628,N/A (Untreated Cohort),Immunotherapy
-Liu 2019,LIU_PATIENT181,0.6241,Responder,Nivolumab
-TCGA-SKCM,TCGA-EB-A6R0,0.6239,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-HR-A2OH,0.6222,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
-Riaz 2017,RIAZ_PT35,0.6221,Unknown,Nivolumab
-TCGA-SKCM,TCGA-ER-A19W,0.6169,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT34,0.6166,Responder,Nivolumab
-TCGA-SKCM,TCGA-Z2-A8RT,0.6165,N/A (Untreated Cohort),Targeted Molecular Therapy
-TCGA-SKCM,TCGA-EE-A2MR,0.613,N/A (Untreated Cohort),Radiation Therapy
-Riaz 2017,RIAZ_PT92,0.6094,Unknown,Nivolumab
-Riaz 2017,RIAZ_PT13,0.6074,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT145,0.6068,Responder,Pembrolizumab
-Riaz 2017,RIAZ_PT105,0.6026,Unknown,Nivolumab
-TCGA-SKCM,TCGA-W3-AA1W,0.6025,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-Liu 2019,LIU_PATIENT133,0.6022,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D3-A5GU,0.6021,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT10,0.5998,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-ER-A1A1,0.5986,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-Riaz 2017,RIAZ_PT80,0.5966,Unknown,Nivolumab
-Riaz 2017,RIAZ_PT31,0.5956,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-GN-A9SD,0.5949,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-D3-A8GM,0.5938,N/A (Untreated Cohort),Radiation Therapy
-Liu 2019,LIU_PATIENT185,0.5932,Unknown,Nivolumab
-Riaz 2017,RIAZ_PT44,0.5931,Responder,Nivolumab
-Liu 2019,LIU_PATIENT99,0.5877,Responder,Nivolumab
-Riaz 2017,RIAZ_PT18,0.5832,Responder,Nivolumab
-Liu 2019,LIU_PATIENT62,0.5822,Responder,Nivolumab
-Riaz 2017,RIAZ_PT65,0.582,Unknown,Nivolumab
-TCGA-SKCM,TCGA-D3-A8GD,0.5801,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT131,0.5798,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-WE-AAA4,0.5796,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-D3-A1QB,0.5794,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-W3-AA1R,0.5753,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy, Vaccine"
-TCGA-SKCM,TCGA-EE-A2MS,0.5742,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-ER-A2NH,0.5734,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-GF-A4EO,0.5729,N/A (Untreated Cohort),Radiation Therapy
-Riaz 2017,RIAZ_PT46,0.5729,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-ER-A42L,0.5702,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT137,0.5697,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D3-A8GJ,0.5691,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT42,0.5689,Responder,Nivolumab
-Liu 2019,LIU_PATIENT179,0.5681,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D3-A1Q7,0.5664,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-FR-A7UA,0.5655,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A51F,0.5638,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FR-A44A,0.5633,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-D9-A6E9,0.562,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-ER-A19M,0.5611,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-ER-A3EV,0.5602,N/A (Untreated Cohort),Vaccine
-TCGA-SKCM,TCGA-EE-A2GU,0.56,N/A (Untreated Cohort),Vaccine
-TCGA-SKCM,TCGA-EE-A3JE,0.558,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT98,0.5539,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EB-A44Q,0.5518,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-DA-A1HV,0.5514,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-GN-A4U8,0.5502,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-ER-A19N,0.5488,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-Riaz 2017,RIAZ_PT94,0.5486,Responder,Nivolumab
-Liu 2019,LIU_PATIENT15,0.5458,Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT192,0.5446,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D9-A1JX,0.5416,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FR-A728,0.541,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-FS-A1ZM,0.5407,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT89,0.5404,Unknown,Nivolumab
-TCGA-SKCM,TCGA-EE-A2A6,0.5396,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT3,0.5394,Responder,Nivolumab
-TCGA-SKCM,TCGA-EE-A2GC,0.5384,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT94,0.5364,Non-Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT33,0.5355,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-WE-A8ZN,0.5353,N/A (Untreated Cohort),Chemotherapy
-Liu 2019,LIU_PATIENT141,0.535,Responder,Nivolumab
-Liu 2019,LIU_PATIENT79,0.5329,Non-Responder,Pembrolizumab
-Hugo 2016,HUGO_PT25,0.5317,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-QB-AA9O,0.5316,N/A (Untreated Cohort),Immunotherapy
-Liu 2019,LIU_PATIENT77,0.5314,Non-Responder,Pembrolizumab
-Riaz 2017,RIAZ_PT48,0.5295,Responder,Nivolumab
-TCGA-SKCM,TCGA-WE-A8ZX,0.5285,N/A (Untreated Cohort),Radiation Therapy
-Liu 2019,LIU_PATIENT20,0.5262,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-ER-A193,0.5259,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT134,0.5239,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A2MN,0.5216,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-Riaz 2017,RIAZ_PT4,0.5216,Unknown,Nivolumab
-TCGA-SKCM,TCGA-FS-A1ZP,0.5211,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-GN-A26C,0.5202,N/A (Untreated Cohort),Radiation Therapy
-Riaz 2017,RIAZ_PT69,0.5186,Unknown,Nivolumab
-TCGA-SKCM,TCGA-D9-A1JW,0.5162,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FW-A5DY,0.5162,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-GF-A3OT,0.5159,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
-Liu 2019,LIU_PATIENT17,0.514,Unknown,Nivolumab
-TCGA-SKCM,TCGA-QB-A6FS,0.5119,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A5SG,0.5118,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A3J5,0.511,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A2J9,0.5099,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-ER-A19S,0.5097,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-GN-A266,0.5091,N/A (Untreated Cohort),Radiation Therapy
-Liu 2019,LIU_PATIENT100,0.5091,Responder,Nivolumab
-Liu 2019,LIU_PATIENT106,0.5082,Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT107,0.5082,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A2M8,0.5076,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EE-A2GJ,0.5058,N/A (Untreated Cohort),Radiation Therapy
-Riaz 2017,RIAZ_PT10,0.5055,Unknown,Nivolumab
-TCGA-SKCM,TCGA-EE-A2A0,0.505,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A3C8,0.5043,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-GN-A263,0.504,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT28,0.5035,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-DA-A3F8,0.503,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT28,0.5029,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-RP-A6K9,0.5027,N/A (Untreated Cohort),None Recorded
-Hugo 2016,HUGO_PT27,0.5011,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D3-A2JH,0.5004,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-EE-A3AE,0.4996,N/A (Untreated Cohort),Vaccine
-Liu 2019,LIU_PATIENT189,0.4991,Responder,Pembrolizumab
-Riaz 2017,RIAZ_PT34,0.4981,Responder,Nivolumab
-TCGA-SKCM,TCGA-EE-A20F,0.4963,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EE-A2ML,0.4953,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
-TCGA-SKCM,TCGA-WE-A8ZO,0.4953,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-GN-A26A,0.4946,N/A (Untreated Cohort),Radiation Therapy
-Liu 2019,LIU_PATIENT159,0.4941,Unknown,Pembrolizumab
-TCGA-SKCM,TCGA-EB-A5UM,0.4937,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A29P,0.4937,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FR-A8YE,0.4935,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT166,0.4935,Responder,Nivolumab
-Liu 2019,LIU_PATIENT204,0.4928,Responder,Pembrolizumab
-Riaz 2017,RIAZ_PT49,0.4924,Responder,Nivolumab
-Hugo 2016,HUGO_PT20,0.4886,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A3AC,0.4874,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-DA-A3F2,0.4866,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-D3-A5GN,0.485,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT195,0.4833,Responder,Nivolumab
-Liu 2019,LIU_PATIENT63,0.4828,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT86,0.4826,Unknown,Pembrolizumab
-TCGA-SKCM,TCGA-FR-A7U9,0.4804,N/A (Untreated Cohort),"Immunotherapy, Vaccine"
-Riaz 2017,RIAZ_PT67,0.4792,Unknown,Nivolumab
-Liu 2019,LIU_PATIENT7,0.4789,Unknown,Pembrolizumab
-Liu 2019,LIU_PATIENT191,0.4776,Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A2J8,0.4767,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A3JA,0.4766,N/A (Untreated Cohort),Radiation Therapy
-Riaz 2017,RIAZ_PT59,0.4757,Unknown,Nivolumab
-Riaz 2017,RIAZ_PT82,0.4698,Unknown,Nivolumab
-Liu 2019,LIU_PATIENT11,0.4696,Non-Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT6,0.4696,Unknown,Pembrolizumab
-TCGA-SKCM,TCGA-D3-A3C3,0.4693,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-W3-AA1Q,0.4689,N/A (Untreated Cohort),"Chemotherapy, Hormone Therapy, Immunotherapy, Radiation Therapy, Targeted Molecular Therapy, Vaccine"
-Riaz 2017,RIAZ_PT77,0.4686,Unknown,Nivolumab
-TCGA-SKCM,TCGA-BF-A1PX,0.4681,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-3N-A9WC,0.4673,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT44,0.4672,Responder,Nivolumab
-TCGA-SKCM,TCGA-BF-AAP0,0.467,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2GE,0.467,N/A (Untreated Cohort),Radiation Therapy
-Riaz 2017,RIAZ_PT11,0.4645,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A3CB,0.4642,N/A (Untreated Cohort),Vaccine
-TCGA-SKCM,TCGA-D3-A3MR,0.4641,N/A (Untreated Cohort),Radiation Therapy
-Hugo 2016,HUGO_PT15,0.464,Responder,Pembrolizumab
-Riaz 2017,RIAZ_PT92,0.4634,Unknown,Nivolumab
-Riaz 2017,RIAZ_PT49,0.4608,Responder,Nivolumab
-TCGA-SKCM,TCGA-EE-A2GT,0.4577,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT11,0.4567,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-GN-A4U5,0.4553,N/A (Untreated Cohort),Immunotherapy
-Riaz 2017,RIAZ_PT2,0.4541,Unknown,Nivolumab
-Riaz 2017,RIAZ_PT72,0.4541,Responder,Nivolumab
-Riaz 2017,RIAZ_PT90,0.4541,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A1Q6,0.4535,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-FR-A729,0.4534,N/A (Untreated Cohort),Immunotherapy
-Riaz 2017,RIAZ_PT36,0.4533,Unknown,Nivolumab
-TCGA-SKCM,TCGA-EB-A4XL,0.4527,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2M5,0.4504,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-EE-A3AF,0.45,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-Hugo 2016,HUGO_PT37,0.4499,Responder,Pembrolizumab
-Riaz 2017,RIAZ_PT98,0.4495,Unknown,Nivolumab
-Liu 2019,LIU_PATIENT75,0.4484,Responder,Nivolumab
-Liu 2019,LIU_PATIENT30,0.4482,Unknown,Pembrolizumab
-Riaz 2017,RIAZ_PT48,0.448,Responder,Nivolumab
-Hugo 2016,HUGO_PT2,0.4476,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-ER-A198,0.4465,N/A (Untreated Cohort),Chemotherapy
-Riaz 2017,RIAZ_PT87,0.4455,Unknown,Nivolumab
-Riaz 2017,RIAZ_PT1,0.4437,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-DA-A1HW,0.4435,N/A (Untreated Cohort),Radiation Therapy
-Liu 2019,LIU_PATIENT205,0.44,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-Z2-AA3V,0.4387,N/A (Untreated Cohort),Targeted Molecular Therapy
-TCGA-SKCM,TCGA-W3-A824,0.4363,N/A (Untreated Cohort),Immunotherapy
-Riaz 2017,RIAZ_PT30,0.4355,Responder,Nivolumab
-Liu 2019,LIU_PATIENT18,0.4352,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-FW-A3I3,0.435,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A8GN,0.432,N/A (Untreated Cohort),Immunotherapy
-Liu 2019,LIU_PATIENT130,0.4314,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT172,0.4314,Unknown,Pembrolizumab
-TCGA-SKCM,TCGA-ER-A199,0.4308,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A8GS,0.4305,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT132,0.4301,Responder,Pembrolizumab
-Hugo 2016,HUGO_PT19,0.4285,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-WE-A8ZT,0.4282,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT27,0.4247,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-W3-AA1V,0.4245,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-RP-A695,0.4241,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT167,0.4241,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-YG-AA3P,0.423,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-ER-A19K,0.4224,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A3Y6,0.421,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-EB-A4IS,0.4205,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-ER-A3ES,0.42,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-Z2-AA3S,0.4188,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EE-A2MD,0.4184,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-Hugo 2016,HUGO_PT5,0.418,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-WE-A8K1,0.417,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A551,0.4167,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2M7,0.4166,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EE-A3J8,0.4165,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-YG-AA3O,0.4161,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-EB-A41B,0.4159,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A8GL,0.4157,N/A (Untreated Cohort),Radiation Therapy
-Riaz 2017,RIAZ_PT82,0.4153,Unknown,Nivolumab
-TCGA-SKCM,TCGA-WE-A8ZQ,0.4152,N/A (Untreated Cohort),"Chemotherapy, Targeted Molecular Therapy"
-TCGA-SKCM,TCGA-EB-A3XB,0.4143,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A3J7,0.4142,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FS-A4F9,0.4139,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-EB-A6L9,0.4136,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A2JF,0.4135,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT144,0.4135,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D3-A3CE,0.4132,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EB-A5SF,0.412,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FW-A3R5,0.4111,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-FS-A1ZH,0.4108,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT38,0.4107,Unknown,Nivolumab
-Liu 2019,LIU_PATIENT78,0.4104,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-GF-A6C9,0.4094,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-D3-A3C6,0.4077,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT67,0.4077,Unknown,Nivolumab
-Liu 2019,LIU_PATIENT184,0.4069,Responder,Nivolumab
-Riaz 2017,RIAZ_PT84,0.4068,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-GN-A265,0.4067,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FS-A4F0,0.4066,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
-Liu 2019,LIU_PATIENT206,0.4066,Non-Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT203,0.4064,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A2MK,0.4063,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A24D,0.4061,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
-TCGA-SKCM,TCGA-FS-A1ZK,0.4056,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT158,0.4056,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D3-A2J6,0.4053,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT162,0.4053,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT56,0.405,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EB-A24C,0.4049,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
-TCGA-SKCM,TCGA-GN-A4U7,0.4049,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-W3-A825,0.4046,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
-Riaz 2017,RIAZ_PT4,0.4046,Unknown,Nivolumab
-Riaz 2017,RIAZ_PT1,0.4045,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A51J,0.4042,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-ER-A19G,0.4041,N/A (Untreated Cohort),Chemotherapy
-Riaz 2017,RIAZ_PT3,0.404,Responder,Nivolumab
-TCGA-SKCM,TCGA-ER-A2ND,0.4038,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2A1,0.4033,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A20C,0.4027,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EE-A2MP,0.4024,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-DA-A1IC,0.4021,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT14,0.4008,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-BF-A1PZ,0.3999,N/A (Untreated Cohort),None Recorded
-Hugo 2016,HUGO_PT13,0.3991,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-DA-A1HY,0.3984,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A29V,0.3982,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-FS-A1ZN,0.398,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A3AD,0.3972,N/A (Untreated Cohort),Targeted Molecular Therapy
-TCGA-SKCM,TCGA-EE-A29E,0.3966,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FR-A2OS,0.3964,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-ER-A19L,0.3961,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A2JN,0.3957,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-D9-A1X3,0.3957,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-WE-AA9Y,0.3956,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2GM,0.3955,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FW-A3TU,0.3954,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT31,0.3942,Non-Responder,Pembrolizumab
-Hugo 2016,HUGO_PT6,0.394,Responder,Pembrolizumab
-Riaz 2017,RIAZ_PT58,0.3931,Unknown,Nivolumab
-TCGA-SKCM,TCGA-EE-A3AG,0.393,N/A (Untreated Cohort),"Radiation Therapy, Targeted Molecular Therapy"
-Liu 2019,LIU_PATIENT35,0.3929,Unknown,Nivolumab
-Liu 2019,LIU_PATIENT24,0.3928,Non-Responder,Nivolumab
-Riaz 2017,RIAZ_PT103,0.3927,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EE-A29L,0.3923,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-BF-A3DN,0.3922,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A2JE,0.3922,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-DA-A1I5,0.3922,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT58,0.3922,Non-Responder,Nivolumab
-Riaz 2017,RIAZ_PT17,0.3919,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT38,0.3917,Non-Responder,Nivolumab
-Riaz 2017,RIAZ_PT84,0.3916,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT105,0.3912,Unknown,Pembrolizumab
-TCGA-SKCM,TCGA-EB-A5UL,0.391,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-FS-A1Z3,0.3909,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-DA-A1I8,0.3908,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FS-A4F5,0.3905,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-WE-A8K6,0.39,N/A (Untreated Cohort),Chemotherapy
-Liu 2019,LIU_PATIENT197,0.3899,Responder,Nivolumab
-TCGA-SKCM,TCGA-WE-AAA3,0.3898,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT51,0.3895,Responder,Nivolumab
-TCGA-SKCM,TCGA-EB-A44O,0.3894,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2GN,0.3894,N/A (Untreated Cohort),Radiation Therapy
-Liu 2019,LIU_PATIENT25,0.3888,Responder,Pembrolizumab
-Riaz 2017,RIAZ_PT36,0.3887,Unknown,Nivolumab
-TCGA-SKCM,TCGA-EB-A44R,0.3886,N/A (Untreated Cohort),None Recorded
-Hugo 2016,HUGO_PT22,0.3882,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-ER-A196,0.3872,N/A (Untreated Cohort),None Recorded
-Hugo 2016,HUGO_PT28,0.3869,Responder,Pembrolizumab
-Riaz 2017,RIAZ_PT26,0.3861,Unknown,Nivolumab
-TCGA-SKCM,TCGA-FS-A1ZU,0.386,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A5GL,0.3858,N/A (Untreated Cohort),Radiation Therapy
-Hugo 2016,HUGO_PT16,0.3857,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-ER-A19Q,0.3856,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-ER-A194,0.3851,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT38,0.3851,Unknown,Nivolumab
-Hugo 2016,HUGO_PT32,0.3847,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D3-A8GC,0.3846,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-ER-A42H,0.3831,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT44,0.3828,Responder,Nivolumab
-TCGA-SKCM,TCGA-ER-A19H,0.3827,N/A (Untreated Cohort),Chemotherapy
-Liu 2019,LIU_PATIENT201,0.3823,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EB-A5KH,0.3822,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
-TCGA-SKCM,TCGA-W3-AA21,0.3822,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
-TCGA-SKCM,TCGA-DA-A95V,0.382,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A4OZ,0.3817,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A8GB,0.3815,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-FS-A1ZF,0.3813,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-WE-A8ZM,0.3812,N/A (Untreated Cohort),Immunotherapy
-Liu 2019,LIU_PATIENT142,0.381,Unknown,Pembrolizumab
-TCGA-SKCM,TCGA-BF-A1PV,0.3806,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A2JL,0.3806,N/A (Untreated Cohort),Vaccine
-Liu 2019,LIU_PATIENT183,0.3806,Non-Responder,Pembrolizumab
-Riaz 2017,RIAZ_PT76,0.3804,Unknown,Nivolumab
-TCGA-SKCM,TCGA-ER-A2NF,0.3803,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
-TCGA-SKCM,TCGA-D3-A3ML,0.3802,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-GN-A4U3,0.38,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-Hugo 2016,HUGO_PT7,0.3799,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D9-A4Z3,0.3798,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-DA-A1I1,0.3797,N/A (Untreated Cohort),Immunotherapy
-Riaz 2017,RIAZ_PT81,0.3797,Unknown,Nivolumab
-TCGA-SKCM,TCGA-EB-A41A,0.3791,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FS-A1ZZ,0.3789,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT26,0.3787,Unknown,Nivolumab
-TCGA-SKCM,TCGA-DA-A1I0,0.3785,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D9-A6EC,0.3782,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT1,0.3779,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-WE-A8ZY,0.3778,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FS-A4F2,0.3777,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-GN-A262,0.3776,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-W3-A828,0.3774,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-FS-A1ZE,0.3773,N/A (Untreated Cohort),"Chemotherapy, Targeted Molecular Therapy"
-TCGA-SKCM,TCGA-EB-A5UN,0.377,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-ER-A19T,0.3768,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-D3-A1Q4,0.3765,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A2JK,0.3765,N/A (Untreated Cohort),Radiation Therapy
-Riaz 2017,RIAZ_PT62,0.3765,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT4,0.3765,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D3-A8GK,0.3762,N/A (Untreated Cohort),"Radiation Therapy, Vaccine"
-TCGA-SKCM,TCGA-ER-A2NF,0.3762,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
-TCGA-SKCM,TCGA-EE-A2MT,0.3761,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EB-A3XD,0.3759,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT135,0.3758,Responder,Pembrolizumab
-Riaz 2017,RIAZ_PT39,0.3757,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A5GO,0.3756,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A8GP,0.3755,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT200,0.3755,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A2GR,0.3754,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-BF-A3DM,0.3752,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A3C1,0.3751,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT165,0.3751,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A29W,0.375,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EE-A185,0.3745,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-FS-A4FB,0.3742,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A3CF,0.3741,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT17,0.3741,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT196,0.3739,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EE-A29D,0.3736,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-FS-A1ZC,0.3735,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A6QY,0.3733,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
-Riaz 2017,RIAZ_PT85,0.3732,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A3MO,0.3731,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A1Q1,0.373,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Vaccine"
-TCGA-SKCM,TCGA-D3-A51K,0.373,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A3AH,0.373,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-FS-A1ZD,0.3728,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-BF-A5EQ,0.3723,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A8GE,0.3722,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A3CC,0.3721,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A17Z,0.3721,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-YD-A89C,0.3719,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A431,0.3714,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A184,0.3711,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT108,0.3709,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A29A,0.3707,N/A (Untreated Cohort),Radiation Therapy
-Liu 2019,LIU_PATIENT67,0.3707,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-BF-A3DJ,0.3705,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT30,0.3704,Responder,Nivolumab
-Riaz 2017,RIAZ_PT78,0.3703,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT37,0.3702,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A5GS,0.3698,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT150,0.3697,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-RP-A690,0.3695,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FR-A3YO,0.3692,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-3N-A9WB,0.3691,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT148,0.369,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D9-A3Z3,0.3685,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FR-A7U8,0.3683,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-ER-A195,0.3682,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-D3-A2JD,0.368,N/A (Untreated Cohort),None Recorded
-Hugo 2016,HUGO_PT12,0.3679,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D9-A4Z5,0.3675,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-ER-A2NE,0.3675,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-ER-A42K,0.3672,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A6QZ,0.367,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-FS-A1ZY,0.3667,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FS-A4FD,0.3665,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-GN-A268,0.3665,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-FR-A3R1,0.3662,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT82,0.3662,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A17X,0.366,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D9-A6EG,0.3658,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT121,0.3658,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-FS-A1ZG,0.3657,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT32,0.3657,Non-Responder,Nivolumab
-Riaz 2017,RIAZ_PT46,0.3656,Non-Responder,Nivolumab
-Hugo 2016,HUGO_PT35,0.3656,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EB-A4OY,0.3652,N/A (Untreated Cohort),"Chemotherapy, Hormone Therapy"
-Riaz 2017,RIAZ_PT2,0.365,Unknown,Nivolumab
-TCGA-SKCM,TCGA-EB-A5VU,0.3648,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-GF-A2C7,0.3644,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A182,0.3639,N/A (Untreated Cohort),"Ancillary, Radiation Therapy"
-Liu 2019,LIU_PATIENT8,0.3639,Unknown,Pembrolizumab
-Liu 2019,LIU_PATIENT13,0.3635,Non-Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT168,0.3634,Responder,Nivolumab
-Liu 2019,LIU_PATIENT188,0.3634,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D9-A4Z2,0.3632,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A1Q3,0.3631,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-EB-A5FP,0.3631,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-EE-A183,0.3631,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EE-A2GI,0.3629,N/A (Untreated Cohort),Vaccine
-TCGA-SKCM,TCGA-GN-A267,0.362,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-FS-A1ZS,0.3618,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-XV-AB01,0.3617,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-EB-A3XE,0.3616,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A44N,0.3613,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT16,0.3613,Unknown,Nivolumab
-TCGA-SKCM,TCGA-EE-A17Y,0.3612,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-ER-A2NB,0.3611,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A2JG,0.3608,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A29S,0.3606,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2MH,0.3605,N/A (Untreated Cohort),"Radiation Therapy, Vaccine"
-TCGA-SKCM,TCGA-EE-A29R,0.3604,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-ER-A3ET,0.3597,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-BF-A1PU,0.3596,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FR-A726,0.3596,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-ER-A19D,0.3594,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-GN-A26D,0.3594,N/A (Untreated Cohort),Other
-TCGA-SKCM,TCGA-D3-A5GT,0.3592,N/A (Untreated Cohort),Immunotherapy
-Riaz 2017,RIAZ_PT85,0.3584,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A1Q9,0.3583,N/A (Untreated Cohort),"Hormone Therapy, Vaccine"
-Liu 2019,LIU_PATIENT9,0.3583,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT155,0.3579,Non-Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT61,0.3578,Unknown,Nivolumab
-TCGA-SKCM,TCGA-GN-A8LK,0.3576,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-WE-A8K5,0.3576,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-D3-A51N,0.3575,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT94,0.3575,Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A8GI,0.3574,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A2JA,0.3573,N/A (Untreated Cohort),Radiation Therapy
-Riaz 2017,RIAZ_PT10,0.3572,Unknown,Nivolumab
-TCGA-SKCM,TCGA-EB-A3Y7,0.3571,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT193,0.3571,Unknown,Pembrolizumab
-TCGA-SKCM,TCGA-BF-A5EO,0.3569,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A3BZ,0.3569,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-FS-A1YW,0.3569,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT34,0.3569,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A2MM,0.3568,N/A (Untreated Cohort),"Radiation Therapy, Vaccine"
-TCGA-SKCM,TCGA-FR-A8YC,0.3564,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-RP-A694,0.3564,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A430,0.3563,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT106,0.3563,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-DA-A95W,0.3561,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT140,0.356,Non-Responder,Pembrolizumab
-Riaz 2017,RIAZ_PT52,0.3558,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT156,0.3558,Non-Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT23,0.3556,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EE-A20H,0.3553,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FS-A4F8,0.3553,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT24,0.3553,Non-Responder,Nivolumab
-Riaz 2017,RIAZ_PT31,0.3553,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A51R,0.3552,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FS-A1Z7,0.3551,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-YD-A9TB,0.355,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT36,0.3549,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-FS-A1YX,0.3541,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT8,0.3541,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT112,0.3541,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EE-A3AB,0.3539,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-ER-A19T,0.3539,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-D9-A3Z4,0.3538,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT9,0.3538,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EB-A4IQ,0.3536,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2GD,0.3536,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT106,0.3536,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT72,0.3536,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT116,0.3532,Non-Responder,Nivolumab
-Hugo 2016,HUGO_PT14,0.3532,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-FS-A1YY,0.353,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT9,0.353,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EB-A3XF,0.3529,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-GN-A4U4,0.3527,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
-TCGA-SKCM,TCGA-D3-A2JP,0.3524,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-BF-A5ER,0.352,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FR-A69P,0.3518,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-GN-A4U9,0.3518,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-FW-A3TV,0.3517,N/A (Untreated Cohort),Immunotherapy
-Liu 2019,LIU_PATIENT147,0.3517,Responder,Nivolumab
-TCGA-SKCM,TCGA-OD-A75X,0.3516,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FS-A1ZA,0.3511,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-WE-AAA0,0.3511,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-EE-A2A5,0.351,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-LH-A9QB,0.351,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT27,0.351,Non-Responder,Nivolumab
-Riaz 2017,RIAZ_PT103,0.3509,Non-Responder,Nivolumab
-Riaz 2017,RIAZ_PT78,0.3509,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT22,0.3509,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EE-A3JB,0.3506,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-EB-A3XC,0.3505,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-FS-A4F4,0.3505,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A29G,0.3503,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A3JI,0.3502,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-FS-A1ZJ,0.3501,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A51T,0.35,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-ER-A19E,0.3499,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-Liu 2019,LIU_PATIENT32,0.3496,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-GF-A769,0.3495,N/A (Untreated Cohort),None Recorded
-Hugo 2016,HUGO_PT31,0.3495,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-FS-A1ZB,0.3494,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D9-A6EA,0.3491,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A57M,0.3491,N/A (Untreated Cohort),"Ancillary, Chemotherapy, Immunotherapy"
-TCGA-SKCM,TCGA-EE-A2A2,0.3491,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-DA-A3F3,0.349,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A4P0,0.349,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT79,0.349,Unknown,Nivolumab
-Riaz 2017,RIAZ_PT108,0.3488,Unknown,Nivolumab
-Hugo 2016,HUGO_PT10,0.3488,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D3-A8GR,0.3487,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A3MV,0.3486,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-D3-A1Q8,0.3485,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-D9-A148,0.3485,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-EB-A5SH,0.3482,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
-TCGA-SKCM,TCGA-ER-A19F,0.3481,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FS-A1ZQ,0.3481,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FS-A1ZR,0.3481,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT83,0.3479,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EE-A20I,0.3477,N/A (Untreated Cohort),Radiation Therapy
-Riaz 2017,RIAZ_PT68,0.3477,Responder,Nivolumab
-TCGA-SKCM,TCGA-GN-A8LL,0.3475,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT117,0.3474,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A2GB,0.3473,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-D3-A3C7,0.3472,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-DA-A1I7,0.3472,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-ER-A19J,0.3472,N/A (Untreated Cohort),Chemotherapy
-Riaz 2017,RIAZ_PT93,0.347,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-GN-A264,0.3467,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-FR-A8YD,0.3465,N/A (Untreated Cohort),Immunotherapy
-Riaz 2017,RIAZ_PT79,0.3463,Unknown,Nivolumab
-TCGA-SKCM,TCGA-DA-A95Y,0.3462,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-ER-A19C,0.3462,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT37,0.3462,Unknown,Nivolumab
-TCGA-SKCM,TCGA-D3-A1QA,0.3461,N/A (Untreated Cohort),Vaccine
-Riaz 2017,RIAZ_PT5,0.3461,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A1Q5,0.3459,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EE-A2GP,0.3457,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-ER-A19B,0.3457,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-WE-A8JZ,0.3454,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A3HV,0.3448,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A180,0.3448,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-FS-A4FC,0.3448,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-W3-AA1O,0.3448,N/A (Untreated Cohort),"Chemotherapy, Hormone Therapy"
-Riaz 2017,RIAZ_PT98,0.3446,Unknown,Nivolumab
-TCGA-SKCM,TCGA-ER-A2NC,0.3444,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-EE-A3J4,0.3443,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT66,0.3443,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EB-A1NK,0.3442,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-DA-A95Z,0.344,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT23,0.344,Unknown,Nivolumab
-TCGA-SKCM,TCGA-EB-A42Z,0.3439,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EB-A44P,0.3438,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-BF-A5ES,0.3437,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-FW-A5DX,0.3437,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A29Q,0.3435,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-ER-A3PL,0.3435,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D9-A4Z6,0.3433,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-DA-A1IA,0.3433,N/A (Untreated Cohort),Radiation Therapy
-Liu 2019,LIU_PATIENT143,0.3433,Non-Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT47,0.3432,Non-Responder,Nivolumab
-Riaz 2017,RIAZ_PT47,0.3429,Non-Responder,Nivolumab
-Riaz 2017,RIAZ_PT62,0.3429,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EB-A42Y,0.3427,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2MQ,0.3425,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-Liu 2019,LIU_PATIENT45,0.3424,Responder,Nivolumab
-TCGA-SKCM,TCGA-BF-A3DL,0.3423,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT47,0.3423,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A3MU,0.3422,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT96,0.3421,Responder,Nivolumab
-Riaz 2017,RIAZ_PT23,0.342,Unknown,Nivolumab
-Riaz 2017,RIAZ_PT89,0.342,Unknown,Nivolumab
-TCGA-SKCM,TCGA-D3-A8GV,0.3419,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-DA-A1I4,0.3418,N/A (Untreated Cohort),Radiation Therapy
-Liu 2019,LIU_PATIENT163,0.3414,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A2JC,0.3412,N/A (Untreated Cohort),Immunotherapy
-TCGA-SKCM,TCGA-DA-A1I2,0.3412,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT21,0.3411,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-DA-A3F5,0.341,N/A (Untreated Cohort),"Immunotherapy, Targeted Molecular Therapy"
-TCGA-SKCM,TCGA-EE-A29C,0.3408,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy, Targeted Molecular Therapy"
-Liu 2019,LIU_PATIENT173,0.3408,Non-Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT73,0.3408,Non-Responder,Nivolumab
-Liu 2019,LIU_PATIENT170,0.3407,Unknown,Pembrolizumab
-Hugo 2016,HUGO_PT8,0.3406,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EB-A553,0.3405,N/A (Untreated Cohort),Chemotherapy
-TCGA-SKCM,TCGA-EE-A2GO,0.3403,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-BF-A5EP,0.3397,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-D3-A8GQ,0.3396,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-BF-A1Q0,0.3393,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A29B,0.3392,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-IH-A3EA,0.3391,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT127,0.339,Responder,Nivolumab
-TCGA-SKCM,TCGA-EE-A2M6,0.3389,N/A (Untreated Cohort),Vaccine
-TCGA-SKCM,TCGA-D3-A8GO,0.3387,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT27,0.3382,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EB-A5SE,0.338,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT102,0.3377,Unknown,Pembrolizumab
-Liu 2019,LIU_PATIENT187,0.3373,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A3J3,0.3372,N/A (Untreated Cohort),None Recorded
-Liu 2019,LIU_PATIENT154,0.3367,Unknown,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A29N,0.3364,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A29X,0.3359,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
-TCGA-SKCM,TCGA-EE-A20B,0.3357,N/A (Untreated Cohort),None Recorded
-TCGA-SKCM,TCGA-EE-A2GS,0.3355,N/A (Untreated Cohort),"Immunotherapy, Targeted Molecular Therapy"
-Liu 2019,LIU_PATIENT146,0.3352,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-EE-A29H,0.3351,N/A (Untreated Cohort),"Targeted Molecular Therapy, Vaccine"
-TCGA-SKCM,TCGA-DA-A95X,0.3346,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT29,0.3342,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EB-A299,0.3341,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT37,0.3337,Unknown,Nivolumab
-TCGA-SKCM,TCGA-GF-A6C8,0.3333,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT52,0.3332,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-EE-A2MI,0.3331,N/A (Untreated Cohort),Radiation Therapy
-Hugo 2016,HUGO_PT9,0.3326,Responder,Pembrolizumab
-Liu 2019,LIU_PATIENT40,0.3324,Non-Responder,Nivolumab
-Hugo 2016,HUGO_PT1,0.332,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-3N-A9WD,0.3319,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-EE-A2MF,0.3318,N/A (Untreated Cohort),Radiation Therapy
-TCGA-SKCM,TCGA-D3-A2J7,0.3309,N/A (Untreated Cohort),Radiation Therapy
-Liu 2019,LIU_PATIENT48,0.3308,Non-Responder,Pembrolizumab
-TCGA-SKCM,TCGA-D3-A5GR,0.3305,N/A (Untreated Cohort),None Recorded
-Hugo 2016,HUGO_PT4,0.3291,Responder,Pembrolizumab
-TCGA-SKCM,TCGA-HR-A2OG,0.3289,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT8,0.3287,Non-Responder,Nivolumab
-TCGA-SKCM,TCGA-D3-A51G,0.3282,N/A (Untreated Cohort),None Recorded
-Riaz 2017,RIAZ_PT5,0.3271,Non-Responder,Nivolumab
+COHORT,PATIENT_ID,PREDICTED_RESPONSE_SCORE,CONFIDENCE_SCORE,CONFIDENCE_TIER,ACTUAL_RESPONSE,TREATMENT_RECEIVED
+Riaz 2017,RIAZ_PT18,0.7555,0.511,High,Responder,Nivolumab
+Riaz 2017,RIAZ_PT101,0.7526,0.5052,High,Responder,Nivolumab
+Riaz 2017,RIAZ_PT101,0.7497,0.4994,High,Responder,Nivolumab
+Hugo 2016,HUGO_PT38,0.7374,0.4748,High,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D3-A51E,0.7372,0.4744,High,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-EE-A2GK,0.7314,0.4628,High,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-D3-A2JB,0.7307,0.4614,High,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FS-A1Z4,0.7305,0.461,High,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-DA-A1IB,0.7207,0.4414,High,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-FS-A1ZW,0.7206,0.4412,High,N/A (Untreated Cohort),Immunotherapy
+Riaz 2017,RIAZ_PT77,0.718,0.436,High,Unknown,Nivolumab
+TCGA-SKCM,TCGA-RP-A693,0.7122,0.4244,High,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT125,0.7082,0.4164,High,Responder,Nivolumab
+TCGA-SKCM,TCGA-YD-A9TA,0.6991,0.3982,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A3AA,0.6933,0.3866,Moderate,N/A (Untreated Cohort),Vaccine
+TCGA-SKCM,TCGA-EE-A2ME,0.6907,0.3814,Moderate,N/A (Untreated Cohort),Vaccine
+TCGA-SKCM,TCGA-ER-A19A,0.6892,0.3784,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-ER-A197,0.6832,0.3664,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D9-A3Z1,0.6828,0.3656,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2MJ,0.6822,0.3644,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A51H,0.677,0.354,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-EE-A3JD,0.6764,0.3528,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A2JO,0.6724,0.3448,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EE-A2MC,0.6716,0.3432,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A181,0.6713,0.3426,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2MG,0.6703,0.3406,Moderate,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy, Vaccine"
+TCGA-SKCM,TCGA-FS-A1Z0,0.6684,0.3368,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2MU,0.6673,0.3346,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EE-A3JH,0.6643,0.3286,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A5VV,0.6616,0.3232,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2GH,0.6609,0.3218,Moderate,N/A (Untreated Cohort),Vaccine
+TCGA-SKCM,TCGA-ER-A2NG,0.6564,0.3128,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
+Riaz 2017,RIAZ_PT65,0.655,0.31,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-EE-A29M,0.6545,0.309,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-ER-A19P,0.6523,0.3046,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT87,0.6518,0.3036,Moderate,Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT149,0.6513,0.3026,Moderate,Unknown,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A29T,0.6499,0.2998,Moderate,N/A (Untreated Cohort),Targeted Molecular Therapy
+Hugo 2016,HUGO_PT29,0.6474,0.2948,Moderate,Non-Responder,Pembrolizumab
+Hugo 2016,HUGO_PT23,0.647,0.294,Moderate,Non-Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT126,0.6469,0.2938,Moderate,Responder,Nivolumab
+TCGA-SKCM,TCGA-EE-A2GL,0.6452,0.2904,Moderate,N/A (Untreated Cohort),"Radiation Therapy, Vaccine"
+TCGA-SKCM,TCGA-FS-A1ZT,0.6412,0.2824,Moderate,N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-ER-A19O,0.635,0.27,Moderate,N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-D9-A149,0.6346,0.2692,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT169,0.6336,0.2672,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-FR-A3YN,0.628,0.256,Moderate,N/A (Untreated Cohort),Immunotherapy
+Liu 2019,LIU_PATIENT181,0.6241,0.2482,Moderate,Responder,Nivolumab
+TCGA-SKCM,TCGA-EB-A6R0,0.6239,0.2478,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-HR-A2OH,0.6222,0.2444,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
+Riaz 2017,RIAZ_PT35,0.6221,0.2442,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-ER-A19W,0.6169,0.2338,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT34,0.6166,0.2332,Moderate,Responder,Nivolumab
+TCGA-SKCM,TCGA-Z2-A8RT,0.6165,0.233,Moderate,N/A (Untreated Cohort),Targeted Molecular Therapy
+TCGA-SKCM,TCGA-EE-A2MR,0.613,0.226,Moderate,N/A (Untreated Cohort),Radiation Therapy
+Riaz 2017,RIAZ_PT92,0.6094,0.2188,Moderate,Unknown,Nivolumab
+Riaz 2017,RIAZ_PT13,0.6074,0.2148,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT145,0.6068,0.2136,Moderate,Responder,Pembrolizumab
+Riaz 2017,RIAZ_PT105,0.6026,0.2052,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-W3-AA1W,0.6025,0.205,Moderate,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+Liu 2019,LIU_PATIENT133,0.6022,0.2044,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D3-A5GU,0.6021,0.2042,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT10,0.5998,0.1996,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-ER-A1A1,0.5986,0.1972,Low (Borderline),N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+Riaz 2017,RIAZ_PT80,0.5966,0.1932,Low (Borderline),Unknown,Nivolumab
+Riaz 2017,RIAZ_PT31,0.5956,0.1912,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-GN-A9SD,0.5949,0.1898,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-D3-A8GM,0.5938,0.1876,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+Liu 2019,LIU_PATIENT185,0.5932,0.1864,Low (Borderline),Unknown,Nivolumab
+Riaz 2017,RIAZ_PT44,0.5931,0.1862,Low (Borderline),Responder,Nivolumab
+Liu 2019,LIU_PATIENT99,0.5877,0.1754,Low (Borderline),Responder,Nivolumab
+Riaz 2017,RIAZ_PT18,0.5832,0.1664,Low (Borderline),Responder,Nivolumab
+Liu 2019,LIU_PATIENT62,0.5822,0.1644,Low (Borderline),Responder,Nivolumab
+Riaz 2017,RIAZ_PT65,0.582,0.164,Low (Borderline),Unknown,Nivolumab
+TCGA-SKCM,TCGA-D3-A8GD,0.5801,0.1602,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT131,0.5798,0.1596,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-WE-AAA4,0.5796,0.1592,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-D3-A1QB,0.5794,0.1588,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-W3-AA1R,0.5753,0.1506,Low (Borderline),N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy, Vaccine"
+TCGA-SKCM,TCGA-EE-A2MS,0.5742,0.1484,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-ER-A2NH,0.5734,0.1468,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-GF-A4EO,0.5729,0.1458,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+Riaz 2017,RIAZ_PT46,0.5729,0.1458,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-ER-A42L,0.5702,0.1404,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT137,0.5697,0.1394,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D3-A8GJ,0.5691,0.1382,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT42,0.5689,0.1378,Low (Borderline),Responder,Nivolumab
+Liu 2019,LIU_PATIENT179,0.5681,0.1362,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D3-A1Q7,0.5664,0.1328,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-FR-A7UA,0.5655,0.131,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A51F,0.5638,0.1276,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FR-A44A,0.5633,0.1266,Low (Borderline),N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-D9-A6E9,0.562,0.124,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-ER-A19M,0.5611,0.1222,Low (Borderline),N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-ER-A3EV,0.5602,0.1204,Low (Borderline),N/A (Untreated Cohort),Vaccine
+TCGA-SKCM,TCGA-EE-A2GU,0.56,0.12,Low (Borderline),N/A (Untreated Cohort),Vaccine
+TCGA-SKCM,TCGA-EE-A3JE,0.558,0.116,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT98,0.5539,0.1078,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EB-A44Q,0.5518,0.1036,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-DA-A1HV,0.5514,0.1028,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-GN-A4U8,0.5502,0.1004,Low (Borderline),N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-ER-A19N,0.5488,0.0976,Low (Borderline),N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+Riaz 2017,RIAZ_PT94,0.5486,0.0972,Low (Borderline),Responder,Nivolumab
+Liu 2019,LIU_PATIENT15,0.5458,0.0916,Low (Borderline),Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT192,0.5446,0.0892,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D9-A1JX,0.5416,0.0832,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FR-A728,0.541,0.082,Low (Borderline),N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-FS-A1ZM,0.5407,0.0814,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT89,0.5404,0.0808,Low (Borderline),Unknown,Nivolumab
+TCGA-SKCM,TCGA-EE-A2A6,0.5396,0.0792,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT3,0.5394,0.0788,Low (Borderline),Responder,Nivolumab
+TCGA-SKCM,TCGA-EE-A2GC,0.5384,0.0768,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT94,0.5364,0.0728,Low (Borderline),Non-Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT33,0.5355,0.071,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-WE-A8ZN,0.5353,0.0706,Low (Borderline),N/A (Untreated Cohort),Chemotherapy
+Liu 2019,LIU_PATIENT141,0.535,0.07,Low (Borderline),Responder,Nivolumab
+Liu 2019,LIU_PATIENT79,0.5329,0.0658,Low (Borderline),Non-Responder,Pembrolizumab
+Hugo 2016,HUGO_PT25,0.5317,0.0634,Low (Borderline),Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-QB-AA9O,0.5316,0.0632,Low (Borderline),N/A (Untreated Cohort),Immunotherapy
+Liu 2019,LIU_PATIENT77,0.5314,0.0628,Low (Borderline),Non-Responder,Pembrolizumab
+Riaz 2017,RIAZ_PT48,0.5295,0.059,Low (Borderline),Responder,Nivolumab
+TCGA-SKCM,TCGA-WE-A8ZX,0.5285,0.057,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+Liu 2019,LIU_PATIENT20,0.5262,0.0524,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-ER-A193,0.5259,0.0518,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT134,0.5239,0.0478,Low (Borderline),Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A2MN,0.5216,0.0432,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+Riaz 2017,RIAZ_PT4,0.5216,0.0432,Low (Borderline),Unknown,Nivolumab
+TCGA-SKCM,TCGA-FS-A1ZP,0.5211,0.0422,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-GN-A26C,0.5202,0.0404,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+Riaz 2017,RIAZ_PT69,0.5186,0.0372,Low (Borderline),Unknown,Nivolumab
+TCGA-SKCM,TCGA-D9-A1JW,0.5162,0.0324,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FW-A5DY,0.5162,0.0324,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-GF-A3OT,0.5159,0.0318,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
+Liu 2019,LIU_PATIENT17,0.514,0.028,Low (Borderline),Unknown,Nivolumab
+TCGA-SKCM,TCGA-QB-A6FS,0.5119,0.0238,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A5SG,0.5118,0.0236,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A3J5,0.511,0.022,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A2J9,0.5099,0.0198,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-ER-A19S,0.5097,0.0194,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-GN-A266,0.5091,0.0182,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+Liu 2019,LIU_PATIENT100,0.5091,0.0182,Low (Borderline),Responder,Nivolumab
+Liu 2019,LIU_PATIENT106,0.5082,0.0164,Low (Borderline),Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT107,0.5082,0.0164,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A2M8,0.5076,0.0152,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EE-A2GJ,0.5058,0.0116,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+Riaz 2017,RIAZ_PT10,0.5055,0.011,Low (Borderline),Unknown,Nivolumab
+TCGA-SKCM,TCGA-EE-A2A0,0.505,0.01,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A3C8,0.5043,0.0086,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-GN-A263,0.504,0.008,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT28,0.5035,0.007,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-DA-A3F8,0.503,0.006,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT28,0.5029,0.0058,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-RP-A6K9,0.5027,0.0054,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Hugo 2016,HUGO_PT27,0.5011,0.0022,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D3-A2JH,0.5004,0.0008,Low (Borderline),N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-EE-A3AE,0.4996,0.0008,Low (Borderline),N/A (Untreated Cohort),Vaccine
+Liu 2019,LIU_PATIENT189,0.4991,0.0018,Low (Borderline),Responder,Pembrolizumab
+Riaz 2017,RIAZ_PT34,0.4981,0.0038,Low (Borderline),Responder,Nivolumab
+TCGA-SKCM,TCGA-EE-A20F,0.4963,0.0074,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EE-A2ML,0.4953,0.0094,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
+TCGA-SKCM,TCGA-WE-A8ZO,0.4953,0.0094,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-GN-A26A,0.4946,0.0108,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+Liu 2019,LIU_PATIENT159,0.4941,0.0118,Low (Borderline),Unknown,Pembrolizumab
+TCGA-SKCM,TCGA-EB-A5UM,0.4937,0.0126,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A29P,0.4937,0.0126,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FR-A8YE,0.4935,0.013,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT166,0.4935,0.013,Low (Borderline),Responder,Nivolumab
+Liu 2019,LIU_PATIENT204,0.4928,0.0144,Low (Borderline),Responder,Pembrolizumab
+Riaz 2017,RIAZ_PT49,0.4924,0.0152,Low (Borderline),Responder,Nivolumab
+Hugo 2016,HUGO_PT20,0.4886,0.0228,Low (Borderline),Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A3AC,0.4874,0.0252,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-DA-A3F2,0.4866,0.0268,Low (Borderline),N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-D3-A5GN,0.485,0.03,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT195,0.4833,0.0334,Low (Borderline),Responder,Nivolumab
+Liu 2019,LIU_PATIENT63,0.4828,0.0344,Low (Borderline),Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT86,0.4826,0.0348,Low (Borderline),Unknown,Pembrolizumab
+TCGA-SKCM,TCGA-FR-A7U9,0.4804,0.0392,Low (Borderline),N/A (Untreated Cohort),"Immunotherapy, Vaccine"
+Riaz 2017,RIAZ_PT67,0.4792,0.0416,Low (Borderline),Unknown,Nivolumab
+Liu 2019,LIU_PATIENT7,0.4789,0.0422,Low (Borderline),Unknown,Pembrolizumab
+Liu 2019,LIU_PATIENT191,0.4776,0.0448,Low (Borderline),Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A2J8,0.4767,0.0466,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A3JA,0.4766,0.0468,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+Riaz 2017,RIAZ_PT59,0.4757,0.0486,Low (Borderline),Unknown,Nivolumab
+Riaz 2017,RIAZ_PT82,0.4698,0.0604,Low (Borderline),Unknown,Nivolumab
+Liu 2019,LIU_PATIENT11,0.4696,0.0608,Low (Borderline),Non-Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT6,0.4696,0.0608,Low (Borderline),Unknown,Pembrolizumab
+TCGA-SKCM,TCGA-D3-A3C3,0.4693,0.0614,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-W3-AA1Q,0.4689,0.0622,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Hormone Therapy, Immunotherapy, Radiation Therapy, Targeted Molecular Therapy, Vaccine"
+Riaz 2017,RIAZ_PT77,0.4686,0.0628,Low (Borderline),Unknown,Nivolumab
+TCGA-SKCM,TCGA-BF-A1PX,0.4681,0.0638,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-3N-A9WC,0.4673,0.0654,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT44,0.4672,0.0656,Low (Borderline),Responder,Nivolumab
+TCGA-SKCM,TCGA-BF-AAP0,0.467,0.066,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2GE,0.467,0.066,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+Riaz 2017,RIAZ_PT11,0.4645,0.071,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A3CB,0.4642,0.0716,Low (Borderline),N/A (Untreated Cohort),Vaccine
+TCGA-SKCM,TCGA-D3-A3MR,0.4641,0.0718,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+Hugo 2016,HUGO_PT15,0.464,0.072,Low (Borderline),Responder,Pembrolizumab
+Riaz 2017,RIAZ_PT92,0.4634,0.0732,Low (Borderline),Unknown,Nivolumab
+Riaz 2017,RIAZ_PT49,0.4608,0.0784,Low (Borderline),Responder,Nivolumab
+TCGA-SKCM,TCGA-EE-A2GT,0.4577,0.0846,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT11,0.4567,0.0866,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-GN-A4U5,0.4553,0.0894,Low (Borderline),N/A (Untreated Cohort),Immunotherapy
+Riaz 2017,RIAZ_PT2,0.4541,0.0918,Low (Borderline),Unknown,Nivolumab
+Riaz 2017,RIAZ_PT72,0.4541,0.0918,Low (Borderline),Responder,Nivolumab
+Riaz 2017,RIAZ_PT90,0.4541,0.0918,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A1Q6,0.4535,0.093,Low (Borderline),N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-FR-A729,0.4534,0.0932,Low (Borderline),N/A (Untreated Cohort),Immunotherapy
+Riaz 2017,RIAZ_PT36,0.4533,0.0934,Low (Borderline),Unknown,Nivolumab
+TCGA-SKCM,TCGA-EB-A4XL,0.4527,0.0946,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2M5,0.4504,0.0992,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-EE-A3AF,0.45,0.1,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+Hugo 2016,HUGO_PT37,0.4499,0.1002,Low (Borderline),Responder,Pembrolizumab
+Riaz 2017,RIAZ_PT98,0.4495,0.101,Low (Borderline),Unknown,Nivolumab
+Liu 2019,LIU_PATIENT75,0.4484,0.1032,Low (Borderline),Responder,Nivolumab
+Liu 2019,LIU_PATIENT30,0.4482,0.1036,Low (Borderline),Unknown,Pembrolizumab
+Riaz 2017,RIAZ_PT48,0.448,0.104,Low (Borderline),Responder,Nivolumab
+Hugo 2016,HUGO_PT2,0.4476,0.1048,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-ER-A198,0.4465,0.107,Low (Borderline),N/A (Untreated Cohort),Chemotherapy
+Riaz 2017,RIAZ_PT87,0.4455,0.109,Low (Borderline),Unknown,Nivolumab
+Riaz 2017,RIAZ_PT1,0.4437,0.1126,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-DA-A1HW,0.4435,0.113,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+Liu 2019,LIU_PATIENT205,0.44,0.12,Low (Borderline),Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-Z2-AA3V,0.4387,0.1226,Low (Borderline),N/A (Untreated Cohort),Targeted Molecular Therapy
+TCGA-SKCM,TCGA-W3-A824,0.4363,0.1274,Low (Borderline),N/A (Untreated Cohort),Immunotherapy
+Riaz 2017,RIAZ_PT30,0.4355,0.129,Low (Borderline),Responder,Nivolumab
+Liu 2019,LIU_PATIENT18,0.4352,0.1296,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-FW-A3I3,0.435,0.13,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A8GN,0.432,0.136,Low (Borderline),N/A (Untreated Cohort),Immunotherapy
+Liu 2019,LIU_PATIENT130,0.4314,0.1372,Low (Borderline),Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT172,0.4314,0.1372,Low (Borderline),Unknown,Pembrolizumab
+TCGA-SKCM,TCGA-ER-A199,0.4308,0.1384,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A8GS,0.4305,0.139,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT132,0.4301,0.1398,Low (Borderline),Responder,Pembrolizumab
+Hugo 2016,HUGO_PT19,0.4285,0.143,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-WE-A8ZT,0.4282,0.1436,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT27,0.4247,0.1506,Low (Borderline),Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-W3-AA1V,0.4245,0.151,Low (Borderline),N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-RP-A695,0.4241,0.1518,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT167,0.4241,0.1518,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-YG-AA3P,0.423,0.154,Low (Borderline),N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-ER-A19K,0.4224,0.1552,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A3Y6,0.421,0.158,Low (Borderline),N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-EB-A4IS,0.4205,0.159,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-ER-A3ES,0.42,0.16,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-Z2-AA3S,0.4188,0.1624,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EE-A2MD,0.4184,0.1632,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+Hugo 2016,HUGO_PT5,0.418,0.164,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-WE-A8K1,0.417,0.166,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A551,0.4167,0.1666,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2M7,0.4166,0.1668,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EE-A3J8,0.4165,0.167,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-YG-AA3O,0.4161,0.1678,Low (Borderline),N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-EB-A41B,0.4159,0.1682,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A8GL,0.4157,0.1686,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+Riaz 2017,RIAZ_PT82,0.4153,0.1694,Low (Borderline),Unknown,Nivolumab
+TCGA-SKCM,TCGA-WE-A8ZQ,0.4152,0.1696,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Targeted Molecular Therapy"
+TCGA-SKCM,TCGA-EB-A3XB,0.4143,0.1714,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A3J7,0.4142,0.1716,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FS-A4F9,0.4139,0.1722,Low (Borderline),N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-EB-A6L9,0.4136,0.1728,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A2JF,0.4135,0.173,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT144,0.4135,0.173,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D3-A3CE,0.4132,0.1736,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EB-A5SF,0.412,0.176,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FW-A3R5,0.4111,0.1778,Low (Borderline),N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-FS-A1ZH,0.4108,0.1784,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT38,0.4107,0.1786,Low (Borderline),Unknown,Nivolumab
+Liu 2019,LIU_PATIENT78,0.4104,0.1792,Low (Borderline),Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-GF-A6C9,0.4094,0.1812,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-D3-A3C6,0.4077,0.1846,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT67,0.4077,0.1846,Low (Borderline),Unknown,Nivolumab
+Liu 2019,LIU_PATIENT184,0.4069,0.1862,Low (Borderline),Responder,Nivolumab
+Riaz 2017,RIAZ_PT84,0.4068,0.1864,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-GN-A265,0.4067,0.1866,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FS-A4F0,0.4066,0.1868,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
+Liu 2019,LIU_PATIENT206,0.4066,0.1868,Low (Borderline),Non-Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT203,0.4064,0.1872,Low (Borderline),Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A2MK,0.4063,0.1874,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A24D,0.4061,0.1878,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
+TCGA-SKCM,TCGA-FS-A1ZK,0.4056,0.1888,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT158,0.4056,0.1888,Low (Borderline),Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D3-A2J6,0.4053,0.1894,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT162,0.4053,0.1894,Low (Borderline),Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT56,0.405,0.19,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EB-A24C,0.4049,0.1902,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
+TCGA-SKCM,TCGA-GN-A4U7,0.4049,0.1902,Low (Borderline),N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-W3-A825,0.4046,0.1908,Low (Borderline),N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
+Riaz 2017,RIAZ_PT4,0.4046,0.1908,Low (Borderline),Unknown,Nivolumab
+Riaz 2017,RIAZ_PT1,0.4045,0.191,Low (Borderline),Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A51J,0.4042,0.1916,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-ER-A19G,0.4041,0.1918,Low (Borderline),N/A (Untreated Cohort),Chemotherapy
+Riaz 2017,RIAZ_PT3,0.404,0.192,Low (Borderline),Responder,Nivolumab
+TCGA-SKCM,TCGA-ER-A2ND,0.4038,0.1924,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2A1,0.4033,0.1934,Low (Borderline),N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A20C,0.4027,0.1946,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EE-A2MP,0.4024,0.1952,Low (Borderline),N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-DA-A1IC,0.4021,0.1958,Low (Borderline),N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT14,0.4008,0.1984,Low (Borderline),Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-BF-A1PZ,0.3999,0.2002,Moderate,N/A (Untreated Cohort),None Recorded
+Hugo 2016,HUGO_PT13,0.3991,0.2018,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-DA-A1HY,0.3984,0.2032,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A29V,0.3982,0.2036,Moderate,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-FS-A1ZN,0.398,0.204,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A3AD,0.3972,0.2056,Moderate,N/A (Untreated Cohort),Targeted Molecular Therapy
+TCGA-SKCM,TCGA-EE-A29E,0.3966,0.2068,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FR-A2OS,0.3964,0.2072,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-ER-A19L,0.3961,0.2078,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A2JN,0.3957,0.2086,Moderate,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-D9-A1X3,0.3957,0.2086,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-WE-AA9Y,0.3956,0.2088,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2GM,0.3955,0.209,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FW-A3TU,0.3954,0.2092,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT31,0.3942,0.2116,Moderate,Non-Responder,Pembrolizumab
+Hugo 2016,HUGO_PT6,0.394,0.212,Moderate,Responder,Pembrolizumab
+Riaz 2017,RIAZ_PT58,0.3931,0.2138,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-EE-A3AG,0.393,0.214,Moderate,N/A (Untreated Cohort),"Radiation Therapy, Targeted Molecular Therapy"
+Liu 2019,LIU_PATIENT35,0.3929,0.2142,Moderate,Unknown,Nivolumab
+Liu 2019,LIU_PATIENT24,0.3928,0.2144,Moderate,Non-Responder,Nivolumab
+Riaz 2017,RIAZ_PT103,0.3927,0.2146,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EE-A29L,0.3923,0.2154,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-BF-A3DN,0.3922,0.2156,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A2JE,0.3922,0.2156,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-DA-A1I5,0.3922,0.2156,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT58,0.3922,0.2156,Moderate,Non-Responder,Nivolumab
+Riaz 2017,RIAZ_PT17,0.3919,0.2162,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT38,0.3917,0.2166,Moderate,Non-Responder,Nivolumab
+Riaz 2017,RIAZ_PT84,0.3916,0.2168,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT105,0.3912,0.2176,Moderate,Unknown,Pembrolizumab
+TCGA-SKCM,TCGA-EB-A5UL,0.391,0.218,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-FS-A1Z3,0.3909,0.2182,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-DA-A1I8,0.3908,0.2184,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FS-A4F5,0.3905,0.219,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-WE-A8K6,0.39,0.22,Moderate,N/A (Untreated Cohort),Chemotherapy
+Liu 2019,LIU_PATIENT197,0.3899,0.2202,Moderate,Responder,Nivolumab
+TCGA-SKCM,TCGA-WE-AAA3,0.3898,0.2204,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT51,0.3895,0.221,Moderate,Responder,Nivolumab
+TCGA-SKCM,TCGA-EB-A44O,0.3894,0.2212,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2GN,0.3894,0.2212,Moderate,N/A (Untreated Cohort),Radiation Therapy
+Liu 2019,LIU_PATIENT25,0.3888,0.2224,Moderate,Responder,Pembrolizumab
+Riaz 2017,RIAZ_PT36,0.3887,0.2226,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-EB-A44R,0.3886,0.2228,Moderate,N/A (Untreated Cohort),None Recorded
+Hugo 2016,HUGO_PT22,0.3882,0.2236,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-ER-A196,0.3872,0.2256,Moderate,N/A (Untreated Cohort),None Recorded
+Hugo 2016,HUGO_PT28,0.3869,0.2262,Moderate,Responder,Pembrolizumab
+Riaz 2017,RIAZ_PT26,0.3861,0.2278,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-FS-A1ZU,0.386,0.228,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A5GL,0.3858,0.2284,Moderate,N/A (Untreated Cohort),Radiation Therapy
+Hugo 2016,HUGO_PT16,0.3857,0.2286,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-ER-A19Q,0.3856,0.2288,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-ER-A194,0.3851,0.2298,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT38,0.3851,0.2298,Moderate,Unknown,Nivolumab
+Hugo 2016,HUGO_PT32,0.3847,0.2306,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D3-A8GC,0.3846,0.2308,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-ER-A42H,0.3831,0.2338,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT44,0.3828,0.2344,Moderate,Responder,Nivolumab
+TCGA-SKCM,TCGA-ER-A19H,0.3827,0.2346,Moderate,N/A (Untreated Cohort),Chemotherapy
+Liu 2019,LIU_PATIENT201,0.3823,0.2354,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EB-A5KH,0.3822,0.2356,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
+TCGA-SKCM,TCGA-W3-AA21,0.3822,0.2356,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
+TCGA-SKCM,TCGA-DA-A95V,0.382,0.236,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A4OZ,0.3817,0.2366,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A8GB,0.3815,0.237,Moderate,N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-FS-A1ZF,0.3813,0.2374,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-WE-A8ZM,0.3812,0.2376,Moderate,N/A (Untreated Cohort),Immunotherapy
+Liu 2019,LIU_PATIENT142,0.381,0.238,Moderate,Unknown,Pembrolizumab
+TCGA-SKCM,TCGA-BF-A1PV,0.3806,0.2388,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A2JL,0.3806,0.2388,Moderate,N/A (Untreated Cohort),Vaccine
+Liu 2019,LIU_PATIENT183,0.3806,0.2388,Moderate,Non-Responder,Pembrolizumab
+Riaz 2017,RIAZ_PT76,0.3804,0.2392,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-ER-A2NF,0.3803,0.2394,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
+TCGA-SKCM,TCGA-D3-A3ML,0.3802,0.2396,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-GN-A4U3,0.38,0.24,Moderate,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+Hugo 2016,HUGO_PT7,0.3799,0.2402,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D9-A4Z3,0.3798,0.2404,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-DA-A1I1,0.3797,0.2406,Moderate,N/A (Untreated Cohort),Immunotherapy
+Riaz 2017,RIAZ_PT81,0.3797,0.2406,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-EB-A41A,0.3791,0.2418,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FS-A1ZZ,0.3789,0.2422,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT26,0.3787,0.2426,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-DA-A1I0,0.3785,0.243,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D9-A6EC,0.3782,0.2436,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT1,0.3779,0.2442,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-WE-A8ZY,0.3778,0.2444,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FS-A4F2,0.3777,0.2446,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-GN-A262,0.3776,0.2448,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-W3-A828,0.3774,0.2452,Moderate,N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-FS-A1ZE,0.3773,0.2454,Moderate,N/A (Untreated Cohort),"Chemotherapy, Targeted Molecular Therapy"
+TCGA-SKCM,TCGA-EB-A5UN,0.377,0.246,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-ER-A19T,0.3768,0.2464,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-D3-A1Q4,0.3765,0.247,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A2JK,0.3765,0.247,Moderate,N/A (Untreated Cohort),Radiation Therapy
+Riaz 2017,RIAZ_PT62,0.3765,0.247,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT4,0.3765,0.247,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D3-A8GK,0.3762,0.2476,Moderate,N/A (Untreated Cohort),"Radiation Therapy, Vaccine"
+TCGA-SKCM,TCGA-ER-A2NF,0.3762,0.2476,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
+TCGA-SKCM,TCGA-EE-A2MT,0.3761,0.2478,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EB-A3XD,0.3759,0.2482,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT135,0.3758,0.2484,Moderate,Responder,Pembrolizumab
+Riaz 2017,RIAZ_PT39,0.3757,0.2486,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A5GO,0.3756,0.2488,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A8GP,0.3755,0.249,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT200,0.3755,0.249,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A2GR,0.3754,0.2492,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-BF-A3DM,0.3752,0.2496,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A3C1,0.3751,0.2498,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT165,0.3751,0.2498,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A29W,0.375,0.25,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EE-A185,0.3745,0.251,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-FS-A4FB,0.3742,0.2516,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A3CF,0.3741,0.2518,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT17,0.3741,0.2518,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT196,0.3739,0.2522,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EE-A29D,0.3736,0.2528,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-FS-A1ZC,0.3735,0.253,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A6QY,0.3733,0.2534,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
+Riaz 2017,RIAZ_PT85,0.3732,0.2536,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A3MO,0.3731,0.2538,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A1Q1,0.373,0.254,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Vaccine"
+TCGA-SKCM,TCGA-D3-A51K,0.373,0.254,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A3AH,0.373,0.254,Moderate,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-FS-A1ZD,0.3728,0.2544,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-BF-A5EQ,0.3723,0.2554,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A8GE,0.3722,0.2556,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A3CC,0.3721,0.2558,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A17Z,0.3721,0.2558,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-YD-A89C,0.3719,0.2562,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A431,0.3714,0.2572,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A184,0.3711,0.2578,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT108,0.3709,0.2582,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A29A,0.3707,0.2586,Moderate,N/A (Untreated Cohort),Radiation Therapy
+Liu 2019,LIU_PATIENT67,0.3707,0.2586,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-BF-A3DJ,0.3705,0.259,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT30,0.3704,0.2592,Moderate,Responder,Nivolumab
+Riaz 2017,RIAZ_PT78,0.3703,0.2594,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT37,0.3702,0.2596,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A5GS,0.3698,0.2604,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT150,0.3697,0.2606,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-RP-A690,0.3695,0.261,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FR-A3YO,0.3692,0.2616,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-3N-A9WB,0.3691,0.2618,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT148,0.369,0.262,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D9-A3Z3,0.3685,0.263,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FR-A7U8,0.3683,0.2634,Moderate,N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-ER-A195,0.3682,0.2636,Moderate,N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-D3-A2JD,0.368,0.264,Moderate,N/A (Untreated Cohort),None Recorded
+Hugo 2016,HUGO_PT12,0.3679,0.2642,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D9-A4Z5,0.3675,0.265,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-ER-A2NE,0.3675,0.265,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-ER-A42K,0.3672,0.2656,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A6QZ,0.367,0.266,Moderate,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-FS-A1ZY,0.3667,0.2666,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FS-A4FD,0.3665,0.267,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-GN-A268,0.3665,0.267,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-FR-A3R1,0.3662,0.2676,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT82,0.3662,0.2676,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A17X,0.366,0.268,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D9-A6EG,0.3658,0.2684,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT121,0.3658,0.2684,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-FS-A1ZG,0.3657,0.2686,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT32,0.3657,0.2686,Moderate,Non-Responder,Nivolumab
+Riaz 2017,RIAZ_PT46,0.3656,0.2688,Moderate,Non-Responder,Nivolumab
+Hugo 2016,HUGO_PT35,0.3656,0.2688,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EB-A4OY,0.3652,0.2696,Moderate,N/A (Untreated Cohort),"Chemotherapy, Hormone Therapy"
+Riaz 2017,RIAZ_PT2,0.365,0.27,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-EB-A5VU,0.3648,0.2704,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-GF-A2C7,0.3644,0.2712,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A182,0.3639,0.2722,Moderate,N/A (Untreated Cohort),"Ancillary, Radiation Therapy"
+Liu 2019,LIU_PATIENT8,0.3639,0.2722,Moderate,Unknown,Pembrolizumab
+Liu 2019,LIU_PATIENT13,0.3635,0.273,Moderate,Non-Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT168,0.3634,0.2732,Moderate,Responder,Nivolumab
+Liu 2019,LIU_PATIENT188,0.3634,0.2732,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D9-A4Z2,0.3632,0.2736,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A1Q3,0.3631,0.2738,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-EB-A5FP,0.3631,0.2738,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-EE-A183,0.3631,0.2738,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EE-A2GI,0.3629,0.2742,Moderate,N/A (Untreated Cohort),Vaccine
+TCGA-SKCM,TCGA-GN-A267,0.362,0.276,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-FS-A1ZS,0.3618,0.2764,Moderate,N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-XV-AB01,0.3617,0.2766,Moderate,N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-EB-A3XE,0.3616,0.2768,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A44N,0.3613,0.2774,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT16,0.3613,0.2774,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-EE-A17Y,0.3612,0.2776,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-ER-A2NB,0.3611,0.2778,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A2JG,0.3608,0.2784,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A29S,0.3606,0.2788,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2MH,0.3605,0.279,Moderate,N/A (Untreated Cohort),"Radiation Therapy, Vaccine"
+TCGA-SKCM,TCGA-EE-A29R,0.3604,0.2792,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-ER-A3ET,0.3597,0.2806,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-BF-A1PU,0.3596,0.2808,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FR-A726,0.3596,0.2808,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-ER-A19D,0.3594,0.2812,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-GN-A26D,0.3594,0.2812,Moderate,N/A (Untreated Cohort),Other
+TCGA-SKCM,TCGA-D3-A5GT,0.3592,0.2816,Moderate,N/A (Untreated Cohort),Immunotherapy
+Riaz 2017,RIAZ_PT85,0.3584,0.2832,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A1Q9,0.3583,0.2834,Moderate,N/A (Untreated Cohort),"Hormone Therapy, Vaccine"
+Liu 2019,LIU_PATIENT9,0.3583,0.2834,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT155,0.3579,0.2842,Moderate,Non-Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT61,0.3578,0.2844,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-GN-A8LK,0.3576,0.2848,Moderate,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-WE-A8K5,0.3576,0.2848,Moderate,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-D3-A51N,0.3575,0.285,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT94,0.3575,0.285,Moderate,Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A8GI,0.3574,0.2852,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A2JA,0.3573,0.2854,Moderate,N/A (Untreated Cohort),Radiation Therapy
+Riaz 2017,RIAZ_PT10,0.3572,0.2856,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-EB-A3Y7,0.3571,0.2858,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT193,0.3571,0.2858,Moderate,Unknown,Pembrolizumab
+TCGA-SKCM,TCGA-BF-A5EO,0.3569,0.2862,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A3BZ,0.3569,0.2862,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-FS-A1YW,0.3569,0.2862,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT34,0.3569,0.2862,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A2MM,0.3568,0.2864,Moderate,N/A (Untreated Cohort),"Radiation Therapy, Vaccine"
+TCGA-SKCM,TCGA-FR-A8YC,0.3564,0.2872,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-RP-A694,0.3564,0.2872,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A430,0.3563,0.2874,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT106,0.3563,0.2874,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-DA-A95W,0.3561,0.2878,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT140,0.356,0.288,Moderate,Non-Responder,Pembrolizumab
+Riaz 2017,RIAZ_PT52,0.3558,0.2884,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT156,0.3558,0.2884,Moderate,Non-Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT23,0.3556,0.2888,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EE-A20H,0.3553,0.2894,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FS-A4F8,0.3553,0.2894,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT24,0.3553,0.2894,Moderate,Non-Responder,Nivolumab
+Riaz 2017,RIAZ_PT31,0.3553,0.2894,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A51R,0.3552,0.2896,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FS-A1Z7,0.3551,0.2898,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-YD-A9TB,0.355,0.29,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT36,0.3549,0.2902,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-FS-A1YX,0.3541,0.2918,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT8,0.3541,0.2918,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT112,0.3541,0.2918,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EE-A3AB,0.3539,0.2922,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-ER-A19T,0.3539,0.2922,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-D9-A3Z4,0.3538,0.2924,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT9,0.3538,0.2924,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EB-A4IQ,0.3536,0.2928,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2GD,0.3536,0.2928,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT106,0.3536,0.2928,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT72,0.3536,0.2928,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT116,0.3532,0.2936,Moderate,Non-Responder,Nivolumab
+Hugo 2016,HUGO_PT14,0.3532,0.2936,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-FS-A1YY,0.353,0.294,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT9,0.353,0.294,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EB-A3XF,0.3529,0.2942,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-GN-A4U4,0.3527,0.2946,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
+TCGA-SKCM,TCGA-D3-A2JP,0.3524,0.2952,Moderate,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-BF-A5ER,0.352,0.296,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FR-A69P,0.3518,0.2964,Moderate,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-GN-A4U9,0.3518,0.2964,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-FW-A3TV,0.3517,0.2966,Moderate,N/A (Untreated Cohort),Immunotherapy
+Liu 2019,LIU_PATIENT147,0.3517,0.2966,Moderate,Responder,Nivolumab
+TCGA-SKCM,TCGA-OD-A75X,0.3516,0.2968,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FS-A1ZA,0.3511,0.2978,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-WE-AAA0,0.3511,0.2978,Moderate,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-EE-A2A5,0.351,0.298,Moderate,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-LH-A9QB,0.351,0.298,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT27,0.351,0.298,Moderate,Non-Responder,Nivolumab
+Riaz 2017,RIAZ_PT103,0.3509,0.2982,Moderate,Non-Responder,Nivolumab
+Riaz 2017,RIAZ_PT78,0.3509,0.2982,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT22,0.3509,0.2982,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EE-A3JB,0.3506,0.2988,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-EB-A3XC,0.3505,0.299,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-FS-A4F4,0.3505,0.299,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A29G,0.3503,0.2994,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A3JI,0.3502,0.2996,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-FS-A1ZJ,0.3501,0.2998,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A51T,0.35,0.3,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-ER-A19E,0.3499,0.3002,Moderate,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+Liu 2019,LIU_PATIENT32,0.3496,0.3008,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-GF-A769,0.3495,0.301,Moderate,N/A (Untreated Cohort),None Recorded
+Hugo 2016,HUGO_PT31,0.3495,0.301,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-FS-A1ZB,0.3494,0.3012,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D9-A6EA,0.3491,0.3018,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A57M,0.3491,0.3018,Moderate,N/A (Untreated Cohort),"Ancillary, Chemotherapy, Immunotherapy"
+TCGA-SKCM,TCGA-EE-A2A2,0.3491,0.3018,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-DA-A3F3,0.349,0.302,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A4P0,0.349,0.302,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT79,0.349,0.302,Moderate,Unknown,Nivolumab
+Riaz 2017,RIAZ_PT108,0.3488,0.3024,Moderate,Unknown,Nivolumab
+Hugo 2016,HUGO_PT10,0.3488,0.3024,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D3-A8GR,0.3487,0.3026,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A3MV,0.3486,0.3028,Moderate,N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-D3-A1Q8,0.3485,0.303,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-D9-A148,0.3485,0.303,Moderate,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-EB-A5SH,0.3482,0.3036,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy"
+TCGA-SKCM,TCGA-ER-A19F,0.3481,0.3038,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FS-A1ZQ,0.3481,0.3038,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FS-A1ZR,0.3481,0.3038,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT83,0.3479,0.3042,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EE-A20I,0.3477,0.3046,Moderate,N/A (Untreated Cohort),Radiation Therapy
+Riaz 2017,RIAZ_PT68,0.3477,0.3046,Moderate,Responder,Nivolumab
+TCGA-SKCM,TCGA-GN-A8LL,0.3475,0.305,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT117,0.3474,0.3052,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A2GB,0.3473,0.3054,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-D3-A3C7,0.3472,0.3056,Moderate,N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-DA-A1I7,0.3472,0.3056,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-ER-A19J,0.3472,0.3056,Moderate,N/A (Untreated Cohort),Chemotherapy
+Riaz 2017,RIAZ_PT93,0.347,0.306,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-GN-A264,0.3467,0.3066,Moderate,N/A (Untreated Cohort),"Immunotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-FR-A8YD,0.3465,0.307,Moderate,N/A (Untreated Cohort),Immunotherapy
+Riaz 2017,RIAZ_PT79,0.3463,0.3074,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-DA-A95Y,0.3462,0.3076,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-ER-A19C,0.3462,0.3076,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT37,0.3462,0.3076,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-D3-A1QA,0.3461,0.3078,Moderate,N/A (Untreated Cohort),Vaccine
+Riaz 2017,RIAZ_PT5,0.3461,0.3078,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A1Q5,0.3459,0.3082,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EE-A2GP,0.3457,0.3086,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-ER-A19B,0.3457,0.3086,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-WE-A8JZ,0.3454,0.3092,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A3HV,0.3448,0.3104,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A180,0.3448,0.3104,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-FS-A4FC,0.3448,0.3104,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-W3-AA1O,0.3448,0.3104,Moderate,N/A (Untreated Cohort),"Chemotherapy, Hormone Therapy"
+Riaz 2017,RIAZ_PT98,0.3446,0.3108,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-ER-A2NC,0.3444,0.3112,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-EE-A3J4,0.3443,0.3114,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT66,0.3443,0.3114,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EB-A1NK,0.3442,0.3116,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-DA-A95Z,0.344,0.312,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT23,0.344,0.312,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-EB-A42Z,0.3439,0.3122,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EB-A44P,0.3438,0.3124,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-BF-A5ES,0.3437,0.3126,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-FW-A5DX,0.3437,0.3126,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A29Q,0.3435,0.313,Moderate,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-ER-A3PL,0.3435,0.313,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D9-A4Z6,0.3433,0.3134,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-DA-A1IA,0.3433,0.3134,Moderate,N/A (Untreated Cohort),Radiation Therapy
+Liu 2019,LIU_PATIENT143,0.3433,0.3134,Moderate,Non-Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT47,0.3432,0.3136,Moderate,Non-Responder,Nivolumab
+Riaz 2017,RIAZ_PT47,0.3429,0.3142,Moderate,Non-Responder,Nivolumab
+Riaz 2017,RIAZ_PT62,0.3429,0.3142,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EB-A42Y,0.3427,0.3146,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2MQ,0.3425,0.315,Moderate,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+Liu 2019,LIU_PATIENT45,0.3424,0.3152,Moderate,Responder,Nivolumab
+TCGA-SKCM,TCGA-BF-A3DL,0.3423,0.3154,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT47,0.3423,0.3154,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A3MU,0.3422,0.3156,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT96,0.3421,0.3158,Moderate,Responder,Nivolumab
+Riaz 2017,RIAZ_PT23,0.342,0.316,Moderate,Unknown,Nivolumab
+Riaz 2017,RIAZ_PT89,0.342,0.316,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-D3-A8GV,0.3419,0.3162,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-DA-A1I4,0.3418,0.3164,Moderate,N/A (Untreated Cohort),Radiation Therapy
+Liu 2019,LIU_PATIENT163,0.3414,0.3172,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A2JC,0.3412,0.3176,Moderate,N/A (Untreated Cohort),Immunotherapy
+TCGA-SKCM,TCGA-DA-A1I2,0.3412,0.3176,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT21,0.3411,0.3178,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-DA-A3F5,0.341,0.318,Moderate,N/A (Untreated Cohort),"Immunotherapy, Targeted Molecular Therapy"
+TCGA-SKCM,TCGA-EE-A29C,0.3408,0.3184,Moderate,N/A (Untreated Cohort),"Chemotherapy, Immunotherapy, Radiation Therapy, Targeted Molecular Therapy"
+Liu 2019,LIU_PATIENT173,0.3408,0.3184,Moderate,Non-Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT73,0.3408,0.3184,Moderate,Non-Responder,Nivolumab
+Liu 2019,LIU_PATIENT170,0.3407,0.3186,Moderate,Unknown,Pembrolizumab
+Hugo 2016,HUGO_PT8,0.3406,0.3188,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EB-A553,0.3405,0.319,Moderate,N/A (Untreated Cohort),Chemotherapy
+TCGA-SKCM,TCGA-EE-A2GO,0.3403,0.3194,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-BF-A5EP,0.3397,0.3206,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-D3-A8GQ,0.3396,0.3208,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-BF-A1Q0,0.3393,0.3214,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A29B,0.3392,0.3216,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-IH-A3EA,0.3391,0.3218,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT127,0.339,0.322,Moderate,Responder,Nivolumab
+TCGA-SKCM,TCGA-EE-A2M6,0.3389,0.3222,Moderate,N/A (Untreated Cohort),Vaccine
+TCGA-SKCM,TCGA-D3-A8GO,0.3387,0.3226,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT27,0.3382,0.3236,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EB-A5SE,0.338,0.324,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT102,0.3377,0.3246,Moderate,Unknown,Pembrolizumab
+Liu 2019,LIU_PATIENT187,0.3373,0.3254,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A3J3,0.3372,0.3256,Moderate,N/A (Untreated Cohort),None Recorded
+Liu 2019,LIU_PATIENT154,0.3367,0.3266,Moderate,Unknown,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A29N,0.3364,0.3272,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A29X,0.3359,0.3282,Moderate,N/A (Untreated Cohort),"Chemotherapy, Radiation Therapy"
+TCGA-SKCM,TCGA-EE-A20B,0.3357,0.3286,Moderate,N/A (Untreated Cohort),None Recorded
+TCGA-SKCM,TCGA-EE-A2GS,0.3355,0.329,Moderate,N/A (Untreated Cohort),"Immunotherapy, Targeted Molecular Therapy"
+Liu 2019,LIU_PATIENT146,0.3352,0.3296,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-EE-A29H,0.3351,0.3298,Moderate,N/A (Untreated Cohort),"Targeted Molecular Therapy, Vaccine"
+TCGA-SKCM,TCGA-DA-A95X,0.3346,0.3308,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT29,0.3342,0.3316,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EB-A299,0.3341,0.3318,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT37,0.3337,0.3326,Moderate,Unknown,Nivolumab
+TCGA-SKCM,TCGA-GF-A6C8,0.3333,0.3334,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT52,0.3332,0.3336,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-EE-A2MI,0.3331,0.3338,Moderate,N/A (Untreated Cohort),Radiation Therapy
+Hugo 2016,HUGO_PT9,0.3326,0.3348,Moderate,Responder,Pembrolizumab
+Liu 2019,LIU_PATIENT40,0.3324,0.3352,Moderate,Non-Responder,Nivolumab
+Hugo 2016,HUGO_PT1,0.332,0.336,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-3N-A9WD,0.3319,0.3362,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-EE-A2MF,0.3318,0.3364,Moderate,N/A (Untreated Cohort),Radiation Therapy
+TCGA-SKCM,TCGA-D3-A2J7,0.3309,0.3382,Moderate,N/A (Untreated Cohort),Radiation Therapy
+Liu 2019,LIU_PATIENT48,0.3308,0.3384,Moderate,Non-Responder,Pembrolizumab
+TCGA-SKCM,TCGA-D3-A5GR,0.3305,0.339,Moderate,N/A (Untreated Cohort),None Recorded
+Hugo 2016,HUGO_PT4,0.3291,0.3418,Moderate,Responder,Pembrolizumab
+TCGA-SKCM,TCGA-HR-A2OG,0.3289,0.3422,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT8,0.3287,0.3426,Moderate,Non-Responder,Nivolumab
+TCGA-SKCM,TCGA-D3-A51G,0.3282,0.3436,Moderate,N/A (Untreated Cohort),None Recorded
+Riaz 2017,RIAZ_PT5,0.3271,0.3458,Moderate,Non-Responder,Nivolumab

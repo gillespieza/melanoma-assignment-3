@@ -96,9 +96,20 @@ class SinglePatientPredictor:
         is_responder = prob >= threshold
         label = "Responder (High Response Probability)" if is_responder else "Non-Responder (Low Response Probability)"
 
+        # Calculate prediction confidence score relative to decision threshold
+        confidence_score = round(abs(prob - threshold) * 2.0, 4)
+        if confidence_score >= 0.40:
+            confidence_tier = "High"
+        elif confidence_score >= 0.20:
+            confidence_tier = "Moderate"
+        else:
+            confidence_tier = "Low (Borderline)"
+
         return {
             "patient_id": patient_id,
             "predicted_probability": round(prob, 4),
+            "confidence_score": confidence_score,
+            "confidence_tier": confidence_tier,
             "classification": "Responder" if is_responder else "Non-Responder",
             "response_label": label,
             "threshold": threshold,
@@ -220,6 +231,7 @@ def main():
         res = predictor.predict_from_saved_patient(args.patient, cohort=args.cohort)
         print(f"Patient ID:                {res['patient_id']}")
         print(f"Predicted Response Prob:   {res['predicted_probability']:.4f}")
+        print(f"Confidence Score:          {res['confidence_score']:.4f} ({res['confidence_tier']} Confidence)")
         print(f"Classification:            {res['classification']}")
         if "actual_recist_response" in res:
             print(f"Actual RECIST Response:    {res['actual_recist_response']}")
@@ -238,6 +250,7 @@ def main():
 
         res = predictor.predict_from_signatures(sig_dict, threshold=args.threshold)
         print(f"Predicted Response Prob:   {res['predicted_probability']:.4f}")
+        print(f"Confidence Score:          {res['confidence_score']:.4f} ({res['confidence_tier']} Confidence)")
         print(f"Classification:            {res['classification']}")
         print(f"Response Label:            {res['response_label']}")
 
@@ -250,6 +263,7 @@ def main():
         print(f"==================================================")
         print(f"Patient ID:                {res['patient_id']}")
         print(f"Predicted Response Prob:   {res['predicted_probability']:.4f}")
+        print(f"Confidence Score:          {res['confidence_score']:.4f} ({res['confidence_tier']} Confidence)")
         print(f"Classification:            {res['classification']}")
         if "actual_recist_response" in res:
             print(f"Actual RECIST Response:    {res['actual_recist_response']}")
