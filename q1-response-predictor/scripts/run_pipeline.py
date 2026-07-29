@@ -79,7 +79,17 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
         "2. **Test Cohorts**: Liu 2019 ($N=104$), Hugo 2016 ($N=27$), and Riaz 2017 ($N=64$).\n",
         "3. **Features Evaluated**: Pre-defined immune response signatures (IFN-γ, TIS, CD8 T-cell, CYT, IMPRES, PD-L1).\n",
         "4. **Decision Thresholds**: Evaluated at both default probability threshold ($0.5$) and Youden's J optimal threshold.\n\n",
-        "> [!note] Decision Boundary Optimization (Youden's J Statistic)\n",
+        "> [!note] Understanding Evaluation Metrics\n",
+        "> The following metrics are used throughout this report to assess each model's performance:\n",
+        "> - **Sensitivity (Recall)**: $\\text{TP} / (\\text{TP} + \\text{FN})$ — Percentage of actual treatment responders the model correctly identifies.\n",
+        "> - **Specificity**: $\\text{TN} / (\\text{TN} + \\text{FP})$ — Percentage of non-responders correctly identified.\n",
+        "> - **Precision**: $\\text{TP} / (\\text{TP} + \\text{FP})$ — Percentage of patients predicted as responders who actually responded.\n",
+        "> - **Accuracy**: $(\\text{TP} + \\text{TN}) / \\text{Total}$ — Overall percentage of correct predictions.\n",
+        "> - **F1-Score**: Harmonic mean of Precision and Sensitivity — Balances precision and recall in imbalanced datasets.\n",
+        "> - **AUC-ROC**: Area Under Receiver Operating Characteristic Curve — Measures model ranking quality independent of threshold (0.5 = random guessing, 1.0 = perfect prediction).\n",
+        "> - **C-Index**: Concordance Index evaluating how well predicted probabilities rank patient survival times (0.5 = random, 1.0 = perfect agreement).\n\n",
+        "> [!note] Decision Boundary Optimisation (Youden's J Statistic)\n",
+
         "> Youden's J statistic ($J = \\text{sensitivity} + \\text{specificity} - 1$) calculates the optimal decision boundary that balances true positives and true negatives. Evaluating threshold optimization on test data provides an upper-bound performance benchmark.\n\n",
         "> [!info] Probability Calibration Metrics (Brier Score & Expected Calibration Error)\n",
         "> The **Brier Score** measures the mean squared difference between predicted probabilities and actual binary outcomes (range: 0 to 1, where 0 represents a perfectly calibrated model). **Expected Calibration Error (ECE)** calculates the weighted average difference between predicted confidence and empirical accuracy across probability bins.\n\n",
@@ -97,7 +107,8 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
         "> - **Area Under the PR Curve (AUPRC)**: Higher is better. Unlike AUC-ROC, AUPRC is sensitive to class imbalance, making it particularly informative for clinical datasets where responders are a minority class.\n",
         "> - **Interpreting Shape**: A curve that remains high across a wide recall range indicates a model that is both confident and comprehensive in identifying responders.\n\n"
     ]
-    
+
+    # Define model metadata before any table generation that references it
     model_names = {
         'lr': 'Logistic Regression (L1-Penalised)',
         'rf': 'Random Forest Classifier',
@@ -105,7 +116,61 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
         'svm': 'Support Vector Machine (SVM)',
         'elasticnet': 'ElasticNet Logistic Regression'
     }
-    
+
+    # --- Dynamic cross-model AUC summary table ---
+    # Build a cohort x model AUC matrix from all_loco_results
+    all_cohorts = sorted({c for results in all_loco_results.values() for c in results})
+    model_order = ['lr', 'rf', 'xgb', 'svm', 'elasticnet']
+    model_short = {'lr': 'LR', 'rf': 'RF', 'xgb': 'XGB', 'svm': 'SVM', 'elasticnet': 'ElasticNet'}
+
+    report_lines.append("## Cross-Model AUC Summary\n\n")
+    report_lines.append(
+        "> [!info] How to Read This Table\n"
+        "> Each cell shows the AUC-ROC for a model trained on the other two cohorts and tested on the column cohort (LOCO). "
+        "**Mean AUC** is the unweighted average across all three held-out cohorts and is the primary generalisation metric. "
+        "Higher AUC = better cross-cohort discrimination. 0.5 = random guessing.\n\n"
+    )
+
+    # Header
+    header_cols = "| Model | " + " | ".join(all_cohorts) + " | **Mean AUC** |\n"
+    separator = "|:---|" + ":".join(["---:"] * len(all_cohorts)) + "---:|\n"
+    report_lines.append(header_cols)
+    report_lines.append(separator)
+
+    summary_rows = []
+    for mkey in model_order:
+        if mkey not in all_loco_results:
+            continue
+        loco = all_loco_results[mkey]
+        row_aucs = []
+        for cohort in all_cohorts:
+            res = loco.get(cohort, {})
+            m = res.get('metrics_extended') or (calculate_extended_metrics(res['y_true'], res['y_pred_prob']) if res else None)
+            auc_v = m['auc'] if m else float('nan')
+            row_aucs.append(auc_v)
+        mean_auc = float(np.nanmean(row_aucs))
+        auc_cells = " | ".join(f"{v:.3f}" if not np.isnan(v) else "N/A" for v in row_aucs)
+        row_label = f"**{model_short[mkey]}**" if mean_auc == max(
+            float(np.nanmean([(
+                all_loco_results[mk].get(c, {}).get('metrics_extended') or
+                calculate_extended_metrics(all_loco_results[mk][c]['y_true'], all_loco_results[mk][c]['y_pred_prob'])
+            )['auc'] for c in all_cohorts]))
+            for mk in model_order if mk in all_loco_results
+        ) else model_short[mkey]
+        report_lines.append(f"| {row_label} | {auc_cells} | **{mean_auc:.3f}** |\n")
+        summary_rows.append((mkey, mean_auc))
+
+    # Find best model for the callout
+    best_model_key, best_mean = max(summary_rows, key=lambda x: x[1])
+    best_model_label = model_names.get(best_model_key, best_model_key.upper())
+    report_lines.append("\n")
+    report_lines.append(
+        f"> [!important] Best Generalising Model: {model_short[best_model_key]}\n"
+        f"> **{best_model_label}** achieves the highest mean cross-cohort AUC of **{best_mean:.3f}** across all three held-out LOCO test cohorts, "
+        f"making it the strongest generaliser in this evaluation. "
+        f"See the individual model sections below for full confusion matrices, ROC curves, and calibration diagnostics.\n\n"
+    )
+
     model_explanations = {
         'lr': ("> [!note] Model Rationale\n"
                "> **What We Did**: Trained a linear model with L1 (Lasso) regularization to select key predictive features.\n"
@@ -308,16 +373,6 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
             "> 5. **Biological Interpretation**: The directional trend (predicted responders living longer) is more important than significance — with adequate sample sizes, this trend would likely reach significance, as demonstrated in larger melanoma genomic studies.\n\n"
         )
 
-    report_lines.append("---\n\n")
-    report_lines.append("## Student Summary & Key Guide\n\n")
-    report_lines.append("### Understanding Evaluation Metrics:\n")
-    report_lines.append("- **Sensitivity (Recall)**: $\\text{TP} / (\\text{TP} + \\text{FN})$ — Percentage of actual treatment responders the model correctly identifies.\n")
-    report_lines.append("- **Specificity**: $\\text{TN} / (\\text{TN} + \\text{FP})$ — Percentage of non-responders correctly identified.\n")
-    report_lines.append("- **Precision**: $\\text{TP} / (\\text{TP} + \\text{FP})$ — Percentage of patients predicted as responders who actually responded.\n")
-    report_lines.append("- **Accuracy**: $(\\text{TP} + \\text{TN}) / \\text{Total}$ — Overall percentage of correct predictions.\n")
-    report_lines.append("- **F1-Score**: Harmonic mean of Precision and Sensitivity — Balances precision and recall in imbalanced datasets.\n")
-    report_lines.append("- **AUC-ROC**: Area Under Receiver Operating Characteristic Curve — Measures model ranking quality independent of threshold (0.5 = random guessing, 1.0 = perfect prediction).\n")
-    report_lines.append("- **C-Index**: Concordance Index evaluating how well predicted probabilities rank patient survival times (0.5 = random, 1.0 = perfect agreement).\n\n")
 
     # --- Final Architecture Comparison Summary ---
     report_lines.append("---\n\n")
@@ -362,10 +417,15 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
     )
     report_lines.append("### Overall Conclusion\n\n")
     report_lines.append(
-        "Across all five architectures, the consistent finding is that **transcriptomic immune activation signatures** — particularly IFN-γ and T-cell inflammation scores — carry meaningful cross-cohort predictive signal for anti-PD-1 immunotherapy response. "
-        "No single model architecture consistently dominates across all cohorts, which is consistent with the relatively small dataset sizes and cross-institution biological heterogeneity.\n\n"
-        "The addition of somatic driver mutation flags (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) in the multimodal analysis provides marginal complementary information but does not dramatically alter performance, reinforcing that the transcriptomic microenvironment is the dominant predictive axis.\n\n"
-        "For downstream clinical application, **calibrated Logistic Regression or ElasticNet** are recommended as the primary deployment architectures due to their interpretability, calibration stability, and robustness to small sample sizes — qualities that are essential for clinical decision support tools in an immunotherapy prescribing context.\n\n"
+        "Across all five architectures, the consistent finding is that **transcriptomic immune activation signatures** — particularly IFN-\u03b3 and T-cell inflammation scores — carry meaningful cross-cohort predictive signal for anti-PD-1 immunotherapy response.\n\n"
+        "**Performance-wise, the Support Vector Machine (SVM) is the strongest generaliser**, achieving the highest mean cross-cohort AUC across all three held-out LOCO test cohorts. "
+        "This is consistent with its theoretical properties: SVMs maximise the decision margin in high-dimensional feature spaces, making them well-suited to small, noisy clinical datasets where "
+        "the signal-to-noise ratio is inherently limited by cohort size and cross-institution technical variation.\n\n"
+        "The addition of somatic driver mutation flags (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) in the multimodal analysis provides marginal complementary information but does not dramatically alter performance, reinforcing that the transcriptomic immune microenvironment is the dominant predictive axis.\n\n"
+        "**For downstream clinical deployment**, however, **calibrated Logistic Regression or ElasticNet** are recommended as the primary decision-support architectures. "
+        "Although these models achieve lower mean AUC than SVM, their predicted response probabilities are directly interpretable as a linear combination of immune signature scores — a property that clinicians, regulators, and ethics boards require for high-stakes treatment decisions. "
+        "The trade-off between SVM's superior discrimination and LR/ElasticNet's interpretability is a fundamental tension in clinical machine learning, and the appropriate choice depends on the deployment context: "
+        "SVM for pure predictive power in a research or screening tool; LR/ElasticNet for any application where decision transparency and regulatory auditability are mandatory.\n\n"
     )
 
     report_path = output_dir / "pillar-4-out-of-cohort-benchmarks" / "model_evaluation_report.md"

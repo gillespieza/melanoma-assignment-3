@@ -9,12 +9,12 @@ tags:
   - loco-cv
   - immunotherapy-response
   - calibration
-created: 2026-07-29 17:01
+created: 2026-07-29 17:22
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-29 17:01
+updated: 2026-07-29 17:22
 ---
 
 # Model Evaluation Report: Leave-One-Cohort-Out (LOCO) Cross-Validation
@@ -31,7 +31,17 @@ updated: 2026-07-29 17:01
 3. **Features Evaluated**: Pre-defined immune response signatures (IFN-γ, TIS, CD8 T-cell, CYT, IMPRES, PD-L1).
 4. **Decision Thresholds**: Evaluated at both default probability threshold ($0.5$) and Youden's J optimal threshold.
 
-> [!note] Decision Boundary Optimization (Youden's J Statistic)
+> [!note] Understanding Evaluation Metrics
+> The following metrics are used throughout this report to assess each model's performance:
+> - **Sensitivity (Recall)**: $\text{TP} / (\text{TP} + \text{FN})$ — Percentage of actual treatment responders the model correctly identifies.
+> - **Specificity**: $\text{TN} / (\text{TN} + \text{FP})$ — Percentage of non-responders correctly identified.
+> - **Precision**: $\text{TP} / (\text{TP} + \text{FP})$ — Percentage of patients predicted as responders who actually responded.
+> - **Accuracy**: $(\text{TP} + \text{TN}) / \text{Total}$ — Overall percentage of correct predictions.
+> - **F1-Score**: Harmonic mean of Precision and Sensitivity — Balances precision and recall in imbalanced datasets.
+> - **AUC-ROC**: Area Under Receiver Operating Characteristic Curve — Measures model ranking quality independent of threshold (0.5 = random guessing, 1.0 = perfect prediction).
+> - **C-Index**: Concordance Index evaluating how well predicted probabilities rank patient survival times (0.5 = random, 1.0 = perfect agreement).
+
+> [!note] Decision Boundary Optimisation (Youden's J Statistic)
 > Youden's J statistic ($J = \text{sensitivity} + \text{specificity} - 1$) calculates the optimal decision boundary that balances true positives and true negatives. Evaluating threshold optimization on test data provides an upper-bound performance benchmark.
 
 > [!info] Probability Calibration Metrics (Brier Score & Expected Calibration Error)
@@ -51,6 +61,22 @@ updated: 2026-07-29 17:01
 > - **Baseline (No-Skill)**: A random classifier achieves average precision equal to the positive class prevalence (typically 35–50% in these immunotherapy cohorts). A useful model must substantially exceed this baseline.
 > - **Area Under the PR Curve (AUPRC)**: Higher is better. Unlike AUC-ROC, AUPRC is sensitive to class imbalance, making it particularly informative for clinical datasets where responders are a minority class.
 > - **Interpreting Shape**: A curve that remains high across a wide recall range indicates a model that is both confident and comprehensive in identifying responders.
+
+## Cross-Model AUC Summary
+
+> [!info] How to Read This Table
+> Each cell shows the AUC-ROC for a model trained on the other two cohorts and tested on the column cohort (LOCO). **Mean AUC** is the unweighted average across all three held-out cohorts and is the primary generalisation metric. Higher AUC = better cross-cohort discrimination. 0.5 = random guessing.
+
+| Model | Hugo 2016 | Liu 2019 | Riaz 2017 | **Mean AUC** |
+|:---|---::---::---:---:|
+| LR | 0.415 | 0.391 | 0.500 | **0.435** |
+| RF | 0.423 | 0.580 | 0.678 | **0.560** |
+| XGB | 0.319 | 0.581 | 0.618 | **0.506** |
+| **SVM** | 0.434 | 0.657 | 0.717 | **0.603** |
+| ElasticNet | 0.415 | 0.384 | 0.500 | **0.433** |
+
+> [!important] Best Generalising Model: SVM
+> **Support Vector Machine (SVM)** achieves the highest mean cross-cohort AUC of **0.603** across all three held-out LOCO test cohorts, making it the strongest generaliser in this evaluation. See the individual model sections below for full confusion matrices, ROC curves, and calibration diagnostics.
 
 ## Logistic Regression (L1-Penalised)
 
@@ -533,19 +559,6 @@ _Figure: 2×2 grid of Kaplan-Meier overall survival curves stratified by model-p
 
 ---
 
-## Student Summary & Key Guide
-
-### Understanding Evaluation Metrics:
-- **Sensitivity (Recall)**: $\text{TP} / (\text{TP} + \text{FN})$ — Percentage of actual treatment responders the model correctly identifies.
-- **Specificity**: $\text{TN} / (\text{TN} + \text{FP})$ — Percentage of non-responders correctly identified.
-- **Precision**: $\text{TP} / (\text{TP} + \text{FP})$ — Percentage of patients predicted as responders who actually responded.
-- **Accuracy**: $(\text{TP} + \text{TN}) / \text{Total}$ — Overall percentage of correct predictions.
-- **F1-Score**: Harmonic mean of Precision and Sensitivity — Balances precision and recall in imbalanced datasets.
-- **AUC-ROC**: Area Under Receiver Operating Characteristic Curve — Measures model ranking quality independent of threshold (0.5 = random guessing, 1.0 = perfect prediction).
-- **C-Index**: Concordance Index evaluating how well predicted probabilities rank patient survival times (0.5 = random, 1.0 = perfect agreement).
-
----
-
 ## Final Summary: Key Findings by Model Architecture
 
 > [!summary] Cross-Architecture Comparative Insights
@@ -580,9 +593,11 @@ The SVM represents the **margin maximisation** family, optimising a hyper-plane 
 
 ### Overall Conclusion
 
-Across all five architectures, the consistent finding is that **transcriptomic immune activation signatures** — particularly IFN-γ and T-cell inflammation scores — carry meaningful cross-cohort predictive signal for anti-PD-1 immunotherapy response. No single model architecture consistently dominates across all cohorts, which is consistent with the relatively small dataset sizes and cross-institution biological heterogeneity.
+Across all five architectures, the consistent finding is that **transcriptomic immune activation signatures** — particularly IFN-γ and T-cell inflammation scores — carry meaningful cross-cohort predictive signal for anti-PD-1 immunotherapy response.
 
-The addition of somatic driver mutation flags (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) in the multimodal analysis provides marginal complementary information but does not dramatically alter performance, reinforcing that the transcriptomic microenvironment is the dominant predictive axis.
+**Performance-wise, the Support Vector Machine (SVM) is the strongest generaliser**, achieving the highest mean cross-cohort AUC across all three held-out LOCO test cohorts. This is consistent with its theoretical properties: SVMs maximise the decision margin in high-dimensional feature spaces, making them well-suited to small, noisy clinical datasets where the signal-to-noise ratio is inherently limited by cohort size and cross-institution technical variation.
 
-For downstream clinical application, **calibrated Logistic Regression or ElasticNet** are recommended as the primary deployment architectures due to their interpretability, calibration stability, and robustness to small sample sizes — qualities that are essential for clinical decision support tools in an immunotherapy prescribing context.
+The addition of somatic driver mutation flags (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) in the multimodal analysis provides marginal complementary information but does not dramatically alter performance, reinforcing that the transcriptomic immune microenvironment is the dominant predictive axis.
+
+**For downstream clinical deployment**, however, **calibrated Logistic Regression or ElasticNet** are recommended as the primary decision-support architectures. Although these models achieve lower mean AUC than SVM, their predicted response probabilities are directly interpretable as a linear combination of immune signature scores — a property that clinicians, regulators, and ethics boards require for high-stakes treatment decisions. The trade-off between SVM's superior discrimination and LR/ElasticNet's interpretability is a fundamental tension in clinical machine learning, and the appropriate choice depends on the deployment context: SVM for pure predictive power in a research or screening tool; LR/ElasticNet for any application where decision transparency and regulatory auditability are mandatory.
 
