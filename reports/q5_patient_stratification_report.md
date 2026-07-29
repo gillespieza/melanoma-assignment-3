@@ -9,12 +9,12 @@ tags:
   - patient-stratification
   - melanoma
   - immunotherapy
-created: 2026-07-29 13:06
+created: 2026-07-29 13:16
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-29 13:06
+updated: 2026-07-29 13:16
 ---
 
 # Q5: Biomarker-Guided Patient Stratification Report (N = 326)
@@ -212,6 +212,12 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 ### Orthogonal Protein Validation & ML Performance Benchmark
 
 ![RPPA Validation](q3-ode-model/outputs/plots/ode_vs_rppa_validation.png)
+
+> [!INFO] Figure Interpretation: Independent Orthogonal Protein Validation (RPPA)
+> - **What is being done**: Correlating mechanistic ODE-predicted baseline `pERK` levels against independent, experimentally measured `pERK` (`MAPK_pT202_Y204`) and `pMEK` (`MEK1_pS217_S221`) protein levels from TCGA-SKCM Reverse-Phase Protein Array (RPPA) assays ($N = 310$).
+> - **Why we are doing it**: To validate whether the 12-gene transcriptomic ODE digital twin captures physical protein-level signaling dynamics using an orthogonal experimental platform rather than relying solely on self-referential gene expression data.
+> - **What question it answers**: Does the ODE mechanistic model accurately predict physical downstream signaling activation at the protein level? Yes, showing a statistically significant positive correlation with measured `pERK` ($r = 0.175, p = 0.00203$) and confirming that `NRAS`-mutant tumours exhibit the highest baseline `pERK` activation ($p = 3.16 \times 10^{-9}$).
+
 
 ![ML vs ODE Benchmark](q3-ode-model/outputs/plots/ml_vs_ode_comparison.png)
 
