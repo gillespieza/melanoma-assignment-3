@@ -9,12 +9,12 @@ tags:
   - patient-stratification
   - melanoma
   - immunotherapy
-created: 2026-07-29 13:16
+created: 2026-07-29 13:18
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-29 13:16
+updated: 2026-07-29 13:18
 ---
 
 # Q5: Biomarker-Guided Patient Stratification Report (N = 326)
@@ -220,6 +220,12 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 
 
 ![ML vs ODE Benchmark](q3-ode-model/outputs/plots/ml_vs_ode_comparison.png)
+
+> [!INFO] Figure Interpretation: Machine Learning vs. Mechanistic ODE Benchmark
+> - **What is being done**: Benchmarking 5-fold cross-validated ROC-AUC performance for predicting clinical response between pure machine learning architectures (Random Forest, Logistic Regression, Neural Network) trained on 12 raw gene expression features versus a simple Logistic Regression classifier operating on only 3 mechanistic ODE digital twin output features (`pERK`, BRAFi tumour burden, anti-PD-1 checkpoint burden).
+> - **Why we are doing it**: To evaluate whether compressing high-dimensional transcriptomics into biologically grounded, differential-equation-based dynamic readouts retains or improves predictive performance while eliminating black-box opacity.
+> - **What question it answers**: Does a mechanistic dynamic ODE digital twin achieve competitive predictive performance compared to black-box machine learning? Yes, achieving an ROC-AUC of **0.666** ($\pm 0.074$) with only **3 interpretable features**, outperforming linear Logistic Regression (**0.646**) and Neural Networks (**0.583**), and performing within $0.02$ AUC of complex 12-feature Random Forests (**0.686**).
+
 
 | Model Architecture | Feature Count | 5-Fold CV ROC-AUC | Interpretability & Clinical Utility |
 | :--- | :---: | :---: | :--- |
