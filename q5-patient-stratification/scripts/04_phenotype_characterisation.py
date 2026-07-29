@@ -134,7 +134,7 @@ def plot_baseline_boxplots(df: pd.DataFrame, save_path: Path) -> None:
     ax.set_xlabel("Immune Microenvironment & Biomarker Signature", fontsize=12, fontweight="bold")
     ax.set_ylabel("Standardized Z-Score", fontsize=12, fontweight="bold")
     ax.axhline(0, color="#37474F", linestyle="--", linewidth=1.0, alpha=0.7)
-    ax.legend(title="Phenotype Subtype", loc="upper right", frameon=True, fontsize=9)
+    ax.legend(title="Phenotype Subtype", loc="lower right", frameon=True, fontsize=9)
 
     plt.tight_layout()
     save_path.parent.mkdir(parents=True, exist_ok=True)
