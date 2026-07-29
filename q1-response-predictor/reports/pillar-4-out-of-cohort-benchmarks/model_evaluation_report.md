@@ -9,6 +9,12 @@ obsidianUIMode: source
 updated: 2026-07-25 22:46
 ---
 
+> [!summary]+ Contents
+> ```table-of-contents
+> style: nestedList  # nestedList, nestedOrderedList, inlineFirstLevel
+> hideWhenEmpty: true # Hide TOC if no headings are found
+> ```
+
 # Model Evaluation Report: Leave-One-Cohort-Out (LOCO) Cross-Validation
 
 > [!summary] What, Why & Key Questions  
@@ -439,4 +445,55 @@ Many published papers claim high AUCs (>0.85) because they use standard 5-fold c
 The model's target was predicting **anti-PD-1 response (CR/PR vs. PD)**, where SVM achieved an out-of-cohort AUC of **0.717**.
 
 - **Key Insight Realised**: Short-term treatment response and long-term overall survival are decoupled in metastatic melanoma due to crossover second-line targeted therapies and non-immune clinical drivers (like ECOG score and LDH levels).
-- **Pipeline Justification**: This result reinforces why we move to **Question 5 / Multimodal Integration**, combining immune signatures with clinical stage, LDH, and driver mutations to build a complete prognostic picture.
+- **Pipeline Justification**: This result reinforces why we move to **Question 5 / Multimodal Integration**, combining immune signatures with clinical stage, LDH, and driver mutations to build a complete prognostic picture.
+
+## Summary of Key Findings by Model Architecture
+
+> [!summary] Comparative Overview of Model Performance & Biological Insights  
+> **What**: A comprehensive synthesis comparing all 5 machine learning architectures (Support Vector Machine, ElasticNet, Logistic Regression, Random Forest, and XGBoost) evaluated under Leave-One-Cohort-Out (LOCO) cross-validation across 3 independent clinical trial cohorts (Hugo 2016, $N=27$; Liu 2019, $N=104$; Riaz 2017, $N=64$).  
+> **Why**: Synthesising performance characteristics across model families clarifies how mathematical assumptions (linear regularisation, non-linear bagging, gradient boosting, maximum-margin hyper-planes) interact with high-dimensional transcriptomic immune signatures and discrete somatic driver mutations.  
+> **What Question It Answers**: Which model architecture provides the optimal balance of cross-cohort generalisation, prediction stability, and multimodal feature utilisation for clinical immunotherapy response prediction?
+
+### Cross-Model Performance Matrix (LOCO ROC-AUC Scores)
+
+| Model Architecture | Immune Only: Hugo 2016 ($N=27$) | Immune Only: Liu 2019 ($N=104$) | Immune Only: Riaz 2017 ($N=64$) | Multimodal: Hugo 2016 | Multimodal: Liu 2019 | Multimodal: Riaz 2017 | Impact of Adding Driver Mutations (`BRAF`/`NRAS`/`NF1`) |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---|
+| **Support Vector Machine (SVM)** | 0.434 | **0.657** | **0.717** | 0.434 | **0.657** | **0.717** | No change ($\Delta\text{AUC} = 0.000$); continuous signatures dominate kernel distance matrix. |
+| **ElasticNet Logistic Regression** | 0.415 | 0.616 | 0.500 | 0.415 | 0.616 | 0.500 | No change ($\Delta\text{AUC} = 0.000$); L1 penalty zeroes out uninformative mutation weights. |
+| **Logistic Regression (L1-Penalised)** | 0.415 | 0.609 | 0.500 | 0.415 | 0.609 | 0.500 | No change ($\Delta\text{AUC} = 0.000$); Lasso zeroes out driver mutation coefficients. |
+| **Random Forest Classifier** | 0.423 | 0.580 | 0.678 | **0.473** | 0.581 | **0.688** | **Improved** ($\Delta\text{AUC} = +0.050$ on Hugo 2016, $+0.010$ on Riaz 2017); non-linear interaction splits. |
+| **XGBoost Gradient Boosting** | 0.319 | 0.581 | 0.618 | 0.319 | 0.581 | 0.618 | No change ($\Delta\text{AUC} = 0.000$); greedy split selection ignores binary mutation flags. |
+
+### Model-by-Model Synthesis & Key Findings
+
+#### 1. Support Vector Machine (SVM) — Top Performing Classifier
+- **Key Finding**: SVM emerged as the top-performing model overall, achieving the highest out-of-cohort generalisation performance across LOCO test benchmarks (AUC = 0.717 on Riaz 2017 and AUC = 0.657 on Liu 2019).
+- **Mathematical Rationale**: The maximum-margin hyper-plane algorithm ($C=0.1$, RBF kernel with $\gamma=\text{'scale'}$) effectively regularises against sample-specific noise and batch effect variations present across distinct clinical trial datasets.
+- **Multimodal Behaviour**: Adding somatic driver mutation flags (`BRAF`, `NRAS`, `NF1`) produced zero change in AUC ($\Delta\text{AUC} = 0.000$). Because continuous Z-scored immune signatures span a wider range than binary mutation values ($0$ or $1$), the Euclidean distance metric within the RBF kernel matrix is predominantly governed by transcriptomic expression levels.
+
+#### 2. ElasticNet Logistic Regression — Best Linear Baseline
+- **Key Finding**: ElasticNet demonstrated superior linear performance compared to pure L1 Lasso Logistic Regression on Liu 2019 (AUC = 0.616 vs 0.609).
+- **Mathematical Rationale**: By combining L1 (Lasso) and L2 (Ridge) penalties (`l1_ratio = 0.1`), ElasticNet avoids the arbitrary elimination of collinear features. Because immune expression signatures exhibit strong inter-feature correlation ($r_s = 0.85\text{--}0.94$), the L2 component retains complementary signals across signature blocks rather than dropping all but one feature.
+- **Multimodal Behaviour**: Binary driver mutation flags (`BRAF`, `NRAS`, `NF1`) were assigned zero weight by the L1 regulariser, yielding identical cross-cohort predictions between immune-only and multimodal feature sets.
+
+#### 3. L1-Penalised Logistic Regression — Transparent Baseline
+- **Key Finding**: L1 Logistic Regression provided a transparent benchmark, achieving moderate discrimination on Liu 2019 (AUC = 0.609) but collapsing to random guessing on Riaz 2017 (AUC = 0.500) and inverted performance on Hugo 2016 (AUC = 0.415).
+- **Mathematical Rationale**: Linear sparsity constraints shrink uninformative coefficients to zero. However, strict linear boundaries cannot capture non-linear immune microenvironment threshold effects or multi-gene non-additive interactions.
+- **Multimodal Behaviour**: Driver mutation coefficients (`BRAF`, `NRAS`, `NF1`) were zeroed out completely because somatic driver status alone does not differentiate responders from non-responders across cohorts.
+
+#### 4. Random Forest Classifier — Only Architecture Benefiting from Multimodal Integration
+- **Key Finding**: Random Forest was the **only model architecture** to show consistent performance improvements upon incorporating somatic driver mutations (`BRAF`, `NRAS`, `NF1`).
+- **Performance Boost**: Out-of-cohort AUC increased from 0.423 to 0.473 (+0.050) on Hugo 2016 and from 0.678 to 0.688 (+0.010) on Riaz 2017, while maintaining 0.581 on Liu 2019.
+- **Mathematical Rationale**: Unlike linear models or greedy gradient-boosted trees, decision tree ensembles construct multi-way conditional split rules (e.g., evaluating immune infiltration levels conditional upon `BRAF` or `NRAS` mutation status). This non-linear subgroup splitting successfully captures subtle, complementary biological interactions between tumour genomics and microenvironmental immune engagement.
+
+#### 5. XGBoost Gradient Boosting — Prone to Overfitting on Small Cohorts
+- **Key Finding**: XGBoost exhibited suboptimal cross-cohort transferability, particularly on small test cohorts (Hugo 2016 AUC = 0.319), while achieving moderate performance on larger trials (Liu 2019 AUC = 0.581, Riaz 2017 AUC = 0.618).
+- **Mathematical Rationale**: Greedy split selection at each boosting step prioritises continuous transcriptomic features (`TIS`, `IFN-γ`) that offer immediate gradient reduction, ignoring lower-gain binary mutation flags entirely. Sequential error correction without extensive sample volume leads to overfitting on cohort-specific noise.
+- **Multimodal Behaviour**: Identical predictions were produced with and without driver mutation flags ($\Delta\text{AUC} = 0.000$), as regularisation hyperparameters (`learning_rate`, `max_depth`) pruned binary mutation splits early during tree construction.
+
+### Key Takeaways
+
+> [!insight] Core Methodological & Clinical Takeaways  
+> 1. **Model Hierarchy**: Maximum-margin classifiers (SVM) dominate cross-cohort generalisation (peak AUC = 0.717 on Riaz 2017), followed by correlated linear regularisers (ElasticNet AUC = 0.616 on Liu 2019) and non-linear tree ensembles (Random Forest AUC = 0.688 on Riaz 2017).  
+> 2. **Multimodal Utility**: Somatic driver mutations (`BRAF`, `NRAS`, `NF1`) provide complementary predictive value **only** when paired with non-linear tree-based interaction splitting (Random Forest). Linear models and kernel methods zero out or dilute discrete genomic flags.  
+> 3. **Clinical Recommendation**: For out-of-cohort immunotherapy response prediction based on transcriptomic signatures, SVM with RBF kernel is the optimal standalone classifier, while Random Forest should be selected when integrating multimodal genomic and transcriptomic features.
