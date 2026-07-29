@@ -62,7 +62,9 @@ PHASE2_VOLCANO_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "biomarke
 PHASE2_ROC_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "youden_roc_curves.png"
 PHASE2_INTERACTION_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "genomic_interaction_tis_braf.png"
 PHASE2_MATRIX_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "genomic_immune_interaction_matrix.png"
-PHASE3_CLUSTER_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "clustering" / "umap_clusters.png"
+PHASE3_PCA_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "clustering" / "pca_clusters.png"
+PHASE3_UMAP_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "clustering" / "umap_clusters.png"
+PHASE3_CLUSTER_PLOT_PATH = PHASE3_PCA_PLOT_PATH
 PHASE4_ODE_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "phenotypes" / "ode_trajectories.png"
 
 # Q3 ODE Plot Paths
@@ -304,16 +306,26 @@ def main() -> None:
         doc_sections.append("### Unsupervised Phenotype Cluster Summary\n")
         doc_sections.append(format_markdown_table(pd.DataFrame(cluster_summary)) + "\n")
 
-    if PHASE3_CLUSTER_PLOT_PATH.exists():
-        rel_img = rel_path(PHASE3_CLUSTER_PLOT_PATH)
-        doc_sections.append("### Unsupervised Phenotype Cluster Projection\n")
-        doc_sections.append(f"![Unsupervised Patient Phenotype Clusters]({rel_img})\n")
+    if PHASE3_PCA_PLOT_PATH.exists():
+        rel_img = rel_path(PHASE3_PCA_PLOT_PATH)
+        doc_sections.append("### Unsupervised Phenotype Cluster Projection (2D PCA)\n")
+        doc_sections.append(f"![Unsupervised Patient Phenotype Clusters PCA]({rel_img})\n")
         doc_sections.append(
             "> [!INFO] Figure Interpretation: 2D Principal Component Cluster Projection\n"
             "> - **What this plot shows**: 2D Principal Component Projection of $N = 326$ patients color-coded by their multi-modal K-Means phenotype cluster ($K=4$). Shaded confidence ellipses mark cluster boundaries.\n"
             "> - **Axis 1 (Horizontal)**: Principal Component 1 captures immune activation and lymphocytic T-cell density (separating Inflamed Hot vs Desert Cold tumours).\n"
             "> - **Axis 2 (Vertical)**: Principal Component 2 captures macrophage polarisation (M1/M2 ratio) and stromal CAF exclusion.\n"
             "> - **Clinical Value**: Discovers discrete patient subgroups with distinct treatment response profiles without relying on biased outcome labels.\n"
+        )
+
+    if PHASE3_UMAP_PLOT_PATH.exists():
+        rel_img_umap = rel_path(PHASE3_UMAP_PLOT_PATH)
+        doc_sections.append("### Unsupervised Phenotype Manifold (UMAP Projection)\n")
+        doc_sections.append(f"![Unsupervised Patient Phenotype Clusters UMAP]({rel_img_umap})\n")
+        doc_sections.append(
+            "> [!INFO] Figure Interpretation: Non-Linear UMAP Cluster Manifold\n"
+            "> - **What this plot shows**: 2D UMAP non-linear manifold projection of the 38-feature patient space ($N = 326$).\n"
+            "> - **Non-Linear Topology**: Preserves local patient neighborhood structure and non-linear biomarker interactions across high-dimensional feature spaces.\n"
         )
 
     # Dynamic plain-language takeaways

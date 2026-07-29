@@ -9,12 +9,12 @@ tags:
   - patient-stratification
   - melanoma
   - immunotherapy
-created: 2026-07-29 12:17
+created: 2026-07-29 12:25
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-29 12:17
+updated: 2026-07-29 12:25
 ---
 
 # Q5: Biomarker-Guided Patient Stratification Report (N = 326)
@@ -142,15 +142,23 @@ Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
 | Cluster 2    | `Immune Hot (High TIS & CYT, Inflamed Microenvironment)`      |                 133 | 40.8%          | **41.8%**       |
 | Cluster 3    | `M2 Immunosuppressive (Depleted T-cells & Stromal Exclusion)` |                  35 | 10.7%          | **61.5%**       |
 
-### Unsupervised Phenotype Cluster Projection
+### Unsupervised Phenotype Cluster Projection (2D PCA)
 
-![Unsupervised Patient Phenotype Clusters](q5-patient-stratification/plots/clustering/umap_clusters.png)
+![Unsupervised Patient Phenotype Clusters PCA](q5-patient-stratification/plots/clustering/pca_clusters.png)
 
 > [!INFO] Figure Interpretation: 2D Principal Component Cluster Projection
 > - **What this plot shows**: 2D Principal Component Projection of $N = 326$ patients color-coded by their multi-modal K-Means phenotype cluster ($K=4$). Shaded confidence ellipses mark cluster boundaries.
 > - **Axis 1 (Horizontal)**: Principal Component 1 captures immune activation and lymphocytic T-cell density (separating Inflamed Hot vs Desert Cold tumours).
 > - **Axis 2 (Vertical)**: Principal Component 2 captures macrophage polarisation (M1/M2 ratio) and stromal CAF exclusion.
 > - **Clinical Value**: Discovers discrete patient subgroups with distinct treatment response profiles without relying on biased outcome labels.
+
+### Unsupervised Phenotype Manifold (UMAP Projection)
+
+![Unsupervised Patient Phenotype Clusters UMAP](q5-patient-stratification/plots/clustering/umap_clusters.png)
+
+> [!INFO] Figure Interpretation: Non-Linear UMAP Cluster Manifold
+> - **What this plot shows**: 2D UMAP non-linear manifold projection of the 38-feature patient space ($N = 326$).
+> - **Non-Linear Topology**: Preserves local patient neighborhood structure and non-linear biomarker interactions across high-dimensional feature spaces.
 
 ### Key Takeaways
 - **Distinct Patient Groups**: K-Means clustering splits the $N = 326$ cohort into four clear biological subgroups with response rates ranging from **35.2% to 61.5%**.

@@ -90,14 +90,17 @@ def main() -> None:
             pass
     df_clean.to_csv(out_clusters, index=False)
 
-    # 4. Generate 300 DPI 2D Cluster Projection Figure
-    plot_file = SUBPROJECT_ROOT / "plots" / "clustering" / "umap_clusters.png"
-    plot_2d_cluster_projection(df_clean, labels, X_scaled, plot_file, PHENOTYPE_NAMES)
+    # 4. Generate 300 DPI 2D Cluster Projection Figures (both PCA and UMAP)
+    pca_plot_file = SUBPROJECT_ROOT / "plots" / "clustering" / "pca_clusters.png"
+    umap_plot_file = SUBPROJECT_ROOT / "plots" / "clustering" / "umap_clusters.png"
+    plot_2d_cluster_projection(df_clean, labels, X_scaled, pca_plot_file, PHENOTYPE_NAMES, method="pca")
+    plot_2d_cluster_projection(df_clean, labels, X_scaled, umap_plot_file, PHENOTYPE_NAMES, method="umap")
 
     print("=" * 80)
     print("PATIENT STRATIFICATION COMPLETE")
     print(f"Output Clusters File: {rel_path(out_clusters)}")
-    print(f"Output Cluster Plot:  {rel_path(plot_file)}")
+    print(f"Output PCA Plot:      {rel_path(pca_plot_file)}")
+    print(f"Output UMAP Plot:     {rel_path(umap_plot_file)}")
     print(f"Total Stratified Patients: {len(df_clean)}")
     for cid, name in PHENOTYPE_NAMES.items():
         cnt = np.sum(labels == cid)
