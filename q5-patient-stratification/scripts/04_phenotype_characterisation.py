@@ -171,7 +171,7 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
         ax.plot(
             sol.t,
             sol.y[0],
-            label=f"{cfg['name']} (T_180 = {sol.y[0][-1]:.2f})",
+            label=rf"{cfg['name']} ($T_{{180}} = {sol.y[0][-1]:.2f}$)",
             color=cfg["color"],
             linestyle=cfg["ls"],
             linewidth=lw,
