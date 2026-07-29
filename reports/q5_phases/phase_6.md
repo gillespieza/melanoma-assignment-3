@@ -41,6 +41,17 @@ At a decision threshold of $p_t = 0.30$, the Q5 Phenotype-Stratified system achi
 
 ![Net Benefit breakdown by biological phenotype at $p_t = 0.30$.](q5-patient-stratification/plots/clinical_utility/net_benefit_by_phenotype.png)
 
+> [!INFO] Understanding Net Benefit by Biological Phenotype: Explanation & Takeaways
+> - **What this plot is showing**: Subgroup-specific breakdown of Net Clinical Benefit at a standard decision threshold of $p_t = 0.30$ across the four discovered biological melanoma phenotypes: **Mutant-Driven**, **Immune Cold**, **Immune Hot**, and **M2 Immunosuppressive**. It compares the performance of the **Phenotype-Stratified (Q5)** model against the **Global Predictor (Q1)**, single-gene `CD274` (PD-L1+), `High TMB`, and empirical **Treat All**.
+> - **How to interpret the plot**:
+>   1. **Phenotype Subgroups (X-axis)**: Represents biologically distinct tumour microenvironments with varying baseline response rates (e.g. *Immune Hot* ~65% response vs *Immune Cold* ~20% response).
+>   2. **Net Clinical Benefit (Y-axis)**: Higher bars reflect greater net clinical gain within that specific patient subgroup. A strategy that performs well overall may have negative or negligible net benefit in specific resistant subgroups.
+>   3. **Subgroup Heterogeneity**: Demonstrates why a single global model or empirical 'Treat All' strategy fails in immunologically cold or immunosuppressive microenvironments.
+> - **Key Takeaways**:
+>   - **Phenotype-Tailored Value**: The Q5 Phenotype-Stratified model delivers positive Net Benefit across all four subgroups, maintaining high clinical gain in *Immune Hot* and *Mutant-Driven* tumours while effectively filtering non-responders in *Immune Cold* tumours.
+>   - **Sparing Immunosuppressive & Cold Tumours**: In hard-to-treat *Immune Cold* and *M2 Immunosuppressive* phenotypes, unselected 'Treat All' yields poor net benefit due to high false-positive rates; Q5 stratification avoids futile monotherapy in these patients.
+>   - **Rationale for Stratified Decision Support**: Confirms that biological heterogeneity requires subgroup-tailored decision thresholds rather than a one-size-fits-all clinical policy.
+
 
 ![Non-responders spared from unnecessary monotherapy toxicity across decision thresholds.](q5-patient-stratification/plots/clinical_utility/unnecessary_treatments_avoided.png)
 
