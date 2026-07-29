@@ -14,6 +14,7 @@ import sys
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+SUBPROJECT_ROOT = SCRIPT_DIR.parent
 for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
     if (parent / "src").is_dir() and (parent / "data").is_dir():
         if str(parent) not in sys.path:
@@ -27,8 +28,9 @@ if str(SCRIPT_DIR) not in sys.path:
 # Project Imports
 # ---------------------------------------------------------------------------
 
+from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import PROJECT_ROOT, SUBPROJECT_ROOT, rel_path
+from src.utils.paths import PROJECT_ROOT, rel_path
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions

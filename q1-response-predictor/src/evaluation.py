@@ -133,9 +133,75 @@ def find_optimal_threshold(y_true: np.ndarray, y_pred_prob: np.ndarray) -> float
     return float(thresholds[best_idx])
 
 
+from sklearn.calibration import calibration_curve
+from sklearn.metrics import brier_score_loss
+
+def compute_expected_calibration_error(y_true: np.ndarray, y_pred_prob: np.ndarray, n_bins: int = 10) -> float:
+    """
+    Computes Expected Calibration Error (ECE) for binary classification.
+    ECE measures the difference between expected accuracy and actual empirical accuracy across confidence bins.
+    """
+    if len(np.unique(y_true)) < 2:
+        return np.nan
+
+    bin_boundaries = np.linspace(0, 1, n_bins + 1)
+    ece = 0.0
+    n_samples = len(y_true)
+
+    for i in range(n_bins):
+        bin_lower = bin_boundaries[i]
+        bin_upper = bin_boundaries[i + 1]
+
+        # Find predictions in bin
+        if i == n_bins - 1:
+            in_bin = (y_pred_prob >= bin_lower) & (y_pred_prob <= bin_upper)
+        else:
+            in_bin = (y_pred_prob >= bin_lower) & (y_pred_prob < bin_upper)
+
+        prop_in_bin = np.mean(in_bin)
+        if prop_in_bin > 0:
+            accuracy_in_bin = np.mean(y_true[in_bin])
+            avg_confidence_in_bin = np.mean(y_pred_prob[in_bin])
+            ece += np.abs(accuracy_in_bin - avg_confidence_in_bin) * prop_in_bin
+
+    return float(ece)
+
+
+def plot_calibration_curves(loco_results, model_name, save_path=None):
+    """
+    Plots calibration curves (reliability diagrams) for all LOCO CV folds.
+    """
+    plt.figure(figsize=(8, 6))
+
+    for cohort, res in loco_results.items():
+        y_true = res['y_true']
+        y_pred_prob = res['y_pred_prob']
+
+        if len(np.unique(y_true)) > 1:
+            prob_true, prob_pred = calibration_curve(y_true, y_pred_prob, n_bins=5)
+            ece = compute_expected_calibration_error(y_true, y_pred_prob, n_bins=5)
+            brier = brier_score_loss(y_true, y_pred_prob)
+            plt.plot(prob_pred, prob_true, marker='o', linewidth=2, label=f'{cohort} (ECE = {ece:.3f}, Brier = {brier:.3f})')
+
+    plt.plot([0, 1], [0, 1], color='gray', linestyle='--', label='Perfectly Calibrated')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('Mean Predicted Probability')
+    plt.ylabel('Fraction of Positives (Empirical Response Rate)')
+    plt.title(f'LOCO Calibration Curves / Reliability Diagrams ({model_name})')
+    plt.legend(loc="upper left")
+    plt.grid(alpha=0.3)
+
+    if save_path:
+        plt.savefig(save_path, bbox_inches='tight', dpi=300)
+        plt.close()
+    else:
+        plt.show()
+
+
 def calculate_extended_metrics(y_true, y_pred_prob, threshold=0.5):
     """
-    Calculates extended metrics including specificity at a given threshold.
+    Calculates extended metrics including specificity, Brier score, and ECE at a given threshold.
 
     Args:
         y_true: Binary ground-truth labels (0/1).
@@ -145,7 +211,7 @@ def calculate_extended_metrics(y_true, y_pred_prob, threshold=0.5):
 
     Returns:
         dict with keys: auc, accuracy, precision, sensitivity, specificity,
-        f1, tp, tn, fp, fn, threshold.
+        f1, brier_score, ece, tp, tn, fp, fn, threshold.
     """
     y_pred_class = (y_pred_prob >= threshold).astype(int)
 
@@ -157,6 +223,8 @@ def calculate_extended_metrics(y_true, y_pred_prob, threshold=0.5):
     # Calculate metrics
     sensitivity = tp / (tp + fn) if (tp + fn) > 0 else np.nan
     specificity = tn / (tn + fp) if (tn + fp) > 0 else np.nan
+    brier = brier_score_loss(y_true, y_pred_prob) if len(np.unique(y_true)) > 1 else np.nan
+    ece = compute_expected_calibration_error(y_true, y_pred_prob) if len(np.unique(y_true)) > 1 else np.nan
 
     metrics = {
         'auc': roc_auc_score(y_true, y_pred_prob) if len(np.unique(y_true)) > 1 else np.nan,
@@ -165,6 +233,8 @@ def calculate_extended_metrics(y_true, y_pred_prob, threshold=0.5):
         'sensitivity': sensitivity,
         'specificity': specificity,
         'f1': f1_score(y_true, y_pred_class, zero_division=0),
+        'brier_score': brier,
+        'ece': ece,
         'tp': tp,
         'tn': tn,
         'fp': fp,
@@ -276,3 +346,71 @@ def run_survival_analysis(df_clin, y_pred_prob, time_col='os_months', status_col
         plt.show()
         
     return p_value
+
+
+def plot_survival_2x2_grid(cohort_survival_data, save_path=None):
+    """
+    Plots a 2x2 grid of Kaplan-Meier survival curves for the 4 cohorts (Hugo, Liu, Riaz, TCGA-SKCM).
+    
+    Args:
+        cohort_survival_data: list of dicts with keys:
+            'cohort', 'df_clin', 'y_pred_prob', 'time_col', 'status_col', 'model_name'
+    """
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    axes = axes.flatten()
+
+    for idx, item in enumerate(cohort_survival_data):
+        ax = axes[idx]
+        cohort_name = item['cohort']
+        df = item['df_clin'].copy()
+        time_col = item['time_col']
+        status_col = item['status_col']
+        y_pred_prob = item['y_pred_prob']
+
+        df[time_col] = pd.to_numeric(df[time_col], errors='coerce').astype(float)
+        df[status_col] = pd.to_numeric(df[status_col], errors='coerce').astype(float)
+        df['y_pred_prob'] = y_pred_prob
+        df = df.dropna(subset=[time_col, status_col, 'y_pred_prob'])
+
+        threshold = 0.5
+        high_prob = df[df['y_pred_prob'] >= threshold]
+        low_prob = df[df['y_pred_prob'] < threshold]
+
+        if len(high_prob) == 0 or len(low_prob) == 0:
+            threshold = df['y_pred_prob'].median()
+            high_prob = df[df['y_pred_prob'] >= threshold]
+            low_prob = df[df['y_pred_prob'] < threshold]
+
+        if len(high_prob) > 0 and len(low_prob) > 0:
+            kmf_high = KaplanMeierFitter()
+            kmf_low = KaplanMeierFitter()
+
+            kmf_high.fit(high_prob[time_col], event_observed=high_prob[status_col], label=f'High Prob (N={len(high_prob)})')
+            kmf_high.plot_survival_function(ax=ax, ci_show=True, color='#009E73', lw=2)
+
+            kmf_low.fit(low_prob[time_col], event_observed=low_prob[status_col], label=f'Low Prob (N={len(low_prob)})')
+            kmf_low.plot_survival_function(ax=ax, ci_show=True, color='#D55E00', lw=2)
+
+            results = logrank_test(
+                high_prob[time_col], low_prob[time_col],
+                event_observed_A=high_prob[status_col], event_observed_B=low_prob[status_col]
+            )
+            p_val = results.p_value
+            ax.set_title(f"{cohort_name} ({item.get('model_name', 'Model').upper()}, p = {p_val:.3f})", fontsize=12, fontweight='bold')
+        else:
+            ax.set_title(f"{cohort_name} (Constant Predictions)", fontsize=12, fontweight='bold')
+
+        ax.set_xlabel('Survival Time (Months)')
+        ax.set_ylabel('Overall Survival Probability')
+        ax.grid(color='#E5E7EB', linewidth=0.5, alpha=0.6)
+        ax.legend(loc="lower left")
+
+    plt.suptitle("Overall Survival Stratification Across Cohorts by Model Predictions", fontsize=15, fontweight='bold', y=0.98)
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, bbox_inches='tight', dpi=300)
+        plt.close()
+    else:
+        plt.show()
+

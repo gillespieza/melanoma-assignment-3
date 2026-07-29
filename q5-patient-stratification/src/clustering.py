@@ -32,18 +32,17 @@ set_presentation_style()
 
 # Phenotype Cluster Index Colors matching PHENOTYPE_PALETTE
 CLUSTER_PALETTE = {
-    0: PHENOTYPE_PALETTE["Immune Hot"],                 # Crimson Red (#D55E00)
+    0: PHENOTYPE_PALETTE["Mutant-Driven"],              # Okabe-Ito Orange (#E69F00)
     1: PHENOTYPE_PALETTE["Immune Cold"],                # Okabe-Ito Blue (#0072B2)
-    2: PHENOTYPE_PALETTE["Immunosuppressive M2-High"],  # Okabe-Ito Reddish Purple (#CC79A7)
-    3: PHENOTYPE_PALETTE["Mutant-Driven"],              # Okabe-Ito Orange (#E69F00)
+    2: PHENOTYPE_PALETTE["Immune Hot"],                 # Crimson Red (#D55E00)
+    3: PHENOTYPE_PALETTE["Immunosuppressive M2-High"],  # Okabe-Ito Reddish Purple (#CC79A7)
 }
 
 
 def prepare_clustering_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, np.ndarray]:
-    """Select and standardize numeric immune & microenvironment features for clustering."""
+    """Select and standardize multi-modal immune microenvironment and driver mutation features for patient clustering."""
     feature_cols = [
-        c for c in ["TIS", "CYT", "IFN_gamma", "CD8_Tcell", "PD_L1", "M1_M2_Ratio",
-                    "M1_score", "M2_score", "CD8_T_cells", "M1_Macrophages", "M2_Macrophages", "CAFs"]
+        c for c in ["TIS", "CYT", "CD8_T_cells", "M1_Macrophages", "M2_Macrophages", "CAFs", "mut_BRAF", "mut_NRAS", "mut_NF1"]
         if c in df.columns
     ]
     df_clean = df.dropna(subset=feature_cols).copy()
@@ -75,14 +74,24 @@ def plot_2d_cluster_projection(
     X_scaled: np.ndarray,
     save_path: Path,
     cluster_names: Dict[int, str] = None,
+    method: str = "pca",
 ) -> None:
-    """Generate publication-ready 2D cluster projection plot with clear cluster separation and expanded biological legend.
-
-    Uses PCA 2D embedding to project patients into visually distinct cluster regions.
-    Colors imported from PHENOTYPE_PALETTE in src.styles (Crimson Red for Immune Hot, Blue for Immune Cold).
-    """
-    pca = PCA(n_components=2, random_state=42)
-    coords = pca.fit_transform(X_scaled)
+    """Generate publication-ready 2D cluster projection plot (PCA or UMAP)."""
+    method_lower = method.lower()
+    if method_lower == "umap":
+        import umap
+        reducer = umap.UMAP(n_components=2, random_state=42, n_neighbors=15, min_dist=0.1)
+        coords = reducer.fit_transform(X_scaled)
+        xlabel = "UMAP Dimension 1"
+        ylabel = "UMAP Dimension 2"
+        title_str = f"Unsupervised Patient Phenotype Manifold (N={len(df_clean)}, UMAP Embedding)"
+    else:
+        pca = PCA(n_components=2, random_state=42)
+        coords = pca.fit_transform(X_scaled)
+        var_explained = np.sum(pca.explained_variance_ratio_) * 100
+        xlabel = "Principal Component 1 (Immune Activation & T-cell Density)"
+        ylabel = "Principal Component 2 (M1/M2 Macrophage & Stromal Axis)"
+        title_str = f"Unsupervised Patient Phenotype Clusters (N={len(df_clean)}, PCA Variance: {var_explained:.1f}%)"
 
     df_plot = df_clean.copy()
     df_plot["Dim1"] = coords[:, 0]
@@ -141,18 +150,10 @@ def plot_2d_cluster_projection(
                 bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor=c_color, alpha=0.9),
             )
 
-    n_patients = len(df_plot)
-    var_explained = np.sum(pca.explained_variance_ratio_) * 100
-    ax.set_title(
-        f"Unsupervised Patient Phenotype Clusters (N={n_patients}, PCA Variance: {var_explained:.1f}%)",
-        fontsize=14,
-        fontweight="bold",
-        pad=15,
-    )
-    ax.set_xlabel("Principal Component 1 (Immune Activation & T-cell Density)", fontsize=12, fontweight="bold")
-    ax.set_ylabel("Principal Component 2 (M1/M2 Macrophage & Stromal Axis)", fontsize=12, fontweight="bold")
+    ax.set_title(title_str, fontsize=14, fontweight="bold", pad=15)
+    ax.set_xlabel(xlabel, fontsize=12, fontweight="bold")
+    ax.set_ylabel(ylabel, fontsize=12, fontweight="bold")
 
-    # Legend with expanded biological descriptions
     ax.legend(
         title="Biological Subtype & Microenvironment",
         loc="upper right",
@@ -168,4 +169,4 @@ def plot_2d_cluster_projection(
     save_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(save_path, dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"Saved 2D cluster projection plot to {save_path}")
+    print(f"Saved {method.upper()} 2D cluster projection plot to {save_path}")

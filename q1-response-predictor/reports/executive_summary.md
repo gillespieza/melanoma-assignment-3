@@ -148,13 +148,13 @@ graph LR
 
 ### _Table 3: Key pipeline architecture decisions and their justifications._
 
-| Decision | Choice | Rationale |
-|:---|:---|:---|
-| **Batch correction** | Cohort-independent Z-score scaling | Prevents cross-validation data leakage (ComBat requires access to all cohorts simultaneously) |
-| **Transcriptomic features** | 6 curated immune signatures | Biologically interpretable, stable across folds, grounded in known ICI biology |
-| **Genomic features** | TMB + 3 driver mutations (`BRAF`, `NRAS`, `NF1`) | Orthogonal to transcriptomic signatures; TMB is predictive of response but not prognostic of baseline survival |
-| **Feature selection** | Curated signatures over SelectKBest | Data-driven selection captures cohort-specific noise, not transferable immune biology |
-| **Validation strategy** | Report both pooled CV and LOCO | LOCO is the primary evidence layer; pooled CV provides complementary upper-bound estimates |
+| Decision                    | Choice                                           | Rationale                                                                                                      |
+|:--------------------------- |:------------------------------------------------ |:-------------------------------------------------------------------------------------------------------------- |
+| **Batch correction**        | Cohort-independent Z-score scaling               | Prevents cross-validation data leakage (ComBat requires access to all cohorts simultaneously)                  |
+| **Transcriptomic features** | 6 curated immune signatures                      | Biologically interpretable, stable across folds, grounded in known ICI biology                                 |
+| **Genomic features**        | TMB + 3 driver mutations (`BRAF`, `NRAS`, `NF1`) | Orthogonal to transcriptomic signatures; TMB is predictive of response but not prognostic of baseline survival |
+| **Feature selection**       | Curated signatures over SelectKBest              | Data-driven selection captures cohort-specific noise, not transferable immune biology                          |
+| **Validation strategy**     | Report both pooled CV and LOCO                   | LOCO is the primary evidence layer; pooled CV provides complementary upper-bound estimates                     |
 
 ---
 
