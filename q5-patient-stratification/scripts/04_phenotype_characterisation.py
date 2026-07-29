@@ -35,7 +35,8 @@ import pandas as pd
 import seaborn as sns
 from scipy.integrate import solve_ivp
 
-from src.styles import PHENOTYPE_PALETTE, set_presentation_style
+from src.styles import set_presentation_style
+from clustering import CLUSTER_PALETTE
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 
@@ -51,12 +52,7 @@ PLOTS_DIR = SUBPROJECT_ROOT / "plots" / "phenotypes"
 
 set_presentation_style()
 
-LABEL_COLORS = {
-    "Mutant-Driven (NF1 Loss & High Response Subtype)": "#0072B2",  # Okabe-Ito Blue
-    "Immune Cold (Low TIS & Infiltration, Desert)": "#CC79A7",       # Okabe-Ito Purple
-    "Immune Hot (High TIS & CYT, Inflamed Microenvironment)": "#D55E00", # Crimson Red
-    "M2 Immunosuppressive (Depleted T-cells & Stromal Exclusion)": "#E69F00", # Okabe-Ito Orange
-}
+# No longer needed — colours resolved dynamically from CLUSTER_PALETTE by cluster ID at plot time
 
 
 def compute_phenotype_profiles(df: pd.DataFrame) -> pd.DataFrame:
@@ -71,17 +67,45 @@ def compute_phenotype_profiles(df: pd.DataFrame) -> pd.DataFrame:
     return summary
 
 
+def _build_label_palette(df: pd.DataFrame) -> dict:
+    """Build a Phenotype_Label -> hex colour mapping from CLUSTER_PALETTE.
+
+    Derives colours by joining each phenotype label to its integer Cluster_ID,
+    ensuring the boxplot uses the same Okabe-Ito colours as the PCA and UMAP plots.
+
+    Args:
+        df: Patient DataFrame containing Cluster_ID and Phenotype_Label columns.
+
+    Returns:
+        Dictionary mapping phenotype label string to hex colour code.
+    """
+    label_map = (
+        df[["Cluster_ID", "Phenotype_Label"]]
+        .drop_duplicates()
+        .set_index("Phenotype_Label")["Cluster_ID"]
+        .to_dict()
+    )
+    return {
+        label: CLUSTER_PALETTE.get(cid, f"C{cid}")
+        for label, cid in label_map.items()
+    }
+
+
 def plot_baseline_boxplots(df: pd.DataFrame, save_path: Path) -> None:
-    """Generate 300 DPI publication boxplots comparing core biomarker Z-scores across clusters."""
+    """Generate 300 DPI publication boxplots comparing core biomarker Z-scores across clusters.
+
+    Colours are resolved from CLUSTER_PALETTE (same integer-keyed mapping used by PCA
+    and UMAP projection plots), so all Q5 figures share a consistent Okabe-Ito palette.
+    """
     features = [c for c in ["TIS", "CYT", "CD8_T_cells", "M1_Macrophages", "M2_Macrophages", "CAFs"] if c in df.columns]
-    
-    # Standardize features for comparable boxplot Z-scores
+
+    # Standardize features for comparable boxplot Z-scores across biomarkers
     df_plot = df.copy()
     for col in features:
         mean_val = df_plot[col].mean()
         std_val = df_plot[col].std()
         df_plot[col] = (df_plot[col] - mean_val) / (std_val if std_val > 0 else 1.0)
-        
+
     df_melt = pd.melt(
         df_plot,
         id_vars=["Cluster_ID", "Phenotype_Label"],
@@ -90,6 +114,9 @@ def plot_baseline_boxplots(df: pd.DataFrame, save_path: Path) -> None:
         value_name="Z_Score"
     )
 
+    # Derive palette from CLUSTER_PALETTE so colours match PCA/UMAP projection plots exactly
+    label_palette = _build_label_palette(df_plot)
+
     fig, ax = plt.subplots(figsize=(12, 6.5), dpi=300)
 
     sns.boxplot(
@@ -97,7 +124,7 @@ def plot_baseline_boxplots(df: pd.DataFrame, save_path: Path) -> None:
         x="Biomarker",
         y="Z_Score",
         hue="Phenotype_Label",
-        palette=LABEL_COLORS,
+        palette=label_palette,
         ax=ax,
         fliersize=2,
         linewidth=1.2,
