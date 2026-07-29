@@ -9,12 +9,12 @@ tags:
   - patient-stratification
   - melanoma
   - immunotherapy
-created: 2026-07-29 12:25
+created: 2026-07-29 12:41
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-29 12:25
+updated: 2026-07-29 12:41
 ---
 
 # Q5: Biomarker-Guided Patient Stratification Report (N = 326)
@@ -157,8 +157,8 @@ Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
 ![Unsupervised Patient Phenotype Clusters UMAP](q5-patient-stratification/plots/clustering/umap_clusters.png)
 
 > [!INFO] Figure Interpretation: Non-Linear UMAP Cluster Manifold
-> - **What this plot shows**: 2D UMAP non-linear manifold projection of the 38-feature patient space ($N = 326$).
-> - **Non-Linear Topology**: Preserves local patient neighborhood structure and non-linear biomarker interactions across high-dimensional feature spaces.
+> - **What this plot shows**: 2D UMAP non-linear manifold projection of the 9-feature patient space ($N = 326$), colour-coded by the K-Means cluster labels assigned in full 9-dimensional feature space.
+> - **Non-Linear Topology**: Preserves local patient neighbourhood structure and non-linear biomarker interactions across the 9 multi-modal clustering features (TIS, CYT, CD8 T-cells, M1/M2 Macrophages, CAFs, BRAF/NRAS/NF1 mutations).
 
 ### Key Takeaways
 - **Distinct Patient Groups**: K-Means clustering splits the $N = 326$ cohort into four clear biological subgroups with response rates ranging from **35.2% to 61.5%**.

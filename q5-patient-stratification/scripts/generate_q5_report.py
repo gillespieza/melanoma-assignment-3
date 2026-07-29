@@ -324,8 +324,10 @@ def main() -> None:
         doc_sections.append(f"![Unsupervised Patient Phenotype Clusters UMAP]({rel_img_umap})\n")
         doc_sections.append(
             "> [!INFO] Figure Interpretation: Non-Linear UMAP Cluster Manifold\n"
-            "> - **What this plot shows**: 2D UMAP non-linear manifold projection of the 38-feature patient space ($N = 326$).\n"
-            "> - **Non-Linear Topology**: Preserves local patient neighborhood structure and non-linear biomarker interactions across high-dimensional feature spaces.\n"
+            "> - **What this plot shows**: 2D UMAP non-linear manifold projection of the 9-feature patient space ($N = 326$), "
+            "colour-coded by the K-Means cluster labels assigned in full 9-dimensional feature space.\n"
+            "> - **Non-Linear Topology**: Preserves local patient neighbourhood structure and non-linear biomarker interactions "
+            "across the 9 multi-modal clustering features (TIS, CYT, CD8 T-cells, M1/M2 Macrophages, CAFs, BRAF/NRAS/NF1 mutations).\n"
         )
 
     # Dynamic plain-language takeaways
