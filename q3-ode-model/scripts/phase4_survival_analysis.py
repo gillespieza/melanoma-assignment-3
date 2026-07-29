@@ -44,8 +44,8 @@ warnings.filterwarnings("ignore")
 # ─── Paths ────────────────────────────────────────────────────────────────────
 BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_FILE   = os.path.join(BASE_DIR, "data", "melanoma_params_full.csv")
-RESULTS_DIR = os.path.join(BASE_DIR, "results")
-PLOTS_DIR   = os.path.join(BASE_DIR, "plots")
+RESULTS_DIR = os.path.join(BASE_DIR, "outputs", "results")
+PLOTS_DIR   = os.path.join(BASE_DIR, "outputs", "plots")
 PERK_FILE       = os.path.join(RESULTS_DIR, "pERK_simulations.csv")
 TUMOUR_FILE     = os.path.join(RESULTS_DIR, "tumour_burden_simulations.csv")
 CHECKPOINT_FILE = os.path.join(RESULTS_DIR, "checkpoint_tumour_simulations.csv")
@@ -152,7 +152,7 @@ def optimal_threshold_km(merged, opt_col, label, ax):
             ha="right", va="top", fontsize=11, fontweight="bold",
             bbox=dict(boxstyle="round,pad=0.3", facecolor="lightyellow", alpha=0.85))
     ax.set_ylim(0, 1.02)
-    ax.legend(fontsize=9, loc="lower left")
+    ax.legend(fontsize=9, loc="upper right", bbox_to_anchor=(0.97, 0.82))
     ax.grid(alpha=0.3)
     direction = (f"High {label} -> WORSE survival"
                  if worse_group == "High" else
@@ -220,7 +220,7 @@ for (label, _, _, _), ax in zip(readouts, axes_km):
                        label=line.get_label())
     ax_single.set_title(ax.get_title(), fontweight="bold", fontsize=11)
     ax_single.set_xlabel(ax.get_xlabel()); ax_single.set_ylabel(ax.get_ylabel())
-    ax_single.set_ylim(0, 1.02); ax_single.legend(fontsize=9, loc="lower left")
+    ax_single.set_ylim(0, 1.02); ax_single.legend(fontsize=9, loc="upper right", bbox_to_anchor=(0.97, 0.82))
     ax_single.grid(alpha=0.3)
     fname = "km_" + label.replace(" ", "_") + ".png"
     fig_single.savefig(os.path.join(PLOTS_DIR, fname), dpi=150, bbox_inches="tight")
