@@ -9,12 +9,12 @@ tags:
   - patient-stratification
   - melanoma
   - immunotherapy
-created: 2026-07-29 12:02
+created: 2026-07-29 12:13
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-29 12:02
+updated: 2026-07-29 12:13
 ---
 
 # Q5: Biomarker-Guided Patient Stratification Report (N = 326)
@@ -47,7 +47,7 @@ Phase 1 integrates harmonised data from four clinical trials (*Liu 2019*, *Riaz 
 
 ### Baseline Biomarker Feature Distributions
 
-![Baseline Biomarker Feature Distributions](q5-patient-stratification/plots/phenotypes/baseline_signature_boxplots.png)
+![Baseline Biomarker Feature Distributions](q5-patient-stratification/plots/phenotypes/baseline_response_violins.png)
 
 ### Key Takeaways
 - **Dimensionality Reduction**: Successfully compressed ~19,757 transcriptomic features into 38 standardized, clinically interpretable biomarkers.
@@ -176,11 +176,20 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 
 ### Baseline Biomarker Profile Distribution
 
-![Biomarker Profile Boxplots](q5-patient-stratification/plots/phenotypes/baseline_signature_boxplots.png)
+![Biomarker Profile Boxplots](plots/phenotypes/baseline_signature_boxplots.png)
 
 > [!INFO] Figure Interpretation: Biomarker Z-Score Fingerprints
 > - **What this plot shows**: Standardized Z-scores across core microenvironment signatures (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`) for all four patient clusters.
 > - **Subtype Profiles**: *Immune Hot* (crimson red) and *Mutant-Driven* (blue) display elevated Z-scores ($+0.4\text{ to }+0.6$) across inflammatory markers (`TIS`, `CYT`, `CD8_T_cells`). *M2 Immunosuppressive* (gold) exhibits elevated `M2_Macrophages` and `CAFs` stroma scores. *Immune Cold Desert* (purple) displays deeply suppressed Z-scores ($-1.2\text{ to }-2.0$) across all microenvironmental signatures.
+
+### Mechanistic Q3 ODE Tumour Volume Trajectories T(t)
+
+![Q3 ODE Tumour Trajectories](plots/phenotypes/ode_trajectories.png)
+
+> [!INFO] Figure Interpretation: Q3 ODE Trajectory Simulations
+> - **What this plot shows**: Dynamic 180-day relative tumour volume $T(t)/K$ trajectories simulated using the Kuznetsov-de Pillis ODE system parameterised by cluster biomarker means.
+> - **Complete Regression ($T(180) \to 0.00$)**: *Immune Hot* (solid crimson) achieves rapid clearance by Day 60. *Mutant-Driven* (solid orange) achieves clearance by Day 90–120.
+> - **Resistance & Combination Rescue**: *M2 Immunosuppressive* under anti-PD-1 monotherapy (solid purple) experiences uncontrolled growth ($T(180) = 0.94$). Adding an M2-depleting agent (dashed purple) restores T-cell killing efficiency ($c \to 0.40$), driving complete tumor regression ($T(180) \to 0.00$).
 
 ### Overall Survival Stratification by ODE Checkpoint Tumour Burden
 

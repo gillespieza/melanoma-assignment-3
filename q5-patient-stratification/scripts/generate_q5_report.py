@@ -56,13 +56,18 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 OUTPUT_REPORT_PATH = REPORTS_DIR / "q5_patient_stratification_report.md"
 
 # Phase Plot Paths
-PHASE1_BOXPLOT_PATH = SUBPROJECT_ROOT / "plots" / "phenotypes" / "baseline_signature_boxplots.png"
+# NOTE: 01_load_and_prepare.py uses SCRIPT_DIR.parent (= q5-patient-stratification/) as its own
+# subproject root, so Phase 1 output lands in SUBPROJECT_ROOT/plots/phenotypes/.
+# 04_phenotype_characterisation.py imports SUBPROJECT_ROOT from src.utils.paths which resolves to
+# PROJECT_ROOT, so Phase 4 outputs land in PROJECT_ROOT/plots/phenotypes/.
+PHASE1_VIOLIN_PATH = SUBPROJECT_ROOT / "plots" / "phenotypes" / "baseline_response_violins.png"
+PHASE4_BOXPLOT_PATH = PROJECT_ROOT / "plots" / "phenotypes" / "baseline_signature_boxplots.png"
 PHASE2_VOLCANO_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "biomarker_volcano_plot.png"
 PHASE2_ROC_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "youden_roc_curves.png"
 PHASE2_INTERACTION_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "genomic_interaction_tis_braf.png"
 PHASE2_MATRIX_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "genomic_immune_interaction_matrix.png"
 PHASE3_CLUSTER_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "clustering" / "umap_clusters.png"
-PHASE4_ODE_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "phenotypes" / "ode_trajectories.png"
+PHASE4_ODE_PLOT_PATH = PROJECT_ROOT / "plots" / "phenotypes" / "ode_trajectories.png"
 
 # Q3 ODE Plot Paths
 Q3_KM_CHECKPOINT_PATH = PROJECT_ROOT / "q3-ode-model" / "outputs" / "plots" / "km_checkpoint_tumour_burden.png"
@@ -159,8 +164,8 @@ def main() -> None:
         f"- **Transcriptomic Deconvolution**: Marker-based signature scores estimating the relative abundance of CD8+ T cells, CD4+ T cells, NK cells, B cells, M1 Macrophages, M2 Macrophages, and Cancer-Associated Fibroblasts (CAFs).\n"
     )
 
-    if PHASE1_BOXPLOT_PATH.exists():
-        rel_box = rel_path(PHASE1_BOXPLOT_PATH)
+    if PHASE1_VIOLIN_PATH.exists():
+        rel_box = rel_path(PHASE1_VIOLIN_PATH)
         doc_sections.append("### Baseline Biomarker Feature Distributions\n")
         doc_sections.append(f"![Baseline Biomarker Feature Distributions]({rel_box})\n")
 
@@ -361,9 +366,9 @@ def main() -> None:
         "| **Module D: Checkpoint Axis** | PD-1 / PD-L1 QSS Sub-Module | Competitive anti-PD-1 binding depleting $PD-1 \\cdot PD-L1$ inhibitory complex $Q$, unleashing CD8+ T-cell killing capacity. |\n\n"
     )
 
-    if PHASE1_BOXPLOT_PATH.exists():
+    if PHASE4_BOXPLOT_PATH.exists():
         doc_sections.append("### Baseline Biomarker Profile Distribution\n")
-        doc_sections.append(f"![Biomarker Profile Boxplots]({rel_path(PHASE1_BOXPLOT_PATH)})\n")
+        doc_sections.append(f"![Biomarker Profile Boxplots]({rel_path(PHASE4_BOXPLOT_PATH)})\n")
         doc_sections.append(
             "> [!INFO] Figure Interpretation: Biomarker Z-Score Fingerprints\n"
             "> - **What this plot shows**: Standardized Z-scores across core microenvironment signatures (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`) for all four patient clusters.\n"

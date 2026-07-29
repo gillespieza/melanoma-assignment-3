@@ -266,7 +266,7 @@ def main() -> None:
     safe_save_csv(df_master, out_file)
 
     # 7. Generate 300 DPI publication boxplots figure for presentation
-    plot_file = SUBPROJECT_ROOT / "plots" / "phenotypes" / "baseline_signature_boxplots.png"
+    plot_file = SUBPROJECT_ROOT / "plots" / "phenotypes" / "baseline_response_violins.png"
     plot_baseline_signature_boxplots(df_master, plot_file)
 
     print("=" * 80)
