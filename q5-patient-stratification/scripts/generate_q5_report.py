@@ -382,7 +382,8 @@ def main() -> None:
         doc_sections.append(
             "> [!INFO] Figure Interpretation: Biomarker Z-Score Fingerprints\n"
             "> - **What this plot shows**: Standardized Z-scores across core microenvironment signatures (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`) for all four patient clusters.\n"
-            "> - **Subtype Profiles**: *Immune Hot* (crimson red) and *Mutant-Driven* (blue) display elevated Z-scores ($+0.4\\text{ to }+0.6$) across inflammatory markers (`TIS`, `CYT`, `CD8_T_cells`). *M2 Immunosuppressive* (gold) exhibits elevated `M2_Macrophages` and `CAFs` stroma scores. *Immune Cold Desert* (purple) displays deeply suppressed Z-scores ($-1.2\\text{ to }-2.0$) across all microenvironmental signatures.\n"
+            "> - **Colour Key**: *Mutant-Driven* — **orange** | *Immune Cold* — **blue** | *Immune Hot* — **vermillion** | *M2 Immunosuppressive* — **reddish purple**.\n"
+            "> - **Subtype Profiles**: *Immune Hot* (vermillion) displays the highest Z-scores across inflammatory markers (`TIS`, `CYT`, `CD8_T_cells`), consistent with an active cytotoxic microenvironment. *Mutant-Driven* (orange) shows elevated TIS relative to the Cold subtype but is dominated by driver mutation burden. *M2 Immunosuppressive* (reddish purple) exhibits elevated `M2_Macrophages` and `CAFs` stromal scores, reflecting immunosuppressive exclusion. *Immune Cold* (blue) displays deeply suppressed Z-scores across all microenvironmental signatures.\n"
         )
 
     if PHASE4_ODE_PLOT_PATH.exists():

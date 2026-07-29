@@ -9,12 +9,12 @@ tags:
   - patient-stratification
   - melanoma
   - immunotherapy
-created: 2026-07-29 12:41
+created: 2026-07-29 12:46
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-29 12:41
+updated: 2026-07-29 12:46
 ---
 
 # Q5: Biomarker-Guided Patient Stratification Report (N = 326)
@@ -188,7 +188,8 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 
 > [!INFO] Figure Interpretation: Biomarker Z-Score Fingerprints
 > - **What this plot shows**: Standardized Z-scores across core microenvironment signatures (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`) for all four patient clusters.
-> - **Subtype Profiles**: *Immune Hot* (crimson red) and *Mutant-Driven* (blue) display elevated Z-scores ($+0.4\text{ to }+0.6$) across inflammatory markers (`TIS`, `CYT`, `CD8_T_cells`). *M2 Immunosuppressive* (gold) exhibits elevated `M2_Macrophages` and `CAFs` stroma scores. *Immune Cold Desert* (purple) displays deeply suppressed Z-scores ($-1.2\text{ to }-2.0$) across all microenvironmental signatures.
+> - **Colour Key**: *Mutant-Driven* — **orange** | *Immune Cold* — **blue** | *Immune Hot* — **vermillion** | *M2 Immunosuppressive* — **reddish purple**.
+> - **Subtype Profiles**: *Immune Hot* (vermillion) displays the highest Z-scores across inflammatory markers (`TIS`, `CYT`, `CD8_T_cells`), consistent with an active cytotoxic microenvironment. *Mutant-Driven* (orange) shows elevated TIS relative to the Cold subtype but is dominated by driver mutation burden. *M2 Immunosuppressive* (reddish purple) exhibits elevated `M2_Macrophages` and `CAFs` stromal scores, reflecting immunosuppressive exclusion. *Immune Cold* (blue) displays deeply suppressed Z-scores across all microenvironmental signatures.
 
 ### Mechanistic Q3 ODE Tumour Volume Trajectories T(t)
 
