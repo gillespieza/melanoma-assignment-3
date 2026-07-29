@@ -367,7 +367,7 @@ def main() -> None:
         doc_sections.append(
             "> [!INFO] Figure Interpretation: Biomarker Z-Score Fingerprints\n"
             "> - **What this plot shows**: Standardized Z-scores across core microenvironment signatures (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`) for all four patient clusters.\n"
-            "> - **Subtype Profiles**: *Immune Hot* (red) exhibits positive Z-scores across all lymphocytic markers. *M2 Immunosuppressive* (purple) displays high CAF stroma and M2 macrophage density paired with depleted T-cells.\n"
+            "> - **Subtype Profiles**: *Immune Hot* (crimson red) and *Mutant-Driven* (blue) display elevated Z-scores ($+0.4\\text{ to }+0.6$) across inflammatory markers (`TIS`, `CYT`, `CD8_T_cells`). *M2 Immunosuppressive* (gold) exhibits elevated `M2_Macrophages` and `CAFs` stroma scores. *Immune Cold Desert* (purple) displays deeply suppressed Z-scores ($-1.2\\text{ to }-2.0$) across all microenvironmental signatures.\n"
         )
 
     if PHASE4_ODE_PLOT_PATH.exists():

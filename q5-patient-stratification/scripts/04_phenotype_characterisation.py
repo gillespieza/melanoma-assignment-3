@@ -47,11 +47,11 @@ PLOTS_DIR = SUBPROJECT_ROOT / "plots" / "phenotypes"
 
 set_presentation_style()
 
-PHENOTYPE_COLORS = {
-    0: "#E69F00",  # Mutant-Driven (Okabe-Ito Orange)
-    1: "#0072B2",  # Immune Cold Desert (Okabe-Ito Blue)
-    2: "#D55E00",  # Immune Hot Inflamed (Crimson Red)
-    3: "#CC79A7",  # M2 Immunosuppressive (Okabe-Ito Reddish Purple)
+LABEL_COLORS = {
+    "Mutant-Driven (NF1 Loss & High Response Subtype)": "#0072B2",  # Okabe-Ito Blue
+    "Immune Cold (Low TIS & Infiltration, Desert)": "#CC79A7",       # Okabe-Ito Purple
+    "Immune Hot (High TIS & CYT, Inflamed Microenvironment)": "#D55E00", # Crimson Red
+    "M2 Immunosuppressive (Depleted T-cells & Stromal Exclusion)": "#E69F00", # Okabe-Ito Orange
 }
 
 
@@ -87,14 +87,13 @@ def plot_baseline_boxplots(df: pd.DataFrame, save_path: Path) -> None:
     )
 
     fig, ax = plt.subplots(figsize=(12, 6.5), dpi=300)
-    palette = [PHENOTYPE_COLORS[i] for i in sorted(PHENOTYPE_COLORS.keys())]
 
     sns.boxplot(
         data=df_melt,
         x="Biomarker",
         y="Z_Score",
         hue="Phenotype_Label",
-        palette=palette,
+        palette=LABEL_COLORS,
         ax=ax,
         fliersize=2,
         linewidth=1.2,
