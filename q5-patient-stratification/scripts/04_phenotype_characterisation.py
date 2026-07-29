@@ -159,7 +159,7 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
         0: {"name": "Mutant-Driven (NF1/BRAF)", "params": [0.18, 1.0, 0.32, 0.08, 0.12, 0.30, 0.05, 0.03], "y0": [0.8, 0.40], "color": "#E69F00", "ls": "-"},
         1: {"name": "Immune Cold Desert", "params": [0.18, 1.0, 0.15, 0.02, 0.05, 0.30, 0.05, 0.04], "y0": [0.8, 0.15], "color": "#0072B2", "ls": "-"},
         2: {"name": "Immune Hot Inflamed", "params": [0.18, 1.0, 0.45, 0.10, 0.15, 0.30, 0.05, 0.02], "y0": [0.8, 0.80], "color": "#D55E00", "ls": "-"},
-        3: {"name": "M2 Immunosuppressive (Anti-PD-1 Monotherapy)", "params": [0.18, 1.0, 0.08, 0.01, 0.03, 0.30, 0.05, 0.05], "y0": [0.8, 0.08], "color": "#CC79A7", "ls": "-"},
+        3: {"name": "M2 Immunosuppressive (Anti-PD-1 Monotherapy)", "params": [0.18, 1.0, 0.08, 0.01, 0.03, 0.30, 0.05, 0.05], "y0": [0.8, 0.08], "color": "#CC79A7", "ls": ":"},
         "rescue": {"name": "M2 Immunosuppressive + Combination Rescue (M2-Depleting)", "params": [0.18, 1.0, 0.40, 0.12, 0.15, 0.30, 0.05, 0.02], "y0": [0.8, 0.08], "color": "#CC79A7", "ls": "--"},
     }
 

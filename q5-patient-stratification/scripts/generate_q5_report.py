@@ -394,7 +394,7 @@ def main() -> None:
             "> - **What this plot shows**: Dynamic 180-day relative tumour volume $T(t)/K$ trajectories simulated using the Kuznetsov-de Pillis ODE system parameterised by cluster biomarker means.\n"
             "> - **Complete Regression ($T(180) \\to 0.00$)**: *Immune Hot* (solid crimson) achieves complete tumour burden clearance by Day 60. *Mutant-Driven* (solid orange) achieves complete tumour burden clearance by Day 90–120.\n"
             "> - **Immune Cold Desert ($T(180) = 0.52$)**: *Immune Cold* (solid blue) exhibits incomplete tumour regression due to severe effector T-cell paucity and low initial influx rate ($s = 0.02$).\n"
-            "> - **Resistance & Combination Rescue**: *M2 Immunosuppressive* under anti-PD-1 monotherapy (solid purple) experiences uncontrolled growth ($T(180) = 0.94$). Adding an M2-depleting agent (dashed purple) restores T-cell killing efficiency ($c \\to 0.40$), driving complete tumour regression ($T(180) \\to 0.00$).\n"
+            "> - **Resistance & Combination Rescue**: *M2 Immunosuppressive* under anti-PD-1 monotherapy (dotted purple) experiences uncontrolled growth ($T(180) = 0.94$). Adding an M2-depleting agent (dashed purple) restores T-cell killing efficiency ($c \\to 0.40$), driving complete tumour regression ($T(180) \\to 0.00$).\n"
         )
 
     if Q3_KM_CHECKPOINT_PATH.exists():
