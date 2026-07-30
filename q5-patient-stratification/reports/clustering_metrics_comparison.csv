@@ -1,0 +1,7 @@
+Algorithm,Clusters (K),Noise Count,Silhouette Score (High),Calinski-Harabasz (High),Davies-Bouldin (Low),ARI vs K-Means,Response Rate Spread (%)
+K-Means (Current),4,0,0.237,100.2,1.39,1.0,26.4
+HAC (Ward Linkage),4,0,0.212,89.0,1.508,0.327,29.6
+Gaussian Mixture (GMM),4,0,0.224,59.4,1.434,0.188,17.9
+Spectral Clustering,4,0,0.218,49.4,1.839,0.497,25.6
+DBSCAN (Density-Based),6,43,0.232,44.9,1.385,0.538,64.9
+Consensus Clustering,4,0,0.217,96.3,1.473,0.17,17.8

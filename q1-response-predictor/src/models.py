@@ -9,9 +9,23 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
 import xgboost as xgb
 
-def tune_logistic_regression(X_train, y_train):
+def calibrate_estimator(estimator, X_train, y_train, method='sigmoid', cv=3):
     """
-    Tuning L1-penalized Logistic Regression using Grid Search.
+    Fits a CalibratedClassifierCV wrapper around a base estimator using internal cross-validation.
+    """
+    calibrated = CalibratedClassifierCV(
+        estimator=estimator,
+        method=method,
+        cv=cv,
+        ensemble=False,
+        n_jobs=-1
+    )
+    calibrated.fit(X_train, y_train)
+    return calibrated
+
+def tune_logistic_regression(X_train, y_train, calibrate=True):
+    """
+    Tuning L1-penalized Logistic Regression using Grid Search, optionally calibrated via Platt Scaling.
     """
     param_grid = {
         'C': [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
@@ -20,11 +34,14 @@ def tune_logistic_regression(X_train, y_train):
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(lr, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
-    return grid.best_estimator_
+    best_est = grid.best_estimator_
+    if calibrate:
+        return calibrate_estimator(best_est, X_train, y_train)
+    return best_est
 
-def tune_random_forest(X_train, y_train):
+def tune_random_forest(X_train, y_train, calibrate=True):
     """
-    Tuning Random Forest.
+    Tuning Random Forest, optionally calibrated via Platt Scaling / Sigmoid calibration.
     """
     param_grid = {
         'n_estimators': [50, 100, 200],
@@ -35,18 +52,20 @@ def tune_random_forest(X_train, y_train):
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(rf, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
-    return grid.best_estimator_
+    best_est = grid.best_estimator_
+    if calibrate:
+        return calibrate_estimator(best_est, X_train, y_train)
+    return best_est
 
-def tune_xgboost(X_train, y_train):
+def tune_xgboost(X_train, y_train, calibrate=True):
     """
-    Tuning XGBoost Classifier.
+    Tuning XGBoost Classifier, optionally calibrated via Platt Scaling.
     """
     param_grid = {
         'n_estimators': [50, 100, 150],
         'max_depth': [3, 5, 7],
         'learning_rate': [0.01, 0.05, 0.1, 0.2]
     }
-    # scale_pos_weight is useful for class imbalance: sum(negative) / sum(positive)
     pos_count = sum(y_train == 1)
     neg_count = sum(y_train == 0)
     scale_weight = neg_count / pos_count if pos_count > 0 else 1.0
@@ -55,9 +74,12 @@ def tune_xgboost(X_train, y_train):
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(xgb_clf, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
-    return grid.best_estimator_
+    best_est = grid.best_estimator_
+    if calibrate:
+        return calibrate_estimator(best_est, X_train, y_train)
+    return best_est
 
-def tune_svc(X_train, y_train):
+def tune_svc(X_train, y_train, calibrate=True):
     """
     Tuning Support Vector Classifier (SVC) using Grid Search.
     """
@@ -77,7 +99,7 @@ def tune_svc(X_train, y_train):
     grid.fit(X_train, y_train)
     return grid.best_estimator_
 
-def tune_elasticnet(X_train, y_train):
+def tune_elasticnet(X_train, y_train, calibrate=True):
     """
     Tuning ElasticNet (Logistic Regression with elasticnet penalty) using Grid Search.
     """
@@ -89,22 +111,25 @@ def tune_elasticnet(X_train, y_train):
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(lr, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
-    return grid.best_estimator_
+    best_est = grid.best_estimator_
+    if calibrate:
+        return calibrate_estimator(best_est, X_train, y_train)
+    return best_est
 
-def get_model(model_type, X_train, y_train):
+def get_model(model_type, X_train, y_train, calibrate=True):
     """
-    Tunes and returns the requested model.
+    Tunes and returns the requested calibrated model.
     """
     if model_type == "lr":
-        return tune_logistic_regression(X_train, y_train)
+        return tune_logistic_regression(X_train, y_train, calibrate=calibrate)
     elif model_type == "rf":
-        return tune_random_forest(X_train, y_train)
+        return tune_random_forest(X_train, y_train, calibrate=calibrate)
     elif model_type == "xgb":
-        return tune_xgboost(X_train, y_train)
+        return tune_xgboost(X_train, y_train, calibrate=calibrate)
     elif model_type == "svm":
-        return tune_svc(X_train, y_train)
+        return tune_svc(X_train, y_train, calibrate=calibrate)
     elif model_type == "elasticnet":
-        return tune_elasticnet(X_train, y_train)
+        return tune_elasticnet(X_train, y_train, calibrate=calibrate)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
