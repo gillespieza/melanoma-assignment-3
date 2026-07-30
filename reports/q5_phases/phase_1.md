@@ -14,6 +14,6 @@ Phase 1 integrates harmonised data from four clinical trials (*Liu 2019*, *Riaz 
 
 ![Baseline Biomarker Feature Distributions](q5-patient-stratification/plots/phenotypes/baseline_response_violins.png)
 
-### Key Takeaways
-- **Dimensionality Reduction**: Successfully compressed ~19,757 transcriptomic features into 37 standardized, clinically interpretable biomarkers.
-- **M1/M2 Polarisation**: The Macrophage STV score captures microenvironmental suppression that operates independently of total T-cell density.
+> [!IMPORTANT] Key Takeaways
+> - **Dimensionality Reduction**: Successfully compressed ~19,757 transcriptomic features into 37 standardised, clinically interpretable biomarkers.
+> - **M1/M2 Polarisation**: The Macrophage STV score captures microenvironmental suppression that operates independently of total T-cell density.

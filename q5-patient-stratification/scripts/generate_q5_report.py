@@ -189,9 +189,9 @@ def main() -> None:
         doc_sections.append(f"![Baseline Biomarker Feature Distributions]({rel_box})\n")
 
     doc_sections.append(
-        "### Key Takeaways\n"
-        f"- **Dimensionality Reduction**: Successfully compressed ~{n_genes:,} transcriptomic features into {n_features} standardized, clinically interpretable biomarkers.\n"
-        "- **M1/M2 Polarisation**: The Macrophage STV score captures microenvironmental suppression that operates independently of total T-cell density.\n"
+        "> [!IMPORTANT] Key Takeaways\n"
+        f"> - **Dimensionality Reduction**: Successfully compressed ~{n_genes:,} transcriptomic features into {n_features} standardised, clinically interpretable biomarkers.\n"
+        "> - **M1/M2 Polarisation**: The Macrophage STV score captures microenvironmental suppression that operates independently of total T-cell density.\n"
     )
 
     # Section 2: Phase 2 Feature Analysis
