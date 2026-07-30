@@ -37,7 +37,7 @@ if str(BASE_DIR) not in sys.path:
 
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.signatures import extract_all_signatures
-from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+from src.styles import COHORT_PALETTE, FEATURE_SELECTION_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, REPORTS_DIR
 from src.utils.plotting import save_fig
@@ -186,12 +186,7 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
         "SVM": "Support Vector Machine",
         "ElasticNet": "Elastic Net",
     }
-    palette = {
-        "Curated Signatures": "#1B9E77",
-        "SelectKBest (k=20)": "#D95F02",
-        "SelectKBest (k=100)": "#7570B3",
-        "SelectKBest (k=200)": "#C62828",
-    }
+    palette = FEATURE_SELECTION_PALETTE
 
     # Prepare long-format melted dataframe
     df_melted_all = pd.melt(

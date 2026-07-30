@@ -4,12 +4,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import sys
 from pathlib import Path
 from sklearn.metrics import roc_curve
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from src.styles import THRESHOLD_STRATEGY_PALETTE, set_presentation_style
+
 PLOT_DIR = BASE_DIR / "plots" / "models"
 PLOT_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # Data for Default (0.5) vs Optimal (Youden's J) Threshold Performance
 data = [
@@ -34,7 +41,10 @@ sns.barplot(
     x="Cohort",
     y="Accuracy",
     hue="Strategy",
-    palette=["#56B4E9", "#009E73"],
+    palette=[
+        THRESHOLD_STRATEGY_PALETTE["Default (0.50)"],
+        THRESHOLD_STRATEGY_PALETTE["Optimal (Youden's J)"],
+    ],
     ax=axes[0],
     edgecolor="white",
     linewidth=1.2
@@ -56,7 +66,10 @@ sns.barplot(
     x="Cohort",
     y="Sensitivity",
     hue="Strategy",
-    palette=["#E69F00", "#D55E00"],
+    palette=[
+        THRESHOLD_STRATEGY_PALETTE["Default (0.50)"],
+        THRESHOLD_STRATEGY_PALETTE["Optimal (Youden's J)"],
+    ],
     ax=axes[1],
     edgecolor="white",
     linewidth=1.2

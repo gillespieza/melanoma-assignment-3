@@ -43,6 +43,7 @@ from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.styles import (
     COHORT_PALETTE,
     DRIVER_PALETTE,
+    PHENOTYPE_PALETTE,
     RESPONSE_PALETTE,
     get_cohort_color,
     set_presentation_style,
@@ -411,7 +412,7 @@ def _plot_tcga_survival_stratification(clin_tcga: pd.DataFrame, plot_dir: Path) 
         df_surv["TMB_NONSYNONYMOUS"] >= df_surv["TMB_NONSYNONYMOUS"].median(),
         "High TMB", "Low TMB",
     )
-    for group, color in [("High TMB", "#d95f02"), ("Low TMB", "#7570b3")]:
+    for group, color in [("High TMB", PHENOTYPE_PALETTE["Immune Hot"]), ("Low TMB", PHENOTYPE_PALETTE["Immune Cold"])]:
         mask = df_surv["TMB_Group"] == group
         kmf.fit(
             df_surv.loc[mask, "OS_MONTHS"],
@@ -695,7 +696,7 @@ def _plot_extended_pathway_dumbbell(
 ) -> None:
     """Plots dumbbell plot showing trial variation vs. pooled benchmark for extended pathways with right-side category labels."""
     trial_colors = dict(zip(cohort_cols, colors[: len(cohort_cols)]))
-    pooled_color = get_cohort_color(pooled_col, default="#e41a1c")
+    pooled_color = get_cohort_color(pooled_col, default=COHORT_PALETTE["Pooled Trials"])
     max_val = np.nanmax(df[cohort_cols + [pooled_col]].values.astype(float))
     y_pos, y_labels, cat_centers = _compute_category_spaced_y_pos(df, category_gap=2.0, item_gap=1.8)
 

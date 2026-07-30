@@ -109,7 +109,7 @@ LOG_PATH = LOG_DIR / "run_extended_biomarkers.log"
 # Imports from src
 from src.config.constants import DRIVER_GENES, PATHWAY_GENES
 from src.signatures import extract_all_signatures
-from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+from src.styles import COHORT_PALETTE, OKABE_ITO, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.plotting import save_fig
 
@@ -630,7 +630,7 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
     n_models = len(models)
     bar_width = 0.8 / n_models
     
-    colors = ['#0072B2', '#009E73', '#D55E00', '#CC79A7', '#F0E442']
+    colors = OKABE_ITO[:n_models]
     
     for i, pd_row in enumerate(plot_data):
         means = [pd_row['base_mean'], pd_row['drivers_mean'], pd_row['full_mean']]

@@ -46,7 +46,7 @@ if str(_SUBPROJECT_ROOT) not in sys.path:
 from src.config.constants import EXCLUDED_CLINICAL_COLS
 from src.config.datasets import DatasetConfig, load_dataset_config
 from src.signatures import extract_all_signatures
-from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+from src.styles import COHORT_PALETTE, MODEL_TYPE_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.formatting import generate_obsidian_frontmatter
 from src.utils.logging import TeeStream
 from src.utils.paths import (
@@ -590,21 +590,21 @@ def _plot_univariate_vs_multivariate_comparison(
         m_high = row["HR upper 95%_multi"]
         m_p = row["p-value_multi"]
 
-        # Univariate: Okabe-Ito Blue (#0072B2)
-        ax.plot([u_low, u_high], [y_u, y_u], color="#0072B2", linewidth=2.0, alpha=0.85)
-        ax.scatter(u_hr, y_u, color="#0072B2", marker="o", s=70, zorder=5, edgecolor="black", linewidth=0.6)
+        # Univariate: MODEL_TYPE_PALETTE["Univariate"]
+        ax.plot([u_low, u_high], [y_u, y_u], color=MODEL_TYPE_PALETTE["Univariate"], linewidth=2.0, alpha=0.85)
+        ax.scatter(u_hr, y_u, color=MODEL_TYPE_PALETTE["Univariate"], marker="o", s=70, zorder=5, edgecolor="black", linewidth=0.6)
 
-        # Multivariate: Okabe-Ito Orange (#E69F00)
-        ax.plot([m_low, m_high], [y_m, y_m], color="#E69F00", linewidth=2.0, alpha=0.85)
-        ax.scatter(m_hr, y_m, color="#E69F00", marker="s", s=70, zorder=5, edgecolor="black", linewidth=0.6)
+        # Multivariate: MODEL_TYPE_PALETTE["Multivariate"]
+        ax.plot([m_low, m_high], [y_m, y_m], color=MODEL_TYPE_PALETTE["Multivariate"], linewidth=2.0, alpha=0.85)
+        ax.scatter(m_hr, y_m, color=MODEL_TYPE_PALETTE["Multivariate"], marker="s", s=70, zorder=5, edgecolor="black", linewidth=0.6)
 
         # Annotations
         u_text = f"Uni: {u_hr:.2f} (p={u_p:.1e})"
         m_text = f"Multi: {m_hr:.2f} (p={m_p:.1e})"
 
         max_right = max(u_high, m_high)
-        ax.annotate(u_text, (max_right, y_u), xytext=(8, -3), textcoords="offset points", fontsize=8.0, color="#0072B2", fontweight="bold" if u_p < 0.05 else "normal")
-        ax.annotate(m_text, (max_right, y_m), xytext=(8, -3), textcoords="offset points", fontsize=8.0, color="#D55E00", fontweight="bold" if m_p < 0.05 else "normal")
+        ax.annotate(u_text, (max_right, y_u), xytext=(8, -3), textcoords="offset points", fontsize=8.0, color=MODEL_TYPE_PALETTE["Univariate"], fontweight="bold" if u_p < 0.05 else "normal")
+        ax.annotate(m_text, (max_right, y_m), xytext=(8, -3), textcoords="offset points", fontsize=8.0, color=MODEL_TYPE_PALETTE["Multivariate"], fontweight="bold" if m_p < 0.05 else "normal")
 
     ax.set_yticks(y_indices)
     ax.set_yticklabels(merged["Formatted_Feature"], fontsize=10.5, fontweight="bold")
@@ -625,8 +625,8 @@ def _plot_univariate_vs_multivariate_comparison(
     ax.set_xlabel(xlabel, fontsize=11, fontweight="bold")
 
     legend_handles = [
-        mlines.Line2D([], [], color="#0072B2", marker="o", linestyle="-", linewidth=2.0, markersize=8, label="Univariate HR (95% CI)"),
-        mlines.Line2D([], [], color="#E69F00", marker="s", linestyle="-", linewidth=2.0, markersize=8, label="Multivariate Adjusted aHR (95% CI)"),
+        mlines.Line2D([], [], color=MODEL_TYPE_PALETTE["Univariate"], marker="o", linestyle="-", linewidth=2.0, markersize=8, label="Univariate HR (95% CI)"),
+        mlines.Line2D([], [], color=MODEL_TYPE_PALETTE["Multivariate"], marker="s", linestyle="-", linewidth=2.0, markersize=8, label="Multivariate Adjusted aHR (95% CI)"),
         mlines.Line2D([], [], color="#37474F", linestyle="--", linewidth=1.2, label="Null Effect (HR = 1.0)"),
     ]
     ax.legend(handles=legend_handles, loc="lower right", frameon=True, facecolor="white", edgecolor="#CCCCCC", fontsize=9.0)

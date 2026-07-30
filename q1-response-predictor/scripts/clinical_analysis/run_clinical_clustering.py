@@ -96,9 +96,9 @@ CLUSTER_PLOT_NAMES: Dict[int, str] = {
 }
 
 CLUSTER_COLORS: Dict[int, str] = {
-    0: RESPONSE_PALETTE["PD"],       # Crimson Red (#D55E00) for Hot
-    1: COHORT_PALETTE["Liu 2019"],   # Blue (#0072B2) for Cold
-    2: COHORT_PALETTE["Riaz 2017"],  # Reddish Purple / Pink (#CC79A7) for High-TMB
+    0: PHENOTYPE_PALETTE["Immune Hot"],                 # Vermillion Red (#D55E00) for Hot
+    1: PHENOTYPE_PALETTE["Immune Cold"],                # Okabe-Ito Blue (#0072B2) for Cold
+    2: PHENOTYPE_PALETTE["Immunosuppressive M2-High"],  # Okabe-Ito Reddish Purple (#CC79A7) for High-TMB
 }
 
 

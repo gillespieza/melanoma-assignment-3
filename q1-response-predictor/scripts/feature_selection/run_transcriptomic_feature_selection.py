@@ -38,7 +38,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
-from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, get_cohort_color, set_presentation_style
+from src.styles import COHORT_PALETTE, GENE_CATEGORY_PALETTE, RESPONSE_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, REPORTS_DIR
 from src.utils.plotting import save_fig
@@ -425,14 +425,7 @@ def _plot_prognostic_forest(df_cox: pd.DataFrame, plot_dir: Path) -> None:
         ("Interferon GTPases", ["GBP1", "GBP4", "GBP5", "GBP1P1"]),
     ]
 
-    category_colors = {
-        "Interferon GTPases": COHORT_PALETTE["Liu 2019"],
-        "Chemokines & Cytokines": COHORT_PALETTE["Pooled Trials"],
-        "NK-Cell & T-Cell Receptors & Regulators": RESPONSE_PALETTE["PD"],
-        "Signaling & Adapters": COHORT_PALETTE["Hugo 2016"],
-        "Enzymes & Metabolism": RESPONSE_PALETTE["CR/PR"],
-        "Transcription Factors": COHORT_PALETTE["Riaz 2017"],
-    }
+    category_colors = GENE_CATEGORY_PALETTE
 
     y_positions = []
     y_labels = []

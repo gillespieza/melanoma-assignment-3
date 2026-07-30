@@ -47,6 +47,74 @@ PHENOTYPE_PALETTE = {
     "Mutant-Driven": "#E69F00",                                                   # Orange (MAPK Mutation Driven)
 }
 
+# Full ordered Okabe-Ito palette list for generic sequential categorical encoding
+OKABE_ITO = [
+    "#E69F00",  # Orange
+    "#56B4E9",  # Sky Blue
+    "#009E73",  # Bluish Green
+    "#F0E442",  # Yellow
+    "#0072B2",  # Blue
+    "#D55E00",  # Vermillion
+    "#CC79A7",  # Reddish Purple
+    "#000000",  # Black
+]
+
+# Sex / Gender Data Encoding (Okabe-Ito assignment)
+SEX_PALETTE = {
+    "Male":    "#56B4E9",  # Okabe-Ito Sky Blue
+    "Female":  "#CC79A7",  # Okabe-Ito Reddish Purple
+    "Unknown": "#F0E442",  # Okabe-Ito Yellow
+}
+
+# Gene Functional Category Encoding (transcriptomic forest plots)
+GENE_CATEGORY_PALETTE = {
+    "Interferon GTPases":                      "#0072B2",  # Okabe-Ito Blue
+    "Chemokines & Cytokines":                  "#009E73",  # Okabe-Ito Bluish Green
+    "NK-Cell & T-Cell Receptors & Regulators": "#D55E00",  # Okabe-Ito Vermillion
+    "Signaling & Adapters":                    "#E69F00",  # Okabe-Ito Orange
+    "Enzymes & Metabolism":                    "#CC79A7",  # Okabe-Ito Reddish Purple
+    "Transcription Factors":                   "#56B4E9",  # Okabe-Ito Sky Blue
+}
+
+# Analysis Model-Type Encoding (univariate vs multivariate comparisons)
+MODEL_TYPE_PALETTE = {
+    "Univariate":   "#0072B2",  # Okabe-Ito Blue
+    "Multivariate": "#E69F00",  # Okabe-Ito Orange
+}
+
+# Feature Selection Method Encoding (AUC comparison plots)
+FEATURE_SELECTION_PALETTE = {
+    "Curated Signatures":  "#0072B2",  # Okabe-Ito Blue
+    "SelectKBest (k=20)":  "#E69F00",  # Okabe-Ito Orange
+    "SelectKBest (k=100)": "#D55E00",  # Okabe-Ito Vermillion
+    "SelectKBest (k=200)": "#CC79A7",  # Okabe-Ito Reddish Purple
+}
+
+# Threshold Optimisation Strategy Encoding (default vs Youden's J cutoff comparison)
+THRESHOLD_STRATEGY_PALETTE = {
+    "Default (0.50)":       "#56B4E9",  # Okabe-Ito Sky Blue
+    "Optimal (Youden's J)": "#009E73",  # Okabe-Ito Bluish Green
+}
+
+# Clinical Utility Strategy Encoding (Q5 decision framework)
+STRATEGY_PALETTE = {
+    "Phenotype-Stratified (Q5)": "#009E73",  # Okabe-Ito Bluish Green
+    "Global Predictor (Q1)":     "#0072B2",  # Okabe-Ito Blue
+    "Global Q1 Predictor":       "#0072B2",  # Okabe-Ito Blue (alternate key)
+    "Subgroup Specific":         "#009E73",  # Okabe-Ito Bluish Green (alternate key)
+    "CD274 (PD-L1+)":            "#E69F00",  # Okabe-Ito Orange
+    "High TMB":                  "#CC79A7",  # Okabe-Ito Reddish Purple
+    "Treat All":                 "#D55E00",  # Okabe-Ito Vermillion
+    "Treat None":                "#F0E442",  # Okabe-Ito Yellow
+}
+
+# Treatment Arm Encoding (Q5 treatability scoring)
+ARM_PALETTE = {
+    "Arm A: Immunotherapy":        "#009E73",  # Okabe-Ito Bluish Green
+    "Arm B: Targeted Therapy":     "#E69F00",  # Okabe-Ito Orange
+    "Arm C: Combination/Reversal": "#CC79A7",  # Okabe-Ito Reddish Purple
+}
+
 from matplotlib.colors import LinearSegmentedColormap
 
 
@@ -88,5 +156,13 @@ def get_cohort_color(cohort_name: str, default: str = "#37474F") -> str:
     """Returns the standardized hex color code for a given cohort."""
     for key, color in COHORT_PALETTE.items():
         if key.lower() in cohort_name.lower():
+            return color
+    return default
+
+
+def get_phenotype_color(phenotype_name: str, default: str = "#37474F") -> str:
+    """Returns the standardised hex colour code for a given phenotype subtype label."""
+    for key, color in PHENOTYPE_PALETTE.items():
+        if key.lower() in phenotype_name.lower():
             return color
     return default

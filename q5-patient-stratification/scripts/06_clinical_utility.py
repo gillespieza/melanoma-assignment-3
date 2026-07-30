@@ -42,6 +42,7 @@ from reporting import generate_obsidian_frontmatter
 from src.styles import (
     PHENOTYPE_PALETTE,
     RESPONSE_PALETTE,
+    STRATEGY_PALETTE,
     set_presentation_style,
 )
 from src.utils.logging import TeeStream
@@ -69,14 +70,7 @@ PHENOTYPE_SHORT_NAMES: Dict[int, str] = {
     3: "Mutant-Driven",
 }
 
-STRATEGY_PALETTE: Dict[str, str] = {
-    "Phenotype-Stratified (Q5)": "#009E73",  # Okabe-Ito Bluish Green
-    "Global Predictor (Q1)": "#0072B2",      # Okabe-Ito Blue
-    "CD274 (PD-L1+)": "#E69F00",             # Okabe-Ito Orange
-    "High TMB": "#CC79A7",                   # Okabe-Ito Reddish Purple
-    "Treat All": "#D55E00",                  # Okabe-Ito Vermillion
-    "Treat None": "#9E9E9E",                 # Gray
-}
+
 
 
 def save_fig(fig: plt.Figure, out_path: Path, dpi: int = 300) -> None:
@@ -320,7 +314,7 @@ def plot_dca_curves(df_dca: pd.DataFrame, out_path: Path) -> None:
     ax.grid(True, color="#E5E7EB", linewidth=0.5, alpha=0.6)
 
     # Highlight clinical decision range 0.2 - 0.5
-    ax.axvspan(0.20, 0.50, color="#009E73", alpha=0.08, label="Clinical Decision Window (0.20-0.50)")
+    ax.axvspan(0.20, 0.50, color=RESPONSE_PALETTE["CR/PR"], alpha=0.08, label="Clinical Decision Window (0.20-0.50)")
 
     plt.tight_layout()
     save_fig(fig, out_path, dpi=300)

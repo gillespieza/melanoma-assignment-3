@@ -27,7 +27,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
-from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+from src.styles import (
+    COHORT_PALETTE,
+    OKABE_ITO,
+    PHENOTYPE_PALETTE,
+    RESPONSE_PALETTE,
+    SEX_PALETTE,
+    set_presentation_style,
+)
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
@@ -138,14 +145,15 @@ def main() -> None:
     df = df.dropna(subset=["OS_MONTHS", "OS_STATUS"])
     print(f"Number of samples with valid survival data: {len(df)}")
 
-    palette_2 = [COHORT_PALETTE["Liu 2019"], COHORT_PALETTE["Hugo 2016"]]
-    palette_multi = [RESPONSE_PALETTE["PD"], COHORT_PALETTE["Riaz 2017"], "#7f7f7f", "#17becf", COHORT_PALETTE["Hugo 2016"]]
+    palette_sex = [SEX_PALETTE["Male"], SEX_PALETTE["Female"]]
+    palette_age = [PHENOTYPE_PALETTE["Immune Cold"], PHENOTYPE_PALETTE["Immune Hot"]]
+    palette_stage = OKABE_ITO[:4]
 
     if "SEX" in df.columns:
-        _plot_km(df, "SEX", "TCGA-SKCM Overall Survival by Sex", "km_sex.png", palette_2)
+        _plot_km(df, "SEX", "TCGA-SKCM Overall Survival by Sex", "km_sex.png", palette_sex)
 
     if "AGE" in df.columns:
-        _plot_km(df, "AGE", "TCGA-SKCM Overall Survival by Age Median Split", "km_age.png", palette_2, split_median=True)
+        _plot_km(df, "AGE", "TCGA-SKCM Overall Survival by Age Median Split", "km_age.png", palette_age, split_median=True)
 
     if "AJCC_PATHOLOGIC_TUMOR_STAGE" in df.columns:
         df["Stage_Group"] = df["AJCC_PATHOLOGIC_TUMOR_STAGE"].astype(str).apply(
@@ -159,7 +167,7 @@ def main() -> None:
         )
         df_stage = df.dropna(subset=["Stage_Group"])
         if len(df_stage) > 0:
-            _plot_km(df_stage, "Stage_Group", "TCGA-SKCM Overall Survival by Pathologic Stage", "km_stage.png", palette_multi)
+            _plot_km(df_stage, "Stage_Group", "TCGA-SKCM Overall Survival by Pathologic Stage", "km_stage.png", palette_stage)
 
     print("==================================================")
     print("Done!")

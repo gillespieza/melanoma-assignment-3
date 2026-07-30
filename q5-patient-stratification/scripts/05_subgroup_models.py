@@ -53,6 +53,7 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
 from src.styles import (
     PHENOTYPE_PALETTE,
     RESPONSE_PALETTE,
+    STRATEGY_PALETTE,
     set_presentation_style,
 )
 from src.utils.logging import TeeStream
@@ -79,10 +80,10 @@ PLOTS_DIR = SUBPROJECT_ROOT / "plots" / "subgroup_models"
 set_presentation_style()
 
 PHENOTYPE_COLORS: Dict[int, str] = {
-    0: "#D55E00",  # Okabe-Ito Vermillion (Immune Hot)
-    1: "#0072B2",  # Okabe-Ito Blue (Immune Cold)
-    2: "#CC79A7",  # Okabe-Ito Reddish Purple (M2 Immunosuppressive)
-    3: "#E69F00",  # Okabe-Ito Orange (Mutant-Driven / NF1 Loss)
+    0: PHENOTYPE_PALETTE["Immune Hot"],                 # Okabe-Ito Vermillion (Immune Hot)
+    1: PHENOTYPE_PALETTE["Immune Cold"],                # Okabe-Ito Blue (Immune Cold)
+    2: PHENOTYPE_PALETTE["Immunosuppressive M2-High"],  # Okabe-Ito Reddish Purple (M2 Immunosuppressive)
+    3: PHENOTYPE_PALETTE["Mutant-Driven"],              # Okabe-Ito Orange (Mutant-Driven / NF1 Loss)
 }
 
 PHENOTYPE_SHORT_NAMES: Dict[int, str] = {
@@ -363,7 +364,7 @@ def plot_subgroup_roc_curves(
             linewidth=2,
             label=f"Global Q1 (AUC = {g_auc:.3f})",
         )
-        phenotype_color = PHENOTYPE_PALETTE.get(p_name, "#009E73")
+        phenotype_color = PHENOTYPE_PALETTE.get(p_name, RESPONSE_PALETTE["CR/PR"])
         ax.plot(
             r_dict["fpr_subgroup"],
             r_dict["tpr_subgroup"],
@@ -401,7 +402,7 @@ def plot_performance_comparison(df_eval: pd.DataFrame, out_path: Path) -> None:
     df_melt["Metric"] = df_melt["Metric"].replace({"ROC_AUC": "ROC-AUC", "PR_AUC": "PR-AUC"})
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    palette = {"Global Q1 Predictor": "#37474F", "Subgroup Specific": "#009E73"}
+    palette = STRATEGY_PALETTE
 
     sns.barplot(
         data=df_melt,

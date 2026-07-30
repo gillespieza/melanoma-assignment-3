@@ -36,7 +36,14 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
 # Project Imports
 # ---------------------------------------------------------------------------
 
-from src.styles import DRIVER_PALETTE, RESPONSE_PALETTE, get_okabe_ito_diverging_cmap, set_presentation_style
+from src.styles import (
+    DRIVER_PALETTE,
+    OKABE_ITO,
+    PHENOTYPE_PALETTE,
+    RESPONSE_PALETTE,
+    get_okabe_ito_diverging_cmap,
+    set_presentation_style,
+)
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 
@@ -159,20 +166,20 @@ def plot_volcano(df_assoc: pd.DataFrame, save_path: Path) -> None:
     top_neg = df_sorted.head(7)
     df_plot = pd.concat([top_neg, top_pos]).drop_duplicates()
 
-    df_plot["Color"] = np.where(df_plot["Cohens_d"] > 0, "#009E73", "#D55E00")
+    df_plot["Color"] = np.where(df_plot["Cohens_d"] > 0, RESPONSE_PALETTE["CR/PR"], RESPONSE_PALETTE["PD"])
 
     bars = ax.barh(df_plot["Feature"], df_plot["Cohens_d"], color=df_plot["Color"], edgecolor="#37474F", linewidth=1.0, alpha=0.85)
 
     # Vertical zero line and small effect cutoff lines (|d| = 0.20)
     ax.axvline(0, color="#37474F", linestyle="-", linewidth=1.2, alpha=0.7)
-    ax.axvline(0.2, color="#009E73", linestyle="--", linewidth=1.2, alpha=0.6)
-    ax.axvline(-0.2, color="#D55E00", linestyle="--", linewidth=1.2, alpha=0.6)
+    ax.axvline(0.2, color=RESPONSE_PALETTE["CR/PR"], linestyle="--", linewidth=1.2, alpha=0.6)
+    ax.axvline(-0.2, color=RESPONSE_PALETTE["PD"], linestyle="--", linewidth=1.2, alpha=0.6)
 
     # Add explicit legend patches for Responders vs Non-Responders
     import matplotlib.patches as mpatches
 
-    resp_patch = mpatches.Patch(color="#009E73", label="Enriched in Responders (d > 0)")
-    non_resp_patch = mpatches.Patch(color="#D55E00", label="Enriched in Non-Responders (d < 0)")
+    resp_patch = mpatches.Patch(color=RESPONSE_PALETTE["CR/PR"], label="Enriched in Responders (d > 0)")
+    non_resp_patch = mpatches.Patch(color=RESPONSE_PALETTE["PD"], label="Enriched in Non-Responders (d < 0)")
     cutoff_line = plt.Line2D([0], [0], color="#37474F", linestyle="--", linewidth=1.2, alpha=0.6, label="Small Effect Cutoff (|d| = 0.20)")
 
     ax.legend(
@@ -197,7 +204,7 @@ def plot_youden_roc(df: pd.DataFrame, df_cutoffs: pd.DataFrame, save_path: Path)
     """Generate 300 DPI ROC curves with marked Youden optimal cutoffs."""
     fig, ax = plt.subplots(figsize=(11, 6), dpi=300)
 
-    colors = ["#0072B2", "#009E73", "#CC79A7", "#E69F00", "#56B4E9", "#F0E442"]
+    colors = OKABE_ITO
     valid_df = df.dropna(subset=["RESPONSE_BINARY"]).copy()
     y_true = valid_df["RESPONSE_BINARY"].values
 
@@ -213,17 +220,17 @@ def plot_youden_roc(df: pd.DataFrame, df_cutoffs: pd.DataFrame, save_path: Path)
 
         best_fpr = 1.0 - row["Specificity"]
         best_tpr = row["Sensitivity"]
-        ax.scatter([best_fpr], [best_tpr], color="#D55E00", s=100, zorder=5)
+        ax.scatter([best_fpr], [best_tpr], color=RESPONSE_PALETTE["PD"], s=100, zorder=5)
         ax.text(
             best_fpr - 0.02,
             best_tpr + 0.03,
             f"Youden Cutoff = {row['Optimal_Threshold']:.2f}",
             fontsize=8,
             fontweight="bold",
-            color="#D55E00",
+            color=RESPONSE_PALETTE["PD"],
             ha="right",
             va="center",
-            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor="#D55E00", alpha=0.85),
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor=RESPONSE_PALETTE["PD"], alpha=0.85),
         )
 
     ax.plot([0, 1], [0, 1], color="#37474F", linestyle="--", linewidth=1.2, label="Chance Baseline (AUC = 0.50)")
@@ -263,7 +270,7 @@ def plot_genomic_interaction(df: pd.DataFrame, save_path: Path) -> None:
     grouped["Response_Pct"] = grouped["mean"] * 100
 
     fig, ax = plt.subplots(figsize=(11, 6), dpi=300)
-    palette = {"TIS High": "#009E73", "TIS Low": "#0072B2"}
+    palette = {"TIS High": RESPONSE_PALETTE["CR/PR"], "TIS Low": PHENOTYPE_PALETTE["Immune Cold"]}
 
     sns.barplot(
         data=grouped,

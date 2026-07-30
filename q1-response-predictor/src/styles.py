@@ -1,49 +1,116 @@
-"""
-Centralized Visualization Styles and Color Palettes for Melanoma Assignment 3.
+"""Centralized Visualization Styles and Color Palettes for Melanoma Assignment 3.
+
 Based on the Okabe-Ito Palette System - The universal gold standard for scientific publications (Cell, Nature, Science)
 ensuring 100% colorblind-safe accessibility across deuteranopia, protanopia, and tritanopia.
 """
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+from matplotlib.colors import LinearSegmentedColormap
 
 # Study Cohort Color Mappings (Okabe-Ito Gold Standard System)
 COHORT_PALETTE = {
-    "Liu 2019": "#0072B2",               # Okabe-Ito Blue
-    "Liu 2019 (N=104)": "#0072B2",
-    "Hugo 2016": "#E69F00",               # Okabe-Ito Orange
-    "Hugo 2016 (N=27)": "#E69F00",
-    "Riaz 2017": "#CC79A7",               # Okabe-Ito Reddish Purple
-    "Riaz 2017 (N=64)": "#CC79A7",
-    "TCGA-SKCM": "#37474F",               # Dark Slate Charcoal Reference
-    "TCGA-SKCM (N=426)": "#37474F",
-    "Pooled Trials": "#009E73",           # Okabe-Ito Bluish Green Benchmark
-    "Pooled Trials (N=195)": "#009E73",
+    "Liu 2019":      "#0072B2",  # Okabe-Ito Blue
+    "Hugo 2016":     "#E69F00",  # Okabe-Ito Orange
+    "Riaz 2017":     "#CC79A7",  # Okabe-Ito Reddish Purple
+    "TCGA-SKCM":     "#37474F",  # Dark Slate Charcoal Reference
+    "Pooled Trials": "#009E73",  # Okabe-Ito Bluish Green Benchmark
 }
 
 # Clinical Response Mappings (Okabe-Ito Status Palette)
 RESPONSE_PALETTE = {
-    "CR/PR": "#009E73",                   # Okabe-Ito Bluish Green (Positive Response)
-    "Responder": "#009E73",
-    "Response": "#009E73",
-    "PD": "#D55E00",                      # Okabe-Ito Vermillion Red (Progressive Disease)
+    "CR/PR":         "#009E73",  # Okabe-Ito Bluish Green (Positive Response)
+    "Responder":     "#009E73",
+    "Response":      "#009E73",
+    "PD":            "#D55E00",  # Okabe-Ito Vermillion Red (Progressive Disease)
     "Non-responder": "#D55E00",
-    "Non-Response": "#D55E00",
-    "SD": "#F0E442",                      # Okabe-Ito Yellow (Stable Disease)
+    "Non-Response":  "#D55E00",
+    "SD":            "#F0E442",  # Okabe-Ito Yellow (Stable Disease)
 }
 
 # Driver Mutation Subtype Mappings (Okabe-Ito Accent Palette)
 DRIVER_PALETTE = {
-    "BRAF": "#D55E00",                    # Okabe-Ito Vermillion
-    "NRAS": "#56B4E9",                    # Okabe-Ito Sky Blue
-    "NF1": "#009E73",                     # Okabe-Ito Bluish Green
-    "Triple-WT": "#CC79A7",               # Okabe-Ito Reddish Purple
+    "BRAF":      "#D55E00",  # Okabe-Ito Vermillion
+    "NRAS":      "#56B4E9",  # Okabe-Ito Sky Blue
+    "NF1":       "#009E73",  # Okabe-Ito Bluish Green
+    "Triple-WT": "#CC79A7",  # Okabe-Ito Reddish Purple
+}
+
+# Biological Phenotype Subtype Mappings (Okabe-Ito Scientific Standards)
+PHENOTYPE_PALETTE = {
+    "Immune Hot":                                                  "#D55E00",  # Okabe-Ito Vermillion (Hot Inflamed)
+    "Immune Hot (High TIS & CYT, Inflamed Microenvironment)":     "#D55E00",
+    "Immune Cold":                                                 "#0072B2",  # Okabe-Ito Blue (Cold / Excluded)
+    "Immune Cold (Low TIS & Infiltration, Desert)":               "#0072B2",
+    "Immunosuppressive M2-High":                                   "#CC79A7",  # Okabe-Ito Reddish Purple (M2 Macrophage)
+    "M2 Immunosuppressive":                                        "#CC79A7",
+    "M2 Immunosuppressive (High M2 Macrophages & CAFs)":          "#CC79A7",
+    "Mutant-Driven":                                               "#E69F00",  # Okabe-Ito Orange (MAPK Mutation Driven)
+}
+
+# Full ordered Okabe-Ito palette list for generic sequential categorical encoding
+OKABE_ITO = [
+    "#E69F00",  # Orange
+    "#56B4E9",  # Sky Blue
+    "#009E73",  # Bluish Green
+    "#F0E442",  # Yellow
+    "#0072B2",  # Blue
+    "#D55E00",  # Vermillion
+    "#CC79A7",  # Reddish Purple
+    "#000000",  # Black
+]
+
+# Sex / Gender Data Encoding (Okabe-Ito assignment)
+SEX_PALETTE = {
+    "Male":    "#56B4E9",  # Okabe-Ito Sky Blue
+    "Female":  "#CC79A7",  # Okabe-Ito Reddish Purple
+    "Unknown": "#F0E442",  # Okabe-Ito Yellow
+}
+
+# Gene Functional Category Encoding (transcriptomic forest plots)
+GENE_CATEGORY_PALETTE = {
+    "Interferon GTPases":                      "#0072B2",  # Okabe-Ito Blue
+    "Chemokines & Cytokines":                  "#009E73",  # Okabe-Ito Bluish Green
+    "NK-Cell & T-Cell Receptors & Regulators": "#D55E00",  # Okabe-Ito Vermillion
+    "Signaling & Adapters":                    "#E69F00",  # Okabe-Ito Orange
+    "Enzymes & Metabolism":                    "#CC79A7",  # Okabe-Ito Reddish Purple
+    "Transcription Factors":                   "#56B4E9",  # Okabe-Ito Sky Blue
+}
+
+# Analysis Model-Type Encoding (univariate vs multivariate comparisons)
+MODEL_TYPE_PALETTE = {
+    "Univariate":   "#0072B2",  # Okabe-Ito Blue
+    "Multivariate": "#E69F00",  # Okabe-Ito Orange
+}
+
+# Feature Selection Method Encoding (AUC comparison plots)
+FEATURE_SELECTION_PALETTE = {
+    "Curated Signatures":  "#0072B2",  # Okabe-Ito Blue
+    "SelectKBest (k=20)":  "#E69F00",  # Okabe-Ito Orange
+    "SelectKBest (k=100)": "#D55E00",  # Okabe-Ito Vermillion
+    "SelectKBest (k=200)": "#CC79A7",  # Okabe-Ito Reddish Purple
+}
+
+# Threshold Optimisation Strategy Encoding (default vs Youden's J cutoff comparison)
+THRESHOLD_STRATEGY_PALETTE = {
+    "Default (0.50)":       "#56B4E9",  # Okabe-Ito Sky Blue
+    "Optimal (Youden's J)": "#009E73",  # Okabe-Ito Bluish Green
 }
 
 
-def set_presentation_style(font_scale: float = 1.0, dpi: int = 300):
+def get_okabe_ito_diverging_cmap() -> LinearSegmentedColormap:
+    """Returns a colorblind-safe Okabe-Ito continuous diverging colormap for heatmaps.
+
+    Maps negative values (e.g. beta < 0) to Okabe-Ito Vermillion Red (#D55E00), neutral values to
+    light gray (#FAFAFA), and positive values (e.g. beta > 0) to Okabe-Ito Bluish Green (#009E73).
     """
-    Applies project-wide Matplotlib and Seaborn style configurations tailored for
+    colors = ["#D55E00", "#FAFAFA", "#009E73"]
+    return LinearSegmentedColormap.from_list("OkabeItoDiverging", colors, N=256)
+
+
+def set_presentation_style(font_scale: float = 1.0, dpi: int = 300) -> None:
+    """Applies project-wide Matplotlib and Seaborn style configurations tailored for
+
     presentation slides and report figures using Okabe-Ito publication standards.
     """
     sns.set_theme(style="whitegrid", font="sans-serif")
@@ -59,6 +126,9 @@ def set_presentation_style(font_scale: float = 1.0, dpi: int = 300):
         'savefig.dpi': dpi,
         'savefig.bbox': 'tight',
         'figure.autolayout': True,
+        'grid.color': '#E5E7EB',
+        'grid.linewidth': 0.5,
+        'grid.alpha': 0.6,
     })
 
 
@@ -66,5 +136,13 @@ def get_cohort_color(cohort_name: str, default: str = "#37474F") -> str:
     """Returns the standardized hex color code for a given cohort."""
     for key, color in COHORT_PALETTE.items():
         if key.lower() in cohort_name.lower():
+            return color
+    return default
+
+
+def get_phenotype_color(phenotype_name: str, default: str = "#37474F") -> str:
+    """Returns the standardised hex colour code for a given phenotype subtype label."""
+    for key, color in PHENOTYPE_PALETTE.items():
+        if key.lower() in phenotype_name.lower():
             return color
     return default

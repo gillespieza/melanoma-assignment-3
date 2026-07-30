@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
-from src.styles import set_presentation_style
+from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, rel_path
 from src.utils.plotting import save_fig
@@ -35,9 +35,9 @@ PLOT_DIR = PLOTS_DIR / "clinical"
 LOG_PATH = LOG_DIR / "plot_cluster_profile_visualizations.log"
 
 CLUSTER_PALETTE = {
-    "Cluster 0: Baseline (N=312)": "#37474F",
-    "Cluster 1: High TMB/IO (N=112)": "#009E73",
-    "Cluster 2: Stage IV (N=24)": "#D55E00",
+    0: COHORT_PALETTE["TCGA-SKCM"],  # Dark Slate Charcoal (#37474F) for Baseline
+    1: RESPONSE_PALETTE["CR/PR"],     # Okabe-Ito Bluish Green (#009E73) for High TMB/IO
+    2: RESPONSE_PALETTE["PD"],        # Okabe-Ito Vermillion (#D55E00) for Stage IV
 }
 
 
@@ -84,9 +84,9 @@ def _plot_cluster_radar(plot_dir: Path) -> None:
         linewidth=2.5,
         linestyle="solid",
         label="Cluster 0: Baseline (N=312)",
-        color=CLUSTER_PALETTE["Cluster 0: Baseline (N=312)"],
+        color=CLUSTER_PALETTE[0],
     )
-    ax.fill(angles, values_c0, color=CLUSTER_PALETTE["Cluster 0: Baseline (N=312)"], alpha=0.15)
+    ax.fill(angles, values_c0, color=CLUSTER_PALETTE[0], alpha=0.15)
 
     ax.plot(
         angles,
@@ -94,9 +94,9 @@ def _plot_cluster_radar(plot_dir: Path) -> None:
         linewidth=2.5,
         linestyle="solid",
         label="Cluster 1: High TMB/IO (N=112)",
-        color=CLUSTER_PALETTE["Cluster 1: High TMB/IO (N=112)"],
+        color=CLUSTER_PALETTE[1],
     )
-    ax.fill(angles, values_c1, color=CLUSTER_PALETTE["Cluster 1: High TMB/IO (N=112)"], alpha=0.15)
+    ax.fill(angles, values_c1, color=CLUSTER_PALETTE[1], alpha=0.15)
 
     ax.plot(
         angles,
@@ -104,9 +104,9 @@ def _plot_cluster_radar(plot_dir: Path) -> None:
         linewidth=2.5,
         linestyle="solid",
         label="Cluster 2: Stage IV (N=24)",
-        color=CLUSTER_PALETTE["Cluster 2: Stage IV (N=24)"],
+        color=CLUSTER_PALETTE[2],
     )
-    ax.fill(angles, values_c2, color=CLUSTER_PALETTE["Cluster 2: Stage IV (N=24)"], alpha=0.15)
+    ax.fill(angles, values_c2, color=CLUSTER_PALETTE[2], alpha=0.15)
 
     plt.title("Multi-Dimensional Phenotype Fingerprint (Radar Plot)", size=14, weight="bold", pad=25)
     plt.legend(loc="lower center", bbox_to_anchor=(0.5, -0.18), ncol=3, frameon=True)

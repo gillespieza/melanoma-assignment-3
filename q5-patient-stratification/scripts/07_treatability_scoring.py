@@ -40,7 +40,7 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
 # ---------------------------------------------------------------------------
 
 from reporting import generate_obsidian_frontmatter
-from src.styles import PHENOTYPE_PALETTE, set_presentation_style
+from src.styles import ARM_PALETTE, PHENOTYPE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 
@@ -68,11 +68,7 @@ PHENOTYPE_SHORT_NAMES: Dict[int, str] = {
     3: "Mutant-Driven",
 }
 
-ARM_PALETTE: Dict[str, str] = {
-    "Arm A: Immunotherapy": "#009E73",         # Okabe-Ito Bluish Green
-    "Arm B: Targeted Therapy": "#E69F00",      # Okabe-Ito Orange
-    "Arm C: Combination/Reversal": "#CC79A7",  # Okabe-Ito Reddish Purple
-}
+
 
 
 def save_fig(fig: plt.Figure, out_path: Path, dpi: int = 300) -> None:

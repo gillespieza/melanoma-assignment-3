@@ -46,7 +46,7 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
 # Project Imports
 # ---------------------------------------------------------------------------
 
-from src.styles import set_presentation_style
+from src.styles import OKABE_ITO, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 
@@ -70,14 +70,7 @@ CLUSTERING_FEATURES: List[str] = [
 ]
 
 # Okabe-Ito Scientific color palette for cluster panels
-CLUSTER_COLORS: List[str] = [
-    "#E69F00",  # Okabe-Ito Orange    – Cluster 0
-    "#0072B2",  # Okabe-Ito Blue      – Cluster 1
-    "#D55E00",  # Okabe-Ito Vermillion – Cluster 2
-    "#CC79A7",  # Okabe-Ito Purple    – Cluster 3
-    "#009E73",  # Okabe-Ito Green     – Cluster 4 (DBSCAN)
-    "#56B4E9",  # Okabe-Ito Sky Blue  – Cluster 5 (DBSCAN)
-]
+CLUSTER_COLORS: List[str] = OKABE_ITO
 
 N_BOOTSTRAPS = 50
 SUBSAMPLE_RATIO = 0.8
