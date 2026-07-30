@@ -203,7 +203,7 @@ def assign_treatment_arms(
         tis_val = row.get("TIS", 0.0)
 
         # Rule 1: Arm A (Immunotherapy Monotherapy)
-        is_immune_hot = pheno_name == "Immune Hot" or cluster_id == 2
+        is_immune_hot = pheno_name == "Immune Hot"
         is_high_tis = tis_val > tis_q60
 
         if is_immune_hot or (is_high_tis and response != 0):
@@ -225,10 +225,10 @@ def assign_treatment_arms(
             arm = "Arm C: Combination/Reversal"
             treat_idx = row["Treatability_Index"]
 
-            if pheno_name == "M2 Immunosuppressive" or cluster_id == 3:
+            if pheno_name in ("M2 Immunosuppressive", "Immunosuppressive M2-High"):
                 rx = "Anti-PD-1 + CSF1R Inhibitor (Pexidartinib) [Macrophage Reprogramming]"
                 q4_target = "CSF1R (M2 TAM Depletion)"
-            elif pheno_name == "Immune Cold" or cluster_id == 1:
+            elif pheno_name == "Immune Cold":
                 if treat_idx > 40.0:
                     rx = "Anti-PD-1 + AXL Inhibitor (Bemcentinib) [STING / Type-I IFN Priming]"
                     q4_target = "AXL / STING Pathway"
@@ -336,12 +336,13 @@ def plot_treatability_distributions(df_assigned: pd.DataFrame, out_path: Path) -
     # Panel 2: Q2 Dabrafenib Sensitivity Score in Arm B Patients
     df_arm_b = df_plot[df_plot["Treatment_Arm"] == "Arm B: Targeted Therapy"]
     if len(df_arm_b) > 0:
+        has_var = df_arm_b["Dabrafenib_Sensitivity_Index"].nunique() > 3 and df_arm_b["Dabrafenib_Sensitivity_Index"].std() > 1e-3
         sns.histplot(
             data=df_arm_b,
             x="Dabrafenib_Sensitivity_Index",
             hue="Phenotype",
             palette=PHENOTYPE_PALETTE,
-            kde=True,
+            kde=has_var,
             ax=ax2,
             element="step",
             alpha=0.5,

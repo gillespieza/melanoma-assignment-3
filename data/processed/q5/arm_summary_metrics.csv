@@ -1,11 +1,10 @@
 Cluster_ID,Treatment_Arm,Patient_Count,Phenotype
-0,Arm A: Immunotherapy,78,Mutant-Driven
-0,Arm B: Targeted Therapy,46,Mutant-Driven
-0,Arm C: Combination/Reversal,25,Mutant-Driven
+0,Arm A: Immunotherapy,149,Immune Hot
 1,Arm A: Immunotherapy,5,Immune Cold
 1,Arm B: Targeted Therapy,66,Immune Cold
 1,Arm C: Combination/Reversal,40,Immune Cold
-2,Arm A: Immunotherapy,31,Immune Hot
-3,Arm A: Immunotherapy,13,M2 Immunosuppressive
-3,Arm B: Targeted Therapy,13,M2 Immunosuppressive
-3,Arm C: Combination/Reversal,9,M2 Immunosuppressive
+2,Arm B: Targeted Therapy,15,M2 Immunosuppressive
+2,Arm C: Combination/Reversal,16,M2 Immunosuppressive
+3,Arm A: Immunotherapy,13,Mutant-Driven
+3,Arm B: Targeted Therapy,13,Mutant-Driven
+3,Arm C: Combination/Reversal,9,Mutant-Driven
