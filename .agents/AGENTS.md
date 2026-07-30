@@ -47,7 +47,7 @@ Whenever generating plots, figures, web artifacts, or presentation reports for t
 ## 3. Language & Formatting Conventions
 
 - **Spelling**: Always use **British English** spelling for all generated text, markdown reports, code docstrings, plot titles, labels, and presentation slide content (e.g., *colour*, *visualisation*, *characterisation*, *tumour*, *analyse*, *modelling*, *centre*).
-- **Gene Names**: Always wrap all gene names and gene symbols in backticks (e.g., `CD274`, `PDCD1`, `BRAF`, `NRAS`, `NF1`, `B2M`, `TAP1`, `JAK1`, `STAT1`) across all generated markdown files, documentation, reports, and text artifacts.
+- **Gene Names**: Always wrap all gene names and gene symbols in backticks (e.g., `CD274`, `PDCD1`, `BRAF`, `BRAF V600`, `BRAF V600E`, `NRAS`, `NF1`, `B2M`, `TAP1`, `JAK1`, `STAT1`) across all generated markdown files, documentation, reports, and text artifacts.
 - **Horizontal Rules**: Never use horizontal rules (`---` or `***`) in markdown files or responses unless explicitly instructed to do so (the project's custom CSS automatically renders horizontal rules beneath `<h1>` and `<h2>` headings).
 
 
@@ -135,10 +135,11 @@ When fixing code smells or refactoring code in this repository, follow these gui
     - Call `set_presentation_style()` once at module load in any script that produces figures, rather than setting `plt.rcParams` locally.
 13. **Functions and Closures**: Any block of logic used more than once, or that has its own clear single responsibility distinct from its enclosing function, should be its own named function — not a nested closure, not inlined. Nested closures are acceptable only when they capture enclosing-scope variables essential to their one-time use and aren't reused elsewhere.
 14. **Error Handling**: Avoid bare `except:` clauses. Always catch specific exceptions (e.g., `except KeyError:`) and provide actionable error messages that explain how the user can fix the issue (e.g., `raise FileNotFoundError("Missing clin_cleaned.csv in data/processed/. Run preprocessing script first.")`).
-15. **Graduate Student Report Style & Structure**: All generated markdown reports must be pitched at a graduate student level (rigorous, educational, explaining statistical and biological concepts). Every major report section MUST contain:
-    - An Obsidian callout box (`> [!NOTE]` or `> [!INFO]`) explicitly detailing:
+15. **Graduate Student Report Style & Structure**: All generated markdown reports must be pitched at a graduate student level (rigorous, educational, explaining statistical and biological concepts). Every generated markdown report MUST:
+    - **Include Standard Obsidian YAML Frontmatter**: Every markdown report file MUST begin with a standard Obsidian-compliant YAML frontmatter block (enclosed in `---`) generated via `generate_obsidian_frontmatter()` (from `src.utils.formatting` or local `reporting` module). Required fields include `title`, `aliases`, `tags`, `created`, `cssclasses` (`table-small`, `table-center`, `row-alt`), `obsidianEditingMode` (`preview`), `obsidianUIMode` (`source`), and `updated`.
+    - **Include Standard Obsidian Callouts**: Every major report section MUST contain an Obsidian callout box (`> [!NOTE]` or `> [!INFO]`) explicitly detailing:
       1. **What is being done**
       2. **Why we are doing it**
       3. **What question it answers**
-    - A **Key Takeaways** subsection summarizing the core scientific/clinical insights.
+    - **Include Key Takeaways**: Contain a **Key Takeaways** subsection summarizing the core scientific/clinical insights.
 

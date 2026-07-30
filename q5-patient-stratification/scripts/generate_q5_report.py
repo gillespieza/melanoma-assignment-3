@@ -339,7 +339,7 @@ def main() -> None:
         doc_sections.append(f"![Unsupervised Patient Phenotype Clusters PCA]({rel_img})\n")
         doc_sections.append(
             "> [!INFO] Figure Interpretation: 2D Principal Component Cluster Projection\n"
-            "> - **What this plot shows**: 2D Principal Component Projection of $N = 326$ patients color-coded by their multi-modal K-Means phenotype cluster ($K=4$). Shaded confidence ellipses mark cluster boundaries.\n"
+            f"> - **What this plot shows**: 2D Principal Component Projection of $N = {n_patients}$ patients color-coded by their multi-modal K-Means phenotype cluster ($K=4$). Shaded confidence ellipses mark cluster boundaries.\n"
             "> - **Axis 1 (Horizontal)**: Principal Component 1 captures immune activation and lymphocytic T-cell density (separating Inflamed Hot vs Desert Cold tumours).\n"
             "> - **Axis 2 (Vertical)**: Principal Component 2 captures macrophage polarisation (M1/M2 ratio) and stromal CAF exclusion.\n"
             "> - **Clinical Value**: Discovers discrete patient subgroups with distinct treatment response profiles without relying on biased outcome labels.\n"
@@ -351,7 +351,7 @@ def main() -> None:
         doc_sections.append(f"![Unsupervised Patient Phenotype Clusters UMAP]({rel_img_umap})\n")
         doc_sections.append(
             "> [!INFO] Figure Interpretation: Non-Linear UMAP Cluster Manifold\n"
-            "> - **What this plot shows**: 2D UMAP non-linear manifold projection of the 9-feature patient space ($N = 326$), "
+            f"> - **What this plot shows**: 2D UMAP non-linear manifold projection of the 9-feature patient space ($N = {n_patients}$), "
             "colour-coded by the K-Means cluster labels assigned in full 9-dimensional feature space.\n"
             "> - **Non-Linear Topology**: Preserves local patient neighbourhood structure and non-linear biomarker interactions "
             "across the 9 multi-modal clustering features (TIS, CYT, CD8 T-cells, M1/M2 Macrophages, CAFs, BRAF/NRAS/NF1 mutations).\n"
@@ -611,11 +611,16 @@ def main() -> None:
                     f"($\\Delta$ = {best_recall_delta*100:+.1f} percentage points), identifying more true responders "
                     f"who would otherwise be missed by the global model.\n"
                 )
-            comp_callout_lines.append(
-                "> - **Interpretation Caveat**: Small cluster sizes (*Immune Hot* $N = 20$, *M2 Immunosuppressive* $N = 26$) "
-                "produce wide confidence intervals, meaning metric differences within these subgroups may not reach "
-                "statistical significance despite clinically meaningful effect sizes.\n"
-            )
+                # Dynamically retrieve sample sizes for small clusters if available
+                hot_sub = df_sub_eval[(df_sub_eval["Phenotype"] == "Immune Hot") & (df_sub_eval["Model_Scope"] == "Subgroup Specific")]
+                m2_sub = df_sub_eval[(df_sub_eval["Phenotype"] == "M2 Immunosuppressive") & (df_sub_eval["Model_Scope"] == "Subgroup Specific")]
+                n_hot_str = f"{int(hot_sub.iloc[0]['N'])}" if not hot_sub.empty else "small"
+                n_m2_str = f"{int(m2_sub.iloc[0]['N'])}" if not m2_sub.empty else "small"
+                comp_callout_lines.append(
+                    f"> - **Interpretation Caveat**: Small cluster sizes (*Immune Hot* $N = {n_hot_str}$, *M2 Immunosuppressive* $N = {n_m2_str}$) "
+                    "produce wide confidence intervals, meaning metric differences within these subgroups may not reach "
+                    "statistical significance despite clinically meaningful effect sizes.\n"
+                )
             doc_sections.append("".join(comp_callout_lines))
     if PHASE5_IMP_PLOT_PATH.exists():
         doc_sections.append(f"![Phase 5 Feature Importances]({rel_path(PHASE5_IMP_PLOT_PATH)})\n")
@@ -799,15 +804,18 @@ def main() -> None:
 
         mean_treat_overall = df_treat["Treatability_Index"].mean() if "Treatability_Index" in df_treat.columns else float("nan")
 
-        # Per-phenotype mean Treatability Index
-        phenotype_map = {0: "Mutant-Driven", 1: "Immune Cold", 2: "Immune Hot", 3: "M2 Immunosuppressive"}
-        if "Cluster_ID" in df_treat.columns and "Treatability_Index" in df_treat.columns:
-            pheno_treat = df_treat.groupby(df_treat["Cluster_ID"].map(phenotype_map))["Treatability_Index"].mean()
+        # Per-phenotype mean Treatability Index (derived dynamically from data)
+        if "Phenotype_Label" in df_treat.columns and "Treatability_Index" in df_treat.columns:
+            short_pheno = df_treat["Phenotype_Label"].str.split("(").str[0].str.strip()
+            pheno_treat = df_treat.groupby(short_pheno)["Treatability_Index"].mean()
+        elif "Cluster_ID" in df_treat.columns and "Treatability_Index" in df_treat.columns:
+            p_map = {0: "Immune Hot", 1: "Immune Cold", 2: "M2 Immunosuppressive", 3: "Mutant-Driven"}
+            pheno_treat = df_treat.groupby(df_treat["Cluster_ID"].map(p_map))["Treatability_Index"].mean()
         else:
             pheno_treat = pd.Series(dtype=float)
         treat_hot = pheno_treat.get("Immune Hot", float("nan"))
         treat_cold = pheno_treat.get("Immune Cold", float("nan"))
-        treat_m2 = pheno_treat.get("M2 Immunosuppressive", float("nan"))
+        treat_m2 = pheno_treat.get("M2 Immunosuppressive", pheno_treat.get("Immunosuppressive M2-High", float("nan")))
         treat_mut = pheno_treat.get("Mutant-Driven", float("nan"))
 
         # Q2 mean Dabrafenib sensitivity for Arm B patients
@@ -923,6 +931,16 @@ def main() -> None:
 
     # Assemble full content in-memory for splitting (not written to disk)
     full_report_content = "\n".join(doc_sections)
+    phase_titles = {
+        "1": "Phase 1: Feature Engineering & Baseline Signature Distribution",
+        "2": "Phase 2: Feature Analysis, Youden Cutoffs & Genomic Interactions",
+        "3": "Phase 3: Unsupervised Patient Stratification & Manifold Projections",
+        "4": "Phase 4: Phenotype Characterisation & Dynamic ODE Tumour Burden Trajectories",
+        "5": "Phase 5: Subgroup-Specific Predictive Modelling & Machine Learning Evaluation",
+        "6": "Phase 6: Clinical Utility, Net Benefit & Decision Curve Analysis",
+        "7": "Phase 7: 3-Arm Decision Support System & Treatability Scoring",
+    }
+
     import re
     phase_pattern = re.compile(r"^##\s+(\d+)\.\s+", re.MULTILINE)
     matches = list(phase_pattern.finditer(full_report_content))
@@ -932,13 +950,25 @@ def main() -> None:
         phase_num = match.group(1)
         phase_content = full_report_content[start:end].strip() + "\n"
         phase_path = PER_PHASE_DIR / f"phase_{phase_num}.md"
+        
+        # Prepend phase-specific Obsidian YAML frontmatter
+        pf_frontmatter = generate_obsidian_frontmatter(
+            title=phase_titles.get(phase_num, f"Q5 Patient Stratification - Phase {phase_num}"),
+            aliases=[f"Q5 Phase {phase_num}"],
+            tags=["melanoma", "patient-stratification", f"phase-{phase_num}", "q5"],
+        )
         with open(phase_path, "w", encoding="utf-8") as pf:
-            pf.write(phase_content)
+            pf.write(pf_frontmatter + "\n\n" + phase_content)
 
-    # Create an index markdown linking to each phase file
+    # Create an index markdown linking to each phase file with frontmatter
     index_path = PER_PHASE_DIR / "index.md"
+    idx_frontmatter = generate_obsidian_frontmatter(
+        title="Q5 Phase-Specific Patient Stratification Reports",
+        aliases=["Q5 Reports Index"],
+        tags=["melanoma", "patient-stratification", "q5", "index"],
+    )
     with open(index_path, "w", encoding="utf-8") as idx:
-        idx.write("# Q5 Phase‑Specific Reports\n\n")
+        idx.write(idx_frontmatter + "\n\n# Q5 Phase‑Specific Reports\n\n")
         for i in range(1, len(matches) + 1):
             idx.write(f"- [Phase {i} Report]({rel_path(PER_PHASE_DIR / f'phase_{i}.md')})\n")
 
