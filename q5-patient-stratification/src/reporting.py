@@ -59,6 +59,8 @@ def generate_obsidian_frontmatter(
         f"created: {created_ts}",
         "cssclasses:",
         "  - table-small",
+        "  - table-center",
+        "  - row-alt",
         "obsidianEditingMode: preview",
         "obsidianUIMode: source",
         f"updated: {updated_ts}",
