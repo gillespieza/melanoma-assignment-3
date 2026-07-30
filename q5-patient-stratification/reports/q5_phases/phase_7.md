@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-7
   - q5
-created: 2026-07-30 18:04
+created: 2026-07-30 18:40
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-30 18:04
+updated: 2026-07-30 18:40
 ---
 
 ## 7. Phase 7: 3-Arm Decision Support & Treatability Scoring
@@ -27,7 +27,7 @@ updated: 2026-07-30 18:04
 Phase 7 operationalises precision patient allocation across $N = 699$ patients. The decision engine routes patients into three structured therapeutic arms:
 
 1. **Arm A: Immunotherapy Monotherapy** ($N = 294$, **42.1%** of cohort): Assigned to high-confidence predicted responders (*Immune Hot* phenotype or high TIS scores). Received anti-PD-1 monotherapy (*Pembrolizumab* / *Nivolumab*).
-2. **Arm B: Targeted Therapy (Q2 Integration)** ($N = 288$, **41.2%** of cohort): Assigned to predicted non-responders carrying actionable driver mutations (`BRAF` V600 or `NRAS`). Integrates the Q2 LASSO cell viability regression model to compute a patient-specific **Dabrafenib Sensitivity Index** (mean Arm B sensitivity = **57.7/100**).
+2. **Arm B: Targeted Therapy (Q2 Integration)** ($N = 288$, **41.2%** of cohort): Assigned to predicted non-responders carrying actionable driver mutations (`BRAF V600` or `NRAS`). Integrates the Q2 LASSO cell viability regression model to compute a patient-specific **Dabrafenib Sensitivity Index** (mean Arm B sensitivity = **57.7/100**).
 3. **Arm C: Combination & Microenvironmental Reversal (Q4 Integration)** ($N = 117$, **16.7%** of cohort): Assigned to remaining non-responders in immunologically cold or immunosuppressive microenvironments. Integrates Q4 DepMap essentiality targets to nominate helper interventions (most frequent nomination: **CSF1R (M2 TAM Depletion)** with $N = 51$ patients).
 
 ### Treatability Index Analysis

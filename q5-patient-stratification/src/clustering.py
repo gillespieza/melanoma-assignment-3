@@ -197,9 +197,10 @@ def plot_2d_cluster_projection(
     ax.set_xlabel(xlabel, fontsize=12, fontweight="bold")
     ax.set_ylabel(ylabel, fontsize=12, fontweight="bold")
 
+    legend_loc = "lower left" if method_lower == "pca" else "upper left"
     ax.legend(
         title="Biological Subtype & Microenvironment",
-        loc="upper left",
+        loc=legend_loc,
         frameon=True,
         facecolor="white",
         edgecolor="#CCCCCC",

@@ -628,7 +628,7 @@ def generate_phase6_markdown(
         "#### Translation to Multi-Arm Decision Engine (Phase 7)",
         "The findings of Phase 6 demonstrate that withholding immunotherapy from predicted non-responders is only half the clinical equation — non-responders must be actively routed to alternative therapeutic options. Phase 7 operationalises these results into a complete **3-Arm Clinical Decision System**:",
         "- **Arm A (Immunotherapy Monotherapy)**: High-confidence predicted responders (*Immune Hot* / high TIS).",
-        "- **Arm B (Targeted Therapy)**: Non-responders harboring actionable driver mutations (`BRAF` V600 / `NRAS`).",
+        "- **Arm B (Targeted Therapy)**: Non-responders harboring actionable driver mutations (`BRAF V600` / `NRAS`).",
         "- **Arm C (Combination / Reversal Therapy)**: Non-responders requiring targetable helper interventions (`CSF1R`, `MDM2`, `AXL`) to overcome microenvironmental resistance.",
         "",
     ]

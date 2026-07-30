@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-6
   - q5
-created: 2026-07-30 18:04
+created: 2026-07-30 18:40
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-30 18:04
+updated: 2026-07-30 18:40
 ---
 
 ## 6. Phase 6: Clinical Utility & Decision Curve Analysis
@@ -108,5 +108,5 @@ At a decision threshold of $p_t = 0.30$, the Q5 Phenotype-Stratified system achi
 #### Translation to Multi-Arm Decision Engine (Phase 7)
 The findings of Phase 6 demonstrate that withholding immunotherapy from predicted non-responders is only half the clinical equation — non-responders must be actively routed to alternative therapeutic options. Phase 7 operationalises these results into a complete **3-Arm Clinical Decision System**:
 - **Arm A (Immunotherapy Monotherapy)**: High-confidence predicted responders (*Immune Hot* / high TIS).
-- **Arm B (Targeted Therapy)**: Non-responders harboring actionable driver mutations (`BRAF` V600 / `NRAS`).
+- **Arm B (Targeted Therapy)**: Non-responders harboring actionable driver mutations (`BRAF V600` / `NRAS`).
 - **Arm C (Combination / Reversal Therapy)**: Non-responders requiring targetable helper interventions (`CSF1R`, `MDM2`, `AXL`) to overcome microenvironmental resistance.

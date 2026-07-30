@@ -7,24 +7,24 @@ tags:
   - patient-stratification
   - phase-2
   - q5
-created: 2026-07-30 18:04
+created: 2026-07-30 18:40
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-30 18:04
+updated: 2026-07-30 18:40
 ---
 
-## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds (N = 326)
+## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds
 
 > [!NOTE] Analytical Methodology & Rationale
 > - **What is being done**: Performing non-parametric univariate association testing (Mann-Whitney U, Cohen's d), Youden threshold optimisation, and logistic regression interaction modelling.
 > - **Why we are doing it**: Establishing statistical significance and non-linear cutoffs is necessary to identify which individual features differentiate Responders from Non-Responders.
 > - **What question it answers**: Which individual biomarkers significantly correlate with immunotherapy response, and do signatures interact synergistically with genomic driver mutations?
 
-Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
+Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patients:
 - **Continuous Association**: Mann-Whitney U tests confirm that `TIS`, `CYT`, and `CD8_Tcell` scores are significantly higher in Responders ($CR/PR$) compared to Non-Responders ($PD$).
 - **Youden Decision Thresholds**: Youden's J statistic ($J = \text{Sensitivity} + \text{Specificity} - 1$) defines optimal clinical thresholds for categorising continuous signature scores into high/low risk groups.
 - **Genomic Synergy & Interaction**: Logistic regression confirms significant interaction terms between `TIS` and `BRAF` mutation status ($p < 0.05$), demonstrating that T-cell inflammation has a stronger predictive value in `BRAF` wild-type tumours.
@@ -57,7 +57,7 @@ Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
 
 > [!INFO] Rationale: Why TIS x BRAF Was Selected as Primary Benchmark
 > - **FDA-Investigational Benchmark**: `TIS` (Tumour Inflammation Signature, Ayers et al.) represents the clinical gold-standard 18-gene IFN-gamma responsive score evaluated across anti-PD-1 clinical trials.
-> - **Clinical Class Trial Anchor**: `BRAF` V600 is the primary oncogenic driver mutation in ~40-50% of cutaneous melanomas. In clinical oncology, `BRAF` mutation status dictates whether a patient receives Targeted Therapy (Dabrafenib/Trametinib) vs Immunotherapy (anti-PD-1).
+> - **Clinical Class Trial Anchor**: `BRAF V600` is the primary oncogenic driver mutation in ~40-50% of cutaneous melanomas. In clinical oncology, `BRAF` mutation status dictates whether a patient receives Targeted Therapy (Dabrafenib/Trametinib) vs Immunotherapy (anti-PD-1).
 > - **Primary Benchmark**: Testing `TIS` $\times$ `BRAF` provides the primary benchmark for whether oncogenic MAPK activation dampens T-cell inflammation before expanding to all 21 driver $\times$ signature permutations below.
 
 ### Multi-Permutation Genomic x Immune Interaction Matrix
@@ -78,9 +78,9 @@ Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
 
 | Biomarker Feature   | Optimal Cutoff   | Youden J   | Sensitivity   | Specificity   | AUC-ROC   |
 |:--------------------|:-----------------|:-----------|:--------------|:--------------|:----------|
-| `TIS`               | 0.486            | 0.160      | 39.0%         | 77.0%         | 0.578     |
+| `TIS`               | 0.191            | 0.184      | 57.3%         | 61.1%         | 0.585     |
 | `CYT`               | 0.621            | 0.205      | 32.9%         | 87.6%         | 0.583     |
-| `IFN_gamma`         | 0.243            | 0.151      | 54.9%         | 60.2%         | 0.566     |
+| `IFN_gamma`         | 0.439            | 0.170      | 42.7%         | 74.3%         | 0.575     |
 | `CD8_T_cells`       | 0.069            | 0.184      | 67.1%         | 51.3%         | 0.584     |
 | **`B_cells`**       | **0.430**        | **0.306**  | **53.7%**     | **77.0%**     | **0.632** |
 | `M1_M2_Ratio`       | 1.076            | 0.034      | 6.1%          | 97.3%         | 0.442     |
@@ -94,5 +94,5 @@ Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
 > Phase 2 evaluated individual biomarkers to determine how effectively single measurements can predict anti-PD-1 immunotherapy response:
 > 1. **Individual Biomarkers Have Modest Power**: While inflammatory signatures (such as `TIS`, `CYT`, and `CD8_T_cells`) and B-cell abundance (`B_cells`) show statistically significant elevation in responders, their standalone predictive accuracy is modest (AUC $\approx 0.58–0.63$). No single biomarker acts as a sole determinant of response.
 > 2. **Decision Thresholds Provide Triage Cutoffs**: Youden's J statistic established concrete numerical cutoffs (such as `B_cells` threshold $\ge 0.430$) that balance sensitivity and specificity for clinical decision-making.
-> 3. **Genomic Mutations Alter Immune Response**: Microenvironmental immune inflammation interacts significantly with oncogenic driver mutations—specifically `BRAF` V600 ($\beta = -0.65, p = 0.040$). High T-cell inflammation has a stronger positive predictive value in `BRAF` wild-type tumours than in `BRAF`-mutated tumours.
+> 3. **Genomic Mutations Alter Immune Response**: Microenvironmental immune inflammation interacts significantly with oncogenic driver mutations—specifically `BRAF V600` ($\beta = -0.65, p = 0.040$). High T-cell inflammation has a stronger positive predictive value in `BRAF` wild-type tumours than in `BRAF`-mutated tumours.
 > 4. **Rationale for Stratification**: Because single biomarkers yield modest standalone performance and interact with underlying driver mutations, robust patient stratification requires multi-dimensional unsupervised clustering (Phase 3) rather than single-gene tests.

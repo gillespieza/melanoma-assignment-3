@@ -404,7 +404,7 @@ def generate_phase7_markdown(df_assigned: pd.DataFrame, out_path: Path) -> None:
         f"Phase 7 operationalises precision patient allocation across $N = {n_total}$ patients. The decision engine routes patients into three structured therapeutic arms:",
         "",
         f"1. **Arm A: Immunotherapy Monotherapy** ($N = {n_arma}$, **{pct_arma:.1f}%** of cohort): Assigned to high-confidence responders (*Immune Hot* phenotype or high TIS scores). Received anti-PD-1 monotherapy (*Pembrolizumab* / *Nivolumab*).",
-        f"2. **Arm B: Targeted Therapy (Q2 Integration)** ($N = {n_armb}$, **{pct_armb:.1f}%** of cohort): Assigned to predicted non-responders carrying actionable driver mutations (`BRAF` V600 or `NRAS`). Integrates the Q2 LASSO cell viability regression model to compute a patient-specific **Dabrafenib Sensitivity Index** (mean Arm B sensitivity = **{mean_q2_dab:.1f}/100**).",
+        f"2. **Arm B: Targeted Therapy (Q2 Integration)** ($N = {n_armb}$, **{pct_armb:.1f}%** of cohort): Assigned to predicted non-responders carrying actionable driver mutations (`BRAF V600` or `NRAS`). Integrates the Q2 LASSO cell viability regression model to compute a patient-specific **Dabrafenib Sensitivity Index** (mean Arm B sensitivity = **{mean_q2_dab:.1f}/100**).",
         f"3. **Arm C: Combination & Microenvironmental Reversal (Q4 Integration)** ($N = {n_armc}$, **{pct_armc:.1f}%** of cohort): Assigned to remaining non-responders in immunologically cold or immunosuppressive microenvironments. Integrates Q4 DepMap essentiality targets to nominate helper interventions (most frequent nomination: **{top_target}** with $N = {top_target_n}$ patients).",
         "",
         "### Treatability Index Analysis",

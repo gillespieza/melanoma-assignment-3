@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-3
   - q5
-created: 2026-07-30 18:04
+created: 2026-07-30 18:40
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-30 18:04
+updated: 2026-07-30 18:40
 ---
 
 ## 3. Phase 3: Unsupervised Phenotype Stratification (N = 699)
@@ -26,12 +26,12 @@ updated: 2026-07-30 18:04
 
 ### Unsupervised Phenotype Cluster Summary
 
-| Cluster ID   | Biological Phenotype Subtype                                       |   Patient Count (N) | Cohort Share   | Response Rate   |
-|:-------------|:-------------------------------------------------------------------|--------------------:|:---------------|:----------------|
-| Cluster 0    | `Mutant-Driven (NF1 Loss & High Response Subtype)`                 |                  89 | 12.7%          | **61.5%**       |
-| Cluster 1    | `Immune Cold (Low TIS & Infiltration, Desert)`                     |                 198 | 28.3%          | **35.4%**       |
-| Cluster 2    | `Immune Hot (High TIS & CYT, Inflamed Microenvironment)`           |                 289 | 41.3%          | **38.9%**       |
-| Cluster 3    | `Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion)` |                 123 | 17.6%          | **45.2%**       |
+| Cluster ID   | Biological Phenotype Subtype                                     |   Patient Count (N) | Cohort Share   | Response Rate   |
+|:-------------|:-----------------------------------------------------------------|--------------------:|:---------------|:----------------|
+| Cluster 0    | Mutant-Driven (NF1 Loss & High Response Subtype)                 |                  89 | 12.7%          | **61.5%**       |
+| Cluster 1    | Immune Cold (Low TIS & Infiltration, Desert)                     |                 198 | 28.3%          | **35.4%**       |
+| Cluster 2    | Immune Hot (High TIS & CYT, Inflamed Microenvironment)           |                 289 | 41.3%          | **38.9%**       |
+| Cluster 3    | Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion) |                 123 | 17.6%          | **45.2%**       |
 
 ### Unsupervised Phenotype Cluster Projection (2D PCA)
 

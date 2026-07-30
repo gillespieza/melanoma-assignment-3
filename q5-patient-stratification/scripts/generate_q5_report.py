@@ -290,7 +290,7 @@ def main() -> None:
     )
 
     # Section 2: Phase 2 Feature Analysis
-    doc_sections.append(f"## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds (N = {n_patients})\n")
+    doc_sections.append(f"## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds\n")
     doc_sections.append(
         build_section_callout(
             what="Performing non-parametric univariate association testing (Mann-Whitney U, Cohen's d), Youden threshold optimisation, and logistic regression interaction modelling.",
@@ -299,7 +299,7 @@ def main() -> None:
         )
     )
     doc_sections.append(
-        f"Phase 2 evaluates biomarker discriminative power across $N = {n_patients}$ patients:\n"
+        f"Phase 2 evaluates biomarker discriminative power across $N_{{\\text{{ICI}}}}$ patients:\n"
         f"- **Continuous Association**: Mann-Whitney U tests confirm that `TIS`, `CYT`, and `CD8_Tcell` scores are significantly higher in Responders ($CR/PR$) compared to Non-Responders ($PD$).\n"
         f"- **Youden Decision Thresholds**: Youden's J statistic ($J = \\text{{Sensitivity}} + \\text{{Specificity}} - 1$) defines optimal clinical thresholds for categorising continuous signature scores into high/low risk groups.\n"
         f"- **Genomic Synergy & Interaction**: Logistic regression confirms significant interaction terms between `TIS` and `BRAF` mutation status ($p < 0.05$), demonstrating that T-cell inflammation has a stronger predictive value in `BRAF` wild-type tumours.\n"
@@ -337,7 +337,7 @@ def main() -> None:
         doc_sections.append(
             "> [!INFO] Rationale: Why TIS x BRAF Was Selected as Primary Benchmark\n"
             "> - **FDA-Investigational Benchmark**: `TIS` (Tumour Inflammation Signature, Ayers et al.) represents the clinical gold-standard 18-gene IFN-gamma responsive score evaluated across anti-PD-1 clinical trials.\n"
-            "> - **Clinical Class Trial Anchor**: `BRAF` V600 is the primary oncogenic driver mutation in ~40-50% of cutaneous melanomas. In clinical oncology, `BRAF` mutation status dictates whether a patient receives Targeted Therapy (Dabrafenib/Trametinib) vs Immunotherapy (anti-PD-1).\n"
+            "> - **Clinical Class Trial Anchor**: `BRAF V600` is the primary oncogenic driver mutation in ~40-50% of cutaneous melanomas. In clinical oncology, `BRAF` mutation status dictates whether a patient receives Targeted Therapy (Dabrafenib/Trametinib) vs Immunotherapy (anti-PD-1).\n"
             "> - **Primary Benchmark**: Testing `TIS` $\\times$ `BRAF` provides the primary benchmark for whether oncogenic MAPK activation dampens T-cell inflammation before expanding to all 21 driver $\\times$ signature permutations below.\n"
         )
 
@@ -393,7 +393,7 @@ def main() -> None:
         "> Phase 2 evaluated individual biomarkers to determine how effectively single measurements can predict anti-PD-1 immunotherapy response:\n"
         "> 1. **Individual Biomarkers Have Modest Power**: While inflammatory signatures (such as `TIS`, `CYT`, and `CD8_T_cells`) and B-cell abundance (`B_cells`) show statistically significant elevation in responders, their standalone predictive accuracy is modest (AUC $\\approx 0.58–0.63$). No single biomarker acts as a sole determinant of response.\n"
         "> 2. **Decision Thresholds Provide Triage Cutoffs**: Youden's J statistic established concrete numerical cutoffs (such as `B_cells` threshold $\\ge 0.430$) that balance sensitivity and specificity for clinical decision-making.\n"
-        "> 3. **Genomic Mutations Alter Immune Response**: Microenvironmental immune inflammation interacts significantly with oncogenic driver mutations—specifically `BRAF` V600 ($\\beta = -0.65, p = 0.040$). High T-cell inflammation has a stronger positive predictive value in `BRAF` wild-type tumours than in `BRAF`-mutated tumours.\n"
+        "> 3. **Genomic Mutations Alter Immune Response**: Microenvironmental immune inflammation interacts significantly with oncogenic driver mutations—specifically `BRAF V600` ($\\beta = -0.65, p = 0.040$). High T-cell inflammation has a stronger positive predictive value in `BRAF` wild-type tumours than in `BRAF`-mutated tumours.\n"
         "> 4. **Rationale for Stratification**: Because single biomarkers yield modest standalone performance and interact with underlying driver mutations, robust patient stratification requires multi-dimensional unsupervised clustering (Phase 3) rather than single-gene tests.\n"
     )
 
@@ -419,7 +419,7 @@ def main() -> None:
 
             cluster_summary.append({
                 "Cluster ID": f"Cluster {cid}",
-                "Biological Phenotype Subtype": f"`{label}`",
+                "Biological Phenotype Subtype": f"{label}",
                 "Patient Count (N)": cnt,
                 "Cohort Share": f"{pct:.1f}%",
                 "Response Rate": f"**{rr:.1f}%**",
@@ -876,7 +876,7 @@ def main() -> None:
         "#### Translation to Multi-Arm Decision Engine (Phase 7)\n"
         "The findings of Phase 6 demonstrate that withholding immunotherapy from predicted non-responders is only half the clinical equation — non-responders must be actively routed to alternative therapeutic options. Phase 7 operationalises these results into a complete **3-Arm Clinical Decision System**:\n"
         "- **Arm A (Immunotherapy Monotherapy)**: High-confidence predicted responders (*Immune Hot* / high TIS).\n"
-        "- **Arm B (Targeted Therapy)**: Non-responders harboring actionable driver mutations (`BRAF` V600 / `NRAS`).\n"
+        "- **Arm B (Targeted Therapy)**: Non-responders harboring actionable driver mutations (`BRAF V600` / `NRAS`).\n"
         "- **Arm C (Combination / Reversal Therapy)**: Non-responders requiring targetable helper interventions (`CSF1R`, `MDM2`, `AXL`) to overcome microenvironmental resistance.\n"
     )
 
@@ -948,7 +948,7 @@ def main() -> None:
         "Assigned to high-confidence predicted responders (*Immune Hot* phenotype or high TIS scores). "
         "Received anti-PD-1 monotherapy (*Pembrolizumab* / *Nivolumab*).\n"
         f"2. **Arm B: Targeted Therapy (Q2 Integration)** ($N = {n_armb}$, **{pct_armb:.1f}%** of cohort): "
-        "Assigned to predicted non-responders carrying actionable driver mutations (`BRAF` V600 or `NRAS`). "
+        "Assigned to predicted non-responders carrying actionable driver mutations (`BRAF V600` or `NRAS`). "
         f"Integrates the Q2 LASSO cell viability regression model to compute a patient-specific **Dabrafenib Sensitivity Index** "
         f"(mean Arm B sensitivity = **{mean_q2_dab:.1f}/100**).\n"
         f"3. **Arm C: Combination & Microenvironmental Reversal (Q4 Integration)** ($N = {n_armc}$, **{pct_armc:.1f}%** of cohort): "

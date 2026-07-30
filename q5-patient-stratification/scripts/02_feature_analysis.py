@@ -220,16 +220,18 @@ def plot_youden_roc(df: pd.DataFrame, df_cutoffs: pd.DataFrame, save_path: Path)
         best_fpr = 1.0 - row["Specificity"]
         best_tpr = row["Sensitivity"]
         ax.scatter([best_fpr], [best_tpr], color=RESPONSE_PALETTE["PD"], s=100, zorder=5)
+        # Use black for yellow lines — yellow is illegible on a white background
+        label_color = "#000000" if color.upper() == "#F0E442" else color
         ax.text(
             best_fpr - 0.02,
             best_tpr + 0.03,
             f"Youden Cutoff = {row['Optimal_Threshold']:.2f}",
             fontsize=8,
             fontweight="bold",
-            color=RESPONSE_PALETTE["PD"],
+            color=label_color,
             ha="right",
             va="center",
-            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor=RESPONSE_PALETTE["PD"], alpha=0.85),
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor=label_color, alpha=0.85),
         )
 
     ax.plot([0, 1], [0, 1], color="#37474F", linestyle="--", linewidth=1.2, label="Chance Baseline (AUC = 0.50)")

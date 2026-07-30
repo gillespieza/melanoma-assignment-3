@@ -140,7 +140,7 @@ def get_okabe_ito_diverging_cmap():
     light gray (#FAFAFA), and positive values (e.g. beta > 0) to Okabe-Ito Bluish Green (#009E73).
     """
     colors = ["#D55E00", "#FAFAFA", "#009E73"]
-    return LinearSegmentedColormap.from_list("OkabeItoDiverging", colours, N=256)
+    return LinearSegmentedColormap.from_list("OkabeItoDiverging", colors, N=256)
 
 
 def set_presentation_style(font_scale: float = 1.0, dpi: int = 300):
