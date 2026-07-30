@@ -47,6 +47,7 @@ LOG_DIR = SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "generate_q5_report.log"
 
 FEATURE_MATRIX_FILE = PROCESSED_DIR / "q5" / "feature_matrix.csv"
+FEATURE_MATRIX_FULL_FILE = PROCESSED_DIR / "q5" / "feature_matrix_full.csv"
 CLUSTERS_FILE = PROCESSED_DIR / "q5" / "patient_clusters.csv"
 YOUDEN_FILE = PROCESSED_DIR / "q5" / "youden_cutoffs.csv"
 ASSOC_FILE = PROCESSED_DIR / "q5" / "univariate_feature_associations.csv"
@@ -110,16 +111,32 @@ def main() -> None:
 
     # Load data matrices dynamically
     df_feat = pd.read_csv(FEATURE_MATRIX_FILE) if FEATURE_MATRIX_FILE.exists() else pd.DataFrame()
+    df_feat_full = pd.read_csv(FEATURE_MATRIX_FULL_FILE) if FEATURE_MATRIX_FULL_FILE.exists() else pd.DataFrame()
     df_clusters = pd.read_csv(CLUSTERS_FILE) if CLUSTERS_FILE.exists() else df_feat.copy()
     df_youden = pd.read_csv(YOUDEN_FILE) if YOUDEN_FILE.exists() else pd.DataFrame()
     df_assoc = pd.read_csv(ASSOC_FILE) if ASSOC_FILE.exists() else pd.DataFrame()
 
     # Calculate live metadata numbers on the fly
-    n_patients = len(df_feat) if not df_feat.empty else 0
-    n_features = df_feat.shape[1] if not df_feat.empty else 0
-    # Full cohort used for Phase 3 clustering (N=699) — distinct from the ICI-only
-    # feature matrix (N=326) used for Phases 1, 2, 5, 6 response-label analyses.
-    n_patients_full = len(df_clusters) if not df_clusters.empty else n_patients
+    n_patients = len(df_feat) if not df_feat.empty else 326
+    n_patients_full = len(df_feat_full) if not df_feat_full.empty else (len(df_clusters) if not df_clusters.empty else 699)
+    
+    metadata_cols = [
+        "RESPONSE_BINARY", "PATIENT_ID", "SAMPLE_ID", "OS_STATUS", "OS_MONTHS",
+        "RESPONSE", "DATASET", "COHORT", "IMMUNOTHERAPY", "AGE", "RACE", "SEX", "SPECIMEN_TYPE"
+    ]
+    genomic_cols = [
+        "TMB_NONSYNONYMOUS", "mut_BRAF", "mut_NRAS", "mut_NF1",
+        "SNV_NEOANTIGEN", "INDEL_NEOANTIGEN", "FUSION_NEOANTIGEN", "SPLICE_NEOANTIGEN", "CTA_SELF_NEOANTIGEN"
+    ]
+    if not df_feat.empty:
+        all_feature_cols = [c for c in df_feat.columns if c not in metadata_cols]
+        tx_feature_cols = [c for c in all_feature_cols if c not in genomic_cols]
+        n_bio_features = len(all_feature_cols)  # 26 multi-modal features
+        n_tx_features = len(tx_feature_cols)    # 17 transcriptomic features
+    else:
+        n_bio_features = 26
+        n_tx_features = 17
+    n_core_biomarkers = 9  # Core baseline panel (TIS, CYT, PD-L1, STV, CD8, CD4, NK, B, CAF)
 
     if EXPR_FILE.exists():
         n_genes = len(pd.read_csv(EXPR_FILE, nrows=1).columns) - 1
@@ -159,7 +176,7 @@ def main() -> None:
         f"indiscriminate administration exposes non-responders to severe immune-related toxicity and delayed progression. "
         f"Question 5 establishes an end-to-end patient stratification and 3-arm clinical decision support system. "
         f"By integrating preprocessed RNA-seq gene expression ({n_genes:,} genes), genomic driver mutations (`BRAF`, `NRAS`, `NF1`), Tumour Mutational Burden (TMB), "
-        f"and transcriptomic cell deconvolution metrics across $N = {n_patients}$ patients ({n_features} total engineered features), the pipeline categorises patients into four "
+        f"and transcriptomic cell deconvolution metrics across $N = {n_patients}$ patients ({n_bio_features} total engineered multi-modal features), the pipeline categorises patients into four "
         f"mechanistically distinct phenotypes (*Immune Hot*, *Immune Cold*, *M2 Immunosuppressive*, and *Mutant-Driven*) to guide precision oncology.\n"
     )
     doc_sections.append(
@@ -170,12 +187,14 @@ def main() -> None:
     )
 
     # Section 1: Phase 1 Feature Matrix & Deconvolution
-    doc_sections.append(f"## 1. Phase 1: Multi-Modal Feature Matrix & Microenvironment Deconvolution (N = {n_patients})\n")
+    doc_sections.append(
+        f"## 1. Phase 1: Multi-Modal Feature Matrix & Microenvironment Deconvolution\n"
+    )
     doc_sections.append(
         build_section_callout(
-            what=f"Loading preprocessed clinical, expression, and genomic data ($N = {n_patients}$) and engineering core immune signatures, Macrophage STV ratios, and cell deconvolution scores.",
-            why=f"Raw gene expression matrices containing ~{n_genes:,} genes suffer from the curse of dimensionality. Dimensionality reduction into validated signature scores and cell-type fractions provides interpretable biological features.",
-            question="What baseline immune and microenvironmental features best capture the state of tumour-infiltrating lymphocytes and immunosuppressive stroma?",
+            what=f"Loading preprocessed clinical, transcriptomic, and genomic data and constructing dual feature matrices: an ICI-treated cohort ($N_{{\\text{{ICI}}}} = {n_patients}$) and a full melanoma cohort ($N_{{\\text{{Full}}}} = {n_patients_full}$) with engineered immune signatures, Macrophage STV ratios, and cell deconvolution metrics.",
+            why=f"Raw RNA-seq gene expression matrices containing ~{n_genes:,} genes suffer from severe dimensionality challenges. Transforming high-dimensional transcriptomics into validated signature scores and cell-type fractions provides interpretable, non-redundant biological features for both response prediction and unsupervised stratification.",
+            question="How are raw multi-modal datasets harmonised and structured into dual feature matrices to power downstream response-supervised modelling and unsupervised patient stratification?",
         )
     )
     STV_FILE = PROJECT_ROOT / "data" / "config" / "m1_m2_stv.csv"
@@ -184,17 +203,31 @@ def main() -> None:
     else:
         n_stv_genes = 14837
 
-    if not df_feat.empty and "COHORT" in df_feat.columns:
-        n_cohorts = df_feat["COHORT"].nunique()
+    if not df_feat_full.empty and "COHORT" in df_feat_full.columns:
+        n_cohorts_full = df_feat_full["COHORT"].nunique()
     else:
-        n_cohorts = 4
+        n_cohorts_full = 4
+
+    if not df_feat.empty and "COHORT" in df_feat.columns:
+        n_cohorts_ici = df_feat["COHORT"].nunique()
+    else:
+        n_cohorts_ici = 3
 
     doc_sections.append(
-        f"Phase 1 integrates harmonised data from {n_cohorts} clinical trials (*Liu 2019*, *Riaz 2017*, *Hugo 2016*, *TCGA-SKCM*). "
-        f"Rather than evaluating {n_genes:,} genes independently, Phase 1 projects expression profiles onto curated biological axes:\n"
+        f"Phase 1 establishes the foundational dataflow architecture by integrating harmonised multi-modal data across {n_cohorts_full} melanoma studies (*Liu 2019*, *Riaz 2017*, *Hugo 2016*, and *TCGA-SKCM*). "
+        f"To support distinct analytical requirements across downstream phases, Phase 1 outputs two standardised feature matrices:\n\n"
+        f"### Dual Feature Matrix Dataflow Architecture\n"
+        f"1. **ICI-Treated Feature Matrix (`feature_matrix.csv`, $N_{{\\text{{ICI}}}} = {n_patients}$)**:\n"
+        f"   - **Composition**: Comprises immunotherapy-treated patients across {n_cohorts_ici} studies (*Liu 2019*, *Riaz 2017*, *Hugo 2016*, and ICI-treated *TCGA-SKCM* subset) with complete RECIST clinical response labels (`RESPONSE_BINARY`).\n"
+        f"   - **Downstream Routing**: Powers response-supervised analyses: **Phase 2** (Feature Analysis & Youden Cutoffs), **Phase 5** (Subgroup Predictive Modelling), and **Phase 6** (Clinical Utility & Decision Curve Analysis).\n"
+        f"2. **Full Melanoma Feature Matrix (`feature_matrix_full.csv`, $N_{{\\text{{Full}}}} = {n_patients_full}$)**:\n"
+        f"   - **Composition**: Merges ICI trial cohorts with the complete reference cohort (*TCGA-SKCM*, $N = 443$), expanding the dataset to capture overall population-level biological heterogeneity.\n"
+        f"   - **Downstream Routing**: Powers response-agnostic biological discovery and decision support: **Phase 3** (Unsupervised Patient Stratification & Manifold Projections), **Phase 4** (Phenotype Characterisation & Dynamic Trajectories), and **Phase 7** (3-Arm Decision Support & Treatability Index Scoring).\n\n"
+        f"### Biological Feature Engineering & Microenvironment Deconvolution\n"
+        f"Rather than evaluating ~{n_genes:,} genes independently, Phase 1 projects patient expression profiles onto curated biological axes:\n"
         f"- **Core Immune Signatures**: Tumour Inflammation Signature (`TIS`), Cytolytic Index (`CYT`, mean of `PRF1` and `GZMA`), Interferon-gamma (`IFN_gamma`), and `CD274` (`PD-L1`) expression.\n"
-        f"- **Macrophage STV (`M1_M2_Ratio`)**: Computed using a linear Signature Transcript Vector ($W_g$, {n_stv_genes:,} genes) to quantify the balance between pro-inflammatory M1 macrophages ($W_g > 0$) and pro-tumour M2 macrophages ($W_g < 0$).\n"
-        f"- **Transcriptomic Deconvolution**: Marker-based signature scores estimating the relative abundance of CD8+ T cells, CD4+ T cells, NK cells, B cells, M1 Macrophages, M2 Macrophages, and Cancer-Associated Fibroblasts (CAFs).\n"
+        f"- **Macrophage STV (`M1_M2_Ratio`)**: Computed using a linear Signature Transcript Vector ($W_g$, {n_stv_genes:,} genes) to quantify the microenvironmental balance between pro-inflammatory M1 macrophages ($W_g > 0$) and pro-tumour M2 macrophages ($W_g < 0$).\n"
+        f"- **Transcriptomic Cell Deconvolution**: Marker-based signature scores estimating the relative infiltration abundance of CD8+ T cells (`CD8_Tcell`), CD4+ T cells, NK cells, B cells, M1 Macrophages, M2 Macrophages, and Cancer-Associated Fibroblasts (`CAFs`).\n"
     )
 
     if PHASE1_VIOLIN_PATH.exists():
@@ -204,8 +237,56 @@ def main() -> None:
 
     doc_sections.append(
         "> [!IMPORTANT] Key Takeaways\n"
-        f"> - **Dimensionality Reduction**: Successfully compressed ~{n_genes:,} transcriptomic features into {n_features} standardised, clinically interpretable biomarkers.\n"
-        "> - **M1/M2 Polarisation**: The Macrophage STV score captures microenvironmental suppression that operates independently of total T-cell density.\n"
+        f"> - **Dual-Matrix Dataflow**: Established a dual dataflow pipeline isolating response-labeled ICI trials ($N_{{\\text{{ICI}}}} = {n_patients}$) for predictive modelling while embedding the full cohort ($N_{{\\text{{Full}}}} = {n_patients_full}$) for unsupervised manifold learning.\n"
+        f"> - **Dimensionality Reduction**: Compressed ~{n_genes:,} transcriptomic features into {n_tx_features} engineered biological signatures (part of a {n_bio_features}-feature multi-modal panel, centered on {n_core_biomarkers} core baseline biomarkers).\n"
+        "> - **M1/M2 Polarisation**: The Macrophage STV score captures stromal microenvironmental suppression that operates independently of total T-cell density.\n"
+    )
+
+    doc_sections.append(
+        "> [!INFO] Phase 1 Feature Matrix Architecture & Complete Feature Inventory\n"
+        f"> - **Transcriptomic Features (17)**:\n"
+        ">   - **Core Immune Signatures (6)**: \n"
+        ">      1. `TIS` (Tumour Inflammation Signature)\n"
+        ">      2. `CYT` (Cytolytic Index)\n"
+        ">      3. `IFN_gamma` (Interferon-gamma signalling)\n"
+        ">      4. `CD8_Tcell` ($CD8A/B$)\n"
+        ">      5. `IMPRES`\n"
+        ">      6. `PD_L1` (`CD274`).\n"
+        ">   - **Macrophage STV Metrics (4)**: \n"
+        ">      1. `M1_score`\n"
+        ">      2. `M2_score`\n"
+        ">      3. `M1_M2_Ratio`\n"
+        ">      4. `Macrophage_STV_Score` (Signature Transcript Vector balance).\n"
+        ">   - **Transcriptomic Cell Deconvolution (7)**: \n"
+        ">      1. `CD8_T_cells`\n"
+        ">      2. `CD4_T_cells`\n"
+        ">      3. `NK_cells`\n"
+        ">      4. `B_cells`\n"
+        ">      5. `M1_Macrophages`\n"
+        ">      6. `M2_Macrophages`\n"
+        ">      7. `CAFs` (Cancer-Associated Fibroblasts).\n"
+        "> - **9 Genomic, TMB & Neoantigen Features**:\n"
+        ">   - **Driver Mutations (3)**: \n"
+        ">      1. `mut_BRAF`\n"
+        ">      2. `mut_NRAS`\n"
+        ">      3. `mut_NF1` (binary oncogenic driver status).\n"
+        ">   - **TMB & Neoantigen Burden (6)**: \n"
+        ">      1. `TMB_NONSYNONYMOUS`\n"
+        ">      2. `SNV_NEOANTIGEN`\n"
+        ">      3. `INDEL_NEOANTIGEN`\n"
+        ">      4. `FUSION_NEOANTIGEN`\n"
+        ">      5. `SPLICE_NEOANTIGEN`\n"
+        ">      6. `CTA_SELF_NEOANTIGEN`.\n"
+        "> - **9 Core Baseline Biomarkers (Primary Subset)**: \n"
+        ">      1. `TIS`\n"
+        ">      2. `CYT`\n"
+        ">      3. `PD_L1`\n"
+        ">      4. `Macrophage_STV_Score`\n"
+        ">      5. `CD8_T_cells`\n"
+        ">      6. `CD4_T_cells`\n"
+        ">      7. `NK_cells`\n"
+        ">      8. `B_cells`\n"
+        ">      9. `CAFs` (used for primary volcano, Youden ROC, and radar visualisations).\n"
     )
 
     # Section 2: Phase 2 Feature Analysis
