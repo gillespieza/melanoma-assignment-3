@@ -73,9 +73,9 @@ def assign_phenotype_labels(cluster_profiles: pd.DataFrame) -> Dict[int, str]:
     labels: Dict[int, str] = {}
     remaining = set(cluster_profiles.index.tolist())
 
-    # --- Rule 1: Mutant-Driven (NF1 Loss) --------------------------------
-    # The cluster with the highest NF1 mutation rate is the mutant-dominant subtype.
-    # If mut_NF1 is absent or all-zero, this rule is skipped (no NF1-dominant cluster).
+    # --- Rule 1: Mutant-Driven (`NF1` Loss) --------------------------------
+    # The cluster with the highest `NF1` mutation rate is the mutant-dominant subtype.
+    # If mut_NF1 is absent or all-zero, this rule is skipped (no `NF1`-dominant cluster).
     if "mut_NF1" in cluster_profiles.columns and cluster_profiles["mut_NF1"].max() > 0:
         nf1_id = int(cluster_profiles.loc[list(remaining), "mut_NF1"].idxmax())
         labels[nf1_id] = "Mutant-Driven"

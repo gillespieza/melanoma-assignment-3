@@ -175,7 +175,7 @@ def _plot_mutation_frequencies(cohorts: Dict[str, pd.DataFrame], plot_dir: Path)
             "NF1": (f_mut / n) * 100,
             "Triple-WT": (t_wt / n) * 100,
         })
-        print(f"  {label_n}: BRAF: {b_mut} ({b_mut / n * 100:.1f}%), NRAS: {n_mut} ({n_mut / n * 100:.1f}%), NF1: {f_mut} ({f_mut / n * 100:.1f}%), Triple-WT: {t_wt} ({t_wt / n * 100:.1f}%)")
+        print(f"  {label_n}: `BRAF`: {b_mut} ({b_mut / n * 100:.1f}%), `NRAS`: {n_mut} ({n_mut / n * 100:.1f}%), `NF1`: {f_mut} ({f_mut / n * 100:.1f}%), Triple-WT: {t_wt} ({t_wt / n * 100:.1f}%)")
 
     df_mut_freq = pd.DataFrame(mut_data)
     df_mut_melt = df_mut_freq.melt(id_vars="Cohort", var_name="Gene", value_name="Frequency")
@@ -453,7 +453,7 @@ ROW_LABELS = {
     "NRAS": "NRAS mutation",
     "NF1": "NF1 mutation",
     "IFN-gamma Signature": "IFN-gamma 6-Gene Signature",
-    "Tumor Inflammation Signature (TIS)": "Tumor Inflammation Signature (TIS)",
+    "Tumour Inflammation Signature (TIS)": "Tumour Inflammation Signature (TIS)",
     "Cytolytic Activity (CYT)": "Cytolytic Activity (CYT)",
     "CD8 T-Cell Abundance": "CD8 T-Cell Signature",
     "Immune Predictive Score (IMPRES)": "IMPRES Checkpoint Genes",
@@ -465,7 +465,7 @@ ROW_ORDER = [
     ("MAPK Drivers", "NRAS"),
     ("MAPK Drivers", "NF1"),
     ("Immunological Signatures", "IFN-gamma Signature"),
-    ("Immunological Signatures", "Tumor Inflammation Signature (TIS)"),
+    ("Immunological Signatures", "Tumour Inflammation Signature (TIS)"),
     ("Immunological Signatures", "Cytolytic Activity (CYT)"),
     ("Immunological Signatures", "CD8 T-Cell Abundance"),
     ("Immunological Signatures", "Immune Predictive Score (IMPRES)"),
@@ -615,7 +615,7 @@ def _plot_extended_pathway_grouped_bars(
         offset = (i - (n_cohorts - 1) / 2.0) * bar_width
         rects = ax.barh(
             y_pos + offset, values, height=bar_width, label=cohort,
-            color=colors[i], edgecolor="white", linewidth=0.8,
+            color=colours[i], edgecolor="white", linewidth=0.8,
         )
         for rect in rects:
             width = rect.get_width()
@@ -814,13 +814,13 @@ def _generate_genomic_report(cohorts: Dict[str, pd.DataFrame], report_path: Path
         f.write("### Key Observations\n")
         f.write(f"* **Reference Alignment**: The reference **TCGA-SKCM** cohort aligns perfectly with cutaneous melanoma epidemiology, showing a `BRAF` mutation rate of **{tcga_braf_pct:.1f}%**, `NRAS` at **{tcga_nras_pct:.1f}%**, `NF1` at **{tcga_nf1_pct:.1f}%**, and a Triple-WT rate of **{tcga_twt_pct:.1f}%**.\n")
         f.write(f"* **Representative Trial Cohorts**: All trial cohorts align closely with TCGA baseline frequencies. **Liu 2019** shows highly representative driver mutation distributions (`BRAF`: **{liu_braf_pct:.1f}%**, `NRAS`: **{liu_nras_pct:.1f}%**, `NF1`: **{liu_nf1_pct:.1f}%**). **Riaz 2017** mutations are also representative (`BRAF`: **{riaz_braf_pct:.1f}%**, `NRAS`: **{riaz_nras_pct:.1f}%**, `NF1`: **{riaz_nf1_pct:.1f}%**, Triple-WT: **{riaz_twt_pct:.1f}%**).\n")
-        f.write("* **Biological Note**: Driver mutations are generally mutually exclusive: tumors with `BRAF` mutations rarely harbor co-occurring `NRAS` mutations, validating standard melanoma genetics.\n")
+        f.write("* **Biological Note**: Driver mutations are generally mutually exclusive: tumours with `BRAF` mutations rarely harbor co-occurring `NRAS` mutations, validating standard melanoma genetics.\n")
         f.write("* **Representative Cohort Features**: Genomic profiles show mutation status and burden metrics are representative.\n\n")
 
         f.write("### Extended Pathway Mutation Frequencies\n")
-        f.write("To further characterize tumor immunogenicity and mechanisms of resistance, we evaluated pre-treatment somatic mutation frequencies across core biological pathways:\n")
+        f.write("To further characterise tumour immunogenicity and mechanisms of resistance, we evaluated pre-treatment somatic mutation frequencies across core biological pathways:\n")
         f.write("* **Antigen Presentation Machinery**: `B2M`, `TAP1`, `TAP2` (loss causes HLA class I downregulation).\n")
-        f.write("* **IFN-gamma Signaling**: `JAK1`, `JAK2`, `STAT1` (induces insensitivity to T-cell cytotoxicity).\n")
+        f.write("* **IFN-gamma Signalling**: `JAK1`, `JAK2`, `STAT1` (induces insensitivity to T-cell cytotoxicity).\n")
         f.write("* **Immune Checkpoints**: `CD274`, `CTLA4`, `IDO1` (modulators of immune evasion).\n")
         f.write("* **Cytolytic Machinery**: `GZMA`, `PRF1` (effectors of cytotoxic lymphocyte killing).\n")
         f.write("* **Survival & Proliferation Drivers**: `PTEN`, `CDKN2A`, `PIK3CA` (oncogenic drivers).\n\n")
@@ -831,14 +831,14 @@ def _generate_genomic_report(cohorts: Dict[str, pd.DataFrame], report_path: Path
         f.write("_Note: Pre-treatment somatic non-synonymous mutations in MHC Class I machinery (`B2M`, `TAP1`, `TAP2`) are absent in these trial cohorts, as genetic disruption of antigen presentation is primarily an acquired resistance mechanism that emerges under checkpoint blockade pressure rather than a baseline primary resistance mechanism._\n\n")
         f.write("---\n\n")
 
-        f.write("## 2. Tumor Mutational Burden (TMB) & Neoantigen Load\n\n")
-        f.write(f"Tumor Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumor immunogenicity. Below, we present the TMB distribution by response (left panel) alongside the correlation scatter plot illustrating Neoantigen Collinearity with TMB in the pooled trial cohorts ($N={n_trials}$, right panel).\n\n")
+        f.write("## 2. Tumour Mutational Burden (TMB) & Neoantigen Load\n\n")
+        f.write(f"Tumour Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumour immunogenicity. Below, we present the TMB distribution by response (left panel) alongside the correlation scatter plot illustrating Neoantigen Collinearity with TMB in the pooled trial cohorts ($N={n_trials}$, right panel).\n\n")
         f.write("![TMB Distributions](../../plots/genomic/tmb_distributions_by_cohort.png)\n\n")
         f.write("TMB Distributions and Neoantigen Collinearity\n\n")
 
         f.write("### Key Observations\n")
         f.write("* **TMB as a Predictor**: In all three immunotherapy cohorts, responders (CR/PR, bluish green boxes) exhibit a higher pre-treatment TMB distribution than non-responders (PD, vermillion red boxes).\n")
-        f.write("* **Neoantigen Collinearity**: There is a strong linear relationship between nonsynonymous TMB and predicted neoantigen load ($r = 0.756$). The extreme correlation confirms that these two metrics are collinear, making TMB a suitable surrogate for mutational neoantigen burden in downstream modeling.\n\n")
+        f.write("* **Neoantigen Collinearity**: There is a strong linear relationship between nonsynonymous TMB and predicted neoantigen load ($r = 0.756$). The extreme correlation confirms that these two metrics are collinear, making TMB a suitable surrogate for mutational neoantigen burden in downstream modelling.\n\n")
         f.write("---\n\n")
 
         f.write("## 3. Continuous Biomarker Correlation\n\n")
@@ -849,15 +849,15 @@ def _generate_genomic_report(cohorts: Dict[str, pd.DataFrame], report_path: Path
 
         f.write("### Key Observations\n")
         f.write("* **High Collinearity**: TMB and SNV Neoantigens show an extremely high correlation ($r_s = 0.96$). This indicates severe redundancy; in predictive machine learning models, using both features simultaneously is unlikely to add value and may destabilize model coefficients.\n")
-        f.write("* **Neoantigen Subtypes**: Somatic indel neoantigens (`INDEL_NEOANTIGEN`, $r_s = 0.44$ with TMB) and cancer-testis antigens (`CTA_SELF_NEOANTIGEN`, $r_s = 0.22$ with TMB) show much weaker correlations. This suggests they capture distinct biological axes of tumor immunogenicity that are not simply surrogates for total mutational burden.\n\n")
+        f.write("* **Neoantigen Subtypes**: Somatic indel neoantigens (`INDEL_NEOANTIGEN`, $r_s = 0.44$ with TMB) and cancer-testis antigens (`CTA_SELF_NEOANTIGEN`, $r_s = 0.22$ with TMB) show much weaker correlations. This suggests they capture distinct biological axes of tumour immunogenicity that are not simply surrogates for total mutational burden.\n\n")
 
         f.write("### 3.2. Genomic Burden vs. Immune Infiltration\n")
-        f.write(f"To understand how tumor genomic features affect the microenvironment, we evaluated how copy-number burden (Aneuploidy Score, available in TCGA-SKCM, $N={n_tcga}$) and mutational burden (TMB, evaluated in TCGA-SKCM and the pooled trials, $N={n_trials}$) correlate with continuous transcriptomic immune signatures.\n\n")
+        f.write(f"To understand how tumour genomic features affect the microenvironment, we evaluated how copy-number burden (Aneuploidy Score, available in TCGA-SKCM, $N={n_tcga}$) and mutational burden (TMB, evaluated in TCGA-SKCM and the pooled trials, $N={n_trials}$) correlate with continuous transcriptomic immune signatures.\n\n")
         f.write("![Genomic Burden vs Immune Heatmap](../../plots/biomarkers/extended_immune_correlations.png)\n\n")
 
         f.write("### Key Observations\n")
         f.write("* **Aneuploidy vs Infiltration**: Chromosomal instability (Aneuploidy Score) shows a very weak negative correlation ($r \\approx -0.05$ to $-0.11$) with baseline immune signatures in TCGA-SKCM, with only `PD_L1` showing a statistically significant negative correlation ($r = -0.110$, $p = 0.022$). This indicates that while copy number alterations are associated with immune exclusion in some cancer types, Aneuploidy Score alone is a weak predictor of immune-excluded \"cold\" status in melanoma.\n")
-        f.write("* **Orthogonal Biomarkers**: Mutational burden (TMB) shows near-zero/weak correlation with immune signature expression in both TCGA ($r \\approx 0.10$ to $0.16$) and trial cohorts ($r \\approx -0.09$ to $0.05$). This demonstrates that TMB and immune infiltration represent **orthogonal biomarkers**. A tumor can be highly mutated (high TMB) but still immunologically cold, or poorly mutated but hot/inflamed. Downstream predictive models should combine both independent modalities to maximize accuracy.\n\n")
+        f.write("* **Orthogonal Biomarkers**: Mutational burden (TMB) shows near-zero/weak correlation with immune signature expression in both TCGA ($r \\approx 0.10$ to $0.16$) and trial cohorts ($r \\approx -0.09$ to $0.05$). This demonstrates that TMB and immune infiltration represent **orthogonal biomarkers**. A tumour can be highly mutated (high TMB) but still immunologically cold, or poorly mutated but hot/inflamed. Downstream predictive models should combine both independent modalities to maximize accuracy.\n\n")
         f.write("---\n\n")
 
         f.write("## 4. TCGA Survival Stratification by Genomic Features\n\n")
@@ -868,7 +868,7 @@ def _generate_genomic_report(cohorts: Dict[str, pd.DataFrame], report_path: Path
         f.write("TCGA Aneuploidy Survival\n\n")
 
         f.write("### Key Observations\n")
-        f.write("* **Driver Subtypes**: Overall survival does not differ strongly between `BRAF`, `NRAS`, and `NF1` mutant genotypes ($p = 0.0519$). This confirms that while driver mutations are biologically critical for tumor initiation and targeted therapy matching, they do not act as strong, independent prognostic markers for long-term overall survival under standard care.\n")
+        f.write("* **Driver Subtypes**: Overall survival does not differ strongly between `BRAF`, `NRAS`, and `NF1` mutant genotypes ($p = 0.0519$). This confirms that while driver mutations are biologically critical for tumour initiation and targeted therapy matching, they do not act as strong, independent prognostic markers for long-term overall survival under standard care.\n")
         f.write("* **TMB Stratification**: Stratifying TCGA overall survival by TMB using a median split shows no prognostic survival separation ($p = 0.4483$). While TMB is highly _predictive_ of response to checkpoint inhibitors, it is not _prognostic_ of baseline survival in the general TCGA population (where only a small subset received immunotherapy).\n")
         f.write("* **Aneuploidy Prognostic Role**: Partitioning the TCGA cohort by median Aneuploidy Score shows a marginally significant prognostic association ($p = 0.0806$), where patients with high aneuploidy trend towards worse overall survival compared to those with low aneuploidy.\n\n")
         f.write("---\n\n")
@@ -878,9 +878,9 @@ def _generate_genomic_report(cohorts: Dict[str, pd.DataFrame], report_path: Path
         f.write("![Co-Mutation Landscape (Merged Trials)](../../plots/genomic/comut_landscape_merged.png)\n\n")
 
         f.write("### Key Observations\n")
-        f.write("* **MAPK Driver Mutual Exclusivity**: There is high mutual exclusivity between the two primary MAPK pathway drivers, `BRAF` and `NRAS`. This aligns with the classical understanding that `BRAF` and `NRAS` mutations represent redundant and mutually exclusive routes for activating the RAS-RAF-MEK-ERK signaling cascade.\n")
-        f.write("* **NF1 Mutational Overlap**: Unlike `BRAF` and `NRAS`, mutations in the tumor suppressor `NF1` show significant overlap with both drivers. While some of these represent co-occurring driver events, many of these `NF1` mutations are passenger events. `NF1` is a large gene and highly susceptible to random somatic passenger mutations in melanoma, which features a high TMB driven by UV-light exposure.\n")
-        f.write("* **Targeted Resistance Profile**: Core genes related to antigen presentation (`B2M`) and interferon signaling (`JAK1`, `JAK2`) show low baseline mutation rates. These mutations are rare in pre-treatment biopsies, indicating that genetic disruption of interferon signaling is mostly an acquired resistance mechanism rather than a common baseline driver.\n")
+        f.write("* **MAPK Driver Mutual Exclusivity**: There is high mutual exclusivity between the two primary MAPK pathway drivers, `BRAF` and `NRAS`. This aligns with the classical understanding that `BRAF` and `NRAS` mutations represent redundant and mutually exclusive routes for activating the RAS-RAF-MEK-ERK signalling cascade.\n")
+        f.write("* **`NF1` Mutational Overlap**: Unlike `BRAF` and `NRAS`, mutations in the tumour suppressor `NF1` show significant overlap with both drivers. While some of these represent co-occurring driver events, many of these `NF1` mutations are passenger events. `NF1` is a large gene and highly susceptible to random somatic passenger mutations in melanoma, which features a high TMB driven by UV-light exposure.\n")
+        f.write("* **Targeted Resistance Profile**: Core genes related to antigen presentation (`B2M`) and interferon signalling (`JAK1`, `JAK2`) show low baseline mutation rates. These mutations are rare in pre-treatment biopsies, indicating that genetic disruption of interferon signalling is mostly an acquired resistance mechanism rather than a common baseline driver.\n")
         f.write("* **Cohort Distribution**: The Cohort track shows that `BRAF` and `NRAS` mutations are evenly distributed across **Liu 2019** (blue) and **Hugo 2016** (orange).\n")
         f.write("* **No Driver Subtype Response Bias**: Responders are distributed across all driver mutation subtypes (`BRAF`, `NRAS`, `NF1`, and Triple-WT). This visually confirms that driver mutation status itself is not predictive of anti-PD-1 clinical response.\n")
 

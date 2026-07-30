@@ -14,7 +14,6 @@ This supplementary document provides the full, detailed biological rationale, ge
 *Main Report Reference*: [curated_signatures_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-3-transcriptomic-signatures/curated_signatures_report.md)  
 *Python Implementation*: [signatures.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py)
 
----
 
 ## 0. Mathematical Collapsing Strategies & Preprocessing
 
@@ -25,7 +24,7 @@ To transform high-dimensional, multicollinear gene expression matrices into comp
 | Collapsing Strategy | Signatures Applied To | Mathematical Logic | Primary Advantage |
 | :--- | :--- | :--- | :--- |
 | **1. Mean Log-Expression** | IFN-γ, TIS, CYT, CD8 T-Cell | Arithmetic average across $\log_2(\text{TPM} + 1)$ gene values | Smooths gene-level measurement noise and stabilizes co-expressed pathway signals |
-| **2. Pairwise Binary Comparison** | IMPRES | Sum of 15 boolean ratio indicators ($\mathbb{I}[E_{\text{Gene A}} > E_{\text{Gene B}}]$) | Non-linear, scale-free checkpoint balance assessment resistant to normalization offsets |
+| **2. Pairwise Binary Comparison** | IMPRES | Sum of 15 boolean ratio indicators ($\mathbb{I}[E_{\text{Gene A}} > E_{\text{Gene B}}]$) | Non-linear, scale-free checkpoint balance assessment resistant to normalisation offsets |
 | **3. Direct Target Gene Selection** | PD-L1 Proxy | Single gene continuous transcript value ($\log_2[\text{TPM}_{\text{CD274}} + 1]$) | Direct molecular proxy for targeted checkpoint ligand burden |
 
 ### 0.2. Strategy 1: Mean Log-Expression (Arithmetic Average)
@@ -62,7 +61,6 @@ $$Z_{i, k} = \frac{S_{i, k} - \mu_{k}}{\sigma_{k}}$$
 
 where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation of study cohort $k$. This step removes sequencing depth and platform scale differences while preserving zero data leakage during cross-validation.
 
----
 
 ## 1. Interferon-Gamma (IFN-γ) 6-Gene Signature
 
@@ -79,7 +77,6 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
   \[S_{\text{IFN}\gamma} = \frac{1}{|G|} \sum_{g \in G} E_g\]
   where $E_g$ is the normalised log-expression of gene $g$.
 
----
 
 ## 2. Tumour Inflammation Signature (TIS)
 
@@ -92,7 +89,6 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
   > **Implementation Characteristic**: The clinical NanoString TIS panel typically consists of 18 genes. Our implementation in [signatures.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py#L60-L75) expands this set to 21 genes by incorporating critical T-cell receptor components (`CD2`, `CD3D`, `CD3E`) and cytolytic enzymes (`GZMB`, `GZMK`), providing a broader capture of T-cell biology.
 * **Mathematical Calculation**: Arithmetic mean of the $\log_2(\text{TPM} + 1)$ expression values of the detected genes across the expanded panel.
 
----
 
 ## 3. Cytolytic Activity (CYT) Score
 
@@ -105,7 +101,6 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
   \[S_{\text{CYT}} = \frac{E_{\text{GZMA}} + E_{\text{PRF1}}}{2}\]
   *(Equivalent to the logarithm of the geometric mean on the linear TPM scale).*
 
----
 
 ## 4. CD8 T-Cell Abundance Signature
 
@@ -116,7 +111,6 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
 * **Mathematical Calculation**: Arithmetic mean of the log-transformed expression of `CD8A` and `CD8B`:
   \[S_{\text{CD8}} = \frac{E_{\text{CD8A}} + E_{\text{CD8B}}}{2}\]
 
----
 
 ## 5. Immune Predictive Score (IMPRES)
 
@@ -127,7 +121,7 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
   2. `("CD28", "CD276")` (CD28 vs B7-H3)
   3. `("CD86", "TNFRSF4")` (CD86 vs OX40)
   4. `("CD86", "CD200")` (CD86 vs CD200)
-  5. `("CTLA4", "TNFRSF4")` (CTLA4 vs OX40)
+  5. `("CTLA4", "TNFRSF4")` (`CTLA4` vs OX40)
   6. `("PDCD1", "TNFRSF4")` (PD-1 vs OX40)
   7. `("CD80", "TNFSF9")` (CD80 vs 4-1BBL)
   8. `("CD86", "HAVCR2")` (CD86 vs TIM-3)
@@ -143,7 +137,6 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
   To account for missing genes, the score is scaled back to a range of 0–15:
   \[S_{\text{IMPRES}} = S_{\text{raw}} \times \left( \frac{15}{\text{number of valid pairs evaluated}} \right)\]
 
----
 
 ## 6. PD-L1 Transcript Proxy
 

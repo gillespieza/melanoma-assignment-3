@@ -147,9 +147,9 @@ def main() -> None:
         {"label": "Clinical Stage (IV vs III)", "col": "CLINICAL_STAGE", "exp": "IV", "unexp": "III"},
         {"label": "Sex (Male vs Female)", "col": "SEX", "exp": "Male", "unexp": "Female"},
         {"label": "Age (>=60.5 vs <60.5)", "col": "Age_High", "exp": "High", "unexp": "Low"},
-        {"label": "BRAF Mutation (Mut vs WT)", "col": "mut_BRAF", "exp": 1.0, "unexp": 0.0},
-        {"label": "NRAS Mutation (Mut vs WT)", "col": "mut_NRAS", "exp": 1.0, "unexp": 0.0},
-        {"label": "NF1 Mutation (Mut vs WT)", "col": "mut_NF1", "exp": 1.0, "unexp": 0.0},
+        {"label": "`BRAF` Mutation (Mut vs WT)", "col": "mut_BRAF", "exp": 1.0, "unexp": 0.0},
+        {"label": "`NRAS` Mutation (Mut vs WT)", "col": "mut_NRAS", "exp": 1.0, "unexp": 0.0},
+        {"label": "`NF1` Mutation (Mut vs WT)", "col": "mut_NF1", "exp": 1.0, "unexp": 0.0},
     ]
 
     results = []

@@ -151,14 +151,14 @@ def parse_survival_status(value: Any) -> Optional[float]:
 
     event_terms = (
         "DECEASED",
-        "DEAD WITH TUMOR",
+        "DEAD WITH TUMOUR",
         "RECURRED",
         "PROGRESSION",
     )
 
     censored_terms = (
         "LIVING",
-        "ALIVE OR DEAD TUMOR FREE",
+        "ALIVE OR DEAD TUMOUR FREE",
         "DISEASEFREE",
         "DISEASE FREE",
         "CENSORED",

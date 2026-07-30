@@ -9,7 +9,7 @@ Imagine a hospital waiting room filled with **100 new skin cancer (melanoma) pat
 Doctors currently have **three main weapons (treatment options)** to fight melanoma:
 
 1. **Arm A — Immunotherapy**: Giving drugs (`CD274` / anti-PD-1) that wake up the body's own immune system "soldier" cells (T-cells) so they hunt down and destroy cancer cells.
-2. **Arm B — Targeted Therapy**: Using precision "sniper" drugs (BRAF/MEK inhibitors) that switch off a specific broken gene (`BRAF` mutation) inside the tumour.
+2. **Arm B — Targeted Therapy**: Using precision "sniper" drugs (`BRAF`/MEK inhibitors) that switch off a specific broken gene (`BRAF` mutation) inside the tumour.
 3. **Arm C — Chemotherapy & Combination Therapy**: Using chemotherapy (dacarbazine) or adding a helper drug to "reset" the tumour environment.
 
 ### The Problem ⚠️

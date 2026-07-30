@@ -85,7 +85,7 @@ def main() -> None:
 
     # 3. Derive phenotype labels from actual cluster profiles — data-driven, not hardcoded.
     #    profile_clusters() computes per-cluster means; assign_phenotype_labels() ranks
-    #    clusters by NF1 rate, then TIS, to assign biologically grounded short names.
+    #    clusters by `NF1` rate, then TIS, to assign biologically grounded short names.
     feature_cols = [c for c in ["TIS", "CYT", "CD8_T_cells", "mut_NF1", "M1_M2_Ratio", "M2_Macrophages"] if c in df_clean.columns]
     cluster_profiles = profile_clusters(df_clean, "Cluster_ID", feature_cols)
     short_labels: dict = assign_phenotype_labels(cluster_profiles)  # {cluster_id: short_name}
@@ -99,7 +99,7 @@ def main() -> None:
     for cid, name in sorted(phenotype_names.items()):
         profile_tis = cluster_profiles.loc[cid, "TIS"] if "TIS" in cluster_profiles.columns else float("nan")
         profile_nf1 = cluster_profiles.loc[cid, "mut_NF1"] if "mut_NF1" in cluster_profiles.columns else float("nan")
-        print(f"  Cluster {cid}: TIS={profile_tis:+.3f}, NF1={profile_nf1:.0%}  ->  {name}")
+        print(f"  Cluster {cid}: TIS={profile_tis:+.3f}, `NF1`={profile_nf1:.0%}  ->  {name}")
 
     df_clean["Phenotype_Label"] = df_clean["Cluster_ID"].map(phenotype_names)
 

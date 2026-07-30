@@ -235,7 +235,7 @@ def generate_predictions(df: pd.DataFrame) -> Dict[str, np.ndarray]:
         else:
             pred_stratified[mask] = pred_global[mask]
 
-    # 3. Single-Gene CD274 (PD-L1) Benchmark Logistic Probability
+    # 3. Single-Gene `CD274` (PD-L1) Benchmark Logistic Probability
     if "PD_L1" in df.columns and df["PD_L1"].notna().any():
         med_val = df["PD_L1"].median()
         x_pdl1 = df[["PD_L1"]].copy().fillna(med_val if pd.notna(med_val) else 0.0)

@@ -167,9 +167,9 @@ def plot_volcano(df_assoc: pd.DataFrame, save_path: Path) -> None:
     top_neg = df_sorted.head(7)
     df_plot = pd.concat([top_neg, top_pos]).drop_duplicates()
 
-    df_plot["Color"] = np.where(df_plot["Cohens_d"] > 0, RESPONSE_PALETTE["CR/PR"], RESPONSE_PALETTE["PD"])
+    df_plot["Colour"] = np.where(df_plot["Cohens_d"] > 0, RESPONSE_PALETTE["CR/PR"], RESPONSE_PALETTE["PD"])
 
-    bars = ax.barh(df_plot["Feature"], df_plot["Cohens_d"], color=df_plot["Color"], edgecolor="#37474F", linewidth=1.0, alpha=0.85)
+    bars = ax.barh(df_plot["Feature"], df_plot["Cohens_d"], color=df_plot["Colour"], edgecolor="#37474F", linewidth=1.0, alpha=0.85)
 
     # Vertical zero line and small effect cutoff lines (|d| = 0.20)
     ax.axvline(0, color="#37474F", linestyle="-", linewidth=1.2, alpha=0.7)
@@ -246,7 +246,7 @@ def plot_youden_roc(df: pd.DataFrame, df_cutoffs: pd.DataFrame, save_path: Path)
 
 
 def plot_genomic_interaction(df: pd.DataFrame, save_path: Path) -> None:
-    """Generate 300 DPI bar plot demonstrating response rates across TIS High/Low and BRAF mutation status."""
+    """Generate 300 DPI bar plot demonstrating response rates across TIS High/Low and `BRAF` mutation status."""
     valid_df = df.dropna(subset=["RESPONSE_BINARY", "TIS"]).copy()
 
     tis_med = valid_df["TIS"].median()
@@ -294,7 +294,7 @@ def plot_genomic_interaction(df: pd.DataFrame, save_path: Path) -> None:
             )
 
     n_patients = len(valid_df)
-    ax.set_title(f"Genomic Synergy: Anti-PD-1 Response Rate by BRAF Status & TIS Level (N={n_patients})", fontsize=14, fontweight="bold", pad=15)
+    ax.set_title(f"Genomic Synergy: Anti-PD-1 Response Rate by `BRAF` Status & TIS Level (N={n_patients})", fontsize=14, fontweight="bold", pad=15)
     ax.set_xlabel("Genomic Driver Subtype", fontsize=12, fontweight="bold")
     ax.set_ylabel("Objective Response Rate (%)", fontsize=12, fontweight="bold")
     ax.set_ylim(0, 100)

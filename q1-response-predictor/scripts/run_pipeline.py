@@ -90,7 +90,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
         "> - **C-Index**: Concordance Index evaluating how well predicted probabilities rank patient survival times (0.5 = random, 1.0 = perfect agreement).\n\n",
         "> [!note] Decision Boundary Optimisation (Youden's J Statistic)\n",
 
-        "> Youden's J statistic ($J = \\text{sensitivity} + \\text{specificity} - 1$) calculates the optimal decision boundary that balances true positives and true negatives. Evaluating threshold optimization on test data provides an upper-bound performance benchmark.\n\n",
+        "> Youden's J statistic ($J = \\text{sensitivity} + \\text{specificity} - 1$) calculates the optimal decision boundary that balances true positives and true negatives. Evaluating threshold optimisation on test data provides an upper-bound performance benchmark.\n\n",
         "> [!info] Probability Calibration Metrics (Brier Score & Expected Calibration Error)\n",
         "> The **Brier Score** measures the mean squared difference between predicted probabilities and actual binary outcomes (range: 0 to 1, where 0 represents a perfectly calibrated model). **Expected Calibration Error (ECE)** calculates the weighted average difference between predicted confidence and empirical accuracy across probability bins.\n\n",
         "> [!tip] How to Read a Confusion Matrix\n",
@@ -237,7 +237,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
                 f"| {cohort} | {n_samples} | {m['auc']:.3f} | {m['threshold']:.3f} | {m['accuracy']:.3f} | {m['sensitivity']:.3f} | {m['specificity']:.3f} | {m['precision']:.3f} | {m['f1']:.3f} |\n"
             )
         
-        # Visualizations
+        # Visualisations
         report_lines.append("\n### Visualisations & Diagnostics\n\n")
         report_lines.append("#### Confusion Matrices\n\n")
         report_lines.append(f"![Confusion Matrices (Default Threshold 0.5)](../../plots/models/confusion_matrices_{model_key}.png)\n\n")

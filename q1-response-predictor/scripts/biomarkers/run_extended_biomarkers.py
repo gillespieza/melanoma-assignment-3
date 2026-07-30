@@ -79,7 +79,7 @@ def _update_curated_signatures_report(report_path: Path, section_6_lines: list[s
 
 def main() -> None:
     print("==================================================")
-    print("Extended Biomarker Evaluation & Predictive Modeling (Merged Trial Cohorts)")
+    print("Extended Biomarker Evaluation & Predictive Modelling (Merged Trial Cohorts)")
     print("==================================================")
     
     data = _load_and_prepare_data()
@@ -356,7 +356,7 @@ def _evaluate_pathway_mutations(
         "\n## 2. Somatic Pathway Mutations",
         "We evaluated somatic mutations in three biological pathways that dictate tumour immunogenicity and escape:",
         "*   **Antigen Presentation**: `B2M`, `TAP1`, `TAP2` (disrupts MHC Class I presentation).",
-        "*   **IFN-gamma Signaling**: `JAK1`, `JAK2`, `STAT1` (induces insensitivity to T-cell cytotoxicity).",
+        "*   **IFN-gamma Signalling**: `JAK1`, `JAK2`, `STAT1` (induces insensitivity to T-cell cytotoxicity).",
         "*   **Survival & Proliferation Drivers**: `PTEN`, `CDKN2A`, `PIK3CA` (oncogenic drivers).",
         "\n### Mutation Frequencies in Trial Cohorts:",
         f"| Pathway / Gene | Liu 2019 ($N={len(df_liu_clin)}$) | Hugo 2016 ($N={len(df_hugo_clin)}$) | Riaz 2017 ($N={len(df_riaz_clin)}$) | Pooled Trials ($N={len(df_clin_merged)}$) |",
@@ -368,7 +368,7 @@ def _evaluate_pathway_mutations(
         ('NRAS mutation', 'mut_NRAS'),
         ('NF1 mutation', 'mut_NF1'),
         ('Antigen Presentation (MHC)', 'mut_Antigen_Presentation'),
-        ('IFN-gamma Signaling', 'mut_IFN_gamma_Signaling'),
+        ('IFN-gamma Signalling', 'mut_IFN_gamma_Signaling'),
         ('Survival & Proliferation Drivers', 'mut_Survival_Pathways'),
     ]:
         report_section.append(
@@ -529,7 +529,7 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
     """Train cross-validated multimodal prediction models and generate comparison report."""
     print("\nTraining Multimodal Response Predictor on Pooled Trial Cohort...")
     report_section = [
-        "# Extended Biomarkers: Multimodal Predictive Modeling",
+        "# Extended Biomarkers: Multimodal Predictive Modelling",
         f"\nThis report documents the training and evaluation of response prediction models on the pooled immunotherapy trial cohort ($N={len(df_clin_merged)}$), comparing signature models, driver-mutation models, and a full extended clinical-genomic model.",
     ]
     
@@ -637,7 +637,7 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
         stds = [pd_row['base_std'], pd_row['drivers_std'], pd_row['full_std']]
         offset = (i - (n_models - 1) / 2) * bar_width
         bars = ax.bar(x + offset, means, bar_width, yerr=stds,
-                      label=pd_row['model'], color=colors[i % len(colors)],
+                      label=pd_row['model'], color=colours[i % len(colours)],
                       edgecolor='white', linewidth=0.7,
                       capsize=4, error_kw={'elinewidth': 1.2, 'capthick': 1})
         for bar, mean, std in zip(bars, means, stds):

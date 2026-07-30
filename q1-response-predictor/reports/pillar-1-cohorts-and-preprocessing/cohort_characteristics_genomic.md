@@ -28,10 +28,10 @@ This report presents a comparative analysis of genomic features across the four 
 
 > [!summary] What, Why & Key Questions  
 > - **What We Are Doing**: Comparing the mutation frequencies of key melanoma driver genes (`BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across all four study cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**).  
-> - **Why We Are Doing It**: To confirm that our clinical trial datasets reflect real-world melanoma epidemiology and to assess whether baseline pre-treatment mutations in antigen presentation (_B2M_) or IFN-$\gamma$ signaling (_JAK1/2_) drive primary resistance.  
+> - **Why We Are Doing It**: To confirm that our clinical trial datasets reflect real-world melanoma epidemiology and to assess whether baseline pre-treatment mutations in antigen presentation (_B2M_) or IFN-$\gamma$ signalling (_JAK1/2_) drive primary resistance.  
 > - **Questions**:
 > 	1. _Are our clinical trial cohorts representative of standard melanoma epidemiology? _
-> 	2. _Do trial patients harbour baseline mutations in antigen presentation or interferon signaling pathways prior to therapy?_
+> 	2. _Do trial patients harbour baseline mutations in antigen presentation or interferon signalling pathways prior to therapy?_
 
 The distribution of driver mutations (`BRAF`, `NRAS`, `NF1`) and extended biological pathway mutation frequencies across all cohorts are shown below.
 
@@ -43,13 +43,13 @@ The distribution of driver mutations (`BRAF`, `NRAS`, `NF1`) and extended biolog
 - **Matches Real-World Melanoma Genetics**: The reference TCGA-SKCM cohort matches expected real-world melanoma genetics (`BRAF`: **52.1%**, `NRAS`: **28.0%**, `NF1`: **17.1%**, Triple-WT: **15.2%**).
 - **Trial Cohorts are Biologically Representative**: The immunotherapy trial datasets (Liu 2019, Hugo 2016, Riaz 2017) closely align with baseline TCGA frequencies, confirming that trial patients are representative of general melanoma populations.
 - **Driver Mutations Are Mutually Exclusive**: Tumours with `BRAF` mutations almost never carry co-occurring `NRAS` mutations, confirming that these drivers act through independent, non-overlapping growth pathways.
-- **Immune Evasion Mutations Are Absent Before Therapy**: Pre-treatment mutations in antigen presentation (_B2M_, _TAP1/2_) and interferon signaling (_JAK1/2_) are virtually absent (<2%) prior to treatment. This confirms that genetic loss of antigen presentation is an **acquired resistance mechanism** that develops _during_ therapy, rather than a common baseline cause of initial treatment failure.
+- **Immune Evasion Mutations Are Absent Before Therapy**: Pre-treatment mutations in antigen presentation (_B2M_, _TAP1/2_) and interferon signalling (_JAK1/2_) are virtually absent (<2%) prior to treatment. This confirms that genetic loss of antigen presentation is an **acquired resistance mechanism** that develops _during_ therapy, rather than a common baseline cause of initial treatment failure.
 
 ## 2. Tumour Mutational Burden (TMB) & Neoantigen Load
 
 > [!summary] What, Why & Key Questions  
 > - **What We Are Doing**: Analysing the distribution of Tumour Mutational Burden (TMB) across immunotherapy response groups (Responders vs. Non-Responders) and evaluating the correlation between TMB and predicted neoantigen load ($N = 256$).  
-> - **Why We Are Doing It**: Somatic mutations generate novel peptide antigens (neoantigens) that trigger T-cell recognition. We test whether TMB correlates with treatment response and whether TMB can serve as a proxy for mutational neoantigen load in downstream modeling.  
+> - **Why We Are Doing It**: Somatic mutations generate novel peptide antigens (neoantigens) that trigger T-cell recognition. We test whether TMB correlates with treatment response and whether TMB can serve as a proxy for mutational neoantigen load in downstream modelling.  
 > - **Questions**:
 > 	1. _Do responders exhibit higher baseline TMB than non-responders? _
 > 	2. _Is total TMB collinear with predicted neoantigen count?_
@@ -114,7 +114,7 @@ Overall Survival (OS) in the reference **TCGA-SKCM** survival cohort ($N = 428$ 
 
 > [!summary] What, Why & Key Questions  
 > - **What We Are Doing**: Constructing a multi-track co-mutation oncoplot across **$N = 195$** immunotherapy trial patients with binary response labels (CR/PR or PD, excluding Stable Disease), mapping somatic mutations in driver and resistance genes alongside patient TMB, response status, trial cohort, and sex tracks.  
-> - **Why We Are Doing It**: To visualize patient-level co-occurrence and mutual exclusivity patterns across driver mutations and resistance pathways simultaneously.  
+> - **Why We Are Doing It**: To visualise patient-level co-occurrence and mutual exclusivity patterns across driver mutations and resistance pathways simultaneously.  
 > - **Questions**:
 > 	1. _Are `BRAF` and `NRAS` driver mutations strictly mutually exclusive in trial patients?_
 > 	2. _Are responders enriched in specific driver mutation subtypes or clinical tracks?_

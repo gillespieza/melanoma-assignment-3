@@ -284,7 +284,7 @@ def _plot_cluster_heatmap(
         "CD8_Tcell": "CD8+ T-cell Score",
         "PD_L1": "PD-L1 Expression Score",
         "IMPRES": "IMPRES Signature",
-        "TMB_NONSYNONYMOUS": "Tumor Mutational Burden (TMB)",
+        "TMB_NONSYNONYMOUS": "Tumour Mutational Burden (TMB)",
         "AGE": "Patient Age at Diagnosis",
     }
 
@@ -456,7 +456,7 @@ def _plot_cluster_pca(df: pd.DataFrame, pca_coords: np.ndarray, plot_dir: Path) 
 
     out_path = plot_dir / "pca_clinical_clusters.png"
     save_fig(fig, out_path)
-    print(f"Saved PCA cluster visualization to {out_path.relative_to(SUBPROJECT_ROOT).as_posix()}")
+    print(f"Saved PCA cluster visualisation to {out_path.relative_to(SUBPROJECT_ROOT).as_posix()}")
 
 
 def _plot_cluster_survival(df: pd.DataFrame, plot_dir: Path) -> Tuple[float, Dict[int, str]]:
@@ -588,7 +588,7 @@ def _generate_clustering_report(
     median_survivals: Dict[int, str],
     report_path: Path,
 ) -> None:
-    """Generates comprehensive Obsidian Markdown report summarizing full-dataset clustering.
+    """Generates comprehensive Obsidian Markdown report summarising full-dataset clustering.
 
     Args:
         df: Pooled DataFrame with cluster assignments.

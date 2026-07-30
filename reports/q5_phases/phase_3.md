@@ -1,22 +1,3 @@
----
-title: "Phase 3: Unsupervised Patient Stratification & Manifold Projections"
-aliases:
-  - Q5 Phase 3
-tags:
-  - melanoma
-  - patient-stratification
-  - phase-3
-  - q5
-created: 2026-07-30 14:27
-cssclasses:
-  - table-small
-  - table-center
-  - row-alt
-obsidianEditingMode: preview
-obsidianUIMode: source
-updated: 2026-07-30 14:27
----
-
 ## 3. Phase 3: Unsupervised Phenotype Stratification (N = 326)
 
 > [!NOTE] Analytical Methodology & Rationale
@@ -26,12 +7,12 @@ updated: 2026-07-30 14:27
 
 ### Unsupervised Phenotype Cluster Summary
 
-| Cluster ID   | Biological Phenotype Subtype                                       |   Patient Count (N) | Cohort Share   | Response Rate   |
-|:-------------|:-------------------------------------------------------------------|--------------------:|:---------------|:----------------|
-| Cluster 0    | `Immune Hot (High TIS & CYT, Inflamed Microenvironment)`           |                 149 | 45.7%          | **43.5%**       |
-| Cluster 1    | `Immune Cold (Low TIS & Infiltration, Desert)`                     |                 111 | 34.0%          | **31.2%**       |
-| Cluster 2    | `Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion)` |                  31 | 9.5%           | **45.0%**       |
-| Cluster 3    | `Mutant-Driven (NF1 Loss & High Response Subtype)`                 |                  35 | 10.7%          | **61.5%**       |
+| Cluster ID   | Biological Phenotype Subtype                                  |   Patient Count (N) | Cohort Share   | Response Rate   |
+|:-------------|:--------------------------------------------------------------|--------------------:|:---------------|:----------------|
+| Cluster 0    | `Mutant-Driven (NF1 Loss & High Response Subtype)`            |                 149 | 45.7%          | **43.5%**       |
+| Cluster 1    | `Immune Cold (Low TIS & Infiltration, Desert)`                |                 111 | 34.0%          | **31.2%**       |
+| Cluster 2    | `Immune Hot (High TIS & CYT, Inflamed Microenvironment)`      |                  31 | 9.5%           | **45.0%**       |
+| Cluster 3    | `M2 Immunosuppressive (Depleted T-cells & Stromal Exclusion)` |                  35 | 10.7%          | **61.5%**       |
 
 ### Unsupervised Phenotype Cluster Projection (2D PCA)
 
@@ -53,7 +34,7 @@ updated: 2026-07-30 14:27
 
 ### Key Takeaways & Student Summary
 - **Distinct Patient Groups**: K-Means clustering splits the $N = 326$ cohort into four clear biological subgroups with response rates ranging from **31.2% to 61.5%**.
-- **Highest Response Group**: The **Mutant-Driven** subgroup achieves the highest response rate (61.5%), benefiting from favorable immune activation and high driver mutation burden.
+- **Highest Response Group**: The **M2 Immunosuppressive** subgroup achieves the highest response rate (61.5%), benefiting from favorable immune activation and high driver mutation burden.
 - **Treatment-Resistant Subgroup**: The **Immune Cold** subgroup exhibits the lowest response rate (31.2%), highlighting the need for targeted combination therapies beyond single-agent PD-1 blockade.
 
 > [!NOTE] Student-Friendly Phase 3 Summary

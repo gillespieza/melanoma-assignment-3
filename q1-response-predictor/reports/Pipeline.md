@@ -11,7 +11,6 @@ updated: 2026-07-23 17:21
 
 This report documents the workflow and operations implemented in `download_data.py`, `clean_data.py`, and `src/merge_datasets.py` to fetch, extract, clean, and merge datasets for the melanoma immunotherapy response predictor.
 
----
 
 ## Codebase Architecture & Helper Modules
 
@@ -29,7 +28,6 @@ To maintain a clean and modular architecture, helper functions are organised und
   * Sample alignment between clinical and expression matrices (`align_expression_and_clinical`).
 * **`src/utils/cbioportal_api.py`**: Wraps the cBioPortal REST API v2 client and provides functions to programmatically query study metadata, molecular profiles, sample lists, and download raw datasets (`download_raw_tcga_skcm`).
 
----
 
 
 ## 1. Data Acquisition (`scripts/download_data.py`)
@@ -46,11 +44,10 @@ The data acquisition script standardizes the raw input files by downloading offi
 * **Redownload Prevention**: Checks for the existence of `data_clinical_patient.txt` in the destination directory to skip files that have already been retrieved.
 * **Extraction & Clean-up**: Extracts the archive contents to a temporary folder, moves the files into the final destination folder, deletes any empty parent directories, and deletes the temporary `.tar.gz` archive to save disk space.
 
----
 
 ## 2. Data Cleaning (`scripts/clean_data.py`)
 
-The data cleaning pipeline transforms raw inputs into normalized expression matrices and clinical metadata dataframes suitable for modeling. 
+The data cleaning pipeline transforms raw inputs into normalised expression matrices and clinical metadata dataframes suitable for modelling. 
 
 ### Core Parsers and Helpers
 * `parse_cbioportal_expression(expr_file_path)`: Consolidates common cBioPortal expression parsing steps:
@@ -89,7 +86,7 @@ The data cleaning pipeline transforms raw inputs into normalized expression matr
 
 ### Cohort Attrition (Samples Lost at Each Step)
 
-The following table summarizes the number of samples/patients retained and lost at each phase of the cleaning pipeline:
+The following table summarises the number of samples/patients retained and lost at each phase of the cleaning pipeline:
 
 | Cohort        | Step | Starting N | Action / Filter                                                          | Lost | Retained N |
 |:------------- |:---- |:---------- |:------------------------------------------------------------------------ |:---- |:---------- |
@@ -107,7 +104,6 @@ The following table summarizes the number of samples/patients retained and lost 
 |               | 3    | 448        | Patient deduplication in model analysis                                  | 6    | 442        |
 |               | 4    | 442        | Survival validation cohort (drop invalid/missing OS)                     | 15   | 427        |
 
----
 
 ## 3. Dataset Merging (`scripts/merge_datasets.py`)
 
@@ -147,11 +143,10 @@ Each sample in the merged clinical metadata includes the following standardised 
 | `specimen_type` | Biopsy type (Primary/Metastatic/N/A) |
 | `immunotherapy` | Whether the patient received immunotherapy (1 = yes, 0 = no) |
 
----
 
 ## 4. Clinical & Genomic Characterisation Pipeline
 
-Once the clean datasets are generated, the characterisation scripts analyze clinical and genomic variables across trials (Liu, Hugo, Riaz) and the TCGA reference cohort.
+Once the clean datasets are generated, the characterisation scripts analyse clinical and genomic variables across trials (Liu, Hugo, Riaz) and the TCGA reference cohort.
 
 ### 4.1. Clinical Characterisation
 *   **`scripts/clinical_analysis/run_clinical_analysis.py`**: Reads processed clinical data and generates stacked bar charts showing percentage response rates (CR/PR vs. PD) across studies, saved to `plots/clinical/response_distribution.png` and `plots/clinical/km_os_grid.png`.
@@ -174,14 +169,13 @@ Once the clean datasets are generated, the characterisation scripts analyze clin
     *   Computes Kaplan-Meier survival curves in TCGA stratified by Aneuploidy Score, saved to `plots/biomarkers/extended_aneuploidy_survival.png`.
     *   Trains cross-validated classifiers (Logistic Regression, Random Forest) on the pooled trial cohort ($N=195$) to evaluate the predictive benefit of signatures, driver mutations, TMB, and pathway mutations.
 
----
 
 ## 5. Outputs Generated
 
 The pipeline outputs processed data, figures, and reports to their respective directories:
 
 ### Data Outputs (`data/processed/{study_name}/`)
-*   **`expr_cleaned.csv`**: Normalized and log2-transformed expression values (genes as columns, samples as rows).
+*   **`expr_cleaned.csv`**: Normalised and log2-transformed expression values (genes as columns, samples as rows).
 *   **`clin_cleaned.csv`**: Cleaned, standardized clinical metadata (patient demographic fields, survival timeline, response status, and driver mutation flags).
 
 ### Merged Data Outputs (`data/processed/merged/`)

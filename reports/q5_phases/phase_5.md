@@ -1,22 +1,3 @@
----
-title: "Phase 5: Subgroup-Specific Predictive Modelling & Machine Learning Evaluation"
-aliases:
-  - Q5 Phase 5
-tags:
-  - melanoma
-  - patient-stratification
-  - phase-5
-  - q5
-created: 2026-07-30 14:27
-cssclasses:
-  - table-small
-  - table-center
-  - row-alt
-obsidianEditingMode: preview
-obsidianUIMode: source
-updated: 2026-07-30 14:27
----
-
 ## 5. Phase 5: Subgroup-Specific Predictive Models
 
 > [!NOTE] Analytical Methodology & Rationale
@@ -24,25 +5,25 @@ updated: 2026-07-30 14:27
 > - **Why we are doing it**: A single global model assumes uniform feature weights across all patients. Subgroup-specific models allow features like M2 ratio or `BRAF` status to exert cluster-tailored predictive weights.
 > - **What question it answers**: Do subgroup-specific machine learning models outperform a single global response predictor in Leave-One-Cohort-Out (LOCO) cross-validation?
 
-Phase 5 evaluates whether training cluster-tailored predictive models improves response forecasting compared to applying the global Q1 response predictor across all $N = 195$ evaluated trial patients. In the *Mutant-Driven* phenotype ($N = 26$), the subgroup-specific classifier achieved an ROC-AUC of 0.256 (compared to 0.362 for the global model). In the *M2 Immunosuppressive* subset ($N = 20$), subgroup-specific modelling dramatically increased sensitivity and recall (11.1% vs 11.1%) and Positive Predictive Value (PPV = 11.1% vs 12.5%).
+Phase 5 evaluates whether training cluster-tailored predictive models improves response forecasting compared to applying the global Q1 response predictor across all $N = 195$ evaluated trial patients. In the *Mutant-Driven* phenotype ($N = 85$), the subgroup-specific classifier achieved an ROC-AUC of 0.593 (compared to 0.571 for the global model). In the *M2 Immunosuppressive* subset ($N = 26$), subgroup-specific modelling dramatically increased sensitivity and recall (62.5% vs 37.5%) and Positive Predictive Value (PPV = 52.6% vs 50.0%).
 
 ![Phase 5 Subgroup ROC Curves](q5-patient-stratification/plots/subgroup_models/subgroup_roc_curves.png)
 
 > [!INFO] Figure Interpretation: Subgroup-Specific vs Global Q1 ROC Curves
 > - **What this plot shows**: Receiver Operating Characteristic (ROC) curves comparing the Global Q1 Predictor (dashed dark slate) against phenotype-tailored Subgroup Models (solid, colour-coded by phenotype) for each of the four discovered biological subtypes.
-> - **Mutant-Driven** (orange, $N = 26$): Subgroup AUC = 0.256 vs Global AUC = 0.362 ($\Delta$ = -0.106, decline).
+> - **Mutant-Driven** (orange, $N = 85$): Subgroup AUC = 0.593 vs Global AUC = 0.571 ($\Delta$ = +0.022, improvement).
 > - **Immune Cold** (blue, $N = 64$): Subgroup AUC = 0.489 vs Global AUC = 0.494 ($\Delta$ = -0.006, decline).
-> - **Immune Hot** (vermillion, $N = 85$): Subgroup AUC = 0.593 vs Global AUC = 0.571 ($\Delta$ = +0.022, improvement).
-> - **M2 Immunosuppressive** (reddish purple, $N = 20$): Subgroup AUC = 0.141 vs Global AUC = 0.131 ($\Delta$ = +0.010, improvement).
+> - **Immune Hot** (vermillion, $N = 20$): Subgroup AUC = 0.141 vs Global AUC = 0.131 ($\Delta$ = +0.010, improvement).
+> - **M2 Immunosuppressive** (reddish purple, $N = 26$): Subgroup AUC = 0.256 vs Global AUC = 0.362 ($\Delta$ = -0.106, decline).
 > - **Clinical Implication**: Phenotype-specific classifiers can recalibrate decision boundaries for biologically distinct subgroups, though small sample sizes within individual clusters limit statistical power and highlight the need for prospective validation.
 
 ![Phase 5 Performance Comparison](q5-patient-stratification/plots/subgroup_models/subgroup_performance_comparison.png)
 
 > [!INFO] Figure Interpretation: Cross-Validated Performance Comparison
 > - **What this plot shows**: Grouped bar chart comparing four cross-validation metrics (ROC-AUC, PR-AUC, Precision, Recall) between the Global Q1 Predictor (dark slate) and phenotype-specific Subgroup Models (green) across all four biological subtypes.
-> - **Highest ROC-AUC**: The *Immune Hot* subgroup model achieves the highest discriminative performance (AUC = 0.593), benefiting from the largest sample size and clearest driver mutation signal.
-> - **Largest Recall Gain**: In the *Mutant-Driven* subgroup, phenotype-specific training increases Recall from 37.5% to 62.5% ($\Delta$ = +25.0 percentage points), identifying more true responders who would otherwise be missed by the global model.
-> - **Interpretation Caveat**: Small cluster sizes (*Immune Hot* $N = 85$, *M2 Immunosuppressive* $N = 20$) produce wide confidence intervals, meaning metric differences within these subgroups may not reach statistical significance despite clinically meaningful effect sizes.
+> - **Highest ROC-AUC**: The *Mutant-Driven* subgroup model achieves the highest discriminative performance (AUC = 0.593), benefiting from the largest sample size and clearest driver mutation signal.
+> - **Largest Recall Gain**: In the *M2 Immunosuppressive* subgroup, phenotype-specific training increases Recall from 37.5% to 62.5% ($\Delta$ = +25.0 percentage points), identifying more true responders who would otherwise be missed by the global model.
+> - **Interpretation Caveat**: Small cluster sizes (*Immune Hot* $N = 20$, *M2 Immunosuppressive* $N = 26$) produce wide confidence intervals, meaning metric differences within these subgroups may not reach statistical significance despite clinically meaningful effect sizes.
 
 ![Phase 5 Feature Importances](q5-patient-stratification/plots/subgroup_models/subgroup_feature_importances.png)
 

@@ -46,7 +46,9 @@ Whenever generating plots, figures, web artifacts, or presentation reports for t
 
 ## 3. Language & Formatting Conventions
 
-- **Spelling**: Always use **British English** spelling for all generated text, markdown reports, code docstrings, plot titles, labels, and presentation slide content (e.g., *colour*, *visualisation*, *characterisation*, *tumour*, *analyse*, *modelling*, *centre*).
+- **Spelling**: Always use **British English** spelling for all human-readable output text (e.g., *colour*, *visualisation*, *characterisation*, *tumour*, *analyse*, *modelling*, *centre*). The scope of this rule is:
+  - ✅ **In scope** — apply British spelling to: markdown report body text and headings; code **comments** (`# ...`); **docstrings** (`"""..."""`); **plot title and axis label strings** (e.g. `set_title(...)`, `set_xlabel(...)`, `ax.text(...)`); **print/log output strings** and `f.write(...)` report content.
+  - ❌ **Out of scope** — do **not** apply British spelling to: Python **function argument names or kwarg values** (e.g. `ha="center"`, `va="center"`, `loc="lower center"`, `color=...`, `edgecolor=...` — these are library API tokens and must match exactly what the library expects); **YAML key strings** in frontmatter or cssclass lists (e.g. `table-center` is the Obsidian CSS class name and must not be changed); **Python dictionary key strings** used as internal code identifiers (e.g. `{"color": "#aabbcc"}`); **import lines and module/class names** (e.g. `from matplotlib.colors import ...`); **variable names, loop variables, and function parameter names** (e.g. `for color in palette`, `return color`).
 - **Gene Names**: Always wrap all gene names and gene symbols in backticks (e.g., `CD274`, `PDCD1`, `BRAF`, `BRAF V600`, `BRAF V600E`, `NRAS`, `NF1`, `B2M`, `TAP1`, `JAK1`, `STAT1`) across all generated markdown files, documentation, reports, and text artifacts.
 - **Horizontal Rules**: Never use horizontal rules (`---` or `***`) in markdown files or responses unless explicitly instructed to do so (the project's custom CSS automatically renders horizontal rules beneath `<h1>` and `<h2>` headings).
 

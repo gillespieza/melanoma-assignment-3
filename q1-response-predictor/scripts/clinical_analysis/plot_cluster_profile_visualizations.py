@@ -120,7 +120,7 @@ def _plot_cluster_radar(plot_dir: Path) -> None:
 
 
 def main() -> None:
-    """Executes the cluster profile visualization pipeline."""
+    """Executes the cluster profile visualisation pipeline."""
     print("==================================================")
     print("Generating Clinical Cluster Profile Visualisations")
     print("==================================================\n")

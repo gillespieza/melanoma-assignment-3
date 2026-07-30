@@ -637,7 +637,7 @@ def generate_attrition_table(
     attrition_data: dict[str, pd.DataFrame],
     cohort_order: list[str],
 ) -> str:
-    """Generates a Markdown table summarizing sample attrition across preprocessing steps.
+    """Generates a Markdown table summarising sample attrition across preprocessing steps.
 
     Args:
         attrition_data: Mapping of cohort name to its attrition DataFrame.

@@ -33,7 +33,7 @@ set_presentation_style()
 
 # Phenotype Cluster Index Colors matching PHENOTYPE_PALETTE.
 # Cluster IDs correspond to the corrected PHENOTYPE_NAMES in 03_cluster_patients.py:
-#   0 = Immune Hot, 1 = Immune Cold, 2 = M2 Immunosuppressive, 3 = Mutant-Driven (NF1 Loss)
+#   0 = Immune Hot, 1 = Immune Cold, 2 = M2 Immunosuppressive, 3 = Mutant-Driven (`NF1` Loss)
 CLUSTER_PALETTE = {
     0: PHENOTYPE_PALETTE["Immune Hot"],                 # Crimson Red (#D55E00)
     1: PHENOTYPE_PALETTE["Immune Cold"],                # Okabe-Ito Blue (#0072B2)

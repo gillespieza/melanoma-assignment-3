@@ -4,7 +4,6 @@ A machine learning pipeline designed to predict binary anti-PD-1 immunotherapy r
 
 The model is specifically engineered and evaluated under **Leave-One-Cohort-Out (LOCO) Cross-Validation** to ensure generalisability to new patient populations and clinical sites across heterogeneous sequencing platforms.
 
----
 
 ## 🚀 Single-Patient Predictor (`predictor.py`)
 
@@ -45,7 +44,6 @@ python q1-response-predictor/predictor.py --signatures "IFN_gamma=1.2,TIS=0.8,CY
 python q1-response-predictor/predictor.py --signatures "IFN_gamma=0.5,TIS=0.4,CYT=0.3,CD8_Tcell=0.2,IMPRES=5.0,PD_L1=0.8" --threshold 0.45
 ```
 
----
 
 ### Python API Usage
 
@@ -77,7 +75,6 @@ res_cohort = predictor.predict_from_saved_patient("HUGO_PT38", cohort="hugo_2016
 res_expr = predictor.predict_from_expression(single_patient_gene_expression_df)
 ```
 
----
 
 ## 🛠️ Full Pipeline Execution Order
 
@@ -100,7 +97,6 @@ If you wish to re-run the full data ingestion, preprocessing, training, and repo
    python q1-response-predictor/scripts/run_pipeline.py
    ```
 
----
 
 ## 📂 Subproject Directory Hierarchy
 

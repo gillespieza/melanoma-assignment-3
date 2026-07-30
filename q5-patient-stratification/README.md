@@ -149,7 +149,7 @@ q5-patient-stratification/
 │   ├── 02_feature_analysis.py     <- Association testing & Youden cutoffs
 │   ├── 03_cluster_patients.py     <- K-Means/Ward clustering & UMAP
 │   ├── 04_phenotype_characterisation.py <- Subtype annotation & Q3 ODE
-│   ├── 05_subgroup_models.py     <- Subgroup predictive modeling
+│   ├── 05_subgroup_models.py     <- Subgroup predictive modelling
 │   ├── 06_clinical_utility.py     <- Decision Curve Analysis (DCA)
 │   ├── 07_treatability_scoring.py <- Treatability index, Q2 & Q4
 │   └── run_q5_pipeline.py         <- Master pipeline orchestrator

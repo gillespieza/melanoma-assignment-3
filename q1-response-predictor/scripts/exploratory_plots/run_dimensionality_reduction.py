@@ -262,7 +262,7 @@ def main() -> None:
         linewidth=0.8,
         ax=axes[0, 0],
     )
-    axes[0, 0].set_title("PCA Before Batch Correction (Colored by Cohort)", fontsize=13, fontweight="bold", pad=10)
+    axes[0, 0].set_title("PCA Before Batch Correction (Coloured by Cohort)", fontsize=13, fontweight="bold", pad=10)
     axes[0, 0].set_xlabel(f"PC1 ({pca_raw_trials.explained_variance_ratio_[0]*100:.1f}% variance)")
     axes[0, 0].set_ylabel(f"PC2 ({pca_raw_trials.explained_variance_ratio_[1]*100:.1f}% variance)")
 
@@ -280,7 +280,7 @@ def main() -> None:
         linewidth=0.8,
         ax=axes[0, 1],
     )
-    axes[0, 1].set_title("PCA Before Batch Correction (Colored by Response)", fontsize=13, fontweight="bold", pad=10)
+    axes[0, 1].set_title("PCA Before Batch Correction (Coloured by Response)", fontsize=13, fontweight="bold", pad=10)
     axes[0, 1].set_xlabel(f"PC1 ({pca_raw_trials.explained_variance_ratio_[0]*100:.1f}% variance)")
     axes[0, 1].set_ylabel(f"PC2 ({pca_raw_trials.explained_variance_ratio_[1]*100:.1f}% variance)")
 
@@ -298,7 +298,7 @@ def main() -> None:
         linewidth=0.8,
         ax=axes[1, 0],
     )
-    axes[1, 0].set_title("PCA After Batch Correction (Colored by Cohort)", fontsize=13, fontweight="bold", pad=10)
+    axes[1, 0].set_title("PCA After Batch Correction (Coloured by Cohort)", fontsize=13, fontweight="bold", pad=10)
     axes[1, 0].set_xlabel(f"PC1 ({pca_scaled_trials.explained_variance_ratio_[0]*100:.1f}% variance)")
     axes[1, 0].set_ylabel(f"PC2 ({pca_scaled_trials.explained_variance_ratio_[1]*100:.1f}% variance)")
 
@@ -316,7 +316,7 @@ def main() -> None:
         linewidth=0.8,
         ax=axes[1, 1],
     )
-    axes[1, 1].set_title("PCA After Batch Correction (Colored by Response)", fontsize=13, fontweight="bold", pad=10)
+    axes[1, 1].set_title("PCA After Batch Correction (Coloured by Response)", fontsize=13, fontweight="bold", pad=10)
     axes[1, 1].set_xlabel(f"PC1 ({pca_scaled_trials.explained_variance_ratio_[0]*100:.1f}% variance)")
     axes[1, 1].set_ylabel(f"PC2 ({pca_scaled_trials.explained_variance_ratio_[1]*100:.1f}% variance)")
 
@@ -343,7 +343,7 @@ def main() -> None:
         linewidth=0.8,
         ax=axes[0, 0],
     )
-    axes[0, 0].set_title("UMAP Before Batch Correction (Colored by Cohort)", fontsize=13, fontweight="bold", pad=10)
+    axes[0, 0].set_title("UMAP Before Batch Correction (Coloured by Cohort)", fontsize=13, fontweight="bold", pad=10)
     axes[0, 0].set_xlabel("UMAP Dimension 1")
     axes[0, 0].set_ylabel("UMAP Dimension 2")
 
@@ -361,7 +361,7 @@ def main() -> None:
         linewidth=0.8,
         ax=axes[0, 1],
     )
-    axes[0, 1].set_title("UMAP Before Batch Correction (Colored by Response)", fontsize=13, fontweight="bold", pad=10)
+    axes[0, 1].set_title("UMAP Before Batch Correction (Coloured by Response)", fontsize=13, fontweight="bold", pad=10)
     axes[0, 1].set_xlabel("UMAP Dimension 1")
     axes[0, 1].set_ylabel("UMAP Dimension 2")
 
@@ -379,7 +379,7 @@ def main() -> None:
         linewidth=0.8,
         ax=axes[1, 0],
     )
-    axes[1, 0].set_title("UMAP After Batch Correction (Colored by Cohort)", fontsize=13, fontweight="bold", pad=10)
+    axes[1, 0].set_title("UMAP After Batch Correction (Coloured by Cohort)", fontsize=13, fontweight="bold", pad=10)
     axes[1, 0].set_xlabel("UMAP Dimension 1")
     axes[1, 0].set_ylabel("UMAP Dimension 2")
 
@@ -397,7 +397,7 @@ def main() -> None:
         linewidth=0.8,
         ax=axes[1, 1],
     )
-    axes[1, 1].set_title("UMAP After Batch Correction (Colored by Response)", fontsize=13, fontweight="bold", pad=10)
+    axes[1, 1].set_title("UMAP After Batch Correction (Coloured by Response)", fontsize=13, fontweight="bold", pad=10)
     axes[1, 1].set_xlabel("UMAP Dimension 1")
     axes[1, 1].set_ylabel("UMAP Dimension 2")
 

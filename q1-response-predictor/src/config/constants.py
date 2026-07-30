@@ -79,7 +79,7 @@ SIGNATURE_GENES = [
 # Definitions of genes included in specific functional pathways and immune signatures
 PATHWAY_GENES = {
     "IFN-gamma Signature": ["IFNG", "CXCL9", "CXCL10", "IDO1", "HLA-DRA", "STAT1"],
-    "Tumor Inflammation Signature (TIS)": [
+    "Tumour Inflammation Signature (TIS)": [
         "CCL5", "CD2", "CD3D", "CD3E", "CD27", "CD274", "CMKLR1", "CXCL9",
         "CXCR6", "GZMB", "GZMK", "HLA-DRA", "HLA-DQA1", "HLA-E", "IDO1",
         "LAG3", "NKG7", "PDCD1LG2", "PSMB10", "STAT1", "TIGIT",
@@ -109,7 +109,7 @@ IMMUNE_SIGNATURES = [
 
 IMMUNE_SIGNATURE_LABELS = {
     "IFN_gamma": "Interferon-Gamma (IFN-γ) 6-Gene Signature",
-    "TIS": "Tumor Inflammation Signature (TIS)",
+    "TIS": "Tumour Inflammation Signature (TIS)",
     "CYT": "Cytolytic Activity (CYT) Score",
     "CD8_Tcell": "CD8 T-Cell Abundance Signature",
     "IMPRES": "Immune Predictive Score (IMPRES)",

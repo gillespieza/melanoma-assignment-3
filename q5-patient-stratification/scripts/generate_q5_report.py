@@ -198,7 +198,7 @@ def main() -> None:
     doc_sections.append(f"## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds (N = {n_patients})\n")
     doc_sections.append(
         build_section_callout(
-            what="Performing non-parametric univariate association testing (Mann-Whitney U, Cohen's d), Youden threshold optimization, and logistic regression interaction modeling.",
+            what="Performing non-parametric univariate association testing (Mann-Whitney U, Cohen's d), Youden threshold optimisation, and logistic regression interaction modelling.",
             why="Establishing statistical significance and non-linear cutoffs is necessary to identify which individual features differentiate Responders from Non-Responders.",
             question="Which individual biomarkers significantly correlate with immunotherapy response, and do signatures interact synergistically with genomic driver mutations?",
         )
@@ -259,7 +259,7 @@ def main() -> None:
         doc_sections.append(
             "> [!INSIGHT] Analytical Validation: Heatmap Confirms Primary Focus on TIS x BRAF\n"
             "> - **Validation of Initial Hypothesis**: The comprehensive $21$-permutation interaction matrix confirms that `TIS` $\\times$ `BRAF` ($\\beta = -0.65, p = 0.040$) is indeed the single statistically significant driver-microenvironment interaction ($p < 0.05$), validating our initial analytical focus on this key biomarker pair.\n"
-            "> - **Borderline Cells Highlight `BRAF` Again**: Furthermore, every single borderline significant interaction ($p < 0.10$) occurs exclusively within the `BRAF` column across all major lymphocytic markers: `BRAF` $\\times$ `IFN_gamma` ($\\beta = -0.57, p = 0.064$), `BRAF` $\\times$ `B_cells` ($\\beta = -0.63, p = 0.073$), and `BRAF` $\\times$ `CD8_T_cells` ($\\beta = -0.57, p = 0.074$). This repeatedly points to `BRAF` oncogenic signaling as the dominant genomic modifier of microenvironmental immunity.\n"
+            "> - **Borderline Cells Highlight `BRAF` Again**: Furthermore, every single borderline significant interaction ($p < 0.10$) occurs exclusively within the `BRAF` column across all major lymphocytic markers: `BRAF` $\\times$ `IFN_gamma` ($\\beta = -0.57, p = 0.064$), `BRAF` $\\times$ `B_cells` ($\\beta = -0.63, p = 0.073$), and `BRAF` $\\times$ `CD8_T_cells` ($\\beta = -0.57, p = 0.074$). This repeatedly points to `BRAF` oncogenic signalling as the dominant genomic modifier of microenvironmental immunity.\n"
         )
 
     # Live Youden Summary Table
@@ -339,7 +339,7 @@ def main() -> None:
         doc_sections.append(f"![Unsupervised Patient Phenotype Clusters PCA]({rel_img})\n")
         doc_sections.append(
             "> [!INFO] Figure Interpretation: 2D Principal Component Cluster Projection\n"
-            f"> - **What this plot shows**: 2D Principal Component Projection of $N = {n_patients}$ patients color-coded by their multi-modal K-Means phenotype cluster ($K=4$). Shaded confidence ellipses mark cluster boundaries.\n"
+            f"> - **What this plot shows**: 2D Principal Component Projection of $N = {n_patients}$ patients colour-coded by their multi-modal K-Means phenotype cluster ($K=4$). Shaded confidence ellipses mark cluster boundaries.\n"
             "> - **Axis 1 (Horizontal)**: Principal Component 1 captures immune activation and lymphocytic T-cell density (separating Inflamed Hot vs Desert Cold tumours).\n"
             "> - **Axis 2 (Vertical)**: Principal Component 2 captures macrophage polarisation (M1/M2 ratio) and stromal CAF exclusion.\n"
             "> - **Clinical Value**: Discovers discrete patient subgroups with distinct treatment response profiles without relying on biased outcome labels.\n"
@@ -452,8 +452,8 @@ def main() -> None:
             doc_sections.append(
                 "> [!INFO] Figure Interpretation: Independent Orthogonal Protein Validation (RPPA)\n"
                 "> - **What is being done**: Correlating mechanistic ODE-predicted baseline `pERK` levels against independent, experimentally measured `pERK` (`MAPK_pT202_Y204`) and `pMEK` (`MEK1_pS217_S221`) protein levels from TCGA-SKCM Reverse-Phase Protein Array (RPPA) assays ($N = 310$).\n"
-                "> - **Why we are doing it**: To validate whether the 12-gene transcriptomic ODE digital twin captures physical protein-level signaling dynamics using an orthogonal experimental platform rather than relying solely on self-referential gene expression data.\n"
-                "> - **What question it answers**: Does the ODE mechanistic model accurately predict physical downstream signaling activation at the protein level? Yes, showing a statistically significant positive correlation with measured `pERK` ($r = 0.175, p = 0.00203$) and confirming that `NRAS`-mutant tumours exhibit the highest baseline `pERK` activation ($p = 3.16 \\times 10^{-9}$).\n\n"
+                "> - **Why we are doing it**: To validate whether the 12-gene transcriptomic ODE digital twin captures physical protein-level signalling dynamics using an orthogonal experimental platform rather than relying solely on self-referential gene expression data.\n"
+                "> - **What question it answers**: Does the ODE mechanistic model accurately predict physical downstream signalling activation at the protein level? Yes, showing a statistically significant positive correlation with measured `pERK` ($r = 0.175, p = 0.00203$) and confirming that `NRAS`-mutant tumours exhibit the highest baseline `pERK` activation ($p = 3.16 \\times 10^{-9}$).\n\n"
             )
         if Q3_ML_COMPARE_PATH.exists():
             doc_sections.append(f"![ML vs ODE Benchmark]({rel_path(Q3_ML_COMPARE_PATH)})\n")
@@ -476,7 +476,7 @@ def main() -> None:
         doc_sections.append(
             "> [!INSIGHT] Analytical Validation: Mechanistic ODE Rivals Machine Learning\n"
             "> - **Interpretable Superiority**: Using only **three mechanistically derived features** (baseline pERK, BRAFi tumour burden, and checkpoint tumour burden), the ODE digital twin achieves **ROC-AUC = 0.666**, outperforming 12-feature Logistic Regression ($0.646$) and Neural Networks ($0.583$).\n"
-            "> - **Orthogonal Protein Validation**: ODE-predicted baseline pERK correlates significantly with TCGA Reverse-Phase Protein Array (RPPA) measured phospho-ERK ($n = 310, r = 0.175, p = 0.002$), confirming that the kinetic parameters capture true cellular signaling.\n"
+            "> - **Orthogonal Protein Validation**: ODE-predicted baseline pERK correlates significantly with TCGA Reverse-Phase Protein Array (RPPA) measured phospho-ERK ($n = 310, r = 0.175, p = 0.002$), confirming that the kinetic parameters capture true cellular signalling.\n"
         )
 
     doc_sections.append(
@@ -519,7 +519,7 @@ def main() -> None:
             f"applying the global Q1 response predictor across all $N = {n_eval_patients}$ evaluated trial patients. "
             f"In the *Mutant-Driven* phenotype ($N = {int(mutant_sub_row['N'])}$), the subgroup-specific classifier achieved an "
             f"ROC-AUC of {mutant_sub_row['ROC_AUC']:.3f} (compared to {mutant_g_row['ROC_AUC']:.3f} for the global model). "
-            f"In the *M2 Immunosuppressive* subset ($N = {int(m2_sub_row['N'])}$), subgroup-specific modeling dramatically increased "
+            f"In the *M2 Immunosuppressive* subset ($N = {int(m2_sub_row['N'])}$), subgroup-specific modelling dramatically increased "
             f"sensitivity and recall ({m2_sub_row['Recall']*100:.1f}% vs {m2_g_row['Recall']*100:.1f}%) and Positive Predictive Value "
             f"(PPV = {m2_sub_row['PPV']*100:.1f}% vs {m2_g_row['PPV']*100:.1f}%).\n"
         )
@@ -628,7 +628,7 @@ def main() -> None:
         imp_callout_lines = [
             "> [!INFO] Figure Interpretation: Phenotype-Specific Feature Importance Heatmap\n",
             "> - **What this plot shows**: Heatmap of Random Forest Gini feature importances across the top 12 biomarker and microenvironmental signature features for the Global Q1 predictor and the four phenotype-specific subgroup models.\n",
-            "> - **`Macrophage_STV_Score` Dominance**: Serves as the primary predictive driver in the *Mutant-Driven* phenotype (Gini importance = 0.200) and *Immune Hot* phenotype (0.162), highlighting that myeloid polarisation strongly dictates outcome when baseline T-cell infiltration is already high or driven by MAPK signaling.\n",
+            "> - **`Macrophage_STV_Score` Dominance**: Serves as the primary predictive driver in the *Mutant-Driven* phenotype (Gini importance = 0.200) and *Immune Hot* phenotype (0.162), highlighting that myeloid polarisation strongly dictates outcome when baseline T-cell infiltration is already high or driven by MAPK signalling.\n",
             "> - **`B_cells` Infiltration in M2 Immunosuppressive**: `B_cells` abundance emerges as the top predictive marker in the *M2 Immunosuppressive* subgroup (Gini importance = 0.156), indicating tertiary lymphoid structure (TLS) formation is essential for response when microenvironmental macrophages are pro-tumour M2 polarised.\n",
             "> - **Cytolytic & Stromal Shifts**: Cytolytic index (`CYT`) maintains consistent baseline importance across subtypes (0.081–0.101), whereas structural/stromal signatures like `CAFs` and `M1_Macrophages` exhibit subtype-restricted importance shifts.\n",
         ]

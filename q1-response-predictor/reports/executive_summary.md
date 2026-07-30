@@ -21,7 +21,6 @@ updated: 2026-07-25 20:08
 
 Build a binary immunotherapy response predictor (CR/PR vs. PD) for cutaneous melanoma patients treated with anti-PD-1 checkpoint inhibitors, designed to generalise to **any new patient** — not just patients drawn from the same clinical trial the model was trained on. Three independent trial cohorts (Liu 2019, Hugo 2016, Riaz 2017) and one large-scale reference cohort (TCGA-SKCM) are used to train and validate the model under Leave-One-Cohort-Out (LOCO) cross-validation, which simulates deployment to a genuinely unseen clinical site with a different sequencing platform, patient population, and response distribution. A multimodal feature set — six curated immune signatures, tumour mutational burden, and driver mutation status — is used to keep the model interpretable and biologically grounded rather than overfit to any single cohort's idiosyncrasies.
 
----
 
 ## 1. Cohort Summary
 
@@ -37,7 +36,6 @@ Build a binary immunotherapy response predictor (CR/PR vs. PD) for cutaneous mel
 > [!NOTE]
 > **On sample-size variants**: N figures for Liu 2019, Hugo 2016, Riaz 2017, and TCGA-SKCM vary slightly across individual analyses in this pipeline (e.g. LOCO response modelling vs. TCGA-signature projection vs. survival stratification) due to analysis-specific completeness filters. See the **"Reconciling Sample Size (N) Variants Across All Cohorts & Reports"** section in [model_evaluation_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-4-out-of-cohort-benchmarks/model_evaluation_report.md) for the full per-cohort, per-analysis breakdown.
 
----
 
 ## 2. Overall Survival & Response Stratification
 
@@ -60,7 +58,6 @@ Build a binary immunotherapy response predictor (CR/PR vs. PD) for cutaneous mel
 > * **Hugo 2016 ($N = 27$)**: Log-rank $p < 0.0001$. Responders show sustained survival extension over non-responders.
 > * **Riaz 2017 ($N = 107$)**: Log-rank $p < 0.0001$. Profound separation confirming durable survival benefit among anti-PD-1 responders.
 
----
 
 ## 3. Co-Mutation & Clinical Landscape
 
@@ -72,9 +69,8 @@ Build a binary immunotherapy response predictor (CR/PR vs. PD) for cutaneous mel
 >
 > * **MAPK Driver Mutual Exclusivity**: High mutual exclusivity is observed between primary drivers `BRAF` (43.1%) and `NRAS` (24.6%), representing distinct, non-overlapping mechanisms of RAS-RAF-MEK-ERK activation.
 > * **Driver Subtype Response Equivalence**: Responders (green) and non-responders (vermillion) are evenly distributed across `BRAF`, `NRAS`, `NF1`, and Triple-WT subtypes, visually demonstrating that driver mutation status alone does not dictate response to anti-PD-1 therapy.
-> * **Targeted Resistance Genes**: Baseline mutations in primary resistance machinery (_B2M_, _JAK1_, _JAK2_) are rare (<5%) in pre-treatment biopsies, indicating that genetic disruption of antigen presentation and interferon signaling is predominantly an acquired rather than primary resistance mechanism.
+> * **Targeted Resistance Genes**: Baseline mutations in primary resistance machinery (_B2M_, _JAK1_, _JAK2_) are rare (<5%) in pre-treatment biopsies, indicating that genetic disruption of antigen presentation and interferon signalling is predominantly an acquired rather than primary resistance mechanism.
 
----
 
 ## 4. Batch Effect Evaluation & Correction
 
@@ -89,7 +85,6 @@ Build a binary immunotherapy response predictor (CR/PR vs. PD) for cutaneous mel
 > [!NOTE] 
 > **A second, coarser scaling step also exists at model-fit time.** The cohort-independent Z-scoring shown above is applied once, upstream, to raw signature scores before any train/test split. A separate `StandardScaler`, fit on the pooled *training* cohorts within each LOCO fold (`run_loco_cv()` in `src/models.py`), is applied afterward. This introduces no test-set leakage, but it is a distinct step from the per-cohort Z-scoring described here — see [batch_correction_report.md §4.1](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-1-cohorts-and-preprocessing/batch_correction_report.md) for the full two-stage explanation.
 
----
 
 ## 5. Key Findings
 
@@ -129,7 +124,6 @@ Hugo 2016 ($N = 27$) is consistently the most difficult held-out cohort, with al
 
 The custom 20-gene overall survival signature derived from TCGA-SKCM ($N = 428$) strongly stratifies baseline survival (Log-Rank $p = 1.57 \times 10^{-8}$), but its transfer to immunotherapy response prediction via direct Cox risk-score projection is modest (AUC = 0.55–0.65). This confirms that overall survival and treatment response, while related, are partially distinct biological endpoints.
 
----
 
 ## 6. Pipeline Architecture Decisions
 
@@ -156,7 +150,6 @@ graph LR
 | **Feature selection**       | Curated signatures over SelectKBest              | Data-driven selection captures cohort-specific noise, not transferable immune biology                          |
 | **Validation strategy**     | Report both pooled CV and LOCO                   | LOCO is the primary evidence layer; pooled CV provides complementary upper-bound estimates                     |
 
----
 
 ## 7. Known Limitations
 

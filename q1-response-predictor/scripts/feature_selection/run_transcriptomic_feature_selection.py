@@ -407,7 +407,7 @@ def _validate_on_trial_cohorts(
 
 
 def _plot_prognostic_forest(df_cox: pd.DataFrame, plot_dir: Path) -> None:
-    """Renders categorized Hazard Ratio Forest Plot for the top 20 prognostic genes.
+    """Renders categorised Hazard Ratio Forest Plot for the top 20 prognostic genes.
 
     Args:
         df_cox: Cox regression results DataFrame.
@@ -418,7 +418,7 @@ def _plot_prognostic_forest(df_cox: pd.DataFrame, plot_dir: Path) -> None:
     categories = [
         ("Transcription Factors", ["ZNF831"]),
         ("Enzymes & Metabolism", ["IDO1", "PLAAT4"]),
-        ("Signaling & Adapters", ["STAT4", "SAMSN1", "AKAP5"]),
+        ("Signalling & Adapters", ["STAT4", "SAMSN1", "AKAP5"]),
         ("NK-Cell & T-Cell Receptors & Regulators", ["KLRD1", "KLRK1", "GPR171", "CD72", "CD38", "PTPN22"]),
         ("Chemokines & Cytokines", ["CCL8", "CXCL10", "CXCL11", "IL15"]),
         ("Interferon GTPases", ["GBP1", "GBP4", "GBP5", "GBP1P1"]),

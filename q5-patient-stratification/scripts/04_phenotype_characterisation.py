@@ -143,7 +143,7 @@ def plot_baseline_boxplots(df: pd.DataFrame, save_path: Path) -> None:
 
 
 def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
-    """Simulate Q3 ODE tumor volume trajectories T(t) per Q5 patient phenotype over 180 days."""
+    """Simulate Q3 ODE tumour volume trajectories T(t) per Q5 patient phenotype over 180 days."""
     def tumor_immune_ode(t, y, r, K, c, s, p, g, d_E, mu):
         T, E = y
         dTdt = r * T * (1.0 - T / K) - c * E * T
@@ -155,7 +155,7 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
 
     # Phenotype ODE parameters [r, K, c, s, p, g, d_E, mu], initial [T0, E0]
     # Cluster IDs match the corrected PHENOTYPE_NAMES mapping in 03_cluster_patients.py:
-    #   0 = Immune Hot, 1 = Immune Cold, 2 = M2 Immunosuppressive, 3 = Mutant-Driven (NF1)
+    #   0 = Immune Hot, 1 = Immune Cold, 2 = M2 Immunosuppressive, 3 = Mutant-Driven (`NF1`)
     phenotype_params = {
         0: {"name": "Immune Hot Inflamed", "params": [0.18, 1.0, 0.45, 0.10, 0.15, 0.30, 0.05, 0.02], "y0": [0.8, 0.80], "color": PHENOTYPE_PALETTE["Immune Hot"], "ls": "-"},
         1: {"name": "Immune Cold Desert", "params": [0.18, 1.0, 0.15, 0.02, 0.05, 0.30, 0.05, 0.04], "y0": [0.8, 0.15], "color": PHENOTYPE_PALETTE["Immune Cold"], "ls": "-"},

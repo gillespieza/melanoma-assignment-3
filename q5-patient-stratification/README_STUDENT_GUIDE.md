@@ -22,7 +22,7 @@ A comprehensive, student-focused reference explaining the **biology**, **statist
 In cutaneous melanoma, patients diagnosed with advanced (Stage III/IV) disease have three main treatment avenues:
 
 1. **Arm A — Immunotherapy**: Immune Checkpoint Inhibitors (ICI) such as Anti-PD-1 (*Nivolumab*, *Pembrolizumab*) or Anti-CTLA-4 (*Ipilimumab*). These drugs release the molecular "brakes" on cytotoxic CD8+ T cells so they can destroy tumour cells.
-2. **Arm B — Targeted Therapy**: Small-molecule kinase inhibitors (BRAF inhibitor *Dabrafenib* + MEK inhibitor *Trametinib*). These selectively block hyperactive MAPK pathway signaling in tumours harboring a **`BRAF` V600E/K mutation**.
+2. **Arm B — Targeted Therapy**: Small-molecule kinase inhibitors (`BRAF` inhibitor *Dabrafenib* + MEK inhibitor *Trametinib*). These selectively block hyperactive MAPK pathway signalling in tumours harboring a **`BRAF` V600E/K mutation**.
 3. **Arm C — Chemotherapy & Combination Therapy**: Cytotoxic chemotherapy (*Dacarbazine*) or combination regimens (e.g., M2-macrophage depletion / epigenetic priming combined with anti-PD-1).
 
 ### The Challenge
@@ -36,7 +36,7 @@ Question 5 builds a **biomarker-guided decision support system**. By inspecting 
 ### Immune Checkpoints & T-Cell Infiltration
 * **CD8+ Cytotoxic T Cells**: The primary immune effector cells capable of killing cancer cells.
 * **PD-1 (`PDCD1`) & PD-L1 (`CD274`)**: PD-1 is a receptor expressed on T cells. Tumours express PD-L1 (`CD274`), which binds to PD-1 (`PDCD1`) and sends an inhibitory "don't kill me" signal to the T cell. Anti-PD-1 antibodies block this binding, restoring T-cell cytotoxicity.
-* **Tumour Inflammation Signature (TIS)**: An 18-gene expression signature measuring pre-existing adaptive immune suppression and active IFN-$\gamma$ signaling in the tumour microenvironment.
+* **Tumour Inflammation Signature (TIS)**: An 18-gene expression signature measuring pre-existing adaptive immune suppression and active IFN-$\gamma$ signalling in the tumour microenvironment.
 * **Cytolytic Index (CYT)**: Defined as the geometric mean of Perforin 1 (`PRF1`) and Granzyme A (`GZMA`) transcript levels, quantifying active cytotoxic T-cell and NK-cell killing.
 
 ### Macrophage Polarisation (M1 vs. M2) & Macrophage STV
@@ -51,7 +51,7 @@ The project utilizes a linear **Signature Transcript Vector (STV)** containing 1
 $$\text{STV Score}_i = \sum_{g=1}^{14837} W_g \cdot E_{i,g}$$
 
 * Positive weights correspond to M1-associated features; negative weights correspond to M2-associated features.
-* The normalized score yields the **M1/M2 Ratio** ($M1 / [M1 + M2]$). High ratios reflect an inflamed, M1-dominant microenvironment; low ratios indicate M2-mediated immune exclusion.
+* The normalised score yields the **M1/M2 Ratio** ($M1 / [M1 + M2]$). High ratios reflect an inflamed, M1-dominant microenvironment; low ratios indicate M2-mediated immune exclusion.
 
 ### Mechanisms of Immunotherapy Resistance
 Non-response to checkpoint blockade typically stems from four biological barriers:
@@ -86,7 +86,7 @@ A statistically significant interaction coefficient ($\beta_3 \ne 0, p < 0.05$) 
 
 ### Unsupervised Clustering
 
-#### Feature Normalization (`StandardScaler`)
+#### Feature Normalisation (`StandardScaler`)
 Before clustering, continuous features are standardized to zero mean and unit variance ($z = \frac{x - \mu}{\sigma}$). This prevents features with large raw scales (e.g. TMB) from dominating distance calculations over bounded signature scores.
 
 #### K-Means vs. Hierarchical Agglomerative (Ward) Clustering

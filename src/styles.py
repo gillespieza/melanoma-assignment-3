@@ -1,4 +1,4 @@
-"""Centralized Visualization Styles and Color Palettes for Melanoma Assignment 3.
+"""Centralized Visualisation Styles and Colour Palettes for Melanoma Assignment 3.
 
 Based on the Okabe-Ito Palette System - The universal gold standard for scientific publications (Cell, Nature, Science)
 ensuring 100% colorblind-safe accessibility across deuteranopia, protanopia, and tritanopia.
@@ -7,7 +7,7 @@ ensuring 100% colorblind-safe accessibility across deuteranopia, protanopia, and
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Study Cohort Color Mappings (Okabe-Ito Gold Standard System)
+# Study Cohort Colour Mappings (Okabe-Ito Gold Standard System)
 COHORT_PALETTE = {
     "Liu 2019": "#0072B2",               # Okabe-Ito Blue
     "Hugo 2016": "#E69F00",               # Okabe-Ito Orange
@@ -71,7 +71,7 @@ GENE_CATEGORY_PALETTE = {
     "Interferon GTPases":                      "#0072B2",  # Okabe-Ito Blue
     "Chemokines & Cytokines":                  "#009E73",  # Okabe-Ito Bluish Green
     "NK-Cell & T-Cell Receptors & Regulators": "#D55E00",  # Okabe-Ito Vermillion
-    "Signaling & Adapters":                    "#E69F00",  # Okabe-Ito Orange
+    "Signalling & Adapters":                    "#E69F00",  # Okabe-Ito Orange
     "Enzymes & Metabolism":                    "#CC79A7",  # Okabe-Ito Reddish Purple
     "Transcription Factors":                   "#56B4E9",  # Okabe-Ito Sky Blue
 }
@@ -125,7 +125,7 @@ def get_okabe_ito_diverging_cmap():
     light gray (#FAFAFA), and positive values (e.g. beta > 0) to Okabe-Ito Bluish Green (#009E73).
     """
     colors = ["#D55E00", "#FAFAFA", "#009E73"]
-    return LinearSegmentedColormap.from_list("OkabeItoDiverging", colors, N=256)
+    return LinearSegmentedColormap.from_list("OkabeItoDiverging", colours, N=256)
 
 
 def set_presentation_style(font_scale: float = 1.0, dpi: int = 300):
@@ -153,7 +153,7 @@ def set_presentation_style(font_scale: float = 1.0, dpi: int = 300):
 
 
 def get_cohort_color(cohort_name: str, default: str = "#37474F") -> str:
-    """Returns the standardized hex color code for a given cohort."""
+    """Returns the standardized hex colour code for a given cohort."""
     for key, color in COHORT_PALETTE.items():
         if key.lower() in cohort_name.lower():
             return color

@@ -42,7 +42,7 @@ updated: 2026-07-29 17:22
 > - **C-Index**: Concordance Index evaluating how well predicted probabilities rank patient survival times (0.5 = random, 1.0 = perfect agreement).
 
 > [!note] Decision Boundary Optimisation (Youden's J Statistic)
-> Youden's J statistic ($J = \text{sensitivity} + \text{specificity} - 1$) calculates the optimal decision boundary that balances true positives and true negatives. Evaluating threshold optimization on test data provides an upper-bound performance benchmark.
+> Youden's J statistic ($J = \text{sensitivity} + \text{specificity} - 1$) calculates the optimal decision boundary that balances true positives and true negatives. Evaluating threshold optimisation on test data provides an upper-bound performance benchmark.
 
 > [!info] Probability Calibration Metrics (Brier Score & Expected Calibration Error)
 > The **Brier Score** measures the mean squared difference between predicted probabilities and actual binary outcomes (range: 0 to 1, where 0 represents a perfectly calibrated model). **Expected Calibration Error (ECE)** calculates the weighted average difference between predicted confidence and empirical accuracy across probability bins.
@@ -453,7 +453,6 @@ The diagnostic plots above provide a complete evaluation of classifier discrimin
 > - **Threshold Optimisation**: Youden's J threshold tuning typically recovers 5–15% sensitivity relative to the default 0.5 cut-off, at the cost of reduced specificity.
 > - **Clinical Implication**: Models should be interpreted in conjunction with clinical context; AUC > 0.65 across unseen cohorts represents a meaningful biological signal given the small sample sizes and cross-institution batch effects.
 
----
 
 ## Multimodal Integration: Immune Signatures + Driver Mutations
 
@@ -521,7 +520,6 @@ _Figure: Multimodal ROC curves for Support Vector Machine (SVM) integrating immu
 
 _Figure: Multimodal ROC curves for ElasticNet Logistic Regression integrating immune signatures and driver mutation flags._
 
----
 
 ## Downstream Overall Survival Stratification
 
@@ -557,7 +555,6 @@ _Figure: 2×2 grid of Kaplan-Meier overall survival curves stratified by model-p
 > 4. **Censoring Density**: Clinical trial datasets often have high censoring rates (patients lost to follow-up or still alive at trial closure), which reduces the effective number of survival events and further decreases statistical power.
 > 5. **Biological Interpretation**: The directional trend (predicted responders living longer) is more important than significance — with adequate sample sizes, this trend would likely reach significance, as demonstrated in larger melanoma genomic studies.
 
----
 
 ## Final Summary: Key Findings by Model Architecture
 
