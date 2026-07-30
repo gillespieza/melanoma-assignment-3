@@ -46,6 +46,7 @@ from src.styles import (
 )
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
+from src.utils.plotting import save_fig
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
@@ -193,10 +194,8 @@ def plot_volcano(df_assoc: pd.DataFrame, save_path: Path) -> None:
     ax.set_xlabel("Cohen's d Effect Size", fontsize=12, fontweight="bold")
     ax.set_ylabel("Engineered Biomarker Feature", fontsize=12, fontweight="bold")
 
-    plt.tight_layout()
     save_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.close()
+    save_fig(fig, save_path)
     print(f"Saved ranked feature association bar plot to {save_path}")
 
 
@@ -241,10 +240,8 @@ def plot_youden_roc(df: pd.DataFrame, df_cutoffs: pd.DataFrame, save_path: Path)
     ax.set_ylabel("True Positive Rate (Sensitivity)", fontsize=12, fontweight="bold")
     ax.legend(loc="lower right", frameon=True)
 
-    plt.tight_layout()
     save_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.close()
+    save_fig(fig, save_path)
     print(f"Saved Youden ROC plot to {save_path}")
 
 
@@ -303,10 +300,8 @@ def plot_genomic_interaction(df: pd.DataFrame, save_path: Path) -> None:
     ax.set_ylim(0, 100)
     ax.legend(title="TIS Phenotype", loc="upper right", frameon=True)
 
-    plt.tight_layout()
     save_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.close()
+    save_fig(fig, save_path)
     print(f"Saved genomic interaction plot to {save_path}")
 
 
@@ -449,10 +444,8 @@ def plot_interaction_heatmap(df_inter: pd.DataFrame, save_path: Path) -> None:
     ax.set_xlabel("Driver Mutation Subtype", fontsize=12, fontweight="bold")
     ax.set_ylabel("Immune Microenvironment Feature", fontsize=12, fontweight="bold")
 
-    plt.tight_layout()
     save_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.close()
+    save_fig(fig, save_path)
     print(f"Saved interaction matrix heatmap to {save_path}")
 
 

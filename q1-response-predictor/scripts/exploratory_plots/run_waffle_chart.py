@@ -29,6 +29,8 @@ from src.utils.logging import TeeStream
 from src.utils.paths import LOG_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 PLOT_DIR = PLOTS_DIR / "clinical"
 LOG_PATH = LOG_DIR / "run_waffle_chart.log"
@@ -102,7 +104,6 @@ def main() -> None:
     print("==================================================\n")
 
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
-    set_presentation_style()
 
     cohorts: Dict[str, Dict[str, int]] = {
         "Liu 2019": {"resp": 48, "nr": 56, "cols": 10},

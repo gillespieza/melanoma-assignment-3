@@ -23,6 +23,7 @@ from sklearn.preprocessing import StandardScaler
 # ---------------------------------------------------------------------------
 
 from src.styles import PHENOTYPE_PALETTE, set_presentation_style
+from src.utils.plotting import save_fig
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
@@ -167,8 +168,6 @@ def plot_2d_cluster_projection(
         title_fontsize=10,
     )
 
-    plt.tight_layout()
     save_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.close()
+    save_fig(fig, save_path)
     print(f"Saved {method.upper()} 2D cluster projection plot to {save_path}")

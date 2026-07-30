@@ -32,6 +32,8 @@ from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 PLOT_DIR = PLOTS_DIR / "clinical"
 LOG_PATH = LOG_DIR / "run_response_distribution.log"
@@ -86,7 +88,6 @@ def _plot_response_distribution(df_resp: pd.DataFrame, p_val: float, plot_dir: P
         p_val: Chi-square test p-value.
         plot_dir: Path to export output figure artifact.
     """
-    set_presentation_style()
     fig, ax = plt.subplots(figsize=(8, 6))
 
     cohort_names = df_resp["Cohort"].tolist()

@@ -8,10 +8,10 @@ import seaborn as sns
 from src.styles import get_cohort_color
 
 
-def save_fig(fig, path: Path) -> None:
+def save_fig(fig, path: Path, dpi: int = 300) -> None:
     """Standard tight-layout + save + close, so this isn't repeated per chart."""
     fig.tight_layout()
-    fig.savefig(path, bbox_inches="tight")
+    fig.savefig(path, bbox_inches="tight", dpi=dpi)
     plt.close(fig)
 
 

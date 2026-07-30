@@ -42,6 +42,8 @@ from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, REPORTS_DIR
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 PLOT_DIR = PLOTS_DIR / "feature_selection"
 LOG_PATH = LOG_DIR / "run_comparison.log"
@@ -173,8 +175,6 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
         df_results: Results DataFrame containing LOCO AUC scores.
         out_plot_path: Destination path for figure output artifact.
     """
-    set_presentation_style()
-    sns.set_theme(style="whitegrid", font="sans-serif")
     fig, axes = plt.subplots(3, 2, figsize=(13, 10.5), sharey=True)
     axes_flat = axes.flatten()
 
@@ -304,8 +304,6 @@ def _plot_comparison_heatmap(df_results: pd.DataFrame, out_plot_path: Path) -> N
         df_results: Results DataFrame containing LOCO AUC scores.
         out_plot_path: Destination path for figure output artifact.
     """
-    set_presentation_style()
-
     value_cols = [
         "Curated Signatures AUC",
         "SelectKBest (k=20) AUC",

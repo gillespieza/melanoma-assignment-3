@@ -13,6 +13,9 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 from src.styles import THRESHOLD_STRATEGY_PALETTE, set_presentation_style
+from src.utils.plotting import save_fig
+
+set_presentation_style()
 
 PLOT_DIR = BASE_DIR / "plots" / "models"
 PLOT_DIR.mkdir(parents=True, exist_ok=True)
@@ -32,8 +35,7 @@ data = [
 
 df = pd.DataFrame(data)
 
-fig, axes = plt.subplots(1, 2, figsize=(13, 5), dpi=300)
-sns.set_theme(style="whitegrid")
+fig, axes = plt.subplots(1, 2, figsize=(12, 6.5))
 
 # Plot 1: Accuracy Gain
 sns.barplot(
@@ -86,8 +88,7 @@ for p in axes[1].patches:
                         ha='center', va='bottom', fontsize=10, fontweight='bold', xytext=(0, 3), textcoords='offset points')
 
 sns.despine(top=True, right=True)
-plt.tight_layout()
 
 out_path = PLOT_DIR / "threshold_tuning_impact.png"
-plt.savefig(out_path, dpi=300, bbox_inches="tight")
+save_fig(fig, out_path)
 print(f"Saved threshold tuning comparison plot to {out_path}")

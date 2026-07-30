@@ -56,6 +56,8 @@ from src.utils.paths import (
 )
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
 # ---------------------------------------------------------------------------
@@ -228,7 +230,6 @@ def _plot_cluster_radar(df: pd.DataFrame, plot_dir: Path) -> None:
     angles = [n / float(n_vars) * 2 * np.pi for n in range(n_vars)]
     angles += angles[:1]
 
-    set_presentation_style()
     fig, ax = plt.subplots(figsize=(9, 8.5), subplot_kw=dict(polar=True))
 
     for c in range(3):
@@ -317,7 +318,6 @@ def _plot_cluster_heatmap(
         else:
             resp_rates.append("N/A")
 
-    set_presentation_style()
     fig = plt.figure(figsize=(10, 8.5))
     gs = fig.add_gridspec(3, 1, height_ratios=[0.8, 4.5, 0.4], hspace=0.15)
 
@@ -414,7 +414,6 @@ def _plot_cluster_pca(df: pd.DataFrame, pca_coords: np.ndarray, plot_dir: Path) 
         CLUSTER_PLOT_NAMES[2]: CLUSTER_COLORS[2],
     }
 
-    set_presentation_style()
     fig, ax_pca = plt.subplots(figsize=(9.5, 7.5))
     hue_order = [CLUSTER_PLOT_NAMES[0], CLUSTER_PLOT_NAMES[1], CLUSTER_PLOT_NAMES[2]]
 
@@ -454,7 +453,6 @@ def _plot_cluster_pca(df: pd.DataFrame, pca_coords: np.ndarray, plot_dir: Path) 
     handles, labels = ax_pca.get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     ax_pca.legend(by_label.values(), by_label.keys(), title="Patient Subtypes", loc="best", fontsize=10)
-    ax_pca.grid(True, linestyle="--", alpha=0.5)
 
     out_path = plot_dir / "pca_clinical_clusters.png"
     save_fig(fig, out_path)
@@ -473,8 +471,7 @@ def _plot_cluster_survival(df: pd.DataFrame, plot_dir: Path) -> Tuple[float, Dic
     """
     df_surv = df.dropna(subset=["OS_MONTHS", "OS_STATUS"]).copy()
 
-    set_presentation_style()
-    fig, ax = plt.subplots(figsize=(9, 6.5))
+    fig, ax = plt.subplots(figsize=(11, 6))
 
     palette_dict = {
         CLUSTER_PLOT_NAMES[0]: CLUSTER_COLORS[0],
@@ -519,7 +516,6 @@ def _plot_cluster_survival(df: pd.DataFrame, plot_dir: Path) -> Tuple[float, Dic
     ax.set_xlabel("Overall Survival (Months)", fontsize=13, labelpad=10)
     ax.set_ylabel("Survival Probability", fontsize=13, labelpad=10)
     ax.set_ylim(0, 1.05)
-    ax.grid(True, linestyle="--", alpha=0.5)
 
     out_path = plot_dir / "km_clinical_clusters.png"
     save_fig(fig, out_path)
@@ -546,8 +542,7 @@ def _plot_cluster_response(df: pd.DataFrame, plot_dir: Path) -> float:
 
     resp_pct = pd.crosstab(df_trial["CLINICAL_CLUSTER"], df_trial["RESPONDER_NUM"], normalize="index") * 100
 
-    set_presentation_style()
-    fig, ax = plt.subplots(figsize=(8.5, 6))
+    fig, ax = plt.subplots(figsize=(11, 6))
 
     clusters = [0, 1, 2]
     cluster_labels_short = [CLUSTER_PLOT_NAMES[c] for c in clusters]
@@ -577,7 +572,6 @@ def _plot_cluster_response(df: pd.DataFrame, plot_dir: Path) -> float:
     ax.set_ylabel("Proportion of Patients (%)", fontsize=12)
     ax.set_ylim(0, 105)
     ax.legend(loc="upper right", fontsize=10)
-    ax.grid(True, linestyle="--", alpha=0.3, axis="y")
 
     out_path = plot_dir / "response_by_clinical_cluster.png"
     save_fig(fig, out_path)

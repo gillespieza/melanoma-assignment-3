@@ -667,7 +667,6 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
     ax.set_title('Multimodal Response Prediction: Feature Set Comparison\n(Pooled IO Trial Cohort, 5-Fold Stratified CV)',
                  fontsize=14, fontweight='bold', pad=15)
     sns.despine(ax=ax, top=True, right=True)
-    ax.grid(axis='y', linestyle='--', linewidth=0.8, alpha=0.4)
     plt.tight_layout()
     
     multimodal_plot_path = PLOT_DIR / "multimodal_auc_comparison.png"

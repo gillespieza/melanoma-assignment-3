@@ -31,6 +31,8 @@ from src.utils.logging import TeeStream
 from src.utils.paths import find_project_root
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
 PLOT_DIR = BASE_DIR / "plots"
@@ -149,7 +151,6 @@ def main() -> None:
     clin_full["PCA_Scaled_PC1"] = pcs_scaled_full[:, 0]
     clin_full["PCA_Scaled_PC2"] = pcs_scaled_full[:, 1]
 
-    set_presentation_style()
     colors_cohort = COHORT_PALETTE
     cohort_order = ["TCGA-SKCM", "Liu 2019", "Hugo 2016", "Riaz 2017"]
 
@@ -173,7 +174,6 @@ def main() -> None:
     )
     axes[0].set_xlabel("PC1")
     axes[0].set_ylabel("PC2")
-    axes[0].grid(True, linestyle="--", alpha=0.5)
 
     sns.scatterplot(
         data=clin_full,
@@ -193,7 +193,6 @@ def main() -> None:
     )
     axes[1].set_xlabel("PC1")
     axes[1].set_ylabel("PC2")
-    axes[1].grid(True, linestyle="--", alpha=0.5)
 
     plt.suptitle(f"PCA Batch Effect Assessment Across Full Cohort (N = {n_full})", fontsize=14, fontweight="bold", y=0.98)
     plt.tight_layout()
@@ -266,7 +265,6 @@ def main() -> None:
     axes[0, 0].set_title("PCA Before Batch Correction (Colored by Cohort)", fontsize=13, fontweight="bold", pad=10)
     axes[0, 0].set_xlabel(f"PC1 ({pca_raw_trials.explained_variance_ratio_[0]*100:.1f}% variance)")
     axes[0, 0].set_ylabel(f"PC2 ({pca_raw_trials.explained_variance_ratio_[1]*100:.1f}% variance)")
-    axes[0, 0].grid(True, linestyle="--", alpha=0.5)
 
     sns.scatterplot(
         data=clin_trials_merged,
@@ -285,7 +283,6 @@ def main() -> None:
     axes[0, 1].set_title("PCA Before Batch Correction (Colored by Response)", fontsize=13, fontweight="bold", pad=10)
     axes[0, 1].set_xlabel(f"PC1 ({pca_raw_trials.explained_variance_ratio_[0]*100:.1f}% variance)")
     axes[0, 1].set_ylabel(f"PC2 ({pca_raw_trials.explained_variance_ratio_[1]*100:.1f}% variance)")
-    axes[0, 1].grid(True, linestyle="--", alpha=0.5)
 
     sns.scatterplot(
         data=clin_trials_merged,
@@ -304,7 +301,6 @@ def main() -> None:
     axes[1, 0].set_title("PCA After Batch Correction (Colored by Cohort)", fontsize=13, fontweight="bold", pad=10)
     axes[1, 0].set_xlabel(f"PC1 ({pca_scaled_trials.explained_variance_ratio_[0]*100:.1f}% variance)")
     axes[1, 0].set_ylabel(f"PC2 ({pca_scaled_trials.explained_variance_ratio_[1]*100:.1f}% variance)")
-    axes[1, 0].grid(True, linestyle="--", alpha=0.5)
 
     sns.scatterplot(
         data=clin_trials_merged,
@@ -323,7 +319,6 @@ def main() -> None:
     axes[1, 1].set_title("PCA After Batch Correction (Colored by Response)", fontsize=13, fontweight="bold", pad=10)
     axes[1, 1].set_xlabel(f"PC1 ({pca_scaled_trials.explained_variance_ratio_[0]*100:.1f}% variance)")
     axes[1, 1].set_ylabel(f"PC2 ({pca_scaled_trials.explained_variance_ratio_[1]*100:.1f}% variance)")
-    axes[1, 1].grid(True, linestyle="--", alpha=0.5)
 
     plt.suptitle(f"PCA Dimensionality Reduction of Trial Expression Data (N = {n_trials})", fontsize=16, fontweight="bold", y=0.98)
 
@@ -351,7 +346,6 @@ def main() -> None:
     axes[0, 0].set_title("UMAP Before Batch Correction (Colored by Cohort)", fontsize=13, fontweight="bold", pad=10)
     axes[0, 0].set_xlabel("UMAP Dimension 1")
     axes[0, 0].set_ylabel("UMAP Dimension 2")
-    axes[0, 0].grid(True, linestyle="--", alpha=0.5)
 
     sns.scatterplot(
         data=clin_trials_merged,
@@ -370,7 +364,6 @@ def main() -> None:
     axes[0, 1].set_title("UMAP Before Batch Correction (Colored by Response)", fontsize=13, fontweight="bold", pad=10)
     axes[0, 1].set_xlabel("UMAP Dimension 1")
     axes[0, 1].set_ylabel("UMAP Dimension 2")
-    axes[0, 1].grid(True, linestyle="--", alpha=0.5)
 
     sns.scatterplot(
         data=clin_trials_merged,
@@ -389,7 +382,6 @@ def main() -> None:
     axes[1, 0].set_title("UMAP After Batch Correction (Colored by Cohort)", fontsize=13, fontweight="bold", pad=10)
     axes[1, 0].set_xlabel("UMAP Dimension 1")
     axes[1, 0].set_ylabel("UMAP Dimension 2")
-    axes[1, 0].grid(True, linestyle="--", alpha=0.5)
 
     sns.scatterplot(
         data=clin_trials_merged,
@@ -408,7 +400,6 @@ def main() -> None:
     axes[1, 1].set_title("UMAP After Batch Correction (Colored by Response)", fontsize=13, fontweight="bold", pad=10)
     axes[1, 1].set_xlabel("UMAP Dimension 1")
     axes[1, 1].set_ylabel("UMAP Dimension 2")
-    axes[1, 1].grid(True, linestyle="--", alpha=0.5)
 
     plt.suptitle(f"UMAP Dimensionality Reduction of Trial Expression Data (N = {n_trials})", fontsize=16, fontweight="bold", y=0.98)
     plt.tight_layout()

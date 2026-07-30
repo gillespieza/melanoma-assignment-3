@@ -36,6 +36,8 @@ from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 SIG_PLOT_DIR = PLOTS_DIR / "signatures"
 LOG_PATH = LOG_DIR / "run_extra_plots.log"
@@ -100,8 +102,6 @@ def _plot_signature_violins(sig_corrected: pd.DataFrame, y_all: pd.Series, plot_
 
     df_melt = pd.melt(df_plot, id_vars=["Response"], var_name="Signature", value_name="Score")
 
-    set_presentation_style()
-    sns.set_theme(style="whitegrid")
     fig, ax = plt.subplots(figsize=(14, 6))
 
     palette = {"Responder (CR/PR)": RESPONSE_PALETTE["CR/PR"], "Non-Responder (PD)": RESPONSE_PALETTE["PD"]}
@@ -164,8 +164,6 @@ def _plot_correlation_heatmap(sig_corrected: pd.DataFrame, plot_dir: Path) -> No
         sig_corrected: Signature DataFrame.
         plot_dir: Directory path to export plot artifact.
     """
-    set_presentation_style()
-    sns.set_theme(style="white")
     fig, ax = plt.subplots(figsize=(8, 7))
 
     corr = sig_corrected.corr(method="spearman")
@@ -212,8 +210,6 @@ def _plot_multivariate_forest(sig_corrected: pd.DataFrame, y_all: pd.Series, plo
         "CI_upper": ci_upper,
     }).sort_values(by="OR", ascending=True)
 
-    set_presentation_style()
-    sns.set_theme(style="whitegrid")
     fig, ax = plt.subplots(figsize=(9, 5.5))
 
     y_pos = np.arange(len(df_or))

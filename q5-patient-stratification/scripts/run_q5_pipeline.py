@@ -32,6 +32,8 @@ from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import PROJECT_ROOT, rel_path
 
+set_presentation_style()
+
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
 # ---------------------------------------------------------------------------

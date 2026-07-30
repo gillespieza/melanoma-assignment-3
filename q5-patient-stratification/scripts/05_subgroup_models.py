@@ -58,12 +58,8 @@ from src.styles import (
 )
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
+from src.utils.plotting import save_fig
 
-
-def save_fig(fig: plt.Figure, out_path: Path, dpi: int = 300) -> None:
-    """Save matplotlib figure to out_path with proper directory creation."""
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out_path, dpi=dpi, bbox_inches="tight")
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions

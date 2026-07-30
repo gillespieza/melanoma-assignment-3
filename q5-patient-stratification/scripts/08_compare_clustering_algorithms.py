@@ -49,6 +49,7 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
 from src.styles import OKABE_ITO, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
+from src.utils.plotting import save_fig
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
@@ -298,10 +299,8 @@ def plot_comparison(
         f"Clustering Algorithms Benchmark Comparison (N={n_patients} Patients, {n_features} Multi-Modal Features)",
         fontsize=14, fontweight="bold", y=0.98,
     )
-    plt.tight_layout(rect=[0, 0, 1, 0.95])
     OUTPUT_PLOT.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(OUTPUT_PLOT, dpi=300, bbox_inches="tight")
-    plt.close()
+    save_fig(fig, OUTPUT_PLOT)
     print(f"Saved comparison figure to: {rel_path(OUTPUT_PLOT)}")
 
 

@@ -45,6 +45,8 @@ from src.utils.paths import (
 )
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 PLOT_DIR = PLOTS_DIR / "clinical"
 LOG_PATH = LOG_DIR / "run_univariate_associations.log"
@@ -254,8 +256,6 @@ def _plot_univariate_associations(all_results: pd.DataFrame, cohort_counts: Dict
 
     variables = all_results["Variable"].unique().tolist()
 
-    set_presentation_style()
-    sns.set_theme(style="whitegrid")
     fig, ax = plt.subplots(figsize=(13, 11))
     plt.subplots_adjust(left=0.28, right=0.62, top=0.90, bottom=0.20)
 
@@ -346,8 +346,6 @@ def _plot_univariate_associations(all_results: pd.DataFrame, cohort_counts: Dict
     ax.legend(handles=legend_elements, loc="upper center", bbox_to_anchor=(0.5, -0.155), ncol=2, frameon=True, facecolor="white", edgecolor="#CCCCCC", fontsize=9.5)
 
     sns.despine(ax=ax, top=True, right=True)
-    ax.yaxis.grid(True, linestyle="--", color="#E0E0E0", linewidth=0.5, alpha=0.7)
-    ax.xaxis.grid(True, linestyle=":", color="#E0E0E0", linewidth=0.5, alpha=0.5)
     ax.set_axisbelow(True)
 
     out_path = plot_dir / "univariate_associations.png"

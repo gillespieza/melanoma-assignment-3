@@ -37,6 +37,8 @@ from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, rel_path
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 PLOT_DIR = PLOTS_DIR / "biomarkers"
 LOG_PATH = LOG_DIR / "run_clustering.log"

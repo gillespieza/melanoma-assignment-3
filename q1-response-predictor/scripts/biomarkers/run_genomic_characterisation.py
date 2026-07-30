@@ -62,6 +62,8 @@ from src.utils.paths import (
 )
 from src.utils.plotting import resolve_colors, save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 CONFIG_PATH = CONFIG_DIR / "datasets.yaml"
 PLOT_DIR = PLOTS_DIR / "genomic"
@@ -891,7 +893,6 @@ def main() -> None:
     print("Genomic Characterisation and Visualisation")
     print("==================================================\n")
 
-    set_presentation_style()
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
     cohorts = _prepare_cohort_data(DATA_DIR)

@@ -31,6 +31,8 @@ from src.utils.logging import TeeStream
 from src.utils.paths import find_project_root
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
 PLOT_DIR = BASE_DIR / "plots" / "exploratory"
@@ -115,8 +117,6 @@ def main() -> None:
     expr_scaled_merged = expr_scaled_merged.loc[clin_merged.index]
 
     clin_merged["Response"] = clin_merged["response"].map({1.0: "Responder (CR/PR)", 0.0: "Non-responder (PD)"})
-
-    set_presentation_style()
 
     colors_cohort = COHORT_PALETTE
     colors_response = {

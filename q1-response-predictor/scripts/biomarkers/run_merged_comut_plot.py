@@ -40,6 +40,8 @@ from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 PLOT_DIR = PLOTS_DIR / "genomic"
 LOG_PATH = LOG_DIR / "run_merged_comut_plot.log"
@@ -138,8 +140,6 @@ def _draw_merged_comut_plot(df_sorted: pd.DataFrame, sorted_sample_ids: List[str
 
     gene_freqs = [(df_sorted[g] > 0).mean() * 100 for g in MERGED_COMUT_DRIVER_GENES]
 
-    set_presentation_style()
-    sns.set_theme(style="white")
     fig = plt.figure(figsize=(16, 11))
 
     gs = gridspec.GridSpec(
@@ -265,7 +265,6 @@ def main() -> None:
     print("Generating Co-Mutation (Oncoplot) for Merged Trial Cohorts")
     print("==================================================\n")
 
-    set_presentation_style()
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
     result = _load_and_align_merged_data(DATA_DIR)

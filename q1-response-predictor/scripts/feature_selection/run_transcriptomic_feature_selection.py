@@ -43,6 +43,8 @@ from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, REPORTS_DIR
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 PLOT_DIR = PLOTS_DIR / "feature_selection"
 REPORTS_DIR = REPORTS_DIR / "pillar-4-out-of-cohort-benchmarks"
@@ -241,8 +243,6 @@ def _plot_tcga_km_curve(df_clin_survival: pd.DataFrame, plot_dir: Path) -> None:
         df_clin_survival: Clinical DataFrame containing RISK_SCORE and RISK_GROUP.
         plot_dir: Path to export plot artifact.
     """
-    set_presentation_style()
-    sns.set_theme(style="whitegrid", context="talk")
     fig, ax = plt.subplots(figsize=(9, 6.5))
     kmf = KaplanMeierFitter()
 
@@ -313,7 +313,6 @@ def _validate_on_trial_cohorts(
 
     validation_results = {}
 
-    set_presentation_style()
     fig_roc, ax_roc = plt.subplots(figsize=(8, 7))
     ax_roc.plot([0, 1], [0, 1], "k--", alpha=0.5)
 
@@ -457,7 +456,6 @@ def _plot_prognostic_forest(df_cox: pd.DataFrame, plot_dir: Path) -> None:
         y_pos += 1
         y_pos += 0.5
 
-    set_presentation_style()
     fig_forest, ax_forest = plt.subplots(figsize=(11.5, 9.5))
 
     ax_forest.axvline(x=1.0, color="#333333", linestyle="--", linewidth=1.0, alpha=0.8, zorder=2)
@@ -513,7 +511,6 @@ def _plot_prognostic_forest(df_cox: pd.DataFrame, plot_dir: Path) -> None:
 
     ax_forest.set_xlim(0.70, 1.05)
     ax_forest.set_ylim(-0.5, y_pos - 0.2)
-    ax_forest.grid(True, which="both", linestyle=":", alpha=0.5, zorder=1)
     sns.despine(left=True, bottom=True)
 
     legend_elements = [Patch(facecolor=color, label=cat) for cat, color in category_colors.items()]

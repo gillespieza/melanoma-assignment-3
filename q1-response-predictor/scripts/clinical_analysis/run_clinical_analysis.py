@@ -56,6 +56,8 @@ from src.utils.paths import (
 )
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # ===========================================================================
 # PATHS & CONFIGURATION
 # ===========================================================================
@@ -450,7 +452,6 @@ def plot_km_os(
     ax.set_ylabel("Overall Survival Probability", fontsize=10)
     ax.set_ylim(0, 1.05)
     ax.legend(loc="lower left", fontsize=9, framealpha=0.9)
-    ax.grid(axis="y", linestyle=":", alpha=0.4)
 
     n_total = len(df_clin)
     n_valid_os = len(df)
@@ -888,8 +889,6 @@ def main() -> None:
     print("==================================================")
     print("Clinical Analysis — Phase 1: Kaplan-Meier OS Curves")
     print("==================================================\n")
-
-    set_presentation_style()
 
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
     REPORT_DIR.mkdir(exist_ok=True, parents=True)

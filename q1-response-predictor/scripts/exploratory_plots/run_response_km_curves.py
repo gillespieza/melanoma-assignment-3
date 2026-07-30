@@ -33,6 +33,8 @@ from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 PLOT_DIR = PLOTS_DIR / "clinical"
 LOG_PATH = LOG_DIR / "run_response_km_curves.log"
@@ -86,7 +88,6 @@ def plot_cohort_km_by_response(ax: plt.Axes, df_clin: pd.DataFrame, cohort_name:
     ax.set_ylabel("Survival Probability", fontsize=11)
     ax.set_ylim(0, 1.05)
     ax.legend(loc="lower left", fontsize=10)
-    ax.grid(True, linestyle="--", alpha=0.5)
 
 
 def main() -> None:
@@ -96,13 +97,11 @@ def main() -> None:
     print("==================================================\n")
 
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
-    set_presentation_style()
 
     _, clin_liu = load_liu_2019(DATA_DIR)
     _, clin_hugo = load_hugo_2016(DATA_DIR)
     _, clin_riaz = load_riaz_2017(DATA_DIR)
 
-    sns.set_theme(style="white")
     fig, axes = plt.subplots(1, 3, figsize=(18, 5.5))
 
     plot_cohort_km_by_response(axes[0], clin_liu, "Liu 2019")

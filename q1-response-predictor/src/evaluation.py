@@ -7,11 +7,16 @@ from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test
 from lifelines.utils import concordance_index
 
+from src.styles import set_presentation_style
+from src.utils.plotting import save_fig
+
+set_presentation_style()
+
 def plot_roc_curves(loco_results, model_name, save_path=None):
     """
     Plots ROC curves for all LOCO CV folds (one per test cohort).
     """
-    plt.figure(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(11, 6))
     
     for cohort, res in loco_results.items():
         y_true = res['y_true']
@@ -32,11 +37,9 @@ def plot_roc_curves(loco_results, model_name, save_path=None):
     plt.ylabel('True Positive Rate')
     plt.title(f'LOCO Cross-Cohort ROC Curves ({model_name})')
     plt.legend(loc="lower right")
-    plt.grid(alpha=0.3)
     
     if save_path:
-        plt.savefig(save_path, bbox_inches='tight', dpi=300)
-        plt.close()
+        save_fig(fig, save_path)
     else:
         plt.show()
 
@@ -44,7 +47,7 @@ def plot_pr_curves(loco_results, model_name, save_path=None):
     """
     Plots Precision-Recall curves.
     """
-    plt.figure(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(11, 6))
     
     for cohort, res in loco_results.items():
         y_true = res['y_true']
@@ -61,11 +64,9 @@ def plot_pr_curves(loco_results, model_name, save_path=None):
     plt.ylabel('Precision')
     plt.title(f'LOCO Cross-Cohort PR Curves ({model_name})')
     plt.legend(loc="lower left")
-    plt.grid(alpha=0.3)
     
     if save_path:
-        plt.savefig(save_path, bbox_inches='tight', dpi=300)
-        plt.close()
+        save_fig(fig, save_path)
     else:
         plt.show()
 
@@ -74,7 +75,7 @@ def plot_confusion_matrices(loco_results, model_name, save_path=None, use_optima
     Plots confusion matrices for all test cohorts in a grid.
     """
     n_cohorts = len(loco_results)
-    fig, axes = plt.subplots(1, n_cohorts, figsize=(5*n_cohorts, 4))
+    fig, axes = plt.subplots(1, n_cohorts, figsize=(12, 4.5))
     
     if n_cohorts == 1:
         axes = [axes]
@@ -101,11 +102,9 @@ def plot_confusion_matrices(loco_results, model_name, save_path=None, use_optima
     
     thresh_label = "Optimal Youden's J Threshold" if use_optimal_threshold else "Default Threshold 0.5"
     plt.suptitle(f'Confusion Matrices ({model_name}) - {thresh_label}', fontsize=14, y=1.02)
-    plt.tight_layout()
     
     if save_path:
-        plt.savefig(save_path, bbox_inches='tight', dpi=300)
-        plt.close()
+        save_fig(fig, save_path)
         print(f"Saved confusion matrix plot to {save_path}")
     else:
         plt.show()
@@ -171,7 +170,7 @@ def plot_calibration_curves(loco_results, model_name, save_path=None):
     """
     Plots calibration curves (reliability diagrams) for all LOCO CV folds.
     """
-    plt.figure(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(11, 6))
 
     for cohort, res in loco_results.items():
         y_true = res['y_true']
@@ -190,11 +189,9 @@ def plot_calibration_curves(loco_results, model_name, save_path=None):
     plt.ylabel('Fraction of Positives (Empirical Response Rate)')
     plt.title(f'LOCO Calibration Curves / Reliability Diagrams ({model_name})')
     plt.legend(loc="upper left")
-    plt.grid(alpha=0.3)
 
     if save_path:
-        plt.savefig(save_path, bbox_inches='tight', dpi=300)
-        plt.close()
+        save_fig(fig, save_path)
     else:
         plt.show()
 
@@ -318,7 +315,7 @@ def run_survival_analysis(df_clin, y_pred_prob, time_col='os_months', status_col
     kmf_high = KaplanMeierFitter()
     kmf_low = KaplanMeierFitter()
     
-    plt.figure(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(11, 6))
     
     kmf_high.fit(high_prob[time_col], event_observed=high_prob[status_col], label=f'High predicted prob (N={len(high_prob)})')
     kmf_high.plot_survival_function(ci_show=True)
@@ -336,12 +333,10 @@ def run_survival_analysis(df_clin, y_pred_prob, time_col='os_months', status_col
     plt.title(f'Overall Survival by Predicted Response Probability (p = {p_value:.2e})')
     plt.xlabel('Survival Time (Months)')
     plt.ylabel('Survival Probability')
-    plt.grid(alpha=0.3)
     plt.legend(loc="lower left")
     
     if save_path:
-        plt.savefig(save_path, bbox_inches='tight', dpi=300)
-        plt.close()
+        save_fig(fig, save_path)
     else:
         plt.show()
         
@@ -356,7 +351,7 @@ def plot_survival_2x2_grid(cohort_survival_data, save_path=None):
         cohort_survival_data: list of dicts with keys:
             'cohort', 'df_clin', 'y_pred_prob', 'time_col', 'status_col', 'model_name'
     """
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     axes = axes.flatten()
 
     for idx, item in enumerate(cohort_survival_data):
@@ -402,15 +397,12 @@ def plot_survival_2x2_grid(cohort_survival_data, save_path=None):
 
         ax.set_xlabel('Survival Time (Months)')
         ax.set_ylabel('Overall Survival Probability')
-        ax.grid(color='#E5E7EB', linewidth=0.5, alpha=0.6)
         ax.legend(loc="lower left")
 
     plt.suptitle("Overall Survival Stratification Across Cohorts by Model Predictions", fontsize=15, fontweight='bold', y=0.98)
-    plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, bbox_inches='tight', dpi=300)
-        plt.close()
+        save_fig(fig, save_path)
     else:
         plt.show()
 

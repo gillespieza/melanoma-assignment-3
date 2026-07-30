@@ -39,6 +39,8 @@ from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 CLINICAL_FILE = DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018" / "clin_cleaned.csv"
 PLOT_DIR = PLOTS_DIR / "clinical"
@@ -65,7 +67,6 @@ def _plot_km(
         labels: Optional label mapping dictionary.
         split_median: If True, splits group_col into High/Low by median.
     """
-    set_presentation_style()
     fig, ax = plt.subplots(figsize=(9, 6.5))
 
     df_sub = df.copy()
@@ -121,7 +122,6 @@ def _plot_km(
     ax.set_ylabel("Survival Probability", fontsize=13, fontweight="bold")
     ax.set_ylim(0, 1.05)
     ax.legend(loc="upper right", frameon=True)
-    ax.grid(True, linestyle="--", alpha=0.5)
 
     out_path = PLOT_DIR / filename
     save_fig(fig, out_path)

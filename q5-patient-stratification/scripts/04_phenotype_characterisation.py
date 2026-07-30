@@ -39,6 +39,7 @@ from src.styles import PHENOTYPE_PALETTE, set_presentation_style
 from clustering import CLUSTER_PALETTE
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
+from src.utils.plotting import save_fig
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
@@ -136,10 +137,8 @@ def plot_baseline_boxplots(df: pd.DataFrame, save_path: Path) -> None:
     ax.axhline(0, color="#37474F", linestyle="--", linewidth=1.0, alpha=0.7)
     ax.legend(title="Phenotype Subtype", loc="lower right", frameon=True, fontsize=9)
 
-    plt.tight_layout()
     save_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.close()
+    save_fig(fig, save_path)
     print(f"Saved baseline signature boxplot to {save_path}")
 
 
@@ -186,10 +185,8 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
     ax.axhline(0, color="#37474F", linestyle=":", linewidth=1.0, alpha=0.7)
     ax.legend(title="Phenotype & Therapy Arm", loc="lower right", bbox_to_anchor=(0.98, 0.12), frameon=True, fontsize=9.0)
 
-    plt.tight_layout()
     save_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.close()
+    save_fig(fig, save_path)
     print(f"Saved Q3 ODE trajectory plot to {save_path}")
 
 

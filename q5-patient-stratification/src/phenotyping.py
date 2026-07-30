@@ -17,6 +17,7 @@ import seaborn as sns
 # ---------------------------------------------------------------------------
 
 from src.styles import RESPONSE_PALETTE, set_presentation_style
+from src.utils.plotting import save_fig
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
@@ -147,11 +148,8 @@ def plot_baseline_signature_boxplots(df: pd.DataFrame, save_path: Path) -> None:
 
     n_patients = len(valid_df)
     fig.suptitle(f"Baseline Immune & Microenvironmental Biomarker Distributions (N={n_patients})", fontsize=14, fontweight="bold", y=0.98)
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
-
     save_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(save_path, dpi=300, bbox_inches="tight")
-    plt.close()
+    save_fig(fig, save_path)
     print(f"Saved facetted biomarker violin plot figure to {save_path}")
 
 

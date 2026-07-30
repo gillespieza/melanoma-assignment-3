@@ -1,12 +1,22 @@
+import sys
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+from src.styles import set_presentation_style
+from src.utils.plotting import save_fig
+
+set_presentation_style()
+
 PLOT_DIR = BASE_DIR / "plots" / "models"
 PLOT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -21,9 +31,7 @@ data = [
 
 df = pd.DataFrame(data).set_index("Model")
 
-# Set up styling
-plt.figure(figsize=(10, 5.5), dpi=300)
-sns.set_theme(style="white")
+fig, ax_heatmap = plt.subplots(figsize=(11, 6))
 
 ax = sns.heatmap(
     df,
@@ -36,6 +44,7 @@ ax = sns.heatmap(
     annot_kws={"size": 13, "weight": "bold"},
     vmin=0.25,
     vmax=0.70,
+    ax=ax_heatmap,
 )
 
 plt.title("Leave-One-Cohort-Out (LOCO) ROC-AUC Performance Across Models & Held-Out Cohorts", fontsize=13, fontweight="bold", pad=15)
@@ -44,7 +53,6 @@ plt.ylabel("Model Architecture", fontsize=11, fontweight="bold", labelpad=10)
 plt.xticks(fontsize=11)
 plt.yticks(fontsize=11, rotation=0)
 
-plt.tight_layout()
 out_path = PLOT_DIR / "loco_performance_heatmap.png"
-plt.savefig(out_path, dpi=300, bbox_inches="tight")
+save_fig(fig, out_path)
 print(f"Saved LOCO performance heatmap to {out_path}")

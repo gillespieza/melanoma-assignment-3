@@ -61,6 +61,8 @@ from src.utils.paths import (
 )
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # ---------------------------------------------------------------------------
 # Module-level Constants & Directory Paths
 # ---------------------------------------------------------------------------
@@ -290,7 +292,6 @@ def _evaluate_tier1_rf_survival(df: pd.DataFrame, plots_dir: Path) -> pd.DataFra
     df_rf["Formatted_Feature"] = df_rf["Feature"].apply(_format_feature_name)
     df_rf = df_rf.sort_values(by="Importance", ascending=False).reset_index(drop=True)
 
-    set_presentation_style()
     fig, ax = plt.subplots(figsize=(10, 6.5))
     palette = sns.color_palette("Blues_r", n_colors=len(df_rf))
     sns.barplot(
@@ -384,7 +385,6 @@ def _evaluate_tier1_cox(df: pd.DataFrame, plots_dir: Path) -> pd.DataFrame:
     df_plot["Formatted_Feature"] = df_plot["Feature"].apply(_format_feature_name)
     df_plot = df_plot.iloc[::-1].reset_index(drop=True)
 
-    set_presentation_style()
     fig, ax = plt.subplots(figsize=(12, 7.5))
 
     y_pos = np.arange(len(df_plot))
@@ -476,7 +476,6 @@ def _plot_multivariate_cox_forest(
     df_plot["Formatted_Feature"] = df_plot["Feature"].apply(_format_feature_name)
     df_plot = df_plot.iloc[::-1].reset_index(drop=True)
 
-    set_presentation_style()
     fig, ax = plt.subplots(figsize=(12, max(6.5, len(df_plot) * 0.5)))
 
     y_pos = np.arange(len(df_plot))
@@ -567,7 +566,6 @@ def _plot_univariate_vs_multivariate_comparison(
     merged["Formatted_Feature"] = merged["Feature"].apply(_format_feature_name)
     merged = merged.iloc[::-1].reset_index(drop=True)
 
-    set_presentation_style()
     n_feats = len(merged)
     fig, ax = plt.subplots(figsize=(13, max(7.0, n_feats * 0.6)))
 
@@ -819,7 +817,6 @@ def _evaluate_tier2_tcga_rf(X_encoded: pd.DataFrame, y_os_status: pd.Series, plo
     df_rf = df_rf.sort_values(by="Importance", ascending=False).reset_index(drop=True)
     df_top20 = df_rf.head(20).copy()
 
-    set_presentation_style()
     fig, ax = plt.subplots(figsize=(11, 8.5))
     palette = sns.color_palette("Purples_r", n_colors=len(df_top20))
     sns.barplot(
@@ -912,7 +909,6 @@ def _evaluate_tier2_tcga_cox(
     df_top20["Formatted_Feature"] = df_top20["Feature"].apply(_format_feature_name)
     df_top20 = df_top20.iloc[::-1].reset_index(drop=True)
 
-    set_presentation_style()
     fig, ax = plt.subplots(figsize=(12, 8.5))
 
     y_pos = np.arange(len(df_top20))

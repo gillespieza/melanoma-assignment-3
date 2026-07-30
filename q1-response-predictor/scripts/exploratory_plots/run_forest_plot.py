@@ -31,6 +31,8 @@ from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
 
+set_presentation_style()
+
 # Module-level Constants
 PLOT_DIR = PLOTS_DIR / "clinical"
 LOG_PATH = LOG_DIR / "run_forest_plot.log"
@@ -162,7 +164,6 @@ def main() -> None:
 
     df_res.to_csv(PLOT_DIR / "forest_plot_data.csv", index=False)
 
-    set_presentation_style()
     fig, ax = plt.subplots(figsize=(10, 6))
 
     df_plot = df_res.iloc[::-1].reset_index(drop=True)
