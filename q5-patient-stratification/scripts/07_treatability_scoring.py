@@ -62,10 +62,10 @@ REPORTS_DIR = SUBPROJECT_ROOT / "reports" / "q5_phases"
 set_presentation_style()
 
 PHENOTYPE_SHORT_NAMES: Dict[int, str] = {
-    0: "Mutant-Driven",
+    0: "Immune Hot",
     1: "Immune Cold",
-    2: "Immune Hot",
-    3: "M2 Immunosuppressive",
+    2: "M2 Immunosuppressive",
+    3: "Mutant-Driven",
 }
 
 ARM_PALETTE: Dict[str, str] = {

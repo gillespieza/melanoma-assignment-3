@@ -45,28 +45,64 @@ def profile_clusters(df: pd.DataFrame, cluster_col: str, feature_cols: List[str]
 
 
 def assign_phenotype_labels(cluster_profiles: pd.DataFrame) -> Dict[int, str]:
-    """Assign biological phenotype labels to clusters based on profile rules.
+    """Assign biological phenotype labels to clusters based on their empirical profiles.
+
+    Labels are assigned using a rank-based approach on the actual computed cluster
+    means, making the assignment robust to K-Means producing different integer cluster
+    IDs across runs, random seeds, or different datasets. The four rules are applied
+    sequentially, with each cluster claimed at most once:
+
+    1. **Mutant-Driven (NF1 Loss)**: Cluster with the highest ``mut_NF1`` rate.
+    2. **Immune Hot**: Among the remaining clusters, the one with the highest TIS.
+    3. **M2 Immunosuppressive**: Among the remaining clusters, the one with the
+       *lowest M1/M2 macrophage ratio*. TIS alone cannot separate M2-suppressed from
+       immune desert — both are cold — but the macrophage polarisation balance
+       (M2-skewed vs. uniformly depleted) is the discriminating biological signal.
+       Falls back to lowest ``CD8_T_cells`` if ``M1_M2_Ratio`` is unavailable.
+    4. **Immune Cold**: The single remaining cluster (moderate immune desert).
 
     Args:
-        cluster_profiles: DataFrame of cluster feature profiles.
+        cluster_profiles: DataFrame indexed by cluster ID with columns including
+            at minimum ``TIS`` and optionally ``mut_NF1``, ``M1_M2_Ratio``,
+            ``CD8_T_cells``.
 
     Returns:
-        Dictionary mapping cluster ID to phenotype label string.
+        Dictionary mapping integer cluster ID to phenotype label string.
     """
-    labels = {}
-    for cluster_id, row in cluster_profiles.iterrows():
-        tis = row.get("TIS", 0)
-        m1_m2 = row.get("M1_M2_Ratio", 0.5)
-        m2_score = row.get("M2_Macrophages", row.get("M2_score", 0))
+    labels: Dict[int, str] = {}
+    remaining = set(cluster_profiles.index.tolist())
 
-        if tis > cluster_profiles["TIS"].median() and m1_m2 > cluster_profiles["M1_M2_Ratio"].median():
-            labels[cluster_id] = "Immune Hot"
-        elif tis < cluster_profiles["TIS"].median() and m1_m2 < cluster_profiles["M1_M2_Ratio"].median():
-            labels[cluster_id] = "Immune Cold"
-        elif m2_score > cluster_profiles["M2_score"].median() if "M2_score" in cluster_profiles else m1_m2 < 0.4:
-            labels[cluster_id] = "Immunosuppressive M2-High"
-        else:
-            labels[cluster_id] = "Mutant-Driven"
+    # --- Rule 1: Mutant-Driven (NF1 Loss) --------------------------------
+    # The cluster with the highest NF1 mutation rate is the mutant-dominant subtype.
+    # If mut_NF1 is absent or all-zero, this rule is skipped (no NF1-dominant cluster).
+    if "mut_NF1" in cluster_profiles.columns and cluster_profiles["mut_NF1"].max() > 0:
+        nf1_id = int(cluster_profiles.loc[list(remaining), "mut_NF1"].idxmax())
+        labels[nf1_id] = "Mutant-Driven"
+        remaining.discard(nf1_id)
+
+    # --- Rule 2: Immune Hot (highest TIS among remaining) -----------------
+    hot_id = int(cluster_profiles.loc[list(remaining), "TIS"].idxmax())
+    labels[hot_id] = "Immune Hot"
+    remaining.discard(hot_id)
+
+    # --- Rule 3: M2 Immunosuppressive (lowest M1/M2 ratio among remaining) ---
+    # TIS alone cannot separate M2-suppressed from immune desert — both are cold.
+    # The M1/M2 macrophage balance is the discriminating signal: M2-skewed clusters
+    # have active immunosuppression, whereas the true immune cold desert is uniformly low.
+    # Falls back to lowest CD8_T_cells (most T-cell excluded) if ratio column is absent.
+    if "M1_M2_Ratio" in cluster_profiles.columns:
+        m2_id = int(cluster_profiles.loc[list(remaining), "M1_M2_Ratio"].idxmin())
+    elif "CD8_T_cells" in cluster_profiles.columns:
+        m2_id = int(cluster_profiles.loc[list(remaining), "CD8_T_cells"].idxmin())
+    else:
+        m2_id = int(cluster_profiles.loc[list(remaining), "TIS"].idxmin())
+    labels[m2_id] = "Immunosuppressive M2-High"
+    remaining.discard(m2_id)
+
+    # --- Rule 4: Immune Cold (sole remainder — moderate immune desert) ----
+    for cid in remaining:
+        labels[cid] = "Immune Cold"
+
     return labels
 
 
