@@ -4,10 +4,10 @@ import { Panel, Pill } from "./ui";
 // ---------------------------------------------------------------------------
 // Q2 · Experimental validation — cohort-level evidence, never per-patient.
 //
-// The cell-line arm of Q2 belongs to a separate workstream and its results are
-// not in this repository, so it is shown as pending rather than invented. What
-// IS shown is the orthogonal experimental validation that exists here: the RPPA
-// proteomic check on the Q3 twin, and the ML-vs-ODE benchmark.
+// Two independent checks: the RPPA proteomic validation of the Q3 twin, and the
+// cell-line drug-response model (q2-viability-predictor/, GDSC2 + DepMap). The
+// cell-line entry deliberately keeps its own stability caveat on screen — the
+// headline correlation alone overstates it.
 // ---------------------------------------------------------------------------
 
 interface Evidence {
@@ -42,17 +42,16 @@ const EVIDENCE: Evidence[] = [
       "times as many inputs — the biology is doing real work, not curve-fitting.",
     stat: "ODE AUC 0.666 ± 0.074 vs RF 0.686 ± 0.046",
   },
-  // TO WIRE IN when the cell-line data arrives: flip this to
-  // status: "established" and fill `stat` with the real correlation
-  // (n, coefficient, p-value). See docs/07_SESSION_LOG.md §4 — it covers both
-  // the quick headline-stat route and the fuller per-cell-line CSV route.
-  // Do NOT invent a statistic; the pending card is the honest fallback.
   {
-    status: "pending",
-    claim: "Cell-line drug-response validation of the Q1 signature",
+    status: "established",
+    claim: "LASSO model predicts BRAF-inhibitor sensitivity in melanoma cell lines",
     detail:
-      "The Q2 workstream applies the Q1 expression signature to melanoma cell lines with known drug " +
-      "sensitivity. Those results sit outside this repository and are not wired in here.",
+      "Trained on GDSC2 drug-response data and DepMap gene expression, melanoma cell lines only " +
+      "(not the Q1 signature — a separate model). Of five drugs tested, Dabrafenib was the only " +
+      "defensible result: the two chemotherapy agents had almost no viability variation to predict, " +
+      "and PLX-4720 was a genuine model failure. Refit across 5 random train/test splits to check " +
+      "stability — the model is directionally right but not reliable on any single split.",
+    stat: "Dabrafenib: best-split r = 0.75 (n = 8) · mean r = 0.28 across 5 refits (range -0.29 to 0.75)",
   },
 ];
 
