@@ -35,7 +35,14 @@ import pandas as pd
 import seaborn as sns
 from scipy.integrate import solve_ivp
 
-from src.styles import PHENOTYPE_PALETTE, set_presentation_style
+try:
+    from lifelines import KaplanMeierFitter
+    from lifelines.statistics import multivariate_logrank_test
+    _LIFELINES_AVAILABLE = True
+except ImportError:
+    _LIFELINES_AVAILABLE = False
+
+from src.styles import PHENOTYPE_PALETTE, get_phenotype_color, set_presentation_style
 from clustering import CLUSTER_PALETTE
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
@@ -53,8 +60,6 @@ PLOTS_DIR = SUBPROJECT_ROOT / "plots" / "phenotypes"
 
 set_presentation_style()
 
-# No longer needed — colours resolved dynamically from CLUSTER_PALETTE by cluster ID at plot time
-
 
 def compute_phenotype_profiles(df: pd.DataFrame) -> pd.DataFrame:
     """Compute mean biomarker features, cell fractions, and clinical response rates per cluster."""
@@ -69,26 +74,20 @@ def compute_phenotype_profiles(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _build_label_palette(df: pd.DataFrame) -> dict:
-    """Build a Phenotype_Label -> hex colour mapping from CLUSTER_PALETTE.
+    """Build a Phenotype_Label -> hex colour mapping using get_phenotype_color.
 
-    Derives colours by joining each phenotype label to its integer Cluster_ID,
-    ensuring the boxplot uses the same Okabe-Ito colours as the PCA and UMAP plots.
+    Ensures boxplots and KM survival curves use the exact Okabe-Ito colours
+    specified in src/styles.py and project visual guidelines.
 
     Args:
-        df: Patient DataFrame containing Cluster_ID and Phenotype_Label columns.
+        df: Patient DataFrame containing Phenotype_Label column.
 
     Returns:
         Dictionary mapping phenotype label string to hex colour code.
     """
-    label_map = (
-        df[["Cluster_ID", "Phenotype_Label"]]
-        .drop_duplicates()
-        .set_index("Phenotype_Label")["Cluster_ID"]
-        .to_dict()
-    )
     return {
-        label: CLUSTER_PALETTE.get(cid, f"C{cid}")
-        for label, cid in label_map.items()
+        label: get_phenotype_color(label)
+        for label in df["Phenotype_Label"].dropna().unique()
     }
 
 
@@ -190,6 +189,86 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
     print(f"Saved Q3 ODE trajectory plot to {save_path}")
 
 
+def plot_kaplan_meier_by_phenotype(df: pd.DataFrame, save_path: Path) -> None:
+    """Plot Kaplan-Meier overall survival curves stratified by phenotype cluster.
+
+    Draws one KM curve per phenotype with 95% confidence intervals and annotates the
+    log-rank p-value from a multivariate test across all clusters.
+
+    Args:
+        df:        Patient DataFrame containing Cluster_ID, Phenotype_Label, OS_MONTHS,
+                   and OS_STATUS columns. Rows with missing OS data are silently dropped.
+        save_path: File path to save the 300 DPI PNG figure.
+    """
+    if not _LIFELINES_AVAILABLE:
+        raise ImportError(
+            "lifelines is required for Kaplan-Meier curves. "
+            "Install with: pip install lifelines"
+        )
+
+    required_cols = ["OS_MONTHS", "OS_STATUS", "Cluster_ID", "Phenotype_Label"]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        print(f"Skipping KM plot — missing columns: {missing}")
+        return
+
+    df_km = df.dropna(subset=["OS_MONTHS", "OS_STATUS"]).copy()
+    df_km["OS_STATUS"] = pd.to_numeric(df_km["OS_STATUS"], errors="coerce").fillna(0).astype(int)
+    n_valid = len(df_km)
+
+    if n_valid < 10:
+        print(f"Skipping KM plot — only {n_valid} patients with OS data (minimum 10 required).")
+        return
+
+    # Log-rank test across all clusters
+    lr_result = multivariate_logrank_test(
+        df_km["OS_MONTHS"], df_km["Cluster_ID"], df_km["OS_STATUS"]
+    )
+    p_val = lr_result.p_value
+    p_label = f"p < 0.001" if p_val < 0.001 else f"p = {p_val:.3f}"
+
+    label_palette = _build_label_palette(df_km)
+
+    fig, ax = plt.subplots(figsize=(12, 6.5), dpi=300)
+
+    for cluster_id in sorted(df_km["Cluster_ID"].unique()):
+        grp = df_km[df_km["Cluster_ID"] == cluster_id]
+        pheno_label = grp["Phenotype_Label"].iloc[0]
+        color = label_palette.get(pheno_label, f"C{cluster_id}")
+        median_os = grp["OS_MONTHS"].median()
+
+        kmf = KaplanMeierFitter()
+        kmf.fit(
+            grp["OS_MONTHS"],
+            event_observed=grp["OS_STATUS"],
+            label=f"{pheno_label}  (N={len(grp)}, median OS={median_os:.1f} mo)",
+        )
+        kmf.plot_survival_function(
+            ax=ax,
+            color=color,
+            ci_show=True,
+            ci_alpha=0.12,
+            linewidth=2.2,
+        )
+
+    ax.set_title(
+        f"Kaplan-Meier Overall Survival by Phenotype Cluster\n"
+        f"(N={n_valid} patients with OS data, log-rank {p_label})",
+        fontsize=13, fontweight="bold", pad=12,
+    )
+    ax.set_xlabel("Overall Survival (Months)", fontsize=11, fontweight="bold")
+    ax.set_ylabel("Survival Probability", fontsize=11, fontweight="bold")
+    ax.set_ylim(-0.05, 1.05)
+    ax.axhline(0.5, color="#37474F", linestyle=":", linewidth=1.0, alpha=0.6, label="Median OS (50%)")
+    ax.legend(loc="upper right", frameon=True, facecolor="white", edgecolor="#E5E7EB", fontsize=9)
+    ax.grid(True, color="#E5E7EB", linewidth=0.5, alpha=0.6)
+
+    plt.tight_layout()
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    save_fig(fig, save_path, dpi=300)
+    print(f"Saved Kaplan-Meier survival plot to {rel_path(save_path)}")
+
+
 def main() -> None:
     """Main execution function for Phase 4 phenotype characterisation."""
     print(f"Starting Q5 Phase 4 Phenotype Characterisation (Project root: {rel_path(PROJECT_ROOT)})")
@@ -210,6 +289,9 @@ def main() -> None:
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
     plot_baseline_boxplots(df_clusters, PLOTS_DIR / "baseline_signature_boxplots.png")
     simulate_q3_ode_trajectories(df_clusters, PLOTS_DIR / "ode_trajectories.png")
+
+    # 3. Kaplan-Meier survival curves stratified by phenotype (N=699, uses OS data)
+    plot_kaplan_meier_by_phenotype(df_clusters, PLOTS_DIR / "km_survival_by_phenotype.png")
 
     print("=" * 80)
     print("PHASE 4 PHENOTYPE CHARACTERISATION COMPLETE")
