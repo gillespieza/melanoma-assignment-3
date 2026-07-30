@@ -43,6 +43,32 @@ export interface Q4Block {
   reserve: string[];
 }
 
+/** One line of therapy: a TCGA treatment type paired with the agent(s) given
+ *  under it, e.g. { type: "Targeted Molecular Therapy", agents: ["Vemurafenib"] }.
+ *  `agents` is empty when TCGA recorded the type but not a named drug. */
+export interface TreatmentLine {
+  type: string;
+  agents: string[];
+}
+
+/** What TCGA recorded this patient as actually having been treated with —
+ *  recorded for ~46% of the cohort; TCGA simply has no data for the rest. */
+export interface TreatmentHistory {
+  recorded: boolean;
+  /** Grouped by TREATMENT_TYPE, each with its own named agent(s) — type first,
+   *  agent(s) underneath, so a reader doesn't have to guess which drug maps to
+   *  which category. */
+  lines: TreatmentLine[];
+  /** Received a checkpoint inhibitor (ipilimumab / pembrolizumab / nivolumab) —
+   *  the anti-PD-1 axis Q3 simulates. */
+  checkpointInhibitor: boolean;
+  /** Received a BRAF/MEK inhibitor (vemurafenib / dabrafenib / trametinib) —
+   *  the BRAFi axis Q3 simulates. */
+  targetedTherapy: boolean;
+  chemotherapy: boolean;
+  radiation: boolean;
+}
+
 export interface CohortPatient {
   id: string;
   sampleId: string;
@@ -94,6 +120,9 @@ export interface CohortPatient {
   // --- Q1 / Q4 ---
   q1: Q1Prediction | null;
   q4: Q4Block;
+
+  // --- treatment actually received (real, from TCGA clin_cleaned.csv) ---
+  treatment: TreatmentHistory;
 
   /** Set only by the what-if explorer. TCGA records no LDH, so the engine
    *  normally infers rapid-control pressure from stage IV; supplying a value

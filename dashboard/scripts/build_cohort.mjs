@@ -7,6 +7,7 @@
 //   q3-ode-model/outputs/results/tumour_burden_simulations.csv      BRAFi sweep
 //   q3-ode-model/outputs/results/checkpoint_tumour_simulations.csv  anti-PD-1 sweep
 //   data/processed/skcm_tcga_pan_can_atlas_2018/clin_cleaned.csv    TCGA clinical
+//   data/raw/skcm_tcga_pan_can_atlas_2018/data_timeline_treatment.txt  treatment received
 //   dashboard/public/q1_predictions.csv                             Q1 ML output
 //
 // Idempotent: re-run it any time. If q1_predictions.csv gains TCGA-SKCM rows,
@@ -27,6 +28,10 @@ const PATHS = {
   tumour: resolve(REPO, "q3-ode-model/outputs/results/tumour_burden_simulations.csv"),
   checkpoint: resolve(REPO, "q3-ode-model/outputs/results/checkpoint_tumour_simulations.csv"),
   clinical: resolve(REPO, "data/processed/skcm_tcga_pan_can_atlas_2018/clin_cleaned.csv"),
+  // Per-line-of-therapy treatment timeline (one row per drug/modality) — richer
+  // than clin_cleaned's flattened TREATMENT_TYPES/TREATMENT_AGENTS columns
+  // because each row keeps its type and agent paired.
+  treatmentTimeline: resolve(REPO, "data/raw/skcm_tcga_pan_can_atlas_2018/data_timeline_treatment.txt"),
   q1: resolve(DASHBOARD, "public/q1_predictions.csv"),
   // Per-patient TCGA response scores from the Q1 workstream (origin/main:
   // data/processed/patient_predicted_response_scores.csv). One ensemble score
@@ -71,6 +76,16 @@ function parseCsv(text) {
 
 function readCsv(path) {
   return parseCsv(readFileSync(path, "utf8"));
+}
+
+/** Plain tab-separated read (the TCGA timeline files carry no quoted fields). */
+function readTsv(path) {
+  const lines = readFileSync(path, "utf8").split("\n").filter((l) => l.length);
+  const header = lines[0].split("\t");
+  return lines.slice(1).map((line) => {
+    const cells = line.split("\t");
+    return Object.fromEntries(header.map((h, i) => [h, (cells[i] ?? "").trim()]));
+  });
 }
 
 /** "" / "NA" / "NaN" → null, else Number. */
@@ -221,6 +236,50 @@ function optimalDose(curve) {
 function normalisedCurve(curve) {
   if (!isInformative(curve)) return null;
   return curve.map((v) => round((v / curve[0]) * 100, 2));
+}
+
+// ---- treatment history -------------------------------------------------------
+// The treatment(s) the patient actually received, from TCGA's per-line-of-therapy
+// timeline (one row per drug/modality, each carrying its own TREATMENT_TYPE), so
+// the UI can show "Targeted Molecular Therapy — Vemurafenib" instead of two
+// unlinked lists a reader has to match up themselves. Only ~46% of the cohort has
+// any lines at all, so callers must handle `recorded: false`.
+
+const CHECKPOINT_AGENTS = new Set(["Ipilimumab", "Pembrolizumab", "Nivolumab"]);
+const TARGETED_AGENTS = new Set(["Vemurafenib", "Dabrafenib", "Trametinib"]);
+const CHEMO_AGENTS = new Set(["Dacarbazine", "Temozolomide"]);
+
+function emptyTreatment() {
+  return { recorded: false, lines: [], checkpointInhibitor: false, targetedTherapy: false, chemotherapy: false, radiation: false };
+}
+
+/** Group the per-line timeline rows into one entry per patient, type-grouped. */
+function buildTreatmentByPatient(rows) {
+  const byPatient = new Map();
+  for (const r of rows) {
+    const pid = r.PATIENT_ID;
+    const type = r.TREATMENT_TYPE?.trim();
+    if (!pid || !type) continue;
+
+    if (!byPatient.has(pid)) byPatient.set(pid, { ...emptyTreatment(), recorded: true });
+    const entry = byPatient.get(pid);
+
+    let line = entry.lines.find((l) => l.type === type);
+    if (!line) {
+      line = { type, agents: [] };
+      entry.lines.push(line);
+    }
+    const agent = r.AGENT?.trim();
+    if (agent && !line.agents.includes(agent)) line.agents.push(agent);
+
+    // The two axes Q3 actually simulates (BRAFi sweep, anti-PD-1 sweep), so a
+    // clinician can see at a glance which arm this patient really received.
+    if (agent && CHECKPOINT_AGENTS.has(agent)) entry.checkpointInhibitor = true;
+    if (agent && TARGETED_AGENTS.has(agent)) entry.targetedTherapy = true;
+    if (agent && CHEMO_AGENTS.has(agent)) entry.chemotherapy = true;
+    if (type === "Radiation Therapy") entry.radiation = true;
+  }
+  return byPatient;
 }
 
 // ---- Q4 heuristics ----------------------------------------------------------
@@ -425,6 +484,13 @@ function main() {
   const checkpointBySample = new Map(checkpoint.map((r) => [r.SAMPLE_ID, r]));
   const clinByPatient = new Map(clinical.map((r) => [r.PATIENT_ID, r]));
 
+  const treatmentByPatient = existsSync(PATHS.treatmentTimeline)
+    ? buildTreatmentByPatient(readTsv(PATHS.treatmentTimeline))
+    : new Map();
+  if (!treatmentByPatient.size) {
+    console.warn("  note: data_timeline_treatment.txt absent — treatment history will be unrecorded for all");
+  }
+
   const q1Csv = existsSync(PATHS.q1) ? readCsv(PATHS.q1) : [];
   const { byPatient: q1FromInfer, validation: q1Validation } = buildQ1(q1Csv);
   if (!q1Csv.length) console.warn("  note: public/q1_predictions.csv absent — q1 will be null");
@@ -476,6 +542,7 @@ function main() {
       antipd1Reduction: round(reduction(antipd1Curve)),
       brafiOptimalDose: optimalDose(brafiCurve),
       antipd1OptimalDose: optimalDose(antipd1Curve),
+      treatment: treatmentByPatient.get(t.PATIENT_ID) ?? emptyTreatment(),
     });
   }
   if (missingCheckpoint) {

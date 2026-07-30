@@ -1,4 +1,4 @@
-import { IdCard, Dna, Microscope } from "lucide-react";
+import { IdCard, Dna, Microscope, Syringe } from "lucide-react";
 import type { CohortPatient } from "../data/cohort";
 import { pdl1Band } from "../data/cohort";
 import { Panel, Pill } from "./ui";
@@ -23,6 +23,15 @@ function Field({ label, value, muted }: { label: string; value: string; muted?: 
       </div>
     </div>
   );
+}
+
+const CHECKPOINT_AGENTS = new Set(["Ipilimumab", "Pembrolizumab", "Nivolumab"]);
+const TARGETED_AGENTS = new Set(["Vemurafenib", "Dabrafenib", "Trametinib"]);
+
+function agentTone(agent: string): "teal" | "blue" | "neutral" {
+  if (CHECKPOINT_AGENTS.has(agent)) return "teal";
+  if (TARGETED_AGENTS.has(agent)) return "blue";
+  return "neutral";
 }
 
 export default function PatientPassport({
@@ -86,6 +95,64 @@ export default function PatientPassport({
           muted={patient.tmb === null}
         />
         <Field label="MAPK driven" value={patient.mapkDriven ? "Yes" : "No"} />
+      </div>
+
+      <div className="mt-4 border-t border-clinical-border pt-3.5">
+        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-clinical-muted">
+          <Syringe size={11} /> Treatment received
+        </div>
+        {patient.treatment.recorded ? (
+          <>
+            <div className="mt-1.5 flex flex-col gap-2">
+              {patient.treatment.lines.map((line) => (
+                <div key={line.type}>
+                  <div className="text-[11.5px] font-bold text-clinical-ink">{line.type}</div>
+                  {line.agents.length ? (
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {line.agents.map((a) => (
+                        <Pill key={a} tone={agentTone(a)}>
+                          {a}
+                        </Pill>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-1 text-[11px] text-clinical-muted">Agent not specified</div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {(patient.treatment.checkpointInhibitor || patient.treatment.targetedTherapy) && (
+              <p className="mt-2 text-[11.5px] leading-snug text-clinical-muted">
+                This patient actually received{" "}
+                {patient.treatment.targetedTherapy && patient.treatment.checkpointInhibitor
+                  ? "both a BRAF/MEK inhibitor and a checkpoint inhibitor"
+                  : patient.treatment.targetedTherapy
+                    ? "a BRAF/MEK inhibitor"
+                    : "a checkpoint inhibitor"}{" "}
+                — directly comparable to the {patient.treatment.targetedTherapy && patient.treatment.checkpointInhibitor
+                  ? "BRAFi and anti-PD-1 arms"
+                  : patient.treatment.targetedTherapy
+                    ? "BRAFi arm"
+                    : "anti-PD-1 arm"}{" "}
+                the Q3 twin simulates below.
+              </p>
+            )}
+            {!patient.treatment.checkpointInhibitor &&
+              !patient.treatment.targetedTherapy &&
+              (patient.treatment.chemotherapy || patient.treatment.radiation) && (
+                <p className="mt-2 text-[11.5px] leading-snug text-clinical-muted">
+                  Chemotherapy and radiotherapy are not modelled by any method here — no ODE arm exists
+                  for either. In melanoma today both are largely palliative or adjuvant, not
+                  survival-directed the way checkpoint or BRAF/MEK blockade is, so this is shown as
+                  historical record only, not a comparator for the twin.
+                </p>
+              )}
+          </>
+        ) : (
+          <div className="tabular mt-1 text-[13.5px] font-bold leading-tight text-clinical-muted">
+            Not recorded
+          </div>
+        )}
       </div>
 
       <p className="mt-4 border-t border-clinical-border pt-3 text-[11.5px] leading-snug text-clinical-muted">

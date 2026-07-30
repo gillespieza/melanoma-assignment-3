@@ -96,6 +96,7 @@ generated file, `public/cohort.json`, built by `scripts/build_cohort.mjs` from:
 | `q3-ode-model/outputs/results/tumour_burden_simulations.csv` | BRAF-inhibitor dose sweep |
 | `q3-ode-model/outputs/results/checkpoint_tumour_simulations.csv` | Anti-PD-1 sweep, CD274, PDCD1 |
 | `data/processed/skcm_tcga_pan_can_atlas_2018/clin_cleaned.csv` | Age, sex, stage, TMB, survival |
+| `data/raw/skcm_tcga_pan_can_atlas_2018/data_timeline_treatment.txt` | Treatment received, type-paired with agent |
 | `public/q1_predictions.csv` | Q1 per-model + ensemble probabilities (trial cohorts) |
 | `public/q1_tcga_scores.csv` | Q1 per-patient TCGA response scores (from `origin/main`) |
 | `q3-ode-model/outputs/results/survival_summary.txt` | KM medians (in `src/data/model.ts`) |
@@ -127,6 +128,15 @@ Being precise about this matters more than the numbers looking good:
    numerically-zero tumour compartment. That is *not* drug resistance — the model has
    nothing to say — so those patients are flagged rather than shown as 0% response, and
    the agreement badge reports "single method" instead of inventing a comparison.
+3. **Treatment received is recorded for only 197/421 patients (47%), and it is
+   completeness-by-institution, not random dropout** — TCGA's follow-up treatment
+   fields were optional per submitting site, so some tissue-source sites report it for
+   every patient and others (e.g. site `BF`, 14 patients) report it for none. Where
+   present, chemotherapy and radiotherapy are shown for historical context only — no
+   ODE arm exists for either, and modern melanoma use of both is largely
+   palliative/adjuvant rather than survival-directed. Only checkpoint-inhibitor and
+   BRAF/MEK-inhibitor agents are captioned as comparable to the Q3 twin's simulated
+   arms, because those are the only two the twin actually models.
 
 ## Project structure
 

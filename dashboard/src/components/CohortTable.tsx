@@ -103,6 +103,7 @@ export default function CohortTable({
   const [braf, setBraf] = useState("all");
   const [pdl1, setPdl1] = useState("all");
   const [agreement, setAgreement] = useState("all");
+  const [treatment, setTreatment] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [descending, setDescending] = useState(false);
   const [limit, setLimit] = useState(50);
@@ -114,6 +115,8 @@ export default function CohortTable({
       if (braf !== "all" && (braf === "mut" ? patient.braf === "WT" : patient.braf !== "WT")) return false;
       if (pdl1 !== "all" && pdl1Band(patient.pdl1Pct) !== pdl1) return false;
       if (agreement !== "all" && a !== agreement) return false;
+      if (treatment === "recorded" && !patient.treatment.recorded) return false;
+      if (treatment === "unrecorded" && patient.treatment.recorded) return false;
       return true;
     });
 
@@ -134,16 +137,18 @@ export default function CohortTable({
       const cmp = typeof av === "string" ? av.localeCompare(bv as string) : (av as number) - (bv as number);
       return descending ? -cmp : cmp;
     });
-  }, [rows, query, braf, pdl1, agreement, sortKey, descending]);
+  }, [rows, query, braf, pdl1, agreement, treatment, sortKey, descending]);
 
   const visible = filtered.slice(0, limit);
-  const hasFilters = query !== "" || braf !== "all" || pdl1 !== "all" || agreement !== "all";
+  const hasFilters =
+    query !== "" || braf !== "all" || pdl1 !== "all" || agreement !== "all" || treatment !== "all";
 
   const reset = () => {
     setQuery("");
     setBraf("all");
     setPdl1("all");
     setAgreement("all");
+    setTreatment("all");
   };
 
   return (
@@ -203,6 +208,16 @@ export default function CohortTable({
             { value: "partial", label: "Partial" },
             { value: "discordant", label: "Discordant" },
             { value: "unavailable", label: "Single method" },
+          ]}
+        />
+        <Select
+          label="Treatment"
+          value={treatment}
+          onChange={setTreatment}
+          options={[
+            { value: "all", label: "All" },
+            { value: "recorded", label: "Recorded" },
+            { value: "unrecorded", label: "Not recorded" },
           ]}
         />
         <Select
