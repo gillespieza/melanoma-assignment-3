@@ -12,12 +12,6 @@ Dabrafenib and PLX-4720 were used as the two BRAF-inhibitor proxies for the core
 
 ## Model performance across five drugs
 
-| Drug | Drug class | Cell lines | Correlation (predicted vs actual viability) |
-|---|---|---|---|
-| Dacarbazine | Chemotherapy | 24 | 0.797 |
-| Dabrafenib | BRAF inhibitor | 37 | 0.751 |
-## Model performance across five drugs
-
 | Drug | Drug class | Cell lines | Test-set actual viability range | Correlation (r) |
 |---|---|---|---|---|
 | Dacarbazine | Chemotherapy | 24 | 0.954 – 0.984 (0.03) | 0.797 |
