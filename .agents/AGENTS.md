@@ -28,7 +28,7 @@ Whenever generating plots, figures, web artifacts, or presentation reports for t
 - **Immune Hot**: `#D55E00` (Crimson / Vermillion Red)
 - **Immune Cold**: `#0072B2` (Okabe-Ito Blue)
 - **Immunosuppressive M2-High**: `#CC79A7` (Okabe-Ito Reddish Purple)
-- **Mutant-Driven**: `#E69F00` (Okabe-Ito Orange)
+- **Mutant-Driven**: `#F0E442` (Okabe-Ito Yellow)
 
 ---
 

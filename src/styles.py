@@ -37,15 +37,30 @@ DRIVER_PALETTE = {
 
 # Biological Phenotype Subtype Mappings (Okabe-Ito Scientific Standards)
 PHENOTYPE_PALETTE = {
-    "Immune Hot": "#D55E00",                                                      # Crimson Red (Hot Inflamed)
+    "Immune Hot": "#D55E00",                                                               # Crimson Red (Hot Inflamed)
     "Immune Hot (High TIS & CYT, Inflamed Microenvironment)": "#D55E00",
-    "Immune Cold": "#0072B2",                                                     # Okabe-Ito Blue (Cold / Excluded)
+    "Immune Cold": "#0072B2",                                                              # Okabe-Ito Blue (Cold / Excluded)
     "Immune Cold (Low TIS & Infiltration, Desert)": "#0072B2",
-    "Immunosuppressive M2-High": "#CC79A7",                                        # Reddish Purple (M2 Macrophage)
+    "Immunosuppressive M2-High": "#CC79A7",                                                # Reddish Purple (M2 Macrophage)
+    "Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion)": "#CC79A7",
     "M2 Immunosuppressive": "#CC79A7",
     "M2 Immunosuppressive (High M2 Macrophages & CAFs)": "#CC79A7",
-    "Mutant-Driven": "#E69F00",                                                   # Orange (MAPK Mutation Driven)
+    "Mutant-Driven": "#F0E442",                                                            # Okabe-Ito Yellow (MAPK Mutation Driven)
+    "Mutant-Driven (NF1 Loss & High Response Subtype)": "#F0E442",
 }
+
+
+def get_phenotype_color(label: str) -> str:
+    """Resolve color for a phenotype label string (handles base name or full descriptive label)."""
+    if not isinstance(label, str):
+        return "#37474F"
+    if label in PHENOTYPE_PALETTE:
+        return PHENOTYPE_PALETTE[label]
+    for key, color in PHENOTYPE_PALETTE.items():
+        if key in label:
+            return color
+    return "#37474F"
+
 
 # Full ordered Okabe-Ito palette list for generic sequential categorical encoding
 OKABE_ITO = [
