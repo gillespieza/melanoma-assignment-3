@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-4
   - q5
-created: 2026-07-30 14:27
+created: 2026-07-30 17:35
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-30 14:27
+updated: 2026-07-30 17:35
 ---
 
 ## 4. Phase 4: Phenotype Characterisation & Q3 ODE Digital Twin Dynamics
@@ -40,8 +40,8 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 
 > [!INFO] Figure Interpretation: Biomarker Z-Score Fingerprints
 > - **What this plot shows**: Standardized Z-scores across core microenvironment signatures (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`) for all four patient clusters.
-> - **Colour Key**: *Mutant-Driven* — **orange** | *Immune Cold* — **blue** | *Immune Hot* — **vermillion** | *M2 Immunosuppressive* — **reddish purple**.
-> - **Subtype Profiles**: *Immune Hot* (vermillion) displays the highest Z-scores across inflammatory markers (`TIS`, `CYT`, `CD8_T_cells`), consistent with an active cytotoxic microenvironment. *Mutant-Driven* (orange) shows elevated TIS relative to the Cold subtype but is dominated by driver mutation burden. *M2 Immunosuppressive* (reddish purple) exhibits elevated `M2_Macrophages` and `CAFs` stromal scores, reflecting immunosuppressive exclusion. *Immune Cold* (blue) displays deeply suppressed Z-scores across all microenvironmental signatures.
+> - **Colour Key**: *Mutant-Driven* — **yellow** | *Immune Cold* — **blue** | *Immune Hot* — **vermillion** | *M2 Immunosuppressive* — **reddish purple**.
+> - **Subtype Profiles**: *Immune Hot* (vermillion) displays the highest Z-scores across inflammatory markers (`TIS`, `CYT`, `CD8_T_cells`), consistent with an active cytotoxic microenvironment. *Mutant-Driven* (yellow) shows elevated TIS relative to the Cold subtype but is dominated by driver mutation burden. *M2 Immunosuppressive* (reddish purple) exhibits elevated `M2_Macrophages` and `CAFs` stromal scores, reflecting immunosuppressive exclusion. *Immune Cold* (blue) displays deeply suppressed Z-scores across all microenvironmental signatures.
 
 ### Mechanistic Q3 ODE Tumour Volume Trajectories T(t)
 

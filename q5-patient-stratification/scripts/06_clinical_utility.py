@@ -32,7 +32,7 @@ for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
         break
 
 if str(SUBPROJECT_ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(SUBPROJECT_ROOT / "src"))
+    sys.path.append(str(SUBPROJECT_ROOT / "src"))
 
 # ---------------------------------------------------------------------------
 # Project Imports
@@ -60,7 +60,7 @@ INPUT_FILE = PROCESSED_DIR / "q5" / "patient_clusters.csv"
 OUTPUT_DIR = PROCESSED_DIR / "q5"
 MODELS_DIR = SUBPROJECT_ROOT / "models"
 PLOTS_DIR = SUBPROJECT_ROOT / "plots" / "clinical_utility"
-REPORTS_DIR = PROJECT_ROOT / "reports" / "q5_phases"
+REPORTS_DIR = SUBPROJECT_ROOT / "reports" / "q5_phases"
 
 set_presentation_style()
 

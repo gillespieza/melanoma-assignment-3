@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-6
   - q5
-created: 2026-07-30 14:27
+created: 2026-07-30 17:35
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-30 14:27
+updated: 2026-07-30 17:35
 ---
 
 ## 6. Phase 6: Clinical Utility & Decision Curve Analysis
@@ -28,7 +28,7 @@ Phase 6 quantifies real-world clinical utility across $N = 195$ patients (82 obj
 
 $$\text{Net Benefit}(p_t) = \frac{\text{True Positives}}{N} - \left( \frac{\text{False Positives}}{N} \right) \times \left( \frac{p_t}{1 - p_t} \right)$$
 
-At a decision threshold of $p_t = 0.30$, the Q5 Phenotype-Stratified system achieves a Net Benefit of **0.198**, outperforming empirical 'Treat All' (**0.184**), global Q1 prediction (**0.356**), and single-gene `CD274` (PD-L1+) biomarker selection (**0.172**). The Number Needed to Treat (NNT) is reduced to **2.06** versus **2.38** under 'Treat All' (an improvement of 13.4%), sparing **41** non-responders from unnecessary toxicity.
+At a decision threshold of $p_t = 0.30$, the Q5 Phenotype-Stratified system achieves a Net Benefit of **0.201**, outperforming empirical 'Treat All' (**0.184**), global Q1 prediction (**0.360**), and single-gene `CD274` (PD-L1+) biomarker selection (**0.172**). The Number Needed to Treat (NNT) is reduced to **2.01** versus **2.38** under 'Treat All' (an improvement of 15.3%), sparing **45** non-responders from unnecessary toxicity.
 
 
 ![Decision Curve Analysis (DCA): Net Benefit across threshold probabilities for all strategies.](q5-patient-stratification/plots/clinical_utility/dca_curves.png)
@@ -53,8 +53,8 @@ At a decision threshold of $p_t = 0.30$, the Q5 Phenotype-Stratified system achi
 >   1. **Positive Predictive Value (PPV, Left Panel)**: Higher bars are better. PPV indicates the proportion of treated patients who achieve objective response. Under empirical 'Treat All', PPV equals the baseline population response rate ($42.1\%$). Model-guided strategies increase PPV by filtering out predicted non-responders.
 >   2. **Number Needed to Treat (NNT, Right Panel)**: Lower bars are better. An unselected 'Treat All' strategy requires treating $2.38$ patients to achieve $1$ response. A lower NNT indicates greater therapeutic efficiency, minimising unhelpful drug exposure.
 > - **Key Takeaways**:
->   - **Superior Clinical Efficiency**: At $p_t = 0.30$, the Q5 Phenotype-Stratified system reduces NNT to **2.06** (vs **2.38** for Treat All), achieving a **13.4\% improvement** in treatment efficiency.
->   - **Enhanced Precision**: The Q5 system increases PPV to **48.6\%** (vs **42.1\%** for Treat All), ensuring a higher proportion of treated patients derive true clinical benefit.
+>   - **Superior Clinical Efficiency**: At $p_t = 0.30$, the Q5 Phenotype-Stratified system reduces NNT to **2.01** (vs **2.38** for Treat All), achieving a **15.3\% improvement** in treatment efficiency.
+>   - **Enhanced Precision**: The Q5 system increases PPV to **49.6\%** (vs **42.1\%** for Treat All), ensuring a higher proportion of treated patients derive true clinical benefit.
 >   - **Clinical Decision Impact**: Higher decision thresholds ($p_t = 0.50$) further optimise precision and reduce NNT, allowing clinicians to tailor treatment aggressiveness to individual patient risk profiles.
 
 
@@ -100,9 +100,9 @@ At a decision threshold of $p_t = 0.30$, the Q5 Phenotype-Stratified system achi
 > Phase 6 establishes that the Q5 Phenotype-Stratified Decision System translates classification performance into direct clinical utility. Across Decision Curve Analysis (DCA), NNT reduction, PPV enhancement, and toxicity avoidance, multi-feature biological stratification demonstrates clear decision-support superiority over both empirical treatment ('Treat All') and single-gene biomarker benchmarks (`CD274` / PD-L1+ and `TMB_NONSYNONYMOUS`).
 
 #### Core Analytical Milestones Achieved
-1. **Net Clinical Gain**: At a standard decision threshold of $p_t = 0.30$, the Q5 decision framework achieves a Net Benefit of **0.198**, outperforming empirical 'Treat All' (**0.184**) and single-gene `CD274` selection (**0.172**).
-2. **Therapeutic Efficiency**: Reduces the Number Needed to Treat (NNT) to achieve one objective response from **2.38** to **2.06** at $p_t = 0.30$, representing a **13.4%** reduction in futile treatment exposure.
-3. **Toxicity Sparing & Safety**: Successfully identifies and spares **41** predicted non-responders from futile anti-PD-1 monotherapy, protecting patients from severe immune-related adverse events (irAEs) with no loss of treatment efficacy.
+1. **Net Clinical Gain**: At a standard decision threshold of $p_t = 0.30$, the Q5 decision framework achieves a Net Benefit of **0.201**, outperforming empirical 'Treat All' (**0.184**) and single-gene `CD274` selection (**0.172**).
+2. **Therapeutic Efficiency**: Reduces the Number Needed to Treat (NNT) to achieve one objective response from **2.38** to **2.01** at $p_t = 0.30$, representing a **15.3%** reduction in futile treatment exposure.
+3. **Toxicity Sparing & Safety**: Successfully identifies and spares **45** predicted non-responders from futile anti-PD-1 monotherapy, protecting patients from severe immune-related adverse events (irAEs) with no loss of treatment efficacy.
 4. **Subgroup Decision Logic**: Confirms that biologically resistant microenvironments (*Immune Cold* and *M2 Immunosuppressive*) require conservative gating away from monotherapy and routing into alternative treatment modalities.
 
 #### Translation to Multi-Arm Decision Engine (Phase 7)

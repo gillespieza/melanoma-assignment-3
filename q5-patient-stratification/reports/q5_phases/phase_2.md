@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-2
   - q5
-created: 2026-07-30 14:27
+created: 2026-07-30 17:35
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-30 14:27
+updated: 2026-07-30 17:35
 ---
 
 ## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds (N = 326)
@@ -51,11 +51,11 @@ Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
 > - **Modest Standalone Accuracy (AUC $\approx 0.58$)**: Single biomarkers (`TIS`, `CYT`, `CD8_T_cells`) achieve modest predictive accuracy ($58\%$) because immunotherapy resistance is multi-factorial—a single gene or cell type misses stromal exclusion (CAFs) and M2 macrophage immunosuppression.
 > - **Core Motivation for Question 5**: This modest univariate performance proves why rigid single-biomarker tests fail in clinical practice and establishes the essential rationale for **Phase 3 (Unsupervised Multidimensional Clustering)** and **Phase 7 (Multi-Arm Decision Trees)**.
 
-### Genomic Synergy: TIS x `BRAF` Interaction Analysis
+### Genomic Synergy: TIS x BRAF Interaction Analysis
 
-![Genomic Interaction TIS x `BRAF`](q5-patient-stratification/plots/feature_analysis/genomic_interaction_tis_braf.png)
+![Genomic Interaction TIS x BRAF](q5-patient-stratification/plots/feature_analysis/genomic_interaction_tis_braf.png)
 
-> [!INFO] Rationale: Why TIS x `BRAF` Was Selected as Primary Benchmark
+> [!INFO] Rationale: Why TIS x BRAF Was Selected as Primary Benchmark
 > - **FDA-Investigational Benchmark**: `TIS` (Tumour Inflammation Signature, Ayers et al.) represents the clinical gold-standard 18-gene IFN-gamma responsive score evaluated across anti-PD-1 clinical trials.
 > - **Clinical Class Trial Anchor**: `BRAF` V600 is the primary oncogenic driver mutation in ~40-50% of cutaneous melanomas. In clinical oncology, `BRAF` mutation status dictates whether a patient receives Targeted Therapy (Dabrafenib/Trametinib) vs Immunotherapy (anti-PD-1).
 > - **Primary Benchmark**: Testing `TIS` $\times$ `BRAF` provides the primary benchmark for whether oncogenic MAPK activation dampens T-cell inflammation before expanding to all 21 driver $\times$ signature permutations below.
@@ -70,7 +70,7 @@ Phase 2 evaluates biomarker discriminative power across $N = 326$ patients:
 > - **`NF1` x `M1_M2_Ratio` Synergy ($\beta = +0.94$)**: `NF1` mutated melanoma displays the highest positive effect size with macrophage polarisation (`M1_M2_Ratio`), demonstrating that pro-inflammatory myeloid reprogramming strongly enhances response in high-TMB `NF1` loss tumours.
 > - **Clinical Utility**: Provides the mathematical foundation for multi-dimensional patient clustering (Phase 3) and multi-arm treatment routing (Phase 7).
 
-> [!INSIGHT] Analytical Validation: Heatmap Confirms Primary Focus on TIS x `BRAF`
+> [!INSIGHT] Analytical Validation: Heatmap Confirms Primary Focus on TIS x BRAF
 > - **Validation of Initial Hypothesis**: The comprehensive $21$-permutation interaction matrix confirms that `TIS` $\times$ `BRAF` ($\beta = -0.65, p = 0.040$) is indeed the single statistically significant driver-microenvironment interaction ($p < 0.05$), validating our initial analytical focus on this key biomarker pair.
 > - **Borderline Cells Highlight `BRAF` Again**: Furthermore, every single borderline significant interaction ($p < 0.10$) occurs exclusively within the `BRAF` column across all major lymphocytic markers: `BRAF` $\times$ `IFN_gamma` ($\beta = -0.57, p = 0.064$), `BRAF` $\times$ `B_cells` ($\beta = -0.63, p = 0.073$), and `BRAF` $\times$ `CD8_T_cells` ($\beta = -0.57, p = 0.074$). This repeatedly points to `BRAF` oncogenic signalling as the dominant genomic modifier of microenvironmental immunity.
 

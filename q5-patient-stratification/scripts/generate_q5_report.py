@@ -117,6 +117,9 @@ def main() -> None:
     # Calculate live metadata numbers on the fly
     n_patients = len(df_feat) if not df_feat.empty else 0
     n_features = df_feat.shape[1] if not df_feat.empty else 0
+    # Full cohort used for Phase 3 clustering (N=699) — distinct from the ICI-only
+    # feature matrix (N=326) used for Phases 1, 2, 5, 6 response-label analyses.
+    n_patients_full = len(df_clusters) if not df_clusters.empty else n_patients
 
     if EXPR_FILE.exists():
         n_genes = len(pd.read_csv(EXPR_FILE, nrows=1).columns) - 1
@@ -175,11 +178,22 @@ def main() -> None:
             question="What baseline immune and microenvironmental features best capture the state of tumour-infiltrating lymphocytes and immunosuppressive stroma?",
         )
     )
+    STV_FILE = PROJECT_ROOT / "data" / "config" / "m1_m2_stv.csv"
+    if STV_FILE.exists():
+        n_stv_genes = len(pd.read_csv(STV_FILE))
+    else:
+        n_stv_genes = 14837
+
+    if not df_feat.empty and "COHORT" in df_feat.columns:
+        n_cohorts = df_feat["COHORT"].nunique()
+    else:
+        n_cohorts = 4
+
     doc_sections.append(
-        f"Phase 1 integrates harmonised data from four clinical trials (*Liu 2019*, *Riaz 2017*, *Hugo 2016*, *TCGA-SKCM*). "
+        f"Phase 1 integrates harmonised data from {n_cohorts} clinical trials (*Liu 2019*, *Riaz 2017*, *Hugo 2016*, *TCGA-SKCM*). "
         f"Rather than evaluating {n_genes:,} genes independently, Phase 1 projects expression profiles onto curated biological axes:\n"
-        f"- **Core Immune Signatures**: Tumour Inflammation Signature (`TIS`), Cytolytic Index (`CYT`, mean of `PRF1` and `GZMA`), Interferon-gamma (`IFN_gamma`), and `CD274` (PD-L1) expression.\n"
-        f"- **Macrophage STV (`M1_M2_Ratio`)**: Computed using a linear Signature Transcript Vector ($W_g$, 14,837 genes) to quantify the balance between pro-inflammatory M1 macrophages ($W_g > 0$) and pro-tumour M2 macrophages ($W_g < 0$).\n"
+        f"- **Core Immune Signatures**: Tumour Inflammation Signature (`TIS`), Cytolytic Index (`CYT`, mean of `PRF1` and `GZMA`), Interferon-gamma (`IFN_gamma`), and `CD274` (`PD-L1`) expression.\n"
+        f"- **Macrophage STV (`M1_M2_Ratio`)**: Computed using a linear Signature Transcript Vector ($W_g$, {n_stv_genes:,} genes) to quantify the balance between pro-inflammatory M1 macrophages ($W_g > 0$) and pro-tumour M2 macrophages ($W_g < 0$).\n"
         f"- **Transcriptomic Deconvolution**: Marker-based signature scores estimating the relative abundance of CD8+ T cells, CD4+ T cells, NK cells, B cells, M1 Macrophages, M2 Macrophages, and Cancer-Associated Fibroblasts (CAFs).\n"
     )
 
@@ -303,7 +317,7 @@ def main() -> None:
     )
 
     # Section 3: Phase 3 Unsupervised Phenotype Stratification
-    doc_sections.append(f"## 3. Phase 3: Unsupervised Phenotype Stratification (N = {n_patients})\n")
+    doc_sections.append(f"## 3. Phase 3: Unsupervised Phenotype Stratification (N = {n_patients_full})\n")
     doc_sections.append(
         build_section_callout(
             what="Applying K-Means clustering ($K=4$) to feature matrices and generating 2D Principal Component projections.",
@@ -339,7 +353,7 @@ def main() -> None:
         doc_sections.append(f"![Unsupervised Patient Phenotype Clusters PCA]({rel_img})\n")
         doc_sections.append(
             "> [!INFO] Figure Interpretation: 2D Principal Component Cluster Projection\n"
-            f"> - **What this plot shows**: 2D Principal Component Projection of $N = {n_patients}$ patients colour-coded by their multi-modal K-Means phenotype cluster ($K=4$). Shaded confidence ellipses mark cluster boundaries.\n"
+            f"> - **What this plot shows**: 2D Principal Component Projection of $N = {n_patients_full}$ patients colour-coded by their multi-modal K-Means phenotype cluster ($K=4$). Shaded confidence ellipses mark cluster boundaries.\n"
             "> - **Axis 1 (Horizontal)**: Principal Component 1 captures immune activation and lymphocytic T-cell density (separating Inflamed Hot vs Desert Cold tumours).\n"
             "> - **Axis 2 (Vertical)**: Principal Component 2 captures macrophage polarisation (M1/M2 ratio) and stromal CAF exclusion.\n"
             "> - **Clinical Value**: Discovers discrete patient subgroups with distinct treatment response profiles without relying on biased outcome labels.\n"
@@ -347,14 +361,15 @@ def main() -> None:
 
     if PHASE3_UMAP_PLOT_PATH.exists():
         rel_img_umap = rel_path(PHASE3_UMAP_PLOT_PATH)
-        doc_sections.append("### Unsupervised Phenotype Manifold (UMAP Projection)\n")
-        doc_sections.append(f"![Unsupervised Patient Phenotype Clusters UMAP]({rel_img_umap})\n")
+        doc_sections.append("### Unsupervised Phenotype Manifold (t-SNE Projection)\n")
+        doc_sections.append(f"![Unsupervised Patient Phenotype Clusters t-SNE]({rel_img_umap})\n")
         doc_sections.append(
-            "> [!INFO] Figure Interpretation: Non-Linear UMAP Cluster Manifold\n"
-            f"> - **What this plot shows**: 2D UMAP non-linear manifold projection of the 9-feature patient space ($N = {n_patients}$), "
+            "> [!INFO] Figure Interpretation: Non-Linear t-SNE Cluster Manifold\n"
+            f"> - **What this plot shows**: 2D t-SNE non-linear manifold projection of the 9-feature patient space ($N = {n_patients_full}$), "
             "colour-coded by the K-Means cluster labels assigned in full 9-dimensional feature space.\n"
-            "> - **Non-Linear Topology**: Preserves local patient neighbourhood structure and non-linear biomarker interactions "
-            "across the 9 multi-modal clustering features (TIS, CYT, CD8 T-cells, M1/M2 Macrophages, CAFs, BRAF/NRAS/NF1 mutations).\n"
+            "> - **Non-Linear Topology**: t-SNE (perplexity=50) preserves local patient neighbourhood structure and non-linear biomarker interactions "
+            "across the 9 multi-modal clustering features (`TIS`, `CYT`, CD8 T-cells, M1/M2 Macrophages, CAFs, `BRAF`/`NRAS`/`NF1` mutations). "
+            "Natural within-cluster scatter reflects genuine continuous variation within each immune phenotype.\n"
         )
 
     # Dynamic plain-language takeaways
@@ -363,21 +378,21 @@ def main() -> None:
         cluster_rrs = df_clusters.groupby("Cluster_ID")["RESPONSE_BINARY"].mean() * 100
         best_cid = cluster_rrs.idxmax()
         worst_cid = cluster_rrs.idxmin()
-        best_name = df_clusters[df_clusters["Cluster_ID"] == best_cid]["Phenotype_Label"].iloc[0].split("(")[0].strip()
-        worst_name = df_clusters[df_clusters["Cluster_ID"] == worst_cid]["Phenotype_Label"].iloc[0].split("(")[0].strip()
+        best_name = df_clusters[df_clusters["Cluster_ID"] == best_cid]["Phenotype_Label"].iloc[0].strip()
+        worst_name = df_clusters[df_clusters["Cluster_ID"] == worst_cid]["Phenotype_Label"].iloc[0].strip()
         best_rr_val = cluster_rrs[best_cid]
         worst_rr_val = cluster_rrs[worst_cid]
 
         doc_sections.append(
             "### Key Takeaways & Student Summary\n"
-            f"- **Distinct Patient Groups**: K-Means clustering splits the $N = {n_patients}$ cohort into four clear biological subgroups with response rates ranging from **{worst_rr_val:.1f}% to {best_rr_val:.1f}%**.\n"
+            f"- **Distinct Patient Groups**: K-Means clustering partitioned $N = {n_patients_full}$ patients (full cohort) into four biological subgroups; within the ICI-treated sub-cohort ($N = {n_patients}$), response rates range from **{worst_rr_val:.1f}% to {best_rr_val:.1f}%**.\n"
             f"- **Highest Response Group**: The **{best_name}** subgroup achieves the highest response rate ({best_rr_val:.1f}%), benefiting from favorable immune activation and high driver mutation burden.\n"
             f"- **Treatment-Resistant Subgroup**: The **{worst_name}** subgroup exhibits the lowest response rate ({worst_rr_val:.1f}%), highlighting the need for targeted combination therapies beyond single-agent PD-1 blockade.\n\n"
             "> [!NOTE] Student-Friendly Phase 3 Summary\n"
             "> Phase 3 performed unsupervised multi-dimensional clustering to discover natural biological patient subgroups without relying on outcome labels:\n"
-            "> 1. **Four Distinct Phenotypes**: K-Means clustering ($K=4$) partitioned patients into *Immune Hot*, *Immune Cold*, *M2 Immunosuppressive*, and *Mutant-Driven* phenotypes across 9 biomarker axes.\n"
+            "> 1. **Four Distinct Phenotypes**: K-Means clustering ($K=4$) partitioned patients into *Immune Hot (High TIS & CYT, Inflamed Microenvironment)*, *Immune Cold (Low TIS & Infiltration, Desert)*, *Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion)*, and *Mutant-Driven (NF1 Loss & High Response Subtype)* phenotypes across 9 biomarker axes.\n"
             "> 2. **Wide Response Rate Divergence**: Clinical response rates varied markedly across clusters, demonstrating that unselected cohort averages mask distinct biological subgroups.\n"
-            "> 3. **Dimensionality Projections**: 2D PCA and non-linear UMAP projections confirm clear spatial separation, with PC1 capturing T-cell inflammation and PC2 capturing myeloid/stromal exclusion.\n"
+            "> 3. **Dimensionality Projections**: 2D PCA and non-linear t-SNE projections confirm clear spatial separation, with PC1 capturing T-cell inflammation and PC2 capturing myeloid/stromal exclusion.\n"
             "> 4. **Clinical Takeaway**: Identifying a patient's biological phenotype provides the foundation for targeted routing rather than applying a single uniform treatment protocol.\n"
         )
     else:
@@ -387,9 +402,9 @@ def main() -> None:
             "- **Subgroup Sensitivity**: Response rates vary significantly across immune hot, immune cold, and driver-mutated phenotypes.\n\n"
             "> [!NOTE] Student-Friendly Phase 3 Summary\n"
             "> Phase 3 performed unsupervised multi-dimensional clustering to discover natural biological patient subgroups without relying on outcome labels:\n"
-            "> 1. **Four Distinct Phenotypes**: K-Means clustering ($K=4$) partitioned patients into *Immune Hot*, *Immune Cold*, *M2 Immunosuppressive*, and *Mutant-Driven* phenotypes across 9 biomarker axes.\n"
+            "> 1. **Four Distinct Phenotypes**: K-Means clustering ($K=4$) partitioned patients into *Immune Hot (High TIS & CYT, Inflamed Microenvironment)*, *Immune Cold (Low TIS & Infiltration, Desert)*, *Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion)*, and *Mutant-Driven (NF1 Loss & High Response Subtype)* phenotypes across 9 biomarker axes.\n"
             "> 2. **Wide Response Rate Divergence**: Clinical response rates varied markedly across clusters, demonstrating that unselected cohort averages mask distinct biological subgroups.\n"
-            "> 3. **Dimensionality Projections**: 2D PCA and non-linear UMAP projections confirm clear spatial separation, with PC1 capturing T-cell inflammation and PC2 capturing myeloid/stromal exclusion.\n"
+            "> 3. **Dimensionality Projections**: 2D PCA and non-linear t-SNE projections confirm clear spatial separation, with PC1 capturing T-cell inflammation and PC2 capturing myeloid/stromal exclusion.\n"
             "> 4. **Clinical Takeaway**: Identifying a patient's biological phenotype provides the foundation for targeted routing rather than applying a single uniform treatment protocol.\n"
         )
 
@@ -421,8 +436,8 @@ def main() -> None:
         doc_sections.append(
             "> [!INFO] Figure Interpretation: Biomarker Z-Score Fingerprints\n"
             "> - **What this plot shows**: Standardized Z-scores across core microenvironment signatures (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`) for all four patient clusters.\n"
-            "> - **Colour Key**: *Mutant-Driven* — **orange** | *Immune Cold* — **blue** | *Immune Hot* — **vermillion** | *M2 Immunosuppressive* — **reddish purple**.\n"
-            "> - **Subtype Profiles**: *Immune Hot* (vermillion) displays the highest Z-scores across inflammatory markers (`TIS`, `CYT`, `CD8_T_cells`), consistent with an active cytotoxic microenvironment. *Mutant-Driven* (orange) shows elevated TIS relative to the Cold subtype but is dominated by driver mutation burden. *M2 Immunosuppressive* (reddish purple) exhibits elevated `M2_Macrophages` and `CAFs` stromal scores, reflecting immunosuppressive exclusion. *Immune Cold* (blue) displays deeply suppressed Z-scores across all microenvironmental signatures.\n"
+            "> - **Colour Key**: *Mutant-Driven* — **yellow** | *Immune Cold* — **blue** | *Immune Hot* — **vermillion** | *M2 Immunosuppressive* — **reddish purple**.\n"
+            "> - **Subtype Profiles**: *Immune Hot* (vermillion) displays the highest Z-scores across inflammatory markers (`TIS`, `CYT`, `CD8_T_cells`), consistent with an active cytotoxic microenvironment. *Mutant-Driven* (yellow) shows elevated TIS relative to the Cold subtype but is dominated by driver mutation burden. *M2 Immunosuppressive* (reddish purple) exhibits elevated `M2_Macrophages` and `CAFs` stromal scores, reflecting immunosuppressive exclusion. *Immune Cold* (blue) displays deeply suppressed Z-scores across all microenvironmental signatures.\n"
         )
 
     if PHASE4_ODE_PLOT_PATH.exists():
@@ -806,17 +821,13 @@ def main() -> None:
 
         # Per-phenotype mean Treatability Index (derived dynamically from data)
         if "Phenotype_Label" in df_treat.columns and "Treatability_Index" in df_treat.columns:
-            short_pheno = df_treat["Phenotype_Label"].str.split("(").str[0].str.strip()
-            pheno_treat = df_treat.groupby(short_pheno)["Treatability_Index"].mean()
-        elif "Cluster_ID" in df_treat.columns and "Treatability_Index" in df_treat.columns:
-            p_map = {0: "Immune Hot", 1: "Immune Cold", 2: "M2 Immunosuppressive", 3: "Mutant-Driven"}
-            pheno_treat = df_treat.groupby(df_treat["Cluster_ID"].map(p_map))["Treatability_Index"].mean()
+            pheno_treat = df_treat.groupby("Phenotype_Label")["Treatability_Index"].mean()
+            treat_hot  = next((v for k, v in pheno_treat.items() if "Immune Hot" in k), float("nan"))
+            treat_cold = next((v for k, v in pheno_treat.items() if "Immune Cold" in k), float("nan"))
+            treat_m2   = next((v for k, v in pheno_treat.items() if "M2" in k or "Immunosuppressive" in k), float("nan"))
+            treat_mut  = next((v for k, v in pheno_treat.items() if "Mutant" in k), float("nan"))
         else:
-            pheno_treat = pd.Series(dtype=float)
-        treat_hot = pheno_treat.get("Immune Hot", float("nan"))
-        treat_cold = pheno_treat.get("Immune Cold", float("nan"))
-        treat_m2 = pheno_treat.get("M2 Immunosuppressive", pheno_treat.get("Immunosuppressive M2-High", float("nan")))
-        treat_mut = pheno_treat.get("Mutant-Driven", float("nan"))
+            treat_hot, treat_cold, treat_m2, treat_mut = float("nan"), float("nan"), float("nan"), float("nan")
 
         # Q2 mean Dabrafenib sensitivity for Arm B patients
         df_armb = df_treat[df_treat["Treatment_Arm"] == "Arm B: Targeted Therapy"]
