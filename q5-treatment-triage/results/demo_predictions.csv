@@ -1,6 +1,0 @@
-patient_id,subtype,immune_score,immune_status,targeted_pERK_suppression,tumour_burden,burden_status,RECOMMENDATION,rationale
-P1_BRAF_hot,BRAF,1.685,hot,0.535,0.0,low,Immunotherapy first,"BRAF-V600 + immune-hot, low burden: durable IO benefit, targeted in reserve"
-P2_BRAF_cold,BRAF,0.099,cold,0.494,0.26,high,Targeted therapy first,BRAF-V600 + immune-cold: BRAF/MEK inhibitor gives the clearest predicted benefit
-P3_NRAS_hot,NRAS,1.805,hot,0.0,0.0,low,Immunotherapy first,BRAF-wild-type + immune-hot: checkpoint blockade (no targeted option)
-P4_WT_cold,WT,0.069,cold,0.0,0.372,high,Trial / Chemotherapy,BRAF-wild-type + immune-cold: hardest group; trial or chemo fallback
-P5_BRAF_hot_bulk,BRAF,1.342,hot,0.439,0.0,low,Immunotherapy first,"BRAF-V600 + immune-hot, low burden: durable IO benefit, targeted in reserve"
