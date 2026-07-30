@@ -33,7 +33,7 @@ for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
         break
 
 if str(SUBPROJECT_ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(SUBPROJECT_ROOT / "src"))
+    sys.path.append(str(SUBPROJECT_ROOT / "src"))
 
 # ---------------------------------------------------------------------------
 # Project Imports
@@ -53,8 +53,11 @@ LOG_DIR = SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "07_treatability_scoring.log"
 
 INPUT_PATIENTS = PROCESSED_DIR / "q5" / "patient_clusters.csv"
-INPUT_EXPR = PROCESSED_DIR / "merged" / "immunotherapy" / "expr_merged.csv"
-Q2_DABRAFENIB_CSV = PROJECT_ROOT / "q2-viability-predictor" / "important_genes_Dabrafenib.csv"
+# Full cohort expression matrix (N=699) — needed for Q2 Dabrafenib score on all patients
+INPUT_EXPR     = PROCESSED_DIR / "merged" / "full" / "expr_merged.csv"
+# Full cohort clinical file — provides IMMUNOTHERAPY flag for ICI vs prospective split
+INPUT_CLIN_FULL = PROCESSED_DIR / "merged" / "full" / "clin_merged.csv"
+Q2_DABRAFENIB_CSV = PROJECT_ROOT / "q2-viability-predictor" / "outputs" / "important_genes_Dabrafenib.csv"
 
 OUTPUT_DIR = PROCESSED_DIR / "q5"
 PLOTS_DIR = SUBPROJECT_ROOT / "plots" / "treatability"
@@ -75,11 +78,14 @@ PHENOTYPE_SHORT_NAMES: Dict[int, str] = {
 
 def load_q2_dabrafenib_weights() -> Dict[str, float]:
     """Load Q2 LASSO regression gene weights for Dabrafenib sensitivity prediction."""
-    if not Q2_DABRAFENIB_CSV.exists():
+    q2_file = Q2_DABRAFENIB_CSV
+    if not q2_file.exists():
+        q2_file = PROJECT_ROOT / "q2-viability-predictor" / "important_genes_Dabrafenib.csv"
+    if not q2_file.exists():
         print(f"Warning: Q2 Dabrafenib CSV not found at {rel_path(Q2_DABRAFENIB_CSV)}. Using default empty dict.")
         return {}
 
-    df_q2 = pd.read_csv(Q2_DABRAFENIB_CSV)
+    df_q2 = pd.read_csv(q2_file)
     weights = {}
     for _, row in df_q2.iterrows():
         gene_raw = str(row["gene"])
@@ -89,7 +95,7 @@ def load_q2_dabrafenib_weights() -> Dict[str, float]:
         else:
             gene_symbol = gene_raw.split(" ")[0].strip()
             weights[gene_symbol] = coef
-    print(f"Loaded Q2 Dabrafenib sensitivity model: {len(weights)-1} gene features + intercept")
+    print(f"Loaded Q2 Dabrafenib sensitivity model: {len(weights)-1} gene features + intercept from {rel_path(q2_file)}")
     return weights
 
 
@@ -466,6 +472,25 @@ def main() -> None:
     df_patients = pd.read_csv(INPUT_PATIENTS)
     print(f"Loaded patient dataset: {len(df_patients)} patients")
 
+    # Join IMMUNOTHERAPY flag from full clinical file so we can distinguish
+    # ICI-treated patients (known response) from prospective TCGA patients
+    if INPUT_CLIN_FULL.exists() and "IMMUNOTHERAPY" not in df_patients.columns:
+        df_clin_full = pd.read_csv(INPUT_CLIN_FULL, usecols=["SAMPLE_ID", "IMMUNOTHERAPY"])
+        df_patients = df_patients.merge(df_clin_full, on="SAMPLE_ID", how="left")
+        print(f"Joined IMMUNOTHERAPY flag from {rel_path(INPUT_CLIN_FULL)}")
+
+    # Ensure ICI_Treated column is present (1 = known ICI-treated, 0 = prospective)
+    if "IMMUNOTHERAPY" in df_patients.columns:
+        df_patients["ICI_Treated"] = df_patients["IMMUNOTHERAPY"].fillna(0).astype(int)
+    else:
+        df_patients["ICI_Treated"] = 0
+        print("Warning: IMMUNOTHERAPY column not found — ICI_Treated defaulted to 0 for all patients.")
+
+    n_ici  = int(df_patients["ICI_Treated"].sum())
+    n_pros = len(df_patients) - n_ici
+    print(f"  ICI-treated (known response): {n_ici}")
+    print(f"  Prospective (no ICI label):   {n_pros}")
+
     q2_weights = load_q2_dabrafenib_weights()
 
     if INPUT_EXPR.exists():
@@ -485,10 +510,25 @@ def main() -> None:
     # 3. Assign Treatment Arms (Arm A, Arm B, Arm C)
     df_assigned = assign_treatment_arms(df_patients, df_components, dabrafenib_scores)
 
+    # Tag each patient as ICI-treated (retrospective validation) or prospective
+    df_assigned["ICI_Treated"] = df_patients["ICI_Treated"].values
+
     # 4. Save output CSVs
     out_csv = OUTPUT_DIR / "treatability_scores.csv"
     df_assigned.to_csv(out_csv, index=False)
     print(f"\nSaved treatability scores and arm assignments to {rel_path(out_csv)}")
+
+    # Arm summary split by ICI-treated vs prospective
+    df_ici_sub  = df_assigned[df_assigned["ICI_Treated"] == 1]
+    df_pros_sub = df_assigned[df_assigned["ICI_Treated"] == 0]
+    print(f"  ICI-treated  (N={len(df_ici_sub)}):   "
+          f"Arm A={int((df_ici_sub['Treatment_Arm'].str.startswith('Arm A')).sum())}, "
+          f"Arm B={int((df_ici_sub['Treatment_Arm'].str.startswith('Arm B')).sum())}, "
+          f"Arm C={int((df_ici_sub['Treatment_Arm'].str.startswith('Arm C')).sum())}")
+    print(f"  Prospective  (N={len(df_pros_sub)}): "
+          f"Arm A={int((df_pros_sub['Treatment_Arm'].str.startswith('Arm A')).sum())}, "
+          f"Arm B={int((df_pros_sub['Treatment_Arm'].str.startswith('Arm B')).sum())}, "
+          f"Arm C={int((df_pros_sub['Treatment_Arm'].str.startswith('Arm C')).sum())}")
 
     df_summary = df_assigned.groupby(["Cluster_ID", "Treatment_Arm"]).size().reset_index(name="Patient_Count")
     df_summary["Phenotype"] = df_summary["Cluster_ID"].map(PHENOTYPE_SHORT_NAMES)

@@ -60,8 +60,10 @@ set_presentation_style()
 LOG_DIR = SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "08_compare_clustering_algorithms.log"
 
-INPUT_FILE = PROCESSED_DIR / "q5" / "feature_matrix.csv"
-OUTPUT_PLOT = SUBPROJECT_ROOT / "plots" / "clustering" / "clustering_algorithms_comparison.png"
+INPUT_FILE_ICI  = PROCESSED_DIR / "q5" / "feature_matrix.csv"
+INPUT_FILE_FULL = PROCESSED_DIR / "q5" / "feature_matrix_full.csv"
+OUTPUT_PLOT    = SUBPROJECT_ROOT / "plots" / "clustering" / "clustering_algorithms_comparison.png"
+OUTPUT_PLOT_COHORT_CMP = SUBPROJECT_ROOT / "plots" / "clustering" / "algorithms_cohort_size_comparison.png"
 OUTPUT_METRICS = SUBPROJECT_ROOT / "reports" / "clustering_metrics_comparison.csv"
 
 # The 9 multi-modal features used for clustering
@@ -80,8 +82,11 @@ DBSCAN_EPS = 1.8
 DBSCAN_MIN_SAMPLES = 5
 
 
-def load_and_prepare_features() -> tuple[pd.DataFrame, np.ndarray, List[str]]:
+def load_and_prepare_features(input_file: Path) -> tuple[pd.DataFrame, np.ndarray, List[str]]:
     """Load the Q5 feature matrix and prepare scaled clustering features.
+
+    Args:
+        input_file: Path to the feature matrix CSV (either ICI-only or full cohort).
 
     Returns:
         Tuple of (df_clean, X_scaled, feature_cols) where df_clean is the patient
@@ -91,12 +96,12 @@ def load_and_prepare_features() -> tuple[pd.DataFrame, np.ndarray, List[str]]:
     Raises:
         FileNotFoundError: If the feature matrix CSV is missing.
     """
-    if not INPUT_FILE.exists():
+    if not input_file.exists():
         raise FileNotFoundError(
-            f"Missing feature matrix at {rel_path(INPUT_FILE)}. Run Script 01 first."
+            f"Missing feature matrix at {rel_path(input_file)}. Run Script 01 first."
         )
 
-    df_master = pd.read_csv(INPUT_FILE)
+    df_master = pd.read_csv(input_file)
     feature_cols = [c for c in CLUSTERING_FEATURES if c in df_master.columns]
     df_clean = df_master.dropna(subset=feature_cols).copy()
     X_scaled = StandardScaler().fit_transform(df_clean[feature_cols])
@@ -304,32 +309,105 @@ def plot_comparison(
     print(f"Saved comparison figure to: {rel_path(OUTPUT_PLOT)}")
 
 
+def plot_silhouette_cohort_comparison(
+    df_ici: pd.DataFrame,
+    df_full: pd.DataFrame,
+) -> None:
+    """Generate a side-by-side grouped bar chart of Silhouette Scores across cohort sizes.
+
+    Args:
+        df_ici:  Metrics DataFrame for the ICI-only cohort (N≈326).
+        df_full: Metrics DataFrame for the full cohort (N≈699).
+    """
+    import numpy as np
+
+    algos    = df_ici["Algorithm"].tolist()
+    sil_ici  = df_ici["Silhouette Score (High)"].tolist()
+    sil_full = df_full["Silhouette Score (High)"].tolist()
+
+    x     = np.arange(len(algos))
+    width = 0.35
+
+    fig, ax = plt.subplots(figsize=(14, 6))
+    bars_ici  = ax.bar(x - width / 2, sil_ici,  width, label=f"ICI-only  (N={len(df_ici)})",    color=CLUSTER_COLORS[0], edgecolor="black", linewidth=0.8)
+    bars_full = ax.bar(x + width / 2, sil_full, width, label=f"Full cohort (N={len(df_full)})", color=CLUSTER_COLORS[4 % len(CLUSTER_COLORS)], edgecolor="black", linewidth=0.8)
+
+    for bar in list(bars_ici) + list(bars_full):
+        h = bar.get_height()
+        if not np.isnan(h):
+            ax.annotate(
+                f"{h:.3f}",
+                xy=(bar.get_x() + bar.get_width() / 2, h),
+                xytext=(0, 4), textcoords="offset points",
+                ha="center", va="bottom", fontsize=8.5, fontweight="bold",
+            )
+
+    n_ici_val  = int(df_ici["Clusters (K)"].iloc[0]) if len(df_ici) else 0
+    n_full_val = int(df_full["Clusters (K)"].iloc[0]) if len(df_full) else 0
+    ax.set_title(
+        "Silhouette Score by Algorithm: ICI-only vs Full Cohort",
+        fontsize=13, fontweight="bold", pad=12,
+    )
+    ax.set_xlabel("Clustering Algorithm", fontsize=11, fontweight="bold")
+    ax.set_ylabel("Silhouette Score (higher = better separation)", fontsize=11, fontweight="bold")
+    ax.set_xticks(x)
+    ax.set_xticklabels(algos, rotation=18, ha="right", fontsize=9)
+    ax.legend(frameon=True, facecolor="white", edgecolor="#E5E7EB", fontsize=10)
+    ax.grid(True, axis="y", color="#E5E7EB", linewidth=0.5, alpha=0.6)
+    plt.tight_layout()
+
+    OUTPUT_PLOT_COHORT_CMP.parent.mkdir(parents=True, exist_ok=True)
+    save_fig(fig, OUTPUT_PLOT_COHORT_CMP)
+    print(f"Saved cohort-size silhouette comparison to: {rel_path(OUTPUT_PLOT_COHORT_CMP)}")
+
+
 def main() -> None:
-    """Main execution function for clustering algorithm benchmark."""
+    """Main execution function for clustering algorithm benchmark on both cohort sizes."""
     print("=" * 80)
-    print("CLUSTERING ALGORITHM BENCHMARK COMPARISON")
+    print("CLUSTERING ALGORITHM BENCHMARK COMPARISON (ICI N~=326 vs Full N~=699)")
     print("=" * 80)
 
-    df_clean, X_scaled, feature_cols = load_and_prepare_features()
+    # --- ICI-only cohort (N≈326) ---
+    print("\n[1/2] Benchmarking on ICI-only cohort...")
+    df_clean_ici, X_scaled_ici, _ = load_and_prepare_features(INPUT_FILE_ICI)
+    pca_ici    = PCA(n_components=2, random_state=42)
+    coords_ici = pca_ici.fit_transform(X_scaled_ici)
+    df_clean_ici["Dim1"] = coords_ici[:, 0]
+    df_clean_ici["Dim2"] = coords_ici[:, 1]
+    algos_ici      = run_all_algorithms(X_scaled_ici)
+    df_metrics_ici = compute_metrics(X_scaled_ici, df_clean_ici, algos_ici)
+    df_metrics_ici["Cohort_Size"] = f"ICI-only (N={len(df_clean_ici)})"
 
-    # 2D PCA projection for consistent visual comparison across all algorithm panels
-    pca = PCA(n_components=2, random_state=42)
-    coords = pca.fit_transform(X_scaled)
-    df_clean["Dim1"] = coords[:, 0]
-    df_clean["Dim2"] = coords[:, 1]
+    # --- Full cohort (N≈699) ---
+    print("\n[2/2] Benchmarking on full cohort...")
+    df_clean_full, X_scaled_full, _ = load_and_prepare_features(INPUT_FILE_FULL)
+    pca_full    = PCA(n_components=2, random_state=42)
+    coords_full = pca_full.fit_transform(X_scaled_full)
+    df_clean_full["Dim1"] = coords_full[:, 0]
+    df_clean_full["Dim2"] = coords_full[:, 1]
+    algos_full      = run_all_algorithms(X_scaled_full)
+    df_metrics_full = compute_metrics(X_scaled_full, df_clean_full, algos_full)
+    df_metrics_full["Cohort_Size"] = f"Full cohort (N={len(df_clean_full)})"
+    # Response Rate Spread is NaN for non-ICI patients — expected and correct
 
-    algorithms = run_all_algorithms(X_scaled)
-    df_metrics = compute_metrics(X_scaled, df_clean, algorithms)
-
+    # --- Save combined metrics table ---
+    df_all_metrics = pd.concat([df_metrics_ici, df_metrics_full], ignore_index=True)
     OUTPUT_METRICS.parent.mkdir(parents=True, exist_ok=True)
-    df_metrics.to_csv(OUTPUT_METRICS, index=False)
+    df_all_metrics.to_csv(OUTPUT_METRICS, index=False)
 
-    print("\nEVALUATION METRICS TABLE:")
-    print(df_metrics.to_string(index=False))
+    print("\nEVALUATION METRICS TABLE (both cohort sizes):")
+    print(df_all_metrics.to_string(index=False))
 
-    plot_comparison(df_clean, algorithms, df_metrics)
+    # 6-panel comparison figure on the ICI cohort (primary academic figure)
+    # pca must be accessible in plot_comparison's closure — pass as module-level ref
+    global pca
+    pca = pca_ici
+    plot_comparison(df_clean_ici, algos_ici, df_metrics_ici)
 
-    print(f"Saved metrics CSV to:       {rel_path(OUTPUT_METRICS)}")
+    # New: side-by-side silhouette score comparison across cohort sizes
+    plot_silhouette_cohort_comparison(df_metrics_ici, df_metrics_full)
+
+    print(f"\nSaved metrics CSV to: {rel_path(OUTPUT_METRICS)}")
     print("=" * 80)
 
 
