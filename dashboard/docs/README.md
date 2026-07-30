@@ -27,6 +27,7 @@ Recharts); all model outputs are baked into data files, no live backend.
 | `05_BUILD_PLAN.md` | Ordered task list with acceptance criteria + verification steps |
 | `06_DECISIONS.md` | Every decision locked so far (so nothing gets re-litigated) |
 | `07_SESSION_LOG.md` | **Current state, git/deploy setup, and how to wire in the Q2 cell-line data** |
+| `08_USER_GUIDE.md` | Complete, zero-assumed-background explanation of every screen, field, and term for anyone using the dashboard (not building it) |
 
 ## Current status — BUILD PLAN COMPLETE
 
