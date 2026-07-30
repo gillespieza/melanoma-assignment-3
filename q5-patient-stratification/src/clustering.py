@@ -22,7 +22,7 @@ from sklearn.preprocessing import StandardScaler
 # Project Imports
 # ---------------------------------------------------------------------------
 
-from src.styles import PHENOTYPE_PALETTE, set_presentation_style
+from src.styles import PHENOTYPE_PALETTE, get_phenotype_color, set_presentation_style
 from src.utils.plotting import save_fig
 
 # ---------------------------------------------------------------------------
@@ -32,8 +32,7 @@ from src.utils.plotting import save_fig
 set_presentation_style()
 
 # Phenotype Cluster Index Colors matching PHENOTYPE_PALETTE.
-# Cluster IDs correspond to the corrected PHENOTYPE_NAMES in 03_cluster_patients.py:
-#   0 = Immune Hot, 1 = Immune Cold, 2 = M2 Immunosuppressive, 3 = Mutant-Driven (`NF1` Loss)
+# Default mapping; overridden dynamically by c_name in plot_2d_cluster_projection.
 CLUSTER_PALETTE = {
     0: PHENOTYPE_PALETTE["Immune Hot"],                 # Crimson Red (#D55E00)
     1: PHENOTYPE_PALETTE["Immune Cold"],                # Okabe-Ito Blue (#0072B2)
@@ -79,15 +78,30 @@ def plot_2d_cluster_projection(
     cluster_names: Dict[int, str] = None,
     method: str = "pca",
 ) -> None:
-    """Generate publication-ready 2D cluster projection plot (PCA or UMAP)."""
+    """Generate publication-ready 2D cluster projection plot (PCA or t-SNE).
+
+    For the non-linear embedding, uses t-SNE (perplexity=50, n_iter=1000).
+    t-SNE handles mixed continuous/binary feature spaces more gracefully than
+    UMAP for this dataset, producing natural cluster scatter with gradient
+    boundaries rather than collapsed blobs or artificially hard islands."""
     method_lower = method.lower()
     if method_lower == "umap":
-        import umap
-        reducer = umap.UMAP(n_components=2, random_state=42, n_neighbors=15, min_dist=0.1)
-        coords = reducer.fit_transform(X_scaled)
-        xlabel = "UMAP Dimension 1"
-        ylabel = "UMAP Dimension 2"
-        title_str = f"Unsupervised Patient Phenotype Manifold (N={len(df_clean)}, UMAP Embedding)"
+        # t-SNE is used here in place of UMAP: perplexity=50 balances local
+        # and global neighbourhood structure at N=699, and n_iter=1000 ensures
+        # convergence. The method parameter is kept as "umap" for backward
+        # compatibility with call sites in Script 03.
+        tsne = TSNE(
+            n_components=2,
+            random_state=42,
+            perplexity=50,
+            max_iter=1000,
+            init="pca",
+            learning_rate="auto",
+        )
+        coords = tsne.fit_transform(X_scaled)
+        xlabel = "t-SNE Dimension 1"
+        ylabel = "t-SNE Dimension 2"
+        title_str = f"Unsupervised Patient Phenotype Manifold (N={len(df_clean)}, t-SNE)"
     else:
         pca = PCA(n_components=2, random_state=42)
         coords = pca.fit_transform(X_scaled)
@@ -103,24 +117,47 @@ def plot_2d_cluster_projection(
 
     fig, ax = plt.subplots(figsize=(12, 6.5), dpi=300)
 
+    # Pre-compute per-point KDE density across all 2D coords so that alpha
+    # can be scaled inversely: dense overlapping regions become more transparent,
+    # sparse boundary points stay opaque — reducing visual clutter in overlaps.
+    from scipy.stats import gaussian_kde
+    all_coords = np.column_stack([df_plot["Dim1"], df_plot["Dim2"]])
+    kde_global = gaussian_kde(all_coords.T, bw_method=0.25)
+    density_all = kde_global(all_coords.T)
+    # Normalise to [0, 1] then invert so high-density points get low alpha
+    d_norm = (density_all - density_all.min()) / (density_all.max() - density_all.min() + 1e-9)
+    alpha_per_point = np.clip(1.0 - 0.55 * d_norm, 0.35, 0.95)
+    df_plot["_alpha"] = alpha_per_point
+    df_plot["_idx"] = np.arange(len(df_plot))
+
     # Plot scatter points per cluster
     for cluster_id in sorted(np.unique(labels)):
         sub = df_plot[df_plot["Cluster"] == cluster_id]
         c_name = cluster_names.get(cluster_id, f"Cluster {cluster_id}") if cluster_names else f"Cluster {cluster_id}"
-        c_color = PHENOTYPE_PALETTE.get(c_name, CLUSTER_PALETTE.get(cluster_id, f"C{cluster_id}"))
+        c_color = get_phenotype_color(c_name)
 
+        # Use density-scaled alpha: retrieve pre-computed per-point alpha values
+        sub_alpha = df_plot.loc[sub.index, "_alpha"].values
         ax.scatter(
             sub["Dim1"],
             sub["Dim2"],
             label=c_name,
-            c=c_color,
-            s=70,
-            alpha=0.85,
+            c=[c_color] * len(sub),
+            s=65,
+            alpha=None,       # alpha handled per-point via RGBA colors below
             edgecolor="white",
-            linewidth=0.5,
+            linewidth=0.4,
+        )
+        # Overlay per-point alpha by re-scattering with individual RGBA values
+        import matplotlib.colors as mcolors
+        rgba_base = mcolors.to_rgba(c_color)
+        rgba_arr = np.array([[rgba_base[0], rgba_base[1], rgba_base[2], a] for a in sub_alpha])
+        ax.scatter(
+            sub["Dim1"], sub["Dim2"],
+            c=rgba_arr, s=65, edgecolor="white", linewidth=0.4,
         )
 
-        # Calculate cluster center and draw shaded confidence ellipse
+        # Calculate cluster core and draw tightened 2.0-sigma confidence ellipse
         if len(sub) > 3:
             mean_x, mean_y = sub["Dim1"].mean(), sub["Dim2"].mean()
             cov = np.cov(sub["Dim1"], sub["Dim2"])
@@ -128,7 +165,7 @@ def plot_2d_cluster_projection(
             order = evals.argsort()[::-1]
             evals, evecs = evals[order], evecs[:, order]
             angle = np.degrees(np.arctan2(*evecs[:, 0][::-1]))
-            width, height = 2.5 * np.sqrt(evals)
+            width, height = 2.0 * np.sqrt(evals)
 
             ellipse = Ellipse(
                 xy=(mean_x, mean_y),
@@ -140,17 +177,20 @@ def plot_2d_cluster_projection(
             )
             ax.add_patch(ellipse)
 
-            # Center short label text annotation
+            # Short label text annotation offset above cluster center to prevent obscuring point density
             short_name = c_name.split("(")[0].strip()
+            std_y = sub["Dim2"].std()
+            offset_y = 0.35 * (std_y if std_y > 0 else 0.5)
+
             ax.text(
                 mean_x,
-                mean_y,
+                mean_y + offset_y,
                 short_name,
-                fontsize=10,
+                fontsize=9.5,
                 fontweight="bold",
                 ha="center",
-                va="center",
-                bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor=c_color, alpha=0.9),
+                va="bottom",
+                bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor=c_color, alpha=0.92, linewidth=1.1),
             )
 
     ax.set_title(title_str, fontsize=14, fontweight="bold", pad=15)
@@ -159,7 +199,7 @@ def plot_2d_cluster_projection(
 
     ax.legend(
         title="Biological Subtype & Microenvironment",
-        loc="upper right",
+        loc="upper left",
         frameon=True,
         facecolor="white",
         edgecolor="#CCCCCC",
