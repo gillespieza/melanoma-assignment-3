@@ -248,6 +248,121 @@ def assign_treatment_arms(
     return df_out
 
 
+# ---------------------------------------------------------------------------
+# Confidence Index Computation
+# ---------------------------------------------------------------------------
+
+# Thresholds that map a raw 0-1 composite score to a labelled confidence band.
+# High ≥ 0.70 | Moderate ≥ 0.45 | Low < 0.45
+CONF_HIGH_THRESHOLD: float = 0.70
+CONF_MOD_THRESHOLD: float  = 0.45
+
+
+def _minmax(series: pd.Series) -> pd.Series:
+    """Normalise a Series to [0, 1]; returns 0.5 everywhere if range is zero."""
+    lo, hi = series.min(), series.max()
+    if hi > lo:
+        return (series - lo) / (hi - lo)
+    return pd.Series(0.5, index=series.index)
+
+
+def compute_recommendation_confidence(df: pd.DataFrame) -> pd.DataFrame:
+    """Compute arm-specific Recommendation_Confidence_Index (0–100) and Confidence_Band.
+
+    Confidence is computed from the signals that drove each arm decision:
+      - Arm A: TIS distance from threshold (50%), IFN-gamma (30%), CD8 infiltration (20%).
+      - Arm B: mutation strength – BRAF=1.0 / NRAS=0.7 (40%), Q2 Dabrafenib sensitivity (60%).
+              NRAS-only patients are capped at Moderate regardless of weighted score.
+      - Arm C: phenotype–target alignment score (50%), Treatability Index (30%),
+              inverted M2 barrier (20%).
+
+    Returns a copy of df with two new columns appended:
+      - Recommendation_Confidence_Index : float  0–100
+      - Confidence_Band                 : str    'High' / 'Moderate' / 'Low'
+    """
+    df_out = df.copy()
+
+    # --- Pre-normalise shared signals used across arms ----------------------
+    tis_q60     = df["TIS"].quantile(0.60) if "TIS" in df.columns else 0.0
+    tis_norm    = _minmax(df["TIS"])         if "TIS" in df.columns else pd.Series(0.5, index=df.index)
+    ifn_norm    = _minmax(df["IFN_gamma"])   if "IFN_gamma" in df.columns else pd.Series(0.5, index=df.index)
+    cd8_norm    = _minmax(df["CD8_Tcell"])   if "CD8_Tcell" in df.columns else pd.Series(0.5, index=df.index)
+    dab_norm    = _minmax(df["Dabrafenib_Sensitivity_Index"])  # already 0–100, normalise to 0–1
+    treat_norm  = _minmax(df["Treatability_Index"])            # already 0–100, normalise to 0–1
+    m2_norm_inv = 1.0 - _minmax(df["M2_score"]) if "M2_score" in df.columns else pd.Series(0.5, index=df.index)
+
+    # TIS distance above boundary: how far above the 60th-pct threshold?
+    # Clip negative values (below threshold) to 0 so Arm A entries always benefit.
+    tis_above_boundary = ((df["TIS"] - tis_q60) / (df["TIS"].std() + 1e-9)).clip(lower=0.0)
+    tis_dist_norm = _minmax(tis_above_boundary)
+
+    # Phenotype–target alignment score for Arm C
+    pheno_short = df["Cluster_ID"].map(PHENOTYPE_SHORT_NAMES)
+    alignment_score = pd.Series(0.5, index=df.index)  # default
+    is_m2 = pheno_short.isin(["M2 Immunosuppressive", "Immunosuppressive M2-High"])
+    is_cold_high = (pheno_short == "Immune Cold") & (df["Treatability_Index"] > 40.0)
+    is_cold_low  = (pheno_short == "Immune Cold") & (df["Treatability_Index"] <= 40.0)
+    alignment_score[is_m2]       = 1.00   # CSF1R for M2 — best-supported Q4 nomination
+    alignment_score[is_cold_high] = 0.75  # AXL/STING for cold-but-convertible
+    alignment_score[is_cold_low]  = 0.50  # HDAC/epigenetic — least specific
+
+    conf_raw = pd.Series(0.0, index=df.index)
+
+    arm_col = df["Treatment_Arm"]
+
+    mask_a = arm_col.str.startswith("Arm A")
+    mask_b = arm_col.str.startswith("Arm B")
+    mask_c = arm_col.str.startswith("Arm C")
+
+    # Arm A confidence: TIS distance (50%) + IFN-gamma (30%) + CD8 (20%)
+    conf_raw[mask_a] = (
+        0.50 * tis_dist_norm[mask_a] +
+        0.30 * ifn_norm[mask_a] +
+        0.20 * cd8_norm[mask_a]
+    )
+
+    # Arm B confidence: mutation strength (40%) + Q2 Dabrafenib sensitivity (60%)
+    mut_strength = pd.Series(0.0, index=df.index)
+    mut_strength[df["mut_BRAF"] == 1] = 1.00
+    mut_strength[(df["mut_BRAF"] != 1) & (df["mut_NRAS"] == 1)] = 0.70
+
+    conf_raw[mask_b] = (
+        0.40 * mut_strength[mask_b] +
+        0.60 * dab_norm[mask_b]
+    )
+
+    # Arm C confidence: phenotype-target alignment (50%) + treatability (30%) + M2-inv barrier (20%)
+    conf_raw[mask_c] = (
+        0.50 * alignment_score[mask_c] +
+        0.30 * treat_norm[mask_c] +
+        0.20 * m2_norm_inv[mask_c]
+    )
+
+    # Scale to 0–100
+    conf_index = (conf_raw * 100.0).clip(0.0, 100.0)
+    df_out["Recommendation_Confidence_Index"] = conf_index.round(2)
+
+    # Assign Confidence_Band labels
+    def _band(raw_score: float, is_nras_only: bool) -> str:
+        """Return 'High' / 'Moderate' / 'Low'; NRAS-only Arm B patients are capped at Moderate."""
+        if raw_score >= CONF_HIGH_THRESHOLD:
+            if is_nras_only:
+                return "Moderate"  # Cap NRAS-only at Moderate — Q2 score is less directly applicable
+            return "High"
+        if raw_score >= CONF_MOD_THRESHOLD:
+            return "Moderate"
+        return "Low"
+
+    nras_only = (df["mut_BRAF"] != 1) & (df["mut_NRAS"] == 1) & mask_b
+
+    df_out["Confidence_Band"] = [
+        _band(raw, nras)
+        for raw, nras in zip(conf_raw, nras_only)
+    ]
+
+    return df_out
+
+
 def plot_arm_assignment_breakdown(df_assigned: pd.DataFrame, out_path: Path) -> None:
     """Plot distribution of patient allocation across Arm A, B, and C by biological phenotype."""
     df_plot = df_assigned.copy()
@@ -513,7 +628,13 @@ def main() -> None:
     # Tag each patient as ICI-treated (retrospective validation) or prospective
     df_assigned["ICI_Treated"] = df_patients["ICI_Treated"].values
 
-    # 4. Save output CSVs
+    # 4. Compute Recommendation Confidence Index and band
+    df_assigned = compute_recommendation_confidence(df_assigned)
+    conf_counts = df_assigned["Confidence_Band"].value_counts()
+    print(f"Recommendation Confidence — High: {conf_counts.get('High', 0)}, "
+          f"Moderate: {conf_counts.get('Moderate', 0)}, Low: {conf_counts.get('Low', 0)}")
+
+    # 5. Save output CSVs
     out_csv = OUTPUT_DIR / "treatability_scores.csv"
     df_assigned.to_csv(out_csv, index=False)
     print(f"\nSaved treatability scores and arm assignments to {rel_path(out_csv)}")
@@ -536,7 +657,7 @@ def main() -> None:
     df_summary.to_csv(out_sum_csv, index=False)
     print(f"Saved arm summary metrics to {rel_path(out_sum_csv)}")
 
-    # 5. Generate plots
+    # 6. Generate plots
     plot_arm_file = PLOTS_DIR / "arm_assignment_breakdown.png"
     plot_arm_assignment_breakdown(df_assigned, plot_arm_file)
 
@@ -545,7 +666,7 @@ def main() -> None:
 
     print(f"\nGenerated Plots:\n  1. {rel_path(plot_arm_file)}\n  2. {rel_path(plot_dist_file)}")
 
-    # 6. Render Phase 7 markdown report
+    # 7. Render Phase 7 markdown report
     phase7_report_path = REPORTS_DIR / "phase_7.md"
     generate_phase7_markdown(df_assigned, phase7_report_path)
 
