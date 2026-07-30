@@ -19,6 +19,11 @@ melanoma_ids <- melanoma_models[, c("ModelID", "SangerModelID")]
 
 # ---- STEP 4: Load GDSC2 drug data, filter to our 2 drugs ----
 gdsc <- read_excel(paste0(data_path, "GDSC2_fitted_dose_response.csv"))
+
+# checking whether Amanda's requested drugs actually exist in my GDSC2 data
+candidate_drugs <- c("Dacarbazine", "Temozolomide", "Trametinib", "Cobimetinib")
+unique(gdsc$DRUG_NAME[gdsc$DRUG_NAME %in% candidate_drugs])
+
 target_drugs <- c("Dabrafenib", "PLX-4720")
 gdsc_braf <- gdsc[gdsc$DRUG_NAME %in% target_drugs, ]
 cat("Number of drug-response rows for our 2 drugs (all cancers):", nrow(gdsc_braf), "\n")
@@ -133,8 +138,8 @@ for (s in c(123, 456, 789, 101, 202)) {
 
 cat("\n--- Correlation across 5 seeds (Dabrafenib) ---\n")
 print(round(correlations, 3))
-cat("Mean:", round(mean(correlations), 3),
-    "| Range:", round(min(correlations), 3), "to", round(max(correlations), 3), "\n")
+cat("Mean:", round(mean(correlations, na.rm = TRUE), 3),
+    "| Range:", round(min(correlations, na.rm = TRUE), 3), "to", round(max(correlations, na.rm = TRUE), 3), "\n")
 
 cat("\n--- Genes selected in 3 or more of 5 seeds ---\n")
 freq <- sort(table(gene_counts), decreasing = TRUE)
@@ -155,6 +160,9 @@ plx4720_coefs   <- read.csv("important_genes_PLX_4720.csv", stringsAsFactors = F
 dabrafenib_coefs$gene <- gsub(" \\(.*\\)$", "", dabrafenib_coefs$gene)
 plx4720_coefs$gene    <- gsub(" \\(.*\\)$", "", plx4720_coefs$gene)
 
+# CEP104 didn't match the TCGA file because TCGA uses its older name, KIAA0562 -
+# same gene, just a different symbol, so renaming it here BEFORE scoring happens
+dabrafenib_coefs$gene[dabrafenib_coefs$gene == "CEP104"] <- "KIAA0562"
 
 # ---- 8c: load patient gene expression data ----
 patient_expr_raw <- read.delim(paste0(tcga_path, "data_mrna_seq_v2_rsem.txt"),
@@ -195,18 +203,10 @@ apply_lasso_score <- function(expr_data, coef_df) {
   gene_coefs <- gene_coefs[gene_coefs$gene %in% matched_genes, ]
   weighted_sum <- as.matrix(expr_data[, matched_genes]) %*% gene_coefs$coefficient
   return(as.vector(intercept + weighted_sum))
-} 
-expr_tcga$Dabrafenib_Predicted_AUC <- apply_lasso_score(expr_tcga, dabrafenib_coefs)
-
-# checking exactly which gene didn't match
-setdiff(dabrafenib_coefs$gene, colnames(expr_tcga))
+}
 
 expr_tcga$Dabrafenib_Predicted_AUC <- apply_lasso_score(expr_tcga, dabrafenib_coefs)
 expr_tcga$PLX4720_Predicted_AUC   <- apply_lasso_score(expr_tcga, plx4720_coefs)
-
-# CEP104 didn't match the TCGA file because TCGA uses its older name, KIAA0562 -
-# same gene, just a different symbol, so renaming it to recover the match
-dabrafenib_coefs$gene[dabrafenib_coefs$gene == "CEP104"] <- "KIAA0562"
 
 # ---- 8f: save the output Amanda asked for ----
 output <- merge(expr_tcga[, c("SAMPLE_ID", "Dabrafenib_Predicted_AUC", "PLX4720_Predicted_AUC")],
@@ -252,4 +252,133 @@ cat("PLX-4720 vs immunotherapy response:", round(cor_plx4720, 3), "\n")
 # ---- 9e: save the merged results ----
 write.csv(merged_results, "q2_correlation_results.csv", row.names = FALSE)
 cat("Saved merged correlation results to q2_correlation_results.csv\n")
- 
+
+# ============================================================
+# STEP 10: Expand drug panel - Trametinib, Temozolomide, Dacarbazine
+# (Amanda's request, for the group presentation - confirmed these 3
+# are actually present in my GDSC2 data back in Step 4)
+# ============================================================
+
+# ---- 10a: filter GDSC2 down to just these 3 new drugs ----
+new_drugs <- c("Trametinib", "Temozolomide", "Dacarbazine")
+gdsc_new <- gdsc[gdsc$DRUG_NAME %in% new_drugs, ]
+cat("Number of drug-response rows for new drugs (all cancers):", nrow(gdsc_new), "\n")
+
+# ---- 10b: keep only melanoma cell lines, same as before ----
+gdsc_melanoma_new <- merge(gdsc_new, melanoma_ids, by.x = "SANGER_MODEL_ID", by.y = "SangerModelID")
+cat("Number of melanoma-specific drug-response rows (new drugs):", nrow(gdsc_melanoma_new), "\n")
+
+# ---- 10c: same LASSO loop as Step 7, just pointed at the new drugs ----
+for (drug in new_drugs) {
+  cat("\n\n===== Building model for:", drug, "=====\n")
+  
+  drug_data <- gdsc_melanoma_new[gdsc_melanoma_new$DRUG_NAME == drug, ]
+  drug_data <- drug_data[!duplicated(drug_data$ModelID), ]
+  
+  merged_data <- merge(drug_data[, c("ModelID", "AUC")], expression, by = "ModelID")
+  cat("Cell lines with BOTH drug response AND expression data:", nrow(merged_data), "\n")
+  
+  if (nrow(merged_data) < 10) {
+    cat("Not enough data to build a model for", drug, "- skipping.\n")
+    next
+  }
+  
+  y <- merged_data$AUC
+  x <- as.matrix(merged_data[, !(colnames(merged_data) %in% non_gene_cols)])
+  
+  set.seed(123)
+  train_index <- sample(1:nrow(x), size = floor(0.8 * nrow(x)))
+  x_train <- x[train_index, ]
+  y_train <- y[train_index]
+  x_test  <- x[-train_index, ]
+  y_test  <- y[-train_index]
+  
+  cv_model <- cv.glmnet(x_train, y_train, alpha = 1)
+  
+  predictions <- predict(cv_model, newx = x_test, s = "lambda.min")
+  correlation <- cor(predictions, y_test)
+  cat("Correlation between predicted and actual viability:", round(correlation, 3), "\n")
+  
+  plot(y_test, predictions,
+       xlab = "Actual viability (AUC)", ylab = "Predicted viability (AUC)",
+       main = paste("Predicted vs Actual -", drug))
+  abline(0, 1, col = "red")
+  
+  coefficients <- coef(cv_model, s = "lambda.min")
+  important_genes <- data.frame(
+    gene = rownames(coefficients)[which(coefficients[,1] != 0)],
+    coefficient = coefficients[which(coefficients[,1] != 0), 1]
+  )
+  write.csv(important_genes, paste0("important_genes_", gsub("-", "_", drug), ".csv"), row.names = FALSE)
+  cat("Saved important genes to important_genes_", gsub("-", "_", drug), ".csv\n", sep = "")
+}
+
+# ============================================================
+# Quick recheck: Temozolomide with a different seed
+# (original seed 123 produced NA - test set predictions had zero variance)
+# ============================================================
+
+drug_data <- gdsc_melanoma_new[gdsc_melanoma_new$DRUG_NAME == "Temozolomide", ]
+drug_data <- drug_data[!duplicated(drug_data$ModelID), ]
+merged_data <- merge(drug_data[, c("ModelID", "AUC")], expression, by = "ModelID")
+
+y <- merged_data$AUC
+x <- as.matrix(merged_data[, !(colnames(merged_data) %in% non_gene_cols)])
+
+set.seed(456)   # different seed, just for this recheck
+train_index <- sample(1:nrow(x), size = floor(0.8 * nrow(x)))
+x_train <- x[train_index, ]
+y_train <- y[train_index]
+x_test  <- x[-train_index, ]
+y_test  <- y[-train_index]
+
+cv_model <- cv.glmnet(x_train, y_train, alpha = 1)
+predictions <- predict(cv_model, newx = x_test, s = "lambda.min")
+correlation <- cor(predictions, y_test)
+cat("Temozolomide (seed 456) correlation:", round(correlation, 3), "\n")
+
+# re-save gene coefficients using this seed's model
+coefficients <- coef(cv_model, s = "lambda.min")
+important_genes <- data.frame(
+  gene = rownames(coefficients)[which(coefficients[,1] != 0)],
+  coefficient = coefficients[which(coefficients[,1] != 0), 1]
+)
+write.csv(important_genes, "important_genes_Temozolomide.csv", row.names = FALSE)
+cat("Re-saved important genes to important_genes_Temozolomide.csv\n")
+# ============================================================
+# STEP 11: Combine all gene coefficients into a single file
+# ============================================================
+
+coef_files <- c(
+  "Dabrafenib"   = "important_genes_Dabrafenib.csv",
+  "PLX-4720"     = "important_genes_PLX_4720.csv",
+  "Trametinib"   = "important_genes_Trametinib.csv",
+  "Temozolomide" = "important_genes_Temozolomide.csv",
+  "Dacarbazine"  = "important_genes_Dacarbazine.csv"
+)
+
+all_coefs <- data.frame()
+
+for (drug_name in names(coef_files)) {
+  file <- coef_files[[drug_name]]
+  coefs <- read.csv(file, stringsAsFactors = FALSE)
+  
+  # drop the intercept row
+  coefs <- coefs[coefs$gene != "(Intercept)", ]
+  
+  # strip the " (entrez_id)" part so gene symbols are clean, e.g. "TRPM3 (80036)" -> "TRPM3"
+  coefs$gene <- gsub(" \\(.*\\)$", "", coefs$gene)
+  
+  # build this drug's rows in the combined format
+  drug_rows <- data.frame(
+    Drug_Name = drug_name,
+    Gene_Symbol = coefs$gene,
+    Lasso_Weight = coefs$coefficient
+  )
+  
+  all_coefs <- rbind(all_coefs, drug_rows)
+}
+
+write.csv(all_coefs, "q2_model_coefficients.csv", row.names = FALSE)
+cat("Saved combined coefficients for all 5 drugs to q2_model_coefficients.csv\n")
+cat("Total rows:", nrow(all_coefs), "\n")
