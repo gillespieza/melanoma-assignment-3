@@ -52,7 +52,7 @@ YOUDEN_FILE = PROCESSED_DIR / "q5" / "youden_cutoffs.csv"
 ASSOC_FILE = PROCESSED_DIR / "q5" / "univariate_feature_associations.csv"
 EXPR_FILE = PROCESSED_DIR / "merged" / "immunotherapy" / "expr_merged.csv"
 
-REPORTS_DIR = PROJECT_ROOT / "reports"
+REPORTS_DIR = SUBPROJECT_ROOT / "reports"
 PER_PHASE_DIR = REPORTS_DIR / "q5_phases"
 OUTPUT_REPORT_PATH = REPORTS_DIR / "q5_patient_stratification_report.md"
 

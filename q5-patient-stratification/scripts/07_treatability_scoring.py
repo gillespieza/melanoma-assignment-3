@@ -57,7 +57,7 @@ Q2_DABRAFENIB_CSV = PROJECT_ROOT / "q2-viability-predictor" / "important_genes_D
 
 OUTPUT_DIR = PROCESSED_DIR / "q5"
 PLOTS_DIR = SUBPROJECT_ROOT / "plots" / "treatability"
-REPORTS_DIR = PROJECT_ROOT / "reports" / "q5_phases"
+REPORTS_DIR = SUBPROJECT_ROOT / "reports" / "q5_phases"
 
 set_presentation_style()
 
