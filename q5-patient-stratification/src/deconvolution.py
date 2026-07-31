@@ -182,4 +182,3 @@ def compute_cell_deconvolution(
     for cell_type, markers in CELL_TYPE_MARKERS.items():
         df_deconv[cell_type] = _score_cell_type_panel(cell_type, markers, df_expr, min_markers)
     return df_deconv
-

@@ -283,13 +283,13 @@ def _engineer_spatial_indicators(df_master: pd.DataFrame) -> pd.DataFrame:
     cd8_val = df_master["CD8_T_cells"] if "CD8_T_cells" in df_master.columns else 0.0
     caf_val = df_master["CAFs"] if "CAFs" in df_master.columns else 0.0
     m1_m2 = df_master["M1_M2_Ratio"] if "M1_M2_Ratio" in df_master.columns else M1_M2_NEUTRAL_RATIO
-    p = SPATIAL_LOG_PSEUDOCOUNT
-
     df_master["Spatial_CD8_CAF_Distance_Ratio"] = np.log2(
-        (np.maximum(cd8_val, 0) + p) / (np.maximum(caf_val, 0) + p)
+        (np.maximum(cd8_val, 0) + SPATIAL_LOG_PSEUDOCOUNT)
+        / (np.maximum(caf_val, 0) + SPATIAL_LOG_PSEUDOCOUNT)
     )
     df_master["Spatial_Tumour_Infiltration_Index"] = np.log2(
-        (np.maximum(cd8_val, 0) * np.maximum(m1_m2, p) + p) / (np.maximum(caf_val, 0) + p)
+        (np.maximum(cd8_val, 0) * np.maximum(m1_m2, SPATIAL_LOG_PSEUDOCOUNT) + SPATIAL_LOG_PSEUDOCOUNT)
+        / (np.maximum(caf_val, 0) + SPATIAL_LOG_PSEUDOCOUNT)
     )
     return df_master
 

@@ -60,7 +60,7 @@ def profile_clusters(df: pd.DataFrame, cluster_col: str, feature_cols: List[str]
     """
     valid_features = [c for c in feature_cols if c in df.columns]
     profile = df.groupby(cluster_col)[valid_features].mean()
-    
+
     if RESPONSE_BINARY_COL in df.columns:
         profile["Response_Rate"] = df.groupby(cluster_col)[RESPONSE_BINARY_COL].mean()
     
@@ -108,7 +108,6 @@ def _claim_cluster_by_rule(
     if method == "idxmin":
         return int(cluster_profiles.loc[rem_list, col].idxmin())
     return None
-
 
 
 def assign_phenotype_labels(cluster_profiles: pd.DataFrame) -> Dict[int, str]:
