@@ -1,8 +1,8 @@
 ---
 title: "Phase 1: Feature Engineering & Baseline Signature Distribution"
 aliases:
-  - Q5 Phase 1 Guide
   - Phase 1 Reference
+  - Q5 Phase 1 Guide
 tags:
   - melanoma
   - patient-stratification
@@ -10,12 +10,12 @@ tags:
   - q5
 created: 2026-07-31 11:00
 cssclasses:
-  - table-small
-  - table-center
   - row-alt
+  - table-center
+  - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 11:22
+updated: 2026-07-31 12:22
 ---
 
 # Phase 1: Feature Engineering & Baseline Signature Distribution 📊
@@ -64,22 +64,22 @@ To support distinct machine learning requirements across downstream analytical p
 ### Why Two Datasets Are Necessary
 1. **Supervised Model Training ($N_{\text{ICI}} = 326$)**:
    - To fit predictive classifiers or determine diagnostic sensitivity/specificity cutoffs, algorithms require ground-truth treatment outcome labels (`Responder` vs `Non-Responder`).
-   - `feature_matrix.csv` strictly isolates patients who received anti-PD-1 or anti-CTLA-4 immunotherapy across 4 trial cohorts (*Liu 2019*, *Riaz 2017*, *Hugo 2016*, and ICI-treated *TCGA-SKCM*).
+   - `feature_matrix.csv` strictly isolates patients who received anti-PD-1 or anti-CTLA-4 immunotherapy across 4 trial cohorts (_Liu 2019_, _Riaz 2017_, _Hugo 2016_, and ICI-treated _TCGA-SKCM_).
 2. **Unsupervised Stratification & Real-World Simulation ($N_{\text{Full}} = 699$)**:
    - In clinical practice, new primary or surgical patients arrive before receiving systemic therapy.
-   - `feature_matrix_full.csv` merges trial cohorts with the complete reference cohort (*TCGA-SKCM*, $N=443$), capturing population-wide biological spectrums without biasing unsupervised clustering toward pre-treated trial populations.
+   - `feature_matrix_full.csv` merges trial cohorts with the complete reference cohort (_TCGA-SKCM_, $N=443$), capturing population-wide biological spectrums without biasing unsupervised clustering toward pre-treated trial populations.
 
 ## 3. Microenvironment Deconvolution: Cops, Soldiers & Barriers 🚓
 
 Tumour tissues are heterogeneous microenvironments composed of malignant cells, infiltrating immune cells, and dense stromal barriers. We can understand the microenvironment by looking at four key biological roles:
 
-- 👮 **M1 Macrophages ("Good Cops" — Antitumour Inflammation)**: 
+- 👮 **M1 Macrophages ("Good Cops" — Antitumour Inflammation)**:
   - Express pro-inflammatory markers (`TNF`, `IL12B`, `CXCL10`, `NOS2`, `IRF5`). They act like vigilant police officers that actively swallow tumour debris and present antigens, sounding the alarm to recruit cytotoxic T cells.
-- 🦹 **M2 Macrophages ("Double Agents" — Immunosuppressive Shielding)**: 
+- 🦹 **M2 Macrophages ("Double Agents" — Immunosuppressive Shielding)**:
   - Express anti-inflammatory markers (`CD163`, `MRC1`, `MSR1`, `TGFB1`, `ARG1`). Rather than attacking cancer, they act like corrupt double agents that secretively release immunosuppressive cytokines, promote tumour blood vessel growth (angiogenesis), and disarm infiltrating T cells.
-- 🪖 **CD8+ Cytotoxic T Cells ("T-Cell Soldiers" — Frontline Effector Cells)**: 
+- 🪖 **CD8+ Cytotoxic T Cells ("T-Cell Soldiers" — Frontline Effector Cells)**:
   - Measured by `CD8A`, `CD8B`, `CD3D`, and `CD3E`. These are the elite frontline soldiers capable of destroying malignant cells. Anti-PD-1 (`CD274`) immunotherapy works by unbinding checkpoint breaks on these soldiers so they can release cytolytic weapons (Perforin `PRF1` and Granzyme A `GZMA`).
-- 🛡️ **Cancer-Associated Fibroblasts (`CAFs`, "Scar Tissue Physical Barriers")**: 
+- 🛡️ **Cancer-Associated Fibroblasts (`CAFs`, "Scar Tissue Physical Barriers")**:
   - Express stromal markers (`FAP`, `PDGFRB`, `COL1A1`, `ACTA2`). They deposit dense collagen scar tissue around the tumour, creating a physical fortress wall that prevents T-cell soldiers from penetrating into the tumour core (immune exclusion).
 
 ### How Transcriptomic Cell Deconvolution Was Determined
@@ -125,7 +125,7 @@ Phase 1 condenses ~19,757 genes into 17 transcriptomic features and 9 genomic/TM
 
 > [!WARNING] Key Phase 1 Limitations to Keep in Mind
 > - **Relative Scores vs True Percentages**: Deconvolution uses mean marker log-expression (`compute_cell_deconvolution`), producing relative arbitrary scores rather than true constrained $0–100\%$ cell percentage proportions (like CIBERSORTx).
-> - **Spatial Blindness**: Bulk RNA-seq blends the whole biopsy together. It cannot tell if T-cell soldiers are physically inside the tumour nest (*Immune Hot*) or trapped outside in the scar tissue wall (*Immune Excluded*).
+> - **Spatial Blindness**: Bulk RNA-seq blends the whole biopsy together. It cannot tell if T-cell soldiers are physically inside the tumour nest (_Immune Hot_) or trapped outside in the scar tissue wall (_Immune Excluded_).
 > - **Indirect DNA Proxies**: Because trial cohorts lack Copy Number Alteration (CNA) GISTIC files, Phase 1 relies on Tumour Mutational Burden (`TMB_NONSYNONYMOUS`) and single-gene transcript levels (`PTEN`, `CDKN2A`) as indirect proxies for chromosomal instability.
 > - **1D Macrophage Axis**: The `M1_M2_Ratio` models macrophages as a single "Good Cop vs Double Agent" spectrum, whereas real macrophages exist in multi-dimensional states (e.g., M2a, M2c, lipid-laden).
 > - **Static Snapshot**: Pre-treatment biopsies cannot capture early dynamic immune changes occurring 2–4 weeks after starting anti-PD-1 (`CD274`) treatment.
