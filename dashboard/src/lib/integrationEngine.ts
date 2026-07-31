@@ -118,7 +118,6 @@ function assessAgreement(
   const statFavours = statistical.value >= FAVOURABLE;
   const mechFavours = mechanistic.value >= FAVOURABLE;
   const bothFavour = statFavours && mechFavours;
-  const neitherFavours = !statFavours && !mechFavours;
 
   if (statFavours !== mechFavours) {
     return {
@@ -155,9 +154,7 @@ function assessAgreement(
     concordance,
     statistical,
     mechanistic,
-    headline: neitherFavours
-      ? "Same direction, differing magnitude"
-      : "Same direction, differing magnitude",
+    headline: "Same direction, differing magnitude",
     detail:
       "Both methods point the same way but disagree on how strongly. The recommendation holds, " +
       "with moderate rather than high confidence.",

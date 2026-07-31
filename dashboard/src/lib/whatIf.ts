@@ -1,5 +1,6 @@
 import type { BrafCall, CohortPatient, NrasCall } from "../data/cohort";
 import { DOSE_RESPONSE } from "../data/model";
+import { PDL1_HIGH } from "./scoring";
 
 // What-if editing.
 //
@@ -36,8 +37,6 @@ export function changedFields(patient: CohortPatient, edits: WhatIfEdits): strin
   if (edits.ldh !== undefined) out.push("LDH");
   return out;
 }
-
-const PDL1_HIGH = 25;
 
 /** The subgroup whose real averaged sweep best matches a hypothetical profile. */
 function subgroupFor(braf: BrafCall, pdl1Pct: number): keyof typeof DOSE_RESPONSE {
