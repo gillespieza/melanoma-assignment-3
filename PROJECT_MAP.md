@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-07-31 (Q3 module architecture expanded; Q5 Phase 4 ODE tech debt added)
+> **Last updated**: 2026-07-31 (Phase 4 ODE fully refactored: Q3-parameterised 2-state Kuznetsov dual-arm trajectories with phenotype-level multipliers; IQR shading removed; confidence bands removed)
 
 ## Repository Overview
 
@@ -230,7 +230,7 @@ All four modules operate on **per-patient inputs only** — kinetic rate constan
 | 1 | `01_load_and_prepare.py` | Load merged data, compute signatures (TIS, CYT, IMPRES), M1/M2 STV deconvolution, cell-type estimates |
 | 2 | `02_feature_analysis.py` | Mann-Whitney U, Fisher's exact, Youden cutoffs, interaction terms, feature credibility |
 | 3 | `03_cluster_patients.py` | Gaussian Mixture Model (GMM, K=4, full covariance) soft clustering, posterior probability export, PCA/t-SNE projections, model persistence |
-| 4 | `04_phenotype_characterisation.py` | Cluster profiling, phenotype labelling, KM survival, Q3 ODE integration |
+| 4 | `04_phenotype_characterisation.py` | Cluster profiling, phenotype labelling, KM survival. Dual-arm Q3-parameterised Kuznetsov 2-state ODE trajectories: Panel A = Immunotherapy (Anti-PD-1 monotherapy + M2 CAF-rescue combination), Panel B = Targeted Therapy (Vemurafenib BRAFi 500 nM). Per-patient r derived from Q3 pERK/pERK_ref coupling (Module A→B); per-patient c from Q3 checkpoint f_kill (Module D) and CYT. Phenotype-level pheno_r_mult applied in targeted arm to separate NF1-loss (0.68×), M2-High (1.25×), and NRAS-paradox (1.00×) cohorts. |
 | 5 | `05_subgroup_models.py` | Per-phenotype Logistic Regression + RF, LOCO CV vs global Q1 model |
 | 6 | `06_clinical_utility.py` | Decision Curve Analysis, Net Benefit, NNT, PPV, clinical benchmarks |
 | 7 | `07_treatability_scoring.py` | Treatability Index, Q2 drug integration, Q4 DepMap/LINCS target nominations |
@@ -253,12 +253,12 @@ All four modules operate on **per-patient inputs only** — kinetic rate constan
 
 ### Four Discovered Phenotypes
 
-| Phenotype | Key Signatures | Approx. Response Rate |
-|-----------|---------------|----------------------|
-| **Immune Hot** | High TIS, high CYT, high CD8, high M1/M2 ratio | ~65% |
-| **Immune Cold** | Low TIS, low infiltration, immune desert | ~20% |
-| **Immunosuppressive M2-High** | High M2 macrophages, high CAFs, low M1/M2 ratio | ~15% |
-| **Mutant-Driven** | High `NF1` mutation rate, high TMB | ~50% |
+| Phenotype | N (%) | Key Signatures | Response Rate |
+|-----------|-------|----------------|---------------|
+| **Immune Cold** (Cluster 0) | 22 (3.1%) | Low TIS, low infiltration, T-cell desert; 90.9% `NRAS` mutant | 50.0% |
+| **Mutant-Driven** (Cluster 1) | 65 (9.3%) | 100% `NF1` loss-of-function, high TMB, 0% `BRAF` V600E | 68.8% |
+| **Immune Hot** (Cluster 2) | 304 (43.5%) | High TIS, high CYT, high `CD8A`/`PRF1`/`GZMA`, 100% `BRAF` mutant | 41.1% |
+| **Immunosuppressive M2-High** (Cluster 3) | 308 (44.1%) | High M2 macrophages, high CAFs, `TGFB1`/`ARG1`/`CD163`, 47.7% `NRAS` | 38.0% |
 
 ### Cross-Question Data Flow
 
@@ -299,7 +299,7 @@ Q5 internal dependency chain:
 | `q5/src/phenotyping.py` L155–163 | `plot_radar_chart()` and `plot_cluster_heatmap()` are stub `pass` implementations | Unresolved |
 | `q5_constants.py` | `PHENOTYPE_FEATURES` defined but never used | **Resolved** (replaced with central `CLUSTERING_FEATURES` & `PHENOTYPE_PROFILE_FEATURES`) |
 | `run_pipeline.py` (Q1) | Still writes log to project root instead of `logs/` directory | Unresolved |
-| `q5/scripts/04_phenotype_characterisation.py` | Replaced local 2-state ODE with direct Q3 4-module ODE per-patient Digital Twin integration across N=699 patients, plotting dual-arm Mean ± IQR bands (surfacing RAF paradox for NF1/NRAS mutants). | **Resolved** |
+| `q5/scripts/04_phenotype_characterisation.py` | Phase 4 now renders a dual-arm Kuznetsov 2-state ODE figure (Panel A: Immunotherapy, Panel B: Targeted Therapy) without IQR confidence shading. Per-patient r derived from Q3 pERK coupling; c from Q3 checkpoint f_kill and CYT. Targeted arm uses phenotype-level pheno_r_mult to achieve visual separation (NF1-loss=0.68×, M2-High=1.25×). All changes confined to `04_phenotype_characterisation.py`; q3-ode-model/ unchanged. | **Resolved** |
 
 ## Conventions Quick Reference
 

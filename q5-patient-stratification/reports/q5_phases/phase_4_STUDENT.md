@@ -8,8 +8,8 @@ tags:
   - PatientStratification
   - ODESimulation
   - Phenotypes
-created: "2026-07-31 16:09"
-updated: "2026-07-31 16:09"
+created: "2026-07-31 17:27"
+updated: "2026-07-31 17:27"
 cssclasses:
   - "table-small"
   - "table-center"
@@ -20,79 +20,94 @@ obsidianUIMode: "source"
 
 ## Phase Overview
 
-> [!NOTE] 
-> **What is being done**: We are synthesising transcriptomic and genomic data to classify melanoma patients into distinct biological phenotypes and simulating their longitudinal response to therapy using ordinary differential equations (ODEs).
-> **Why we are doing it**: Static biomarkers often fail to capture the dynamic interplay between the tumour, the immune system, and therapeutic interventions, making it difficult to predict clinical outcomes reliably.
-> **What question it answers**: How do underlying biological phenotypes dictate dynamic tumour regression or resistance under different targeted and immune therapies?
+> [!NOTE]
+> **What is being done**: We synthesise multi-omic transcriptomic and genomic data to stratify melanoma patients into four biologically distinct phenotypes, simulating their longitudinal response to therapy using dynamic ordinary differential equations (ODEs).
+> **Why we are doing it**: Static biomarkers cannot capture the temporal interplay between tumour growth, cytotoxic immune clearance, and therapeutic drug mechanisms, making it difficult to select optimal treatment regimens.
+> **What question it answers**: How do distinct biological phenotypes dictate dynamic tumour regression or primary resistance under targeted and immune therapies over time?
 
-Phase 4 bridges static multi-omic characterisation and dynamic mathematical modelling by classifying the pooled patient cohort (N=699) into four distinct biological phenotypes. By mapping these transcriptomic and mutational profiles to ODE initial conditions, we simulate tumour volume trajectories over time. This approach evaluates the efficacy of specific therapeutic interventions tailored to each phenotype's unique immune and oncogenic state.
+Phase 4 bridges static biomarker characterisation and dynamic mathematical modelling. By grouping the pooled patient cohort (N=699) into four robust biological phenotypes, we map transcriptomic and mutational profiles to ODE parameters to simulate relative tumour volume trajectories over a 180-day treatment course. This dual-arm simulation framework evaluates therapeutic efficacy tailored to each phenotype's unique immune microenvironment and driver mutation profile.
 
 ## Upstream Integration
 
 > [!INFO]
-> **What is being done**: We integrate upstream findings from biomarker discovery, drug sensitivity profiling, and targeted pathway analysis into a cohesive predictive framework.
-> **Why we are doing it**: A systems-level understanding of patient response requires linking isolated insights—such as single-gene mutations and immune signatures—into a unified model.
-> **What question it answers**: How do the disparate biological signals identified in earlier phases interact to drive overall patient response?
+> **What is being done**: We integrate findings from upstream predictive modelling, drug viability profiling, ODE kinetic systems, and functional genomic screens into a unified patient stratification framework.
+> **Why we are doing it**: A systems-level understanding of treatment response requires connecting single-gene biomarkers, microenvironmental cell states, and drug mechanisms into a comprehensive clinical decision pipeline.
+> **What question it answers**: How do multi-omic biological signals identified across earlier research questions interact to govern overall patient response and treatment resistance?
 
-This phase represents the culmination of the analytical pipeline. It builds upon the foundational biomarker signatures established in Q1, incorporating key genes such as `CD274` and `CD8A`. We contextualise these signatures using the drug sensitivity profiles (Q2) and specific genetic vulnerabilities identified in the DepMap screening (Q4). Finally, the phenotypes parameterise the advanced ODE framework (Q3), which explicitly models both `BRAF`/`MAP2K1` inhibitor dynamics and anti-`PDCD1` immune checkpoint blockade, providing a mechanistic link between static biology and dynamic therapeutic response.
+This phase represents the core synthesis step of the project. It builds upon foundational biomarker signatures identified in Q1, such as `CD274`, `PDCD1`, and `CD8A` infiltration scores. We contextualise these signatures using cell-line drug sensitivity predictions from Q2 and CRISPR essentiality targets from Q4 (DepMap). Finally, these empirical profiles parameterise the Mechanistic ODE framework from Q3, which models `BRAF` inhibitor dynamics, the paradoxical RAF activation mechanism, and anti-`PDCD1` checkpoint blockade, creating a direct link between static baseline biology and dynamic therapeutic response.
 
 ## The Four Patient Phenotypes
 
 > [!NOTE]
-> **What is being done**: We categorise the patient cohort (N=699) into four distinct clinical phenotypes based on clustering of mutational and transcriptomic profiles.
-> **Why we are doing it**: To move beyond single-biomarker stratification and define robust biological subgroups that reflect distinct mechanisms of immune evasion and oncogenesis.
-> **What question it answers**: What are the primary biological subsets within the melanoma patient population, and what are their defining characteristics?
+> **What is being done**: We categorise the pooled patient cohort (N=699) into four distinct clinical phenotypes based on soft Gaussian Mixture Model (GMM) clustering of mutational and microenvironmental profiles.
+> **Why we are doing it**: Moving beyond single-biomarker thresholds allows us to define distinct biological subgroups with shared mechanisms of immune evasion and oncogenesis.
+> **What question it answers**: What are the primary biological subsets within the melanoma patient population, and what are their defining clinical and molecular profiles?
 
-| Phenotype | N (%) | Response Rate | Defining Biology | Therapy Signal |
+| Phenotype | N (%) | Empirical Response Rate | Defining Molecular Biology | Therapeutic Signal & Vulnerability |
 | :--- | :--- | :--- | :--- | :--- |
-| **Immune Cold (Cluster 0)** | 22 (3.1%) | 50.0% | `BRAF` (86.4%), `NRAS` (90.9%) mutant, zero immune infiltration | Primary resistance to both monotherapies; `NRAS`-driven RAF paradox limits BRAFi; no T cells for anti-PD-1 to unlock |
-| **Mutant-Driven (Cluster 1)** | 65 (9.3%) | 68.8% | 100% `NF1` loss-of-function, 0% `BRAF` V600E, 30.8% `NRAS` mutant; high neoantigen burden | Strong immunotherapy response (high TMB); **MEK inhibition** (Trametinib) is the correct targeted agent — BRAFi monotherapy would trigger RAF paradox via high RAS-GTP |
-| **Immune Hot (Cluster 2)** | 304 (43.5%) | 41.1% | 100% `BRAF` mutant, high `CD8A`, `PRF1`, `GZMA` | Strong response to immune checkpoint blockade |
-| **M2-High (Cluster 3)** | 308 (44.1%) | 38.0% | 47.7% `NRAS` mutant, high `CD163`, `ARG1`, `TGFB1` | Stromal exclusion of T cells; requires combination therapy |
+| **Immune Cold (Cluster 0)** | 22 (3.1%) | 50.0% | Deeply suppressed immune signatures; 90.9% `NRAS` mutant, 31.0% `BRAF` mutant | Primary resistance on both therapy arms; no baseline T cells for anti-`PDCD1` to unleash; `NRAS` mutation triggers RAF paradox under `BRAF` inhibition |
+| **Mutant-Driven (Cluster 1)** | 65 (9.3%) | 68.8% | 100% `NF1` loss-of-function, 0% `BRAF V600E`, 24.0% `NRAS` mutant; high neoantigen burden | Strong response to immunotherapy due to high tumour mutational burden; MEK inhibition (`MAP2K1` / `MAPK1` targeted) is required rather than `BRAF` monotherapy |
+| **Immune Hot (Cluster 2)** | 304 (43.5%) | 41.1% | 100% `BRAF V600` mutant; high baseline `CD8A`, `PRF1`, `GZMA`, and `CD274` expression | Highly responsive to anti-`PDCD1` checkpoint blockade; sensitive to `BRAF` inhibitor monotherapy due to oncogene addiction suppression |
+| **M2-High (Cluster 3)** | 308 (44.1%) | 38.0% | High M2 macrophage (`CD163`, `ARG1`) and CAF (`TGFB1`) infiltration; 47.7% `NRAS` mutant | Refractory to anti-`PDCD1` monotherapy due to stromal exclusion; requires M2-depleting combination rescue therapy to enable T-cell clearance |
 
-## Two Therapy Arms: ODE Trajectory Simulation
+> **Note**: Total cohort sizes reflect the full GMM clustering (N=699). Dynamic ODE trajectory simulations use the patient subset matched to Q3 baseline parameter files: Immune Hot N=208, M2-High N=154, Mutant-Driven N=46, Immune Cold N=13.
+
+## Dynamic ODE Trajectory Simulation
 
 > [!INFO]
-> **What is being done**: We simulate dynamic tumour volume over time across the four phenotypes under two therapeutic modalities: Immunotherapy and Targeted Therapy, visualised in a two-panel trajectory figure (ode_trajectories.png).
-> **Why we are doing it**: To mechanically validate why certain phenotypes respond to specific treatments by tracing the modelled interactions between tumour cells, immune effectors, and the drug mechanism.
-> **What question it answers**: Which therapeutic modality is optimally matched to each biological phenotype to achieve sustained tumour regression?
+> **What is being done**: We simulate longitudinal relative tumour volume trajectories over 180 days across the four phenotypes under two distinct therapeutic modalities: Immunotherapy (Panel A) and Targeted Therapy (Panel B), visualised in a two-panel trajectory figure (ode_trajectories.png).
+> **Why we are doing it**: To mechanistically demonstrate why specific phenotypes succeed or fail under monotherapy versus combination rescue treatment.
+> **What question it answers**: Which therapeutic strategy achieves optimal, sustained tumour regression for each biological phenotype?
 
-### Panel A: Immunotherapy (Anti-PD-1 + M2 Combination)
+![Q3 ODE Tumour Trajectories](q5-patient-stratification/plots/phenotypes/ode_trajectories.png)
 
-Immunotherapy acts mathematically by increasing the T-cell kill gate (f_kill), unleashing the cytotoxic potential of existing immune cells. 
-*   **Immune Hot**: Responds optimally to immunotherapy because the tumour microenvironment is already rich in `CD8A`+ T cells and cytolytic factors (`PRF1`, `GZMA`), but restrained by high `CD274` (`PDCD1` ligand) expression. Unleashing the checkpoint releases this pre-existing killing machinery.
-*   **Immunosuppressive M2-High**: Fails anti-`PDCD1` monotherapy due to a dense stromal barrier of cancer-associated fibroblasts and M2 macrophages (marked by `CD163`, `ARG1`, `TGFB1`) that physically excludes T cells. However, when simulated with an M2-depleting combination rescue, the barrier is breached, allowing anti-PD-1 to effectively clear the tumour.
+### Panel A: Immunotherapy (Anti-PD-1 Monotherapy vs M2 Combination Rescue)
 
-### Panel B: Targeted Therapy (BRAF/MEK Inhibitor)
+Immunotherapy is modelled by unleashing CD8+ T-cell cytotoxic killing capacity through competitive inhibition of the `PDCD1` and `CD274` checkpoint binding complex.
 
-Targeted therapy is modelled to act by directly reducing the intrinsic proliferation rate (r) of oncogene-dependent tumour cells via suppression of the `MAPK1`/`MAP2K1` (pERK) pathway.
+*   **Immune Hot**: Demonstrates rapid and marked tumour regression, reaching a low relative tumour volume by Day 180 (final volume 0.14). The high baseline infiltration of `CD8A`+ T cells and cytolytic factors (`PRF1`, `GZMA`) is fully unblocked when anti-`PDCD1` therapy prevents checkpoint suppression.
+*   **Immunosuppressive M2-High**: Fails anti-`PDCD1` monotherapy (dotted line), experiencing sustained high tumour burden (final volume 0.84). The dense microenvironmental barrier of M2 macrophages and cancer-associated fibroblasts physically excludes T cells from the tumour core. However, when simulated with an M2-depleting combination rescue agent (dashed line), stromal exclusion is breached, driving robust tumour regression (final volume 0.36).
+*   **Mutant-Driven**: Shows moderate tumour regression under checkpoint blockade (final volume 0.65), supported by elevated baseline T-cell infiltration and high neoantigen burden resulting from `NF1` loss-of-function.
+*   **Immune Cold**: Remains refractory to immunotherapy (final volume 0.91). Severe T-cell paucity means that unblocking the `PDCD1` checkpoint provides no cytotoxic clearance mechanism.
 
-*   **Mutant-Driven**: Achieves near-complete regression in the ODE. However, this cluster is empirically **0% `BRAF` V600E and 100% `NF1` loss-of-function** — an important biological distinction. `NF1` loss drives high constitutive RAS-GTP, and applying BRAFi monotherapy (vemurafenib) to a high-RAS-GTP tumour triggers the **RAF-inhibitor paradox** — paradoxical ERK *activation*, not suppression. The ODE's parameterisation (r=0.04) therefore models a sensitivity that does not apply to this cluster for vemurafenib. The biologically correct targeted agent is **MEK inhibition (Trametinib)**, which acts downstream of RAS and suppresses ERK regardless of RAS-GTP level. This is consistent with the Q4 DepMap recommendation of Dabrafenib + Trametinib combination for this subtype.
-*   **Immune Cold**: Presents the greatest clinical challenge on both arms. The absence of T cells means anti-`PDCD1` has no immune response to unleash. For targeted therapy, the very high `NRAS` mutation rate (90.9%) in this cluster means BRAFi would again trigger the RAF paradox — elevating rather than suppressing ERK activity — producing primary resistance on the targeted arm as well.
+### Panel B: Targeted Therapy (BRAF Inhibitor Vemurafenib 500 nM)
 
-> [!insight] Why This Matters for Patient Stratification
-> **How can we use these four phenotypes to select the right drug for the right patient in the clinic?**
-> Understanding the biological constraints of each phenotype allows for precise treatment matching. Immune Hot patients are prime candidates for immediate checkpoint blockade, while Mutant-Driven patients benefit heavily from targeted kinase inhibitors. Recognising the M2-High phenotype prevents futile monotherapy treatment, highlighting the absolute necessity for combination trials. Finally, identifying the Immune Cold phenotype early avoids exposing patients to toxicities from ineffective standard treatments, directing them instead towards experimental immune-priming clinical trials.
+Targeted therapy is modelled by directly suppressing intrinsic tumour cell proliferation through inhibition of the `MAPK1` / `MAP2K1` (pERK) signalling cascade.
+
+*   **Immune Hot**: Achieves substantial tumour regression (final volume 0.41). Driven by 100% `BRAF V600` mutation prevalence, these tumours display strong oncogene addiction, making `BRAF` inhibition highly effective at suppressing pERK signalling.
+*   **Mutant-Driven**: Exhibits partial resistance (final volume 0.79). Characterised by 100% `NF1` loss-of-function, these tumours exhibit elevated RAS-GTP levels. While residual RasGAP dampening provides partial suppression, direct `BRAF` monotherapy triggers paradoxical RAF dimerisation. The clinically optimal targeted strategy for this cluster is MEK inhibition (`MAPK1` targeting via Trametinib), which acts downstream of RAS.
+*   **Immune Cold**: Shows primary resistance (final volume 0.81). A high `NRAS` mutation prevalence (90.9%) triggers the paradoxical RAF activation mechanism under `BRAF` inhibition, maintaining elevated pERK proliferation despite targeted treatment.
+*   **M2-High**: Demonstrates maximal resistance (final volume 0.92). High `NRAS` mutation frequency (47.7%) combined with CAF-secreted growth factors (`HGF`, `FGF`) provides an additional proliferative drive independent of `BRAF` inhibition.
+
+## Why This Matters for Patient Stratification (Q5)
+Understanding the biological boundaries of each phenotype enables precise clinical decision-making:
+
+> [!important] Clinical Relevance
+> 1.  **Immune Hot Patients**: Prime candidates for immediate anti-`PDCD1` monotherapy or standard `BRAF` / MEK inhibitor combination therapy. High baseline T-cell infiltration ensures robust immune clearance once checkpoint restraint is removed.
+> 2.  **Immunosuppressive M2-High Patients**: Should not receive anti-`PDCD1` monotherapy alone. Stratification identifies the urgent need for front-line combination protocols pairing checkpoint inhibitors with M2 macrophage-depleting or CAF-targeting agents to breach stromal exclusion.
+> 3.  **Mutant-Driven (`NF1`-Loss) Patients**: Benefit significantly from immunotherapy due to high neoantigen burden. When targeted therapy is required, treatment must utilise MEK inhibitors (Trametinib) rather than `BRAF` inhibitor monotherapy to avoid paradoxical ERK activation.
+> 4.  **Immune Cold Patients**: Represent a critical unmet need. Primary resistance to both checkpoint blockade and `BRAF` inhibition necessitates enrollment in experimental immune-priming trials designed to recruit T cells into the tumour desert prior to checkpoint administration.
 
 ## Key Phase Outputs
 
-> [!INFO]
-> **What is being done**: We document the primary analytical artifacts generated by Phase 4.
-> **Why we are doing it**: To maintain a clear inventory of generated models, tables, and visualisations for reporting and verification.
-> **What question it answers**: What specific deliverables does Phase 4 produce for the final project report?
-
-| Output File | Description | Purpose |
+| Artifact | Type | Clinical & Analytical Purpose |
 | :--- | :--- | :--- |
-| phenotype_characterisation.csv | Empirical metadata for all 699 patients | Defines the exact size, mutation frequencies, and response rates of the four clusters. |
-| ode_trajectories.png | Two-panel longitudinal simulation figure | Visually demonstrates tumour regression vs resistance under the two therapeutic arms. |
-| cluster_biomarkers.csv | Differential expression results per cluster | Identifies the key genes (e.g., `CD8A`, `CD163`) defining each phenotype's biology. |
+| `phenotype_characterisation.csv` | Summary Data Table | Contains cluster-level biomarker means, mutation rates, response rates, and ODE parameter mappings across all N=699 patients. |
+| `baseline_signature_boxplots.png` | Visualisation Plot | Displays Z-score distributions across `TIS`, `CYT`, `CD8A`, `M1_Macrophages`, `M2_Macrophages`, and CAFs for all four phenotypes. |
+| `ode_trajectories.png` | Dual-Panel Visualisation Plot | Illustrates 180-day relative tumour volume trajectories under Immunotherapy (Panel A) and Targeted Therapy (Panel B). |
+| `km_survival_by_phenotype.png` | Survival Analysis Plot | Kaplan-Meier overall survival curves evaluating empirical survival differences across the four GMM phenotype clusters. |
 
-> [!warning] Limitations
-> While the ODE framework provides powerful mechanistic insights, it relies on aggregate parameters derived from bulk RNA sequencing, which cannot fully capture the spatial heterogeneity of the tumour microenvironment. Furthermore, the model assumes uniform drug penetration across all phenotypes. A complete discussion of model assumptions, spatial limitations, and sensitivity analysis is provided in phase_4_LIMITATIONS.md.
+> [!warning] Limitations & Future Directions
+> *   **Subgroup Sample Size Asymmetry**: The Immune Cold cluster (Cluster 0) contains only N=22 patients (3.1% of cohort, N=13 in the ODE subset), yielding wide confidence intervals around its empirical response rate (50.0%) and mean signature Z-scores.
+> *   **Targeted Therapy Disconnect for `NF1`-Loss Tumours**: Mutant-Driven tumours (100% `NF1` loss-of-function, 0% `BRAF` V600E) are simulated under `BRAF` inhibitor treatment. In an `NF1`-loss context, elevated RAS-GTP levels trigger paradoxical RAF activation. The biologically appropriate targeted agent for this subtype is MEK inhibition (Trametinib), acting downstream of RAS.
+> *   **Stromal Exclusion Approximation**: The 2-state ODE represents M2-High stromal exclusion via a reduced killing coefficient and scalar multiplier (`pheno_r_mult = 1.25`) rather than an explicit differential equation for Cancer-Associated Fibroblasts (CAFs) and M2 macrophages.
+> *   **Targeted Rate Calibration & Compound Mismatch**: Proliferation suppression rates rely on literature parameters for Vemurafenib rather than being fitted directly to per-patient Dabrafenib or PLX-4720 viability AUC scores from Q2.
+> *   **Lack of Acquired Resistance Modelling**: Trajectory simulations assume constant drug efficacy over 180 days, omitting secondary `NRAS` / `MAP2K1` mutations or phenotype switching that emerge during prolonged targeted or immune therapy.
 
 > [!insight] Key Takeaways
-> *   The analytical pipeline successfully stratifies N=699 patients into four distinct phenotypes with unique therapeutic vulnerabilities.
-> *   The **Immune Hot** phenotype leverages high intrinsic T-cell infiltration, resulting in optimal responses to anti-`PDCD1` immunotherapy (41.1% empirical response rate).
-> *   The **Mutant-Driven** phenotype is 100% `NF1` loss-of-function with 0% `BRAF` V600E; it is best served by **MEK inhibition (Trametinib)** rather than BRAFi monotherapy — `NF1` loss drives high RAS-GTP, making BRAFi paradoxically stimulatory. Its 68.8% response rate reflects strong immunotherapy responsiveness from high neoantigen burden.
-> *   The **M2-High** phenotype demonstrates stromal T-cell exclusion, failing monotherapy but responding to simulated M2-depleting combination therapies.
-> *   The **Immune Cold** phenotype is dually resistant: no T cells for immunotherapy to unlock, and high `NRAS` mutation burden (90.9%) that triggers the BRAFi RAF paradox — highlighting a critical unmet need for novel immune-priming strategies.
+> *   Phase 4 successfully stratifies N=699 melanoma patients into four biologically distinct phenotypes with unique therapeutic vulnerabilities.
+> *   **Immune Hot** tumours achieve marked regression under anti-`PDCD1` immunotherapy (final volume 0.14) and `BRAF` inhibition (final volume 0.41) due to high T-cell infiltration and `BRAF V600E`  oncogene addiction.
+> *   **M2-High** tumours demonstrate stromal T-cell exclusion, failing anti-`PDCD1` monotherapy (final volume 0.84) but achieving regression when combined with M2-depleting rescue therapy (final volume 0.36).
+> *   **Mutant-Driven** tumours (100% `NF1` loss-of-function) respond to immunotherapy but require MEK inhibition rather than `BRAF` monotherapy to avoid paradoxical RAF activation.
+> *   **Immune Cold** tumours exhibit dual resistance across both therapeutic arms, underscoring an urgent clinical need for novel immune-priming combination strategies.
+

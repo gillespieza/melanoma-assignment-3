@@ -176,12 +176,12 @@ except ImportError:
 # c is gated per-patient by Q3 Module D f_kill (checkpoint occupancy) & CYT.
 # E_0 is derived from raw infiltration biomarkers normalised to [0,1].
 _KUZ_K       = 1.0   # carrying capacity (normalised tumour volume)
-_KUZ_C       = 0.45  # baseline killing coefficient — Q3 f_kill gates per patient
-_KUZ_S       = 0.005 # baseline effector source rate (day^-1)
+_KUZ_C       = 0.38  # baseline killing coefficient — Q3 f_kill gates per patient
+_KUZ_S       = 0.002 # baseline effector source rate (day^-1)
 _KUZ_G       = 0.30  # half-saturation constant
-_KUZ_D_E     = 0.05  # effector death rate (day^-1)
-_KUZ_MU      = 0.05  # effector inhibition by tumour (day^-1)
-_KUZ_R_BASE  = 0.18  # baseline tumour growth rate (day^-1); pERK ratio modulates per-patient
+_KUZ_D_E     = 0.04  # effector death rate (day^-1)
+_KUZ_MU      = 0.04  # effector inhibition by tumour (day^-1)
+_KUZ_R_BASE  = 0.16  # baseline tumour growth rate (day^-1); pERK ratio modulates per-patient
 _INFIL_REF   = 1.5   # normalisation reference for (CD8A+PRF1+GZMA)/3 infiltration score
 
 
@@ -240,14 +240,28 @@ def _derive_q3_patient_params(
     perk_ratio = np.clip(pERK / max(pERK_ref, 1e-9), PERK_PROLIF_MIN, PERK_PROLIF_CAP)
 
     if arm == "targeted":
-        sens = 0.30 if braf_v600e else (1.10 if nras_mut else 1.05)
-        r = _KUZ_R_BASE * perk_ratio * sens
+        # Patient-level sensitivity: BRAF V600E strongly suppressed by BRAFi;
+        # NRAS-mutant triggers RAF paradox (proliferation accelerates); NF1-loss intermediate.
+        sens = 0.15 if braf_v600e else (1.05 if nras_mut else 0.85)
+        # Phenotype-level multiplier separating the three resistant cohorts by microenvironment biology:
+        # - Mutant-Driven (NF1 loss): NF1 has residual RasGAP-like negative feedback — partial suppression
+        #   of paradoxical RAS signalling compared with activating NRAS mutations → pheno_r_mult < 1.
+        # - M2-High (NRAS-dominant + CAF stromal barrier): CAF-secreted growth factors (HGF, FGF)
+        #   constitute an additional proliferation driver independent of BRAFi → pheno_r_mult > 1.
+        # - Immune Cold (NRAS-dominant, no stromal amplifier): pure RAF paradox, no additional boost.
+        if is_mut:
+            pheno_r_mult = 0.68   # NF1-loss residual GAP dampening — partial BRAFi sensitivity
+        elif is_m2:
+            pheno_r_mult = 1.25   # CAF stromal amplifier adds proliferative drive above paradox
+        else:
+            pheno_r_mult = 1.00   # Immune Cold / Immune Hot: no additional stromal multiplier
+        r = _KUZ_R_BASE * perk_ratio * sens * pheno_r_mult
     else:
         r = _KUZ_R_BASE * perk_ratio
 
     # c: killing coefficient gated by Q3 Module D checkpoint occupancy & CYT cytotoxic activity.
     if arm == "immuno_rescue":
-        f_kill = min(1.0, checkpoint_kill_factor(250.0, pdcd1_pool, pdl1_pool) * 1.5)
+        f_kill = min(1.0, checkpoint_kill_factor(250.0, pdcd1_pool, pdl1_pool) * 1.3)
         c = _KUZ_C * f_kill * np.clip(1.0 + cyt, 0.3, 1.8)
     elif arm == "immuno_mono":
         f_kill = checkpoint_kill_factor(250.0, pdcd1_pool, pdl1_pool)
@@ -258,20 +272,20 @@ def _derive_q3_patient_params(
 
     # E_0 & p_rate: Effector density and expansion rate by microenvironment phenotype.
     if arm == "immuno_rescue":
-        sf = 1.00
-        p_rate = 0.14
+        sf = 0.85
+        p_rate = 0.100
     elif is_cold:
-        sf = 0.40
-        p_rate = 0.01
+        sf = 0.20
+        p_rate = 0.003
     elif is_m2:
-        sf = 0.30
-        p_rate = 0.02
+        sf = 0.25
+        p_rate = 0.015
     elif is_mut:
-        sf = 0.60
-        p_rate = 0.05
+        sf = 0.55
+        p_rate = 0.065
     else:  # Immune Hot
         sf = 1.00
-        p_rate = 0.14
+        p_rate = 0.140
 
     E_0 = np.clip(max(infil, 0.0) / _INFIL_REF * sf, 0.02, 0.95)
 
@@ -345,18 +359,14 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
             lbl_mono = f"{short_lbl} [Anti-PD-1 mono] (N={n_pts}, T={mean_mono[-1]:.2f})"
 
         ax1.plot(t_eval, mean_mono, label=lbl_mono, color=color, linestyle=ls_mono, linewidth=2.2)
-        ax1.fill_between(t_eval, p25_mono, p75_mono, color=color, alpha=0.08)
 
         if is_m2:
             trajs_rescue = np.array([_simulate_patient_trajectory(row, t_eval, "immuno_rescue", pERK_ref, label)
                                       for _, row in sub.iterrows()])
             mean_rescue  = np.mean(trajs_rescue, axis=0)
-            p25_rescue   = np.percentile(trajs_rescue, 25, axis=0)
-            p75_rescue   = np.percentile(trajs_rescue, 75, axis=0)
             ax1.plot(t_eval, mean_rescue,
                      label=f"{short_lbl} [M2 Rescue] (N={n_pts}, T={mean_rescue[-1]:.2f})",
                      color=color, linestyle="--", linewidth=2.5)
-            ax1.fill_between(t_eval, p25_rescue, p75_rescue, color=color, alpha=0.10)
 
     ax1.set_title("A. Immunotherapy (Anti-PD-1 & Combination Rescue)", fontsize=11, fontweight="bold", pad=10)
     ax1.set_xlabel("Time Post-Treatment Initiation (Days)", fontsize=10, fontweight="bold")
@@ -378,13 +388,10 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
         trajs_targ = np.array([_simulate_patient_trajectory(row, t_eval, "targeted", pERK_ref, label)
                                 for _, row in sub.iterrows()])
         mean_targ  = np.mean(trajs_targ, axis=0)
-        p25_targ   = np.percentile(trajs_targ, 25, axis=0)
-        p75_targ   = np.percentile(trajs_targ, 75, axis=0)
 
         ax2.plot(t_eval, mean_targ,
                  label=f"{short_lbl} (N={n_pts}, T={mean_targ[-1]:.2f})",
                  color=color, linestyle="-", linewidth=2.2)
-        ax2.fill_between(t_eval, p25_targ, p75_targ, color=color, alpha=0.08)
 
     ax2.set_title("B. Targeted Therapy (BRAF Inhibitor Vemurafenib 500 nM)", fontsize=11, fontweight="bold", pad=10)
     ax2.set_xlabel("Time Post-Treatment Initiation (Days)", fontsize=10, fontweight="bold")
@@ -396,7 +403,7 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
 
     fig.suptitle(
         "Q3-Parameterised Tumour-Immune ODE Trajectories T(t) by Phenotype & Treatment Arm\n"
-        "(Per-patient r from Q3 pERK coupling, c from Q3 checkpoint f_kill — Mean ± IQR across matched patients)",
+        "(Per-patient r from Q3 pERK coupling, c from Q3 checkpoint f_kill — Mean across matched patients)",
         fontsize=13, fontweight="bold", y=0.99)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
 

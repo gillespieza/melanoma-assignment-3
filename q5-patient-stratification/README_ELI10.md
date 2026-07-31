@@ -86,7 +86,7 @@ When any random new patient enters the clinic, Q5 runs them through a simple 3-s
           └── NO  ──► Proceed to Step 2
                                │
                                ▼
-        [Step 2] Is the `BRAF` Gene Broken (`BRAF` V600)?
+        [Step 2] Is the `BRAF` Gene Broken (`BRAF V600`)?
           ├── YES ──► 🔵 ARM B: Targeted Therapy
           └── NO  ──► Proceed to Step 3
                                │

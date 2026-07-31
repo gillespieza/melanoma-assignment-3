@@ -22,7 +22,7 @@ A comprehensive, student-focused reference explaining the **biology**, **statist
 In cutaneous melanoma, patients diagnosed with advanced (Stage III/IV) disease have three main treatment avenues:
 
 1. **Arm A — Immunotherapy**: Immune Checkpoint Inhibitors (ICI) such as Anti-PD-1 (*Nivolumab*, *Pembrolizumab*) or Anti-CTLA-4 (*Ipilimumab*). These drugs release the molecular "brakes" on cytotoxic CD8+ T cells so they can destroy tumour cells.
-2. **Arm B — Targeted Therapy**: Small-molecule kinase inhibitors (`BRAF` inhibitor *Dabrafenib* + MEK inhibitor *Trametinib*). These selectively block hyperactive MAPK pathway signalling in tumours harboring a **`BRAF` V600E/K mutation**.
+2. **Arm B — Targeted Therapy**: Small-molecule kinase inhibitors (`BRAF` inhibitor *Dabrafenib* + MEK inhibitor *Trametinib*). These selectively block hyperactive MAPK pathway signalling in tumours harboring a **`BRAF V600`/K mutation**.
 3. **Arm C — Chemotherapy & Combination Therapy**: Cytotoxic chemotherapy (*Dacarbazine*) or combination regimens (e.g., M2-macrophage depletion / epigenetic priming combined with anti-PD-1).
 
 ### The Challenge
@@ -165,7 +165,7 @@ The master decision engine routes patients through three sequential evaluation g
           └── NO  ──► Proceed to Gate 2
                                │
                                ▼
-        [Gate 2] Is `BRAF` Broken (`BRAF` V600 Mutation)?
+        [Gate 2] Is `BRAF` Broken (`BRAF V600` Mutation)?
           ├── YES ──► 🔵 ARM B: Targeted Therapy
           └── NO  ──► Proceed to Gate 3
                                │
