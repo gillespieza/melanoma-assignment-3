@@ -10,6 +10,25 @@ from typing import Dict, List
 # Module-level Constants & Definitions
 # ---------------------------------------------------------------------------
 
+# Marker gene panels for transcriptomic cell-type deconvolution
+CELL_TYPE_MARKERS: Dict[str, List[str]] = {
+    "CD8_T_cells": ["CD8A", "CD8B", "CD3D", "CD3E"],
+    "CD4_T_cells": ["CD4", "IL7R", "FOXP3"],
+    "NK_cells": ["NCAM1", "KLRB1", "NCR1"],
+    "B_cells": ["CD19", "MS4A1", "CD79A"],
+    "M1_Macrophages": ["TNF", "IL12B", "CXCL10", "NOS2", "IRF5"],
+    "M2_Macrophages": ["CD163", "MRC1", "MSR1", "TGFB1", "ARG1"],
+    "CAFs": ["FAP", "PDGFRB", "COL1A1", "ACTA2"],
+}
+
+# Gene sets for core immune signatures (fallback calculations)
+IMMUNE_SIGNATURE_MARKERS: Dict[str, List[str]] = {
+    "TIS": ["CD274", "PDCD1", "STAT1", "HLA-DRA", "CXCL9", "CXCL10", "IDO1"],
+    "CYT": ["PRF1", "GZMA"],
+    "IFN_gamma": ["IFNG", "STAT1", "IDO1", "CXCL9", "CXCL10"],
+    "CD8_Tcell": ["CD8A", "CD8B"],
+}
+
 # Features utilized for patient clustering
 PHENOTYPE_FEATURES: List[str] = [
     "IFNG_Signaling",

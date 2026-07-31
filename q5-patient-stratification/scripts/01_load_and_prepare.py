@@ -13,7 +13,6 @@ import contextlib
 from pathlib import Path
 import sys
 from typing import Tuple
-import numpy as np
 import pandas as pd
 
 # ---------------------------------------------------------------------------
@@ -44,6 +43,7 @@ from deconvolution import (
     compute_macrophage_stv,
 )
 from phenotyping import plot_baseline_signature_boxplots
+from q5_constants import IMMUNE_SIGNATURE_MARKERS
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, PROCESSED_DIR, PROJECT_ROOT, rel_path
 
@@ -146,7 +146,7 @@ def extract_immune_signatures(df_expr: pd.DataFrame) -> pd.DataFrame:
         from signatures import extract_all_signatures
         df_sig = extract_all_signatures(df_expr)
         print("  Extracted immune signatures via shared Q1 module.")
-    except Exception as err:
+    except (ImportError, ModuleNotFoundError, AttributeError) as err:
         print(f"  Q1 module fallback (reason: {err}). Computing signatures locally.")
         df_sig = pd.DataFrame(index=df_expr.index)
 
@@ -155,22 +155,10 @@ def extract_immune_signatures(df_expr: pd.DataFrame) -> pd.DataFrame:
         elif "PDL1" in df_expr.columns:
             df_sig["PD_L1"] = df_expr["PDL1"]
 
-        tis_markers = ["CD274", "PDCD1", "STAT1", "HLA-DRA", "CXCL9", "CXCL10", "IDO1"]
-        tis_found = [g for g in tis_markers if g in df_expr.columns]
-        if tis_found:
-            df_sig["TIS"] = df_expr[tis_found].mean(axis=1)
-
-        cyt_found = [g for g in ["PRF1", "GZMA"] if g in df_expr.columns]
-        if cyt_found:
-            df_sig["CYT"] = df_expr[cyt_found].mean(axis=1)
-
-        ifng_found = [g for g in ["IFNG", "STAT1", "IDO1", "CXCL9", "CXCL10"] if g in df_expr.columns]
-        if ifng_found:
-            df_sig["IFN_gamma"] = df_expr[ifng_found].mean(axis=1)
-
-        cd8_found = [g for g in ["CD8A", "CD8B"] if g in df_expr.columns]
-        if cd8_found:
-            df_sig["CD8_Tcell"] = df_expr[cd8_found].mean(axis=1)
+        for sig_name, markers in IMMUNE_SIGNATURE_MARKERS.items():
+            found = [g for g in markers if g in df_expr.columns]
+            if found:
+                df_sig[sig_name] = df_expr[found].mean(axis=1)
 
     return df_sig
 
@@ -181,16 +169,16 @@ def safe_save_csv(df: pd.DataFrame, out_file: Path) -> None:
     if out_file.exists():
         try:
             out_file.unlink()
-        except Exception:
+        except (PermissionError, OSError):
             pass
     try:
         df.to_csv(out_file, index=False)
-    except PermissionError:
+    except (PermissionError, OSError):
         tmp_file = out_file.with_suffix(".tmp.csv")
         df.to_csv(tmp_file, index=False)
         try:
             tmp_file.replace(out_file)
-        except Exception:
+        except (PermissionError, OSError):
             print(f"Warning: could not overwrite {out_file.name} directly. Saved to {tmp_file.name}")
 
 

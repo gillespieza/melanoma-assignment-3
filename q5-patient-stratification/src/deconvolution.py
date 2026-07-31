@@ -5,24 +5,11 @@ and estimate relative cell-type fractions for patient stratification.
 """
 
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Tuple
 import numpy as np
 import pandas as pd
 
-# ---------------------------------------------------------------------------
-# Module-level Constants & Definitions
-# ---------------------------------------------------------------------------
-
-# Marker gene panels for transcriptomic cell-type deconvolution
-CELL_TYPE_MARKERS: Dict[str, list] = {
-    "CD8_T_cells": ["CD8A", "CD8B", "CD3D", "CD3E"],
-    "CD4_T_cells": ["CD4", "IL7R", "FOXP3"],
-    "NK_cells": ["NCAM1", "KLRB1", "NCR1"],
-    "B_cells": ["CD19", "MS4A1", "CD79A"],
-    "M1_Macrophages": ["TNF", "IL12B", "CXCL10", "NOS2", "IRF5"],
-    "M2_Macrophages": ["CD163", "MRC1", "MSR1", "TGFB1", "ARG1"],
-    "CAFs": ["FAP", "PDGFRB", "COL1A1", "ACTA2"],
-}
+from q5_constants import CELL_TYPE_MARKERS
 
 
 def compute_macrophage_stv(
