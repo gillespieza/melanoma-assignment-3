@@ -29,6 +29,7 @@ updated: 2026-07-31 14:18
   - [Student Guide](q5-patient-stratification/reports/q5_phases/phase_3_STUDENT.md)
   - [Methodological Limitations & Future Iterations](q5-patient-stratification/reports/q5_phases/phase_3_LIMITATIONS.md)
 - [Phase 4: Phenotype Characterisation & Dynamic ODE Tumour Burden Trajectories (Q3)](q5-patient-stratification/reports/q5_phases/phase_4.md)
+  - [Explainer: Phenotype Characterisation & Tumour-Immune Trajectories](q5-patient-stratification/reports/q5_phases/phase_4_STUDENT.md)
   - [Methodological Limitations & Future Iterations](q5-patient-stratification/reports/q5_phases/phase_4_LIMITATIONS.md)
 - [Phase 5: Subgroup-Specific Predictive Modelling & Machine Learning Evaluation (Q1)](q5-patient-stratification/reports/q5_phases/phase_5.md)
 - [Phase 6: Clinical Utility & Decision Impact Analysis (Q1)](q5-patient-stratification/reports/q5_phases/phase_6.md)

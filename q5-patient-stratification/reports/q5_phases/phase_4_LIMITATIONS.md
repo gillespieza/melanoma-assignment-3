@@ -33,14 +33,14 @@ Phase 4 bridges unsupervised clustering (Phase 3) with dynamic ODE mechanics (Q3
 
 | Statistical Limitation                        | Primary Cause                                                 | Clinical Impact                                                     | Empirical Observation / Risk                                                                                                                                                                                                 |
 |:--------------------------------------------- |:------------------------------------------------------------- |:------------------------------------------------------------------- |:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Cohort Sample Size Asymmetry**              | Imbalanced cluster sizes ($N=22$ to $N=305$).                 | Reduced statistical power for minority phenotype comparisons.       | Cluster 0 (*Immune Cold*, $N=22, 3.1\%$) and Cluster 3 (*Mutant-Driven*, $N=106, 15.2\%$) are substantially smaller than Cluster 1 (*Immunosuppressive M2-High*, $N=305, 43.6\%$) and Cluster 2 (*Immune Hot*, $N=266, 38.1\%$). |
+| **Cohort Sample Size Asymmetry**              | Imbalanced cluster sizes ($N=22$ to $N=308$).                 | Reduced statistical power for minority phenotype comparisons.       | Cluster 0 (*Immune Cold*, $N=22, 3.1\%$) and Cluster 1 (*Mutant-Driven*, $N=65, 9.3\%$) are substantially smaller than Cluster 2 (*Immune Hot*, $N=304, 43.5\%$) and Cluster 3 (*Immunosuppressive M2-High*, $N=308, 44.1\%$). |
 | **Profile Mean Aggregation**                  | Summarising clusters using central mean Z-scores.             | Masks continuous within-cluster variance and heavy-tailed outliers. | Single mean Z-score vectors collapse broad multi-modal distributions into point estimates, ignoring intra-cluster heterogeneity.                                                                                             |
 | **Survival Data Censoring & Sub-cohort Loss** | Missing Overall Survival (OS) follow-up across trial cohorts. | Reduces effective $N$ for Kaplan–Meier log-rank testing.            | Only a subset of the $N=699$ cohort has complete `OS_MONTHS` and `OS_STATUS` metadata, increasing vulnerability to right-censoring bias.                                                                                     |
 
 ### Detailed Statistical Audit
 
 1. **Sample Size Imbalance Across Phenotype Subtypes**:
-   - The stratified patient dataset ($N=699$) exhibits marked group size imbalance: Cluster 0 (*Immune Cold*, $N=22, 3.1\%$) is the smallest subgroup, followed by Cluster 3 (*Mutant-Driven*, $N=106, 15.2\%$), whereas Cluster 1 (*Immunosuppressive M2-High*, $N=305, 43.6\%$) and Cluster 2 (*Immune Hot*, $N=266, 38.1\%$) together account for $81.7\%$ of all patients.
+   - The stratified patient dataset ($N=699$) exhibits marked group size imbalance: Cluster 0 (*Immune Cold*, $N=22, 3.1\%$) and Cluster 1 (*Mutant-Driven*, $N=65, 9.3\%$) together comprise just $12.4\%$ of the cohort, whereas Cluster 2 (*Immune Hot*, $N=304, 43.5\%$) and Cluster 3 (*Immunosuppressive M2-High*, $N=308, 44.1\%$) account for $87.6\%$ of all patients.
    - This imbalance reduces statistical power when conducting non-parametric Mann–Whitney U or log-rank survival tests on minority clusters, increasing the risk of Type II errors for rare subtype characterisation.
 
 2. **Information Loss from Central Profile Aggregation**:
@@ -132,19 +132,7 @@ To address these statistical weaknesses and biological simplifications, future i
 
 ## 5. Key Takeaways & Student Summary 🎓
 
-- **Cluster Profiling Characterises Biological Phenotypes**: Phase 4 successfully mapped $N=699$ patients into four actionable phenotype profiles — *Immune Cold* ($N=22$, 3.1%), *Immunosuppressive M2-High* ($N=305$, 43.6%), *Immune Hot* ($N=266$, 38.1%), and *Mutant-Driven* ($N=106$, 15.2%) — demonstrating distinct response rates and overall survival trends.
+- **Cluster Profiling Characterises Biological Phenotypes**: Phase 4 successfully mapped $N=699$ patients into four actionable phenotype profiles — *Immune Cold* ($N=22$, 3.1%), *Mutant-Driven* ($N=65$, 9.3%), *Immune Hot* ($N=304$, 43.5%), and *Immunosuppressive M2-High* ($N=308$, 44.1%) — demonstrating distinct tumour microenvironmental characteristics and overall survival trends.
 - **2-State ODE Systems Model Phenotype Tumour Burden**: Phenotype-specific 180-day ODE simulations capture tumour clearance in inflamed subtypes versus uncontrolled growth in immunosuppressive subtypes.
-- **Statistical Imbalance & Profile Aggregation Constraints**: Imbalanced cluster sizes ($3.1\%$ to $43.6\%$) and mean scalar Z-score aggregation collapse intra-cluster continuous variance.
+- **Statistical Imbalance & Profile Aggregation Constraints**: Imbalanced cluster sizes ($3.1\%$ to $44.1\%$) and mean scalar Z-score aggregation collapse intra-cluster continuous variance.
 - **Biological Simplifications Require Multi-Module Extensions**: 2-state ODE models omit explicit CAF physical barriers, M1/M2 macrophage switching, and `B2M`/`TAP1` antigen presentation loss, highlighting the need for 4-module patient-specific digital twin extensions in future iterations.
-
----
-
-> [!formula] Phase 4 Script Execution & Software Module Architecture
-> - **Primary Pipeline Execution Scripts**:
->   - [`04_phenotype_characterisation.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/04_phenotype_characterisation.py): Annotates and characterises discovered patient phenotypes, calculates summary profiles across immune signatures and cell deconvolution, integrates Q3 ODE tumour dynamics simulations ($T(t)$ trajectories) over 180 days, performs log-rank Kaplan–Meier survival analysis, and exports `phenotype_characterisation.csv`, `baseline_signature_boxplots.png`, `ode_trajectories.png`, and `km_survival_by_phenotype.png`.
-> - **Core Supporting Python Modules**:
->   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Implements cluster profiling (`profile_clusters`), rank-based phenotype label assignment (`assign_phenotype_labels`), facetted biomarker violin plots (`plot_baseline_signature_boxplots`), radar chart comparison (`plot_radar_chart`), and annotated patient heatmap (`plot_cluster_heatmap`).
->   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Central source of truth defining clustering features (`CLUSTERING_FEATURES`), phenotype profile features (`PHENOTYPE_PROFILE_FEATURES`), and phenotype label mappings (`PHENOTYPE_LABELS`).
-> - **Shared Cross-Question & Pipeline Modules**:
->   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `04_phenotype_characterisation.py` as Step 4.
->   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Reads phenotype characterisation summaries and updates phase markdown reports.
