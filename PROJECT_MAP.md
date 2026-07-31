@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-07-31 (Phase 4 ODE fully refactored: Q3-parameterised 2-state Kuznetsov dual-arm trajectories with phenotype-level multipliers; IQR shading removed; confidence bands removed)
+> **Last updated**: 2026-07-31 (Phase 5 subgroup models fully refactored: unused `LogisticRegression` import removed; magic numbers centralised as `RANDOM_STATE`/`RF_N_ESTIMATORS`/`GLOBAL_MAX_DEPTH`/`SUBGROUP_MAX_DEPTH`/`SKF_N_SPLITS`; `PHENOTYPE_SHORT_NAMES` key corrected from `"M2 Immunosuppressive"` → `"Immunosuppressive M2-High"` to fix Okabe-Ito palette lookup; 183-line `train_and_eval_loco` decomposed into 6 single-responsibility helpers; `SimpleImputer`+`StandardScaler` duplication collapsed into `_preprocess_features`; plotting helpers `_plot_single_roc_panel` and `_annotate_bars` extracted)
 
 ## Repository Overview
 
@@ -300,6 +300,7 @@ Q5 internal dependency chain:
 | `q5_constants.py` | `PHENOTYPE_FEATURES` defined but never used | **Resolved** (replaced with central `CLUSTERING_FEATURES` & `PHENOTYPE_PROFILE_FEATURES`) |
 | `run_pipeline.py` (Q1) | Still writes log to project root instead of `logs/` directory | Unresolved |
 | `q5/scripts/04_phenotype_characterisation.py` | Phase 4 now renders a dual-arm Kuznetsov 2-state ODE figure (Panel A: Immunotherapy, Panel B: Targeted Therapy) without IQR confidence shading. Per-patient r derived from Q3 pERK coupling; c from Q3 checkpoint f_kill and CYT. Targeted arm uses phenotype-level pheno_r_mult to achieve visual separation (NF1-loss=0.68×, M2-High=1.25×). All changes confined to `04_phenotype_characterisation.py`; q3-ode-model/ unchanged. | **Resolved** |
+| `q5/scripts/05_subgroup_models.py` | Unused `LogisticRegression` import; magic numbers inline; 183-line `train_and_eval_loco` monolith; `SimpleImputer`+`StandardScaler` duplicated 5×; `PHENOTYPE_SHORT_NAMES` key `"M2 Immunosuppressive"` mismatched `PHENOTYPE_PALETTE` (silent wrong colour); missing docstrings on helpers. | **Resolved** (Phase 5 refactored 2026-07-31) |
 
 ## Conventions Quick Reference
 

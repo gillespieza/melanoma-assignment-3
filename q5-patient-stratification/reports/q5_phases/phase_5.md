@@ -63,3 +63,15 @@ Phase 5 evaluates whether training cluster-tailored predictive models improves r
 > 2. **Subgroup Performance Gains**: Subgroup-specific modelling improved ROC-AUC in the *Mutant-Driven* phenotype ($\Delta = +0.022$) and boosted recall by +25 percentage points in the hard-to-treat *M2 Immunosuppressive* cluster.
 > 3. **Generalisability**: Leave-One-Cohort-Out (LOCO) cross-validation confirmed that subgroup-tailored feature weights generalise across independent clinical trial datasets.
 > 4. **Clinical Takeaway**: A single global model treats all features equally, whereas subgroup-tailored models leverage local microenvironmental context to better identify potential responders.
+
+> [!INFO] Phase 5 Script Execution & Software Module Architecture
+> - **Primary Pipeline Execution Script**:
+>   - [`05_subgroup_models.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/05_subgroup_models.py): Trains phenotype-specific Random Forest classifiers within each discovered cluster, evaluates out-of-fold predictions using Leave-One-Cohort-Out (LOCO) cross-validation vs the global Q1 predictor, serialises production model objects (`subgroup_model_*.joblib`), exports evaluation metrics (`subgroup_models_evaluation.csv`), and generates publication figures (`subgroup_roc_curves.png`, `subgroup_performance_comparison.png`, `subgroup_feature_importances.png`).
+> - **Core Supporting Python Modules**:
+>   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Central source of truth defining hyperparameter definitions, phenotype short names, and feature sets for subgroup modelling.
+>   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Provides phenotype profiling and cluster label assignment helpers.
+>   - [`reporting.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/reporting.py): Utility functions for Obsidian frontmatter formatting and markdown report formatting.
+> - **Shared Cross-Question & Pipeline Modules**:
+>   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `05_subgroup_models.py` as Step 5.
+>   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles cross-validation evaluation results and updates phase markdown reports.
+
