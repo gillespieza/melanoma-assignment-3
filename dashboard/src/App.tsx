@@ -6,17 +6,19 @@ import FeaturedCards from "./components/FeaturedCards";
 import MethodsStrip from "./components/MethodsStrip";
 import PatientView from "./components/PatientView";
 import Q1ValidationPanel from "./components/Q1ValidationPanel";
+import UserGuide from "./components/UserGuide";
 import { Panel } from "./components/ui";
 import { loadCohort, type Cohort } from "./data/cohort";
 
 /**
- * Minimal hash routing: `#/cohort` and `#/patient/TCGA-XX-XXXX`.
+ * Minimal hash routing: `#/cohort`, `#/patient/TCGA-XX-XXXX`, `#/guide`.
  * No router dependency and no storage APIs — it just makes a patient view
  * linkable and survivable across a refresh, which matters during a live demo.
  */
 function readHash(): { view: ViewKey; id: string | null } {
   const parts = window.location.hash.replace(/^#\/?/, "").split("/");
   if (parts[0] === "patient" && parts[1]) return { view: "patient", id: decodeURIComponent(parts[1]) };
+  if (parts[0] === "guide") return { view: "guide", id: null };
   return { view: "cohort", id: null };
 }
 
@@ -114,6 +116,8 @@ export default function App() {
           <LoadErrorState message={loadError} />
         ) : !cohort ? (
           <LoadingState />
+        ) : view === "guide" ? (
+          <UserGuide />
         ) : view === "patient" && selectedPatient ? (
           <PatientView
             patient={selectedPatient}

@@ -1,10 +1,11 @@
-import { Activity, Users, User } from "lucide-react";
+import { Activity, Users, User, BookOpen } from "lucide-react";
 
-export type ViewKey = "cohort" | "patient";
+export type ViewKey = "cohort" | "patient" | "guide";
 
 const TABS: { key: ViewKey; label: string; icon: typeof Users }[] = [
   { key: "cohort", label: "Cohort", icon: Users },
   { key: "patient", label: "Patient", icon: User },
+  { key: "guide", label: "Guide", icon: BookOpen },
 ];
 
 export default function Header({
