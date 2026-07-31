@@ -14,7 +14,7 @@ cssclasses:
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-30 18:40
+updated: 2026-07-31 11:11
 ---
 
 ## 1. Phase 1: Multi-Modal Feature Matrix & Microenvironment Deconvolution
@@ -34,11 +34,36 @@ Phase 1 establishes the foundational dataflow architecture by integrating harmon
    - **Composition**: Merges ICI trial cohorts with the complete reference cohort (*TCGA-SKCM*, $N = 443$), expanding the dataset to capture overall population-level biological heterogeneity.
    - **Downstream Routing**: Powers response-agnostic biological discovery and decision support: **Phase 3** (Unsupervised Patient Stratification & Manifold Projections), **Phase 4** (Phenotype Characterisation & Dynamic Trajectories), and **Phase 7** (3-Arm Decision Support & Treatability Index Scoring).
 
-### Biological Feature Engineering & Microenvironment Deconvolution
-Rather than evaluating ~19,757 genes independently, Phase 1 projects patient expression profiles onto curated biological axes:
-- **Core Immune Signatures**: Tumour Inflammation Signature (`TIS`), Cytolytic Index (`CYT`, mean of `PRF1` and `GZMA`), Interferon-gamma (`IFN_gamma`), and `CD274` (`PD-L1`) expression.
-- **Macrophage STV (`M1_M2_Ratio`)**: Computed using a linear Signature Transcript Vector ($W_g$, 14,835 genes) to quantify the microenvironmental balance between pro-inflammatory M1 macrophages ($W_g > 0$) and pro-tumour M2 macrophages ($W_g < 0$).
-- **Transcriptomic Cell Deconvolution**: Marker-based signature scores estimating the relative infiltration abundance of CD8+ T cells (`CD8_Tcell`), CD4+ T cells, NK cells, B cells, M1 Macrophages, M2 Macrophages, and Cancer-Associated Fibroblasts (`CAFs`).
+### Biological Feature Engineering & Microenvironment Deconvolution Determination
+
+Rather than evaluating ~19,757 genes independently, Phase 1 projects patient expression profiles onto curated biological axes. Transcriptomic cell deconvolution is determined via two complementary quantitative methodologies in `deconvolution.py`:
+
+#### 1. Marker-Based Relative Cell Abundance Averaging
+For 7 distinct immune and stromal cell types, relative infiltration abundance is calculated as the sample-wise mean $\log_2$-transformed expression across curated marker gene panels:
+
+$$\text{Deconvolution Score}_{\text{CellType}, i} = \frac{1}{|M|} \sum_{g \in M} E_{i, g}$$
+
+Where $M$ represents the set of verified marker genes present in the normalized expression matrix for sample $i$:
+
+| Cell-Type Feature | Marker Genes ($M$) | Primary Biological Function |
+| :--- | :--- | :--- |
+| **`CD8_T_cells`** | `CD8A`, `CD8B`, `CD3D`, `CD3E` | Cytotoxic T-cell effector density |
+| **`CD4_T_cells`** | `CD4`, `IL7R`, `FOXP3` | Helper and regulatory T-cell infiltrates |
+| **`NK_cells`** | `NCAM1`, `KLRB1`, `NCR1` | Innate natural killer cell abundance |
+| **`B_cells`** | `CD19`, `MS4A1`, `CD79A` | Humoral immune infiltrate density |
+| **`M1_Macrophages`** | `TNF`, `IL12B`, `CXCL10`, `NOS2`, `IRF5` | Pro-inflammatory antitumour macrophages |
+| **`M2_Macrophages`** | `CD163`, `MRC1`, `MSR1`, `TGFB1`, `ARG1` | Immunosuppressive pro-tumour macrophages |
+| **`CAFs`** | `FAP`, `PDGFRB`, `COL1A1`, `ACTA2` | Cancer-Associated Fibroblast stromal walls |
+
+#### 2. Macrophage Signature Transcript Vector (STV) Polarisation Scoring
+To resolve the functional balance between M1 (pro-inflammatory) and M2 (immunosuppressive) macrophages, a continuous **Signature Transcript Vector (STV)** is computed using the 14,837-gene scorecard `m1_m2_stv.csv`:
+
+- **M1 Score Calculation**: Weighted dot-product across positive weight genes ($W_{g, \text{M1}} > 0$):
+  $$\text{M1\_score}_i = \sum_{g \in \text{M1}} E_{i,g} \cdot W_{g, \text{M1}}$$
+- **M2 Score Calculation**: Weighted dot-product across absolute negative weight genes ($W_{g, \text{M2}} < 0$):
+  $$\text{M2\_score}_i = \sum_{g \in \text{M2}} E_{i,g} \cdot |W_{g, \text{M2}}|$$
+- **Normalized M1/M2 Ratio**:
+  $$\text{M1\_M2\_Ratio}_i = \frac{\text{M1\_score}_i}{\text{M1\_score}_i + \text{M2\_score}_i}$$
 
 ### Baseline Biomarker Feature Distributions
 
