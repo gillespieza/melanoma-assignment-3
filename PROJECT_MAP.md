@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-07-31
+> **Last updated**: 2026-07-31 (Q3 module architecture expanded; Q5 Phase 4 ODE tech debt added)
 
 ## Repository Overview
 
@@ -154,7 +154,7 @@ melanoma-assignment-3/
 
 ## Q3: ODE Model (`q3-ode-model/`)
 
-**Question**: Can we simulate tumour-immune dynamics under therapy?
+**Question**: Can we simulate tumour-immune dynamics under therapy (targeted and immunotherapy)?
 
 ### Phase → Script Mapping
 
@@ -162,11 +162,33 @@ melanoma-assignment-3/
 |-------|--------|---------|
 | 1 | `phase1_check_environment.py` | Verifies required packages, TCGA data files, CPU cores |
 | 2 | `phase2_preprocess_data.py` | Preprocesses TCGA clinical/expression/mutation data → `melanoma_params_full.csv` |
-| 3 | `phase3_ode_simulation.py` | Solves 4-module ODE (RAF dimer, MAPK cascade, tumour-immune, checkpoint axis) per patient |
+| 3 | `phase3_ode_simulation.py` | Solves 4-module ODE per patient across BRAFi dose sweep AND anti-PD-1 dose sweep |
 | 4 | `phase4_survival_analysis.py` | KM + Cox PH survival stratification across ODE readouts |
 | 5 | `phase5_rppa_validation.py` | Validates ODE pERK vs TCGA RPPA phospho-protein data |
 | 6 | `phase6_ml_vs_ode.py` | 5-fold CV AUC benchmark: ODE digital twin vs ML classifiers |
 | — | `run_all.sh` | Shell orchestrator for phases 1–6 |
+
+### 4-Module ODE Architecture (`phase3_ode_simulation.py`)
+
+All four modules operate on **per-patient inputs only** — kinetic rate constants are universal (literature-sourced). Only protein expression levels, mutation status, infiltration scores, and drug doses vary per patient.
+
+| Module | Timescale | What It Models | Per-Patient Inputs |
+|--------|-----------|----------------|--------------------|
+| **A** — RAF dimerisation + BRAFi binding | Fast (equilibrium) | Vemurafenib binding to RAF dimers/monomers; RAF-inhibitor paradox (paradoxical ERK activation in `NRAS`-mutant/WT tumours emerges from binding equilibria, not hard-coded); `BRAF V600E` monomer directly inhibited (monotonic suppression) | `BRAF` expression, `BRAF_MUT`, `NRAS_MUT` → RAS-GTP level |
+| **B** — MAPK cascade with ERK feedback | Fast (minutes) | 8-state Raf/MEK/ERK phosphorylation cascade; di-phospho-ERK feeds back to inhibit cascade top (Ki = 9 nM, universal). Readout: steady-state pERK | `BRAF`, `MAP2K1`, `MAP2K2`, `MAPK1`, `MAPK3` expression (scales protein pool totals) |
+| **C** — Melanoma tumour / immune dynamics | Slow (days) | Single ODE: logistic tumour growth scaled by pERK from Module B → targeted drug effect propagates here; minus CD8+ T-cell killing gated by checkpoint state (Module D) and capped by patient CYT; minus natural death. Published Lai et al. 2017 rate constants | `CD8A`, `PRF1`, `GZMA` (effector density); `CYT` (killing ceiling, Rooney et al. 2015); pERK from Module B; f_kill from Module D |
+| **D** — PD-1/PD-L1 checkpoint + anti-PD-1 | Steady state | Minimal PD-1/PD-L1 binding equilibrium; anti-PD-1 competitively occupies PD-1 before it can form the inhibitory complex with PD-L1; f_kill = 1 − Q/P_tot gates Module C killing (0 = fully suppressed, 1 = fully unleashed). At zero drug, f_kill reflects patient's own baseline checkpoint burden | `PDCD1` (PD-1 pool), `CD274` (PD-L1 pool), anti-PD-1 dose |
+
+### Simulation Grid & Outputs
+
+`simulate_patient()` runs **two independent dose sweeps per patient**:
+
+| Sweep | Drug | Dose Range | Output CSV |
+|-------|------|------------|------------|
+| BRAFi sweep | Vemurafenib | 0–1000 nM (10 dose steps) | `results/pERK_simulations.csv`, `results/tumour_burden_simulations.csv` |
+| Anti-PD-1 sweep | Anti-PD-1 | 0–500 nM (10 dose steps) | `results/checkpoint_tumour_simulations.csv` |
+
+> **Note**: A full BRAFi × anti-PD-1 combination grid is explicitly deferred — see `docs/Q3_Refactor_Proposal.md`.
 
 ### Source Modules (`q3-ode-model/src/`)
 
@@ -177,7 +199,7 @@ melanoma-assignment-3/
 ### Key Data Dependencies
 
 - **Reads**: `q1-response-predictor/data/raw/skcm_tcga_pan_can_atlas_2018/` (clinical, expression, mutation, RPPA data), `data/processed/q5/patient_clusters.csv` (Q5 phenotype integration)
-- **Outputs**: `q3-ode-model/data/melanoma_params_full.csv`, `outputs/results/` (pERK/tumour simulations, survival summaries, ML comparison), `outputs/plots/` (KM, Cox dose-scan, RPPA validation, ML comparison figures)
+- **Outputs**: `q3-ode-model/data/melanoma_params_full.csv`, `outputs/results/pERK_simulations.csv`, `outputs/results/tumour_burden_simulations.csv`, `outputs/results/checkpoint_tumour_simulations.csv`, `outputs/plots/` (KM, Cox dose-scan, RPPA validation, ML comparison figures)
 
 ## Q4: DepMap & LINCS (`Q4_dep_map/`)
 
@@ -277,6 +299,7 @@ Q5 internal dependency chain:
 | `q5/src/phenotyping.py` L155–163 | `plot_radar_chart()` and `plot_cluster_heatmap()` are stub `pass` implementations | Unresolved |
 | `q5_constants.py` | `PHENOTYPE_FEATURES` defined but never used | **Resolved** (replaced with central `CLUSTERING_FEATURES` & `PHENOTYPE_PROFILE_FEATURES`) |
 | `run_pipeline.py` (Q1) | Still writes log to project root instead of `logs/` directory | Unresolved |
+| `q5/scripts/04_phenotype_characterisation.py` | `simulate_q3_ode_trajectories()` reimplements a simplified 2-state tumour-immune ODE locally (phenotype-level average parameters, anti-PD-1 arm only) instead of reading Q3's per-patient output CSVs (`tumour_burden_simulations.csv`, `checkpoint_tumour_simulations.csv`). This means: (1) BRAFi/targeted therapy trajectories are absent from Phase 4 despite being fully computed by Q3; (2) per-patient mechanistic detail (pERK coupling, CYT killing ceiling, checkpoint gating) is lost; (3) the Q3 label in plot titles is misleading. **Fix**: replace `simulate_q3_ode_trajectories()` with a loader that reads Q3 output CSVs, joins on `SAMPLE_ID`, groups by `Phenotype_Label`, and plots per-phenotype mean ± IQR trajectories for both treatment arms. | Unresolved |
 
 ## Conventions Quick Reference
 
