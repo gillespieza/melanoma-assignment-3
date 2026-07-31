@@ -11,7 +11,7 @@ import warnings
 import matplotlib.patches as mpatches
 from pathlib import Path
 import sys
-from typing import List
+from typing import Any, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -51,6 +51,7 @@ from src.styles import (
     get_okabe_ito_diverging_cmap,
     set_presentation_style,
 )
+from src.utils.io import safe_save_csv
 from src.utils.logging import TeeStream
 from src.utils.paths import LOG_DIR as ROOT_LOG_DIR, PROCESSED_DIR, PROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
@@ -94,6 +95,9 @@ P_VALUE_FLOOR: float = 1e-15
 # Vertical offsets for the two annotation text lines within each heatmap cell (fraction of cell height)
 CELL_BETA_Y_OFFSET: float = 0.36   # Top line: β interaction coefficient label
 CELL_PVAL_Y_OFFSET: float = 0.68   # Bottom line: p-value label
+
+# Dark slate charcoal color for plot borders, lines, and legends
+DARK_SLATE_CHARCOAL: str = "#37474F"
 
 set_presentation_style()
 
@@ -244,15 +248,15 @@ def plot_volcano(df_assoc: pd.DataFrame, save_path: Path) -> None:
     df_plot = pd.concat([top_neg, top_pos]).drop_duplicates()
 
     df_plot["Colour"] = np.where(df_plot["Cohens_d"] > 0, RESPONSE_PALETTE["CR/PR"], RESPONSE_PALETTE["PD"])
-    ax.barh(df_plot["Feature"], df_plot["Cohens_d"], color=df_plot["Colour"], edgecolor="#37474F", linewidth=1.0, alpha=0.85)
+    ax.barh(df_plot["Feature"], df_plot["Cohens_d"], color=df_plot["Colour"], edgecolor=DARK_SLATE_CHARCOAL, linewidth=1.0, alpha=0.85)
 
-    ax.axvline(0, color="#37474F", linestyle="-", linewidth=1.2, alpha=0.7)
+    ax.axvline(0, color=DARK_SLATE_CHARCOAL, linestyle="-", linewidth=1.2, alpha=0.7)
     ax.axvline(EFFECT_SIZE_CUTOFF, color=RESPONSE_PALETTE["CR/PR"], linestyle="--", linewidth=1.2, alpha=0.6)
     ax.axvline(-EFFECT_SIZE_CUTOFF, color=RESPONSE_PALETTE["PD"], linestyle="--", linewidth=1.2, alpha=0.6)
 
     resp_patch = mpatches.Patch(color=RESPONSE_PALETTE["CR/PR"], label="Enriched in Responders (d > 0)")
     non_resp_patch = mpatches.Patch(color=RESPONSE_PALETTE["PD"], label="Enriched in Non-Responders (d < 0)")
-    cutoff_line = plt.Line2D([0], [0], color="#37474F", linestyle="--", linewidth=1.2, alpha=0.6, label=f"Small Effect Cutoff (|d| = {EFFECT_SIZE_CUTOFF:.2f})")
+    cutoff_line = plt.Line2D([0], [0], color=DARK_SLATE_CHARCOAL, linestyle="--", linewidth=1.2, alpha=0.6, label=f"Small Effect Cutoff (|d| = {EFFECT_SIZE_CUTOFF:.2f})")
 
     ax.legend(
         handles=[resp_patch, non_resp_patch, cutoff_line],
@@ -309,10 +313,15 @@ def plot_youden_roc(df: pd.DataFrame, df_cutoffs: pd.DataFrame, save_path: Path)
             bbox=dict(boxstyle="round,pad=0.2", facecolor="white", edgecolor=label_color, alpha=0.85),
         )
 
-    ax.plot([0, 1], [0, 1], color="#37474F", linestyle="--", linewidth=1.2, label="Chance Baseline (AUC = 0.50)")
+    ax.plot([0, 1], [0, 1], color=DARK_SLATE_CHARCOAL, linestyle="--", linewidth=1.2, label="Chance Baseline (AUC = 0.50)")
 
     n_patients = len(valid_df)
-    ax.set_title(f"Receiver Operating Characteristic (ROC) & Youden Optimal Cutoffs (N={n_patients})", fontsize=14, fontweight="bold", pad=15)
+    ax.set_title(
+        f"Receiver Operating Characteristic (ROC) & Youden Optimal Cutoffs (N={n_patients})",
+        fontsize=14,
+        fontweight="bold",
+        pad=15,
+    )
     ax.set_xlabel("False Positive Rate (1 - Specificity)", fontsize=12, fontweight="bold")
     ax.set_ylabel("True Positive Rate (Sensitivity)", fontsize=12, fontweight="bold")
     ax.legend(loc="lower right", frameon=True)
@@ -322,7 +331,7 @@ def plot_youden_roc(df: pd.DataFrame, df_cutoffs: pd.DataFrame, save_path: Path)
     print(f"Saved Youden ROC plot to {rel_path(save_path)}")
 
 
-def _prepare_genomic_interaction_data(df: pd.DataFrame) -> tuple:
+def _prepare_genomic_interaction_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, int]:
     """Prepare grouped response rate data for the TIS x `BRAF` interaction bar plot.
 
     Median-splits TIS into High/Low, resolves the `BRAF` mutation column name from
@@ -373,7 +382,7 @@ def plot_genomic_interaction(df: pd.DataFrame, save_path: Path) -> None:
         hue="TIS_Status",
         palette=palette,
         ax=ax,
-        edgecolor="#37474F",
+        edgecolor=DARK_SLATE_CHARCOAL,
         linewidth=1.2,
     )
 
@@ -406,7 +415,7 @@ def plot_genomic_interaction(df: pd.DataFrame, save_path: Path) -> None:
     print(f"Saved genomic interaction plot to {rel_path(save_path)}")
 
 
-def _annotate_heatmap_cells(ax: plt.Axes, piv_beta: pd.DataFrame, piv_raw_p: pd.DataFrame, okabe_cmap) -> None:
+def _annotate_heatmap_cells(ax: plt.Axes, piv_beta: pd.DataFrame, piv_raw_p: pd.DataFrame, okabe_cmap: Any) -> None:
     """Render two-line cell text annotations (Beta coefficient and p-value)."""
     for i in range(piv_beta.shape[0]):
         for j in range(piv_beta.shape[1]):
@@ -438,7 +447,7 @@ def _add_significance_borders(ax: plt.Axes, piv_beta: pd.DataFrame, piv_p: pd.Da
         loc="upper right",
         bbox_to_anchor=(1.0, -0.16),
         frameon=True,
-        facecolor="#37474F",
+        facecolor=DARK_SLATE_CHARCOAL,
         labelcolor="white",
         fontsize=9,
     )
@@ -477,7 +486,12 @@ def plot_interaction_heatmap(df_inter: pd.DataFrame, save_path: Path) -> None:
     _annotate_heatmap_cells(ax, piv_beta, piv_raw_p, okabe_cmap)
     _add_significance_borders(ax, piv_beta, piv_p)
 
-    ax.set_title("Genomic x Immune Interaction Matrix (Logistic Regression: $\\beta_{interaction}$)", fontsize=14, fontweight="bold", pad=15)
+    ax.set_title(
+        "Genomic x Immune Interaction Matrix (Logistic Regression: $\\beta_{interaction}$)",
+        fontsize=14,
+        fontweight="bold",
+        pad=15,
+    )
     ax.set_xlabel("Driver Mutation Subtype", fontsize=12, fontweight="bold")
     ax.set_ylabel("Immune Microenvironment Feature", fontsize=12, fontweight="bold")
 
@@ -502,19 +516,19 @@ def main() -> None:
 
     df_assoc = run_univariate_associations(df_feat)
     assoc_file = OUTPUT_DIR / "univariate_feature_associations.csv"
-    df_assoc.to_csv(assoc_file, index=False)
+    safe_save_csv(df_assoc, assoc_file)
     print(f"Saved univariate association results to {rel_path(assoc_file)}")
 
     # Use the centralised biology constant to prevent list drift vs KEY_IMMUNE_FEATURES
     target_feats = [c for c in KEY_IMMUNE_FEATURES if c in df_feat.columns]
     df_cutoffs = compute_youden_cutoffs(df_feat, target_feats)
     cutoffs_file = OUTPUT_DIR / "youden_cutoffs.csv"
-    df_cutoffs.to_csv(cutoffs_file, index=False)
+    safe_save_csv(df_cutoffs, cutoffs_file)
     print(f"Saved Youden cutoffs to {rel_path(cutoffs_file)}")
 
     df_inter = compute_interaction_matrix(df_feat)
     inter_file = OUTPUT_DIR / "genomic_immune_interactions.csv"
-    df_inter.to_csv(inter_file, index=False)
+    safe_save_csv(df_inter, inter_file)
     print(f"Saved interaction matrix to {rel_path(inter_file)}")
 
     plot_volcano(df_assoc, PLOTS_DIR / "biomarker_volcano_plot.png")
