@@ -2,6 +2,11 @@
 
 Whenever generating plots, figures, web artifacts, or presentation reports for this project, always adhere to the project-wide visual style and Okabe-Ito (Cell / Nature / Science Gold Standard) color palettes defined below.
 
+## 0. Project Architecture Map (READ FIRST)
+
+- **Before exploring the codebase**, always read [`PROJECT_MAP.md`](../PROJECT_MAP.md) in the repository root. It contains the complete subproject inventory, phase-to-file mappings, module dependency graph, data flow paths, and known technical debt. This eliminates redundant file-discovery across conversations.
+- **After completing any structural change** (new scripts, moved files, new modules, refactored phases, resolved tech debt), update `PROJECT_MAP.md` to reflect the current architecture before closing the task.
+
 ---
 
 ## 1. Color Palettes (Okabe-Ito Scientific Gold Standard)

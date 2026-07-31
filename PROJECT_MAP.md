@@ -1,0 +1,287 @@
+# Project Architecture Map
+
+> **Purpose**: Living reference document for agent orientation. Read this FIRST before
+> exploring the codebase. Eliminates redundant file-discovery across conversations.
+>
+> **Last updated**: 2026-07-31
+
+## Repository Overview
+
+**Domain**: Melanoma immunotherapy — predicting anti-PD-1/CTLA-4 response, drug sensitivity, tumour dynamics, and patient stratification across multi-cohort clinical trial data (Liu 2019, Hugo 2016, Riaz 2017, TCGA-SKCM).
+
+**Structure**: 5 research questions (Q1–Q5), each in its own subproject directory, plus shared infrastructure in the root `src/` and `data/` directories. Q5 is the master synthesis engine that integrates Q1–Q4 outputs.
+
+```
+melanoma-assignment-3/
+├── .agents/AGENTS.md       <- Style rules, palettes, code conventions
+├── PROJECT_MAP.md          <- THIS FILE — architecture reference
+├── src/                    <- Shared source (styles, utils, config, biology constants)
+├── data/                   <- All raw + processed data
+├── docs/                   <- Assignment brief, data dictionary, references
+├── plots/                  <- Top-level cross-cohort visualisations
+├── logs/                   <- Top-level pipeline logs
+├── q1-response-predictor/  <- Q1: Immunotherapy response prediction
+├── q2-viability-predictor/ <- Q2: Cell-line drug sensitivity modelling
+├── q3-ode-model/           <- Q3: ODE tumour-immune dynamics
+├── Q4_dep_map/             <- Q4: DepMap CRISPR + LINCS L1000 target discovery
+└── q5-patient-stratification/ <- Q5: Patient clustering, clinical utility, treatability
+```
+
+## Shared Infrastructure (`src/`)
+
+### Core Modules
+
+| Module | Purpose |
+|--------|---------|
+| `src/styles.py` | All Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`, `PHENOTYPE_PALETTE`, `MUTATION_PALETTE`, etc.), `set_presentation_style()`, `get_cohort_color()`, `get_phenotype_color()`. Single source of truth for visual identity. |
+| `src/biology_constants.py` | Centralised biological domain constants: `NON_SILENT` variant classes, gene panels (IFN-γ, antigen presentation, checkpoint), `COHORT_DIRS` mappings. |
+
+### Utilities (`src/utils/`)
+
+| Module | Key Exports |
+|--------|------------|
+| `src/utils/paths.py` | `PROJECT_ROOT`, `CONFIG_DIR`, `RAW_DIR`, `PROCESSED_DIR`, `PLOTS_DIR`, `REPORTS_DIR`, `DATA_DIR`, `rel_path()` |
+| `src/utils/formatting.py` | `generate_obsidian_frontmatter()`, `format_count_percentage()`, `format_median()`, `format_median_iqr()` |
+| `src/utils/plotting.py` | `save_fig()`, `resolve_colors()` |
+| `src/utils/logging.py` | `TeeStream` (dual stdout/log-file stream) |
+| `src/utils/io.py` | CSV loading, safe file writing |
+| `src/utils/dataframes.py` | DataFrame manipulation helpers |
+| `src/utils/preprocessing.py` | Data cleaning and transformation |
+
+### Configuration (`src/config/`)
+
+| Module | Key Exports |
+|--------|------------|
+| `src/config/datasets.py` | `load_dataset_config()` — loads `data/config/datasets.yaml` |
+| `src/config/constants.py` | Central domain/pathway definitions |
+
+## Data Directory (`data/`)
+
+### Raw Data (`data/raw/`)
+
+| Subdirectory | Contents |
+|-------------|----------|
+| `iatlas/` | iAtlas harmonised RNA-seq and clinical data (Liu, Hugo, Riaz) |
+| `tcga/` | TCGA-SKCM expression and clinical |
+| `gdsc/` | Genomics of Drug Sensitivity in Cancer (cell-line viability) |
+| `ccle/` | Cancer Cell Line Encyclopedia expression |
+
+### Configuration (`data/config/`)
+
+| File | Purpose |
+|------|---------|
+| `datasets.yaml` | Master dataset metadata (cohort names, paths, sizes) |
+| `m1_m2_stv.csv` | 14,837-gene M1/M2 macrophage Signature Transcript Vector matrix |
+| `q2_drug_list.csv` | Curated drug list for Q2 modelling |
+| `q4_depmap_targets.csv` | DepMap CRISPR essentiality targets |
+| `q4_lincs_perturbagens.csv` | LINCS L1000 perturbagen recommendations |
+
+### Processed Data (`data/processed/`)
+
+| Subdirectory | Contents |
+|-------------|----------|
+| `liu_2019/`, `hugo_2016/`, `riaz_2017/` | Per-cohort cleaned CSVs (`clin_cleaned.csv`, `expr_cleaned.csv`, `mutations_cleaned.csv`) |
+| `tcga_skcm/` | TCGA-SKCM processed data |
+| `merged/immunotherapy/` | **Key merged files**: `clin_merged.csv`, `expr_merged.csv`, `merged_genomic.csv` |
+| `merged/full/` | All cohorts merged (including TCGA-SKCM reference) |
+| `q1/` | Q1 feature matrices, model predictions |
+| `q2/` | Q2 cleaned viability matrices, patient drug-sensitivity predictions |
+| `q5/` | Q5 outputs: `feature_matrix.csv` (ICI-only, N≈326), `feature_matrix_full.csv` (all cohorts, N≈699), `patient_clusters.csv`, `kmeans_model.pkl`, `clustering_feature_cols.json` |
+
+## Q1: Response Predictor (`q1-response-predictor/`)
+
+**Question**: Can we predict immunotherapy response from baseline tumour profiles?
+
+### Phase → Script Mapping
+
+| Phase | Script | Purpose |
+|-------|--------|---------|
+| 1 | `01_load_and_prepare.py` | Load multi-cohort data, compute immune signatures (TIS, CYT, IFN-γ) |
+| 2 | `02_univariate_biomarkers.py` | Mann-Whitney U, Fisher's exact, ROC AUC per biomarker |
+| 3 | `03_multivariate_model.py` | Logistic Regression + Random Forest with stratified CV |
+| 4 | `04_threshold_optimisation.py` | Youden's J optimal cutoff selection |
+| 5 | `05_cohort_validation.py` | Leave-One-Cohort-Out (LOCO) cross-validation |
+| 6 | `06_summary_report.py` | Final summary report compilation |
+| — | `generate_q1_report.py` | Comprehensive Q1 markdown report generator |
+| — | `run_pipeline.py` | Master pipeline orchestrator |
+
+### Source Modules (`q1-response-predictor/src/`)
+
+| Module | Purpose |
+|--------|---------|
+| `data_loading.py` | Loads merged clinical, expression, genomic CSVs |
+| `feature_engineering.py` | TIS, CYT, IFN-γ signature computation; TMB; response binarisation |
+| `modelling.py` | Model training pipelines and hyperparameter grids |
+| `evaluation.py` | ROC AUC, classification reports, confusion matrices |
+| `preprocessing.py` | Missing-value imputation, feature scaling |
+| `visualisation.py` | ROC curves, confusion matrices, forest plots |
+| `reporting.py` | Obsidian frontmatter and markdown helpers |
+
+### Key Outputs
+
+- `models/logistic_regression_final.pkl`, `random_forest_final.pkl`
+- `models/threshold_optimisation_results.json`, `feature_importance_rankings.csv`
+- `plots/` subdirs: `biomarkers/`, `models/`, `validation/`, `threshold/`
+
+## Q2: Viability Predictor (`q2-viability-predictor/`)
+
+**Question**: Can we predict cell-line drug sensitivity and translate to patient tumours?
+
+> **Note**: Q2 uses an **R-based pipeline** (`Question2.R`), unlike Q1/Q3/Q5 which use Python scripts.
+
+### Script
+
+| File | Purpose |
+|------|---------||
+| `scripts/Question2.R` | Complete R pipeline: trains LASSO regression viability models across 5 drugs (Dabrafenib, PLX-4720, Trametinib, Temozolomide, Dacarbazine), conducts stability checks, scores TCGA-SKCM patients, and correlates predicted viability with Q1 immunotherapy response |
+
+### Key Input Data
+
+- `Model.csv` (DepMap) — cell line ID → Oncotree lineage mapping
+- `GDSC2_fitted_dose_response.csv` — cell-line drug AUC response data
+- `OmicsExpressionTPMLogp1HumanProteinCodingGenes.csv` (DepMap) — Log2(TPM+1) expression
+- `data_mrna_seq_v2_rsem.txt` (TCGA-SKCM) — patient RSEM expression
+- `clin_merged.csv` — merged clinical metadata
+- `patient_predicted_response_scores.csv` (from Q1) — predicted IO response probabilities
+
+### Key Outputs (`q2-viability-predictor/outputs/`)
+
+- `important_genes_{Drug}.csv` — LASSO gene weights per drug
+- `q2_model_coefficients.csv` — master non-zero LASSO weights across all 5 drugs
+- `q2_patient_drug_predictions.csv` — predicted viability AUC for TCGA-SKCM patients
+- `q2_correlation_results.csv` — merged drug viability + Q1 response scores
+- No `models/` directory — coefficients saved as CSV artifacts
+
+## Q3: ODE Model (`q3-ode-model/`)
+
+**Question**: Can we simulate tumour-immune dynamics under therapy?
+
+### Phase → Script Mapping
+
+| Phase | Script | Purpose |
+|-------|--------|---------|
+| 1 | `phase1_check_environment.py` | Verifies required packages, TCGA data files, CPU cores |
+| 2 | `phase2_preprocess_data.py` | Preprocesses TCGA clinical/expression/mutation data → `melanoma_params_full.csv` |
+| 3 | `phase3_ode_simulation.py` | Solves 4-module ODE (RAF dimer, MAPK cascade, tumour-immune, checkpoint axis) per patient |
+| 4 | `phase4_survival_analysis.py` | KM + Cox PH survival stratification across ODE readouts |
+| 5 | `phase5_rppa_validation.py` | Validates ODE pERK vs TCGA RPPA phospho-protein data |
+| 6 | `phase6_ml_vs_ode.py` | 5-fold CV AUC benchmark: ODE digital twin vs ML classifiers |
+| — | `run_all.sh` | Shell orchestrator for phases 1–6 |
+
+### Source Modules (`q3-ode-model/src/`)
+
+| Module | Purpose |
+|--------|---------|
+| `ode_models.py` | ODE system equations (`tumour_immune_ode`), `run_simulation()`, `DEFAULT_PARAMS` |
+
+### Key Data Dependencies
+
+- **Reads**: `q1-response-predictor/data/raw/skcm_tcga_pan_can_atlas_2018/` (clinical, expression, mutation, RPPA data), `data/processed/q5/patient_clusters.csv` (Q5 phenotype integration)
+- **Outputs**: `q3-ode-model/data/melanoma_params_full.csv`, `outputs/results/` (pERK/tumour simulations, survival summaries, ML comparison), `outputs/plots/` (KM, Cox dose-scan, RPPA validation, ML comparison figures)
+
+## Q4: DepMap & LINCS (`Q4_dep_map/`)
+
+**Question**: Can we identify novel drug targets from functional genomics screens?
+
+### Structure
+
+| Path | Contents |
+|------|----------|
+| `scripts/melanoma_depmap_v2.py` | Main DepMap CRISPR essentiality analysis pipeline |
+| `scripts/sox10_proxy_plot_clean.py` | SOX10 proxy target visualisation |
+| `scripts/sox10_proxy_targets.py` | SOX10 proxy target identification |
+| `figures/dependency_selectivity/` | Dependency selectivity visualisations |
+| `figures/proxy/` | SOX10 proxy analysis figures |
+
+> **Note**: Q4 uses a script-based workflow. Integration into Q5 is via `data/config/q4_depmap_targets.csv` and `q4_lincs_perturbagens.csv`.
+
+## Q5: Patient Stratification (`q5-patient-stratification/`)
+
+**Question**: Can we identify clinically distinct patient subgroups requiring different treatments?
+
+**Role**: Master synthesis engine integrating Q1–Q4 outputs into a clinical decision framework.
+
+### Phase → Script Mapping
+
+| Phase | Script | Purpose |
+|-------|--------|---------|
+| 1 | `01_load_and_prepare.py` | Load merged data, compute signatures (TIS, CYT, IMPRES), M1/M2 STV deconvolution, cell-type estimates |
+| 2 | `02_feature_analysis.py` | Mann-Whitney U, Fisher's exact, Youden cutoffs, interaction terms, feature credibility |
+| 3 | `03_cluster_patients.py` | K-Means clustering (K=4) on full cohort, PCA/t-SNE projections, model persistence |
+| 4 | `04_phenotype_characterisation.py` | Cluster profiling, phenotype labelling, KM survival, Q3 ODE integration |
+| 5 | `05_subgroup_models.py` | Per-phenotype Logistic Regression + RF, LOCO CV vs global Q1 model |
+| 6 | `06_clinical_utility.py` | Decision Curve Analysis, Net Benefit, NNT, PPV, clinical benchmarks |
+| 7 | `07_treatability_scoring.py` | Treatability Index, Q2 drug integration, Q4 DepMap/LINCS target nominations |
+| — | `08_compare_clustering_algorithms.py` | Algorithmic comparison: K-Means vs Ward vs GMM vs DBSCAN |
+| — | `generate_q5_report.py` | Comprehensive Q5 markdown report generator |
+| — | `run_q5_pipeline.py` | Master pipeline orchestrator (runs Phases 1–7) |
+
+### Source Modules (`q5-patient-stratification/src/`)
+
+| Module | Purpose |
+|--------|---------|
+| `q5_constants.py` | Cell-type markers, immune signature genes, clustering features, resistance pathways, treatability features, phenotype labels, Q3 ODE params, Q4 target nominations |
+| `clustering.py` | `prepare_clustering_features()`, `run_kmeans()`, `plot_2d_cluster_projection()` |
+| `phenotyping.py` | `profile_clusters()`, `assign_phenotype_labels()`, violin/radar/heatmap plots |
+| `deconvolution.py` | Transcriptomic cell-type deconvolution from marker panels |
+| `feature_analysis.py` | Mann-Whitney U and Fisher's exact statistical testing |
+| `clinical_utility.py` | DCA net benefit and NNT calculators |
+| `reporting.py` | Obsidian frontmatter, markdown table formatting |
+
+### Four Discovered Phenotypes
+
+| Phenotype | Key Signatures | Approx. Response Rate |
+|-----------|---------------|----------------------|
+| **Immune Hot** | High TIS, high CYT, high CD8, high M1/M2 ratio | ~65% |
+| **Immune Cold** | Low TIS, low infiltration, immune desert | ~20% |
+| **Immunosuppressive M2-High** | High M2 macrophages, high CAFs, low M1/M2 ratio | ~15% |
+| **Mutant-Driven** | High `NF1` mutation rate, high TMB | ~50% |
+
+### Cross-Question Data Flow
+
+```
+Q1 models (LR/RF .pkl) ──────────────┐
+Q2 drug predictions (viability CSV) ──┤
+Q3 ODE params (per phenotype) ────────┼──► Q5 Phase 7: Treatability Scoring
+Q4 DepMap/LINCS targets ──────────────┘
+                                      │
+Q5 patient_clusters.csv ──────────────► Q3 Phase 1: Phenotype ODE trajectories
+```
+
+## Module Dependency Graph
+
+```
+Shared src/
+├── src/styles.py            ← imported by ALL scripts and Q-specific src/ modules
+├── src/biology_constants.py ← imported by preprocessing scripts, Q5 constants
+├── src/utils/paths.py       ← imported by ALL scripts
+├── src/utils/logging.py     ← imported by ALL pipeline runners
+├── src/utils/plotting.py    ← imported by ALL plotting code
+├── src/utils/formatting.py  ← imported by report generators
+└── src/config/datasets.py   ← imported by data-loading scripts
+
+Q5 internal dependency chain:
+  q5_constants.py ← clustering.py, phenotyping.py, clinical_utility.py
+  clustering.py   ← 03_cluster_patients.py, 08_compare_clustering_algorithms.py
+  phenotyping.py  ← 03_cluster_patients.py, 04_phenotype_characterisation.py
+  deconvolution.py ← 01_load_and_prepare.py
+```
+
+## Known Technical Debt
+
+| Area | Issue | Status |
+|------|-------|--------|
+| `src/styles.py` L53 & L178 | Duplicate `get_phenotype_color()` definitions (first is legacy, second added later) | Unresolved |
+| `q5/src/reporting.py` | Local `generate_obsidian_frontmatter()` duplicates `src/utils/formatting.py` version | Unresolved |
+| `q5/src/phenotyping.py` L155–163 | `plot_radar_chart()` and `plot_cluster_heatmap()` are stub `pass` implementations | Unresolved |
+| `q5_constants.py` | `PHENOTYPE_FEATURES` defined but never used | **Resolved** (replaced with central `CLUSTERING_FEATURES` & `PHENOTYPE_PROFILE_FEATURES`) |
+| `run_pipeline.py` (Q1) | Still writes log to project root instead of `logs/` directory | Unresolved |
+
+## Conventions Quick Reference
+
+- **Pipeline pattern**: Each Q has `run_qN_pipeline.py` → sequential `01_...py` through `0N_...py` scripts
+- **Logging**: All scripts use `TeeStream` to dual-write stdout to `logs/` directory
+- **Figures**: 300 DPI PNG via `save_fig()`, 16:9 aspect ratio preferred
+- **Reports**: Obsidian markdown with YAML frontmatter, callout boxes, British English
+- **Colours**: Okabe-Ito palette only, accessed via `src/styles.py` helpers
+- **Paths**: Always use `src/utils/paths.py` constants, log relative paths via `rel_path()`

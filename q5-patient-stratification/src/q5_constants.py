@@ -30,16 +30,35 @@ IMMUNE_SIGNATURE_MARKERS: Dict[str, List[str]] = {
 }
 
 # Features utilized for patient clustering
-PHENOTYPE_FEATURES: List[str] = [
-    "IFNG_Signaling",
+CLUSTERING_FEATURES: List[str] = [
     "TIS",
     "CYT",
-    "CD8_T_cell",
-    "IMPRES",
-    "PDL1_expression",
-    "M1_M2_Ratio",
-    "TMB",
+    "CD8_T_cells",
+    "M1_Macrophages",
+    "M2_Macrophages",
+    "CAFs",
+    "mut_BRAF",
+    "mut_NRAS",
+    "mut_NF1",
 ]
+
+# Features utilized for phenotype profiling and label assignment
+PHENOTYPE_PROFILE_FEATURES: List[str] = [
+    "TIS",
+    "CYT",
+    "CD8_T_cells",
+    "mut_NF1",
+    "M1_M2_Ratio",
+    "M2_Macrophages",
+]
+
+# Descriptive biological suffixes for phenotype labels
+PHENOTYPE_LABEL_SUFFIX: Dict[str, str] = {
+    "Immune Hot": "(High TIS & CYT, Inflamed Microenvironment)",
+    "Immune Cold": "(Low TIS & Infiltration, Desert)",
+    "Mutant-Driven": "(NF1 Loss & High Response Subtype)",
+    "Immunosuppressive M2-High": "(Depleted T-cells & Stromal Exclusion)",
+}
 
 # Resistance pathways and key associated genes
 RESISTANCE_PATHWAYS: Dict[str, List[str]] = {
