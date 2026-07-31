@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-1
   - q5
-created: 2026-07-30 18:40
+created: 2026-07-31 14:09
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 11:27
+updated: 2026-07-31 14:09
 ---
 
 ## 1. Phase 1: Multi-Modal Feature Matrix & Microenvironment Deconvolution
@@ -34,36 +34,11 @@ Phase 1 establishes the foundational dataflow architecture by integrating harmon
    - **Composition**: Merges ICI trial cohorts with the complete reference cohort (*TCGA-SKCM*, $N = 443$), expanding the dataset to capture overall population-level biological heterogeneity.
    - **Downstream Routing**: Powers response-agnostic biological discovery and decision support: **Phase 3** (Unsupervised Patient Stratification & Manifold Projections), **Phase 4** (Phenotype Characterisation & Dynamic Trajectories), and **Phase 7** (3-Arm Decision Support & Treatability Index Scoring).
 
-### Biological Feature Engineering & Microenvironment Deconvolution Determination
-
-Rather than evaluating ~19,757 genes independently, Phase 1 projects patient expression profiles onto curated biological axes. Transcriptomic cell deconvolution is determined via two complementary quantitative methodologies in `deconvolution.py`:
-
-#### 1. Marker-Based Relative Cell Abundance Averaging
-For 7 distinct immune and stromal cell types, relative infiltration abundance is calculated as the sample-wise mean $\log_2$-transformed expression across curated marker gene panels:
-
-$$\text{Deconvolution Score}_{\text{CellType}, i} = \frac{1}{|M|} \sum_{g \in M} E_{i, g}$$
-
-Where $M$ represents the set of verified marker genes present in the normalized expression matrix for sample $i$:
-
-| Cell-Type Feature | Marker Genes ($M$) | Primary Biological Function |
-| :--- | :--- | :--- |
-| **`CD8_T_cells`** | `CD8A`, `CD8B`, `CD3D`, `CD3E` | Cytotoxic T-cell effector density |
-| **`CD4_T_cells`** | `CD4`, `IL7R`, `FOXP3` | Helper and regulatory T-cell infiltrates |
-| **`NK_cells`** | `NCAM1`, `KLRB1`, `NCR1` | Innate natural killer cell abundance |
-| **`B_cells`** | `CD19`, `MS4A1`, `CD79A` | Humoral immune infiltrate density |
-| **`M1_Macrophages`** | `TNF`, `IL12B`, `CXCL10`, `NOS2`, `IRF5` | Pro-inflammatory antitumour macrophages |
-| **`M2_Macrophages`** | `CD163`, `MRC1`, `MSR1`, `TGFB1`, `ARG1` | Immunosuppressive pro-tumour macrophages |
-| **`CAFs`** | `FAP`, `PDGFRB`, `COL1A1`, `ACTA2` | Cancer-Associated Fibroblast stromal walls |
-
-#### 2. Macrophage Signature Transcript Vector (STV) Polarisation Scoring
-To resolve the functional balance between M1 (pro-inflammatory) and M2 (immunosuppressive) macrophages, a continuous **Signature Transcript Vector (STV)** is computed using the 14,837-gene scorecard `m1_m2_stv.csv`:
-
-- **M1 Score Calculation**: Weighted dot-product across positive weight genes ($W_{g, \text{M1}} > 0$):
-  $$\text{M1\_score}_i = \sum_{g \in \text{M1}} E_{i,g} \cdot W_{g, \text{M1}}$$
-- **M2 Score Calculation**: Weighted dot-product across absolute negative weight genes ($W_{g, \text{M2}} < 0$):
-  $$\text{M2\_score}_i = \sum_{g \in \text{M2}} E_{i,g} \cdot |W_{g, \text{M2}}|$$
-- **Normalized M1/M2 Ratio**:
-  $$\text{M1\_M2\_Ratio}_i = \frac{\text{M1\_score}_i}{\text{M1\_score}_i + \text{M2\_score}_i}$$
+### Biological Feature Engineering & Microenvironment Deconvolution
+Rather than evaluating ~19,757 genes independently, Phase 1 projects patient expression profiles onto curated biological axes:
+- **Core Immune Signatures**: Tumour Inflammation Signature (`TIS`), Cytolytic Index (`CYT`, mean of `PRF1` and `GZMA`), Interferon-gamma (`IFN_gamma`), and `CD274` (`PD-L1`) expression.
+- **Macrophage STV (`M1_M2_Ratio`)**: Computed using a linear Signature Transcript Vector ($W_g$, 14,835 genes) to quantify the microenvironmental balance between pro-inflammatory M1 macrophages ($W_g > 0$) and pro-tumour M2 macrophages ($W_g < 0$).
+- **Transcriptomic Cell Deconvolution**: Marker-based signature scores estimating the relative infiltration abundance of CD8+ T cells (`CD8_Tcell`), CD4+ T cells, NK cells, B cells, M1 Macrophages, M2 Macrophages, and Cancer-Associated Fibroblasts (`CAFs`).
 
 ### Baseline Biomarker Feature Distributions
 
@@ -71,7 +46,7 @@ To resolve the functional balance between M1 (pro-inflammatory) and M2 (immunosu
 
 > [!IMPORTANT] Key Takeaways
 > - **Dual-Matrix Dataflow**: Established a dual dataflow pipeline isolating response-labeled ICI trials ($N_{\text{ICI}} = 326$) for predictive modelling while embedding the full cohort ($N_{\text{Full}} = 699$) for unsupervised manifold learning.
-> - **Dimensionality Reduction**: Compressed ~19,757 transcriptomic features into 17 engineered biological signatures (part of a 26-feature multi-modal panel, centered on 9 core baseline biomarkers).
+> - **Dimensionality Reduction**: Compressed ~19,757 transcriptomic features into 19 engineered biological signatures (part of a 28-feature multi-modal panel, centered on 9 core baseline biomarkers).
 > - **M1/M2 Polarisation**: The Macrophage STV score captures stromal microenvironmental suppression that operates independently of total T-cell density.
 
 > [!INFO] Phase 1 Feature Matrix Architecture & Complete Feature Inventory
@@ -118,15 +93,3 @@ To resolve the functional balance between M1 (pro-inflammatory) and M2 (immunosu
 >      7. `NK_cells`
 >      8. `B_cells`
 >      9. `CAFs` (used for primary volcano, Youden ROC, and radar visualisations).
-
-> [!formula] Phase 1 Script Execution & Software Module Architecture
-> - **Primary Pipeline Execution Script**:
->   - [`01_load_and_prepare.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/01_load_and_prepare.py): Orchestrates multi-modal data loading, signature extraction, Macrophage STV calculation, cell deconvolution, and feature matrix export (`feature_matrix.csv` and `feature_matrix_full.csv`).
-> - **Core Supporting Python Modules**:
->   - [`deconvolution.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/deconvolution.py): Implements marker-based cell deconvolution (`compute_cell_deconvolution`) and Macrophage STV dot-product scoring (`compute_macrophage_stv`).
->   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Implements baseline biomarker violin plotting (`plot_baseline_signature_boxplots`).
->   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Central source of truth defining marker gene panels (`IMMUNE_SIGNATURE_MARKERS`, `CELL_TYPE_MARKERS`) and phenotype constants.
-> - **Shared Cross-Question & Pipeline Modules**:
->   - `q1-response-predictor/src/signatures.py`: Shared signature extraction module (`extract_all_signatures`) with local fallback computation.
->   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `01_load_and_prepare.py` as Step 1.
->   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Reads feature metrics and updates phase markdown reports.
