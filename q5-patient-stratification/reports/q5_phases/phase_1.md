@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-1
   - q5
-created: 2026-07-31 19:36
+created: 2026-07-31 20:30
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 19:36
+updated: 2026-07-31 20:30
 ---
 
 ## 1. Phase 1: Multi-Modal Feature Matrix & Microenvironment Deconvolution
@@ -46,7 +46,7 @@ Rather than evaluating ~19,757 genes independently, Phase 1 projects patient exp
 
 > [!IMPORTANT] Key Takeaways
 > - **Dual-Matrix Dataflow**: Established a dual dataflow pipeline isolating response-labeled ICI trials ($N_{\text{ICI}} = 326$) for predictive modelling while embedding the full cohort ($N_{\text{Full}} = 699$) for unsupervised manifold learning.
-> - **Dimensionality Reduction**: Compressed ~19,757 transcriptomic features into 24 engineered biological signatures (part of a 33-feature multi-modal panel, centered on 9 core baseline biomarkers).
+> - **Dimensionality Reduction**: Compressed ~19,757 transcriptomic features into 23 engineered biological signatures (part of a 32-feature multi-modal panel, centered on 9 core baseline biomarkers).
 > - **M1/M2 Polarisation**: The Macrophage STV score captures stromal microenvironmental suppression that operates independently of total T-cell density.
 
 > [!INFO] Phase 1 Feature Matrix Architecture & Complete Feature Inventory
@@ -93,3 +93,14 @@ Rather than evaluating ~19,757 genes independently, Phase 1 projects patient exp
 >      7. `NK_cells`
 >      8. `B_cells`
 >      9. `CAFs` (used for primary volcano, Youden ROC, and radar visualisations).
+
+> [!formula] Phase 1 Script Execution & Software Module Architecture
+> - **Primary Pipeline Execution Scripts**:
+>   - [`01_load_and_prepare.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/01_load_and_prepare.py): Loads preprocessed clinical, expression, and genomic data from `data/processed/merged/`, computes immune signatures (`TIS`, `CYT`, `IFN_gamma`, `CD8_Tcell`), calculates Macrophage STV (`M1_M2_Ratio`), runs transcriptomic cell deconvolution, and exports dual feature matrices (`feature_matrix.csv`, $N_{\text{ICI}} = 326$; `feature_matrix_full.csv`, $N_{\text{Full}} = 699$).
+> - **Core Supporting Python Modules**:
+>   - [`deconvolution.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/deconvolution.py): Implements Signature Transcript Vector (`compute_macrophage_stv`) and cell-type abundance estimation (`compute_cell_deconvolution`).
+>   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Renders 2x3 facetted biomarker distribution violins (`plot_baseline_signature_boxplots`).
+>   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Single source of truth for cell marker panels (`CELL_TYPE_MARKERS`), immune signature definitions (`IMMUNE_SIGNATURE_MARKERS`), and neutral STV fallback ratios.
+> - **Shared Cross-Question & Pipeline Modules**:
+>   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `01_load_and_prepare.py` as Step 1.
+>   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles live statistical summaries and generates phase markdown reports.

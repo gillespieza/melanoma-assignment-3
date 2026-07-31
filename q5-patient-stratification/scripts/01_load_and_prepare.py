@@ -196,6 +196,38 @@ def safe_save_csv(df: pd.DataFrame, out_file: Path) -> None:
             print(f"Warning: could not overwrite {out_file.name} directly. Saved to {tmp_file.name}")
 
 
+def _merge_modalities(
+    df_clin: pd.DataFrame,
+    df_sig: pd.DataFrame,
+    df_deconv: pd.DataFrame,
+    df_genomic: pd.DataFrame,
+) -> pd.DataFrame:
+    """Merge clinical, immune signature, deconvolution, and genomic feature sets.
+
+    Args:
+        df_clin: Clinical metadata DataFrame.
+        df_sig: Immune signature DataFrame.
+        df_deconv: Deconvolution DataFrame.
+        df_genomic: Driver mutation & TMB DataFrame.
+
+    Returns:
+        pd.DataFrame: Merged feature matrix indexed by SAMPLE_ID.
+    """
+    df_master = df_clin.copy()
+    if "SAMPLE_ID" in df_master.columns:
+        df_master = df_master.set_index("SAMPLE_ID")
+
+    df_master = df_master.join(df_sig, how="left")
+    df_master = df_master.join(df_deconv, how="left")
+
+    if not df_genomic.empty and "SAMPLE_ID" in df_genomic.columns:
+        genomic_cols = [c for c in df_genomic.columns if c not in df_master.columns and c != "SAMPLE_ID"]
+        df_genomic_idx = df_genomic.set_index("SAMPLE_ID")[genomic_cols]
+        df_master = df_master.join(df_genomic_idx, how="left")
+
+    return df_master
+
+
 def build_feature_matrix(input_dir: Path) -> pd.DataFrame:
     """Build the full multi-modal patient feature matrix from a given input directory.
 
@@ -207,8 +239,7 @@ def build_feature_matrix(input_dir: Path) -> pd.DataFrame:
                    expr_merged.csv, and merged_genomic.csv.
 
     Returns:
-        pd.DataFrame: Unified feature matrix (clinical + immune signatures + STV +
-                      deconvolution + genomic mutations) for all patients in input_dir.
+        pd.DataFrame: Unified feature matrix for all patients in input_dir.
     """
     print(f"\n--- Building feature matrix from {rel_path(input_dir)} ---")
     df_clin, df_expr, df_genomic = load_processed_datasets(input_dir)
@@ -226,17 +257,7 @@ def build_feature_matrix(input_dir: Path) -> pd.DataFrame:
     df_deconv = compute_cell_deconvolution(df_expr)
 
     print("  Merging clinical, signature, STV, and deconvolution features...")
-    df_master = df_clin.copy()
-    if "SAMPLE_ID" in df_master.columns:
-        df_master = df_master.set_index("SAMPLE_ID")
-
-    df_master = df_master.join(df_sig,   how="left")
-    df_master = df_master.join(df_deconv, how="left")
-
-    if not df_genomic.empty and "SAMPLE_ID" in df_genomic.columns:
-        genomic_cols = [c for c in df_genomic.columns if c not in df_master.columns and c != "SAMPLE_ID"]
-        df_genomic_idx = df_genomic.set_index("SAMPLE_ID")[genomic_cols]
-        df_master = df_master.join(df_genomic_idx, how="left")
+    df_master = _merge_modalities(df_clin, df_sig, df_deconv, df_genomic)
 
     print("  Engineering spatial microenvironment indicators...")
     df_master = _engineer_spatial_indicators(df_master)
@@ -283,31 +304,38 @@ def _engineer_spatial_indicators(df_master: pd.DataFrame) -> pd.DataFrame:
     return df_master
 
 
-def main() -> None:
-    """Main execution function for feature matrix preparation."""
-    print(f"Starting Phase 1 Feature Matrix Preparation (Project root: {rel_path(PROJECT_ROOT)})")
+def _build_and_save_matrix(
+    input_dir: Path, output_file: Path, plot_file: Path = None
+) -> pd.DataFrame:
+    """Build, serialise, and optionally plot a patient feature matrix.
 
-    # ------------------------------------------------------------------
-    # Matrix 1: ICI-treated only (N≈326) — Phases 2, 5, 6
-    # These phases train response prediction models and run DCA;
-    # they require RESPONSE_BINARY labels available only for ICI cohorts.
-    # ------------------------------------------------------------------
-    df_ici  = build_feature_matrix(INPUT_DIR_ICI)
-    out_ici = OUTPUT_DIR / "feature_matrix.csv"
-    safe_save_csv(df_ici, out_ici)
+    Args:
+        input_dir: Input directory containing raw merged cohort CSVs.
+        output_file: Destination CSV path.
+        plot_file: Optional file path to save baseline violin plot.
 
-    plot_file_ici = SUBPROJECT_ROOT / "plots" / "phenotypes" / "baseline_response_violins.png"
-    plot_baseline_signature_boxplots(df_ici, plot_file_ici)
+    Returns:
+        pd.DataFrame: Built feature matrix.
+    """
+    df_matrix = build_feature_matrix(input_dir)
+    safe_save_csv(df_matrix, output_file)
+    if plot_file is not None:
+        plot_baseline_signature_boxplots(df_matrix, plot_file)
+    return df_matrix
 
-    # ------------------------------------------------------------------
-    # Matrix 2: Full cohort (N≈699) — Phases 3, 4, 7, Script 08
-    # Includes all melanoma patients regardless of treatment type.
-    # RESPONSE_BINARY is NaN for the 373 non-ICI TCGA-SKCM patients.
-    # ------------------------------------------------------------------
-    df_full  = build_feature_matrix(INPUT_DIR_FULL)
-    out_full = OUTPUT_DIR / "feature_matrix_full.csv"
-    safe_save_csv(df_full, out_full)
 
+def _print_completion_summary(
+    out_ici: Path, df_ici: pd.DataFrame, out_full: Path, df_full: pd.DataFrame, plot_file_ici: Path
+) -> None:
+    """Print standard completion banner for Phase 1 execution.
+
+    Args:
+        out_ici: Path to ICI-only feature matrix.
+        df_ici: ICI-only feature matrix DataFrame.
+        out_full: Path to full melanoma feature matrix.
+        df_full: Full feature matrix DataFrame.
+        plot_file_ici: Path to output violin plot image.
+    """
     print("=" * 80)
     print("FEATURE MATRIX PREPARATION & PLOTTING COMPLETE")
     print(f"ICI-only matrix  (Phases 2/5/6): {rel_path(out_ici)}  "
@@ -316,6 +344,21 @@ def main() -> None:
           f"[{len(df_full)} patients, {df_full.shape[1]} features]")
     print(f"Violin plot (ICI cohort)        : {rel_path(plot_file_ici)}")
     print("=" * 80)
+
+
+def main() -> None:
+    """Main execution function for feature matrix preparation."""
+    print(f"Starting Phase 1 Feature Matrix Preparation (Project root: {rel_path(PROJECT_ROOT)})")
+
+    out_ici = OUTPUT_DIR / "feature_matrix.csv"
+    plot_file_ici = SUBPROJECT_ROOT / "plots" / "phenotypes" / "baseline_response_violins.png"
+    df_ici = _build_and_save_matrix(INPUT_DIR_ICI, out_ici, plot_file_ici)
+
+    out_full = OUTPUT_DIR / "feature_matrix_full.csv"
+    df_full = _build_and_save_matrix(INPUT_DIR_FULL, out_full)
+
+    _print_completion_summary(out_ici, df_ici, out_full, df_full, plot_file_ici)
+
 
 
 if __name__ == "__main__":

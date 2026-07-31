@@ -289,6 +289,19 @@ def main() -> None:
         ">      9. `CAFs` (used for primary volcano, Youden ROC, and radar visualisations).\n"
     )
 
+    doc_sections.append(
+        "> [!formula] Phase 1 Script Execution & Software Module Architecture\n"
+        "> - **Primary Pipeline Execution Scripts**:\n"
+        ">   - [`01_load_and_prepare.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/01_load_and_prepare.py): Loads preprocessed clinical, expression, and genomic data from `data/processed/merged/`, computes immune signatures (`TIS`, `CYT`, `IFN_gamma`, `CD8_Tcell`), calculates Macrophage STV (`M1_M2_Ratio`), runs transcriptomic cell deconvolution, and exports dual feature matrices (`feature_matrix.csv`, $N_{\\text{ICI}} = 326$; `feature_matrix_full.csv`, $N_{\\text{Full}} = 699$).\n"
+        "> - **Core Supporting Python Modules**:\n"
+        ">   - [`deconvolution.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/deconvolution.py): Implements Signature Transcript Vector (`compute_macrophage_stv`) and cell-type abundance estimation (`compute_cell_deconvolution`).\n"
+        ">   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Renders 2x3 facetted biomarker distribution violins (`plot_baseline_signature_boxplots`).\n"
+        ">   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Single source of truth for cell marker panels (`CELL_TYPE_MARKERS`), immune signature definitions (`IMMUNE_SIGNATURE_MARKERS`), and neutral STV fallback ratios.\n"
+        "> - **Shared Cross-Question & Pipeline Modules**:\n"
+        ">   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `01_load_and_prepare.py` as Step 1.\n"
+        ">   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles live statistical summaries and generates phase markdown reports.\n"
+    )
+
     # Section 2: Phase 2 Feature Analysis
     doc_sections.append(f"## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds\n")
     doc_sections.append(

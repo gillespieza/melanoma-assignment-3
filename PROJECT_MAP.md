@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-07-31 (Phase 5 subgroup models fully refactored: unused `LogisticRegression` import removed; magic numbers centralised as `RANDOM_STATE`/`RF_N_ESTIMATORS`/`GLOBAL_MAX_DEPTH`/`SUBGROUP_MAX_DEPTH`/`SKF_N_SPLITS`; `PHENOTYPE_SHORT_NAMES` key corrected from `"M2 Immunosuppressive"` → `"Immunosuppressive M2-High"` to fix Okabe-Ito palette lookup; 183-line `train_and_eval_loco` decomposed into 6 single-responsibility helpers; `SimpleImputer`+`StandardScaler` duplication collapsed into `_preprocess_features`; plotting helpers `_plot_single_roc_panel` and `_annotate_bars` extracted)
+> **Last updated**: 2026-07-31 (Phase 1 refactored: `01_load_and_prepare.py` decomposed with `_merge_modalities`, `_build_and_save_matrix`, `_print_completion_summary`; `compute_cell_deconvolution` in `deconvolution.py` decomposed with `_score_cell_type_panel`; `IMMUNE_SIGNATURE_MARKERS["TIS"]` expanded to full 21-gene panel in `q5_constants.py`; `phenotyping.py` updated with module-level constants `RESPONSE_BINARY_COL`, `RESPONSE_DISPLAY_LABELS`, `BASELINE_VIOLIN_FEATURES`, updated docstrings, and extracted `_zscore_series` helper; Phase 1 script reference callout box added to `generate_q5_report.py` and `phase_1.md`)
 
 ## Repository Overview
 

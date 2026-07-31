@@ -34,7 +34,11 @@ CELL_TYPE_MARKERS: Dict[str, List[str]] = {
 
 # Gene sets for core immune signatures (fallback calculations)
 IMMUNE_SIGNATURE_MARKERS: Dict[str, List[str]] = {
-    "TIS": ["CD274", "PDCD1", "STAT1", "HLA-DRA", "CXCL9", "CXCL10", "IDO1"],
+    "TIS": [
+        "CCL5", "CD2", "CD3D", "CD3E", "CD27", "CD274", "CMKLR1", "CXCL9",
+        "CXCR6", "GZMB", "GZMK", "HLA-DRA", "HLA-DQA1", "HLA-E", "IDO1",
+        "LAG3", "NKG7", "PDCD1LG2", "PSMB10", "STAT1", "TIGIT",
+    ],
     "CYT": ["PRF1", "GZMA"],
     "IFN_gamma": ["IFNG", "STAT1", "IDO1", "CXCL9", "CXCL10"],
     "CD8_Tcell": ["CD8A", "CD8B"],

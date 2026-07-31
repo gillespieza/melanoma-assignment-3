@@ -26,6 +26,22 @@ from src.utils.plotting import save_fig
 
 set_presentation_style()
 
+RESPONSE_BINARY_COL: str = "RESPONSE_BINARY"
+
+RESPONSE_DISPLAY_LABELS: Dict[int, str] = {
+    1: "Responder (CR/PR)",
+    0: "Non-Responder (PD)",
+}
+
+BASELINE_VIOLIN_FEATURES: List[str] = [
+    "TIS",
+    "CYT",
+    "M1_M2_Ratio",
+    "CD8_T_cells",
+    "M2_Macrophages",
+    "CAFs",
+]
+
 
 # ---------------------------------------------------------------------------
 # Profile Calculation & Phenotype Label Assignment
@@ -45,8 +61,8 @@ def profile_clusters(df: pd.DataFrame, cluster_col: str, feature_cols: List[str]
     valid_features = [c for c in feature_cols if c in df.columns]
     profile = df.groupby(cluster_col)[valid_features].mean()
     
-    if "RESPONSE_BINARY" in df.columns:
-        profile["Response_Rate"] = df.groupby(cluster_col)["RESPONSE_BINARY"].mean()
+    if RESPONSE_BINARY_COL in df.columns:
+        profile["Response_Rate"] = df.groupby(cluster_col)[RESPONSE_BINARY_COL].mean()
     
     counts = df.groupby(cluster_col).size()
     profile["Patient_Count"] = counts
@@ -62,7 +78,16 @@ def _claim_cluster_by_rule(
     method: str = "idxmax",
     labels: Optional[Dict[int, str]] = None,
 ) -> None:
-    """Helper to claim a cluster based on feature ranking rule."""
+    """Assign a phenotype label to a cluster based on feature ranking rule.
+
+    Args:
+        remaining: Set of unclaimed integer cluster IDs.
+        cluster_profiles: Summary DataFrame of cluster mean feature values.
+        col: Feature column name to rank clusters on.
+        target_label: Phenotype label string to assign.
+        method: Ranking method ('idxmax' or 'idxmin'). Defaults to 'idxmax'.
+        labels: Output dictionary mapping cluster ID to phenotype label string.
+    """
     if labels is None or not remaining or col not in cluster_profiles.columns:
         return
     rem_list = list(remaining)
@@ -74,6 +99,7 @@ def _claim_cluster_by_rule(
         return
     labels[cid] = target_label
     remaining.discard(cid)
+
 
 
 def assign_phenotype_labels(cluster_profiles: pd.DataFrame) -> Dict[int, str]:
@@ -157,6 +183,12 @@ def _plot_biomarker_violin(
     ax.set_ylabel("Score / Ratio", fontsize=10, fontweight="bold")
 
 
+def _zscore_series(s: pd.Series) -> pd.Series:
+    """Compute Z-score standardized Series with zero-variance protection."""
+    std_val = s.std()
+    return (s - s.mean()) / (std_val if std_val > 0 else 1.0)
+
+
 def plot_baseline_signature_boxplots(df: pd.DataFrame, save_path: Path) -> None:
     """Generate 300 DPI publication 2x3 facetted violin plots with inner quartiles.
 
@@ -164,16 +196,16 @@ def plot_baseline_signature_boxplots(df: pd.DataFrame, save_path: Path) -> None:
         df: Patient DataFrame containing biomarker features and response.
         save_path: File path to save the generated plot.
     """
-    sig_cols = [c for c in ["TIS", "CYT", "M1_M2_Ratio", "CD8_T_cells", "M2_Macrophages", "CAFs"] if c in df.columns]
-    if not sig_cols or "RESPONSE_BINARY" not in df.columns:
+    sig_cols = [c for c in BASELINE_VIOLIN_FEATURES if c in df.columns]
+    if not sig_cols or RESPONSE_BINARY_COL not in df.columns:
         return
 
-    valid_df = df.dropna(subset=sig_cols + ["RESPONSE_BINARY"]).copy()
-    valid_df["Response"] = valid_df["RESPONSE_BINARY"].map({1: "Responder (CR/PR)", 0: "Non-Responder (PD)"})
+    valid_df = df.dropna(subset=sig_cols + [RESPONSE_BINARY_COL]).copy()
+    valid_df["Response"] = valid_df[RESPONSE_BINARY_COL].map(RESPONSE_DISPLAY_LABELS)
 
     palette = {
-        "Responder (CR/PR)": RESPONSE_PALETTE.get("Responder", "#009E73"),
-        "Non-Responder (PD)": RESPONSE_PALETTE.get("Non-responder", "#D55E00"),
+        RESPONSE_DISPLAY_LABELS[1]: RESPONSE_PALETTE.get("Responder", "#009E73"),
+        RESPONSE_DISPLAY_LABELS[0]: RESPONSE_PALETTE.get("Non-responder", "#D55E00"),
     }
 
     fig, axes = plt.subplots(2, 3, figsize=(12, 7), dpi=300)
@@ -242,7 +274,7 @@ def plot_cluster_heatmap(df: pd.DataFrame, cluster_col: str, feature_cols: List[
         return
 
     df_sorted = df.sort_values(by=cluster_col).copy()
-    mat = df_sorted[valid_cols].apply(lambda x: (x - x.mean()) / (x.std() if x.std() > 0 else 1.0))
+    mat = df_sorted[valid_cols].apply(_zscore_series)
 
     fig, ax = plt.subplots(figsize=(10, 8), dpi=300)
     sns.heatmap(mat.T, cmap="vlag", center=0, ax=ax, cbar_kws={"label": "Z-Score"})
@@ -253,4 +285,5 @@ def plot_cluster_heatmap(df: pd.DataFrame, cluster_col: str, feature_cols: List[
     save_path.parent.mkdir(parents=True, exist_ok=True)
     save_fig(fig, save_path)
     print(f"Saved cluster heatmap to {rel_path(save_path)}")
+
 
