@@ -48,10 +48,9 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 ![Q3 ODE Tumour Trajectories](q5-patient-stratification/plots/phenotypes/ode_trajectories.png)
 
 > [!INFO] Figure Interpretation: Q3 ODE Trajectory Simulations
-> - **What this plot shows**: Dynamic 180-day relative tumour volume $T(t)/K$ trajectories simulated using the Kuznetsov-de Pillis ODE system parameterised by cluster biomarker means.
-> - **Complete Regression ($T(180) \to 0.00$)**: *Immune Hot* (solid crimson) achieves complete tumour burden clearance by Day 60. *Mutant-Driven* (solid orange) achieves complete tumour burden clearance by Day 90–120.
-> - **Immune Cold Desert ($T(180) = 0.52$)**: *Immune Cold* (solid blue) exhibits incomplete tumour regression due to severe effector T-cell paucity and low initial influx rate ($s = 0.02$).
-> - **Resistance & Combination Rescue**: *M2 Immunosuppressive* under anti-PD-1 monotherapy (dotted purple) experiences uncontrolled growth ($T(180) = 0.94$). Adding an M2-depleting agent (dashed purple) restores T-cell killing efficiency ($c \to 0.40$), driving complete tumour regression ($T(180) \to 0.00$).
+> - **What this plot shows**: Dynamic 180-day relative tumour volume trajectories simulated using the Kuznetsov-de Pillis ODE system, presented as two panels: Panel A (Immunotherapy: Anti-PD-1 + M2 Combination Rescue) and Panel B (Targeted Therapy: BRAF/MEK Inhibitor monotherapy).
+> - **Panel A — Immunotherapy**: *Immune Hot* achieves near-complete tumour clearance by Day 60, driven by high effector T-cell density and checkpoint release. *M2-High* fails anti-PD-1 monotherapy (uncontrolled growth) but responds to M2-depleting combination rescue. *Immune Cold* is unresponsive — no T cells to unleash.
+> - **Panel B — Targeted Therapy**: *Mutant-Driven* shows near-complete regression under the ODE's BRAFi parameterisation (r=0.04). However, a critical biological caveat applies: this cluster is empirically **0% `BRAF` V600E and 100% `NF1` loss-of-function**. `NF1`-loss drives constitutively elevated RAS-GTP, meaning vemurafenib/BRAFi monotherapy would trigger the **RAF-inhibitor paradox** — paradoxical ERK *activation*. The correct targeted agent is **MEK inhibition (Trametinib)**, consistent with Q4's DepMap recommendation. *Immune Cold* resists on both arms: no T cells for immunotherapy, and high `NRAS` burden (90.9%) that also triggers the RAF paradox under BRAFi.
 
 ### Overall Survival Stratification by ODE Checkpoint Tumour Burden
 
@@ -95,6 +94,7 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 - **Dynamic Response Prediction**: 180-day ODE simulations capture temporal tumour regression curves that match clinical response outcomes.
 - **Biological Rationale for Combination Therapy**: Proves mathematically why *M2 Immunosuppressive* patients fail single-agent anti-PD-1 and require dual-agent macrophage/CAF targeting.
 - **Clinical Prognostic Power**: ODE checkpoint tumour burden produces a highly significant 82-month survival separation ($p = 0.0024$).
+- **Mutant-Driven Therapy Caveat**: The Mutant-Driven cluster is **0% `BRAF` V600E and 100% `NF1`-loss** — BRAFi monotherapy would trigger paradoxical ERK activation in this high-RAS-GTP context. MEK inhibition (Trametinib) is the mechanistically correct targeted agent, consistent with Q4's DepMap findings. The cluster's 68.8% empirical response rate reflects immunotherapy sensitivity from high neoantigen burden.
 - **Mechanistic Efficiency**: 3-feature ODE model beats 12-feature Logistic Regression and Neural Networks while remaining completely transparent and biologically grounded.
 
 > [!NOTE] Student-Friendly Phase 4 Summary

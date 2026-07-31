@@ -45,8 +45,8 @@ This phase represents the culmination of the analytical pipeline. It builds upon
 
 | Phenotype | N (%) | Response Rate | Defining Biology | Therapy Signal |
 | :--- | :--- | :--- | :--- | :--- |
-| **Immune Cold (Cluster 0)** | 22 (3.1%) | 50.0% | `BRAF` (86.4%), `NRAS` (90.9%) mutant, zero immune infiltration | Primary resistance to monotherapies; requires priming |
-| **Mutant-Driven (Cluster 1)** | 65 (9.3%) | 68.8% | 100% `NF1` mutant, strong oncogene addiction | Sensitive to targeted pathway inhibition |
+| **Immune Cold (Cluster 0)** | 22 (3.1%) | 50.0% | `BRAF` (86.4%), `NRAS` (90.9%) mutant, zero immune infiltration | Primary resistance to both monotherapies; `NRAS`-driven RAF paradox limits BRAFi; no T cells for anti-PD-1 to unlock |
+| **Mutant-Driven (Cluster 1)** | 65 (9.3%) | 68.8% | 100% `NF1` loss-of-function, 0% `BRAF` V600E, 30.8% `NRAS` mutant; high neoantigen burden | Strong immunotherapy response (high TMB); **MEK inhibition** (Trametinib) is the correct targeted agent — BRAFi monotherapy would trigger RAF paradox via high RAS-GTP |
 | **Immune Hot (Cluster 2)** | 304 (43.5%) | 41.1% | 100% `BRAF` mutant, high `CD8A`, `PRF1`, `GZMA` | Strong response to immune checkpoint blockade |
 | **M2-High (Cluster 3)** | 308 (44.1%) | 38.0% | 47.7% `NRAS` mutant, high `CD163`, `ARG1`, `TGFB1` | Stromal exclusion of T cells; requires combination therapy |
 
@@ -66,8 +66,9 @@ Immunotherapy acts mathematically by increasing the T-cell kill gate (f_kill), u
 ### Panel B: Targeted Therapy (BRAF/MEK Inhibitor)
 
 Targeted therapy is modelled to act by directly reducing the intrinsic proliferation rate (r) of oncogene-dependent tumour cells via suppression of the `MAPK1`/`MAP2K1` (pERK) pathway.
-*   **Mutant-Driven**: Achieves near-complete regression. The defining `BRAF` and `NF1` mutations drive profound oncogene-addiction. Inhibiting this pathway directly suppresses proliferation (resulting in a very low proliferation rate r=0.04), causing rapid tumour collapse.
-*   **Immune Cold**: Presents the greatest clinical challenge. The absence of T cells means anti-`PDCD1` has no immune response to unleash. Furthermore, because these tumours lack the specific oncogenic drivers targeted by `BRAF` inhibitors, targeted therapy is also ineffective (resulting in no change in the proliferation rate r), demonstrating primary resistance. These patients require novel priming strategies.
+
+*   **Mutant-Driven**: Achieves near-complete regression in the ODE. However, this cluster is empirically **0% `BRAF` V600E and 100% `NF1` loss-of-function** — an important biological distinction. `NF1` loss drives high constitutive RAS-GTP, and applying BRAFi monotherapy (vemurafenib) to a high-RAS-GTP tumour triggers the **RAF-inhibitor paradox** — paradoxical ERK *activation*, not suppression. The ODE's parameterisation (r=0.04) therefore models a sensitivity that does not apply to this cluster for vemurafenib. The biologically correct targeted agent is **MEK inhibition (Trametinib)**, which acts downstream of RAS and suppresses ERK regardless of RAS-GTP level. This is consistent with the Q4 DepMap recommendation of Dabrafenib + Trametinib combination for this subtype.
+*   **Immune Cold**: Presents the greatest clinical challenge on both arms. The absence of T cells means anti-`PDCD1` has no immune response to unleash. For targeted therapy, the very high `NRAS` mutation rate (90.9%) in this cluster means BRAFi would again trigger the RAF paradox — elevating rather than suppressing ERK activity — producing primary resistance on the targeted arm as well.
 
 ## Why This Matters for Patient Stratification
 
@@ -103,7 +104,7 @@ While the ODE framework provides powerful mechanistic insights, it relies on agg
 ## Key Takeaways
 
 *   The analytical pipeline successfully stratifies N=699 patients into four distinct phenotypes with unique therapeutic vulnerabilities.
-*   The **Immune Hot** phenotype leverages high intrinsic T-cell infiltration, resulting in optimal responses to anti-`PDCD1` immunotherapy.
-*   The **Mutant-Driven** phenotype is characterised by oncogene addiction, making it highly sensitive to targeted therapy that directly suppresses proliferation.
+*   The **Immune Hot** phenotype leverages high intrinsic T-cell infiltration, resulting in optimal responses to anti-`PDCD1` immunotherapy (41.1% empirical response rate).
+*   The **Mutant-Driven** phenotype is 100% `NF1` loss-of-function with 0% `BRAF` V600E; it is best served by **MEK inhibition (Trametinib)** rather than BRAFi monotherapy — `NF1` loss drives high RAS-GTP, making BRAFi paradoxically stimulatory. Its 68.8% response rate reflects strong immunotherapy responsiveness from high neoantigen burden.
 *   The **M2-High** phenotype demonstrates stromal T-cell exclusion, failing monotherapy but responding to simulated M2-depleting combination therapies.
-*   The **Immune Cold** phenotype lacks both immune infiltration and targetable drivers, highlighting a critical unmet need for novel immune-priming strategies.
+*   The **Immune Cold** phenotype is dually resistant: no T cells for immunotherapy to unlock, and high `NRAS` mutation burden (90.9%) that triggers the BRAFi RAF paradox — highlighting a critical unmet need for novel immune-priming strategies.
