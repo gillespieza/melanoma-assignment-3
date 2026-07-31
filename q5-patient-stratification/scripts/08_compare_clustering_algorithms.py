@@ -64,7 +64,7 @@ INPUT_FILE_ICI  = PROCESSED_DIR / "q5" / "feature_matrix.csv"
 INPUT_FILE_FULL = PROCESSED_DIR / "q5" / "feature_matrix_full.csv"
 OUTPUT_PLOT    = SUBPROJECT_ROOT / "plots" / "clustering" / "clustering_algorithms_comparison.png"
 OUTPUT_PLOT_COHORT_CMP = SUBPROJECT_ROOT / "plots" / "clustering" / "algorithms_cohort_size_comparison.png"
-OUTPUT_METRICS = SUBPROJECT_ROOT / "reports" / "clustering_metrics_comparison.csv"
+OUTPUT_METRICS = PROCESSED_DIR / "q5" / "clustering_metrics_comparison.csv"
 
 # The 9 multi-modal features used for clustering
 CLUSTERING_FEATURES: List[str] = [
