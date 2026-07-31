@@ -625,21 +625,21 @@ def main() -> None:
 
     if SUBGROUP_EVAL_FILE.exists():
         df_sub_eval = pd.read_csv(SUBGROUP_EVAL_FILE)
-        overall_row = df_sub_eval[(df_sub_eval["Phenotype"] == "Overall Cohort") & (df_sub_eval["Model_Scope"] == "Global Q1 Predictor")].iloc[0]
+        overall_row = df_sub_eval[(df_sub_eval["Phenotype"] == "Overall Cohort") & (df_sub_eval["Model_Scope"] == "Global Enriched Baseline")].iloc[0]
         n_eval_patients = int(overall_row["N"])
 
         mutant_sub_row = df_sub_eval[(df_sub_eval["Phenotype"] == "Mutant-Driven") & (df_sub_eval["Model_Scope"] == "Subgroup Specific")].iloc[0]
-        mutant_g_row = df_sub_eval[(df_sub_eval["Phenotype"] == "Mutant-Driven") & (df_sub_eval["Model_Scope"] == "Global Q1 Predictor")].iloc[0]
+        mutant_g_row = df_sub_eval[(df_sub_eval["Phenotype"] == "Mutant-Driven") & (df_sub_eval["Model_Scope"] == "Global Enriched Baseline")].iloc[0]
 
-        m2_sub_row = df_sub_eval[(df_sub_eval["Phenotype"] == "M2 Immunosuppressive") & (df_sub_eval["Model_Scope"] == "Subgroup Specific")].iloc[0]
-        m2_g_row = df_sub_eval[(df_sub_eval["Phenotype"] == "M2 Immunosuppressive") & (df_sub_eval["Model_Scope"] == "Global Q1 Predictor")].iloc[0]
+        m2_sub_row = df_sub_eval[(df_sub_eval["Phenotype"] == "Immunosuppressive M2-High") & (df_sub_eval["Model_Scope"] == "Subgroup Specific")].iloc[0]
+        m2_g_row = df_sub_eval[(df_sub_eval["Phenotype"] == "Immunosuppressive M2-High") & (df_sub_eval["Model_Scope"] == "Global Enriched Baseline")].iloc[0]
 
         doc_sections.append(
             f"Phase 5 evaluates whether training cluster-tailored predictive models improves response forecasting compared to "
             f"applying the global Q1 response predictor across all $N = {n_eval_patients}$ evaluated trial patients. "
             f"In the *Mutant-Driven* phenotype ($N = {int(mutant_sub_row['N'])}$), the subgroup-specific classifier achieved an "
             f"ROC-AUC of {mutant_sub_row['ROC_AUC']:.3f} (compared to {mutant_g_row['ROC_AUC']:.3f} for the global model). "
-            f"In the *M2 Immunosuppressive* subset ($N = {int(m2_sub_row['N'])}$), subgroup-specific modelling dramatically increased "
+            f"In the *Immunosuppressive M2-High* subset ($N = {int(m2_sub_row['N'])}$), subgroup-specific modelling dramatically increased "
             f"sensitivity and recall ({m2_sub_row['Recall']*100:.1f}% vs {m2_g_row['Recall']*100:.1f}%) and Positive Predictive Value "
             f"(PPV = {m2_sub_row['PPV']*100:.1f}% vs {m2_g_row['PPV']*100:.1f}%).\n"
         )
@@ -655,19 +655,19 @@ def main() -> None:
         # Build dynamic callout interpreting ROC curves using live evaluation data
         if SUBGROUP_EVAL_FILE.exists():
             roc_callout_lines = [
-                "> [!INFO] Figure Interpretation: Subgroup-Specific vs Global Q1 ROC Curves\n",
-                "> - **What this plot shows**: Receiver Operating Characteristic (ROC) curves comparing the Global Q1 Predictor (dashed dark slate) against phenotype-tailored Subgroup Models (solid, colour-coded by phenotype) for each of the four discovered biological subtypes.\n",
+                "> [!INFO] Figure Interpretation: Subgroup-Specific vs Global Enriched Baseline ROC Curves\n",
+                "> - **What this plot shows**: Receiver Operating Characteristic (ROC) curves comparing the Global Enriched Baseline (dashed dark slate; Q1 features + cell deconvolution) against phenotype-tailored Subgroup Models (solid, colour-coded by phenotype) for each of the four discovered biological subtypes.\n",
             ]
             # Dynamically build per-phenotype bullet points
-            phenotype_order = ["Mutant-Driven", "Immune Cold", "Immune Hot", "M2 Immunosuppressive"]
+            phenotype_order = ["Mutant-Driven", "Immune Cold", "Immune Hot", "Immunosuppressive M2-High"]
             colour_labels = {
                 "Mutant-Driven": "orange",
                 "Immune Cold": "blue",
                 "Immune Hot": "vermillion",
-                "M2 Immunosuppressive": "reddish purple",
+                "Immunosuppressive M2-High": "reddish purple",
             }
             for p_name in phenotype_order:
-                g_rows = df_sub_eval[(df_sub_eval["Phenotype"] == p_name) & (df_sub_eval["Model_Scope"] == "Global Q1 Predictor")]
+                g_rows = df_sub_eval[(df_sub_eval["Phenotype"] == p_name) & (df_sub_eval["Model_Scope"] == "Global Enriched Baseline")]
                 s_rows = df_sub_eval[(df_sub_eval["Phenotype"] == p_name) & (df_sub_eval["Model_Scope"] == "Subgroup Specific")]
                 if g_rows.empty or s_rows.empty:
                     continue
@@ -694,7 +694,7 @@ def main() -> None:
             comp_callout_lines = [
                 "> [!INFO] Figure Interpretation: Cross-Validated Performance Comparison\n",
                 "> - **What this plot shows**: Grouped bar chart comparing four cross-validation metrics "
-                "(ROC-AUC, PR-AUC, Precision, Recall) between the Global Q1 Predictor (dark slate) and "
+                "(ROC-AUC, PR-AUC, Precision, Recall) between the Global Enriched Baseline (dark slate; Q1 + deconvolution) and "
                 "phenotype-specific Subgroup Models (green) across all four biological subtypes.\n",
             ]
             # Find best-performing subgroup dynamically
@@ -707,10 +707,10 @@ def main() -> None:
             best_auc = best_sub["ROC_AUC"]
 
             # Find subgroup with largest recall gain
-            phenotype_order = ["Mutant-Driven", "Immune Cold", "Immune Hot", "M2 Immunosuppressive"]
+            phenotype_order = ["Mutant-Driven", "Immune Cold", "Immune Hot", "Immunosuppressive M2-High"]
             recall_deltas = {}
             for p_name in phenotype_order:
-                g_rows = df_sub_eval[(df_sub_eval["Phenotype"] == p_name) & (df_sub_eval["Model_Scope"] == "Global Q1 Predictor")]
+                g_rows = df_sub_eval[(df_sub_eval["Phenotype"] == p_name) & (df_sub_eval["Model_Scope"] == "Global Enriched Baseline")]
                 s_rows = df_sub_eval[(df_sub_eval["Phenotype"] == p_name) & (df_sub_eval["Model_Scope"] == "Subgroup Specific")]
                 if not g_rows.empty and not s_rows.empty:
                     recall_deltas[p_name] = s_rows.iloc[0]["Recall"] - g_rows.iloc[0]["Recall"]
@@ -718,7 +718,7 @@ def main() -> None:
             if recall_deltas:
                 best_recall_name = max(recall_deltas, key=recall_deltas.get)
                 best_recall_delta = recall_deltas[best_recall_name]
-                g_recall = df_sub_eval[(df_sub_eval["Phenotype"] == best_recall_name) & (df_sub_eval["Model_Scope"] == "Global Q1 Predictor")].iloc[0]["Recall"]
+                g_recall = df_sub_eval[(df_sub_eval["Phenotype"] == best_recall_name) & (df_sub_eval["Model_Scope"] == "Global Enriched Baseline")].iloc[0]["Recall"]
                 s_recall = df_sub_eval[(df_sub_eval["Phenotype"] == best_recall_name) & (df_sub_eval["Model_Scope"] == "Subgroup Specific")].iloc[0]["Recall"]
                 comp_callout_lines.append(
                     f"> - **Highest ROC-AUC**: The *{best_name}* subgroup model achieves the highest discriminative "
@@ -733,7 +733,7 @@ def main() -> None:
                 )
                 # Dynamically retrieve sample sizes for small clusters if available
                 hot_sub = df_sub_eval[(df_sub_eval["Phenotype"] == "Immune Hot") & (df_sub_eval["Model_Scope"] == "Subgroup Specific")]
-                m2_sub = df_sub_eval[(df_sub_eval["Phenotype"] == "M2 Immunosuppressive") & (df_sub_eval["Model_Scope"] == "Subgroup Specific")]
+                m2_sub = df_sub_eval[(df_sub_eval["Phenotype"] == "Immunosuppressive M2-High") & (df_sub_eval["Model_Scope"] == "Subgroup Specific")]
                 n_hot_str = f"{int(hot_sub.iloc[0]['N'])}" if not hot_sub.empty else "small"
                 n_m2_str = f"{int(m2_sub.iloc[0]['N'])}" if not m2_sub.empty else "small"
                 comp_callout_lines.append(

@@ -115,6 +115,7 @@ THRESHOLD_STRATEGY_PALETTE = {
 STRATEGY_PALETTE = {
     "Phenotype-Stratified (Q5)": "#009E73",  # Okabe-Ito Bluish Green
     "Global Predictor (Q1)":     "#0072B2",  # Okabe-Ito Blue
+    "Global Enriched Baseline":  "#0072B2",  # Okabe-Ito Blue (Q1 + Deconvolution)
     "Global Q1 Predictor":       "#0072B2",  # Okabe-Ito Blue (alternate key)
     "Subgroup Specific":         "#009E73",  # Okabe-Ito Bluish Green (alternate key)
     "CD274 (PD-L1+)":            "#E69F00",  # Okabe-Ito Orange

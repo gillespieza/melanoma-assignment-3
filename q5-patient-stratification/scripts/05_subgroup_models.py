@@ -367,7 +367,7 @@ def _compile_evaluation_metrics(
         {
             "Cluster_ID": -1,
             "Phenotype": "Overall Cohort",
-            "Model_Scope": "Global Q1 Predictor",
+            "Model_Scope": "Global Enriched Baseline",
             "N": n_total,
             "Responders": n_resp_total,
             "Response_Rate": resp_rate_total,
@@ -403,7 +403,7 @@ def _compile_evaluation_metrics(
             {
                 "Cluster_ID": cid,
                 "Phenotype": p_name,
-                "Model_Scope": "Global Q1 Predictor",
+                "Model_Scope": "Global Enriched Baseline",
                 "N": n_sub,
                 "Responders": n_resp,
                 "Response_Rate": y_sub.mean() * 100.0,
@@ -496,7 +496,7 @@ def _plot_single_roc_panel(
         color="#37474F",
         linestyle="--",
         linewidth=2,
-        label=f"Global Q1 (AUC = {g_auc:.3f})",
+        label=f"Global Enriched (AUC = {g_auc:.3f})",
     )
 
     phenotype_color = PHENOTYPE_PALETTE.get(p_name, RESPONSE_PALETTE["CR/PR"])
@@ -522,7 +522,7 @@ def _plot_single_roc_panel(
 def plot_subgroup_roc_curves(
     roc_data: Dict[str, Dict[str, np.ndarray]], df_eval: pd.DataFrame, out_path: Path
 ) -> None:
-    """Generate 2x2 multi-panel ROC curves comparing Global Q1 vs Subgroup Models.
+    """Generate 2x2 multi-panel ROC curves comparing Global Enriched Baseline vs Subgroup Models.
 
     Args:
         roc_data: Dictionary mapping phenotype to ROC points.
@@ -534,7 +534,7 @@ def plot_subgroup_roc_curves(
 
     for idx, (p_name, r_dict) in enumerate(roc_data.items()):
         ax = axes_flat[idx]
-        g_row = df_eval[(df_eval["Phenotype"] == p_name) & (df_eval["Model_Scope"] == "Global Q1 Predictor")].iloc[0]
+        g_row = df_eval[(df_eval["Phenotype"] == p_name) & (df_eval["Model_Scope"] == "Global Enriched Baseline")].iloc[0]
         s_row = df_eval[(df_eval["Phenotype"] == p_name) & (df_eval["Model_Scope"] == "Subgroup Specific")].iloc[0]
         _plot_single_roc_panel(ax, p_name, r_dict, g_row, s_row)
 
@@ -590,7 +590,7 @@ def plot_performance_comparison(df_eval: pd.DataFrame, out_path: Path) -> None:
     )
 
     ax.set_title(
-        "Subgroup Model vs Global Q1 Predictor Performance across Melanoma Phenotypes",
+        "Subgroup Model vs Global Enriched Baseline Performance across Melanoma Phenotypes",
         fontsize=13,
         fontweight="bold",
         pad=12,
@@ -660,13 +660,13 @@ def _print_performance_summary(df_eval: pd.DataFrame) -> None:
     Args:
         df_eval: Evaluation metrics DataFrame.
     """
-    print("Summary of Cross-Validation Performance (Global Q1 vs Subgroup Model):")
+    print("Summary of Cross-Validation Performance (Global Enriched Baseline vs Subgroup Model):")
     for phenotype in df_eval["Phenotype"].unique():
         sub_df = df_eval[df_eval["Phenotype"] == phenotype]
-        g_auc = sub_df[sub_df["Model_Scope"] == "Global Q1 Predictor"]["ROC_AUC"].values[0]
-        s_auc = sub_df[sub_df["Model_Scope"] != "Global Q1 Predictor"]["ROC_AUC"].values[0]
-        g_ppv = sub_df[sub_df["Model_Scope"] == "Global Q1 Predictor"]["PPV"].values[0]
-        s_ppv = sub_df[sub_df["Model_Scope"] != "Global Q1 Predictor"]["PPV"].values[0]
+        g_auc = sub_df[sub_df["Model_Scope"] == "Global Enriched Baseline"]["ROC_AUC"].values[0]
+        s_auc = sub_df[sub_df["Model_Scope"] != "Global Enriched Baseline"]["ROC_AUC"].values[0]
+        g_ppv = sub_df[sub_df["Model_Scope"] == "Global Enriched Baseline"]["PPV"].values[0]
+        s_ppv = sub_df[sub_df["Model_Scope"] != "Global Enriched Baseline"]["PPV"].values[0]
 
         diff_auc = s_auc - g_auc if not np.isnan(s_auc) and not np.isnan(g_auc) else 0.0
         print(

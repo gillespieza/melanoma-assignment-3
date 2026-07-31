@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-2
   - q5
-created: 2026-07-31 16:36
+created: 2026-07-31 18:44
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 16:36
+updated: 2026-07-31 18:44
 ---
 
 ## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds
