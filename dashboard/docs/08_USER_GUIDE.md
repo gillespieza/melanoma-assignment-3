@@ -1,23 +1,22 @@
 # The Melanoma Digital Twin Dashboard — Complete User Guide
 
-**Who this is for:** anyone opening this dashboard for the first time with no
-assumed background — whether you come from nursing/clinical training and have
-never seen a ROC curve, or you come from computer science and have never heard
-of PD-L1. Every term is explained the first time it appears, and there's a
-glossary at the end for quick lookup. Nothing in this guide assumes you've
-read any other document in this repo.
+**Who this is for:** anyone opening this dashboard for the first time, with no
+assumed background. Every term is explained the first time it appears, and
+there's a glossary at the end for quick lookup. Nothing in this guide assumes
+you've read any other document in this repo.
 
 ---
 
 ## 1 · What is this thing, in one paragraph
 
-This is a web page that helps a cancer doctor (an oncologist) decide which
+This is a web page that helps a cancer clinician (an oncologist) decide which
 drug to give a patient with **melanoma** (skin cancer) that has spread beyond
 the skin. Instead of one method giving one answer, this tool runs **four
 different, independent scientific methods** on the same patient and shows the
-doctor where they agree and where they disagree. It never makes the decision
-for the doctor — it presents ranked options with the evidence behind each one,
-and the doctor picks and signs off on the plan. Everything on screen is built
+clinician where they agree and where they disagree. It never makes the
+decision for the clinician — it presents ranked options with the evidence
+behind each one, and the clinician picks and signs off on the plan. Everything
+on screen is built
 from **421 real, de-identified patient records** from a public cancer genomics
 database (more on that below) — nothing is invented or simulated from
 scratch.
@@ -51,7 +50,7 @@ A white bar with a sentence explaining the tool, plus four number tiles:
 **Patients** (421), **BRAF V600** (how many carry that specific mutation —
 explained below), **Methods concordant** (how many patients had all methods
 agree), **Methods split** (how many had methods disagree — these are the
-interesting/hard cases worth a doctor's attention).
+interesting/hard cases worth a clinician's attention).
 
 ### 3.2 The methods strip
 Five small tiles in a row, showing the five things this project does and how
@@ -127,7 +126,7 @@ few important honesty notes baked into the design:
 
 - **LDH is a field TCGA never recorded at all.** Lactate dehydrogenase is a
   blood enzyme; elevated LDH is a red flag for rapidly progressing disease
-  and normally pushes doctors toward faster-acting treatment. Since it's
+  and normally pushes clinicians toward faster-acting treatment. Since it's
   missing from every single patient in this dataset, the tool quietly uses
   "Stage IV" as a stand-in signal for that same urgency — until you supply an
   actual LDH value in the what-if bar, which then takes over.
@@ -225,7 +224,7 @@ than inventing fake per-model numbers.
 page, §3.5) is a completely different thing: it's not about any one patient,
 it's proof that the Q1 models actually work, tested against 195 patients from
 three real immunotherapy clinical trials (Liu 2019, Riaz 2017, Hugo 2016)
-where the *true* outcome (did they actually respond, confirmed by a doctor)
+where the *true* outcome (did they actually respond, confirmed by a clinician)
 is known. Headline: **AUC 0.593** overall (0.766 in the Riaz trial
 specifically, 0.451 — essentially chance — in the small Hugo trial). AUC
 ("Area Under the [ROC] Curve") is a standard 0–1 accuracy score for a
@@ -404,13 +403,13 @@ Here's the full picture in one place:
 - **RAF paradox** — the counterintuitive effect where giving a BRAF inhibitor to a tumour *without* the BRAF mutation can actually speed up its growth, via a quirk of how the drug interacts with the pathway.
 - **Chemotherapy (in this project: Dacarbazine, Temozolomide)** — older, non-targeted, non-immune drugs that kill rapidly dividing cells generally. In modern melanoma care, mostly used for symptom relief once other options are exhausted.
 - **Stage (I–IV)** — the standard oncology system for how far a cancer has spread; IV is the most advanced (metastatic).
-- **LDH (Lactate Dehydrogenase)** — a blood enzyme; elevated levels are a marker of rapidly progressing disease, used by doctors to judge urgency.
+- **LDH (Lactate Dehydrogenase)** — a blood enzyme; elevated levels are a marker of rapidly progressing disease, used by clinicians to judge urgency.
 - **ECOG performance status** — a standard 0–5 scale of how well a patient can function day-to-day; used alongside stage to judge how aggressive treatment can safely be.
 - **Overall survival (OS) / median OS** — how long patients lived, measured from a fixed starting point; the *median* is the point where half the group has died and half hasn't — the standard way trials report survival.
 - **Kaplan-Meier curve** — the standard statistical way to chart survival over time, correctly handling patients who are still alive when the study ends ("censored").
 - **RPPA (Reverse-Phase Protein Array)** — a lab technique that measures the actual amount of specific proteins present in a tumour sample — used here as ground truth to check whether the model's predictions match physical reality.
 - **pERK** — the "activated" (phosphorylated) form of a protein called ERK, a direct downstream readout of how active the MAPK pathway currently is.
-- **RECIST response** — the standard clinical criteria doctors use to classify whether a tumour shrank, grew, or stayed the same on a scan, used to label real clinical-trial patients as "responders" or "non-responders."
+- **RECIST response** — the standard clinical criteria clinicians use to classify whether a tumour shrank, grew, or stayed the same on a scan, used to label real clinical-trial patients as "responders" or "non-responders."
 
 **Statistics / machine-learning terms**
 
@@ -460,11 +459,10 @@ real case discovered during this project (patient `TCGA-D3-A2JE`):
 
 ## 11 · Who is "Dr. Aoife Gallagher"?
 
-The name and initials shown in the top-right corner of every page are a
-placeholder persona representing whoever is using the tool in the consultant
-role — not a real, identifiable person, and not tied to any specific patient
-in the data. It exists purely so the sign-off flow (§6.6) reads naturally in
-a demo.
+A fictional consultant. The name and initials shown in the top-right corner
+of every page are not a real, identifiable person, and not tied to any
+specific patient in the data — they exist purely so the sign-off flow (§6.6)
+reads naturally in a demo.
 
 ---
 
