@@ -7,6 +7,7 @@ and exports publication-quality 300 DPI plots and statistical summary CSVs.
 """
 
 import contextlib
+import warnings
 import matplotlib.patches as mpatches
 from pathlib import Path
 import sys
@@ -70,6 +71,23 @@ HEATMAP_VMIN = -0.8
 HEATMAP_VMAX = 0.8
 LOG_P_SIG_THRESHOLD = 1.301  # -log10(0.05)
 
+# Minimum per-group patient count required for Mann-Whitney U validity
+MIN_GROUP_SAMPLES: int = 5
+
+# Numerical floor added to standard deviation to prevent division-by-zero during z-scoring
+STD_EPSILON: float = 1e-8
+
+# Convergence iteration cap for statsmodels Logit interaction model
+LOGIT_MAX_ITER: int = 100
+
+# BT.601 ITU-R standard luminance coefficients (R, G, B channel weights)
+BT601_LUMA_R: float = 0.299
+BT601_LUMA_G: float = 0.587
+BT601_LUMA_B: float = 0.114
+
+# Perceived-brightness threshold below which white annotation text is used (vs black)
+LUMA_DARK_THRESHOLD: float = 0.55
+
 set_presentation_style()
 
 
@@ -103,7 +121,7 @@ def run_univariate_associations(df: pd.DataFrame) -> pd.DataFrame:
         r_vals = resp[col].dropna().values
         nr_vals = non_resp[col].dropna().values
 
-        if len(r_vals) < 5 or len(nr_vals) < 5:
+        if len(r_vals) < MIN_GROUP_SAMPLES or len(nr_vals) < MIN_GROUP_SAMPLES:
             continue
 
         stat, pval = stats.mannwhitneyu(r_vals, nr_vals, alternative="two-sided")
@@ -177,17 +195,22 @@ def compute_interaction_matrix(df: pd.DataFrame) -> pd.DataFrame:
             if np.sum(x_drv == 1) < MIN_MUTANT_SAMPLES:
                 continue
 
-            std_imm = (x_imm - np.mean(x_imm)) / (np.std(x_imm) + 1e-8)
+            std_imm = (x_imm - np.mean(x_imm)) / (np.std(x_imm) + STD_EPSILON)
             interaction = std_imm * x_drv
 
             X = np.column_stack([np.ones(len(y)), std_imm, x_drv, interaction])
             try:
-                model = sm.Logit(y, X).fit(disp=False, maxiter=100)
+                model = sm.Logit(y, X).fit(disp=False, maxiter=LOGIT_MAX_ITER)
                 beta_inter = float(model.params[3])
                 pval_inter = float(model.pvalues[3])
-            except Exception:
-                beta_inter = 0.0
-                pval_inter = 1.0
+            except (np.linalg.LinAlgError, ValueError) as err:
+                warnings.warn(
+                    f"Logistic regression failed for {imm} × {drv}: {err}. "
+                    "Setting beta=0.0, p=1.0 as fallback.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                beta_inter, pval_inter = 0.0, 1.0
 
             results.append({
                 "Immune_Feature": imm,
@@ -231,7 +254,12 @@ def plot_volcano(df_assoc: pd.DataFrame, save_path: Path) -> None:
         frameon=True,
     )
 
-    ax.set_title("Ranked Biomarker Association Effect Sizes (Cohen's d: Responders vs Non-Responders)", fontsize=14, fontweight="bold", pad=15)
+    ax.set_title(
+        "Ranked Biomarker Association Effect Sizes (Cohen's d: Responders vs Non-Responders)",
+        fontsize=14,
+        fontweight="bold",
+        pad=15,
+    )
     ax.set_xlabel("Cohen's d Effect Size", fontsize=12, fontweight="bold")
     ax.set_ylabel("Engineered Biomarker Feature", fontsize=12, fontweight="bold")
 
@@ -356,8 +384,8 @@ def _annotate_heatmap_cells(ax: plt.Axes, piv_beta: pd.DataFrame, piv_raw_p: pd.
 
             norm_val = np.clip((val_b - HEATMAP_VMIN) / (HEATMAP_VMAX - HEATMAP_VMIN), 0, 1)
             rgba = okabe_cmap(norm_val)
-            luminance = 0.299 * rgba[0] + 0.587 * rgba[1] + 0.114 * rgba[2]
-            text_color = "white" if luminance < 0.55 else "black"
+            luminance = BT601_LUMA_R * rgba[0] + BT601_LUMA_G * rgba[1] + BT601_LUMA_B * rgba[2]
+            text_color = "white" if luminance < LUMA_DARK_THRESHOLD else "black"
 
             ax.text(j + 0.5, i + 0.36, f"β = {val_b:+.2f}", ha="center", va="center", fontsize=9.5, fontweight="bold", color=text_color)
             ax.text(j + 0.5, i + 0.68, f"p = {val_pval:.3f}", ha="center", va="center", fontsize=7.5, fontweight="normal", color=text_color, alpha=0.9)
@@ -444,7 +472,8 @@ def main() -> None:
     df_assoc.to_csv(assoc_file, index=False)
     print(f"Saved univariate association results to {rel_path(assoc_file)}")
 
-    target_feats = [c for c in ["TIS", "CYT", "IFN_gamma", "CD8_T_cells", "B_cells", "M1_M2_Ratio"] if c in df_feat.columns]
+    # Use the centralised biology constant to prevent list drift vs KEY_IMMUNE_FEATURES
+    target_feats = [c for c in KEY_IMMUNE_FEATURES if c in df_feat.columns]
     df_cutoffs = compute_youden_cutoffs(df_feat, target_feats)
     cutoffs_file = OUTPUT_DIR / "youden_cutoffs.csv"
     df_cutoffs.to_csv(cutoffs_file, index=False)

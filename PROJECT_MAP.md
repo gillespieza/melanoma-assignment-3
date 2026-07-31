@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-01 (Phase 1 code smell audit: `safe_save_csv` extracted to new `src/utils/io.py`; `generate_obsidian_frontmatter` in `src/utils/formatting.py` extended with `extra_css_classes` param and Q5 `reporting.py` duplicate removed; `_claim_cluster_by_rule` in `phenotyping.py` refactored from mutable-output-param to `Optional[int]` return; `Optional[Path]` annotation fixed on `_build_and_save_matrix`; `suptitle` long line split; trailing blank line removed from `phenotyping.py`)
+> **Last updated**: 2026-08-01 (Phase 2 code smell audit: 8 smells resolved in `02_feature_analysis.py` — bare `except Exception` → specific `LinAlgError/ValueError` + `warnings.warn`; 6 magic numbers extracted to named constants (`MIN_GROUP_SAMPLES`, `STD_EPSILON`, `LOGIT_MAX_ITER`, BT.601 luminance coefficients, `LUMA_DARK_THRESHOLD`); hardcoded Youden feature list replaced with `KEY_IMMUNE_FEATURES` (now includes `Macrophage_STV_Score`); long `set_title` line split; stub `src/feature_analysis.py` deleted)
 
 ## Repository Overview
 
@@ -247,9 +247,8 @@ All four modules operate on **per-patient inputs only** — kinetic rate constan
 | `clustering.py` | `prepare_clustering_features()`, `run_kmeans()`, `plot_2d_cluster_projection()` |
 | `phenotyping.py` | `profile_clusters()`, `assign_phenotype_labels()`, violin/radar/heatmap plots |
 | `deconvolution.py` | Transcriptomic cell-type deconvolution from marker panels |
-| `feature_analysis.py` | Mann-Whitney U and Fisher's exact statistical testing |
 | `clinical_utility.py` | DCA net benefit and NNT calculators |
-| `reporting.py` | Obsidian frontmatter, markdown table formatting |
+| `reporting.py` | Obsidian frontmatter (re-exported from `src.utils.formatting`), markdown table formatting |
 
 ### Four Discovered Phenotypes
 

@@ -7,12 +7,12 @@ tags:
   - patient-stratification
   - phase-2
   - q5
-created: 2026-08-01 00:04
+created: 2026-08-01 00:13
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 00:04
+updated: 2026-08-01 00:13
 ---
 
 ## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds
@@ -74,14 +74,15 @@ Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patient
 
 ### Youden Optimal Decision Threshold Metrics
 
-| Biomarker Feature   | Optimal Cutoff   | Youden J   | Sensitivity   | Specificity   | AUC-ROC   |
-|:--------------------|:-----------------|:-----------|:--------------|:--------------|:----------|
-| `TIS`               | 0.191            | 0.184      | 57.3%         | 61.1%         | 0.585     |
-| `CYT`               | 0.621            | 0.205      | 32.9%         | 87.6%         | 0.583     |
-| `IFN_gamma`         | 0.243            | 0.151      | 54.9%         | 60.2%         | 0.566     |
-| `CD8_T_cells`       | 0.069            | 0.184      | 67.1%         | 51.3%         | 0.584     |
-| **`B_cells`**       | **0.430**        | **0.306**  | **53.7%**     | **77.0%**     | **0.632** |
-| `M1_M2_Ratio`       | 1.076            | 0.034      | 6.1%          | 97.3%         | 0.442     |
+| Biomarker Feature      | Optimal Cutoff   | Youden J   | Sensitivity   | Specificity   | AUC-ROC   |
+|:-----------------------|:-----------------|:-----------|:--------------|:--------------|:----------|
+| `TIS`                  | 0.191            | 0.184      | 57.3%         | 61.1%         | 0.585     |
+| `CYT`                  | 0.621            | 0.205      | 32.9%         | 87.6%         | 0.583     |
+| `IFN_gamma`            | 0.243            | 0.151      | 54.9%         | 60.2%         | 0.566     |
+| `CD8_T_cells`          | 0.069            | 0.184      | 67.1%         | 51.3%         | 0.584     |
+| **`B_cells`**          | **0.430**        | **0.306**  | **53.7%**     | **77.0%**     | **0.632** |
+| `M1_M2_Ratio`          | 1.076            | 0.034      | 6.1%          | 97.3%         | 0.442     |
+| `Macrophage_STV_Score` | -16.628          | 0.027      | 100.0%        | 2.7%          | 0.413     |
 
 ### Key Takeaways & Student Summary
 - **Best Single Marker**: `B_cells` is the single best individual marker for distinguishing responders from non-responders (AUC = 0.632).
