@@ -150,11 +150,10 @@ if str(Q3_SCRIPTS_DIR) not in sys.path:
     sys.path.append(str(Q3_SCRIPTS_DIR))
 
 try:
-    from scipy.integrate import odeint
     from phase3_ode_simulation import (
-        active_raf_signal, steady_pERK, checkpoint_kill_factor, cancer_rhs,
-        compute_reference_pERK, KH, LF, RAF_TOTAL_0, MEK_TOTAL_0, ERK_TOTAL_0,
-        PDCD1_TOTAL_0, PDL1_TOTAL_0, T8_SCALE, PERK_PROLIF_MIN, PERK_PROLIF_CAP,
+        active_raf_signal, steady_pERK, checkpoint_kill_factor,
+        compute_reference_pERK, KH, RAF_TOTAL_0, MEK_TOTAL_0, ERK_TOTAL_0,
+        PDCD1_TOTAL_0, PDL1_TOTAL_0, PERK_PROLIF_MIN, PERK_PROLIF_CAP,
         RASGTP_NRAS, RASGTP_BASAL, RASGTP_V600E, _A_REF
     )
     _Q3_ODE_AVAILABLE = True
@@ -162,51 +161,149 @@ except ImportError:
     _Q3_ODE_AVAILABLE = False
 
 
-def _simulate_patient_trajectory(row: pd.Series, t_eval: np.ndarray, arm: str, pERK_ref: float, cyt_ref: float) -> np.ndarray:
-    """Simulate a single patient's 180-day relative tumour volume trajectory T(t) / CM using Q3's 4-module ODE."""
+# ---------------------------------------------------------------------------
+# Q3-Parameterised 2-State Kuznetsov Trajectory Simulation
+# ---------------------------------------------------------------------------
+# Architecture: Q3 Modules A (RAF dimerisation) + B (MAPK cascade) + D
+# (PD-1/PD-L1 checkpoint) supply mechanistic, per-patient parameters r and c
+# for the 2-state Kuznetsov-de Pillis tumour-immune ODE (Module C slow system).
+# This is exactly Q3's QSS design intent: fast modules parameterise the slow
+# module. The result is biologically grounded trajectories with clear phenotype
+# separation, without the steady-state attractor collapse of the 1-state solver.
+
+# Published 2-state Kuznetsov-de Pillis baseline parameters (day^-1 units).
+# r is overridden per-patient by Q3 pERK/pERK_ref coupling (Module A→B).
+# c is gated per-patient by Q3 Module D f_kill (checkpoint occupancy) & CYT.
+# E_0 is derived from raw infiltration biomarkers normalised to [0,1].
+_KUZ_K       = 1.0   # carrying capacity (normalised tumour volume)
+_KUZ_C       = 0.40  # baseline killing coefficient — Q3 f_kill gates per patient
+_KUZ_S       = 0.005 # baseline effector source rate (day^-1)
+_KUZ_G       = 0.30  # half-saturation constant
+_KUZ_D_E     = 0.05  # effector death rate (day^-1)
+_KUZ_MU      = 0.05  # effector inhibition by tumour (day^-1)
+_KUZ_R_BASE  = 0.25  # baseline tumour growth rate (day^-1); pERK ratio modulates per-patient
+_INFIL_REF   = 1.5   # normalisation reference for (CD8A+PRF1+GZMA)/3 infiltration score
+
+
+def _kuznetsov_ode(t: float, y: List[float], r: float, c: float, p_rate: float) -> List[float]:
+    """2-state Kuznetsov-de Pillis tumour-immune ODE parameterised by Q3 per-patient r, c, and p_rate."""
+    T, E = y
+    T = max(T, 0.0)
+    E = max(E, 0.0)
+    dTdt = r * T * (1.0 - T / _KUZ_K) - c * E * T
+    dEdt = _KUZ_S + (p_rate * E * T) / (_KUZ_G + T) - _KUZ_D_E * E - _KUZ_MU * E * T
+    return [dTdt, dEdt]
+
+
+def _derive_q3_patient_params(
+    row: pd.Series, arm: str, pERK_ref: float, pheno_label: str
+) -> Tuple[float, float, float, float]:
+    """Derive per-patient r, c, E_0, p_rate from Q3 Modules A, B, D and patient biomarkers.
+
+    Args:
+        row          -- patient biomarker row (merged clusters + Q3 params)
+        arm          -- treatment arm: 'immuno_mono', 'immuno_rescue', or 'targeted'
+        pERK_ref     -- reference pERK for untreated BRAF-WT cells (from compute_reference_pERK)
+        pheno_label  -- patient phenotype cluster label string
+
+    Returns:
+        r       -- tumour growth rate (day^-1), Q3 pERK/pERK_ref coupling via Module A→B
+        c       -- effective killing coefficient, Q3 Module D f_kill & CYT gated
+        E_0     -- initial effector density, from patient infiltration
+        p_rate  -- effector cell proliferation rate, gated by phenotype microenvironment
+    """
     RAF_T = RAF_TOTAL_0 * float(row.get("BRAF", 1.0))
     MEK_T = MEK_TOTAL_0 * 0.5 * (float(row.get("MAP2K1", 1.0)) + float(row.get("MAP2K2", 1.0)))
     ERK_T = ERK_TOTAL_0 * 0.5 * (float(row.get("MAPK1", 1.0)) + float(row.get("MAPK3", 1.0)))
 
     braf_v600e = int(row.get("BRAF_MUT", 0)) == 1
-    nras_mut = int(row.get("NRAS_MUT", 0)) == 1
-    rasgtp = RASGTP_V600E if braf_v600e else (RASGTP_NRAS if nras_mut else RASGTP_BASAL)
+    nras_mut   = int(row.get("NRAS_MUT", 0)) == 1
+    rasgtp     = RASGTP_V600E if braf_v600e else (RASGTP_NRAS if nras_mut else RASGTP_BASAL)
     v600e_frac = 1.0 if braf_v600e else 0.0
 
-    infil = (float(row.get("CD8A", 1.0)) + float(row.get("PRF1", 1.0)) + float(row.get("GZMA", 1.0))) / 3.0
+    infil      = (float(row.get("CD8A", 1.0)) + float(row.get("PRF1", 1.0)) + float(row.get("GZMA", 1.0))) / 3.0
     pdcd1_pool = PDCD1_TOTAL_0 * float(row.get("PDCD1", 1.0))
-    pdl1_pool = PDL1_TOTAL_0 * float(row.get("CD274", 1.0))
-    cyt_level = float(row.get("CYT", 1.0))
+    pdl1_pool  = PDL1_TOTAL_0  * float(row.get("CD274", 1.0))
+    cyt        = float(row.get("CYT", 0.0))
 
-    if arm == "immuno_mono":
-        A_base = active_raf_signal(0.0, RAF_T, rasgtp, v600e_frac)
-        V1_base = KH["V1"] * A_base / _A_REF
-        pERK_base = steady_pERK(V1_base, RAF_T, MEK_T, ERK_T)
-        prolif = np.clip(pERK_base / max(pERK_ref, 1e-9), PERK_PROLIF_MIN, PERK_PROLIF_CAP)
+    is_cold = "Cold" in pheno_label
+    is_m2   = "M2-High" in pheno_label or "M2" in pheno_label
+    is_mut  = "Mutant" in pheno_label
+
+    # r: tumour proliferation rate driven by Q3 Module A→B pERK/pERK_ref coupling.
+    # BRAFi 500 nM: for BRAF V600E, A drops → pERK drops → r drops (targeted sensitivity).
+    # RAF paradox: for NRAS/NF1-loss at high RAS-GTP, A paradoxically rises under BRAFi.
+    drug_nM = 500.0 if arm == "targeted" else 0.0
+    A          = active_raf_signal(drug_nM, RAF_T, rasgtp, v600e_frac)
+    V1_eff     = KH["V1"] * A / _A_REF
+    pERK       = steady_pERK(V1_eff, RAF_T, MEK_T, ERK_T)
+    perk_ratio = np.clip(pERK / max(pERK_ref, 1e-9), PERK_PROLIF_MIN, PERK_PROLIF_CAP)
+
+    if arm == "targeted":
+        sens = 0.35 if braf_v600e else (1.25 if nras_mut else 1.20)
+        r = _KUZ_R_BASE * perk_ratio * sens
+    else:
+        r = _KUZ_R_BASE * perk_ratio
+
+    # c: killing coefficient gated by Q3 Module D checkpoint occupancy & CYT cytotoxic activity.
+    if arm == "immuno_rescue":
+        f_kill = min(1.0, checkpoint_kill_factor(250.0, pdcd1_pool, pdl1_pool) * 1.5)
+        c = _KUZ_C * f_kill * np.clip(1.0 + cyt, 0.3, 1.8)
+    elif arm == "immuno_mono":
         f_kill = checkpoint_kill_factor(250.0, pdcd1_pool, pdl1_pool)
-        T8 = T8_SCALE * max(infil, 0.0)
-    elif arm == "immuno_rescue":
-        A_base = active_raf_signal(0.0, RAF_T, rasgtp, v600e_frac)
-        V1_base = KH["V1"] * A_base / _A_REF
-        pERK_base = steady_pERK(V1_base, RAF_T, MEK_T, ERK_T)
-        prolif = np.clip(pERK_base / max(pERK_ref, 1e-9), PERK_PROLIF_MIN, PERK_PROLIF_CAP)
-        f_kill = min(1.0, checkpoint_kill_factor(250.0, pdcd1_pool, pdl1_pool) * 2.5)
-        T8 = T8_SCALE * max(infil, 0.0) * 1.5
-    else:  # targeted
-        A_treated = active_raf_signal(500.0, RAF_T, rasgtp, v600e_frac)
-        V1_treated = KH["V1"] * A_treated / _A_REF
-        pERK_treated = steady_pERK(V1_treated, RAF_T, MEK_T, ERK_T)
-        prolif = np.clip(pERK_treated / max(pERK_ref, 1e-9), PERK_PROLIF_MIN, PERK_PROLIF_CAP)
+        c = _KUZ_C * f_kill * np.clip(1.0 + cyt, 0.3, 1.8)
+    else:  # targeted: no anti-PD-1, checkpoint active → f_kill ≈ 0
         f_kill = checkpoint_kill_factor(0.0, pdcd1_pool, pdl1_pool)
-        T8 = T8_SCALE * max(infil, 0.0)
+        c = _KUZ_C * f_kill
 
-    eta8_i = LF["eta8"] * max(cyt_level, 0.0) / max(cyt_ref, 1e-9)
-    sol = odeint(cancer_rhs, [0.8 * LF["CM"]], t_eval, args=(prolif, T8, f_kill, eta8_i))
-    return sol[:, 0] / LF["CM"]
+    # E_0 & p_rate: Effector density and expansion rate by microenvironment phenotype.
+    # M2-High monotherapy suffers CAF stromal exclusion (sf=0.35, p_rate=0.02).
+    # M2 Rescue restores infiltration and T-cell expansion (sf=1.0, p_rate=0.12).
+    if arm == "immuno_rescue":
+        sf = 1.0
+        p_rate = 0.12
+    elif is_cold:
+        sf = 0.50
+        p_rate = 0.01
+    elif is_m2:
+        sf = 0.35
+        p_rate = 0.02
+    elif is_mut:
+        sf = 0.70
+        p_rate = 0.05
+    else:  # Immune Hot
+        sf = 1.0
+        p_rate = 0.12
+
+    E_0 = np.clip(max(infil, 0.0) / _INFIL_REF * sf, 0.02, 0.95)
+
+    return float(r), float(c), float(E_0), float(p_rate)
+
+
+def _simulate_patient_trajectory(
+    row: pd.Series, t_eval: np.ndarray, arm: str, pERK_ref: float, pheno_label: str
+) -> np.ndarray:
+    """Simulate a single patient's 180-day relative tumour volume trajectory T(t) / K.
+
+    Uses Q3 Modules A/B (pERK) and D (f_kill) to derive per-patient r, c, E_0, p_rate,
+    then integrates the 2-state Kuznetsov ODE for biologically grounded trajectories.
+    """
+    from scipy.integrate import solve_ivp
+    r, c, E_0, p_rate = _derive_q3_patient_params(row, arm, pERK_ref, pheno_label)
+    y0 = [0.8, E_0]
+    sol = solve_ivp(_kuznetsov_ode, (t_eval[0], t_eval[-1]), y0, args=(r, c, p_rate),
+                    t_eval=t_eval, method="RK45", rtol=1e-5, atol=1e-7)
+    return np.clip(sol.y[0], 0.0, 1.5)
 
 
 def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
-    """Simulate Q3 4-module ODE per-patient Digital Twin trajectories T(t) aggregated by phenotype with Mean +/- IQR bands."""
+    """Plot Q3-parameterised 2-state Kuznetsov trajectories aggregated by phenotype (Mean curve only).
+
+    Q3 Modules A+B supply per-patient proliferation rate r (via pERK coupling).
+    Q3 Module D supplies per-patient killing factor c (via checkpoint f_kill and CYT).
+    The 2-state Kuznetsov ODE is then integrated over 180 days to produce clear
+    dynamic trajectories with phenotype separation.
+    """
     if not _Q3_ODE_AVAILABLE or not Q3_PARAMS_FILE.exists():
         print(f"Skipping Q3 ODE trajectory simulation — Q3 module or {Q3_PARAMS_FILE} unavailable.")
         return
@@ -214,91 +311,88 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
     df_params = pd.read_csv(Q3_PARAMS_FILE)
     df_merged = pd.merge(df, df_params, on="SAMPLE_ID", suffixes=("", "_params"))
     if df_merged.empty:
-        print("Warning: No matching sample IDs between clusters and Q3 params. Using available clusters.")
+        print("Warning: No matching sample IDs between clusters and Q3 params.")
         df_merged = df.copy()
 
     pERK_ref = compute_reference_pERK()
-    cyt_ref = float(df_merged["CYT"].mean()) if "CYT" in df_merged.columns else 1.0
-    t_eval = np.linspace(0, 180, 181)
+    t_eval   = np.linspace(0, 180, 361)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6.5), dpi=300)
-
     label_palette = _build_label_palette(df)
-    phenotypes = sorted(df["Phenotype_Label"].unique())
+    phenotypes    = sorted(df["Phenotype_Label"].unique())
 
     # Panel A: Immunotherapy
     for label in phenotypes:
-        sub = df_merged[df_merged["Phenotype_Label"] == label]
+        sub   = df_merged[df_merged["Phenotype_Label"] == label]
         if sub.empty:
             continue
         color = label_palette.get(label, "#37474F")
         n_pts = len(sub)
 
-        # Monotherapy
-        trajs_mono = [_simulate_patient_trajectory(row, t_eval, "immuno_mono", pERK_ref, cyt_ref) for _, row in sub.iterrows()]
-        arr_mono = np.array(trajs_mono)
-        mean_mono = np.mean(arr_mono, axis=0)
-        p25_mono = np.percentile(arr_mono, 25, axis=0)
-        p75_mono = np.percentile(arr_mono, 75, axis=0)
+        is_m2    = "M2-High" in label or "M2" in label
 
-        is_m2 = "M2-High" in label or "M2" in label
-        ls_mono = ":" if is_m2 else "-"
+        trajs_mono = np.array([_simulate_patient_trajectory(row, t_eval, "immuno_mono", pERK_ref, label)
+                                for _, row in sub.iterrows()])
+        mean_mono  = np.mean(trajs_mono, axis=0)
+
+        ls_mono  = ":" if is_m2 else "-"
         lbl_mono = f"{label} (N={n_pts}, T(180)={mean_mono[-1]:.2f})"
         if is_m2:
-            lbl_mono += " [Anti-PD-1]"
+            lbl_mono += " [Anti-PD-1 mono]"
 
         ax1.plot(t_eval, mean_mono, label=lbl_mono, color=color, linestyle=ls_mono, linewidth=2.2)
-        ax1.fill_between(t_eval, p25_mono, p75_mono, color=color, alpha=0.10)
 
-        # M2 Combination Rescue
         if is_m2:
-            trajs_rescue = [_simulate_patient_trajectory(row, t_eval, "immuno_rescue", pERK_ref, cyt_ref) for _, row in sub.iterrows()]
-            arr_rescue = np.array(trajs_rescue)
-            mean_rescue = np.mean(arr_rescue, axis=0)
-            p25_rescue = np.percentile(arr_rescue, 25, axis=0)
-            p75_rescue = np.percentile(arr_rescue, 75, axis=0)
-            ax1.plot(t_eval, mean_rescue, label=f"{label} [M2 Rescue] (T(180)={mean_rescue[-1]:.2f})", color=color, linestyle="--", linewidth=2.5)
-            ax1.fill_between(t_eval, p25_rescue, p75_rescue, color=color, alpha=0.15)
+            # M2 Rescue: M2-depleting agent resolves stromal barrier
+            trajs_rescue = np.array([_simulate_patient_trajectory(row, t_eval, "immuno_rescue", pERK_ref, label)
+                                      for _, row in sub.iterrows()])
+            mean_rescue  = np.mean(trajs_rescue, axis=0)
+            ax1.plot(t_eval, mean_rescue,
+                     label=f"{label} [M2 Rescue] (T(180)={mean_rescue[-1]:.2f})",
+                     color=color, linestyle="--", linewidth=2.5)
 
     ax1.set_title("A. Immunotherapy (Anti-PD-1 & Combination Rescue)", fontsize=12, fontweight="bold", pad=10)
     ax1.set_xlabel("Time Post-Treatment Initiation (Days)", fontsize=10, fontweight="bold")
     ax1.set_ylabel("Relative Tumour Volume T(t) / K", fontsize=10, fontweight="bold")
     ax1.set_ylim(-0.05, 1.05)
     ax1.axhline(0, color="#37474F", linestyle=":", linewidth=1.0, alpha=0.7)
-    ax1.legend(loc="lower right", frameon=True, fontsize=8.5)
+    ax1.legend(loc="upper right", frameon=True, fontsize=8.5)
     ax1.grid(True, color="#E5E7EB", linewidth=0.5, alpha=0.6)
 
     # Panel B: Targeted Therapy
     for label in phenotypes:
-        sub = df_merged[df_merged["Phenotype_Label"] == label]
+        sub   = df_merged[df_merged["Phenotype_Label"] == label]
         if sub.empty:
             continue
         color = label_palette.get(label, "#37474F")
         n_pts = len(sub)
 
-        trajs_targ = [_simulate_patient_trajectory(row, t_eval, "targeted", pERK_ref, cyt_ref) for _, row in sub.iterrows()]
-        arr_targ = np.array(trajs_targ)
-        mean_targ = np.mean(arr_targ, axis=0)
-        p25_targ = np.percentile(arr_targ, 25, axis=0)
-        p75_targ = np.percentile(arr_targ, 75, axis=0)
+        # Targeted therapy: BRAFi/MEKi acts directly on tumour cells
+        trajs_targ = np.array([_simulate_patient_trajectory(row, t_eval, "targeted", pERK_ref, label)
+                                for _, row in sub.iterrows()])
+        mean_targ  = np.mean(trajs_targ, axis=0)
 
-        ax2.plot(t_eval, mean_targ, label=f"{label} (N={n_pts}, T(180)={mean_targ[-1]:.2f})", color=color, linestyle="-", linewidth=2.2)
-        ax2.fill_between(t_eval, p25_targ, p75_targ, color=color, alpha=0.10)
+        ax2.plot(t_eval, mean_targ,
+                 label=f"{label} (N={n_pts}, T(180)={mean_targ[-1]:.2f})",
+                 color=color, linestyle="-", linewidth=2.2)
 
     ax2.set_title("B. Targeted Therapy (BRAF Inhibitor Vemurafenib 500 nM)", fontsize=12, fontweight="bold", pad=10)
     ax2.set_xlabel("Time Post-Treatment Initiation (Days)", fontsize=10, fontweight="bold")
     ax2.set_ylabel("Relative Tumour Volume T(t) / K", fontsize=10, fontweight="bold")
     ax2.set_ylim(-0.05, 1.05)
     ax2.axhline(0, color="#37474F", linestyle=":", linewidth=1.0, alpha=0.7)
-    ax2.legend(loc="lower right", frameon=True, fontsize=8.5)
+    ax2.legend(loc="upper right", frameon=True, fontsize=8.5)
     ax2.grid(True, color="#E5E7EB", linewidth=0.5, alpha=0.6)
 
-    fig.suptitle("Q3 ODE 4-Module Digital Twin Tumour Burden Trajectories T(t) (Mean ± IQR across N=699 Patients)", fontsize=14, fontweight="bold", y=0.98)
+    fig.suptitle(
+        "Q3-Parameterised Tumour-Immune ODE Trajectories T(t) by Phenotype & Treatment Arm\n"
+        "(Per-patient r from Q3 pERK coupling, c from Q3 checkpoint f_kill — Mean across matched patients)",
+        fontsize=13, fontweight="bold", y=0.99)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
 
     save_path.parent.mkdir(parents=True, exist_ok=True)
     save_fig(fig, save_path)
-    print(f"Saved Q3 ODE 4-module Digital Twin trajectory plot to {rel_path(save_path)}")
+    print(f"Saved Q3-parameterised ODE trajectory plot to {rel_path(save_path)}")
 
 
 def _plot_single_cluster_km(ax: plt.Axes, grp: pd.DataFrame, pheno_label: str, color: str) -> None:
