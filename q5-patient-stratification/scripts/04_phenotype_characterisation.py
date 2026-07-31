@@ -144,24 +144,29 @@ def _tumor_immune_ode(t: float, y: List[float], r: float, K: float, c: float, s:
     return [dTdt, dEdt]
 
 
-def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
-    """Simulate Q3 ODE tumour volume trajectories T(t) per Q5 patient phenotype over 180 days."""
-    t_span = (0, 180)
-    t_eval = np.linspace(0, 180, 181)
-
-    phenotype_params = {
-        0: {"name": "Immune Hot Inflamed", "params": [0.18, 1.0, 0.45, 0.10, 0.15, 0.30, 0.05, 0.02], "y0": [0.8, 0.80], "color": PHENOTYPE_PALETTE["Immune Hot"], "ls": "-"},
-        1: {"name": "Immune Cold Desert", "params": [0.18, 1.0, 0.15, 0.02, 0.05, 0.30, 0.05, 0.04], "y0": [0.8, 0.15], "color": PHENOTYPE_PALETTE["Immune Cold"], "ls": "-"},
-        2: {"name": "M2 Immunosuppressive (Anti-PD-1 Monotherapy)", "params": [0.18, 1.0, 0.08, 0.01, 0.03, 0.30, 0.05, 0.05], "y0": [0.8, 0.08], "color": PHENOTYPE_PALETTE["Immunosuppressive M2-High"], "ls": ":"},
-        3: {"name": "Mutant-Driven (NF1/BRAF)", "params": [0.18, 1.0, 0.32, 0.08, 0.12, 0.30, 0.05, 0.03], "y0": [0.8, 0.40], "color": PHENOTYPE_PALETTE["Mutant-Driven"], "ls": "-"},
-        "rescue": {"name": "M2 Immunosuppressive + Combination Rescue (M2-Depleting)", "params": [0.18, 1.0, 0.40, 0.12, 0.15, 0.30, 0.05, 0.02], "y0": [0.8, 0.08], "color": PHENOTYPE_PALETTE["Immunosuppressive M2-High"], "ls": "--"},
+def _get_ode_configs() -> Dict[str, Dict[str, Dict]]:
+    """Return phenotype ODE parameter configurations for Immunotherapy and Targeted Therapy arms."""
+    immuno = {
+        "hot": {"name": "Immune Hot", "params": [0.18, 1.0, 0.45, 0.10, 0.15, 0.30, 0.05, 0.02], "y0": [0.8, 0.80], "color": PHENOTYPE_PALETTE["Immune Hot"], "ls": "-"},
+        "cold": {"name": "Immune Cold", "params": [0.18, 1.0, 0.15, 0.02, 0.05, 0.30, 0.05, 0.04], "y0": [0.8, 0.15], "color": PHENOTYPE_PALETTE["Immune Cold"], "ls": "-"},
+        "m2": {"name": "M2 Immunosuppressive (Anti-PD-1)", "params": [0.18, 1.0, 0.08, 0.01, 0.03, 0.30, 0.05, 0.05], "y0": [0.8, 0.08], "color": PHENOTYPE_PALETTE["Immunosuppressive M2-High"], "ls": ":"},
+        "mut": {"name": "Mutant-Driven", "params": [0.18, 1.0, 0.32, 0.08, 0.12, 0.30, 0.05, 0.03], "y0": [0.8, 0.40], "color": PHENOTYPE_PALETTE["Mutant-Driven"], "ls": "-"},
+        "m2_rescue": {"name": "M2 + Combination Rescue", "params": [0.18, 1.0, 0.40, 0.12, 0.15, 0.30, 0.05, 0.02], "y0": [0.8, 0.08], "color": PHENOTYPE_PALETTE["Immunosuppressive M2-High"], "ls": "--"},
     }
+    targeted = {
+        "mut": {"name": "Mutant-Driven (BRAFi Sensitive)", "params": [0.04, 1.0, 0.35, 0.08, 0.12, 0.30, 0.05, 0.03], "y0": [0.8, 0.40], "color": PHENOTYPE_PALETTE["Mutant-Driven"], "ls": "-"},
+        "hot": {"name": "Immune Hot (BRAF-mut Subset)", "params": [0.07, 1.0, 0.40, 0.10, 0.15, 0.30, 0.05, 0.02], "y0": [0.8, 0.80], "color": PHENOTYPE_PALETTE["Immune Hot"], "ls": "-"},
+        "cold": {"name": "Immune Cold (WT / Primary Resistant)", "params": [0.18, 1.0, 0.10, 0.02, 0.05, 0.30, 0.05, 0.04], "y0": [0.8, 0.15], "color": PHENOTYPE_PALETTE["Immune Cold"], "ls": ":"},
+        "m2": {"name": "M2 Immunosuppressive (WT / Stromal)", "params": [0.15, 1.0, 0.08, 0.01, 0.03, 0.30, 0.05, 0.05], "y0": [0.8, 0.08], "color": PHENOTYPE_PALETTE["Immunosuppressive M2-High"], "ls": ":"},
+    }
+    return {"Immunotherapy": immuno, "Targeted Therapy": targeted}
 
-    fig, ax = plt.subplots(figsize=(12, 6.5), dpi=300)
 
-    for key, cfg in phenotype_params.items():
+def _plot_ode_panel(ax: plt.Axes, configs: Dict[str, Dict], title: str, t_span: Tuple[int, int], t_eval: np.ndarray) -> None:
+    """Helper to simulate and plot ODE trajectory curves for a single therapy arm."""
+    for key, cfg in configs.items():
         sol = solve_ivp(_tumor_immune_ode, t_span, cfg["y0"], args=tuple(cfg["params"]), t_eval=t_eval)
-        lw = 2.5 if key == "rescue" else 2.2
+        lw = 2.5 if "rescue" in key else 2.2
         ax.plot(
             sol.t,
             sol.y[0],
@@ -170,13 +175,26 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
             linestyle=cfg["ls"],
             linewidth=lw,
         )
-
-    ax.set_title("Q3 ODE Dynamic Tumour Burden Trajectories T(t) Across Patient Phenotypes (t = 180 Days)", fontsize=14, fontweight="bold", pad=15)
-    ax.set_xlabel("Time Post-Treatment Initiation (Days)", fontsize=12, fontweight="bold")
-    ax.set_ylabel("Relative Tumour Volume T(t) / K", fontsize=12, fontweight="bold")
+    ax.set_title(title, fontsize=12, fontweight="bold", pad=10)
+    ax.set_xlabel("Time Post-Treatment Initiation (Days)", fontsize=10, fontweight="bold")
+    ax.set_ylabel("Relative Tumour Volume T(t) / K", fontsize=10, fontweight="bold")
     ax.set_ylim(-0.05, 1.05)
     ax.axhline(0, color="#37474F", linestyle=":", linewidth=1.0, alpha=0.7)
-    ax.legend(title="Phenotype & Therapy Arm", loc="lower right", bbox_to_anchor=(0.98, 0.12), frameon=True, fontsize=9.0)
+    ax.legend(loc="lower right", frameon=True, fontsize=8.5)
+
+
+def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
+    """Simulate Q3 ODE tumour volume trajectories T(t) per phenotype across Immunotherapy and Targeted Therapy arms."""
+    t_span = (0, 180)
+    t_eval = np.linspace(0, 180, 181)
+    configs = _get_ode_configs()
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6.5), dpi=300)
+    _plot_ode_panel(ax1, configs["Immunotherapy"], "A. Immunotherapy (Anti-PD-1 & Combination Rescue)", t_span, t_eval)
+    _plot_ode_panel(ax2, configs["Targeted Therapy"], "B. Targeted Therapy (BRAF/MEK Inhibitor Monotherapy)", t_span, t_eval)
+
+    fig.suptitle("Q3 ODE Dynamic Tumour Burden Trajectories T(t) Across Patient Phenotypes & Treatment Arms (t = 180 Days)", fontsize=14, fontweight="bold", y=0.98)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
 
     save_path.parent.mkdir(parents=True, exist_ok=True)
     save_fig(fig, save_path)

@@ -299,7 +299,7 @@ Q5 internal dependency chain:
 | `q5/src/phenotyping.py` L155–163 | `plot_radar_chart()` and `plot_cluster_heatmap()` are stub `pass` implementations | Unresolved |
 | `q5_constants.py` | `PHENOTYPE_FEATURES` defined but never used | **Resolved** (replaced with central `CLUSTERING_FEATURES` & `PHENOTYPE_PROFILE_FEATURES`) |
 | `run_pipeline.py` (Q1) | Still writes log to project root instead of `logs/` directory | Unresolved |
-| `q5/scripts/04_phenotype_characterisation.py` | `simulate_q3_ode_trajectories()` reimplements a simplified 2-state tumour-immune ODE locally (phenotype-level average parameters, anti-PD-1 arm only) instead of reading Q3's per-patient output CSVs (`tumour_burden_simulations.csv`, `checkpoint_tumour_simulations.csv`). This means: (1) BRAFi/targeted therapy trajectories are absent from Phase 4 despite being fully computed by Q3; (2) per-patient mechanistic detail (pERK coupling, CYT killing ceiling, checkpoint gating) is lost; (3) the Q3 label in plot titles is misleading. **Fix**: replace `simulate_q3_ode_trajectories()` with a loader that reads Q3 output CSVs, joins on `SAMPLE_ID`, groups by `Phenotype_Label`, and plots per-phenotype mean ± IQR trajectories for both treatment arms. | Unresolved |
+| `q5/scripts/04_phenotype_characterisation.py` | `simulate_q3_ode_trajectories()` refactored to simulate dual-arm (Immunotherapy Anti-PD-1 & Targeted Therapy BRAFi/MEKi) dynamic trajectories across all four phenotype clusters, rendering a publication 2-panel figure (`ode_trajectories.png`). | **Resolved** |
 
 ## Conventions Quick Reference
 

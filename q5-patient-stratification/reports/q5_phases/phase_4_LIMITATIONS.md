@@ -1,138 +1,102 @@
 ---
-title: "Phase 4: Methodological Audit, Biological Criticisms & Technical Limitations"
-aliases:
-  - Phase 4 Criticisms & Technical Roadmap
-  - Q5 Phase 4 Limitations
-tags:
-  - future-work
-  - limitations
-  - melanoma
-  - patient-stratification
-  - phase-4
-  - q5
-  - ode-modelling
-created: 2026-07-31 15:29
-cssclasses:
-  - row-alt
-  - table-center
-  - table-small
+title: Phase 4 Limitations Audit
+aliases: [q5-phase4-limitations, Phase 4 Limitations]
+tags: [report, q5, limitations, phase-4]
+created: 2026-07-31 16:09
+cssclasses: [table-small, table-center, row-alt]
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 15:29
+updated: 2026-07-31 16:09
 ---
 
-# Phase 4: Methodological Audit, Biological Criticisms & Technical Limitations 🔍
+## Overview
 
-An analytical audit and limitations report for **Phase 4** in the Question 5 Patient Stratification pipeline, evaluating statistical weaknesses, biological assumptions, and computational constraints of cluster profiling, phenotype characterisation, Kaplan–Meier overall survival analysis, and Question 3 Ordinary Differential Equation (ODE) tumour-immune dynamic simulations.
+> [!NOTE] 
+> **What is being done:** An audit of the limitations remaining in Q5 Phase 4 following the recent pipeline refactoring.
+> **Why we are doing it:** To systematically document the statistical, biological, and computational constraints of the current Ordinary Differential Equation (ODE) framework.
+> **What question it answers:** What are the known vulnerabilities in the Phase 4 phenotype characterisation and trajectory modelling, and how can they be improved in future iterations?
 
-Phase 4 bridges unsupervised clustering (Phase 3) with dynamic ODE mechanics (Q3) and subgroup predictive modelling (Phase 5). By profiling clusters across baseline biomarkers (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`), driver mutations (`BRAF`, `NRAS`, `NF1`), and 180-day simulated tumour volume trajectories $T(t)$, Phase 4 establishes the biological interpretation of the patient stratification framework. However, a rigorous audit reveals critical statistical and biological limitations.
+This report outlines the structural and methodological limitations of the Phase 4 analysis. Phase 4 characterises patient phenotypes, generating survival plots (`km_survival_by_phenotype.png`), biomarker signature distributions (`baseline_signature_boxplots.png`), and ODE trajectories (`ode_trajectories.png`). A total of N=699 patients were stratified into four clusters: Immune Cold (N=22, 3.1%, Response Rate=50.0%), Mutant-Driven (N=65, 9.3%, Response Rate=68.8%), Immune Hot (N=304, 43.5%, Response Rate=41.1%), and Immunosuppressive M2-High (N=308, 44.1%, Response Rate=38.0%). 
 
----
+## What Was Fixed: The Dual-Arm ODE Integration
 
-## 2. Statistical Weaknesses & Data Constraints
+> [!INFO]
+> **What is being done:** Documentation of the resolved limitations regarding therapeutic arms.
+> **Why we are doing it:** To acknowledge the recent pipeline refactoring that successfully expanded the mechanistic modelling scope.
+> **What question it answers:** Which major limitations were successfully addressed in the latest update?
 
-| Statistical Limitation                        | Primary Cause                                                 | Clinical Impact                                                     | Empirical Observation / Risk                                                                                                                                                                                                 |
-|:--------------------------------------------- |:------------------------------------------------------------- |:------------------------------------------------------------------- |:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Cohort Sample Size Asymmetry**              | Imbalanced cluster sizes ($N=22$ to $N=308$).                 | Reduced statistical power for minority phenotype comparisons.       | Cluster 0 (*Immune Cold*, $N=22, 3.1\%$) and Cluster 1 (*Mutant-Driven*, $N=65, 9.3\%$) are substantially smaller than Cluster 2 (*Immune Hot*, $N=304, 43.5\%$) and Cluster 3 (*Immunosuppressive M2-High*, $N=308, 44.1\%$). |
-| **Profile Mean Aggregation**                  | Summarising clusters using central mean Z-scores.             | Masks continuous within-cluster variance and heavy-tailed outliers. | Single mean Z-score vectors collapse broad multi-modal distributions into point estimates, ignoring intra-cluster heterogeneity.                                                                                             |
-| **Survival Data Censoring & Sub-cohort Loss** | Missing Overall Survival (OS) follow-up across trial cohorts. | Reduces effective $N$ for Kaplan–Meier log-rank testing.            | Only a subset of the $N=699$ cohort has complete `OS_MONTHS` and `OS_STATUS` metadata, increasing vulnerability to right-censoring bias.                                                                                     |
+- **[Resolved] Targeted Therapy Integration:** Phase 4 now correctly renders a dual-arm ODE trajectory figure. Panel A visualises Immunotherapy (Anti-`PDCD1` / Anti-`CD274` + Combination Rescue), whilst Panel B visualises Targeted Therapy (`BRAF` / MEK Inhibitor monotherapy). Previously, the targeted therapy arm was entirely absent from the Phase 4 ODE visualisations.
 
-### Detailed Statistical Audit
+## Statistical Limitations
 
-1. **Sample Size Imbalance Across Phenotype Subtypes**:
-   - The stratified patient dataset ($N=699$) exhibits marked group size imbalance: Cluster 0 (*Immune Cold*, $N=22, 3.1\%$) and Cluster 1 (*Mutant-Driven*, $N=65, 9.3\%$) together comprise just $12.4\%$ of the cohort, whereas Cluster 2 (*Immune Hot*, $N=304, 43.5\%$) and Cluster 3 (*Immunosuppressive M2-High*, $N=308, 44.1\%$) account for $87.6\%$ of all patients.
-   - This imbalance reduces statistical power when conducting non-parametric Mann–Whitney U or log-rank survival tests on minority clusters, increasing the risk of Type II errors for rare subtype characterisation.
+> [!WARNING]
+> **What is being done:** Identification of statistical vulnerabilities in the clustering and survival analyses.
+> **Why we are doing it:** To prevent overconfidence in the model's predictions, particularly for underrepresented patient subpopulations.
+> **What question it answers:** Where are the statistical findings most likely to fail or lack power?
 
-2. **Information Loss from Central Profile Aggregation**:
-   - Computing mean feature values per cluster (`compute_phenotype_profiles`) compresses continuous Z-score distributions into single scalar metrics.
-   - For heterogeneous features like `CAFs` or `M2_Macrophages`, mean aggregation hides bi-modal sub-populations within a cluster, treating patients with extreme stromal exclusion identically to those with moderate values.
+### Extreme Cluster Size Asymmetry
+The Immune Cold cluster (Cluster 0) is severely underpowered, containing only N=22 patients (3.1% of the cohort). Consequently, any response rate or biomarker mean calculated for this subpopulation is statistically unreliable due to very wide confidence intervals. Furthermore, Kaplan-Meier survival curves for this cluster possess very low statistical power.
 
-3. **Unadjusted Kaplan–Meier Log-Rank Testing**:
-   - The multivariate log-rank test evaluates survival probability differences across phenotype clusters without adjusting for key clinical covariates (age, sex, baseline lactate dehydrogenase [LDH], tumour stage, or prior targeted therapy).
-   - Confounding clinical covariates may distort apparent survival differences between phenotypes.
+### Unadjusted Log-Rank Kaplan-Meier Test
+The multivariate log-rank test is not adjusted for critical clinical confounders such as patient age, treatment cohort, or prior therapy history. Furthermore, because clustering was performed using biomarker features that partially overlap with known survival predictors, there is a risk of circularity in the survival analysis.
 
----
+### Mean-Feature Parameterisation of ODE
+The current 2-state ODE uses cluster-mean biomarker values (e.g., mean `CD8A`, mean cytolytic activity via `PRF1` and `GZMA`) to define parameters. This aggregation eliminates all intra-cluster heterogeneity. As a result, all patients within a given phenotype cluster receive identical predicted trajectories, failing to provide true per-patient Digital Twins.
 
-## 3. Biological Assumptions & Model Simplifications
+### Unfitted Targeted Therapy Parameters
+The ODE parameters governing the targeted therapy arm (specifically the tumour proliferation rate and kill coefficient for `BRAF` inhibition) rely on literature-motivated approximations. They are not formally fitted to our empirical GDSC dose-response data, limiting their predictive accuracy.
 
-> [!WARNING] Biological Simplifications in Dynamic ODE Trajectories
-> The current Q5 Phase 4 integration uses a **2-state deterministic ODE system** parameterised by static, phenotype-level average rate constants. This assumes homogeneous dynamic responses within each phenotype arm and omits microenvironmental spatial barriers, antigen presentation loss (`B2M`/`TAP1`), and adaptive therapy resistance.
+## Biological Assumptions
 
-```
-+-----------------------------------------------------------------------------------+
-|                        CURRENT PHASE 4 ODE SYSTEM (2-STATE)                      |
-|                                                                                   |
-|    dT/dt = r * T * (1 - T/K) - c * E * T       [Tumour Growth & Effector Kill]    |
-|    dE/dt = s + (p * E * T)/(g + T) - d_E * E - mu * E * T   [Effector Kinetics]   |
-+-----------------------------------------------------------------------------------+
-                                         |
-                                         v
-+-----------------------------------------------------------------------------------+
-|                       BIOLOGICAL CRITICISMS & OMITTED AXES                        |
-|                                                                                   |
-|  1. Phenotype Homogenisation: Phenotype arms use identical kinetic parameters.    |
-|  2. Omitted Stromal Barrier: No CAF physical trapping or spatial exclusion term. |
-|  3. Omitted Myeloid Axis: No M1/M2 macrophage immunosuppressive switching.        |
-|  4. Omitted Genomic Escape: No `B2M`/`TAP1` antigen presentation loss term.        |
-|  5. Static Kinetics: No adaptive resistance, clonal evolution, or dynamic decay.  |
-+-----------------------------------------------------------------------------------+
-```
+> [!WARNING]
+> **What is being done:** Examination of biological mechanisms absent or oversimplified in the current ODE formulation.
+> **Why we are doing it:** To contextualise the model's biological fidelity and highlight missing tumour microenvironment factors.
+> **What question it answers:** What biological realities are currently ignored by the mathematical model?
 
-### Detailed Biological Audit
+### Absence of Stromal Compartment
+The 2-state ODE (tumour and immune effector cells) lacks a Cancer-Associated Fibroblast (CAF) or stromal compartment. The M2-High phenotype is characterised by very high CAF scores, yet the ODE cannot explicitly model this stromal exclusion. It merely approximates the effect via a reduced kill coefficient, thereby obscuring the true biological mechanism.
 
-1. **Phenotype-Level Parameter Homogenisation**:
-   - ODE simulations use fixed scalar parameter vectors ($[r, K, c, s, p, g, d_E, \mu]$) per phenotype cluster (e.g. `[0.18, 1.0, 0.45, 0.10, 0.15, 0.30, 0.05, 0.02]` for *Immune Hot*).
-   - This treats every patient in a phenotype cluster as an identical "digital clone", failing to capture individual-level kinetic variation or personalized drug clearance rates.
+### Lack of Resistance Emergence Modelling
+The ODE does not incorporate resistance emergence mechanisms. It fails to model `BRAF` inhibitor resistance via secondary `NRAS` mutations, `MAP2K1` / `MAPK1` bypass signalling, or phenotype switching (e.g., from Mutant-Driven to Immune Cold). The assumption that drug efficacy remains constant over 180 days is biologically unrealistic.
 
-2. **Omission of Spatial Microenvironment & Myeloid Dynamics**:
-   - The 2-state differential system models effector cell activation ($E$) and tumour burden ($T$), but omits explicit state variables for Cancer-Associated Fibroblasts ($CAF$) and M1/M2 macrophage polarisation.
-   - Consequently, the observed clinical failure of *Immunosuppressive M2-High* tumours under anti-PD-1 monotherapy is modelled indirectly via a reduced kill rate ($c = 0.08$) rather than explicitly via physical T-cell trapping or IL-10/TGF-$\beta$ cytokine suppression.
+### Drug Compound Mismatch
+The targeted therapy arm ODE utilises vemurafenib pharmacology parameters (derived from Q3 Module A, where KD_RAF=50 nM). However, Q2 tested Dabrafenib and PLX-4720, but not vemurafenib directly. No per-patient drug sensitivity scores from Q2 are linked to the targeted therapy ODE arm, leaving the drug compound mismatch unresolved.
 
-3. **Absence of Genomic Escape Mechanisms**:
-   - The model assumes effector cells ($E$) retain constant killing efficiency against tumour cells ($T$).
-   - In clinical melanoma, acquired or primary resistance frequently arises from genomic antigen presentation loss (mutations in `B2M`, `TAP1`, `TAP2`, or `HLA-A/B/C`) or IFN-$\gamma$ pathway insensitivity (`JAK1`, `JAK2`, `STAT1` loss). The 2-state ODE cannot distinguish between immune cell exhaustion and tumour-intrinsic antigen invisibility.
+### Ignored NF1 Loss-of-Function Biology
+The ODE ignores the unique biology of `NF1` loss-of-function. `NF1` loss activates RAS signalling through the loss of GAP activity — a mechanism distinct from `NRAS` activating mutations, though both drive the MAPK pathway. The ODE currently sets the RAS-GTP level to RASGTP_NRAS = 0.9 for both, failing to differentiate them.
 
-4. **Static Non-Adaptive Rate Constants**:
-   - Kinetic parameters remain static over the entire 180-day simulation window.
-   - Real anti-PD-1 monotherapy or combination regimens induce dynamic transcriptomic shifts, clonal selection, and adaptive up-regulation of secondary checkpoints (`HAVCR2`/TIM-3, `LAG3`).
+## Computational & Data Constraints
 
----
+> [!WARNING]
+> **What is being done:** Review of data flow and computational architecture limitations within Phase 4.
+> **Why we are doing it:** To identify inefficiencies and structural disconnects between the Q3 simulation outputs and Phase 4 reporting.
+> **What question it answers:** How does Phase 4 fail to utilise the full computational output of preceding modules?
 
-## 4. Prioritised Methodological Improvements
+### Disconnected Q3 Simulation Data
+Phase 4 still does not read the per-patient simulation CSVs generated by Q3 (`tumour_burden_simulations.csv`, `checkpoint_tumour_simulations.csv`). Instead, Phase 4 re-simulates trajectories from scratch using a simplified 2-state equation, rather than the full 4-module Q3 system. Consequently, mechanistic phenomena such as the `BRAF` paradox, pERK-proliferation coupling, and checkpoint binding equilibria are entirely absent from Phase 4's visualisations.
 
-To address these statistical weaknesses and biological simplifications, future iterations of Phase 4 should execute the following prioritized enhancements:
+### Absence of Confidence Shading on ODE Trajectories
+The Phase 4 ODE plots currently render a single mean curve per phenotype. There is no interquartile range (IQR) or confidence shading, which hides the extensive intra-cluster variability and presents a misleadingly deterministic view of patient trajectories.
 
-> [!IMPORTANT] Actionable Improvement Roadmap for Future Iterations
-> 1. **Patient-Specific Bayesian ODE Parameterisation**: Transition from cluster-level static ODE parameters to individualised Bayesian parameter estimation ($r_i, c_i, s_i$) derived from each patient's baseline transcriptomic (`TIS`, `CYT`, `M1_M2_Ratio`) and genomic (`mut_BRAF`, `mut_NF1`) profile.
-> 2. **Multi-State 4-Module ODE System**: Expand the differential system to incorporate explicit Cancer-Associated Fibroblast density ($C(t)$), M1/M2 macrophage polarisation ratio ($M(t)$), and antigen presentation intactness ($\alpha_{\text{AP}}$).
-> 3. **Multivariable Cox Proportional Hazards Regression**: Replace unadjusted Kaplan–Meier log-rank tests with stratified Cox PH modelling adjusting for clinical covariates (age, stage, LDH, TMB).
-> 4. **Uncertainty Quantification for Profile Means**: Report interquartile ranges (IQR) and 95% bootstrap confidence intervals alongside cluster feature means.
+## Proposed Improvements
 
-```
-+-----------------------------------------------------------------------------------+
-|                        PROPOSED 4-MODULE ODE EXPANSION                            |
-|                                                                                   |
-|  dT/dt = r * T * (1 - T/K) - c * alpha_AP * E * T / (1 + beta_CAF * C)            |
-|  dE/dt = s + (p * E * T)/(g + T) - d_E * E - mu_M2 * M2 * E                       |
-|  dC/dt = r_C * C * (1 - C/K_C) + gamma_T * T                                      |
-|  dM2/dt = r_M * M2 * (1 - M2/K_M) + theta_supp * T - phi_rescue * D_rescue        |
-+-----------------------------------------------------------------------------------+
-```
+> [!NOTE]
+> **What is being done:** Outlining a prioritised roadmap for addressing the identified limitations.
+> **Why we are doing it:** To guide the next iteration of refactoring and analytical enhancements.
+> **What question it answers:** What are the most impactful technical steps to improve the Phase 4 pipeline?
 
-### Prioritised Action Items
+| Priority | Improvement | Expected Impact |
+| :--- | :--- | :--- |
+| **P1** (Highest) | Replace Phase 4's local 2-state ODE with a loader that reads Q3's output CSVs, joins on SAMPLE_ID with `patient_clusters.csv`, and aggregates by Phenotype_Label to plot mean +/- IQR bands. | Transforms Phase 4 into a true Digital Twin aggregation, incorporating the full Q3 mechanistic model. |
+| **P1** | Add a CAF/M2 macrophage compartment to the Phase 4 ODE. | Allows mechanistic modelling of stromal exclusion for M2-High patients. |
+| **P2** | Add Bonferroni or False Discovery Rate (FDR) adjustment to Kaplan-Meier log-rank tests and bootstrap confidence intervals for Cluster 0 (N=22). | Improves statistical rigour and prevents false positive conclusions from the underpowered cluster. |
+| **P2** | Fit `BRAF` inhibitor ODE proliferation parameters to empirical Q2 PLX-4720 viability AUC scores per patient. | Links Q2 drug sensitivity directly to the Phase 4 targeted therapy ODE arm. |
+| **P3** | Model resistance emergence via a time-varying parameter that increases after Day 60-90. | Better reflects the typical `BRAF` V600E melanoma resistance window. |
 
-| Priority | Improvement Item | Target Module / Script | Rationale & Expected Benefit |
-| :---: | :--- | :--- | :--- |
-| **P1** | **Patient-Specific ODE Parameterisation** | `04_phenotype_characterisation.py` / `ode_models.py` | Replaces cluster-wide static ODE trajectories with $N=699$ individual patient digital twin simulations based on empirical expression scores. |
-| **P2** | **4-Module ODE System Expansion** | `q3-ode-model/src/ode_models.py` | Explicitly models CAF physical exclusion ($C$), M2 macrophage suppression ($M_2$), and `B2M`/`TAP1` antigen intactness ($\alpha_{\text{AP}}$). |
-| **P3** | **Multivariable Stratified Cox PH Regression** | `04_phenotype_characterisation.py` | Adjusts phenotype survival hazard ratios ($HR$) for age, tumour stage, LDH, and driver mutation status. |
-| **P4** | **Bootstrap Confidence Intervals for Profiles** | `src/phenotyping.py` | Provides 95% bootstrap confidence intervals for cluster biomarker means, resolving profile mean point-estimate limitations. |
+## Key Takeaways
 
----
-
-## 5. Key Takeaways & Student Summary 🎓
-
-- **Cluster Profiling Characterises Biological Phenotypes**: Phase 4 successfully mapped $N=699$ patients into four actionable phenotype profiles — *Immune Cold* ($N=22$, 3.1%), *Mutant-Driven* ($N=65$, 9.3%), *Immune Hot* ($N=304$, 43.5%), and *Immunosuppressive M2-High* ($N=308$, 44.1%) — demonstrating distinct tumour microenvironmental characteristics and overall survival trends.
-- **2-State ODE Systems Model Phenotype Tumour Burden**: Phenotype-specific 180-day ODE simulations capture tumour clearance in inflamed subtypes versus uncontrolled growth in immunosuppressive subtypes.
-- **Statistical Imbalance & Profile Aggregation Constraints**: Imbalanced cluster sizes ($3.1\%$ to $44.1\%$) and mean scalar Z-score aggregation collapse intra-cluster continuous variance.
-- **Biological Simplifications Require Multi-Module Extensions**: 2-state ODE models omit explicit CAF physical barriers, M1/M2 macrophage switching, and `B2M`/`TAP1` antigen presentation loss, highlighting the need for 4-module patient-specific digital twin extensions in future iterations.
+- **Statistical Fragility:** The Immune Cold cluster (N=22) is severely underpowered, and unadjusted log-rank tests risk confounding, necessitating rigorous multiple testing correction in future iterations.
+- **Architectural Disconnect:** Phase 4 re-simulates a simplified 2-state ODE rather than aggregating the high-fidelity, 4-module per-patient simulations generated in Q3, losing critical mechanistic depth.
+- **Missing Stromal Mechanics:** The lack of a distinct CAF compartment in the ODE obscures the true mechanism of immune exclusion, relying on mathematical approximation rather than biological modelling.
+- **Unrealistic Temporal Dynamics:** The model currently assumes constant drug efficacy over 180 days, completely ignoring the inevitable emergence of acquired resistance via bypass signalling or phenotype switching.
+- **Drug Calibration Gap:** Targeted therapy parameters rely on generic literature approximations rather than being calibrated to the empirical Q2 dose-response viability scores.
