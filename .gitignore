@@ -14,8 +14,11 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# Anchored to the repo root: these are Python packaging artifacts. Unanchored,
+# "lib/" also matched dashboard/src/lib/ and silently excluded the app's engine
+# source from every commit.
+/lib/
+/lib64/
 parts/
 sdist/
 var/
