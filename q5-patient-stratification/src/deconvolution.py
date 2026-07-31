@@ -1,15 +1,19 @@
 """Transcriptomic cell-type deconvolution and Macrophage STV calculation module for Q5.
 
 Provides helper functions to calculate the M1/M2 Macrophage Signature Transcript Vector (STV)
-and estimate relative cell-type fractions for patient stratification.
+and estimate relative cell-type fractions for patient stratification with strict coverage validation.
 """
 
 from pathlib import Path
 from typing import Tuple
+import warnings
 import numpy as np
 import pandas as pd
 
 from q5_constants import CELL_TYPE_MARKERS
+
+# Minimum number of valid marker genes required per cell type panel to avoid single-gene noise
+MIN_MARKERS_THRESHOLD: int = 2
 
 
 def compute_macrophage_stv(
@@ -66,11 +70,18 @@ def compute_macrophage_stv(
     return m1_score, m2_score, m1_m2_ratio_series, net_stv_score
 
 
-def compute_cell_deconvolution(df_expr: pd.DataFrame) -> pd.DataFrame:
-    """Compute relative cell type signature scores using marker panels.
+def compute_cell_deconvolution(
+    df_expr: pd.DataFrame, min_markers: int = MIN_MARKERS_THRESHOLD
+) -> pd.DataFrame:
+    """Compute relative cell type signature scores using marker panels with coverage thresholds.
+
+    Enforces a minimum marker threshold (`min_markers`) to prevent single-gene
+    noise from causing silent statistical degradation. If fewer than `min_markers`
+    are present in `df_expr`, a warning is raised and `NaN` is assigned.
 
     Args:
         df_expr: Expression DataFrame (samples x genes).
+        min_markers: Minimum number of matching markers required per panel (default: 2).
 
     Returns:
         DataFrame of estimated cell-type fractions/scores (samples x cell types).
@@ -79,9 +90,27 @@ def compute_cell_deconvolution(df_expr: pd.DataFrame) -> pd.DataFrame:
 
     for cell_type, markers in CELL_TYPE_MARKERS.items():
         found = [m for m in markers if m in df_expr.columns]
-        if found:
-            df_deconv[cell_type] = df_expr[found].mean(axis=1)
-        else:
+        n_found = len(found)
+        n_total = len(markers)
+
+        if n_found < min_markers:
+            warnings.warn(
+                f"Cell type deconvolution panel '{cell_type}' has insufficient marker coverage "
+                f"({n_found}/{n_total} markers present: {found}). Minimum required is {min_markers}. "
+                "Assigning NaN to prevent single-gene score degradation.",
+                UserWarning,
+                stacklevel=2,
+            )
             df_deconv[cell_type] = np.nan
+        else:
+            if n_found < n_total:
+                missing = [m for m in markers if m not in df_expr.columns]
+                warnings.warn(
+                    f"Cell type panel '{cell_type}' missing {len(missing)} marker(s): {missing}. "
+                    f"Computing average score across {n_found}/{n_total} present markers.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            df_deconv[cell_type] = df_expr[found].mean(axis=1)
 
     return df_deconv

@@ -14,7 +14,7 @@ cssclasses:
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 11:11
+updated: 2026-07-31 11:27
 ---
 
 ## 1. Phase 1: Multi-Modal Feature Matrix & Microenvironment Deconvolution
@@ -118,3 +118,15 @@ To resolve the functional balance between M1 (pro-inflammatory) and M2 (immunosu
 >      7. `NK_cells`
 >      8. `B_cells`
 >      9. `CAFs` (used for primary volcano, Youden ROC, and radar visualisations).
+
+> [!formula] Phase 1 Script Execution & Software Module Architecture
+> - **Primary Pipeline Execution Script**:
+>   - [`01_load_and_prepare.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/01_load_and_prepare.py): Orchestrates multi-modal data loading, signature extraction, Macrophage STV calculation, cell deconvolution, and feature matrix export (`feature_matrix.csv` and `feature_matrix_full.csv`).
+> - **Core Supporting Python Modules**:
+>   - [`deconvolution.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/deconvolution.py): Implements marker-based cell deconvolution (`compute_cell_deconvolution`) and Macrophage STV dot-product scoring (`compute_macrophage_stv`).
+>   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Implements baseline biomarker violin plotting (`plot_baseline_signature_boxplots`).
+>   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Central source of truth defining marker gene panels (`IMMUNE_SIGNATURE_MARKERS`, `CELL_TYPE_MARKERS`) and phenotype constants.
+> - **Shared Cross-Question & Pipeline Modules**:
+>   - `q1-response-predictor/src/signatures.py`: Shared signature extraction module (`extract_all_signatures`) with local fallback computation.
+>   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `01_load_and_prepare.py` as Step 1.
+>   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Reads feature metrics and updates phase markdown reports.
