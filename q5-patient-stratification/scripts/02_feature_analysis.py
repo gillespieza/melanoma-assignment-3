@@ -88,6 +88,13 @@ BT601_LUMA_B: float = 0.114
 # Perceived-brightness threshold below which white annotation text is used (vs black)
 LUMA_DARK_THRESHOLD: float = 0.55
 
+# Minimum p-value floor to prevent log10(0) in -log10(p) transforms across all association tests
+P_VALUE_FLOOR: float = 1e-15
+
+# Vertical offsets for the two annotation text lines within each heatmap cell (fraction of cell height)
+CELL_BETA_Y_OFFSET: float = 0.36   # Top line: β interaction coefficient label
+CELL_PVAL_Y_OFFSET: float = 0.68   # Bottom line: p-value label
+
 set_presentation_style()
 
 
@@ -133,7 +140,7 @@ def run_univariate_associations(df: pd.DataFrame) -> pd.DataFrame:
             "Non_Responder_Mean": float(np.mean(nr_vals)),
             "Mann_Whitney_U": float(stat),
             "p_value": float(pval),
-            "neg_log10_p": float(-np.log10(max(pval, 1e-15))),
+            "neg_log10_p": float(-np.log10(max(pval, P_VALUE_FLOOR))),
             "Cohens_d": d_val,
         })
 
@@ -217,7 +224,7 @@ def compute_interaction_matrix(df: pd.DataFrame) -> pd.DataFrame:
                 "Driver_Mutation": drv,
                 "Beta_Interaction": beta_inter,
                 "p_value": pval_inter,
-                "neg_log10_p": float(-np.log10(max(pval_inter, 1e-15))),
+                "neg_log10_p": float(-np.log10(max(pval_inter, P_VALUE_FLOOR))),
             })
 
     return pd.DataFrame(results)
@@ -315,8 +322,18 @@ def plot_youden_roc(df: pd.DataFrame, df_cutoffs: pd.DataFrame, save_path: Path)
     print(f"Saved Youden ROC plot to {rel_path(save_path)}")
 
 
-def plot_genomic_interaction(df: pd.DataFrame, save_path: Path) -> None:
-    """Generate 300 DPI bar plot demonstrating response rates across TIS High/Low and `BRAF` mutation status."""
+def _prepare_genomic_interaction_data(df: pd.DataFrame) -> tuple:
+    """Prepare grouped response rate data for the TIS x `BRAF` interaction bar plot.
+
+    Median-splits TIS into High/Low, resolves the `BRAF` mutation column name from
+    common aliases, then computes per-group objective response percentages.
+
+    Args:
+        df: Feature matrix containing RESPONSE_BINARY, TIS, and optional `BRAF` mutation columns.
+
+    Returns:
+        Tuple of (grouped DataFrame with BRAF_Status, TIS_Status, Response_Pct columns; n_patients int).
+    """
     valid_df = df.dropna(subset=["RESPONSE_BINARY", "TIS"]).copy()
 
     tis_med = valid_df["TIS"].median()
@@ -333,8 +350,18 @@ def plot_genomic_interaction(df: pd.DataFrame, save_path: Path) -> None:
     else:
         valid_df["BRAF_Status"] = np.where(valid_df[braf_col] == 1, "BRAF Mutated", "BRAF Wild-Type")
 
-    grouped = valid_df.groupby(["BRAF_Status", "TIS_Status"])["RESPONSE_BINARY"].agg(["mean", "count"]).reset_index()
+    grouped = (
+        valid_df.groupby(["BRAF_Status", "TIS_Status"])["RESPONSE_BINARY"]
+        .agg(["mean", "count"])
+        .reset_index()
+    )
     grouped["Response_Pct"] = grouped["mean"] * 100
+    return grouped, len(valid_df)
+
+
+def plot_genomic_interaction(df: pd.DataFrame, save_path: Path) -> None:
+    """Generate 300 DPI bar plot demonstrating response rates across TIS High/Low and `BRAF` mutation status."""
+    grouped, n_patients = _prepare_genomic_interaction_data(df)
 
     fig, ax = plt.subplots(figsize=(11, 6), dpi=300)
     palette = {"TIS High": RESPONSE_PALETTE["CR/PR"], "TIS Low": PHENOTYPE_PALETTE["Immune Cold"]}
@@ -363,8 +390,12 @@ def plot_genomic_interaction(df: pd.DataFrame, save_path: Path) -> None:
                 color="white",
             )
 
-    n_patients = len(valid_df)
-    ax.set_title(f"Genomic Synergy: Anti-PD-1 Response Rate by `BRAF` Status & TIS Level (N={n_patients})", fontsize=14, fontweight="bold", pad=15)
+    ax.set_title(
+        f"Genomic Synergy: Anti-PD-1 Response Rate by `BRAF` Status & TIS Level (N={n_patients})",
+        fontsize=14,
+        fontweight="bold",
+        pad=15,
+    )
     ax.set_xlabel("Genomic Driver Subtype", fontsize=12, fontweight="bold")
     ax.set_ylabel("Objective Response Rate (%)", fontsize=12, fontweight="bold")
     ax.set_ylim(0, 100)
@@ -387,15 +418,17 @@ def _annotate_heatmap_cells(ax: plt.Axes, piv_beta: pd.DataFrame, piv_raw_p: pd.
             luminance = BT601_LUMA_R * rgba[0] + BT601_LUMA_G * rgba[1] + BT601_LUMA_B * rgba[2]
             text_color = "white" if luminance < LUMA_DARK_THRESHOLD else "black"
 
-            ax.text(j + 0.5, i + 0.36, f"β = {val_b:+.2f}", ha="center", va="center", fontsize=9.5, fontweight="bold", color=text_color)
-            ax.text(j + 0.5, i + 0.68, f"p = {val_pval:.3f}", ha="center", va="center", fontsize=7.5, fontweight="normal", color=text_color, alpha=0.9)
+            ax.text(j + 0.5, i + CELL_BETA_Y_OFFSET, f"β = {val_b:+.2f}", ha="center", va="center", fontsize=9.5, fontweight="bold", color=text_color)
+            ax.text(j + 0.5, i + CELL_PVAL_Y_OFFSET, f"p = {val_pval:.3f}", ha="center", va="center", fontsize=7.5, fontweight="normal", color=text_color, alpha=0.9)
 
 
 def _add_significance_borders(ax: plt.Axes, piv_beta: pd.DataFrame, piv_p: pd.DataFrame) -> None:
     """Highlight statistically significant interaction cells (p < 0.05) with white borders."""
     for i in range(piv_beta.shape[0]):
         for j in range(piv_beta.shape[1]):
-            if piv_p.iloc[i, j] >= LOG_P_SIG_THRESHOLD:
+            # piv_p holds -log10(p); >= threshold means the interaction IS significant
+            is_significant = piv_p.iloc[i, j] >= LOG_P_SIG_THRESHOLD
+            if is_significant:
                 rect = mpatches.Rectangle((j, i), 1, 1, fill=False, edgecolor="#FFFFFF", lw=3.0, zorder=10)
                 ax.add_patch(rect)
 
