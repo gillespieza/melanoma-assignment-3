@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-3
   - q5
-created: 2026-07-31 14:09
+created: 2026-07-31 14:18
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 14:09
+updated: 2026-07-31 14:18
 ---
 
 ## 3. Phase 3: Unsupervised Phenotype Stratification (N = 699)
@@ -67,6 +67,7 @@ updated: 2026-07-31 14:09
 > - **Primary Pipeline Execution Scripts**:
 >   - [`03_cluster_patients.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/03_cluster_patients.py): Executes Gaussian Mixture Model (GMM) soft clustering ($K=4$, full covariance) across the 9 multi-modal feature space, computes posterior probabilities, exports `gmm_posterior_probabilities.csv` and `patient_clusters.csv`, serialises the fitted model (`gmm_model.pkl`), and generates PCA/t-SNE 2D projections (`pca_clusters.png`, `tsne_clusters.png`).
 >   - [`08_compare_clustering_algorithms.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/08_compare_clustering_algorithms.py): Benchmarks alternative clustering algorithms (K-Means, HAC, GMM, Spectral Clustering, DBSCAN, Consensus Clustering) across Silhouette, Calinski-Harabasz, Davies-Bouldin, ARI, and response rate spread.
+>   - [`09_run_consensus_clustering.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/09_run_consensus_clustering.py): Executes 1,000-bootstrap Consensus Clustering ensemble across patients ($80\%$) and features ($80\%$) for $K \in [2, 8]$, generating Consensus CDF curves (`consensus_cdf_curves.png`), Delta Area elbow plots ($\Delta(4) = 0.1499$, `consensus_delta_area.png`), and co-association heatmaps (`consensus_heatmap_k4.png`).
 > - **Core Supporting Python Modules**:
 >   - [`clustering.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/clustering.py): Implements feature scaling, GMM soft clustering (`run_gmm`), and 2D cluster projection plotting (`plot_2d_cluster_projection`) for PCA and t-SNE manifolds.
 >   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Implements cluster profiling (`profile_clusters`) and phenotype label mapping (`assign_phenotype_labels`).
