@@ -48,11 +48,16 @@ from sklearn.metrics import (
     davies_bouldin_score,
     silhouette_score,
 )
+from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
 
 from clustering import (
     plot_2d_cluster_projection,
+    plot_spatial_microenvironment_violins,
     prepare_clustering_features,
+    run_gmm,
+    run_spectral_manifold,
+    transform_mahalanobis_space,
 )
 from phenotyping import assign_phenotype_labels, profile_clusters
 from q5_constants import (
@@ -79,16 +84,23 @@ OUTPUT_DIR = PROCESSED_DIR / "q5"
 set_presentation_style()
 
 
-def compute_clustering_metrics(X_scaled: np.ndarray, labels: np.ndarray) -> dict:
-    """Compute internal clustering quality metrics for a given label assignment."""
+def compute_clustering_metrics(X_scaled: np.ndarray, labels: np.ndarray, gmm: GaussianMixture = None) -> dict:
+    """Compute internal clustering quality metrics for a given label assignment and GMM model."""
     valid = labels != -1
-    if len(np.unique(labels[valid])) < 2:
-        return {"Silhouette": float("nan"), "Calinski_Harabasz": float("nan"), "Davies_Bouldin": float("nan")}
-    return {
-        "Silhouette": round(silhouette_score(X_scaled[valid], labels[valid]), 4),
-        "Calinski_Harabasz": round(calinski_harabasz_score(X_scaled[valid], labels[valid]), 1),
-        "Davies_Bouldin": round(davies_bouldin_score(X_scaled[valid], labels[valid]), 4),
-    }
+    metrics = {}
+    if len(np.unique(labels[valid])) >= 2:
+        metrics["Silhouette"] = round(silhouette_score(X_scaled[valid], labels[valid]), 4)
+        metrics["Calinski_Harabasz"] = round(calinski_harabasz_score(X_scaled[valid], labels[valid]), 1)
+        metrics["Davies_Bouldin"] = round(davies_bouldin_score(X_scaled[valid], labels[valid]), 4)
+    else:
+        metrics = {"Silhouette": float("nan"), "Calinski_Harabasz": float("nan"), "Davies_Bouldin": float("nan")}
+
+    if gmm is not None:
+        metrics["Log_Likelihood"] = round(gmm.score(X_scaled), 4)
+        metrics["AIC"] = round(gmm.aic(X_scaled), 1)
+        metrics["BIC"] = round(gmm.bic(X_scaled), 1)
+
+    return metrics
 
 
 def plot_cohort_size_comparison(
@@ -126,7 +138,7 @@ def plot_cohort_size_comparison(
             )
 
     ax.set_title(
-        f"K-Means Clustering Quality: ICI Cohort (N={n_ici}) vs Full Cohort (N={n_full})",
+        f"GMM Clustering Quality: ICI Cohort (N={n_ici}) vs Full Cohort (N={n_full})",
         fontsize=13, fontweight="bold", pad=12,
     )
     ax.set_xlabel("Internal Clustering Metric", fontsize=11, fontweight="bold")
@@ -142,24 +154,26 @@ def plot_cohort_size_comparison(
     print(f"Saved cohort-size clustering comparison to {rel_path(out_path)}")
 
 
-def _fit_and_save_model(
+def _fit_and_save_gmm_model(
     df_clean: pd.DataFrame,
     X_scaled: np.ndarray,
-) -> Tuple[KMeans, np.ndarray, List[str]]:
-    """Fit KMeans (K=4) model and persist model and feature column artifacts."""
+) -> Tuple[GaussianMixture, np.ndarray, np.ndarray, List[str]]:
+    """Fit Gaussian Mixture Model (GMM, K=4, full covariance) and persist model artifacts and posterior probabilities."""
     feature_cols = [c for c in CLUSTERING_FEATURES if c in df_clean.columns]
-    kmeans = KMeans(n_clusters=4, random_state=42, n_init=10)
-    labels = kmeans.fit_predict(X_scaled)
+    gmm, labels, probs = run_gmm(X_scaled, n_components=4, covariance_type="full", random_state=42)
 
-    model_path = OUTPUT_DIR / "kmeans_model.pkl"
+    gmm_model_path = OUTPUT_DIR / "gmm_model.pkl"
+    legacy_model_path = OUTPUT_DIR / "kmeans_model.pkl"
     features_path = OUTPUT_DIR / "clustering_feature_cols.json"
-    joblib.dump(kmeans, model_path)
+
+    joblib.dump(gmm, gmm_model_path)
+    joblib.dump(gmm, legacy_model_path)
     with open(features_path, "w", encoding="utf-8") as fp:
         json.dump(feature_cols, fp)
 
-    print(f"Saved KMeans model to {rel_path(model_path)}")
+    print(f"Saved GMM model to {rel_path(gmm_model_path)} (and legacy fallback {rel_path(legacy_model_path)})")
     print(f"Saved clustering feature list to {rel_path(features_path)}")
-    return kmeans, labels, feature_cols
+    return gmm, labels, probs, feature_cols
 
 
 def _assign_labels(df_clean: pd.DataFrame, labels: np.ndarray) -> Dict[int, str]:
@@ -182,7 +196,7 @@ def _assign_labels(df_clean: pd.DataFrame, labels: np.ndarray) -> Dict[int, str]
 
 
 def _compare_cohort_quality(
-    kmeans: KMeans,
+    gmm: GaussianMixture,
     feature_cols: List[str],
     metrics_full: dict,
     len_full: int,
@@ -196,10 +210,11 @@ def _compare_cohort_quality(
     ici_cols = [c for c in feature_cols if c in df_ici.columns]
     df_ici_clean = df_ici.dropna(subset=ici_cols).copy()
     X_ici = StandardScaler().fit_transform(df_ici_clean[ici_cols])
-    labels_ici = kmeans.predict(X_ici)
-    metrics_ici = compute_clustering_metrics(X_ici, labels_ici)
+    probs_ici = gmm.predict_proba(X_ici)
+    labels_ici = np.argmax(probs_ici, axis=1)
+    metrics_ici = compute_clustering_metrics(X_ici, labels_ici, gmm)
 
-    print(f"\nClustering quality — ICI-only cohort applied to same model (N={len(df_ici_clean)}):")
+    print(f"\nClustering quality — ICI-only cohort applied to same GMM model (N={len(df_ici_clean)}):")
     for k, v in metrics_ici.items():
         print(f"  {k}: {v}")
 
@@ -208,8 +223,8 @@ def _compare_cohort_quality(
 
 
 def main() -> None:
-    """Main execution function for patient clustering on full cohort."""
-    print(f"Starting Phase 3 Unsupervised Patient Stratification (Project root: {rel_path(PROJECT_ROOT)})")
+    """Main execution function for patient clustering on full cohort using GMM soft clustering & Mahalanobis space."""
+    print(f"Starting Phase 3 Unsupervised Patient Stratification (GMM + Mahalanobis + Spatial, Project root: {rel_path(PROJECT_ROOT)})")
     if not INPUT_FILE_FULL.exists():
         raise FileNotFoundError(f"Missing full-cohort feature matrix at {rel_path(INPUT_FILE_FULL)}. Run 01_load_and_prepare.py first.")
 
@@ -217,11 +232,30 @@ def main() -> None:
     print(f"Loaded full-cohort feature matrix: {len(df_matrix)} patients x {df_matrix.shape[1]} features")
 
     df_clean, X_scaled = prepare_clustering_features(df_matrix)
-    kmeans, labels, feature_cols = _fit_and_save_model(df_clean, X_scaled)
+
+    # Fit GMM with full covariance natively handling component Mahalanobis covariance
+    gmm, labels, probs, feature_cols = _fit_and_save_gmm_model(df_clean, X_scaled)
     df_clean["Cluster_ID"] = labels
+
+    for k in range(probs.shape[1]):
+        df_clean[f"P_Cluster_{k}"] = probs[:, k]
 
     phenotype_names = _assign_labels(df_clean, labels)
     df_clean["Phenotype_Label"] = df_clean["Cluster_ID"].map(phenotype_names)
+
+    # Attach mapped phenotype probability columns
+    for cid, name in phenotype_names.items():
+        clean_name = f"P_{name.split('(')[0].strip().replace(' ', '_').replace('-', '_')}"
+        df_clean[clean_name] = probs[:, cid]
+
+    # Save standalone posterior probabilities file
+    prob_cols = [c for c in df_clean.columns if c.startswith("P_")]
+    id_cols = [c for c in ["PATIENT_ID", "sample_id", "patient_id"] if c in df_clean.columns]
+    prob_df_cols = id_cols + ["Cluster_ID", "Phenotype_Label"] + prob_cols
+    df_probs_export = df_clean[[c for c in prob_df_cols if c in df_clean.columns]].copy()
+    out_probs_file = OUTPUT_DIR / "gmm_posterior_probabilities.csv"
+    df_probs_export.to_csv(out_probs_file, index=False)
+    print(f"Saved GMM posterior probabilities matrix to {rel_path(out_probs_file)}")
 
     out_clusters = OUTPUT_DIR / "patient_clusters.csv"
     if out_clusters.exists():
@@ -236,21 +270,40 @@ def main() -> None:
     plot_2d_cluster_projection(df_clean, labels, X_scaled, pca_plot_file, phenotype_names, method="pca")
     plot_2d_cluster_projection(df_clean, labels, X_scaled, tsne_plot_file, phenotype_names, method="tsne")
 
-    metrics_full = compute_clustering_metrics(X_scaled, labels)
-    print(f"\nClustering quality — Full cohort (N={len(df_clean)}):")
-    for k, v in metrics_full.items():
-        print(f"  {k}: {v}")
+    spatial_violin_file = SUBPROJECT_ROOT / "plots" / "clustering" / "spatial_microenvironment_violins.png"
+    plot_spatial_microenvironment_violins(df_clean, spatial_violin_file)
 
-    _compare_cohort_quality(kmeans, feature_cols, metrics_full, len(df_clean))
+    # Evaluate Mahalanobis-transformed GMM & Spectral Manifold Clustering comparison
+    X_mahalanobis, _ = transform_mahalanobis_space(X_scaled)
+    gmm_mah, labels_mah, _ = run_gmm(X_mahalanobis, n_components=4, covariance_type="full")
+    _, spectral_labels = run_spectral_manifold(X_scaled, n_clusters=4, n_neighbors=15)
+
+    gmm_metrics = compute_clustering_metrics(X_scaled, labels, gmm)
+    mah_metrics = compute_clustering_metrics(X_mahalanobis, labels_mah, gmm_mah)
+    spectral_metrics = compute_clustering_metrics(X_scaled, spectral_labels)
+
+    comp_df = pd.DataFrame([
+        {"Method": "GMM (Standard Scaled + Spatial)", **gmm_metrics},
+        {"Method": "GMM (Mahalanobis Transformed)", **mah_metrics},
+        {"Method": "Spectral Manifold (Graph Laplacian)", **spectral_metrics},
+    ])
+    out_metrics_file = OUTPUT_DIR / "mahalanobis_spectral_metrics.csv"
+    comp_df.to_csv(out_metrics_file, index=False)
+    print(f"Saved Mahalanobis & Spectral metrics comparison to {rel_path(out_metrics_file)}")
+
+    _compare_cohort_quality(gmm, feature_cols, gmm_metrics, len(df_clean))
 
     print("=" * 80)
-    print("PATIENT STRATIFICATION COMPLETE (Full Cohort)")
+    print("PATIENT STRATIFICATION COMPLETE (GMM + Mahalanobis + Spatial Microenvironment)")
     print(f"Output Clusters File : {rel_path(out_clusters)}")
+    print(f"Posterior Probs File : {rel_path(out_probs_file)}")
+    print(f"Metrics Output File  : {rel_path(out_metrics_file)}")
     print(f"Total Stratified Patients: {len(df_clean)}")
     for cid, name in sorted(phenotype_names.items()):
         cnt = int(np.sum(labels == cid))
         n_ici = int((df_clean[df_clean["Cluster_ID"] == cid]["IMMUNOTHERAPY"] == 1).sum()) if "IMMUNOTHERAPY" in df_clean.columns else 0
-        print(f"  * Cluster {cid} [{name}]: N={cnt} ({cnt/len(df_clean)*100:.1f}%), ICI-treated={n_ici}")
+        mean_p = np.mean(probs[:, cid])
+        print(f"  * Cluster {cid} [{name}]: N={cnt} ({cnt/len(df_clean)*100:.1f}%), Mean P={mean_p:.3f}, ICI-treated={n_ici}")
     print("=" * 80)
 
 

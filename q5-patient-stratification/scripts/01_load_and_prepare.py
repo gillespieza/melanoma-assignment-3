@@ -224,6 +224,14 @@ def build_feature_matrix(input_dir: Path) -> pd.DataFrame:
         df_genomic_idx = df_genomic.set_index("SAMPLE_ID")[genomic_cols]
         df_master = df_master.join(df_genomic_idx, how="left")
 
+    print("  Engineering spatial microenvironment indicators...")
+    cd8_val = df_master["CD8_T_cells"] if "CD8_T_cells" in df_master.columns else 0.0
+    caf_val = df_master["CAFs"] if "CAFs" in df_master.columns else 0.0
+    m1_m2 = df_master["M1_M2_Ratio"] if "M1_M2_Ratio" in df_master.columns else 0.5
+
+    df_master["Spatial_CD8_CAF_Distance_Ratio"] = np.log2((np.maximum(cd8_val, 0) + 0.01) / (np.maximum(caf_val, 0) + 0.01))
+    df_master["Spatial_Tumour_Infiltration_Index"] = np.log2((np.maximum(cd8_val, 0) * np.maximum(m1_m2, 0.01) + 0.01) / (np.maximum(caf_val, 0) + 0.01))
+
     df_master = df_master.reset_index()
     print(f"  Result: {len(df_master)} patients x {df_master.shape[1]} features")
     return df_master

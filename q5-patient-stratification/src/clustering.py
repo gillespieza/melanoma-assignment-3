@@ -13,10 +13,11 @@ from matplotlib.patches import Ellipse
 import numpy as np
 import pandas as pd
 from scipy.stats import gaussian_kde
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, SpectralClustering
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.metrics import silhouette_score
+from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
 
 # ---------------------------------------------------------------------------
@@ -25,6 +26,7 @@ from sklearn.preprocessing import StandardScaler
 
 from q5_constants import CLUSTERING_FEATURES
 from src.styles import PHENOTYPE_PALETTE, get_phenotype_color, set_presentation_style
+from src.utils.paths import rel_path
 from src.utils.plotting import save_fig
 
 # ---------------------------------------------------------------------------
@@ -79,6 +81,29 @@ def run_kmeans(df_features: pd.DataFrame, k_range: range = range(2, 7)) -> Dict[
         score = silhouette_score(X, labels)
         results[k] = (labels, score)
     return results
+
+
+def run_gmm(
+    X_scaled: np.ndarray,
+    n_components: int = 4,
+    covariance_type: str = "full",
+    random_state: int = 42,
+) -> Tuple[GaussianMixture, np.ndarray, np.ndarray]:
+    """Fit Gaussian Mixture Model (GMM) with full covariance matrices and compute soft posterior probabilities.
+
+    Returns:
+        Tuple of (fitted_gmm_model, hard_cluster_labels, posterior_probabilities_matrix).
+    """
+    gmm = GaussianMixture(
+        n_components=n_components,
+        covariance_type=covariance_type,
+        random_state=random_state,
+        n_init=10,
+    )
+    gmm.fit(X_scaled)
+    probs = gmm.predict_proba(X_scaled)
+    labels = np.argmax(probs, axis=1)
+    return gmm, labels, probs
 
 
 def _compute_2d_embedding(
@@ -199,7 +224,8 @@ def plot_2d_cluster_projection(
         sub = df_plot[df_plot["Cluster"] == cluster_id]
         c_name = cluster_names.get(cluster_id, f"Cluster {cluster_id}") if cluster_names else f"Cluster {cluster_id}"
         c_color = get_phenotype_color(c_name)
-        _scatter_cluster(ax, sub, c_name, c_color)
+        legend_label = f"{c_name} (N={len(sub)})"
+        _scatter_cluster(ax, sub, legend_label, c_color)
 
     ax.set_title(title_str, fontsize=14, fontweight="bold", pad=15)
     ax.set_xlabel(xlabel, fontsize=12, fontweight="bold")
@@ -220,3 +246,242 @@ def plot_2d_cluster_projection(
     save_path.parent.mkdir(parents=True, exist_ok=True)
     save_fig(fig, save_path)
     print(f"Saved {method.upper()} 2D cluster projection plot to {save_path}")
+
+
+def run_consensus_bootstrap(
+    X_scaled: np.ndarray,
+    k_range: range = range(2, 9),
+    n_bootstraps: int = 1000,
+    sample_ratio: float = 0.8,
+    feature_ratio: float = 0.8,
+    random_state: int = 42,
+) -> Tuple[Dict[int, np.ndarray], Dict[int, Tuple[np.ndarray, np.ndarray]], Dict[int, float], Dict[int, float], pd.DataFrame]:
+    """Execute 1,000-bootstrap Consensus Clustering across patients and features for K in k_range.
+
+    Returns:
+        Tuple of (consensus_matrices, cdf_curves, auc_dict, delta_area_dict, metrics_df).
+    """
+    n_samples, n_features = X_scaled.shape
+    rng = np.random.RandomState(random_state)
+    sample_sub_size = max(2, int(n_samples * sample_ratio))
+    feat_sub_size = max(1, int(n_features * feature_ratio))
+
+    consensus_matrices: Dict[int, np.ndarray] = {}
+    cdf_curves: Dict[int, Tuple[np.ndarray, np.ndarray]] = {}
+    auc_dict: Dict[int, float] = {}
+    delta_area_dict: Dict[int, float] = {}
+
+    grid_c = np.linspace(0.01, 1.0, 100)
+
+    for k in k_range:
+        co_counts = np.zeros((n_samples, n_samples), dtype=float)
+        pair_counts = np.zeros((n_samples, n_samples), dtype=float)
+
+        for _ in range(n_bootstraps):
+            sample_idx = rng.choice(n_samples, size=sample_sub_size, replace=False)
+            feat_idx = rng.choice(n_features, size=feat_sub_size, replace=False)
+
+            sub_X = X_scaled[np.ix_(sample_idx, feat_idx)]
+            km = KMeans(n_clusters=k, random_state=rng.randint(0, 100000), n_init=1)
+            lbls = km.fit_predict(sub_X)
+
+            # Vectorized co-clustering update
+            same_cluster = (lbls[:, None] == lbls[None, :])
+            idx_grid = np.ix_(sample_idx, sample_idx)
+            co_counts[idx_grid] += same_cluster
+            pair_counts[idx_grid] += 1
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            M_k = np.where(pair_counts > 0, co_counts / pair_counts, 0.0)
+        consensus_matrices[k] = M_k
+
+        triu_indices = np.triu_indices(n_samples, k=1)
+        u_vals = M_k[triu_indices]
+
+        cdf_vals = np.array([np.mean(u_vals <= c) for c in grid_c])
+        cdf_curves[k] = (grid_c, cdf_vals)
+
+        try:
+            auc_val = float(np.trapezoid(cdf_vals, grid_c))
+        except AttributeError:
+            auc_val = float(np.trapz(cdf_vals, grid_c))
+        auc_dict[k] = auc_val
+
+    sorted_ks = sorted(list(k_range))
+    for idx, k in enumerate(sorted_ks):
+        if idx == 0:
+            delta_area_dict[k] = auc_dict[k]
+        else:
+            prev_k = sorted_ks[idx - 1]
+            prev_auc = auc_dict[prev_k]
+            delta_area_dict[k] = (auc_dict[k] - prev_auc) / prev_auc if prev_auc > 0 else 0.0
+
+    records = []
+    for k in sorted_ks:
+        records.append({
+            "K": k,
+            "CDF_AUC": round(auc_dict[k], 4),
+            "Delta_Area": round(delta_area_dict[k], 4),
+            "Mean_Consensus_Score": round(float(np.mean(consensus_matrices[k][np.triu_indices(n_samples, k=1)])), 4),
+        })
+    metrics_df = pd.DataFrame(records)
+
+    return consensus_matrices, cdf_curves, auc_dict, delta_area_dict, metrics_df
+
+
+def plot_consensus_cdf_and_delta_area(
+    cdf_curves: Dict[int, Tuple[np.ndarray, np.ndarray]],
+    delta_area_dict: Dict[int, float],
+    out_cdf_path: Path,
+    out_delta_path: Path,
+) -> None:
+    """Generate 300 DPI publication plots for Consensus CDF curves and Delta Area scores across K in [2, 8]."""
+    fig, ax = plt.subplots(figsize=(10, 6), dpi=300)
+    colors = plt.cm.plasma(np.linspace(0.1, 0.9, len(cdf_curves)))
+
+    for idx, (k, (grid_c, cdf_vals)) in enumerate(sorted(cdf_curves.items())):
+        ax.plot(grid_c, cdf_vals, label=f"K = {k}", color=colors[idx], linewidth=2.0)
+
+    ax.set_title("Consensus Clustering Cumulative Distribution Functions (CDF across K)", fontsize=13, fontweight="bold", pad=12)
+    ax.set_xlabel("Consensus Index (c)", fontsize=11, fontweight="bold")
+    ax.set_ylabel("CDF (F(c))", fontsize=11, fontweight="bold")
+    ax.legend(title="Cluster Count K", frameon=True, facecolor="white", edgecolor="#E5E7EB", fontsize=9.5)
+    ax.grid(True, color="#E5E7EB", linewidth=0.5, alpha=0.6)
+
+    out_cdf_path.parent.mkdir(parents=True, exist_ok=True)
+    save_fig(fig, out_cdf_path, dpi=300)
+    print(f"Saved Consensus CDF curves to {rel_path(out_cdf_path)}")
+
+    fig2, ax2 = plt.subplots(figsize=(9, 5.5), dpi=300)
+    ks = sorted(list(delta_area_dict.keys()))
+    deltas = [delta_area_dict[k] for k in ks]
+
+    ax2.plot(ks, deltas, marker="o", color="#0072B2", linewidth=2.2, markersize=8, label="Relative Delta Area $\\Delta(K)$")
+    for k, d in zip(ks, deltas):
+        ax2.annotate(f"{d:.3f}", (k, d), textcoords="offset points", xytext=(0, 7), ha="center", fontsize=9, fontweight="bold")
+
+    ax2.set_title("Consensus Clustering Relative Delta Area Score $\\Delta(K)$", fontsize=13, fontweight="bold", pad=12)
+    ax2.set_xlabel("Cluster Count K", fontsize=11, fontweight="bold")
+    ax2.set_ylabel("Relative Change in CDF Area $\\Delta(K)$", fontsize=11, fontweight="bold")
+    ax2.set_xticks(ks)
+    ax2.grid(True, color="#E5E7EB", linewidth=0.5, alpha=0.6)
+
+    out_delta_path.parent.mkdir(parents=True, exist_ok=True)
+    save_fig(fig2, out_delta_path, dpi=300)
+    print(f"Saved Consensus Delta Area plot to {rel_path(out_delta_path)}")
+
+
+def plot_consensus_heatmap(
+    M_k: np.ndarray,
+    out_path: Path,
+    k: int = 4,
+) -> None:
+    """Generate publication-ready clustered heatmap of sample-sample co-association matrix."""
+    from scipy.cluster.hierarchy import leaves_list, linkage
+
+    row_link = linkage(M_k, method="average")
+    order = leaves_list(row_link)
+    M_ordered = M_k[np.ix_(order, order)]
+
+    fig, ax = plt.subplots(figsize=(8, 7), dpi=300)
+    im = ax.imshow(M_ordered, cmap="PuBu", aspect="auto", vmin=0.0, vmax=1.0)
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label("Consensus Co-clustering Index", fontsize=10, fontweight="bold")
+
+    ax.set_title(f"Consensus Co-association Matrix Heatmap (K = {k})", fontsize=13, fontweight="bold", pad=12)
+    ax.set_xlabel("Samples (Ordered by Consensus Linkage)", fontsize=10, fontweight="bold")
+    ax.set_ylabel("Samples (Ordered by Consensus Linkage)", fontsize=10, fontweight="bold")
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    save_fig(fig, out_path, dpi=300)
+    print(f"Saved Consensus Heatmap (K={k}) to {rel_path(out_path)}")
+
+
+def transform_mahalanobis_space(
+    X_scaled: np.ndarray,
+    ridge_alpha: float = 1e-4,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Transform feature space by regularized inverse square root covariance matrix (X_mahalanobis = X_scaled @ Sigma^{-1/2}).
+
+    Decorrelates collinear feature traits (TIS, CYT, CD8_T_cells, r > 0.70) into an isotropic Mahalanobis space.
+
+    Returns:
+        Tuple of (X_mahalanobis, inv_sqrt_cov_matrix).
+    """
+    cov = np.cov(X_scaled, rowvar=False)
+    cov_reg = cov + ridge_alpha * np.eye(cov.shape[0])
+
+    evals, evecs = np.linalg.eigh(cov_reg)
+    evals = np.maximum(evals, 1e-8)
+    inv_sqrt_cov = evecs @ np.diag(1.0 / np.sqrt(evals)) @ evecs.T
+
+    X_mahalanobis = X_scaled @ inv_sqrt_cov
+    return X_mahalanobis, inv_sqrt_cov
+
+
+def run_spectral_manifold(
+    X_scaled: np.ndarray,
+    n_clusters: int = 4,
+    n_neighbors: int = 15,
+    random_state: int = 42,
+) -> Tuple[SpectralClustering, np.ndarray]:
+    """Fit Spectral Manifold Clustering on Graph Laplacian eigenvectors using nearest-neighbors affinity.
+
+    Returns:
+        Tuple of (spectral_model, hard_cluster_labels).
+    """
+    from sklearn.cluster import SpectralClustering
+
+    spectral = SpectralClustering(
+        n_clusters=n_clusters,
+        affinity="nearest_neighbors",
+        n_neighbors=n_neighbors,
+        random_state=random_state,
+        n_init=10,
+    )
+    labels = spectral.fit_predict(X_scaled)
+    return spectral, labels
+
+
+def plot_spatial_microenvironment_violins(
+    df_clean: pd.DataFrame,
+    save_path: Path,
+) -> None:
+    """Generate 300 DPI publication violin plot comparing spatial microenvironment metrics across phenotypes."""
+    spatial_cols = [c for c in ["Spatial_CD8_CAF_Distance_Ratio", "Spatial_Tumour_Infiltration_Index"] if c in df_clean.columns]
+    if not spatial_cols or "Phenotype_Label" not in df_clean.columns:
+        print("Skipping spatial violin plot: missing spatial columns or Phenotype_Label.")
+        return
+
+    fig, axes = plt.subplots(1, len(spatial_cols), figsize=(6.5 * len(spatial_cols), 5.5), dpi=300)
+    if len(spatial_cols) == 1:
+        axes = [axes]
+
+    labels = sorted(df_clean["Phenotype_Label"].unique())
+    palette = [get_phenotype_color(l) for l in labels]
+
+    for idx, col in enumerate(spatial_cols):
+        ax = axes[idx]
+        clean_data = [df_clean[df_clean["Phenotype_Label"] == l][col].dropna() for l in labels]
+        short_names = [l.split("(")[0].strip() for l in labels]
+
+        parts = ax.violinplot(clean_data, showmedians=True, showextrema=False)
+        for pc, color in zip(parts["bodies"], palette):
+            pc.set_facecolor(color)
+            pc.set_alpha(0.7)
+            pc.set_edgecolor("black")
+
+        ax.set_xticks(range(1, len(labels) + 1))
+        ax.set_xticklabels(short_names, fontsize=9.5, fontweight="bold", rotation=15)
+        ax.set_title(col.replace("_", " "), fontsize=12, fontweight="bold", pad=10)
+        ax.set_ylabel("Score Ratio", fontsize=10, fontweight="bold")
+        ax.grid(True, axis="y", color="#E5E7EB", linewidth=0.5, alpha=0.6)
+
+    plt.tight_layout()
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    save_fig(fig, save_path, dpi=300)
+    print(f"Saved spatial microenvironment violin plots to {rel_path(save_path)}")
+
+

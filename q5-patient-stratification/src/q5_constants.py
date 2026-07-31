@@ -29,7 +29,13 @@ IMMUNE_SIGNATURE_MARKERS: Dict[str, List[str]] = {
     "CD8_Tcell": ["CD8A", "CD8B"],
 }
 
-# Features utilized for patient clustering
+# Spatial microenvironment indicators (resolving stroma exclusion vs immune desert)
+SPATIAL_MICROENVIRONMENT_FEATURES: List[str] = [
+    "Spatial_CD8_CAF_Distance_Ratio",
+    "Spatial_Tumour_Infiltration_Index",
+]
+
+# Features utilized for patient clustering (9 primary multi-modal features)
 CLUSTERING_FEATURES: List[str] = [
     "TIS",
     "CYT",
@@ -42,7 +48,7 @@ CLUSTERING_FEATURES: List[str] = [
     "mut_NF1",
 ]
 
-# Features utilized for phenotype profiling and label assignment
+# Features utilized for phenotype profiling and label assignment (includes spatial indicators)
 PHENOTYPE_PROFILE_FEATURES: List[str] = [
     "TIS",
     "CYT",
@@ -50,6 +56,8 @@ PHENOTYPE_PROFILE_FEATURES: List[str] = [
     "mut_NF1",
     "M1_M2_Ratio",
     "M2_Macrophages",
+    "Spatial_CD8_CAF_Distance_Ratio",
+    "Spatial_Tumour_Infiltration_Index",
 ]
 
 # Descriptive biological suffixes for phenotype labels

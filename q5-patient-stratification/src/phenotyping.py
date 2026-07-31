@@ -85,23 +85,14 @@ def assign_phenotype_labels(cluster_profiles: pd.DataFrame) -> Dict[int, str]:
     labels[hot_id] = "Immune Hot"
     remaining.discard(hot_id)
 
-    # --- Rule 3: M2 Immunosuppressive (lowest M1/M2 ratio among remaining) ---
-    # TIS alone cannot separate M2-suppressed from immune desert — both are cold.
-    # The M1/M2 macrophage balance is the discriminating signal: M2-skewed clusters
-    # have active immunosuppression, whereas the true immune cold desert is uniformly low.
-    # Falls back to lowest CD8_T_cells (most T-cell excluded) if ratio column is absent.
-    if "M1_M2_Ratio" in cluster_profiles.columns:
-        m2_id = int(cluster_profiles.loc[list(remaining), "M1_M2_Ratio"].idxmin())
-    elif "CD8_T_cells" in cluster_profiles.columns:
-        m2_id = int(cluster_profiles.loc[list(remaining), "CD8_T_cells"].idxmin())
-    else:
-        m2_id = int(cluster_profiles.loc[list(remaining), "TIS"].idxmin())
-    labels[m2_id] = "Immunosuppressive M2-High"
-    remaining.discard(m2_id)
+    # --- Rule 3: Immune Cold (lowest TIS among remaining — true immune desert) ---
+    cold_id = int(cluster_profiles.loc[list(remaining), "TIS"].idxmin())
+    labels[cold_id] = "Immune Cold"
+    remaining.discard(cold_id)
 
-    # --- Rule 4: Immune Cold (sole remainder — moderate immune desert) ----
+    # --- Rule 4: Immunosuppressive M2-High (sole remainder — stromal exclusion / M2-skewed) ---
     for cid in remaining:
-        labels[cid] = "Immune Cold"
+        labels[cid] = "Immunosuppressive M2-High"
 
     return labels
 
