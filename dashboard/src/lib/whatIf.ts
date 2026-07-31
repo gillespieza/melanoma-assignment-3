@@ -1,7 +1,6 @@
 import type { BrafCall, CohortPatient, NrasCall } from "../data/cohort";
 import { DOSE_RESPONSE } from "../data/model";
 
-// ---------------------------------------------------------------------------
 // What-if editing.
 //
 // A cohort patient's ODE curves belong to their REAL molecular profile. The
@@ -11,7 +10,6 @@ import { DOSE_RESPONSE } from "../data/model";
 //
 // The UI badges any edited patient as hypothetical. Nothing here ever writes
 // back to the cohort.
-// ---------------------------------------------------------------------------
 
 export interface WhatIfEdits {
   braf?: BrafCall;

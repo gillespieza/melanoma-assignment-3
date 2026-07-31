@@ -1,12 +1,7 @@
 import { BrainCircuit, FlaskConical, Waves, ShieldAlert, Layers, ChevronRight } from "lucide-react";
 
-// ---------------------------------------------------------------------------
-// The five methods, in one line.
-//
-// Answers "what is this project?" without costing a click. Q5 is marked as the
-// destination because that is what this dashboard actually is — the point where
-// the other four converge.
-// ---------------------------------------------------------------------------
+// The five methods, in one line. Q5 is marked as the destination — the point
+// where the other four converge into one recommendation.
 
 const METHODS = [
   {

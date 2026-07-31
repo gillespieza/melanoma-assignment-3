@@ -2,13 +2,8 @@ import { Sparkles, ArrowRight } from "lucide-react";
 import type { CohortRow } from "./CohortTable";
 import { Panel, Pill } from "./ui";
 
-// ---------------------------------------------------------------------------
-// Featured archetypes for the scripted live demo.
-//
-// These are NOT the hardcoded v1 patients — they are three REAL cohort patients
-// chosen at render time because they cleanly exhibit the three clinical
-// archetypes. That way the demo story and the browsable cohort are the same data.
-// ---------------------------------------------------------------------------
+// Three real cohort patients, chosen at render time because they cleanly
+// exhibit the three clinical archetypes below.
 
 interface Archetype {
   key: string;

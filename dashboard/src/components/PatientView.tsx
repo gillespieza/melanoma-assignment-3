@@ -31,14 +31,12 @@ import DecisionTree from "./DecisionTree";
 import ConsultantSignoff from "./ConsultantSignoff";
 import { Panel } from "./ui";
 
-// ---------------------------------------------------------------------------
 // The patient workbench.
 //
 // Deliberately kept to a short vertical stack: passport → what-if → the answer
 // → method detail behind tabs. The full multi-method story is all still here,
 // but only one method is on screen at a time so the page never reads as a wall
 // of panels.
-// ---------------------------------------------------------------------------
 
 type TabKey = "q1" | "q2" | "q3" | "q4" | "path";
 
@@ -226,7 +224,6 @@ export default function PatientView({
   );
 }
 
-// ---------------------------------------------------------------------------
 
 function RunGate({ patient, onRun }: { patient: CohortPatient; onRun: () => void }) {
   return (

@@ -144,9 +144,7 @@ export default function App() {
   );
 }
 
-// ---------------------------------------------------------------------------
 // Cohort landing headline
-// ---------------------------------------------------------------------------
 
 function CohortHeadline({
   cohort,
@@ -201,15 +199,11 @@ function CohortHeadline({
   );
 }
 
-// ---------------------------------------------------------------------------
 // Archetype workbench — the original v1 experience: three editable patients whose
 // molecular fields re-run the logic live. Kept for the scripted demo.
-// ---------------------------------------------------------------------------
 
 
-// ---------------------------------------------------------------------------
 // States
-// ---------------------------------------------------------------------------
 
 function LoadingState() {
   return (

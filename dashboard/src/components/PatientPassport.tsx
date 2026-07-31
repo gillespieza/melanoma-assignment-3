@@ -3,11 +3,9 @@ import type { CohortPatient } from "../data/cohort";
 import { pdl1Band } from "../data/cohort";
 import { Panel, Pill } from "./ui";
 
-// ---------------------------------------------------------------------------
 // Patient passport — who this patient is, in the two registers a melanoma MDT
 // actually uses: demographics/staging and molecular profile.
 // Every value here is real TCGA-SKCM data.
-// ---------------------------------------------------------------------------
 
 function Field({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (

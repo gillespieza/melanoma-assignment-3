@@ -2,7 +2,6 @@ import { BrainCircuit, FlaskConical, Hourglass } from "lucide-react";
 import type { CohortPatient, Q1Validation } from "../data/cohort";
 import { Panel, Pill } from "./ui";
 
-// ---------------------------------------------------------------------------
 // Q1 · Gene-expression response predictor (ML).
 //
 // Two states, both designed:
@@ -10,7 +9,6 @@ import { Panel, Pill } from "./ui";
 //   patient.q1 == null  → "awaiting inference" state explaining exactly what is
 //                          missing and what unblocks it. NOT an error, and never
 //                          a fabricated number (locked decision D4).
-// ---------------------------------------------------------------------------
 
 const MODEL_LABELS: Record<string, string> = {
   lr: "Logistic regression",

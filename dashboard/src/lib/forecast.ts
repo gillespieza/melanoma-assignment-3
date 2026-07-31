@@ -1,6 +1,5 @@
 import type { RankedOption } from "../data/types";
 
-// ---------------------------------------------------------------------------
 // Builds the 12-month "Tumour Burden Forecast" and the survival curves.
 //
 // The ENDPOINTS (how much each therapy shrinks the tumour) are anchored to the
@@ -8,7 +7,6 @@ import type { RankedOption } from "../data/types";
 // clinical behaviour: BRAF/MEK gives a fast, deep nadir then resistance rebound;
 // checkpoint immunotherapy is slower but durable; combination/sequencing holds
 // the deepest durable response. Baseline (no systemic therapy) grows.
-// ---------------------------------------------------------------------------
 
 export interface ForecastPoint {
   month: number;

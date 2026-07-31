@@ -3,7 +3,6 @@ import type { CohortPatient } from "../data/cohort";
 import { biomarkerComposite, pdl1Band } from "../data/cohort";
 import { PDL1_HIGH, buildRankedOptions, scoreArms, type ScoringContext } from "./scoring";
 
-// ---------------------------------------------------------------------------
 // Q5 — the integration engine.
 //
 // This is the synthesis step: it takes each method's independent read-out for a
@@ -20,7 +19,6 @@ import { PDL1_HIGH, buildRankedOptions, scoreArms, type ScoringContext } from ".
 // instead. `statistical.source` says which, every time, and the UI surfaces it.
 // The moment real per-patient Q1 lands in cohort.json this switches over with no
 // other code change.
-// ---------------------------------------------------------------------------
 
 export type EvidenceSource = "q1" | "biomarker" | "ode";
 

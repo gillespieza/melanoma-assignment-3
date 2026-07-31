@@ -13,13 +13,11 @@ import { Waves, CircleAlert } from "lucide-react";
 import type { CohortPatient } from "../data/cohort";
 import { Panel, Pill, Stat } from "./ui";
 
-// ---------------------------------------------------------------------------
 // Q3 lane · the patient's OWN simulated dose-response sweep.
 //
 // This is raw digital-twin output — the tumour burden the ODE predicts at each
 // drug dose, as a percentage of that patient's untreated baseline. Arm colours
 // follow the locked design system: targeted = blue, immunotherapy = teal.
-// ---------------------------------------------------------------------------
 
 const INK = "#5b6b7c";
 

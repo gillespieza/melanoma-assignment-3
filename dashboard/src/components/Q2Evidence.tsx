@@ -1,14 +1,12 @@
 import { FlaskConical, CheckCircle2, Hourglass } from "lucide-react";
 import { Panel, Pill } from "./ui";
 
-// ---------------------------------------------------------------------------
 // Q2 · Experimental validation — cohort-level evidence, never per-patient.
 //
 // Two independent checks: the RPPA proteomic validation of the Q3 twin, and the
 // cell-line drug-response model (q2-viability-predictor/, GDSC2 + DepMap). The
 // cell-line entry deliberately keeps its own stability caveat on screen — the
 // headline correlation alone overstates it.
-// ---------------------------------------------------------------------------
 
 interface Evidence {
   status: "established" | "pending";

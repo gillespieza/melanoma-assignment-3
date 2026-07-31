@@ -1,11 +1,9 @@
-// ---------------------------------------------------------------------------
 // REAL model output from the q3 ODE digital twin (TCGA-SKCM, n=421).
 // These arrays are group-averaged tumour-burden dose-response sweeps taken
 // directly from:
 //   q3-ode-model/outputs/results/tumour_burden_simulations.csv   (BRAF inhibitor)
 //   q3-ode-model/outputs/results/checkpoint_tumour_simulations.csv (anti-PD-1)
 // Dose axis (drug fraction of max): 0.01 .. 1.00 in 10 steps.
-// ---------------------------------------------------------------------------
 
 export const DOSE_AXIS = [0.01, 0.12, 0.23, 0.34, 0.45, 0.56, 0.67, 0.78, 0.89, 1.0];
 

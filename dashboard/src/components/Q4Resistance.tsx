@@ -2,13 +2,11 @@ import { ShieldAlert, TriangleAlert, Shield, PackageOpen } from "lucide-react";
 import type { CohortPatient, ResistanceRisk } from "../data/cohort";
 import { Panel, Pill } from "./ui";
 
-// ---------------------------------------------------------------------------
 // Q4 · Resistance & salvage targets.
 //
 // These flags are HEURISTIC — derived from the Q3 residual burden plus driver
 // status, not from a fitted resistance model. The panel says so, plainly and
 // permanently, because a clinician must know which numbers carry model weight.
-// ---------------------------------------------------------------------------
 
 const RISK: Record<ResistanceRisk, { label: string; tone: "green" | "amber" | "rose" | "neutral"; blurb: string }> = {
   low: {

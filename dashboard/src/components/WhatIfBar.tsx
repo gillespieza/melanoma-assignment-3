@@ -2,12 +2,10 @@ import { RotateCcw, FlaskConical } from "lucide-react";
 import type { CohortPatient } from "../data/cohort";
 import type { WhatIfEdits } from "../lib/whatIf";
 
-// ---------------------------------------------------------------------------
 // The what-if editor: one compact row, not a form.
 //
 // Change a molecular field and every lane below re-runs immediately. This is
 // the live "what if this patient had been BRAF wild-type?" moment.
-// ---------------------------------------------------------------------------
 
 const STAGES = ["I", "II", "III", "IV"];
 

@@ -16,7 +16,6 @@ import { Target, Gauge } from "lucide-react";
 import type { Q1Validation } from "../data/cohort";
 import { Panel, Pill, Stat } from "./ui";
 
-// ---------------------------------------------------------------------------
 // Q1 model accuracy — measured, not claimed.
 //
 // Computed at build time from prob_ensemble vs the REAL response labels of the
@@ -25,7 +24,6 @@ import { Panel, Pill, Stat } from "./ui";
 //
 // Palette: responders #0ea5a4 / non-responders #d97706 — validated for CVD
 // separation; the sub-3:1 contrast on the teal is relieved by direct labels.
-// ---------------------------------------------------------------------------
 
 const RESPONDER = "#0ea5a4";
 const NON_RESPONDER = "#d97706";

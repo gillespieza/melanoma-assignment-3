@@ -1,15 +1,13 @@
 import type { RankedOption, TherapyArm, TherapyKey } from "../data/types";
 import { KM_FACTS } from "../data/model";
 
-// ---------------------------------------------------------------------------
-// Shared scoring core, used by integrationEngine.integrate() for every patient —
-// real or edited in the what-if explorer. Keeping the maths in one place means a
-// hypothetical profile and a real patient with the same values always produce the
-// same recommendation, which is what makes the live-editing demo trustworthy.
+// Shared scoring core, used by integrationEngine.integrate() for every patient
+// — real or edited in the what-if explorer. Keeping the maths in one place
+// means a hypothetical profile and a real patient with the same values always
+// produce the same recommendation.
 //
-// Clinical framing: DECISION SUPPORT. Ranked, evidence-anchored options; the
-// consultant confirms the plan.
-// ---------------------------------------------------------------------------
+// Decision support only: ranked, evidence-anchored options; the consultant
+// confirms the plan.
 
 export const PDL1_HIGH = 25; // TPS % / percentile threshold, kept consistent app-wide
 

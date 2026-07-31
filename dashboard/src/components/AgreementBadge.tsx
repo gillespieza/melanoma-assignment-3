@@ -1,12 +1,8 @@
 import { BrainCircuit, Waves, ArrowRight, CircleAlert, CircleCheck, CircleMinus } from "lucide-react";
 import type { AgreementResult, MethodPosition } from "../lib/integrationEngine";
 
-// ---------------------------------------------------------------------------
-// The methods-agreement signal — the centrepiece of the Q5 lane.
-//
-// Two independent methods scored this patient. This makes their positions, and
-// whether they converge, readable at a glance from the back of a lecture theatre.
-// ---------------------------------------------------------------------------
+// The methods-agreement signal: two independent methods scored this patient;
+// this shows their positions and whether they converge.
 
 const TONES = {
   concordant: {

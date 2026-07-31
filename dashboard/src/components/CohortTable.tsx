@@ -5,12 +5,10 @@ import { pdl1Band } from "../data/cohort";
 import { integrate, type AgreementStatus } from "../lib/integrationEngine";
 import { Panel, Pill } from "./ui";
 
-// ---------------------------------------------------------------------------
 // The cohort browser — all 421 real TCGA-SKCM patients, searchable, filterable
 // and sortable, with the Q5 recommendation and methods-agreement resolved for
 // every row so the clinician can scan for the interesting cases (the discordant
 // ones) rather than clicking through blindly.
-// ---------------------------------------------------------------------------
 
 export interface CohortRow {
   patient: CohortPatient;

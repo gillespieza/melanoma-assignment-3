@@ -1,8 +1,6 @@
-// ---------------------------------------------------------------------------
 // Domain types for the Melanoma Digital Twin decision-support cockpit.
 // These mirror the clinical + molecular variables a real melanoma MDT
 // (multidisciplinary team) uses to choose systemic therapy.
-// ---------------------------------------------------------------------------
 
 export type BrafStatus = "V600E" | "V600K" | "WT";
 export type NrasStatus = "Mutant" | "WT";
