@@ -432,8 +432,6 @@ def run_spectral_manifold(
     Returns:
         Tuple of (spectral_model, hard_cluster_labels).
     """
-    from sklearn.cluster import SpectralClustering
-
     spectral = SpectralClustering(
         n_clusters=n_clusters,
         affinity="nearest_neighbors",

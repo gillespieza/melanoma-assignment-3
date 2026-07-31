@@ -37,12 +37,12 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(SUBPROJECT_ROOT / "src"))
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Project Imports
 # ---------------------------------------------------------------------------
 
 import joblib
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
 from sklearn.metrics import (
     calinski_harabasz_score,
     davies_bouldin_score,
@@ -84,28 +84,32 @@ OUTPUT_DIR = PROCESSED_DIR / "q5"
 set_presentation_style()
 
 
-def compute_clustering_metrics(X_scaled: np.ndarray, labels: np.ndarray, gmm: GaussianMixture = None) -> dict:
+def compute_clustering_metrics(
+    X_scaled: np.ndarray,
+    labels: np.ndarray,
+    gmm: GaussianMixture = None,
+) -> Dict[str, float]:
     """Compute internal clustering quality metrics for a given label assignment and GMM model."""
     valid = labels != -1
-    metrics = {}
+    metrics: Dict[str, float] = {}
     if len(np.unique(labels[valid])) >= 2:
-        metrics["Silhouette"] = round(silhouette_score(X_scaled[valid], labels[valid]), 4)
-        metrics["Calinski_Harabasz"] = round(calinski_harabasz_score(X_scaled[valid], labels[valid]), 1)
-        metrics["Davies_Bouldin"] = round(davies_bouldin_score(X_scaled[valid], labels[valid]), 4)
+        metrics["Silhouette"] = round(float(silhouette_score(X_scaled[valid], labels[valid])), 4)
+        metrics["Calinski_Harabasz"] = round(float(calinski_harabasz_score(X_scaled[valid], labels[valid])), 1)
+        metrics["Davies_Bouldin"] = round(float(davies_bouldin_score(X_scaled[valid], labels[valid])), 4)
     else:
         metrics = {"Silhouette": float("nan"), "Calinski_Harabasz": float("nan"), "Davies_Bouldin": float("nan")}
 
     if gmm is not None:
-        metrics["Log_Likelihood"] = round(gmm.score(X_scaled), 4)
-        metrics["AIC"] = round(gmm.aic(X_scaled), 1)
-        metrics["BIC"] = round(gmm.bic(X_scaled), 1)
+        metrics["Log_Likelihood"] = round(float(gmm.score(X_scaled)), 4)
+        metrics["AIC"] = round(float(gmm.aic(X_scaled)), 1)
+        metrics["BIC"] = round(float(gmm.bic(X_scaled)), 1)
 
     return metrics
 
 
 def plot_cohort_size_comparison(
-    metrics_ici: dict,
-    metrics_full: dict,
+    metrics_ici: Dict[str, float],
+    metrics_full: Dict[str, float],
     n_ici: int,
     n_full: int,
     out_path: Path,
@@ -158,7 +162,7 @@ def _fit_and_save_gmm_model(
     df_clean: pd.DataFrame,
     X_scaled: np.ndarray,
 ) -> Tuple[GaussianMixture, np.ndarray, np.ndarray, List[str]]:
-    """Fit Gaussian Mixture Model (GMM, K=4, full covariance) and persist model artifacts and posterior probabilities."""
+    """Fit Gaussian Mixture Model (GMM, K=4, full covariance) and persist model artifacts."""
     feature_cols = [c for c in CLUSTERING_FEATURES if c in df_clean.columns]
     gmm, labels, probs = run_gmm(X_scaled, n_components=4, covariance_type="full", random_state=42)
 
@@ -180,9 +184,9 @@ def _assign_labels(df_clean: pd.DataFrame, labels: np.ndarray) -> Dict[int, str]
     """Derive biological phenotype labels data-driven from cluster profiles."""
     profile_feature_cols = [c for c in PHENOTYPE_PROFILE_FEATURES if c in df_clean.columns]
     cluster_profiles = profile_clusters(df_clean, "Cluster_ID", profile_feature_cols)
-    short_labels: dict = assign_phenotype_labels(cluster_profiles)
+    short_labels: Dict[int, str] = assign_phenotype_labels(cluster_profiles)
 
-    phenotype_names: dict = {
+    phenotype_names: Dict[int, str] = {
         cid: f"{short} {PHENOTYPE_LABEL_SUFFIX.get(short, '')}".strip()
         for cid, short in short_labels.items()
     }
@@ -195,10 +199,83 @@ def _assign_labels(df_clean: pd.DataFrame, labels: np.ndarray) -> Dict[int, str]
     return phenotype_names
 
 
+def _export_cluster_outputs(
+    df_clean: pd.DataFrame,
+    probs: np.ndarray,
+    phenotype_names: Dict[int, str],
+    output_dir: Path,
+) -> Tuple[Path, Path]:
+    """Export posterior probabilities CSV and patient clusters CSV to disk."""
+    for cid, name in phenotype_names.items():
+        clean_name = f"P_{name.split('(')[0].strip().replace(' ', '_').replace('-', '_')}"
+        df_clean[clean_name] = probs[:, cid]
+
+    prob_cols = [c for c in df_clean.columns if c.startswith("P_")]
+    id_cols = [c for c in ["PATIENT_ID", "sample_id", "patient_id"] if c in df_clean.columns]
+    prob_df_cols = id_cols + ["Cluster_ID", "Phenotype_Label"] + prob_cols
+    df_probs_export = df_clean[[c for c in prob_df_cols if c in df_clean.columns]].copy()
+
+    out_probs_file = output_dir / "gmm_posterior_probabilities.csv"
+    df_probs_export.to_csv(out_probs_file, index=False)
+    print(f"Saved GMM posterior probabilities matrix to {rel_path(out_probs_file)}")
+
+    out_clusters = output_dir / "patient_clusters.csv"
+    if out_clusters.exists():
+        try:
+            out_clusters.unlink()
+        except OSError as err:
+            print(f"Warning: Failed to delete previous clusters file: {err}")
+    df_clean.to_csv(out_clusters, index=False)
+    return out_probs_file, out_clusters
+
+
+def _generate_phase3_plots(
+    df_clean: pd.DataFrame,
+    labels: np.ndarray,
+    X_scaled: np.ndarray,
+    phenotype_names: Dict[int, str],
+    subproject_root: Path,
+) -> None:
+    """Generate 2D PCA/t-SNE projection maps and spatial microenvironment violin plots."""
+    pca_plot_file = subproject_root / "plots" / "clustering" / "pca_clusters.png"
+    tsne_plot_file = subproject_root / "plots" / "clustering" / "tsne_clusters.png"
+    plot_2d_cluster_projection(df_clean, labels, X_scaled, pca_plot_file, phenotype_names, method="pca")
+    plot_2d_cluster_projection(df_clean, labels, X_scaled, tsne_plot_file, phenotype_names, method="tsne")
+
+    spatial_violin_file = subproject_root / "plots" / "clustering" / "spatial_microenvironment_violins.png"
+    plot_spatial_microenvironment_violins(df_clean, spatial_violin_file)
+
+
+def _evaluate_mahalanobis_spectral_comparisons(
+    X_scaled: np.ndarray,
+    labels: np.ndarray,
+    gmm: GaussianMixture,
+    output_dir: Path,
+) -> Dict[str, float]:
+    """Evaluate Mahalanobis GMM transformation and Spectral Manifold clustering benchmarks."""
+    X_mahalanobis, _ = transform_mahalanobis_space(X_scaled)
+    gmm_mah, labels_mah, _ = run_gmm(X_mahalanobis, n_components=4, covariance_type="full")
+    _, spectral_labels = run_spectral_manifold(X_scaled, n_clusters=4, n_neighbors=15)
+
+    gmm_metrics = compute_clustering_metrics(X_scaled, labels, gmm)
+    mah_metrics = compute_clustering_metrics(X_mahalanobis, labels_mah, gmm_mah)
+    spectral_metrics = compute_clustering_metrics(X_scaled, spectral_labels)
+
+    comp_df = pd.DataFrame([
+        {"Method": "GMM (Standard Scaled + Spatial)", **gmm_metrics},
+        {"Method": "GMM (Mahalanobis Transformed)", **mah_metrics},
+        {"Method": "Spectral Manifold (Graph Laplacian)", **spectral_metrics},
+    ])
+    out_metrics_file = output_dir / "mahalanobis_spectral_metrics.csv"
+    comp_df.to_csv(out_metrics_file, index=False)
+    print(f"Saved Mahalanobis & Spectral metrics comparison to {rel_path(out_metrics_file)}")
+    return gmm_metrics
+
+
 def _compare_cohort_quality(
     gmm: GaussianMixture,
     feature_cols: List[str],
-    metrics_full: dict,
+    metrics_full: Dict[str, float],
     len_full: int,
 ) -> None:
     """Evaluate clustering quality comparison between ICI-only and full cohort."""
@@ -232,8 +309,6 @@ def main() -> None:
     print(f"Loaded full-cohort feature matrix: {len(df_matrix)} patients x {df_matrix.shape[1]} features")
 
     df_clean, X_scaled = prepare_clustering_features(df_matrix)
-
-    # Fit GMM with full covariance natively handling component Mahalanobis covariance
     gmm, labels, probs, feature_cols = _fit_and_save_gmm_model(df_clean, X_scaled)
     df_clean["Cluster_ID"] = labels
 
@@ -243,61 +318,16 @@ def main() -> None:
     phenotype_names = _assign_labels(df_clean, labels)
     df_clean["Phenotype_Label"] = df_clean["Cluster_ID"].map(phenotype_names)
 
-    # Attach mapped phenotype probability columns
-    for cid, name in phenotype_names.items():
-        clean_name = f"P_{name.split('(')[0].strip().replace(' ', '_').replace('-', '_')}"
-        df_clean[clean_name] = probs[:, cid]
-
-    # Save standalone posterior probabilities file
-    prob_cols = [c for c in df_clean.columns if c.startswith("P_")]
-    id_cols = [c for c in ["PATIENT_ID", "sample_id", "patient_id"] if c in df_clean.columns]
-    prob_df_cols = id_cols + ["Cluster_ID", "Phenotype_Label"] + prob_cols
-    df_probs_export = df_clean[[c for c in prob_df_cols if c in df_clean.columns]].copy()
-    out_probs_file = OUTPUT_DIR / "gmm_posterior_probabilities.csv"
-    df_probs_export.to_csv(out_probs_file, index=False)
-    print(f"Saved GMM posterior probabilities matrix to {rel_path(out_probs_file)}")
-
-    out_clusters = OUTPUT_DIR / "patient_clusters.csv"
-    if out_clusters.exists():
-        try:
-            out_clusters.unlink()
-        except OSError as err:
-            print(f"Warning: Failed to delete previous clusters file: {err}")
-    df_clean.to_csv(out_clusters, index=False)
-
-    pca_plot_file = SUBPROJECT_ROOT / "plots" / "clustering" / "pca_clusters.png"
-    tsne_plot_file = SUBPROJECT_ROOT / "plots" / "clustering" / "tsne_clusters.png"
-    plot_2d_cluster_projection(df_clean, labels, X_scaled, pca_plot_file, phenotype_names, method="pca")
-    plot_2d_cluster_projection(df_clean, labels, X_scaled, tsne_plot_file, phenotype_names, method="tsne")
-
-    spatial_violin_file = SUBPROJECT_ROOT / "plots" / "clustering" / "spatial_microenvironment_violins.png"
-    plot_spatial_microenvironment_violins(df_clean, spatial_violin_file)
-
-    # Evaluate Mahalanobis-transformed GMM & Spectral Manifold Clustering comparison
-    X_mahalanobis, _ = transform_mahalanobis_space(X_scaled)
-    gmm_mah, labels_mah, _ = run_gmm(X_mahalanobis, n_components=4, covariance_type="full")
-    _, spectral_labels = run_spectral_manifold(X_scaled, n_clusters=4, n_neighbors=15)
-
-    gmm_metrics = compute_clustering_metrics(X_scaled, labels, gmm)
-    mah_metrics = compute_clustering_metrics(X_mahalanobis, labels_mah, gmm_mah)
-    spectral_metrics = compute_clustering_metrics(X_scaled, spectral_labels)
-
-    comp_df = pd.DataFrame([
-        {"Method": "GMM (Standard Scaled + Spatial)", **gmm_metrics},
-        {"Method": "GMM (Mahalanobis Transformed)", **mah_metrics},
-        {"Method": "Spectral Manifold (Graph Laplacian)", **spectral_metrics},
-    ])
-    out_metrics_file = OUTPUT_DIR / "mahalanobis_spectral_metrics.csv"
-    comp_df.to_csv(out_metrics_file, index=False)
-    print(f"Saved Mahalanobis & Spectral metrics comparison to {rel_path(out_metrics_file)}")
-
+    out_probs_file, out_clusters = _export_cluster_outputs(df_clean, probs, phenotype_names, OUTPUT_DIR)
+    _generate_phase3_plots(df_clean, labels, X_scaled, phenotype_names, SUBPROJECT_ROOT)
+    gmm_metrics = _evaluate_mahalanobis_spectral_comparisons(X_scaled, labels, gmm, OUTPUT_DIR)
     _compare_cohort_quality(gmm, feature_cols, gmm_metrics, len(df_clean))
 
     print("=" * 80)
     print("PATIENT STRATIFICATION COMPLETE (GMM + Mahalanobis + Spatial Microenvironment)")
     print(f"Output Clusters File : {rel_path(out_clusters)}")
     print(f"Posterior Probs File : {rel_path(out_probs_file)}")
-    print(f"Metrics Output File  : {rel_path(out_metrics_file)}")
+    print(f"Metrics Output File  : {rel_path(OUTPUT_DIR / 'mahalanobis_spectral_metrics.csv')}")
     print(f"Total Stratified Patients: {len(df_clean)}")
     for cid, name in sorted(phenotype_names.items()):
         cnt = int(np.sum(labels == cid))
