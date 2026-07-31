@@ -207,12 +207,13 @@ melanoma-assignment-3/
 |-------|--------|---------|
 | 1 | `01_load_and_prepare.py` | Load merged data, compute signatures (TIS, CYT, IMPRES), M1/M2 STV deconvolution, cell-type estimates |
 | 2 | `02_feature_analysis.py` | Mann-Whitney U, Fisher's exact, Youden cutoffs, interaction terms, feature credibility |
-| 3 | `03_cluster_patients.py` | K-Means clustering (K=4) on full cohort, PCA/t-SNE projections, model persistence |
+| 3 | `03_cluster_patients.py` | Gaussian Mixture Model (GMM, K=4, full covariance) soft clustering, posterior probability export, PCA/t-SNE projections, model persistence |
 | 4 | `04_phenotype_characterisation.py` | Cluster profiling, phenotype labelling, KM survival, Q3 ODE integration |
 | 5 | `05_subgroup_models.py` | Per-phenotype Logistic Regression + RF, LOCO CV vs global Q1 model |
 | 6 | `06_clinical_utility.py` | Decision Curve Analysis, Net Benefit, NNT, PPV, clinical benchmarks |
 | 7 | `07_treatability_scoring.py` | Treatability Index, Q2 drug integration, Q4 DepMap/LINCS target nominations |
 | — | `08_compare_clustering_algorithms.py` | Algorithmic comparison: K-Means vs Ward vs GMM vs DBSCAN |
+| — | `09_run_consensus_clustering.py` | 1,000-bootstrap Consensus Clustering ensemble across patients & features ($K \in [2, 8]$), Consensus CDF, Delta Area $\Delta(K)$ |
 | — | `generate_q5_report.py` | Comprehensive Q5 markdown report generator |
 | — | `run_q5_pipeline.py` | Master pipeline orchestrator (runs Phases 1–7) |
 
