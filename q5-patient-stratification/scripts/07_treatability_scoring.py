@@ -39,10 +39,11 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
 # Project Imports
 # ---------------------------------------------------------------------------
 
-from reporting import generate_obsidian_frontmatter
+from q5_constants import PHENOTYPE_PROB_COL
 from src.styles import ARM_PALETTE, PHENOTYPE_PALETTE, set_presentation_style
+from src.utils.formatting import generate_obsidian_frontmatter
 from src.utils.logging import TeeStream
-from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
+from src.utils.paths import DATA_DIR, PROCESSED_DIR, PROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
 
 # ---------------------------------------------------------------------------
@@ -65,15 +66,17 @@ REPORTS_DIR = SUBPROJECT_ROOT / "reports" / "q5_phases"
 
 set_presentation_style()
 
-PHENOTYPE_SHORT_NAMES: Dict[int, str] = {
-    0: "Immune Hot",
-    1: "Immune Cold",
-    2: "M2 Immunosuppressive",
-    3: "Mutant-Driven",
-}
 
-
-
+def _build_cluster_name_map(df: pd.DataFrame) -> Dict[int, str]:
+    """Derive Cluster_ID -> phenotype display name mapping from data at runtime."""
+    available_named_cols = [col for col in PHENOTYPE_PROB_COL.values() if col in df.columns]
+    col_to_name = {col: name for name, col in PHENOTYPE_PROB_COL.items()}
+    mapping: Dict[int, str] = {}
+    for cid in df["Cluster_ID"].unique():
+        cluster_rows = df[df["Cluster_ID"] == cid]
+        best_col = cluster_rows[available_named_cols].mean().idxmax()
+        mapping[int(cid)] = col_to_name.get(best_col, f"Cluster {cid}")
+    return mapping
 
 
 def load_q2_dabrafenib_weights() -> Dict[str, float]:
@@ -191,10 +194,11 @@ def assign_treatment_arms(
     q4_target_nominations = []
 
     tis_q60 = df["TIS"].quantile(0.60) if "TIS" in df.columns else 0.0
+    cluster_id_to_name = _build_cluster_name_map(df)
 
     for idx, row in df_out.iterrows():
         cluster_id = row.get("Cluster_ID", 0)
-        pheno_name = PHENOTYPE_SHORT_NAMES.get(cluster_id, "Unknown")
+        pheno_name = cluster_id_to_name.get(int(cluster_id), "Unknown")
         mut_braf = row.get("mut_BRAF", 0) == 1
         mut_nras = row.get("mut_NRAS", 0) == 1
         response = row.get("RESPONSE_BINARY", np.nan)
@@ -297,7 +301,8 @@ def compute_recommendation_confidence(df: pd.DataFrame) -> pd.DataFrame:
     tis_dist_norm = _minmax(tis_above_boundary)
 
     # Phenotype–target alignment score for Arm C
-    pheno_short = df["Cluster_ID"].map(PHENOTYPE_SHORT_NAMES)
+    cluster_id_to_name = _build_cluster_name_map(df)
+    pheno_short = df["Cluster_ID"].map(cluster_id_to_name)
     alignment_score = pd.Series(0.5, index=df.index)  # default
     is_m2 = pheno_short.isin(["M2 Immunosuppressive", "Immunosuppressive M2-High"])
     is_cold_high = (pheno_short == "Immune Cold") & (df["Treatability_Index"] > 40.0)
@@ -366,7 +371,8 @@ def compute_recommendation_confidence(df: pd.DataFrame) -> pd.DataFrame:
 def plot_arm_assignment_breakdown(df_assigned: pd.DataFrame, out_path: Path) -> None:
     """Plot distribution of patient allocation across Arm A, B, and C by biological phenotype."""
     df_plot = df_assigned.copy()
-    df_plot["Phenotype"] = df_plot["Cluster_ID"].map(PHENOTYPE_SHORT_NAMES)
+    cluster_id_to_name = _build_cluster_name_map(df_plot)
+    df_plot["Phenotype"] = df_plot["Cluster_ID"].map(cluster_id_to_name)
 
     ct = pd.crosstab(df_plot["Phenotype"], df_plot["Treatment_Arm"], normalize="index") * 100.0
 
@@ -412,7 +418,8 @@ def plot_arm_assignment_breakdown(df_assigned: pd.DataFrame, out_path: Path) -> 
 def plot_treatability_distributions(df_assigned: pd.DataFrame, out_path: Path) -> None:
     """Plot distribution of Treatability Index and Q2 Dabrafenib Sensitivity Scores."""
     df_plot = df_assigned.copy()
-    df_plot["Phenotype"] = df_plot["Cluster_ID"].map(PHENOTYPE_SHORT_NAMES)
+    cluster_id_to_name = _build_cluster_name_map(df_plot)
+    df_plot["Phenotype"] = df_plot["Cluster_ID"].map(cluster_id_to_name)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
@@ -487,7 +494,8 @@ def generate_phase7_markdown(df_assigned: pd.DataFrame, out_path: Path) -> None:
 
     mean_treat_overall = df_assigned["Treatability_Index"].mean()
 
-    pheno_treat = df_assigned.groupby(df_assigned["Cluster_ID"].map(PHENOTYPE_SHORT_NAMES))["Treatability_Index"].mean()
+    cluster_id_to_name = _build_cluster_name_map(df_assigned)
+    pheno_treat = df_assigned.groupby(df_assigned["Cluster_ID"].map(cluster_id_to_name))["Treatability_Index"].mean()
     treat_hot = pheno_treat.get("Immune Hot", 0.0)
     treat_cold = pheno_treat.get("Immune Cold", 0.0)
     treat_m2 = pheno_treat.get("M2 Immunosuppressive", 0.0)
@@ -767,8 +775,10 @@ def main() -> None:
           f"Arm B={int((df_pros_sub['Treatment_Arm'].str.startswith('Arm B')).sum())}, "
           f"Arm C={int((df_pros_sub['Treatment_Arm'].str.startswith('Arm C')).sum())}")
 
-    df_summary = df_assigned.groupby(["Cluster_ID", "Treatment_Arm"]).size().reset_index(name="Patient_Count")
-    df_summary["Phenotype"] = df_summary["Cluster_ID"].map(PHENOTYPE_SHORT_NAMES)
+    df_summary = df_assigned.copy()
+    cluster_id_to_name = _build_cluster_name_map(df_summary)
+    df_summary["Phenotype"] = df_summary["Cluster_ID"].map(cluster_id_to_name)
+    df_summary = df_summary.groupby(["Phenotype", "Treatment_Arm"]).size().reset_index(name="Patient_Count")
     out_sum_csv = OUTPUT_DIR / "arm_summary_metrics.csv"
     df_summary.to_csv(out_sum_csv, index=False)
     print(f"Saved arm summary metrics to {rel_path(out_sum_csv)}")

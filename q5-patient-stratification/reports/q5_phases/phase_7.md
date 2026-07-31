@@ -7,14 +7,12 @@ tags:
   - depmap
   - lincs
   - phase-7
-created: 2026-07-31 19:47
+created: 2026-07-31 19:52
 cssclasses:
   - table-small
-  - table-center
-  - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 19:47
+updated: 2026-07-31 19:52
 ---
 
 ## 7. Phase 7: 3-Arm Decision Support & Treatability Scoring
@@ -26,19 +24,19 @@ updated: 2026-07-31 19:47
 
 Phase 7 operationalises precision patient allocation across $N = 699$ patients. The decision engine routes patients into three structured therapeutic arms:
 
-1. **Arm A: Immunotherapy Monotherapy** ($N = 257$, **36.8%** of cohort): Assigned to high-confidence responders (*Immune Hot* phenotype or high TIS scores). Received anti-PD-1 monotherapy (*Pembrolizumab* / *Nivolumab*).
-2. **Arm B: Targeted Therapy (Q2 Integration)** ($N = 302$, **43.2%** of cohort): Assigned to predicted non-responders carrying actionable driver mutations (`BRAF V600` or `NRAS`). Integrates the Q2 LASSO cell viability regression model to compute a patient-specific **Dabrafenib Sensitivity Index** (mean Arm B sensitivity = **58.0/100**).
-3. **Arm C: Combination & Microenvironmental Reversal (Q4 Integration)** ($N = 140$, **20.0%** of cohort): Assigned to remaining non-responders in immunologically cold or immunosuppressive microenvironments. Integrates Q4 DepMap essentiality targets to nominate helper interventions (most frequent nomination: **MDM2 (p53 Activation)** with $N = 112$ patients).
+1. **Arm A: Immunotherapy Monotherapy** ($N = 437$, **62.5%** of cohort): Assigned to high-confidence responders (*Immune Hot* phenotype or high TIS scores). Received anti-PD-1 monotherapy (*Pembrolizumab* / *Nivolumab*).
+2. **Arm B: Targeted Therapy (Q2 Integration)** ($N = 121$, **17.3%** of cohort): Assigned to predicted non-responders carrying actionable driver mutations (`BRAF V600` or `NRAS`). Integrates the Q2 LASSO cell viability regression model to compute a patient-specific **Dabrafenib Sensitivity Index** (mean Arm B sensitivity = **54.8/100**).
+3. **Arm C: Combination & Microenvironmental Reversal (Q4 Integration)** ($N = 141$, **20.2%** of cohort): Assigned to remaining non-responders in immunologically cold or immunosuppressive microenvironments. Integrates Q4 DepMap essentiality targets to nominate helper interventions (most frequent nomination: **CSF1R (M2 TAM Depletion)** with $N = 112$ patients).
 
 ### Treatability Index Analysis
 
 The composite **Treatability Index** (0–100 scale) quantifies the biological convertibility of patients based on antigen presentation integrity (`B2M`, `TAP1`), interferon-gamma intactness (`IFN_gamma`), tumour mutational burden (`TMB_NONSYNONYMOUS`), and immunosuppressive M2 macrophage barriers:
 
 - **Overall Mean Treatability Index**: **50.5 / 100**
-- **Immune Hot**: **47.5 / 100** (highest baseline sensitivity)
-- **Mutant-Driven**: **49.8 / 100** (moderate convertibility via MAPK inhibition)
-- **M2 Immunosuppressive**: **51.8 / 100** (convertible via `CSF1R` macrophage depletion)
-- **Immune Cold**: **48.4 / 100** (lowest baseline; requires `AXL` / STING priming)
+- **Immune Hot**: **51.8 / 100** (highest baseline sensitivity)
+- **Mutant-Driven**: **48.4 / 100** (moderate convertibility via MAPK inhibition)
+- **M2 Immunosuppressive**: **0.0 / 100** (convertible via `CSF1R` macrophage depletion)
+- **Immune Cold**: **47.5 / 100** (lowest baseline; requires `AXL` / STING priming)
 
 ![3-Arm Clinical Decision System Allocation across Biological Phenotypes.](q5-patient-stratification/plots/treatability/arm_assignment_breakdown.png)
 
@@ -70,7 +68,7 @@ The composite **Treatability Index** (0–100 scale) quantifies the biological c
 > Phase 7 completes the Q5 Precision Patient Stratification Framework by translating biological subtyping (Phases 3-4) and predictive modelling (Phases 5-6) into an operational **3-Arm Clinical Decision Engine**. By integrating Q2 Dabrafenib viability models and Q4 DepMap essentiality target nominations (`CSF1R`, `MDM2`, `AXL`), the system provides personalised, biologically rational treatment pathways for 100% of melanoma patients.
 
 #### Core Achievements
-1. **Complete Decision Routing**: Successfully routed $N = 699$ patients into Arm A (**36.8%**), Arm B (**43.2%**), and Arm C (**20.0%**).
+1. **Complete Decision Routing**: Successfully routed $N = 699$ patients into Arm A (**62.5%**), Arm B (**17.3%**), and Arm C (**20.2%**).
 2. **Cross-Study Integration**: Seamlessly incorporated 24 Q2 Dabrafenib sensitivity gene weights to score targeted therapy responsiveness in Arm B (`BRAF` mutants).
 3. **Mechanistic Reversal Nominations**: Identified `CSF1R` macrophage depletion as the primary helper target for *M2 Immunosuppressive* non-responders ($N = 112$ candidates).
 4. **Treatability Metric**: Standardised a composite 0–100 Treatability Index to prioritise non-responders for combination clinical trial enrolment.
@@ -103,7 +101,7 @@ $$\text{Conf}_A = 0.50 \times \text{TIS}_{\text{dist}} + 0.30 \times \text{IFN-}
 | **IFN-gamma score** ($\text{IFN-}\gamma_{\text{norm}}$) | 30% | Intact interferon-gamma signalling is the primary mechanistic prerequisite for anti-PD-1 response |
 | **CD8 T-cell infiltration** ($\text{CD8}_{\text{norm}}$) | 20% | High cytotoxic T-cell density corroborates immune activation independently of the TIS composite |
 
-Arm A results ($N = 257$): High = 41, Moderate = 129, Low = 87. The high proportion of Low-confidence Arm A patients reflects cases admitted via the borderline high-TIS rule rather than a clean Immune Hot phenotype — these are the patients most worth reviewing in a multidisciplinary team setting.
+Arm A results ($N = 437$): High = 41, Moderate = 142, Low = 254. The high proportion of Low-confidence Arm A patients reflects cases admitted via the borderline high-TIS rule rather than a clean Immune Hot phenotype — these are the patients most worth reviewing in a multidisciplinary team setting.
 
 #### Arm B — Targeted Therapy Confidence
 
@@ -116,9 +114,9 @@ $$\text{Conf}_B = 0.40 \times \text{MutStrength} + 0.60 \times \text{Q2}_{\text{
 | **Mutation strength** (`BRAF` = 1.0, `NRAS` = 0.7) | 40% | `BRAF V600E` has a directly validated targeted drug (Dabrafenib); `NRAS` mutations have weaker direct inhibitor options (MEK/CDK4/6) |
 | **Q2 Dabrafenib Sensitivity Index** (normalised 0–1) | 60% | The primary quantitative evidence for drug responsiveness, derived from Q2 LASSO regression on 24-gene cell line expression signatures |
 
-> **NRAS-only cap**: `NRAS`-only Arm B patients ($N = 109$) are **capped at Moderate** confidence regardless of their weighted score. The Q2 model was trained on Dabrafenib — a `BRAF`-directed drug — so its sensitivity predictions are less directly applicable to pure `NRAS` mutants, whose optimal inhibitor remains MEK or CDK4/6 combination therapy rather than Dabrafenib monotherapy.
+> **NRAS-only cap**: `NRAS`-only Arm B patients ($N = 111$) are **capped at Moderate** confidence regardless of their weighted score. The Q2 model was trained on Dabrafenib — a `BRAF`-directed drug — so its sensitivity predictions are less directly applicable to pure `NRAS` mutants, whose optimal inhibitor remains MEK or CDK4/6 combination therapy rather than Dabrafenib monotherapy.
 
-Arm B results ($N = 302$): High = 153, Moderate = 146, Low = 3. Arm B achieves the highest proportion of High-confidence assignments across all three arms, reflecting that a clear oncogenic driver mutation paired with a strong Q2 drug sensitivity score is the most unambiguous routing signal in the system.
+Arm B results ($N = 121$): High = 5, Moderate = 112, Low = 4. Arm B achieves the highest proportion of High-confidence assignments across all three arms, reflecting that a clear oncogenic driver mutation paired with a strong Q2 drug sensitivity score is the most unambiguous routing signal in the system.
 
 #### Arm C — Combination / Reversal Therapy Confidence
 
@@ -132,7 +130,7 @@ $$\text{Conf}_C = 0.50 \times \text{Align}_{\text{Q4}} + 0.30 \times \text{Treat
 | **Treatability Index** (normalised 0–1) | 30% | Higher treatability signals more intact antigen-presentation machinery, making microenvironmental reversal more plausible |
 | **Inverted M2 barrier** (normalised 0–1) | 20% | Patients with lower M2 macrophage burden face a smaller immunosuppressive obstacle, making combination strategies more likely to succeed |
 
-Arm C results ($N = 140$): High = 0, Moderate = 53, Low = 87. The low proportion of High-confidence Arm C patients is expected: this arm is defined by *exclusion* rather than a positive molecular signal, so many assignments reflect our best available option for a difficult patient rather than a clear-cut recommendation. Low-confidence Arm C patients (typically deep Immune Cold with very low treatability) are the most appropriate candidates for referral to early-phase clinical trials.
+Arm C results ($N = 141$): High = 37, Moderate = 81, Low = 23. The low proportion of High-confidence Arm C patients is expected: this arm is defined by *exclusion* rather than a positive molecular signal, so many assignments reflect our best available option for a difficult patient rather than a clear-cut recommendation. Low-confidence Arm C patients (typically deep Immune Cold with very low treatability) are the most appropriate candidates for referral to early-phase clinical trials.
 
 #### Confidence Band Thresholds
 
@@ -146,7 +144,7 @@ Arm C results ($N = 140$): High = 0, Moderate = 53, Low = 87. The low proportion
 
 | Confidence Band | Count | Percentage |
 |---|---|---|
-| **High** | 194 | 27.8% |
-| **Moderate** | 328 | 46.9% |
-| **Low** | 177 | 25.3% |
-| **Overall Mean Index** | 58.7 / 100 | — |
+| **High** | 83 | 11.9% |
+| **Moderate** | 335 | 47.9% |
+| **Low** | 281 | 40.2% |
+| **Overall Mean Index** | 50.2 / 100 | — |
