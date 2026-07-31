@@ -25,29 +25,22 @@ updated: 2026-07-31 15:29
 
 An analytical audit and limitations report for **Phase 4** in the Question 5 Patient Stratification pipeline, evaluating statistical weaknesses, biological assumptions, and computational constraints of cluster profiling, phenotype characterisation, Kaplan–Meier overall survival analysis, and Question 3 Ordinary Differential Equation (ODE) tumour-immune dynamic simulations.
 
-## 1. Executive Summary & Audit Rationale
-
-> [!NOTE] Analytical Methodology & Rationale
-> - **What is being done**: Critical evaluation of methodological weaknesses, biological simplifications, and statistical constraints across Phase 4 phenotype characterisation, Kaplan–Meier survival stratification, and Q3 2-state ODE dynamic simulations.
-> - **Why we are doing it**: While Phase 4 successfully mapped discovered GMM clusters into four biological phenotypes (*Immune Hot*, *Immune Cold*, *Immunosuppressive M2-High*, *Mutant-Driven*) and integrated dynamic tumour burden trajectories ($T(t)$), rigorous scientific audit requires identifying where aggregated cluster profiles and deterministic ODE systems simplify complex clinical biology.
-> - **What question it answers**: What specific statistical and biological limitations constrain Phase 4 phenotype characterisation, and what concrete methodological improvements are required for future pipeline iterations?
-
 Phase 4 bridges unsupervised clustering (Phase 3) with dynamic ODE mechanics (Q3) and subgroup predictive modelling (Phase 5). By profiling clusters across baseline biomarkers (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`), driver mutations (`BRAF`, `NRAS`, `NF1`), and 180-day simulated tumour volume trajectories $T(t)$, Phase 4 establishes the biological interpretation of the patient stratification framework. However, a rigorous audit reveals critical statistical and biological limitations.
 
 ---
 
-## 2. Statistical Weaknesses & Data Constraints ([STATISTICAL_LIMITATIONS])
+## 2. Statistical Weaknesses & Data Constraints
 
-| Statistical Limitation | Primary Cause | Clinical Impact | Empirical Observation / Risk |
-| :--- | :--- | :--- | :--- |
-| **Cohort Sample Size Asymmetry** | Imbalanced cluster sizes ($N=22$ to $N=308$). | Reduced statistical power for minority phenotype comparisons. | Cluster 0 (*Immune Cold*, $N=22, 3.1\%$) and Cluster 1 (*Mutant-Driven*, $N=65, 9.3\%$) have far fewer patients than Cluster 2 (*Immune Hot*, $N=304, 43.5\%$) and Cluster 3 (*Immunosuppressive M2-High*, $N=308, 44.1\%$). |
-| **Profile Mean Aggregation** | Summarising clusters using central mean Z-scores. | Masks continuous within-cluster variance and heavy-tailed outliers. | Single mean Z-score vectors collapse broad multi-modal distributions into point estimates, ignoring intra-cluster heterogeneity. |
-| **Survival Data Censoring & Sub-cohort Loss** | Missing Overall Survival (OS) follow-up across trial cohorts. | Reduces effective $N$ for Kaplan–Meier log-rank testing. | Only a subset of the $N=699$ cohort has complete `OS_MONTHS` and `OS_STATUS` metadata, increasing vulnerability to right-censoring bias. |
+| Statistical Limitation                        | Primary Cause                                                 | Clinical Impact                                                     | Empirical Observation / Risk                                                                                                                                                                                                 |
+|:--------------------------------------------- |:------------------------------------------------------------- |:------------------------------------------------------------------- |:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cohort Sample Size Asymmetry**              | Imbalanced cluster sizes ($N=22$ to $N=305$).                 | Reduced statistical power for minority phenotype comparisons.       | Cluster 0 (*Immune Cold*, $N=22, 3.1\%$) and Cluster 3 (*Mutant-Driven*, $N=106, 15.2\%$) are substantially smaller than Cluster 1 (*Immunosuppressive M2-High*, $N=305, 43.6\%$) and Cluster 2 (*Immune Hot*, $N=266, 38.1\%$). |
+| **Profile Mean Aggregation**                  | Summarising clusters using central mean Z-scores.             | Masks continuous within-cluster variance and heavy-tailed outliers. | Single mean Z-score vectors collapse broad multi-modal distributions into point estimates, ignoring intra-cluster heterogeneity.                                                                                             |
+| **Survival Data Censoring & Sub-cohort Loss** | Missing Overall Survival (OS) follow-up across trial cohorts. | Reduces effective $N$ for Kaplan–Meier log-rank testing.            | Only a subset of the $N=699$ cohort has complete `OS_MONTHS` and `OS_STATUS` metadata, increasing vulnerability to right-censoring bias.                                                                                     |
 
 ### Detailed Statistical Audit
 
 1. **Sample Size Imbalance Across Phenotype Subtypes**:
-   - The stratified patient dataset ($N=699$) exhibits extreme group size imbalance: Cluster 0 (*Immune Cold*, $N=22, 3.1\%$) and Cluster 1 (*Mutant-Driven*, $N=65, 9.3\%$) comprise only $12.4\%$ of the total cohort combined, whereas Cluster 2 (*Immune Hot*, $N=304, 43.5\%$) and Cluster 3 (*Immunosuppressive M2-High*, $N=308, 44.1\%$) dominate $87.6\%$ of all patients.
+   - The stratified patient dataset ($N=699$) exhibits marked group size imbalance: Cluster 0 (*Immune Cold*, $N=22, 3.1\%$) is the smallest subgroup, followed by Cluster 3 (*Mutant-Driven*, $N=106, 15.2\%$), whereas Cluster 1 (*Immunosuppressive M2-High*, $N=305, 43.6\%$) and Cluster 2 (*Immune Hot*, $N=266, 38.1\%$) together account for $81.7\%$ of all patients.
    - This imbalance reduces statistical power when conducting non-parametric Mann–Whitney U or log-rank survival tests on minority clusters, increasing the risk of Type II errors for rare subtype characterisation.
 
 2. **Information Loss from Central Profile Aggregation**:
@@ -60,7 +53,7 @@ Phase 4 bridges unsupervised clustering (Phase 3) with dynamic ODE mechanics (Q3
 
 ---
 
-## 3. Biological Assumptions & Model Simplifications ([BIOLOGICAL_LIMITATIONS])
+## 3. Biological Assumptions & Model Simplifications
 
 > [!WARNING] Biological Simplifications in Dynamic ODE Trajectories
 > The current Q5 Phase 4 integration uses a **2-state deterministic ODE system** parameterised by static, phenotype-level average rate constants. This assumes homogeneous dynamic responses within each phenotype arm and omits microenvironmental spatial barriers, antigen presentation loss (`B2M`/`TAP1`), and adaptive therapy resistance.
@@ -105,7 +98,7 @@ Phase 4 bridges unsupervised clustering (Phase 3) with dynamic ODE mechanics (Q3
 
 ---
 
-## 4. Prioritised Methodological Improvements ([PROPOSED_IMPROVEMENTS])
+## 4. Prioritised Methodological Improvements
 
 To address these statistical weaknesses and biological simplifications, future iterations of Phase 4 should execute the following prioritized enhancements:
 
@@ -139,9 +132,9 @@ To address these statistical weaknesses and biological simplifications, future i
 
 ## 5. Key Takeaways & Student Summary 🎓
 
-- **Cluster Profiling Characterises Biological Phenotypes**: Phase 4 successfully mapped $N=699$ patients into four actionable phenotype profiles (*Immune Hot*, *Immune Cold*, *Immunosuppressive M2-High*, *Mutant-Driven*), demonstrating distinct response rates ($19.4\%$ to $60.4\%$) and overall survival trends.
+- **Cluster Profiling Characterises Biological Phenotypes**: Phase 4 successfully mapped $N=699$ patients into four actionable phenotype profiles — *Immune Cold* ($N=22$, 3.1%), *Immunosuppressive M2-High* ($N=305$, 43.6%), *Immune Hot* ($N=266$, 38.1%), and *Mutant-Driven* ($N=106$, 15.2%) — demonstrating distinct response rates and overall survival trends.
 - **2-State ODE Systems Model Phenotype Tumour Burden**: Phenotype-specific 180-day ODE simulations capture tumour clearance in inflamed subtypes versus uncontrolled growth in immunosuppressive subtypes.
-- **Statistical Imbalance & Profile Aggregation Constraints**: Imbalanced cluster sizes ($3.1\%$ to $44.1\%$) and mean scalar Z-score aggregation collapse intra-cluster continuous variance.
+- **Statistical Imbalance & Profile Aggregation Constraints**: Imbalanced cluster sizes ($3.1\%$ to $43.6\%$) and mean scalar Z-score aggregation collapse intra-cluster continuous variance.
 - **Biological Simplifications Require Multi-Module Extensions**: 2-state ODE models omit explicit CAF physical barriers, M1/M2 macrophage switching, and `B2M`/`TAP1` antigen presentation loss, highlighting the need for 4-module patient-specific digital twin extensions in future iterations.
 
 ---
