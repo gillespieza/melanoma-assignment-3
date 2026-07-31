@@ -17,7 +17,7 @@ import contextlib
 import json
 from pathlib import Path
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
@@ -36,7 +36,6 @@ for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
 if str(SUBPROJECT_ROOT / "src") not in sys.path:
     sys.path.insert(0, str(SUBPROJECT_ROOT / "src"))
 
-# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # Project Imports
 # ---------------------------------------------------------------------------
@@ -66,6 +65,7 @@ from q5_constants import (
     PHENOTYPE_PROFILE_FEATURES,
 )
 from src.styles import OKABE_ITO, set_presentation_style
+from src.utils.io import safe_save_csv
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
@@ -87,7 +87,7 @@ set_presentation_style()
 def compute_clustering_metrics(
     X_scaled: np.ndarray,
     labels: np.ndarray,
-    gmm: GaussianMixture = None,
+    gmm: Optional[GaussianMixture] = None,
 ) -> Dict[str, float]:
     """Compute internal clustering quality metrics for a given label assignment and GMM model."""
     valid = labels != -1
@@ -199,6 +199,13 @@ def _assign_labels(df_clean: pd.DataFrame, labels: np.ndarray) -> Dict[int, str]
     return phenotype_names
 
 
+def _format_prob_col_name(phenotype_name: str) -> str:
+    """Format biological phenotype label into a clean probability DataFrame column name."""
+    short_label = phenotype_name.split("(")[0].strip()
+    clean_label = short_label.replace(" ", "_").replace("-", "_")
+    return f"P_{clean_label}"
+
+
 def _export_cluster_outputs(
     df_clean: pd.DataFrame,
     probs: np.ndarray,
@@ -207,7 +214,7 @@ def _export_cluster_outputs(
 ) -> Tuple[Path, Path]:
     """Export posterior probabilities CSV and patient clusters CSV to disk."""
     for cid, name in phenotype_names.items():
-        clean_name = f"P_{name.split('(')[0].strip().replace(' ', '_').replace('-', '_')}"
+        clean_name = _format_prob_col_name(name)
         df_clean[clean_name] = probs[:, cid]
 
     prob_cols = [c for c in df_clean.columns if c.startswith("P_")]
@@ -216,16 +223,11 @@ def _export_cluster_outputs(
     df_probs_export = df_clean[[c for c in prob_df_cols if c in df_clean.columns]].copy()
 
     out_probs_file = output_dir / "gmm_posterior_probabilities.csv"
-    df_probs_export.to_csv(out_probs_file, index=False)
+    safe_save_csv(df_probs_export, out_probs_file)
     print(f"Saved GMM posterior probabilities matrix to {rel_path(out_probs_file)}")
 
     out_clusters = output_dir / "patient_clusters.csv"
-    if out_clusters.exists():
-        try:
-            out_clusters.unlink()
-        except OSError as err:
-            print(f"Warning: Failed to delete previous clusters file: {err}")
-    df_clean.to_csv(out_clusters, index=False)
+    safe_save_csv(df_clean, out_clusters)
     return out_probs_file, out_clusters
 
 
@@ -267,7 +269,7 @@ def _evaluate_mahalanobis_spectral_comparisons(
         {"Method": "Spectral Manifold (Graph Laplacian)", **spectral_metrics},
     ])
     out_metrics_file = output_dir / "mahalanobis_spectral_metrics.csv"
-    comp_df.to_csv(out_metrics_file, index=False)
+    safe_save_csv(comp_df, out_metrics_file)
     print(f"Saved Mahalanobis & Spectral metrics comparison to {rel_path(out_metrics_file)}")
     return gmm_metrics
 

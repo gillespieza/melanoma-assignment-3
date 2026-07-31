@@ -6,7 +6,7 @@ visualisation plots (silhouette plots, dendrograms, 2D projections).
 """
 
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
@@ -55,6 +55,12 @@ MARKER_SIZE: float = 65.0
 SIGMA_FACTOR: float = 2.0
 ELLIPSE_ALPHA: float = 0.18
 LABEL_OFFSET_FACTOR: float = 0.35
+MIN_SAMPLES_FOR_ELLIPSE: int = 3
+
+# Default Model & Consensus Parameters
+DEFAULT_N_COMPONENTS: int = 4
+DEFAULT_RANDOM_STATE: int = 42
+CDF_GRID_POINTS: int = 100
 
 
 def prepare_clustering_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, np.ndarray]:
@@ -85,9 +91,9 @@ def run_kmeans(df_features: pd.DataFrame, k_range: range = range(2, 7)) -> Dict[
 
 def run_gmm(
     X_scaled: np.ndarray,
-    n_components: int = 4,
+    n_components: int = DEFAULT_N_COMPONENTS,
     covariance_type: str = "full",
-    random_state: int = 42,
+    random_state: int = DEFAULT_RANDOM_STATE,
 ) -> Tuple[GaussianMixture, np.ndarray, np.ndarray]:
     """Fit Gaussian Mixture Model (GMM) with full covariance matrices and compute soft posterior probabilities.
 
@@ -166,7 +172,7 @@ def _scatter_cluster(
         linewidth=0.4,
     )
 
-    if len(sub) > 3:
+    if len(sub) > MIN_SAMPLES_FOR_ELLIPSE:
         mean_x, mean_y = sub["Dim1"].mean(), sub["Dim2"].mean()
         cov = np.cov(sub["Dim1"], sub["Dim2"])
         evals, evecs = np.linalg.eigh(cov)
@@ -206,7 +212,7 @@ def plot_2d_cluster_projection(
     labels: np.ndarray,
     X_scaled: np.ndarray,
     save_path: Path,
-    cluster_names: Dict[int, str] = None,
+    cluster_names: Optional[Dict[int, str]] = None,
     method: str = "pca",
 ) -> None:
     """Generate publication-ready 2D cluster projection plot (PCA or t-SNE)."""
@@ -248,56 +254,52 @@ def plot_2d_cluster_projection(
     print(f"Saved {method.upper()} 2D cluster projection plot to {save_path}")
 
 
-def run_consensus_bootstrap(
+def _compute_coclustering_matrix(
     X_scaled: np.ndarray,
-    k_range: range = range(2, 9),
-    n_bootstraps: int = 1000,
-    sample_ratio: float = 0.8,
-    feature_ratio: float = 0.8,
-    random_state: int = 42,
-) -> Tuple[Dict[int, np.ndarray], Dict[int, Tuple[np.ndarray, np.ndarray]], Dict[int, float], Dict[int, float], pd.DataFrame]:
-    """Execute 1,000-bootstrap Consensus Clustering across patients and features for K in k_range.
+    k: int,
+    n_bootstraps: int,
+    sample_sub_size: int,
+    feat_sub_size: int,
+    rng: np.random.RandomState,
+) -> np.ndarray:
+    """Compute consensus co-association matrix across n_bootstraps subsamplings."""
+    n_samples = X_scaled.shape[0]
+    co_counts = np.zeros((n_samples, n_samples), dtype=float)
+    pair_counts = np.zeros((n_samples, n_samples), dtype=float)
 
-    Returns:
-        Tuple of (consensus_matrices, cdf_curves, auc_dict, delta_area_dict, metrics_df).
-    """
-    n_samples, n_features = X_scaled.shape
-    rng = np.random.RandomState(random_state)
-    sample_sub_size = max(2, int(n_samples * sample_ratio))
-    feat_sub_size = max(1, int(n_features * feature_ratio))
+    for _ in range(n_bootstraps):
+        sample_idx = rng.choice(n_samples, size=sample_sub_size, replace=False)
+        feat_idx = rng.choice(X_scaled.shape[1], size=feat_sub_size, replace=False)
 
-    consensus_matrices: Dict[int, np.ndarray] = {}
+        sub_X = X_scaled[np.ix_(sample_idx, feat_idx)]
+        km = KMeans(n_clusters=k, random_state=rng.randint(0, 100000), n_init=1)
+        lbls = km.fit_predict(sub_X)
+
+        same_cluster = (lbls[:, None] == lbls[None, :])
+        idx_grid = np.ix_(sample_idx, sample_idx)
+        co_counts[idx_grid] += same_cluster
+        pair_counts[idx_grid] += 1
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        M_k = np.where(pair_counts > 0, co_counts / pair_counts, 0.0)
+    return M_k
+
+
+def _calculate_cdf_auc_delta(
+    consensus_matrices: Dict[int, np.ndarray],
+    k_range: range,
+    n_samples: int,
+    grid_c: np.ndarray,
+) -> Tuple[Dict[int, Tuple[np.ndarray, np.ndarray]], Dict[int, float], Dict[int, float], pd.DataFrame]:
+    """Calculate Cumulative Distribution Functions, AUC, and Delta Area metrics across K values."""
     cdf_curves: Dict[int, Tuple[np.ndarray, np.ndarray]] = {}
     auc_dict: Dict[int, float] = {}
     delta_area_dict: Dict[int, float] = {}
-
-    grid_c = np.linspace(0.01, 1.0, 100)
+    triu_indices = np.triu_indices(n_samples, k=1)
 
     for k in k_range:
-        co_counts = np.zeros((n_samples, n_samples), dtype=float)
-        pair_counts = np.zeros((n_samples, n_samples), dtype=float)
-
-        for _ in range(n_bootstraps):
-            sample_idx = rng.choice(n_samples, size=sample_sub_size, replace=False)
-            feat_idx = rng.choice(n_features, size=feat_sub_size, replace=False)
-
-            sub_X = X_scaled[np.ix_(sample_idx, feat_idx)]
-            km = KMeans(n_clusters=k, random_state=rng.randint(0, 100000), n_init=1)
-            lbls = km.fit_predict(sub_X)
-
-            # Vectorized co-clustering update
-            same_cluster = (lbls[:, None] == lbls[None, :])
-            idx_grid = np.ix_(sample_idx, sample_idx)
-            co_counts[idx_grid] += same_cluster
-            pair_counts[idx_grid] += 1
-
-        with np.errstate(divide="ignore", invalid="ignore"):
-            M_k = np.where(pair_counts > 0, co_counts / pair_counts, 0.0)
-        consensus_matrices[k] = M_k
-
-        triu_indices = np.triu_indices(n_samples, k=1)
+        M_k = consensus_matrices[k]
         u_vals = M_k[triu_indices]
-
         cdf_vals = np.array([np.mean(u_vals <= c) for c in grid_c])
         cdf_curves[k] = (grid_c, cdf_vals)
 
@@ -316,26 +318,57 @@ def run_consensus_bootstrap(
             prev_auc = auc_dict[prev_k]
             delta_area_dict[k] = (auc_dict[k] - prev_auc) / prev_auc if prev_auc > 0 else 0.0
 
-    records = []
-    for k in sorted_ks:
-        records.append({
+    records = [
+        {
             "K": k,
             "CDF_AUC": round(auc_dict[k], 4),
             "Delta_Area": round(delta_area_dict[k], 4),
-            "Mean_Consensus_Score": round(float(np.mean(consensus_matrices[k][np.triu_indices(n_samples, k=1)])), 4),
-        })
+            "Mean_Consensus_Score": round(float(np.mean(consensus_matrices[k][triu_indices])), 4),
+        }
+        for k in sorted_ks
+    ]
     metrics_df = pd.DataFrame(records)
+    return cdf_curves, auc_dict, delta_area_dict, metrics_df
+
+
+def run_consensus_bootstrap(
+    X_scaled: np.ndarray,
+    k_range: range = range(2, 9),
+    n_bootstraps: int = 1000,
+    sample_ratio: float = 0.8,
+    feature_ratio: float = 0.8,
+    random_state: int = DEFAULT_RANDOM_STATE,
+) -> Tuple[Dict[int, np.ndarray], Dict[int, Tuple[np.ndarray, np.ndarray]], Dict[int, float], Dict[int, float], pd.DataFrame]:
+    """Execute 1,000-bootstrap Consensus Clustering across patients and features for K in k_range.
+
+    Returns:
+        Tuple of (consensus_matrices, cdf_curves, auc_dict, delta_area_dict, metrics_df).
+    """
+    n_samples, n_features = X_scaled.shape
+    rng = np.random.RandomState(random_state)
+    sample_sub_size = max(2, int(n_samples * sample_ratio))
+    feat_sub_size = max(1, int(n_features * feature_ratio))
+
+    consensus_matrices: Dict[int, np.ndarray] = {}
+    grid_c = np.linspace(0.01, 1.0, CDF_GRID_POINTS)
+
+    for k in k_range:
+        consensus_matrices[k] = _compute_coclustering_matrix(
+            X_scaled, k, n_bootstraps, sample_sub_size, feat_sub_size, rng
+        )
+
+    cdf_curves, auc_dict, delta_area_dict, metrics_df = _calculate_cdf_auc_delta(
+        consensus_matrices, k_range, n_samples, grid_c
+    )
 
     return consensus_matrices, cdf_curves, auc_dict, delta_area_dict, metrics_df
 
 
-def plot_consensus_cdf_and_delta_area(
+def plot_consensus_cdf_curves(
     cdf_curves: Dict[int, Tuple[np.ndarray, np.ndarray]],
-    delta_area_dict: Dict[int, float],
     out_cdf_path: Path,
-    out_delta_path: Path,
 ) -> None:
-    """Generate 300 DPI publication plots for Consensus CDF curves and Delta Area scores across K in [2, 8]."""
+    """Generate 300 DPI publication plot for Consensus CDF curves across K in [2, 8]."""
     fig, ax = plt.subplots(figsize=(10, 6), dpi=300)
     colors = plt.cm.plasma(np.linspace(0.1, 0.9, len(cdf_curves)))
 
@@ -352,6 +385,12 @@ def plot_consensus_cdf_and_delta_area(
     save_fig(fig, out_cdf_path, dpi=300)
     print(f"Saved Consensus CDF curves to {rel_path(out_cdf_path)}")
 
+
+def plot_consensus_delta_area(
+    delta_area_dict: Dict[int, float],
+    out_delta_path: Path,
+) -> None:
+    """Generate 300 DPI publication plot for Consensus Delta Area scores across K in [2, 8]."""
     fig2, ax2 = plt.subplots(figsize=(9, 5.5), dpi=300)
     ks = sorted(list(delta_area_dict.keys()))
     deltas = [delta_area_dict[k] for k in ks]
@@ -369,6 +408,17 @@ def plot_consensus_cdf_and_delta_area(
     out_delta_path.parent.mkdir(parents=True, exist_ok=True)
     save_fig(fig2, out_delta_path, dpi=300)
     print(f"Saved Consensus Delta Area plot to {rel_path(out_delta_path)}")
+
+
+def plot_consensus_cdf_and_delta_area(
+    cdf_curves: Dict[int, Tuple[np.ndarray, np.ndarray]],
+    delta_area_dict: Dict[int, float],
+    out_cdf_path: Path,
+    out_delta_path: Path,
+) -> None:
+    """Generate 300 DPI publication plots for Consensus CDF curves and Delta Area scores across K in [2, 8]."""
+    plot_consensus_cdf_curves(cdf_curves, out_cdf_path)
+    plot_consensus_delta_area(delta_area_dict, out_delta_path)
 
 
 def plot_consensus_heatmap(
@@ -481,5 +531,3 @@ def plot_spatial_microenvironment_violins(
     save_path.parent.mkdir(parents=True, exist_ok=True)
     save_fig(fig, save_path, dpi=300)
     print(f"Saved spatial microenvironment violin plots to {rel_path(save_path)}")
-
-
