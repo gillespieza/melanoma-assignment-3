@@ -46,10 +46,38 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
 # Project Imports
 # ---------------------------------------------------------------------------
 
+from clustering import run_consensus_bootstrap
 from src.styles import OKABE_ITO, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
+
+
+def _run_consensus_clustering(X_scaled: np.ndarray) -> np.ndarray:
+    """Build a 1,000-bootstrap consensus co-occurrence matrix and apply Spectral Clustering.
+
+    Runs N_BOOTSTRAPS iterations of K-Means on SUBSAMPLE_RATIO subsets of patients and features,
+    accumulating a co-occurrence matrix tracking how often pairs of patients cluster
+    together. Spectral Clustering is then applied to the normalized consensus matrix.
+
+    Args:
+        X_scaled: Normalised patient feature matrix.
+
+    Returns:
+        Array of consensus cluster label integers.
+    """
+    consensus_matrices, _, _, _, _ = run_consensus_bootstrap(
+        X_scaled,
+        k_range=range(K_CLUSTERS, K_CLUSTERS + 1),
+        n_bootstraps=N_BOOTSTRAPS,
+        sample_ratio=SUBSAMPLE_RATIO,
+        feature_ratio=0.8,
+        random_state=42,
+    )
+    M_k = consensus_matrices[K_CLUSTERS]
+    return SpectralClustering(
+        n_clusters=K_CLUSTERS, affinity="precomputed", random_state=42
+    ).fit_predict(M_k)
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
@@ -150,39 +178,6 @@ def run_all_algorithms(X_scaled: np.ndarray) -> Dict[str, np.ndarray]:
     algorithms["Consensus Clustering"] = _run_consensus_clustering(X_scaled)
 
     return algorithms
-
-
-def _run_consensus_clustering(X_scaled: np.ndarray) -> np.ndarray:
-    """Build a bootstrap consensus co-occurrence matrix and apply Spectral Clustering.
-
-    Runs N_BOOTSTRAPS iterations of K-Means on SUBSAMPLE_RATIO subsets of patients,
-    accumulating a co-occurrence matrix tracking how often pairs of patients cluster
-    together. Spectral Clustering is then applied to the normalized consensus matrix.
-
-    Args:
-        X_scaled: Normalised patient feature matrix.
-
-    Returns:
-        Array of consensus cluster label integers.
-    """
-    n = len(X_scaled)
-    co_matrix = np.zeros((n, n))
-    rng = np.random.RandomState(42)
-
-    for _ in range(N_BOOTSTRAPS):
-        idx = rng.choice(n, size=int(n * SUBSAMPLE_RATIO), replace=False)
-        lbls = KMeans(
-            n_clusters=K_CLUSTERS, random_state=rng.randint(0, 10000), n_init=3
-        ).fit_predict(X_scaled[idx])
-        for i_loc, i_orig in enumerate(idx):
-            for j_loc, j_orig in enumerate(idx):
-                if lbls[i_loc] == lbls[j_loc]:
-                    co_matrix[i_orig, j_orig] += 1
-
-    co_matrix /= N_BOOTSTRAPS
-    return SpectralClustering(
-        n_clusters=K_CLUSTERS, affinity="precomputed", random_state=42
-    ).fit_predict(co_matrix)
 
 
 def compute_metrics(
