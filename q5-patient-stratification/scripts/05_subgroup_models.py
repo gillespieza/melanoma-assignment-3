@@ -322,9 +322,13 @@ def _compute_subgroup_oof_predictions(
 
         for k in range(n_clusters):
             weights_k = w_tr[:, k]
+            meaningful = weights_k > MIN_PROB_WEIGHT
+            effective_n_tr = meaningful.sum()
+            y_sub = y_tr[meaningful]
+
             # Fall back to global predictions when the training fold has
-            # negligible cluster weight or only a single response class.
-            if weights_k.sum() < 1e-9 or len(np.unique(y_tr)) < 2:
+            # fewer than 5 effective cluster samples or only a single response class
+            if effective_n_tr < 5 or len(np.unique(y_sub)) < 2:
                 fold_blend += w_te[:, k] * global_oof_prob[test_idx]
                 continue
             preds_k = _fit_predict_fold(
