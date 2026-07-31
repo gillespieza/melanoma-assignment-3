@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-4
   - q5
-created: 2026-07-31 20:30
+created: 2026-07-31 21:13
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 20:30
+updated: 2026-07-31 21:13
 ---
 
 ## 4. Phase 4: Phenotype Characterisation & Q3 ODE Digital Twin Dynamics
@@ -103,3 +103,14 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 > 2. **Mechanistic Rationale for Combination Therapy**: Simulations proved mathematically that *M2 Immunosuppressive* patients fail anti-PD-1 monotherapy due to macrophage-mediated T-cell suppression, but achieve complete tumour clearance when combined with M2-depleting agents.
 > 3. **Prognostic Survival Separation**: Simulated checkpoint tumour burden stratified overall survival, yielding an 82-month median survival gap ($p = 0.0024$).
 > 4. **Mechanistic vs Black-Box ML**: Operating on just 3 mechanistically derived features (`pERK`, BRAFi burden, checkpoint burden), the ODE digital twin achieved an ROC-AUC of **0.666**, outperforming 12-feature Logistic Regression ($0.646$) and Neural Networks ($0.583$) while maintaining total biological transparency.
+
+> [!formula] Phase 4 Script Execution & Software Module Architecture
+> - **Primary Pipeline Execution Scripts**:
+>   - [`04_phenotype_characterisation.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/04_phenotype_characterisation.py): Profiles cluster biomarker distributions (`phenotype_characterisation.csv`), assigns biological phenotype labels, generates 2x3 baseline boxplots (`baseline_signature_boxplots.png`), simulates dynamic 180-day dual-arm Kuznetsov ODE tumour trajectories (`ode_trajectories.png`), and generates Kaplan-Meier overall survival curves stratified by phenotype (`km_survival_by_phenotype.png`).
+> - **Core Supporting Python Modules**:
+>   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Implements cluster profiling (`profile_clusters`), rank-based biological phenotype labelling (`assign_phenotype_labels`), and profile visualisations (`plot_baseline_signature_boxplots`, `plot_radar_chart`, `plot_cluster_heatmap`).
+>   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Central source of truth for phenotype display labels (`PHENOTYPE_LABELS`), GMM probability column mappings (`PHENOTYPE_PROB_COL`), and Q3 ODE simulation parameters (`Q3_ODE_PHENOTYPE_PARAMS`).
+> - **Shared Cross-Question & Pipeline Modules**:
+>   - [`q3-ode-model`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q3-ode-model): 4-module ODE digital twin system coupling RAF dimerisation, MAPK cascade, Kuznetsov tumour-immune dynamics, and PD-1/PD-L1 checkpoint axis.
+>   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `04_phenotype_characterisation.py` as Step 4.
+>   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles live statistical summaries and generates phase markdown reports.

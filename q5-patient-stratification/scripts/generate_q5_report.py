@@ -410,6 +410,19 @@ def main() -> None:
         "> 4. **Rationale for Stratification**: Because single biomarkers yield modest standalone performance and interact with underlying driver mutations, robust patient stratification requires multi-dimensional unsupervised clustering (Phase 3) rather than single-gene tests.\n"
     )
 
+    doc_sections.append(
+        "> [!formula] Phase 2 Script Execution & Software Module Architecture\n"
+        "> - **Primary Pipeline Execution Scripts**:\n"
+        ">   - [`02_feature_analysis.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/02_feature_analysis.py): Conducts non-parametric Mann-Whitney U testing and Cohen's d effect size calculations across features (`univariate_feature_associations.csv`), computes Youden J optimal decision cutoffs and ROC curves (`youden_cutoffs.csv`), and evaluates 21 driver mutation $\\times$ immune signature logistic regression interaction terms (`genomic_immune_interactions.csv`, `genomic_interaction_tis_braf.png`, `genomic_immune_interaction_matrix.png`).\n"
+        "> - **Core Supporting Python Modules**:\n"
+        ">   - [`feature_analysis.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/feature_analysis.py): Implements statistical testing functions (`compute_univariate_associations`), Youden cutoff calculation (`compute_youden_cutoffs`), and interaction model fitting (`evaluate_feature_interactions`).\n"
+        ">   - [`reporting.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/reporting.py): Formats statistical summary tables and Obsidian markdown elements.\n"
+        ">   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Defines primary feature lists and biological constants.\n"
+        "> - **Shared Cross-Question & Pipeline Modules**:\n"
+        ">   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `02_feature_analysis.py` as Step 2.\n"
+        ">   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles live statistical summaries and generates phase markdown reports.\n"
+    )
+
     # Section 3: Phase 3 Unsupervised Phenotype Stratification
     doc_sections.append(f"## 3. Phase 3: Unsupervised Phenotype Stratification (N = {n_patients_full})\n")
     doc_sections.append(
@@ -626,6 +639,19 @@ def main() -> None:
         "> 4. **Mechanistic vs Black-Box ML**: Operating on just 3 mechanistically derived features (`pERK`, BRAFi burden, checkpoint burden), the ODE digital twin achieved an ROC-AUC of **0.666**, outperforming 12-feature Logistic Regression ($0.646$) and Neural Networks ($0.583$) while maintaining total biological transparency.\n"
     )
 
+    doc_sections.append(
+        "> [!formula] Phase 4 Script Execution & Software Module Architecture\n"
+        "> - **Primary Pipeline Execution Scripts**:\n"
+        ">   - [`04_phenotype_characterisation.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/04_phenotype_characterisation.py): Profiles cluster biomarker distributions (`phenotype_characterisation.csv`), assigns biological phenotype labels, generates 2x3 baseline boxplots (`baseline_signature_boxplots.png`), simulates dynamic 180-day dual-arm Kuznetsov ODE tumour trajectories (`ode_trajectories.png`), and generates Kaplan-Meier overall survival curves stratified by phenotype (`km_survival_by_phenotype.png`).\n"
+        "> - **Core Supporting Python Modules**:\n"
+        ">   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Implements cluster profiling (`profile_clusters`), rank-based biological phenotype labelling (`assign_phenotype_labels`), and profile visualisations (`plot_baseline_signature_boxplots`, `plot_radar_chart`, `plot_cluster_heatmap`).\n"
+        ">   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Central source of truth for phenotype display labels (`PHENOTYPE_LABELS`), GMM probability column mappings (`PHENOTYPE_PROB_COL`), and Q3 ODE simulation parameters (`Q3_ODE_PHENOTYPE_PARAMS`).\n"
+        "> - **Shared Cross-Question & Pipeline Modules**:\n"
+        ">   - [`q3-ode-model`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q3-ode-model): 4-module ODE digital twin system coupling RAF dimerisation, MAPK cascade, Kuznetsov tumour-immune dynamics, and PD-1/PD-L1 checkpoint axis.\n"
+        ">   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `04_phenotype_characterisation.py` as Step 4.\n"
+        ">   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles live statistical summaries and generates phase markdown reports.\n"
+    )
+
     # Section 5: Phase 5 Subgroup Models
     doc_sections.append("## 5. Phase 5: Subgroup-Specific Predictive Models\n")
     doc_sections.append(
@@ -780,6 +806,19 @@ def main() -> None:
         "> 4. **Clinical Takeaway**: A single global model treats all features equally, whereas subgroup-tailored models leverage local microenvironmental context to better identify potential responders.\n"
     )
 
+    doc_sections.append(
+        "> [!formula] Phase 5 Script Execution & Software Module Architecture\n"
+        "> - **Primary Pipeline Execution Scripts**:\n"
+        ">   - [`05_subgroup_models.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/05_subgroup_models.py): Trains soft-weighted GMM probability Random Forest classifiers on 9 non-circular features (`IFN_gamma`, `CD8_Tcell`, `PD_L1`, `M1_M2_Ratio`, `Macrophage_STV_Score`, `CD4_T_cells`, `NK_cells`, `B_cells`, `TMB_NONSYNONYMOUS`), evaluates Leave-One-Cohort-Out (LOCO) CV vs Global Enriched Baseline (`subgroup_models_evaluation.csv`), serialises fitted models (`joblib`), and generates ROC, performance, and Gini feature importance plots (`subgroup_roc_curves.png`, `subgroup_performance_comparison.png`, `subgroup_feature_importances.png`).\n"
+        "> - **Core Supporting Python Modules**:\n"
+        ">   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Phenotype palette resolution and short-name mappings.\n"
+        ">   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): GMM probability column mappings (`PHENOTYPE_PROB_COL`) and clustering feature sets.\n"
+        ">   - [`reporting.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/reporting.py): Formats evaluation comparison tables and markdown frontmatter.\n"
+        "> - **Shared Cross-Question & Pipeline Modules**:\n"
+        ">   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `05_subgroup_models.py` as Step 5.\n"
+        ">   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles live statistical summaries and generates phase markdown reports.\n"
+    )
+
     # Section 6: Phase 6 Clinical Utility (DCA, NNT, Net Benefit)
     doc_sections.append("## 6. Phase 6: Clinical Utility & Decision Curve Analysis\n")
     doc_sections.append(
@@ -917,6 +956,19 @@ def main() -> None:
         "- **Arm C (Combination / Reversal Therapy)**: Non-responders requiring targetable helper interventions (`CSF1R`, `MDM2`, `AXL`) to overcome microenvironmental resistance.\n"
     )
 
+    doc_sections.append(
+        "> [!formula] Phase 6 Script Execution & Software Module Architecture\n"
+        "> - **Primary Pipeline Execution Scripts**:\n"
+        ">   - [`06_clinical_utility.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/06_clinical_utility.py): Conducts Decision Curve Analysis (DCA) across decision threshold probabilities ($p_t = 0.05 – 0.85$), calculates Net Benefit (`dca_net_benefit.csv`), computes Positive Predictive Value (PPV), Number Needed to Treat (NNT), and non-responder toxicity avoidance (`clinical_utility_metrics.csv`), generating DCA curves, NNT comparisons, and phenotype net benefit plots (`dca_curves.png`, `nnt_ppv_comparison.png`, `unnecessary_treatments_avoided.png`, `net_benefit_by_phenotype.png`).\n"
+        "> - **Core Supporting Python Modules**:\n"
+        ">   - [`clinical_utility.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/clinical_utility.py): Implements Net Benefit mathematical formulation (`compute_net_benefit`), NNT calculation (`compute_nnt`), and DCA curve rendering.\n"
+        ">   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Biological phenotype labels and GMM probability column mappings.\n"
+        ">   - [`reporting.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/reporting.py): Formats clinical utility summary tables and Obsidian markdown elements.\n"
+        "> - **Shared Cross-Question & Pipeline Modules**:\n"
+        ">   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `06_clinical_utility.py` as Step 6.\n"
+        ">   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles live statistical summaries and generates phase markdown reports.\n"
+    )
+
     # Section 7: Phase 7 3-Arm Decision Support & Treatability Scoring
     # ---------------------------------------------------------------------------
     # Load live Phase 7 treatability metrics from generated CSVs
@@ -1052,6 +1104,21 @@ def main() -> None:
         f"2. **Cross-Study Integration**: Incorporated Q2 Dabrafenib sensitivity gene weights to score targeted therapy responsiveness in Arm B (`BRAF` mutants; mean sensitivity = **{mean_q2_dab:.1f}/100**).\n"
         f"3. **Mechanistic Reversal Nominations**: Identified **{top_q4_target}** as the primary helper target for resistant non-responders ($N = {top_q4_n}$ candidates).\n"
         f"4. **Treatability Metric**: Standardised a composite 0–100 Treatability Index (overall mean = **{mean_treat_overall:.1f}**) to prioritise non-responders for combination clinical trial enrolment.\n"
+    )
+
+    doc_sections.append(
+        "> [!formula] Phase 7 Script Execution & Software Module Architecture\n"
+        "> - **Primary Pipeline Execution Scripts**:\n"
+        ">   - [`07_treatability_scoring.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/07_treatability_scoring.py): Implements 3-arm clinical decision tree routing all $N = 699$ patients into **Arm A** (Immunotherapy Monotherapy), **Arm B** (Targeted Therapy integrating Q2 Dabrafenib sensitivity), and **Arm C** (Combination/Reversal integrating Q4 DepMap essentiality targets `CSF1R`, `MDM2`, `AXL`), computes composite Treatability Index (`treatability_scores.csv`), exports arm allocation summary (`treatment_arm_summary.csv`), and generates 3-arm pie, treatability distribution, and waterfall plots (`arm_distribution_pie.png`, `arm_assignment_breakdown.png`, `treatability_index_distribution.png`, `treatability_waterfall.png`).\n"
+        "> - **Core Supporting Python Modules**:\n"
+        ">   - [`treatability.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/treatability.py): Implements 3-arm assignment rules (`assign_treatment_arms`), composite treatability scoring (`compute_treatability_index`), and treatability visualisations (`plot_arm_distribution_pie`, `plot_treatability_distribution`, `plot_treatability_waterfall`).\n"
+        ">   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Central source of truth for 3-arm definitions (`TREATMENT_ARMS`), arm color palette (`TREATMENT_ARM_PALETTE`), and treatability weights (`TREATABILITY_WEIGHTS`).\n"
+        ">   - [`reporting.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/reporting.py): Formats treatability summary tables and Obsidian markdown elements.\n"
+        "> - **Shared Cross-Question & Pipeline Modules**:\n"
+        ">   - [`q2-dabrafenib-dose-response`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q2-dabrafenib-dose-response): Q2 Hill equation dose-response model providing patient Dabrafenib sensitivity scores.\n"
+        ">   - [`q4-essentiality-mapping`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q4-essentiality-mapping): Q4 DepMap CRISPR essentiality model providing nominated helper targets (`CSF1R`, `MDM2`, `AXL`).\n"
+        ">   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `07_treatability_scoring.py` as Step 7.\n"
+        ">   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles live statistical summaries and generates phase markdown reports.\n"
     )
 
     # Write output: per-phase files only (full combined report removed)

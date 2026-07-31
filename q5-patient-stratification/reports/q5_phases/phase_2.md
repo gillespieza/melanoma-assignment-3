@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-2
   - q5
-created: 2026-07-31 20:30
+created: 2026-07-31 21:13
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 20:30
+updated: 2026-07-31 21:13
 ---
 
 ## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds
@@ -96,3 +96,14 @@ Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patient
 > 2. **Decision Thresholds Provide Triage Cutoffs**: Youden's J statistic established concrete numerical cutoffs (such as `B_cells` threshold $\ge 0.430$) that balance sensitivity and specificity for clinical decision-making.
 > 3. **Genomic Mutations Alter Immune Response**: Microenvironmental immune inflammation interacts significantly with oncogenic driver mutations—specifically `BRAF V600` ($\beta = -0.65, p = 0.040$). High T-cell inflammation has a stronger positive predictive value in `BRAF` wild-type tumours than in `BRAF`-mutated tumours.
 > 4. **Rationale for Stratification**: Because single biomarkers yield modest standalone performance and interact with underlying driver mutations, robust patient stratification requires multi-dimensional unsupervised clustering (Phase 3) rather than single-gene tests.
+
+> [!formula] Phase 2 Script Execution & Software Module Architecture
+> - **Primary Pipeline Execution Scripts**:
+>   - [`02_feature_analysis.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/02_feature_analysis.py): Conducts non-parametric Mann-Whitney U testing and Cohen's d effect size calculations across features (`univariate_feature_associations.csv`), computes Youden J optimal decision cutoffs and ROC curves (`youden_cutoffs.csv`), and evaluates 21 driver mutation $\times$ immune signature logistic regression interaction terms (`genomic_immune_interactions.csv`, `genomic_interaction_tis_braf.png`, `genomic_immune_interaction_matrix.png`).
+> - **Core Supporting Python Modules**:
+>   - [`feature_analysis.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/feature_analysis.py): Implements statistical testing functions (`compute_univariate_associations`), Youden cutoff calculation (`compute_youden_cutoffs`), and interaction model fitting (`evaluate_feature_interactions`).
+>   - [`reporting.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/reporting.py): Formats statistical summary tables and Obsidian markdown elements.
+>   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Defines primary feature lists and biological constants.
+> - **Shared Cross-Question & Pipeline Modules**:
+>   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `02_feature_analysis.py` as Step 2.
+>   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles live statistical summaries and generates phase markdown reports.

@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-7
   - q5
-created: 2026-07-31 20:30
+created: 2026-07-31 21:13
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 20:30
+updated: 2026-07-31 21:13
 ---
 
 ## 7. Phase 7: 3-Arm Decision Support & Treatability Scoring
@@ -79,3 +79,16 @@ The composite **Treatability Index** (0–100 scale) quantifies the biological c
 2. **Cross-Study Integration**: Incorporated Q2 Dabrafenib sensitivity gene weights to score targeted therapy responsiveness in Arm B (`BRAF` mutants; mean sensitivity = **55.2/100**).
 3. **Mechanistic Reversal Nominations**: Identified **CSF1R (M2 TAM Depletion)** as the primary helper target for resistant non-responders ($N = 108$ candidates).
 4. **Treatability Metric**: Standardised a composite 0–100 Treatability Index (overall mean = **48.5**) to prioritise non-responders for combination clinical trial enrolment.
+
+> [!formula] Phase 7 Script Execution & Software Module Architecture
+> - **Primary Pipeline Execution Scripts**:
+>   - [`07_treatability_scoring.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/07_treatability_scoring.py): Implements 3-arm clinical decision tree routing all $N = 699$ patients into **Arm A** (Immunotherapy Monotherapy), **Arm B** (Targeted Therapy integrating Q2 Dabrafenib sensitivity), and **Arm C** (Combination/Reversal integrating Q4 DepMap essentiality targets `CSF1R`, `MDM2`, `AXL`), computes composite Treatability Index (`treatability_scores.csv`), exports arm allocation summary (`treatment_arm_summary.csv`), and generates 3-arm pie, treatability distribution, and waterfall plots (`arm_distribution_pie.png`, `arm_assignment_breakdown.png`, `treatability_index_distribution.png`, `treatability_waterfall.png`).
+> - **Core Supporting Python Modules**:
+>   - [`treatability.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/treatability.py): Implements 3-arm assignment rules (`assign_treatment_arms`), composite treatability scoring (`compute_treatability_index`), and treatability visualisations (`plot_arm_distribution_pie`, `plot_treatability_distribution`, `plot_treatability_waterfall`).
+>   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Central source of truth for 3-arm definitions (`TREATMENT_ARMS`), arm color palette (`TREATMENT_ARM_PALETTE`), and treatability weights (`TREATABILITY_WEIGHTS`).
+>   - [`reporting.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/reporting.py): Formats treatability summary tables and Obsidian markdown elements.
+> - **Shared Cross-Question & Pipeline Modules**:
+>   - [`q2-dabrafenib-dose-response`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q2-dabrafenib-dose-response): Q2 Hill equation dose-response model providing patient Dabrafenib sensitivity scores.
+>   - [`q4-essentiality-mapping`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q4-essentiality-mapping): Q4 DepMap CRISPR essentiality model providing nominated helper targets (`CSF1R`, `MDM2`, `AXL`).
+>   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `07_treatability_scoring.py` as Step 7.
+>   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles live statistical summaries and generates phase markdown reports.
