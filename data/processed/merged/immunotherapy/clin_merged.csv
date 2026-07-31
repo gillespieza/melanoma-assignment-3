@@ -1,327 +1,327 @@
-SAMPLE_ID,PATIENT_ID,COHORT,OS_MONTHS,OS_STATUS,RESPONSE,RESPONSE_BINARY,AGE,RACE,SEX,SPECIMEN_TYPE,IMMUNOTHERAPY
-LIU_SAMPLE1,LIU_PATIENT1,Liu 2019,9.3,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE10,LIU_PATIENT10,Liu 2019,37.42,1.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE100,LIU_PATIENT100,Liu 2019,30.81,1.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE102,LIU_PATIENT102,Liu 2019,25.79,0.0,Stable Disease,,,,Male,Metastatic,1
-LIU_SAMPLE105,LIU_PATIENT105,Liu 2019,17.12,1.0,Stable Disease,,,,Female,Metastatic,1
-LIU_SAMPLE106,LIU_PATIENT106,Liu 2019,25.62,0.0,Complete Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE107,LIU_PATIENT107,Liu 2019,1.54,1.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE108,LIU_PATIENT108,Liu 2019,5.42,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE11,LIU_PATIENT11,Liu 2019,5.26,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE112,LIU_PATIENT112,Liu 2019,17.12,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE116,LIU_PATIENT116,Liu 2019,3.88,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE117,LIU_PATIENT117,Liu 2019,9.69,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE121,LIU_PATIENT121,Liu 2019,42.9,0.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE125,LIU_PATIENT125,Liu 2019,32.13,0.0,Complete Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE126,LIU_PATIENT126,Liu 2019,32.59,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE127,LIU_PATIENT127,Liu 2019,28.45,0.0,Complete Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE13,LIU_PATIENT13,Liu 2019,1.91,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE130,LIU_PATIENT130,Liu 2019,6.31,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE131,LIU_PATIENT131,Liu 2019,27.37,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE132,LIU_PATIENT132,Liu 2019,24.28,0.0,Complete Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE133,LIU_PATIENT133,Liu 2019,12.16,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE134,LIU_PATIENT134,Liu 2019,19.38,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE135,LIU_PATIENT135,Liu 2019,20.63,0.0,Complete Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE137,LIU_PATIENT137,Liu 2019,25.36,0.0,Complete Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE14,LIU_PATIENT14,Liu 2019,6.11,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE140,LIU_PATIENT140,Liu 2019,11.53,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE141,LIU_PATIENT141,Liu 2019,28.75,0.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE142,LIU_PATIENT142,Liu 2019,32.72,0.0,Stable Disease,,,,Female,Metastatic,1
-LIU_SAMPLE143,LIU_PATIENT143,Liu 2019,20.7,0.0,Progressive Disease,0.0,,,Male,N/A,1
-LIU_SAMPLE144,LIU_PATIENT144,Liu 2019,21.75,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE145,LIU_PATIENT145,Liu 2019,27.37,0.0,Complete Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE146,LIU_PATIENT146,Liu 2019,20.11,0.0,Complete Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE147,LIU_PATIENT147,Liu 2019,31.54,0.0,Complete Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE148,LIU_PATIENT148,Liu 2019,26.02,0.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE149,LIU_PATIENT149,Liu 2019,16.33,1.0,Stable Disease,,,,Male,Metastatic,1
-LIU_SAMPLE15,LIU_PATIENT15,Liu 2019,4.89,1.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE150,LIU_PATIENT150,Liu 2019,22.5,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE154,LIU_PATIENT154,Liu 2019,20.86,0.0,Stable Disease,,,,Female,N/A,1
-LIU_SAMPLE155,LIU_PATIENT155,Liu 2019,15.6,0.0,Progressive Disease,0.0,,,Male,N/A,1
-LIU_SAMPLE156,LIU_PATIENT156,Liu 2019,2.86,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE158,LIU_PATIENT158,Liu 2019,6.37,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE159,LIU_PATIENT159,Liu 2019,9.46,0.0,Stable Disease,,,,Female,Metastatic,1
-LIU_SAMPLE162,LIU_PATIENT162,Liu 2019,6.6,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE163,LIU_PATIENT163,Liu 2019,5.68,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE165,LIU_PATIENT165,Liu 2019,2.46,0.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE166,LIU_PATIENT166,Liu 2019,6.73,1.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE167,LIU_PATIENT167,Liu 2019,9.26,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE168,LIU_PATIENT168,Liu 2019,20.47,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE169,LIU_PATIENT169,Liu 2019,17.84,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE17,LIU_PATIENT17,Liu 2019,22.54,1.0,Stable Disease,,,,Male,Metastatic,1
-LIU_SAMPLE170,LIU_PATIENT170,Liu 2019,11.4,0.0,Stable Disease,,,,Male,N/A,1
-LIU_SAMPLE172,LIU_PATIENT172,Liu 2019,8.94,0.0,Stable Disease,,,,Male,N/A,1
-LIU_SAMPLE173,LIU_PATIENT173,Liu 2019,1.38,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE179,LIU_PATIENT179,Liu 2019,21.45,0.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE18,LIU_PATIENT18,Liu 2019,4.27,1.0,Progressive Disease,0.0,,,Male,N/A,1
-LIU_SAMPLE181,LIU_PATIENT181,Liu 2019,15.64,0.0,Complete Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE183,LIU_PATIENT183,Liu 2019,18.79,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE184,LIU_PATIENT184,Liu 2019,16.85,0.0,Complete Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE185,LIU_PATIENT185,Liu 2019,6.67,0.0,Stable Disease,,,,Male,Metastatic,1
-LIU_SAMPLE187,LIU_PATIENT187,Liu 2019,20.27,0.0,Complete Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE188,LIU_PATIENT188,Liu 2019,2.43,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE189,LIU_PATIENT189,Liu 2019,23.59,0.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE191,LIU_PATIENT191,Liu 2019,21.62,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE192,LIU_PATIENT192,Liu 2019,9.53,0.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE193,LIU_PATIENT193,Liu 2019,21.65,0.0,Stable Disease,,,,Female,N/A,1
-LIU_SAMPLE195,LIU_PATIENT195,Liu 2019,29.4,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE196,LIU_PATIENT196,Liu 2019,2.66,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE197,LIU_PATIENT197,Liu 2019,31.54,0.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE20,LIU_PATIENT20,Liu 2019,7.95,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE200,LIU_PATIENT200,Liu 2019,16.82,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE201,LIU_PATIENT201,Liu 2019,5.49,1.0,Progressive Disease,0.0,,,Male,N/A,1
-LIU_SAMPLE203,LIU_PATIENT203,Liu 2019,20.57,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE204,LIU_PATIENT204,Liu 2019,26.91,0.0,Complete Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE205,LIU_PATIENT205,Liu 2019,12.88,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE206,LIU_PATIENT206,Liu 2019,2.96,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE21,LIU_PATIENT21,Liu 2019,29.76,0.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE22,LIU_PATIENT22,Liu 2019,8.31,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE23,LIU_PATIENT23,Liu 2019,32.03,0.0,Progressive Disease,0.0,,,Male,N/A,1
-LIU_SAMPLE24,LIU_PATIENT24,Liu 2019,4.5,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE25,LIU_PATIENT25,Liu 2019,36.01,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE27,LIU_PATIENT27,Liu 2019,14.16,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE30,LIU_PATIENT30,Liu 2019,7.0,1.0,Stable Disease,,,,Female,Metastatic,1
-LIU_SAMPLE31,LIU_PATIENT31,Liu 2019,13.99,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE32,LIU_PATIENT32,Liu 2019,1.74,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE33,LIU_PATIENT33,Liu 2019,55.16,0.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE34,LIU_PATIENT34,Liu 2019,55.55,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE35,LIU_PATIENT35,Liu 2019,31.8,1.0,Stable Disease,,,,Male,Metastatic,1
-LIU_SAMPLE36,LIU_PATIENT36,Liu 2019,14.82,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE37,LIU_PATIENT37,Liu 2019,9.03,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE38,LIU_PATIENT38,Liu 2019,11.27,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE4,LIU_PATIENT4,Liu 2019,19.71,1.0,Complete Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE40,LIU_PATIENT40,Liu 2019,15.37,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE42,LIU_PATIENT42,Liu 2019,33.74,0.0,Complete Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE44,LIU_PATIENT44,Liu 2019,30.29,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE45,LIU_PATIENT45,Liu 2019,54.73,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE47,LIU_PATIENT47,Liu 2019,30.78,0.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE48,LIU_PATIENT48,Liu 2019,1.74,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE51,LIU_PATIENT51,Liu 2019,50.82,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE56,LIU_PATIENT56,Liu 2019,4.01,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE58,LIU_PATIENT58,Liu 2019,9.95,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE6,LIU_PATIENT6,Liu 2019,22.57,1.0,Stable Disease,,,,Female,Metastatic,1
-LIU_SAMPLE61,LIU_PATIENT61,Liu 2019,32.42,0.0,Stable Disease,,,,Female,Metastatic,1
-LIU_SAMPLE62,LIU_PATIENT62,Liu 2019,32.88,0.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE63,LIU_PATIENT63,Liu 2019,5.85,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE67,LIU_PATIENT67,Liu 2019,4.47,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE7,LIU_PATIENT7,Liu 2019,8.84,1.0,Stable Disease,,,,Male,Metastatic,1
-LIU_SAMPLE72,LIU_PATIENT72,Liu 2019,12.98,0.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE73,LIU_PATIENT73,Liu 2019,27.79,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE75,LIU_PATIENT75,Liu 2019,29.27,0.0,Partial Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE77,LIU_PATIENT77,Liu 2019,14.59,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE78,LIU_PATIENT78,Liu 2019,11.7,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE79,LIU_PATIENT79,Liu 2019,27.89,0.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE8,LIU_PATIENT8,Liu 2019,33.02,1.0,Stable Disease,,,,Male,Metastatic,1
-LIU_SAMPLE82,LIU_PATIENT82,Liu 2019,4.3,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE83,LIU_PATIENT83,Liu 2019,2.33,1.0,Progressive Disease,0.0,,,Male,Metastatic,1
-LIU_SAMPLE86,LIU_PATIENT86,Liu 2019,43.59,0.0,Stable Disease,,,,Male,Metastatic,1
-LIU_SAMPLE87,LIU_PATIENT87,Liu 2019,41.49,0.0,Partial Response,1.0,,,Female,Metastatic,1
-LIU_SAMPLE9,LIU_PATIENT9,Liu 2019,31.64,0.0,Progressive Disease,0.0,,,Female,N/A,1
-LIU_SAMPLE94,LIU_PATIENT94,Liu 2019,1.31,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE96,LIU_PATIENT96,Liu 2019,29.99,0.0,Complete Response,1.0,,,Male,Metastatic,1
-LIU_SAMPLE98,LIU_PATIENT98,Liu 2019,22.44,1.0,Progressive Disease,0.0,,,Female,Metastatic,1
-LIU_SAMPLE99,LIU_PATIENT99,Liu 2019,30.26,0.0,Partial Response,1.0,,,Male,Metastatic,1
-HUGO_PT1,HUGO_PT1,Hugo 2016,19.94,1.0,Progressive Disease,0.0,66.0,,Female,N/A,1
-HUGO_PT10,HUGO_PT10,Hugo 2016,12.71,0.0,Progressive Disease,0.0,60.0,,Male,N/A,1
-HUGO_PT12,HUGO_PT12,Hugo 2016,10.74,1.0,Progressive Disease,0.0,59.0,,Male,N/A,1
-HUGO_PT13,HUGO_PT13,Hugo 2016,30.12,0.0,Complete Response,1.0,53.0,,Female,N/A,1
-HUGO_PT14,HUGO_PT14,Hugo 2016,1.77,0.0,Progressive Disease,0.0,27.0,,Female,N/A,1
-HUGO_PT15,HUGO_PT15,Hugo 2016,32.19,1.0,Partial Response,1.0,70.0,,Male,N/A,1
-HUGO_PT16,HUGO_PT16,Hugo 2016,6.11,1.0,Progressive Disease,0.0,19.0,,Male,N/A,1
-HUGO_PT19,HUGO_PT19,Hugo 2016,34.82,0.0,Partial Response,1.0,45.0,,Male,N/A,1
-HUGO_PT2,HUGO_PT2,Hugo 2016,30.45,0.0,Partial Response,1.0,55.0,,Male,N/A,1
-HUGO_PT20,HUGO_PT20,Hugo 2016,11.07,1.0,Progressive Disease,0.0,63.0,,Female,N/A,1
-HUGO_PT22,HUGO_PT22,Hugo 2016,5.98,1.0,Progressive Disease,0.0,55.0,,Male,N/A,1
-HUGO_PT23,HUGO_PT23,Hugo 2016,3.38,1.0,Progressive Disease,0.0,63.0,,Male,N/A,1
-HUGO_PT25,HUGO_PT25,Hugo 2016,8.61,1.0,Progressive Disease,0.0,74.0,,Male,N/A,1
-HUGO_PT27,HUGO_PT27,Hugo 2016,18.0,0.0,Complete Response,1.0,83.0,,Male,N/A,1
-HUGO_PT28,HUGO_PT28,Hugo 2016,14.42,1.0,Partial Response,1.0,82.0,,Male,N/A,1
-HUGO_PT29,HUGO_PT29,Hugo 2016,8.84,1.0,Progressive Disease,0.0,84.0,,Male,N/A,1
-HUGO_PT31,HUGO_PT31,Hugo 2016,23.13,0.0,Progressive Disease,0.0,47.0,,Male,N/A,1
-HUGO_PT32,HUGO_PT32,Hugo 2016,5.62,1.0,Progressive Disease,0.0,47.0,,Male,N/A,1
-HUGO_PT35,HUGO_PT35,Hugo 2016,14.03,0.0,Partial Response,1.0,65.0,,Female,N/A,1
-HUGO_PT37,HUGO_PT37,Hugo 2016,11.96,0.0,Partial Response,1.0,70.0,,Female,N/A,1
-HUGO_PT38,HUGO_PT38,Hugo 2016,14.72,0.0,Partial Response,1.0,57.0,,Female,N/A,1
-HUGO_PT4,HUGO_PT4,Hugo 2016,31.14,0.0,Partial Response,1.0,62.0,,Male,N/A,1
-HUGO_PT5,HUGO_PT5,Hugo 2016,14.42,0.0,Partial Response,1.0,61.0,,Male,N/A,1
-HUGO_PT6,HUGO_PT6,Hugo 2016,28.98,0.0,Partial Response,1.0,51.0,,Male,N/A,1
-HUGO_PT7,HUGO_PT7,Hugo 2016,21.75,1.0,Progressive Disease,0.0,55.0,,Female,N/A,1
-HUGO_PT8,HUGO_PT8,Hugo 2016,,0.0,Complete Response,1.0,69.0,,Male,N/A,1
-HUGO_PT9,HUGO_PT9,Hugo 2016,34.63,0.0,Complete Response,1.0,68.0,,Male,N/A,1
-RIAZ_PT101_ON,RIAZ_PT101,Riaz 2017,27.4,0.0,Partial Response,1.0,47.0,White,Female,N/A,1
-RIAZ_PT101_PRE,RIAZ_PT101,Riaz 2017,27.4,0.0,Partial Response,1.0,47.0,White,Female,N/A,1
-RIAZ_PT103_ON,RIAZ_PT103,Riaz 2017,15.9,0.0,Progressive Disease,0.0,52.0,Asian,Female,N/A,1
-RIAZ_PT103_PRE,RIAZ_PT103,Riaz 2017,15.9,0.0,Progressive Disease,0.0,52.0,Asian,Female,N/A,1
-RIAZ_PT105_ON,RIAZ_PT105,Riaz 2017,,,,,,,N/A,N/A,1
-RIAZ_PT106_ON,RIAZ_PT106,Riaz 2017,2.99,1.0,Progressive Disease,0.0,53.0,White,Male,N/A,1
-RIAZ_PT106_PRE,RIAZ_PT106,Riaz 2017,2.99,1.0,Progressive Disease,0.0,53.0,White,Male,N/A,1
-RIAZ_PT108_ON,RIAZ_PT108,Riaz 2017,29.99,0.0,Stable Disease,,37.0,White,Female,N/A,1
-RIAZ_PT10_ON,RIAZ_PT10,Riaz 2017,8.41,1.0,Stable Disease,,81.0,White,Female,N/A,1
-RIAZ_PT10_PRE,RIAZ_PT10,Riaz 2017,8.41,1.0,Stable Disease,,81.0,White,Female,N/A,1
-RIAZ_PT11_ON,RIAZ_PT11,Riaz 2017,27.5,1.0,Progressive Disease,0.0,61.0,White,Female,N/A,1
-RIAZ_PT11_PRE,RIAZ_PT11,Riaz 2017,27.5,1.0,Progressive Disease,0.0,61.0,White,Female,N/A,1
-RIAZ_PT13_ON,RIAZ_PT13,Riaz 2017,9.2,1.0,Progressive Disease,0.0,67.0,White,Male,N/A,1
-RIAZ_PT16_ON,RIAZ_PT16,Riaz 2017,,,,,,,N/A,N/A,1
-RIAZ_PT17_ON,RIAZ_PT17,Riaz 2017,1.87,1.0,Progressive Disease,0.0,48.0,White,Female,N/A,1
-RIAZ_PT17_PRE,RIAZ_PT17,Riaz 2017,1.87,1.0,Progressive Disease,0.0,48.0,White,Female,N/A,1
-RIAZ_PT18_ON,RIAZ_PT18,Riaz 2017,35.25,0.0,Partial Response,1.0,53.0,White,Male,N/A,1
-RIAZ_PT18_PRE,RIAZ_PT18,Riaz 2017,35.25,0.0,Partial Response,1.0,53.0,White,Male,N/A,1
-RIAZ_PT1_ON,RIAZ_PT1,Riaz 2017,5.26,1.0,Progressive Disease,0.0,,,N/A,N/A,1
-RIAZ_PT1_PRE,RIAZ_PT1,Riaz 2017,5.26,1.0,Progressive Disease,0.0,,,N/A,N/A,1
-RIAZ_PT23_ON,RIAZ_PT23,Riaz 2017,1.71,1.0,,,53.0,White,Female,N/A,1
-RIAZ_PT23_PRE,RIAZ_PT23,Riaz 2017,1.71,1.0,,,53.0,White,Female,N/A,1
-RIAZ_PT24_PRE,RIAZ_PT24,Riaz 2017,4.89,0.0,Progressive Disease,0.0,63.0,White,Male,N/A,1
-RIAZ_PT26_ON,RIAZ_PT26,Riaz 2017,31.27,0.0,Stable Disease,,22.0,White,Female,N/A,1
-RIAZ_PT26_PRE,RIAZ_PT26,Riaz 2017,31.27,0.0,Stable Disease,,22.0,White,Female,N/A,1
-RIAZ_PT27_ON,RIAZ_PT27,Riaz 2017,15.6,1.0,Progressive Disease,0.0,65.0,White,Male,N/A,1
-RIAZ_PT27_PRE,RIAZ_PT27,Riaz 2017,15.6,1.0,Progressive Disease,0.0,65.0,White,Male,N/A,1
-RIAZ_PT28_ON,RIAZ_PT28,Riaz 2017,24.31,1.0,Progressive Disease,0.0,79.0,White,Female,N/A,1
-RIAZ_PT28_PRE,RIAZ_PT28,Riaz 2017,24.31,1.0,Progressive Disease,0.0,79.0,White,Female,N/A,1
-RIAZ_PT29_PRE,RIAZ_PT29,Riaz 2017,8.97,1.0,Progressive Disease,0.0,57.0,White,Female,N/A,1
-RIAZ_PT2_ON,RIAZ_PT2,Riaz 2017,9.03,1.0,Stable Disease,,,,N/A,N/A,1
-RIAZ_PT2_PRE,RIAZ_PT2,Riaz 2017,9.03,1.0,Stable Disease,,,,N/A,N/A,1
-RIAZ_PT30_ON,RIAZ_PT30,Riaz 2017,34.59,0.0,Complete Response,1.0,89.0,White,Female,N/A,1
-RIAZ_PT30_PRE,RIAZ_PT30,Riaz 2017,34.59,0.0,Complete Response,1.0,89.0,White,Female,N/A,1
-RIAZ_PT31_ON,RIAZ_PT31,Riaz 2017,31.57,0.0,Progressive Disease,0.0,56.0,White,Female,N/A,1
-RIAZ_PT31_PRE,RIAZ_PT31,Riaz 2017,31.57,0.0,Progressive Disease,0.0,56.0,White,Female,N/A,1
-RIAZ_PT32_ON,RIAZ_PT32,Riaz 2017,3.75,0.0,Progressive Disease,0.0,34.0,White,Male,N/A,1
-RIAZ_PT34_ON,RIAZ_PT34,Riaz 2017,27.4,0.0,Partial Response,1.0,71.0,White,Male,N/A,1
-RIAZ_PT34_PRE,RIAZ_PT34,Riaz 2017,27.4,0.0,Partial Response,1.0,71.0,White,Male,N/A,1
-RIAZ_PT35_ON,RIAZ_PT35,Riaz 2017,,,,,,,N/A,N/A,1
-RIAZ_PT36_ON,RIAZ_PT36,Riaz 2017,35.51,0.0,Stable Disease,,58.0,White,Male,N/A,1
-RIAZ_PT36_PRE,RIAZ_PT36,Riaz 2017,35.51,0.0,Stable Disease,,58.0,White,Male,N/A,1
-RIAZ_PT37_ON,RIAZ_PT37,Riaz 2017,21.22,1.0,Stable Disease,,63.0,White,Male,N/A,1
-RIAZ_PT37_PRE,RIAZ_PT37,Riaz 2017,21.22,1.0,Stable Disease,,63.0,White,Male,N/A,1
-RIAZ_PT38_ON,RIAZ_PT38,Riaz 2017,5.49,1.0,Stable Disease,,54.0,White,Female,N/A,1
-RIAZ_PT38_PRE,RIAZ_PT38,Riaz 2017,5.49,1.0,Stable Disease,,54.0,White,Female,N/A,1
-RIAZ_PT39_PRE,RIAZ_PT39,Riaz 2017,5.45,1.0,Progressive Disease,0.0,,,N/A,N/A,1
-RIAZ_PT3_ON,RIAZ_PT3,Riaz 2017,37.58,0.0,Partial Response,1.0,52.0,White,Male,N/A,1
-RIAZ_PT3_PRE,RIAZ_PT3,Riaz 2017,37.58,0.0,Partial Response,1.0,52.0,White,Male,N/A,1
-RIAZ_PT44_ON,RIAZ_PT44,Riaz 2017,35.91,0.0,Partial Response,1.0,61.0,White,Male,N/A,1
-RIAZ_PT44_PRE,RIAZ_PT44,Riaz 2017,35.91,0.0,Partial Response,1.0,61.0,White,Male,N/A,1
-RIAZ_PT46_ON,RIAZ_PT46,Riaz 2017,7.46,1.0,Progressive Disease,0.0,79.0,White,Male,N/A,1
-RIAZ_PT46_PRE,RIAZ_PT46,Riaz 2017,7.46,1.0,Progressive Disease,0.0,79.0,White,Male,N/A,1
-RIAZ_PT47_ON,RIAZ_PT47,Riaz 2017,23.59,1.0,Progressive Disease,0.0,52.0,White,Male,N/A,1
-RIAZ_PT47_PRE,RIAZ_PT47,Riaz 2017,23.59,1.0,Progressive Disease,0.0,52.0,White,Male,N/A,1
-RIAZ_PT48_ON,RIAZ_PT48,Riaz 2017,34.36,0.0,Complete Response,1.0,44.0,White,Male,N/A,1
-RIAZ_PT48_PRE,RIAZ_PT48,Riaz 2017,34.36,0.0,Complete Response,1.0,44.0,White,Male,N/A,1
-RIAZ_PT49_ON,RIAZ_PT49,Riaz 2017,27.17,0.0,Partial Response,1.0,52.0,White,Female,N/A,1
-RIAZ_PT49_PRE,RIAZ_PT49,Riaz 2017,27.17,0.0,Partial Response,1.0,52.0,White,Female,N/A,1
-RIAZ_PT4_ON,RIAZ_PT4,Riaz 2017,20.8,1.0,Stable Disease,,62.0,White,Female,N/A,1
-RIAZ_PT4_PRE,RIAZ_PT4,Riaz 2017,20.8,1.0,Stable Disease,,62.0,White,Female,N/A,1
-RIAZ_PT52_ON,RIAZ_PT52,Riaz 2017,15.64,1.0,Progressive Disease,0.0,45.0,White,Female,N/A,1
-RIAZ_PT52_PRE,RIAZ_PT52,Riaz 2017,15.64,1.0,Progressive Disease,0.0,45.0,White,Female,N/A,1
-RIAZ_PT58_ON,RIAZ_PT58,Riaz 2017,16.39,1.0,Stable Disease,,53.0,White,Female,N/A,1
-RIAZ_PT59_PRE,RIAZ_PT59,Riaz 2017,23.26,1.0,Stable Disease,,49.0,White,Female,N/A,1
-RIAZ_PT5_ON,RIAZ_PT5,Riaz 2017,7.29,1.0,Progressive Disease,0.0,58.0,White,Female,N/A,1
-RIAZ_PT5_PRE,RIAZ_PT5,Riaz 2017,7.29,1.0,Progressive Disease,0.0,58.0,White,Female,N/A,1
-RIAZ_PT62_ON,RIAZ_PT62,Riaz 2017,15.51,1.0,Progressive Disease,0.0,,,N/A,N/A,1
-RIAZ_PT62_PRE,RIAZ_PT62,Riaz 2017,15.51,1.0,Progressive Disease,0.0,,,N/A,N/A,1
-RIAZ_PT65_ON,RIAZ_PT65,Riaz 2017,22.73,0.0,Stable Disease,,63.0,White,Female,N/A,1
-RIAZ_PT65_PRE,RIAZ_PT65,Riaz 2017,22.73,0.0,Stable Disease,,63.0,White,Female,N/A,1
-RIAZ_PT66_PRE,RIAZ_PT66,Riaz 2017,17.81,1.0,Progressive Disease,0.0,49.0,White,Female,N/A,1
-RIAZ_PT67_ON,RIAZ_PT67,Riaz 2017,33.9,0.0,Stable Disease,,33.0,White,Female,N/A,1
-RIAZ_PT67_PRE,RIAZ_PT67,Riaz 2017,33.9,0.0,Stable Disease,,33.0,White,Female,N/A,1
-RIAZ_PT68_ON,RIAZ_PT68,Riaz 2017,27.66,0.0,Partial Response,1.0,69.0,White,Male,N/A,1
-RIAZ_PT69_ON,RIAZ_PT69,Riaz 2017,,,,,,,N/A,N/A,1
-RIAZ_PT72_PRE,RIAZ_PT72,Riaz 2017,25.3,1.0,Partial Response,1.0,43.0,White,Female,N/A,1
-RIAZ_PT76_PRE,RIAZ_PT76,Riaz 2017,0.33,1.0,,,60.0,White,Male,N/A,1
-RIAZ_PT77_ON,RIAZ_PT77,Riaz 2017,15.47,1.0,Stable Disease,,56.0,White,Female,N/A,1
-RIAZ_PT77_PRE,RIAZ_PT77,Riaz 2017,15.47,1.0,Stable Disease,,56.0,White,Female,N/A,1
-RIAZ_PT78_ON,RIAZ_PT78,Riaz 2017,2.56,1.0,Progressive Disease,0.0,,,N/A,N/A,1
-RIAZ_PT78_PRE,RIAZ_PT78,Riaz 2017,2.56,1.0,Progressive Disease,0.0,,,N/A,N/A,1
-RIAZ_PT79_ON,RIAZ_PT79,Riaz 2017,7.16,1.0,Stable Disease,,64.0,White,Male,N/A,1
-RIAZ_PT79_PRE,RIAZ_PT79,Riaz 2017,7.16,1.0,Stable Disease,,64.0,White,Male,N/A,1
-RIAZ_PT80_ON,RIAZ_PT80,Riaz 2017,,,,,,,N/A,N/A,1
-RIAZ_PT81_ON,RIAZ_PT81,Riaz 2017,,,,,,,N/A,N/A,1
-RIAZ_PT82_ON,RIAZ_PT82,Riaz 2017,14.09,1.0,Stable Disease,,60.0,White,Female,N/A,1
-RIAZ_PT82_PRE,RIAZ_PT82,Riaz 2017,14.09,1.0,Stable Disease,,60.0,White,Female,N/A,1
-RIAZ_PT84_ON,RIAZ_PT84,Riaz 2017,4.96,1.0,Progressive Disease,0.0,48.0,White,Female,N/A,1
-RIAZ_PT84_PRE,RIAZ_PT84,Riaz 2017,4.96,1.0,Progressive Disease,0.0,48.0,White,Female,N/A,1
-RIAZ_PT85_ON,RIAZ_PT85,Riaz 2017,29.7,0.0,Progressive Disease,0.0,66.0,White,Male,N/A,1
-RIAZ_PT85_PRE,RIAZ_PT85,Riaz 2017,29.7,0.0,Progressive Disease,0.0,66.0,White,Male,N/A,1
-RIAZ_PT87_ON,RIAZ_PT87,Riaz 2017,32.0,0.0,Stable Disease,,68.0,White,Male,N/A,1
-RIAZ_PT89_ON,RIAZ_PT89,Riaz 2017,27.73,1.0,Stable Disease,,56.0,White,Male,N/A,1
-RIAZ_PT89_PRE,RIAZ_PT89,Riaz 2017,27.73,1.0,Stable Disease,,56.0,White,Male,N/A,1
-RIAZ_PT8_ON,RIAZ_PT8,Riaz 2017,8.51,1.0,Progressive Disease,0.0,40.0,White,Male,N/A,1
-RIAZ_PT8_PRE,RIAZ_PT8,Riaz 2017,8.51,1.0,Progressive Disease,0.0,40.0,White,Male,N/A,1
-RIAZ_PT90_PRE,RIAZ_PT90,Riaz 2017,5.72,1.0,Progressive Disease,0.0,60.0,White,Female,N/A,1
-RIAZ_PT92_ON,RIAZ_PT92,Riaz 2017,10.94,1.0,Stable Disease,,58.0,White,Male,N/A,1
-RIAZ_PT92_PRE,RIAZ_PT92,Riaz 2017,10.94,1.0,Stable Disease,,58.0,White,Male,N/A,1
-RIAZ_PT93_ON,RIAZ_PT93,Riaz 2017,27.89,0.0,Progressive Disease,0.0,52.0,White,Male,N/A,1
-RIAZ_PT94_ON,RIAZ_PT94,Riaz 2017,32.23,0.0,Complete Response,1.0,41.0,White,Male,N/A,1
-RIAZ_PT94_PRE,RIAZ_PT94,Riaz 2017,32.23,0.0,Complete Response,1.0,41.0,White,Male,N/A,1
-RIAZ_PT98_ON,RIAZ_PT98,Riaz 2017,24.54,1.0,Stable Disease,,74.0,White,Male,N/A,1
-RIAZ_PT98_PRE,RIAZ_PT98,Riaz 2017,24.54,1.0,Stable Disease,,74.0,White,Male,N/A,1
-RIAZ_PT9_ON,RIAZ_PT9,Riaz 2017,3.02,1.0,Progressive Disease,0.0,46.0,White,Male,N/A,1
-RIAZ_PT9_PRE,RIAZ_PT9,Riaz 2017,3.02,1.0,Progressive Disease,0.0,46.0,White,Male,N/A,1
-TCGA-D3-A1Q1-06,TCGA-D3-A1Q1,TCGA-SKCM,16.56968143,1.0,,,79.0,White,Female,Metastatic,1
-TCGA-D3-A1Q6-06,TCGA-D3-A1Q6,TCGA-SKCM,71.80195286,1.0,,,55.0,White,Male,Metastatic,1
-TCGA-D3-A2JC-06,TCGA-D3-A2JC,TCGA-SKCM,86.76069303,0.0,,,53.0,White,Female,Metastatic,1
-TCGA-D3-A2JH-06,TCGA-D3-A2JH,TCGA-SKCM,42.08173061,0.0,,,68.0,White,Male,Metastatic,1
-TCGA-D3-A2JN-06,TCGA-D3-A2JN,TCGA-SKCM,66.47598383,1.0,,,46.0,White,Female,Metastatic,1
-TCGA-D3-A2JP-06,TCGA-D3-A2JP,TCGA-SKCM,59.5719499,0.0,,,37.0,White,Male,Metastatic,1
-TCGA-D3-A3C7-06,TCGA-D3-A3C7,TCGA-SKCM,46.98030707,0.0,,,57.0,White,Female,Metastatic,1
-TCGA-D3-A3MV-06,TCGA-D3-A3MV,TCGA-SKCM,45.30361311,0.0,,,38.0,White,Female,Metastatic,1
-TCGA-D3-A5GT-01,TCGA-D3-A5GT,TCGA-SKCM,16.01078344,0.0,,,43.0,White,Male,Primary,1
-TCGA-D3-A8GB-06,TCGA-D3-A8GB,TCGA-SKCM,30.83801821,1.0,,,48.0,White,Male,Metastatic,1
-TCGA-D3-A8GN-06,TCGA-D3-A8GN,TCGA-SKCM,160.9954959,0.0,,,27.0,White,Female,Metastatic,1
-TCGA-D9-A148-06,TCGA-D9-A148,TCGA-SKCM,151.5271066,0.0,,,40.0,White,Male,Metastatic,1
-TCGA-DA-A1I1-06,TCGA-DA-A1I1,TCGA-SKCM,222.5071506,0.0,,,55.0,White,Male,Metastatic,1
-TCGA-DA-A3F2-06,TCGA-DA-A3F2,TCGA-SKCM,33.92839531,1.0,,,55.0,White,Male,Metastatic,1
-TCGA-DA-A3F5-06,TCGA-DA-A3F5,TCGA-SKCM,225.9591676,1.0,,,45.0,White,Male,Metastatic,1
-TCGA-EB-A24C-01,TCGA-EB-A24C,TCGA-SKCM,20.77785449,0.0,,,56.0,White,Male,Primary,1
-TCGA-EB-A24D-01,TCGA-EB-A24D,TCGA-SKCM,21.20524707,0.0,,,72.0,White,Male,Primary,1
-TCGA-EB-A57M-01,TCGA-EB-A57M,TCGA-SKCM,15.51763816,1.0,,,56.0,Asian,Male,Primary,1
-TCGA-EB-A5KH-06,TCGA-EB-A5KH,TCGA-SKCM,20.35046191,1.0,,,55.0,Asian,Male,Metastatic,1
-TCGA-EB-A5SH-06,TCGA-EB-A5SH,TCGA-SKCM,54.0158464,0.0,,,60.0,White,Female,Metastatic,1
-TCGA-EB-A6QY-01,TCGA-EB-A6QY,TCGA-SKCM,12.55876648,0.0,,,71.0,White,Male,Primary,1
-TCGA-EE-A29C-06,TCGA-EE-A29C,TCGA-SKCM,78.9689976,1.0,,,20.0,White,Male,Metastatic,1
-TCGA-EE-A2GS-06,TCGA-EE-A2GS,TCGA-SKCM,81.20458954,1.0,,,28.0,White,Female,Metastatic,1
-TCGA-EE-A2ML-06,TCGA-EE-A2ML,TCGA-SKCM,216.6551599,1.0,,,35.0,White,Male,Metastatic,1
-TCGA-EE-A3JI-06,TCGA-EE-A3JI,TCGA-SKCM,152.8092843,1.0,,,48.0,White,Male,Metastatic,1
-TCGA-ER-A195-06,TCGA-ER-A195,TCGA-SKCM,35.4407075,1.0,,,46.0,White,Male,Metastatic,1
-TCGA-ER-A19M-06,TCGA-ER-A19M,TCGA-SKCM,61.05138574,1.0,,,36.0,White,Male,Metastatic,1
-TCGA-ER-A19N-06,TCGA-ER-A19N,TCGA-SKCM,44.08718809,1.0,,,47.0,White,Male,Metastatic,1
-TCGA-ER-A19O-06,TCGA-ER-A19O,TCGA-SKCM,,1.0,,,56.0,White,Male,Metastatic,1
-TCGA-ER-A19Q-06,TCGA-ER-A19Q,TCGA-SKCM,50.89259296,1.0,,,37.0,White,Female,Metastatic,1
-TCGA-ER-A1A1-06,TCGA-ER-A1A1,TCGA-SKCM,105.0728211,0.0,,,58.0,White,Male,Metastatic,1
-TCGA-ER-A2NF-01,TCGA-ER-A2NF,TCGA-SKCM,28.83256074,1.0,,,53.0,White,Male,Primary,1
-TCGA-ER-A2NF-06,TCGA-ER-A2NF,TCGA-SKCM,28.83256074,1.0,,,53.0,White,Male,Metastatic,1
-TCGA-ER-A2NG-06,TCGA-ER-A2NG,TCGA-SKCM,48.98576454,1.0,,,43.0,White,Female,Metastatic,1
-TCGA-FR-A3YN-06,TCGA-FR-A3YN,TCGA-SKCM,92.97432357,0.0,,,44.0,White,Male,Metastatic,1
-TCGA-FR-A44A-06,TCGA-FR-A44A,TCGA-SKCM,174.2117895,0.0,,,29.0,White,Female,Metastatic,1
-TCGA-FR-A69P-06,TCGA-FR-A69P,TCGA-SKCM,15.71489628,0.0,,,34.0,White,Female,Metastatic,1
-TCGA-FR-A729-06,TCGA-FR-A729,TCGA-SKCM,220.7975803,0.0,,,38.0,White,Female,Metastatic,1
-TCGA-FR-A7U8-06,TCGA-FR-A7U8,TCGA-SKCM,27.84627018,0.0,,,50.0,White,Male,Metastatic,1
-TCGA-FR-A7U9-06,TCGA-FR-A7U9,TCGA-SKCM,18.77239702,0.0,,,63.0,White,Female,Metastatic,1
-TCGA-FR-A8YD-06,TCGA-FR-A8YD,TCGA-SKCM,36.2626163,1.0,,,56.0,White,Female,Metastatic,1
-TCGA-FS-A1ZS-06,TCGA-FS-A1ZS,TCGA-SKCM,148.7983693,0.0,,,54.0,White,Male,Metastatic,1
-TCGA-FS-A1ZT-06,TCGA-FS-A1ZT,TCGA-SKCM,53.16106125,0.0,,,55.0,White,Male,Metastatic,1
-TCGA-FS-A1ZW-06,TCGA-FS-A1ZW,TCGA-SKCM,49.47890982,0.0,,,65.0,White,Male,Metastatic,1
-TCGA-FS-A4F0-06,TCGA-FS-A4F0,TCGA-SKCM,77.81832528,0.0,,,67.0,White,Female,Metastatic,1
-TCGA-FW-A3R5-06,TCGA-FW-A3R5,TCGA-SKCM,36.95301969,0.0,,,68.0,White,Male,Metastatic,1
-TCGA-FW-A3TV-06,TCGA-FW-A3TV,TCGA-SKCM,13.51218069,0.0,,,57.0,White,Female,Metastatic,1
-TCGA-GF-A3OT-06,TCGA-GF-A3OT,TCGA-SKCM,9.895781964,0.0,,,58.0,White,Female,Metastatic,1
-TCGA-GN-A264-06,TCGA-GN-A264,TCGA-SKCM,117.9274748,1.0,,,60.0,White,Male,Metastatic,1
-TCGA-GN-A4U3-06,TCGA-GN-A4U3,TCGA-SKCM,121.9055134,0.0,,,30.0,White,Male,Metastatic,1
-TCGA-GN-A4U4-06,TCGA-GN-A4U4,TCGA-SKCM,39.35299339,0.0,,,73.0,White,Male,Metastatic,1
-TCGA-GN-A4U5-01,TCGA-GN-A4U5,TCGA-SKCM,38.00506296,0.0,,,61.0,White,Female,Primary,1
-TCGA-GN-A4U8-06,TCGA-GN-A4U8,TCGA-SKCM,48.88713548,0.0,,,51.0,White,Male,Metastatic,1
-TCGA-GN-A4U9-06,TCGA-GN-A4U9,TCGA-SKCM,22.12578492,1.0,,,71.0,White,Male,Metastatic,1
-TCGA-HR-A2OH-06,TCGA-HR-A2OH,TCGA-SKCM,65.88420949,1.0,,,46.0,,Female,Metastatic,1
-TCGA-QB-AA9O-06,TCGA-QB-AA9O,TCGA-SKCM,18.04911727,1.0,,,73.0,White,Male,Metastatic,1
-TCGA-W3-A824-06,TCGA-W3-A824,TCGA-SKCM,228.1618832,0.0,,,63.0,White,Male,Metastatic,1
-TCGA-W3-A825-06,TCGA-W3-A825,TCGA-SKCM,63.02396686,1.0,,,60.0,White,Female,Metastatic,1
-TCGA-W3-A828-06,TCGA-W3-A828,TCGA-SKCM,121.0836046,1.0,,,66.0,White,Male,Metastatic,1
-TCGA-W3-AA1Q-06,TCGA-W3-AA1Q,TCGA-SKCM,69.07321564,1.0,,,57.0,White,Male,Metastatic,1
-TCGA-W3-AA1R-06,TCGA-W3-AA1R,TCGA-SKCM,111.0891935,1.0,,,71.0,White,Male,Metastatic,1
-TCGA-W3-AA1V-06,TCGA-W3-AA1V,TCGA-SKCM,42.08173061,1.0,,,63.0,White,Male,Metastatic,1
-TCGA-W3-AA1W-06,TCGA-W3-AA1W,TCGA-SKCM,219.1537627,0.0,,,64.0,White,Male,Metastatic,1
-TCGA-W3-AA21-06,TCGA-W3-AA21,TCGA-SKCM,105.0399448,1.0,,,26.0,White,Male,Metastatic,1
-TCGA-WE-A8ZM-06,TCGA-WE-A8ZM,TCGA-SKCM,101.324917,0.0,,,70.0,White,Male,Metastatic,1
-TCGA-WE-AAA0-06,TCGA-WE-AAA0,TCGA-SKCM,40.40503666,0.0,,,47.0,White,Male,Metastatic,1
-TCGA-WE-AAA4-06,TCGA-WE-AAA4,TCGA-SKCM,24.98602755,0.0,,,56.0,White,Female,Metastatic,1
-TCGA-XV-AB01-06,TCGA-XV-AB01,TCGA-SKCM,13.24916987,0.0,,,54.0,White,Female,Metastatic,1
-TCGA-YG-AA3O-06,TCGA-YG-AA3O,TCGA-SKCM,37.93931025,1.0,,,62.0,,Male,Metastatic,1
-TCGA-YG-AA3P-06,TCGA-YG-AA3P,TCGA-SKCM,14.43271855,0.0,,,63.0,,Female,Metastatic,1
+SAMPLE_ID,PATIENT_ID,COHORT,OS_MONTHS,OS_STATUS,RESPONSE,RESPONSE_BINARY,AGE,RACE,SEX,SPECIMEN_TYPE,IMMUNOTHERAPY,TMB_NONSYNONYMOUS,SNV_NEOANTIGEN,INDEL_NEOANTIGEN,FUSION_NEOANTIGEN,SPLICE_NEOANTIGEN,CTA_SELF_NEOANTIGEN,VIRUS_NEOANTIGEN,ERV_NEOANTIGEN,ANEUPLOIDY_SCORE,MSI_SCORE_MANTIS,MSI_SENSOR_SCORE
+LIU_SAMPLE1,LIU_PATIENT1,Liu 2019,9.3,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,3.133333333,52.0,2.0,4.0,51.0,2.0,0.0,0.0,,,
+LIU_SAMPLE10,LIU_PATIENT10,Liu 2019,37.42,1.0,Partial Response,1.0,,,Female,Metastatic,1,3.733333333,63.0,1.0,1.0,43.0,6.0,0.0,0.0,,,
+LIU_SAMPLE100,LIU_PATIENT100,Liu 2019,30.81,1.0,Partial Response,1.0,,,Female,Metastatic,1,4.466666667,39.0,1.0,1.0,85.0,5.0,0.0,0.0,,,
+LIU_SAMPLE102,LIU_PATIENT102,Liu 2019,25.79,0.0,Stable Disease,,,,Male,Metastatic,1,8.7,68.0,1.0,0.0,43.0,18.0,0.0,0.0,,,
+LIU_SAMPLE105,LIU_PATIENT105,Liu 2019,17.12,1.0,Stable Disease,,,,Female,Metastatic,1,5.166666667,16.0,0.0,0.0,81.0,3.0,0.0,0.0,,,
+LIU_SAMPLE106,LIU_PATIENT106,Liu 2019,25.62,0.0,Complete Response,1.0,,,Female,Metastatic,1,8.3,64.0,3.0,3.0,32.0,10.0,0.0,0.0,,,
+LIU_SAMPLE107,LIU_PATIENT107,Liu 2019,1.54,1.0,Partial Response,1.0,,,Male,Metastatic,1,5.7,2.0,0.0,0.0,2.0,0.0,0.0,0.0,,,
+LIU_SAMPLE108,LIU_PATIENT108,Liu 2019,5.42,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,7.733333333,4.0,0.0,0.0,45.0,2.0,0.0,0.0,,,
+LIU_SAMPLE11,LIU_PATIENT11,Liu 2019,5.26,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,7.533333333,89.0,7.0,7.0,28.0,11.0,0.0,0.0,,,
+LIU_SAMPLE112,LIU_PATIENT112,Liu 2019,17.12,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,8.366666667,46.0,3.0,0.0,14.0,1.0,0.0,0.0,,,
+LIU_SAMPLE116,LIU_PATIENT116,Liu 2019,3.88,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,8.066666667,58.0,0.0,4.0,47.0,16.0,0.0,0.0,,,
+LIU_SAMPLE117,LIU_PATIENT117,Liu 2019,9.69,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,3.7,24.0,4.0,8.0,41.0,6.0,0.0,0.0,,,
+LIU_SAMPLE121,LIU_PATIENT121,Liu 2019,42.9,0.0,Partial Response,1.0,,,Female,Metastatic,1,28.5,261.0,9.0,0.0,48.0,4.0,0.0,0.0,,,
+LIU_SAMPLE125,LIU_PATIENT125,Liu 2019,32.13,0.0,Complete Response,1.0,,,Male,Metastatic,1,6.333333333,21.0,5.0,1.0,43.0,4.0,0.0,0.0,,,
+LIU_SAMPLE126,LIU_PATIENT126,Liu 2019,32.59,0.0,Partial Response,1.0,,,Male,Metastatic,1,22.23333333,205.0,4.0,4.0,49.0,10.0,0.0,0.0,,,
+LIU_SAMPLE127,LIU_PATIENT127,Liu 2019,28.45,0.0,Complete Response,1.0,,,Male,Metastatic,1,17.86666667,92.0,10.0,2.0,21.0,17.0,0.0,0.0,,,
+LIU_SAMPLE13,LIU_PATIENT13,Liu 2019,1.91,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,22.5,198.0,5.0,5.0,44.0,8.0,0.0,0.0,,,
+LIU_SAMPLE130,LIU_PATIENT130,Liu 2019,6.31,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,10.96666667,58.0,0.0,3.0,15.0,3.0,0.0,0.0,,,
+LIU_SAMPLE131,LIU_PATIENT131,Liu 2019,27.37,0.0,Partial Response,1.0,,,Male,Metastatic,1,11.8,32.0,3.0,0.0,48.0,2.0,0.0,0.0,,,
+LIU_SAMPLE132,LIU_PATIENT132,Liu 2019,24.28,0.0,Complete Response,1.0,,,Male,Metastatic,1,22.43333333,116.0,3.0,1.0,20.0,15.0,0.0,0.0,,,
+LIU_SAMPLE133,LIU_PATIENT133,Liu 2019,12.16,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,11.76666667,84.0,4.0,1.0,88.0,3.0,0.0,0.0,,,
+LIU_SAMPLE134,LIU_PATIENT134,Liu 2019,19.38,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,12.5,92.0,2.0,0.0,50.0,7.0,0.0,0.0,,,
+LIU_SAMPLE135,LIU_PATIENT135,Liu 2019,20.63,0.0,Complete Response,1.0,,,Male,Metastatic,1,14.0,105.0,0.0,0.0,48.0,24.0,0.0,0.0,,,
+LIU_SAMPLE137,LIU_PATIENT137,Liu 2019,25.36,0.0,Complete Response,1.0,,,Female,Metastatic,1,29.26666667,112.0,0.0,0.0,48.0,1.0,0.0,0.0,,,
+LIU_SAMPLE14,LIU_PATIENT14,Liu 2019,6.11,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,2.633333333,30.0,0.0,3.0,50.0,9.0,0.0,0.0,,,
+LIU_SAMPLE140,LIU_PATIENT140,Liu 2019,11.53,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,71.5,577.0,7.0,3.0,55.0,5.0,0.0,0.0,,,
+LIU_SAMPLE141,LIU_PATIENT141,Liu 2019,28.75,0.0,Partial Response,1.0,,,Female,Metastatic,1,2.633333333,23.0,0.0,0.0,40.0,1.0,0.0,0.0,,,
+LIU_SAMPLE142,LIU_PATIENT142,Liu 2019,32.72,0.0,Stable Disease,,,,Female,Metastatic,1,2.366666667,19.0,0.0,1.0,76.0,4.0,0.0,0.0,,,
+LIU_SAMPLE143,LIU_PATIENT143,Liu 2019,20.7,0.0,Progressive Disease,0.0,,,Male,N/A,1,13.06666667,68.0,2.0,0.0,44.0,4.0,0.0,0.0,,,
+LIU_SAMPLE144,LIU_PATIENT144,Liu 2019,21.75,0.0,Partial Response,1.0,,,Male,Metastatic,1,30.0,62.0,3.0,0.0,63.0,6.0,0.0,0.0,,,
+LIU_SAMPLE145,LIU_PATIENT145,Liu 2019,27.37,0.0,Complete Response,1.0,,,Male,Metastatic,1,10.66666667,58.0,1.0,0.0,34.0,5.0,0.0,0.0,,,
+LIU_SAMPLE146,LIU_PATIENT146,Liu 2019,20.11,0.0,Complete Response,1.0,,,Female,Metastatic,1,13.86666667,119.0,5.0,1.0,32.0,12.0,0.0,0.0,,,
+LIU_SAMPLE147,LIU_PATIENT147,Liu 2019,31.54,0.0,Complete Response,1.0,,,Male,Metastatic,1,18.6,137.0,1.0,0.0,14.0,5.0,0.0,0.0,,,
+LIU_SAMPLE148,LIU_PATIENT148,Liu 2019,26.02,0.0,Partial Response,1.0,,,Female,Metastatic,1,11.36666667,62.0,1.0,3.0,53.0,6.0,0.0,0.0,,,
+LIU_SAMPLE149,LIU_PATIENT149,Liu 2019,16.33,1.0,Stable Disease,,,,Male,Metastatic,1,8.033333333,52.0,1.0,0.0,66.0,5.0,0.0,0.0,,,
+LIU_SAMPLE15,LIU_PATIENT15,Liu 2019,4.89,1.0,Partial Response,1.0,,,Female,Metastatic,1,9.066666667,56.0,0.0,3.0,46.0,6.0,0.0,0.0,,,
+LIU_SAMPLE150,LIU_PATIENT150,Liu 2019,22.5,0.0,Partial Response,1.0,,,Male,Metastatic,1,1.666666667,13.0,3.0,5.0,32.0,10.0,0.0,0.0,,,
+LIU_SAMPLE154,LIU_PATIENT154,Liu 2019,20.86,0.0,Stable Disease,,,,Female,N/A,1,1.0,17.0,0.0,0.0,21.0,9.0,0.0,0.0,,,
+LIU_SAMPLE155,LIU_PATIENT155,Liu 2019,15.6,0.0,Progressive Disease,0.0,,,Male,N/A,1,9.233333333,60.0,2.0,0.0,9.0,9.0,0.0,0.0,,,
+LIU_SAMPLE156,LIU_PATIENT156,Liu 2019,2.86,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,7.0,72.0,0.0,3.0,69.0,15.0,0.0,0.0,,,
+LIU_SAMPLE158,LIU_PATIENT158,Liu 2019,6.37,0.0,Partial Response,1.0,,,Male,Metastatic,1,75.3,680.0,39.0,2.0,33.0,9.0,0.0,0.0,,,
+LIU_SAMPLE159,LIU_PATIENT159,Liu 2019,9.46,0.0,Stable Disease,,,,Female,Metastatic,1,2.2,24.0,2.0,12.0,89.0,14.0,0.0,0.0,,,
+LIU_SAMPLE162,LIU_PATIENT162,Liu 2019,6.6,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,56.63333333,299.0,3.0,4.0,18.0,6.0,0.0,0.0,,,
+LIU_SAMPLE163,LIU_PATIENT163,Liu 2019,5.68,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,7.733333333,57.0,3.0,1.0,52.0,6.0,0.0,0.0,,,
+LIU_SAMPLE165,LIU_PATIENT165,Liu 2019,2.46,0.0,Progressive Disease,0.0,,,Male,Metastatic,1,24.06666667,226.0,4.0,1.0,109.0,12.0,0.0,0.0,,,
+LIU_SAMPLE166,LIU_PATIENT166,Liu 2019,6.73,1.0,Partial Response,1.0,,,Female,Metastatic,1,0.366666667,7.0,0.0,8.0,23.0,9.0,0.0,0.0,,,
+LIU_SAMPLE167,LIU_PATIENT167,Liu 2019,9.26,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,0.966666667,5.0,1.0,6.0,29.0,8.0,0.0,0.0,,,
+LIU_SAMPLE168,LIU_PATIENT168,Liu 2019,20.47,0.0,Partial Response,1.0,,,Male,Metastatic,1,0.8,11.0,0.0,2.0,53.0,21.0,0.0,0.0,,,
+LIU_SAMPLE169,LIU_PATIENT169,Liu 2019,17.84,0.0,Partial Response,1.0,,,Male,Metastatic,1,48.6,336.0,5.0,2.0,21.0,14.0,0.0,0.0,,,
+LIU_SAMPLE17,LIU_PATIENT17,Liu 2019,22.54,1.0,Stable Disease,,,,Male,Metastatic,1,15.36666667,97.0,7.0,6.0,51.0,5.0,0.0,0.0,,,
+LIU_SAMPLE170,LIU_PATIENT170,Liu 2019,11.4,0.0,Stable Disease,,,,Male,N/A,1,2.5,22.0,1.0,10.0,3.0,14.0,0.0,0.0,,,
+LIU_SAMPLE172,LIU_PATIENT172,Liu 2019,8.94,0.0,Stable Disease,,,,Male,N/A,1,23.73333333,126.0,5.0,0.0,32.0,7.0,0.0,0.0,,,
+LIU_SAMPLE173,LIU_PATIENT173,Liu 2019,1.38,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,5.8,65.0,2.0,13.0,54.0,14.0,0.0,0.0,,,
+LIU_SAMPLE179,LIU_PATIENT179,Liu 2019,21.45,0.0,Partial Response,1.0,,,Female,Metastatic,1,16.3,52.0,0.0,1.0,16.0,2.0,0.0,0.0,,,
+LIU_SAMPLE18,LIU_PATIENT18,Liu 2019,4.27,1.0,Progressive Disease,0.0,,,Male,N/A,1,13.93333333,116.0,0.0,4.0,45.0,11.0,0.0,0.0,,,
+LIU_SAMPLE181,LIU_PATIENT181,Liu 2019,15.64,0.0,Complete Response,1.0,,,Female,Metastatic,1,10.7,69.0,3.0,1.0,79.0,10.0,0.0,0.0,,,
+LIU_SAMPLE183,LIU_PATIENT183,Liu 2019,18.79,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,12.06666667,19.0,1.0,0.0,41.0,3.0,0.0,0.0,,,
+LIU_SAMPLE184,LIU_PATIENT184,Liu 2019,16.85,0.0,Complete Response,1.0,,,Male,Metastatic,1,71.66666667,61.0,1.0,0.0,9.0,1.0,0.0,0.0,,,
+LIU_SAMPLE185,LIU_PATIENT185,Liu 2019,6.67,0.0,Stable Disease,,,,Male,Metastatic,1,6.133333333,17.0,1.0,0.0,42.0,2.0,0.0,0.0,,,
+LIU_SAMPLE187,LIU_PATIENT187,Liu 2019,20.27,0.0,Complete Response,1.0,,,Female,Metastatic,1,4.9,37.0,1.0,0.0,42.0,18.0,0.0,0.0,,,
+LIU_SAMPLE188,LIU_PATIENT188,Liu 2019,2.43,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,1.266666667,13.0,0.0,2.0,19.0,25.0,0.0,0.0,,,
+LIU_SAMPLE189,LIU_PATIENT189,Liu 2019,23.59,0.0,Partial Response,1.0,,,Female,Metastatic,1,1.666666667,12.0,0.0,1.0,121.0,5.0,0.0,0.0,,,
+LIU_SAMPLE191,LIU_PATIENT191,Liu 2019,21.62,0.0,Partial Response,1.0,,,Male,Metastatic,1,143.1,966.0,2.0,2.0,34.0,8.0,0.0,0.0,,,
+LIU_SAMPLE192,LIU_PATIENT192,Liu 2019,9.53,0.0,Partial Response,1.0,,,Female,Metastatic,1,17.3,115.0,4.0,3.0,65.0,6.0,0.0,0.0,,,
+LIU_SAMPLE193,LIU_PATIENT193,Liu 2019,21.65,0.0,Stable Disease,,,,Female,N/A,1,21.76666667,138.0,2.0,1.0,26.0,11.0,0.0,0.0,,,
+LIU_SAMPLE195,LIU_PATIENT195,Liu 2019,29.4,0.0,Partial Response,1.0,,,Male,Metastatic,1,66.03333333,436.0,5.0,3.0,43.0,7.0,0.0,0.0,,,
+LIU_SAMPLE196,LIU_PATIENT196,Liu 2019,2.66,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,58.4,388.0,4.0,4.0,50.0,5.0,0.0,0.0,,,
+LIU_SAMPLE197,LIU_PATIENT197,Liu 2019,31.54,0.0,Partial Response,1.0,,,Female,Metastatic,1,2.5,14.0,1.0,4.0,40.0,10.0,0.0,0.0,,,
+LIU_SAMPLE20,LIU_PATIENT20,Liu 2019,7.95,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,16.33333333,98.0,1.0,2.0,32.0,6.0,0.0,0.0,,,
+LIU_SAMPLE200,LIU_PATIENT200,Liu 2019,16.82,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,25.76666667,257.0,1.0,0.0,46.0,6.0,0.0,0.0,,,
+LIU_SAMPLE201,LIU_PATIENT201,Liu 2019,5.49,1.0,Progressive Disease,0.0,,,Male,N/A,1,2.833333333,6.0,2.0,2.0,2.0,1.0,0.0,0.0,,,
+LIU_SAMPLE203,LIU_PATIENT203,Liu 2019,20.57,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,3.1,44.0,0.0,29.0,32.0,8.0,0.0,0.0,,,
+LIU_SAMPLE204,LIU_PATIENT204,Liu 2019,26.91,0.0,Complete Response,1.0,,,Male,Metastatic,1,69.26666667,381.0,2.0,3.0,3.0,10.0,0.0,0.0,,,
+LIU_SAMPLE205,LIU_PATIENT205,Liu 2019,12.88,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,20.5,100.0,2.0,2.0,33.0,15.0,0.0,0.0,,,
+LIU_SAMPLE206,LIU_PATIENT206,Liu 2019,2.96,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,185.4,1259.0,0.0,4.0,32.0,7.0,0.0,0.0,,,
+LIU_SAMPLE21,LIU_PATIENT21,Liu 2019,29.76,0.0,Partial Response,1.0,,,Female,Metastatic,1,9.966666667,36.0,14.0,2.0,4.0,8.0,0.0,0.0,,,
+LIU_SAMPLE22,LIU_PATIENT22,Liu 2019,8.31,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,3.166666667,27.0,3.0,7.0,18.0,7.0,0.0,0.0,,,
+LIU_SAMPLE23,LIU_PATIENT23,Liu 2019,32.03,0.0,Progressive Disease,0.0,,,Male,N/A,1,7.1,37.0,8.0,5.0,41.0,9.0,0.0,0.0,,,
+LIU_SAMPLE24,LIU_PATIENT24,Liu 2019,4.5,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,10.93333333,45.0,3.0,3.0,16.0,12.0,0.0,0.0,,,
+LIU_SAMPLE25,LIU_PATIENT25,Liu 2019,36.01,0.0,Partial Response,1.0,,,Male,Metastatic,1,12.56666667,75.0,2.0,2.0,62.0,6.0,0.0,0.0,,,
+LIU_SAMPLE27,LIU_PATIENT27,Liu 2019,14.16,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,7.966666667,58.0,1.0,0.0,156.0,8.0,0.0,0.0,,,
+LIU_SAMPLE30,LIU_PATIENT30,Liu 2019,7.0,1.0,Stable Disease,,,,Female,Metastatic,1,22.73333333,78.0,1.0,2.0,50.0,7.0,0.0,1.0,,,
+LIU_SAMPLE31,LIU_PATIENT31,Liu 2019,13.99,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,6.5,106.0,5.0,1.0,23.0,8.0,0.0,0.0,,,
+LIU_SAMPLE32,LIU_PATIENT32,Liu 2019,1.74,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,11.2,44.0,2.0,0.0,108.0,5.0,0.0,0.0,,,
+LIU_SAMPLE33,LIU_PATIENT33,Liu 2019,55.16,0.0,Partial Response,1.0,,,Female,Metastatic,1,2.966666667,197.0,0.0,1.0,102.0,2.0,0.0,0.0,,,
+LIU_SAMPLE34,LIU_PATIENT34,Liu 2019,55.55,0.0,Partial Response,1.0,,,Male,Metastatic,1,1.133333333,23.0,0.0,0.0,415.0,2.0,0.0,0.0,,,
+LIU_SAMPLE35,LIU_PATIENT35,Liu 2019,31.8,1.0,Stable Disease,,,,Male,Metastatic,1,3.2,12.0,4.0,3.0,20.0,4.0,0.0,0.0,,,
+LIU_SAMPLE36,LIU_PATIENT36,Liu 2019,14.82,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,6.766666667,50.0,1.0,0.0,58.0,3.0,0.0,0.0,,,
+LIU_SAMPLE37,LIU_PATIENT37,Liu 2019,9.03,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,2.866666667,16.0,0.0,1.0,68.0,4.0,0.0,0.0,,,
+LIU_SAMPLE38,LIU_PATIENT38,Liu 2019,11.27,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,2.6,32.0,3.0,6.0,41.0,2.0,0.0,0.0,,,
+LIU_SAMPLE4,LIU_PATIENT4,Liu 2019,19.71,1.0,Complete Response,1.0,,,Male,Metastatic,1,15.26666667,111.0,4.0,0.0,88.0,4.0,0.0,1.0,,,
+LIU_SAMPLE40,LIU_PATIENT40,Liu 2019,15.37,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,250.8333333,2330.0,26.0,2.0,51.0,4.0,0.0,0.0,,,
+LIU_SAMPLE42,LIU_PATIENT42,Liu 2019,33.74,0.0,Complete Response,1.0,,,Male,Metastatic,1,17.66666667,115.0,1.0,1.0,25.0,12.0,0.0,0.0,,,
+LIU_SAMPLE44,LIU_PATIENT44,Liu 2019,30.29,0.0,Partial Response,1.0,,,Male,Metastatic,1,5.366666667,0.0,0.0,0.0,6.0,2.0,0.0,0.0,,,
+LIU_SAMPLE45,LIU_PATIENT45,Liu 2019,54.73,0.0,Partial Response,1.0,,,Male,Metastatic,1,10.83333333,46.0,0.0,5.0,41.0,7.0,0.0,0.0,,,
+LIU_SAMPLE47,LIU_PATIENT47,Liu 2019,30.78,0.0,Progressive Disease,0.0,,,Female,Metastatic,1,27.9,244.0,3.0,5.0,23.0,15.0,0.0,0.0,,,
+LIU_SAMPLE48,LIU_PATIENT48,Liu 2019,1.74,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,2.733333333,22.0,4.0,1.0,34.0,4.0,0.0,0.0,,,
+LIU_SAMPLE51,LIU_PATIENT51,Liu 2019,50.82,0.0,Partial Response,1.0,,,Male,Metastatic,1,39.36666667,31.0,1.0,0.0,10.0,2.0,0.0,0.0,,,
+LIU_SAMPLE56,LIU_PATIENT56,Liu 2019,4.01,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,1.966666667,47.0,0.0,5.0,55.0,3.0,0.0,0.0,,,
+LIU_SAMPLE58,LIU_PATIENT58,Liu 2019,9.95,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,3.8,10.0,0.0,0.0,20.0,1.0,0.0,0.0,,,
+LIU_SAMPLE6,LIU_PATIENT6,Liu 2019,22.57,1.0,Stable Disease,,,,Female,Metastatic,1,39.86666667,423.0,7.0,4.0,21.0,3.0,0.0,0.0,,,
+LIU_SAMPLE61,LIU_PATIENT61,Liu 2019,32.42,0.0,Stable Disease,,,,Female,Metastatic,1,70.96666667,41.0,2.0,0.0,0.0,5.0,0.0,0.0,,,
+LIU_SAMPLE62,LIU_PATIENT62,Liu 2019,32.88,0.0,Partial Response,1.0,,,Female,Metastatic,1,211.9333333,2003.0,14.0,5.0,42.0,16.0,0.0,0.0,,,
+LIU_SAMPLE63,LIU_PATIENT63,Liu 2019,5.85,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,10.86666667,84.0,6.0,3.0,62.0,5.0,0.0,0.0,,,
+LIU_SAMPLE67,LIU_PATIENT67,Liu 2019,4.47,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,11.7,33.0,2.0,0.0,59.0,8.0,0.0,0.0,,,
+LIU_SAMPLE7,LIU_PATIENT7,Liu 2019,8.84,1.0,Stable Disease,,,,Male,Metastatic,1,7.033333333,207.0,4.0,11.0,44.0,5.0,0.0,0.0,,,
+LIU_SAMPLE72,LIU_PATIENT72,Liu 2019,12.98,0.0,Progressive Disease,0.0,,,Male,Metastatic,1,5.333333333,83.0,2.0,2.0,46.0,9.0,0.0,0.0,,,
+LIU_SAMPLE73,LIU_PATIENT73,Liu 2019,27.79,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,3.733333333,35.0,3.0,0.0,38.0,10.0,0.0,0.0,,,
+LIU_SAMPLE75,LIU_PATIENT75,Liu 2019,29.27,0.0,Partial Response,1.0,,,Male,Metastatic,1,24.46666667,87.0,1.0,1.0,13.0,8.0,0.0,0.0,,,
+LIU_SAMPLE77,LIU_PATIENT77,Liu 2019,14.59,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,4.1,61.0,3.0,4.0,43.0,10.0,0.0,0.0,,,
+LIU_SAMPLE78,LIU_PATIENT78,Liu 2019,11.7,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,1.333333333,80.0,2.0,6.0,25.0,19.0,0.0,0.0,,,
+LIU_SAMPLE79,LIU_PATIENT79,Liu 2019,27.89,0.0,Progressive Disease,0.0,,,Female,Metastatic,1,6.6,76.0,0.0,3.0,14.0,14.0,0.0,0.0,,,
+LIU_SAMPLE8,LIU_PATIENT8,Liu 2019,33.02,1.0,Stable Disease,,,,Male,Metastatic,1,11.43333333,211.0,0.0,1.0,42.0,4.0,0.0,0.0,,,
+LIU_SAMPLE82,LIU_PATIENT82,Liu 2019,4.3,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,61.96666667,559.0,4.0,0.0,42.0,16.0,0.0,0.0,,,
+LIU_SAMPLE83,LIU_PATIENT83,Liu 2019,2.33,1.0,Progressive Disease,0.0,,,Male,Metastatic,1,8.033333333,93.0,1.0,1.0,65.0,17.0,0.0,0.0,,,
+LIU_SAMPLE86,LIU_PATIENT86,Liu 2019,43.59,0.0,Stable Disease,,,,Male,Metastatic,1,9.7,116.0,3.0,1.0,49.0,4.0,0.0,0.0,,,
+LIU_SAMPLE87,LIU_PATIENT87,Liu 2019,41.49,0.0,Partial Response,1.0,,,Female,Metastatic,1,4.3,66.0,5.0,39.0,80.0,7.0,0.0,0.0,,,
+LIU_SAMPLE9,LIU_PATIENT9,Liu 2019,31.64,0.0,Progressive Disease,0.0,,,Female,N/A,1,24.66666667,197.0,6.0,1.0,39.0,7.0,0.0,0.0,,,
+LIU_SAMPLE94,LIU_PATIENT94,Liu 2019,1.31,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,8.866666667,143.0,0.0,2.0,47.0,22.0,0.0,2.0,,,
+LIU_SAMPLE96,LIU_PATIENT96,Liu 2019,29.99,0.0,Complete Response,1.0,,,Male,Metastatic,1,22.36666667,220.0,8.0,2.0,74.0,9.0,0.0,0.0,,,
+LIU_SAMPLE98,LIU_PATIENT98,Liu 2019,22.44,1.0,Progressive Disease,0.0,,,Female,Metastatic,1,10.3,86.0,1.0,3.0,145.0,7.0,0.0,0.0,,,
+LIU_SAMPLE99,LIU_PATIENT99,Liu 2019,30.26,0.0,Partial Response,1.0,,,Male,Metastatic,1,29.76666667,267.0,2.0,3.0,25.0,33.0,0.0,0.0,,,
+HUGO_PT1,HUGO_PT1,Hugo 2016,19.94,1.0,Progressive Disease,0.0,66.0,,Female,N/A,1,77.86666667,615.0,9.0,6.0,14.0,21.0,0.0,0.0,,,
+HUGO_PT10,HUGO_PT10,Hugo 2016,12.71,0.0,Progressive Disease,0.0,60.0,,Male,N/A,1,8.433333333,63.0,2.0,2.0,9.0,17.0,0.0,0.0,,,
+HUGO_PT12,HUGO_PT12,Hugo 2016,10.74,1.0,Progressive Disease,0.0,59.0,,Male,N/A,1,2.7,13.0,0.0,2.0,12.0,10.0,0.0,0.0,,,
+HUGO_PT13,HUGO_PT13,Hugo 2016,30.12,0.0,Complete Response,1.0,53.0,,Female,N/A,1,15.53333333,160.0,3.0,1.0,19.0,18.0,0.0,0.0,,,
+HUGO_PT14,HUGO_PT14,Hugo 2016,1.77,0.0,Progressive Disease,0.0,27.0,,Female,N/A,1,50.53333333,402.0,2.0,2.0,12.0,25.0,0.0,0.0,,,
+HUGO_PT15,HUGO_PT15,Hugo 2016,32.19,1.0,Partial Response,1.0,70.0,,Male,N/A,1,23.86666667,206.0,2.0,4.0,23.0,27.0,0.0,0.0,,,
+HUGO_PT16,HUGO_PT16,Hugo 2016,6.11,1.0,Progressive Disease,0.0,19.0,,Male,N/A,1,18.96666667,132.0,1.0,2.0,13.0,15.0,0.0,0.0,,,
+HUGO_PT19,HUGO_PT19,Hugo 2016,34.82,0.0,Partial Response,1.0,45.0,,Male,N/A,1,21.1,102.0,2.0,0.0,45.0,10.0,1.0,0.0,,,
+HUGO_PT2,HUGO_PT2,Hugo 2016,30.45,0.0,Partial Response,1.0,55.0,,Male,N/A,1,65.4,468.0,5.0,4.0,7.0,3.0,0.0,0.0,,,
+HUGO_PT20,HUGO_PT20,Hugo 2016,11.07,1.0,Progressive Disease,0.0,63.0,,Female,N/A,1,19.6,173.0,2.0,2.0,38.0,16.0,0.0,0.0,,,
+HUGO_PT22,HUGO_PT22,Hugo 2016,5.98,1.0,Progressive Disease,0.0,55.0,,Male,N/A,1,6.5,62.0,0.0,3.0,117.0,13.0,0.0,0.0,,,
+HUGO_PT23,HUGO_PT23,Hugo 2016,3.38,1.0,Progressive Disease,0.0,63.0,,Male,N/A,1,9.266666667,93.0,1.0,3.0,5.0,8.0,0.0,0.0,,,
+HUGO_PT25,HUGO_PT25,Hugo 2016,8.61,1.0,Progressive Disease,0.0,74.0,,Male,N/A,1,4.566666667,31.0,1.0,2.0,8.0,9.0,0.0,0.0,,,
+HUGO_PT27,HUGO_PT27,Hugo 2016,18.0,0.0,Complete Response,1.0,83.0,,Male,N/A,1,86.53333333,694.0,5.0,1.0,31.0,9.0,0.0,0.0,,,
+HUGO_PT28,HUGO_PT28,Hugo 2016,14.42,1.0,Partial Response,1.0,82.0,,Male,N/A,1,29.1,356.0,2.0,1.0,114.0,4.0,0.0,0.0,,,
+HUGO_PT29,HUGO_PT29,Hugo 2016,8.84,1.0,Progressive Disease,0.0,84.0,,Male,N/A,1,8.366666667,87.0,8.0,5.0,30.0,13.0,0.0,0.0,,,
+HUGO_PT31,HUGO_PT31,Hugo 2016,23.13,0.0,Progressive Disease,0.0,47.0,,Male,N/A,1,21.76666667,144.0,3.0,1.0,22.0,19.0,0.0,0.0,,,
+HUGO_PT32,HUGO_PT32,Hugo 2016,5.62,1.0,Progressive Disease,0.0,47.0,,Male,N/A,1,9.866666667,93.0,1.0,0.0,3.0,18.0,0.0,0.0,,,
+HUGO_PT35,HUGO_PT35,Hugo 2016,14.03,0.0,Partial Response,1.0,65.0,,Female,N/A,1,11.33333333,100.0,2.0,3.0,12.0,10.0,0.0,0.0,,,
+HUGO_PT37,HUGO_PT37,Hugo 2016,11.96,0.0,Partial Response,1.0,70.0,,Female,N/A,1,19.2,113.0,0.0,0.0,11.0,20.0,0.0,0.0,,,
+HUGO_PT38,HUGO_PT38,Hugo 2016,14.72,0.0,Partial Response,1.0,57.0,,Female,N/A,1,2.6,41.0,0.0,0.0,19.0,15.0,0.0,0.0,,,
+HUGO_PT4,HUGO_PT4,Hugo 2016,31.14,0.0,Partial Response,1.0,62.0,,Male,N/A,1,131.1333333,1239.0,13.0,0.0,41.0,12.0,0.0,0.0,,,
+HUGO_PT5,HUGO_PT5,Hugo 2016,14.42,0.0,Partial Response,1.0,61.0,,Male,N/A,1,11.86666667,104.0,2.0,4.0,14.0,27.0,0.0,0.0,,,
+HUGO_PT6,HUGO_PT6,Hugo 2016,28.98,0.0,Partial Response,1.0,51.0,,Male,N/A,1,8.0,55.0,0.0,0.0,23.0,15.0,1.0,0.0,,,
+HUGO_PT7,HUGO_PT7,Hugo 2016,21.75,1.0,Progressive Disease,0.0,55.0,,Female,N/A,1,40.73333333,236.0,2.0,8.0,5.0,7.0,0.0,0.0,,,
+HUGO_PT8,HUGO_PT8,Hugo 2016,,0.0,Complete Response,1.0,69.0,,Male,N/A,1,583.6,255.0,5.0,3.0,3.0,22.0,0.0,0.0,,,
+HUGO_PT9,HUGO_PT9,Hugo 2016,34.63,0.0,Complete Response,1.0,68.0,,Male,N/A,1,17.86666667,171.0,2.0,0.0,17.0,31.0,0.0,0.0,,,
+RIAZ_PT101_ON,RIAZ_PT101,Riaz 2017,27.4,0.0,Partial Response,1.0,47.0,White,Female,N/A,1,0.2,0.0,0.0,0.0,12.0,3.0,0.0,0.0,,,
+RIAZ_PT101_PRE,RIAZ_PT101,Riaz 2017,27.4,0.0,Partial Response,1.0,47.0,White,Female,N/A,1,0.466666667,1.0,0.0,0.0,11.0,6.0,0.0,0.0,,,
+RIAZ_PT103_ON,RIAZ_PT103,Riaz 2017,15.9,0.0,Progressive Disease,0.0,52.0,Asian,Female,N/A,1,1.366666667,7.0,4.0,1.0,3.0,3.0,0.0,0.0,,,
+RIAZ_PT103_PRE,RIAZ_PT103,Riaz 2017,15.9,0.0,Progressive Disease,0.0,52.0,Asian,Female,N/A,1,0.733333333,3.0,0.0,0.0,12.0,2.0,0.0,0.0,,,
+RIAZ_PT105_ON,RIAZ_PT105,Riaz 2017,,,,,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT106_ON,RIAZ_PT106,Riaz 2017,2.99,1.0,Progressive Disease,0.0,53.0,White,Male,N/A,1,,,,,,,,,,,
+RIAZ_PT106_PRE,RIAZ_PT106,Riaz 2017,2.99,1.0,Progressive Disease,0.0,53.0,White,Male,N/A,1,24.2,118.0,3.0,1.0,7.0,13.0,0.0,0.0,,,
+RIAZ_PT108_ON,RIAZ_PT108,Riaz 2017,29.99,0.0,Stable Disease,,37.0,White,Female,N/A,1,,,,,,,,,,,
+RIAZ_PT10_ON,RIAZ_PT10,Riaz 2017,8.41,1.0,Stable Disease,,81.0,White,Female,N/A,1,2.566666667,18.0,1.0,3.0,3.0,7.0,0.0,0.0,,,
+RIAZ_PT10_PRE,RIAZ_PT10,Riaz 2017,8.41,1.0,Stable Disease,,81.0,White,Female,N/A,1,3.066666667,9.0,0.0,1.0,0.0,3.0,0.0,0.0,,,
+RIAZ_PT11_ON,RIAZ_PT11,Riaz 2017,27.5,1.0,Progressive Disease,0.0,61.0,White,Female,N/A,1,4.033333333,18.0,1.0,0.0,5.0,3.0,0.0,0.0,,,
+RIAZ_PT11_PRE,RIAZ_PT11,Riaz 2017,27.5,1.0,Progressive Disease,0.0,61.0,White,Female,N/A,1,3.6,14.0,0.0,0.0,4.0,8.0,0.0,0.0,,,
+RIAZ_PT13_ON,RIAZ_PT13,Riaz 2017,9.2,1.0,Progressive Disease,0.0,67.0,White,Male,N/A,1,5.766666667,21.0,2.0,1.0,14.0,3.0,0.0,0.0,,,
+RIAZ_PT16_ON,RIAZ_PT16,Riaz 2017,,,,,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT17_ON,RIAZ_PT17,Riaz 2017,1.87,1.0,Progressive Disease,0.0,48.0,White,Female,N/A,1,1.1,5.0,2.0,0.0,5.0,1.0,0.0,0.0,,,
+RIAZ_PT17_PRE,RIAZ_PT17,Riaz 2017,1.87,1.0,Progressive Disease,0.0,48.0,White,Female,N/A,1,1.0,4.0,0.0,1.0,5.0,4.0,0.0,0.0,,,
+RIAZ_PT18_ON,RIAZ_PT18,Riaz 2017,35.25,0.0,Partial Response,1.0,53.0,White,Male,N/A,1,0.333333333,0.0,0.0,1.0,8.0,2.0,0.0,0.0,,,
+RIAZ_PT18_PRE,RIAZ_PT18,Riaz 2017,35.25,0.0,Partial Response,1.0,53.0,White,Male,N/A,1,7.833333333,46.0,1.0,2.0,9.0,16.0,0.0,0.0,,,
+RIAZ_PT1_ON,RIAZ_PT1,Riaz 2017,5.26,1.0,Progressive Disease,0.0,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT1_PRE,RIAZ_PT1,Riaz 2017,5.26,1.0,Progressive Disease,0.0,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT23_ON,RIAZ_PT23,Riaz 2017,1.71,1.0,,,53.0,White,Female,N/A,1,23.9,143.0,2.0,1.0,8.0,9.0,0.0,0.0,,,
+RIAZ_PT23_PRE,RIAZ_PT23,Riaz 2017,1.71,1.0,,,53.0,White,Female,N/A,1,21.86666667,123.0,0.0,0.0,6.0,10.0,0.0,0.0,,,
+RIAZ_PT24_PRE,RIAZ_PT24,Riaz 2017,4.89,0.0,Progressive Disease,0.0,63.0,White,Male,N/A,1,0.866666667,0.0,0.0,1.0,2.0,2.0,0.0,0.0,,,
+RIAZ_PT26_ON,RIAZ_PT26,Riaz 2017,31.27,0.0,Stable Disease,,22.0,White,Female,N/A,1,3.866666667,26.0,0.0,0.0,3.0,4.0,0.0,0.0,,,
+RIAZ_PT26_PRE,RIAZ_PT26,Riaz 2017,31.27,0.0,Stable Disease,,22.0,White,Female,N/A,1,3.9,23.0,0.0,1.0,4.0,2.0,0.0,0.0,,,
+RIAZ_PT27_ON,RIAZ_PT27,Riaz 2017,15.6,1.0,Progressive Disease,0.0,65.0,White,Male,N/A,1,6.3,29.0,2.0,1.0,5.0,3.0,0.0,0.0,,,
+RIAZ_PT27_PRE,RIAZ_PT27,Riaz 2017,15.6,1.0,Progressive Disease,0.0,65.0,White,Male,N/A,1,6.5,12.0,0.0,1.0,4.0,1.0,0.0,0.0,,,
+RIAZ_PT28_ON,RIAZ_PT28,Riaz 2017,24.31,1.0,Progressive Disease,0.0,79.0,White,Female,N/A,1,2.1,18.0,1.0,4.0,12.0,8.0,0.0,0.0,,,
+RIAZ_PT28_PRE,RIAZ_PT28,Riaz 2017,24.31,1.0,Progressive Disease,0.0,79.0,White,Female,N/A,1,1.566666667,6.0,2.0,5.0,13.0,6.0,0.0,0.0,,,
+RIAZ_PT29_PRE,RIAZ_PT29,Riaz 2017,8.97,1.0,Progressive Disease,0.0,57.0,White,Female,N/A,1,13.36666667,89.0,1.0,0.0,8.0,14.0,0.0,0.0,,,
+RIAZ_PT2_ON,RIAZ_PT2,Riaz 2017,9.03,1.0,Stable Disease,,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT2_PRE,RIAZ_PT2,Riaz 2017,9.03,1.0,Stable Disease,,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT30_ON,RIAZ_PT30,Riaz 2017,34.59,0.0,Complete Response,1.0,89.0,White,Female,N/A,1,0.533333333,3.0,3.0,2.0,6.0,2.0,0.0,0.0,,,
+RIAZ_PT30_PRE,RIAZ_PT30,Riaz 2017,34.59,0.0,Complete Response,1.0,89.0,White,Female,N/A,1,2.2,11.0,1.0,3.0,5.0,27.0,0.0,0.0,,,
+RIAZ_PT31_ON,RIAZ_PT31,Riaz 2017,31.57,0.0,Progressive Disease,0.0,56.0,White,Female,N/A,1,15.66666667,104.0,2.0,1.0,18.0,19.0,0.0,0.0,,,
+RIAZ_PT31_PRE,RIAZ_PT31,Riaz 2017,31.57,0.0,Progressive Disease,0.0,56.0,White,Female,N/A,1,15.4,74.0,2.0,0.0,17.0,12.0,0.0,0.0,,,
+RIAZ_PT32_ON,RIAZ_PT32,Riaz 2017,3.75,0.0,Progressive Disease,0.0,34.0,White,Male,N/A,1,,,,,,,,,,,
+RIAZ_PT34_ON,RIAZ_PT34,Riaz 2017,27.4,0.0,Partial Response,1.0,71.0,White,Male,N/A,1,0.4,0.0,0.0,0.0,4.0,1.0,0.0,0.0,,,
+RIAZ_PT34_PRE,RIAZ_PT34,Riaz 2017,27.4,0.0,Partial Response,1.0,71.0,White,Male,N/A,1,7.733333333,26.0,0.0,0.0,8.0,10.0,0.0,0.0,,,
+RIAZ_PT35_ON,RIAZ_PT35,Riaz 2017,,,,,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT36_ON,RIAZ_PT36,Riaz 2017,35.51,0.0,Stable Disease,,58.0,White,Male,N/A,1,,,,,,,,,,,
+RIAZ_PT36_PRE,RIAZ_PT36,Riaz 2017,35.51,0.0,Stable Disease,,58.0,White,Male,N/A,1,0.2,0.0,0.0,2.0,3.0,2.0,0.0,0.0,,,
+RIAZ_PT37_ON,RIAZ_PT37,Riaz 2017,21.22,1.0,Stable Disease,,63.0,White,Male,N/A,1,0.966666667,2.0,0.0,2.0,7.0,5.0,0.0,0.0,,,
+RIAZ_PT37_PRE,RIAZ_PT37,Riaz 2017,21.22,1.0,Stable Disease,,63.0,White,Male,N/A,1,1.166666667,4.0,1.0,2.0,5.0,10.0,0.0,0.0,,,
+RIAZ_PT38_ON,RIAZ_PT38,Riaz 2017,5.49,1.0,Stable Disease,,54.0,White,Female,N/A,1,,,,,,,,,,,
+RIAZ_PT38_PRE,RIAZ_PT38,Riaz 2017,5.49,1.0,Stable Disease,,54.0,White,Female,N/A,1,11.86666667,136.0,3.0,0.0,7.0,2.0,0.0,0.0,,,
+RIAZ_PT39_PRE,RIAZ_PT39,Riaz 2017,5.45,1.0,Progressive Disease,0.0,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT3_ON,RIAZ_PT3,Riaz 2017,37.58,0.0,Partial Response,1.0,52.0,White,Male,N/A,1,6.1,15.0,2.0,1.0,4.0,7.0,0.0,0.0,,,
+RIAZ_PT3_PRE,RIAZ_PT3,Riaz 2017,37.58,0.0,Partial Response,1.0,52.0,White,Male,N/A,1,6.366666667,30.0,3.0,1.0,3.0,5.0,0.0,0.0,,,
+RIAZ_PT44_ON,RIAZ_PT44,Riaz 2017,35.91,0.0,Partial Response,1.0,61.0,White,Male,N/A,1,0.433333333,0.0,0.0,1.0,5.0,4.0,0.0,0.0,,,
+RIAZ_PT44_PRE,RIAZ_PT44,Riaz 2017,35.91,0.0,Partial Response,1.0,61.0,White,Male,N/A,1,13.23333333,123.0,2.0,3.0,7.0,14.0,0.0,0.0,,,
+RIAZ_PT46_ON,RIAZ_PT46,Riaz 2017,7.46,1.0,Progressive Disease,0.0,79.0,White,Male,N/A,1,,,,,,,,,,,
+RIAZ_PT46_PRE,RIAZ_PT46,Riaz 2017,7.46,1.0,Progressive Disease,0.0,79.0,White,Male,N/A,1,7.233333333,3.0,0.0,1.0,10.0,3.0,0.0,0.0,,,
+RIAZ_PT47_ON,RIAZ_PT47,Riaz 2017,23.59,1.0,Progressive Disease,0.0,52.0,White,Male,N/A,1,34.26666667,214.0,3.0,1.0,4.0,18.0,0.0,0.0,,,
+RIAZ_PT47_PRE,RIAZ_PT47,Riaz 2017,23.59,1.0,Progressive Disease,0.0,52.0,White,Male,N/A,1,,,,,,,,,,,
+RIAZ_PT48_ON,RIAZ_PT48,Riaz 2017,34.36,0.0,Complete Response,1.0,44.0,White,Male,N/A,1,0.3,2.0,2.0,1.0,11.0,0.0,0.0,0.0,,,
+RIAZ_PT48_PRE,RIAZ_PT48,Riaz 2017,34.36,0.0,Complete Response,1.0,44.0,White,Male,N/A,1,5.633333333,10.0,1.0,1.0,22.0,6.0,0.0,0.0,,,
+RIAZ_PT49_ON,RIAZ_PT49,Riaz 2017,27.17,0.0,Partial Response,1.0,52.0,White,Female,N/A,1,,,,,,,,,,,
+RIAZ_PT49_PRE,RIAZ_PT49,Riaz 2017,27.17,0.0,Partial Response,1.0,52.0,White,Female,N/A,1,28.2,85.0,0.0,3.0,11.0,22.0,0.0,0.0,,,
+RIAZ_PT4_ON,RIAZ_PT4,Riaz 2017,20.8,1.0,Stable Disease,,62.0,White,Female,N/A,1,,,,,,,,,,,
+RIAZ_PT4_PRE,RIAZ_PT4,Riaz 2017,20.8,1.0,Stable Disease,,62.0,White,Female,N/A,1,9.3,73.0,2.0,0.0,3.0,6.0,0.0,0.0,,,
+RIAZ_PT52_ON,RIAZ_PT52,Riaz 2017,15.64,1.0,Progressive Disease,0.0,45.0,White,Female,N/A,1,12.93333333,75.0,1.0,0.0,4.0,18.0,0.0,0.0,,,
+RIAZ_PT52_PRE,RIAZ_PT52,Riaz 2017,15.64,1.0,Progressive Disease,0.0,45.0,White,Female,N/A,1,12.2,41.0,1.0,0.0,4.0,13.0,0.0,0.0,,,
+RIAZ_PT58_ON,RIAZ_PT58,Riaz 2017,16.39,1.0,Stable Disease,,53.0,White,Female,N/A,1,44.8,306.0,2.0,0.0,4.0,8.0,0.0,0.0,,,
+RIAZ_PT59_PRE,RIAZ_PT59,Riaz 2017,23.26,1.0,Stable Disease,,49.0,White,Female,N/A,1,15.03333333,90.0,1.0,0.0,21.0,12.0,1.0,0.0,,,
+RIAZ_PT5_ON,RIAZ_PT5,Riaz 2017,7.29,1.0,Progressive Disease,0.0,58.0,White,Female,N/A,1,2.133333333,17.0,2.0,5.0,5.0,10.0,0.0,0.0,,,
+RIAZ_PT5_PRE,RIAZ_PT5,Riaz 2017,7.29,1.0,Progressive Disease,0.0,58.0,White,Female,N/A,1,1.866666667,12.0,1.0,3.0,34.0,1.0,0.0,0.0,,,
+RIAZ_PT62_ON,RIAZ_PT62,Riaz 2017,15.51,1.0,Progressive Disease,0.0,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT62_PRE,RIAZ_PT62,Riaz 2017,15.51,1.0,Progressive Disease,0.0,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT65_ON,RIAZ_PT65,Riaz 2017,22.73,0.0,Stable Disease,,63.0,White,Female,N/A,1,,,,,,,,,,,
+RIAZ_PT65_PRE,RIAZ_PT65,Riaz 2017,22.73,0.0,Stable Disease,,63.0,White,Female,N/A,1,87.3,723.0,3.0,11.0,13.0,7.0,0.0,0.0,,,
+RIAZ_PT66_PRE,RIAZ_PT66,Riaz 2017,17.81,1.0,Progressive Disease,0.0,49.0,White,Female,N/A,1,4.8,27.0,2.0,1.0,3.0,23.0,0.0,0.0,,,
+RIAZ_PT67_ON,RIAZ_PT67,Riaz 2017,33.9,0.0,Stable Disease,,33.0,White,Female,N/A,1,0.566666667,1.0,0.0,0.0,17.0,0.0,0.0,0.0,,,
+RIAZ_PT67_PRE,RIAZ_PT67,Riaz 2017,33.9,0.0,Stable Disease,,33.0,White,Female,N/A,1,0.4,1.0,0.0,1.0,27.0,3.0,0.0,0.0,,,
+RIAZ_PT68_ON,RIAZ_PT68,Riaz 2017,27.66,0.0,Partial Response,1.0,69.0,White,Male,N/A,1,,,,,,,,,,,
+RIAZ_PT69_ON,RIAZ_PT69,Riaz 2017,,,,,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT72_PRE,RIAZ_PT72,Riaz 2017,25.3,1.0,Partial Response,1.0,43.0,White,Female,N/A,1,16.83333333,79.0,1.0,1.0,4.0,8.0,0.0,0.0,,,
+RIAZ_PT76_PRE,RIAZ_PT76,Riaz 2017,0.33,1.0,,,60.0,White,Male,N/A,1,8.5,35.0,3.0,0.0,5.0,7.0,0.0,0.0,,,
+RIAZ_PT77_ON,RIAZ_PT77,Riaz 2017,15.47,1.0,Stable Disease,,56.0,White,Female,N/A,1,,,,,,,,,,,
+RIAZ_PT77_PRE,RIAZ_PT77,Riaz 2017,15.47,1.0,Stable Disease,,56.0,White,Female,N/A,1,1.766666667,6.0,0.0,1.0,26.0,4.0,0.0,0.0,,,
+RIAZ_PT78_ON,RIAZ_PT78,Riaz 2017,2.56,1.0,Progressive Disease,0.0,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT78_PRE,RIAZ_PT78,Riaz 2017,2.56,1.0,Progressive Disease,0.0,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT79_ON,RIAZ_PT79,Riaz 2017,7.16,1.0,Stable Disease,,64.0,White,Male,N/A,1,,,,,,,,,,,
+RIAZ_PT79_PRE,RIAZ_PT79,Riaz 2017,7.16,1.0,Stable Disease,,64.0,White,Male,N/A,1,,,,,,,,,,,
+RIAZ_PT80_ON,RIAZ_PT80,Riaz 2017,,,,,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT81_ON,RIAZ_PT81,Riaz 2017,,,,,,,N/A,N/A,1,,,,,,,,,,,
+RIAZ_PT82_ON,RIAZ_PT82,Riaz 2017,14.09,1.0,Stable Disease,,60.0,White,Female,N/A,1,1.4,9.0,2.0,1.0,15.0,4.0,0.0,0.0,,,
+RIAZ_PT82_PRE,RIAZ_PT82,Riaz 2017,14.09,1.0,Stable Disease,,60.0,White,Female,N/A,1,1.4,8.0,2.0,2.0,5.0,2.0,0.0,0.0,,,
+RIAZ_PT84_ON,RIAZ_PT84,Riaz 2017,4.96,1.0,Progressive Disease,0.0,48.0,White,Female,N/A,1,,,,,,,,,,,
+RIAZ_PT84_PRE,RIAZ_PT84,Riaz 2017,4.96,1.0,Progressive Disease,0.0,48.0,White,Female,N/A,1,0.6,4.0,2.0,0.0,3.0,1.0,0.0,0.0,,,
+RIAZ_PT85_ON,RIAZ_PT85,Riaz 2017,29.7,0.0,Progressive Disease,0.0,66.0,White,Male,N/A,1,,,,,,,,,,,
+RIAZ_PT85_PRE,RIAZ_PT85,Riaz 2017,29.7,0.0,Progressive Disease,0.0,66.0,White,Male,N/A,1,4.233333333,43.0,0.0,0.0,7.0,2.0,0.0,0.0,,,
+RIAZ_PT87_ON,RIAZ_PT87,Riaz 2017,32.0,0.0,Stable Disease,,68.0,White,Male,N/A,1,,,,,,,,,,,
+RIAZ_PT89_ON,RIAZ_PT89,Riaz 2017,27.73,1.0,Stable Disease,,56.0,White,Male,N/A,1,6.9,44.0,0.0,1.0,7.0,14.0,0.0,0.0,,,
+RIAZ_PT89_PRE,RIAZ_PT89,Riaz 2017,27.73,1.0,Stable Disease,,56.0,White,Male,N/A,1,7.133333333,49.0,0.0,0.0,7.0,15.0,1.0,0.0,,,
+RIAZ_PT8_ON,RIAZ_PT8,Riaz 2017,8.51,1.0,Progressive Disease,0.0,40.0,White,Male,N/A,1,3.4,27.0,4.0,0.0,8.0,1.0,0.0,0.0,,,
+RIAZ_PT8_PRE,RIAZ_PT8,Riaz 2017,8.51,1.0,Progressive Disease,0.0,40.0,White,Male,N/A,1,3.166666667,21.0,0.0,0.0,4.0,1.0,0.0,0.0,,,
+RIAZ_PT90_PRE,RIAZ_PT90,Riaz 2017,5.72,1.0,Progressive Disease,0.0,60.0,White,Female,N/A,1,23.86666667,129.0,2.0,4.0,27.0,14.0,0.0,0.0,,,
+RIAZ_PT92_ON,RIAZ_PT92,Riaz 2017,10.94,1.0,Stable Disease,,58.0,White,Male,N/A,1,21.93333333,80.0,1.0,2.0,5.0,13.0,0.0,0.0,,,
+RIAZ_PT92_PRE,RIAZ_PT92,Riaz 2017,10.94,1.0,Stable Disease,,58.0,White,Male,N/A,1,22.0,108.0,0.0,0.0,5.0,11.0,0.0,0.0,,,
+RIAZ_PT93_ON,RIAZ_PT93,Riaz 2017,27.89,0.0,Progressive Disease,0.0,52.0,White,Male,N/A,1,13.56666667,68.0,2.0,1.0,5.0,10.0,0.0,0.0,,,
+RIAZ_PT94_ON,RIAZ_PT94,Riaz 2017,32.23,0.0,Complete Response,1.0,41.0,White,Male,N/A,1,,,,,,,,,,,
+RIAZ_PT94_PRE,RIAZ_PT94,Riaz 2017,32.23,0.0,Complete Response,1.0,41.0,White,Male,N/A,1,13.43333333,71.0,1.0,2.0,9.0,6.0,0.0,0.0,,,
+RIAZ_PT98_ON,RIAZ_PT98,Riaz 2017,24.54,1.0,Stable Disease,,74.0,White,Male,N/A,1,,,,,,,,,,,
+RIAZ_PT98_PRE,RIAZ_PT98,Riaz 2017,24.54,1.0,Stable Disease,,74.0,White,Male,N/A,1,0.733333333,10.0,0.0,0.0,14.0,10.0,0.0,0.0,,,
+RIAZ_PT9_ON,RIAZ_PT9,Riaz 2017,3.02,1.0,Progressive Disease,0.0,46.0,White,Male,N/A,1,13.23333333,99.0,0.0,1.0,7.0,32.0,0.0,0.0,,,
+RIAZ_PT9_PRE,RIAZ_PT9,Riaz 2017,3.02,1.0,Progressive Disease,0.0,46.0,White,Male,N/A,1,13.16666667,84.0,0.0,1.0,6.0,28.0,0.0,0.0,,,
+TCGA-D3-A1Q1-06,TCGA-D3-A1Q1,TCGA-SKCM,16.56968143,1.0,,,79.0,White,Female,Metastatic,1,16.2,,,,,,,,27.0,,
+TCGA-D3-A1Q6-06,TCGA-D3-A1Q6,TCGA-SKCM,71.80195286,1.0,,,55.0,White,Male,Metastatic,1,31.76666667,,,,,,,,18.0,,
+TCGA-D3-A2JC-06,TCGA-D3-A2JC,TCGA-SKCM,86.76069303,0.0,,,53.0,White,Female,Metastatic,1,105.0,,,,,,,,22.0,,
+TCGA-D3-A2JH-06,TCGA-D3-A2JH,TCGA-SKCM,42.08173061,0.0,,,68.0,White,Male,Metastatic,1,21.76666667,,,,,,,,2.0,,
+TCGA-D3-A2JN-06,TCGA-D3-A2JN,TCGA-SKCM,66.47598383,1.0,,,46.0,White,Female,Metastatic,1,24.66666667,,,,,,,,24.0,,
+TCGA-D3-A2JP-06,TCGA-D3-A2JP,TCGA-SKCM,59.5719499,0.0,,,37.0,White,Male,Metastatic,1,138.2,,,,,,,,19.0,,
+TCGA-D3-A3C7-06,TCGA-D3-A3C7,TCGA-SKCM,46.98030707,0.0,,,57.0,White,Female,Metastatic,1,48.13333333,,,,,,,,9.0,,
+TCGA-D3-A3MV-06,TCGA-D3-A3MV,TCGA-SKCM,45.30361311,0.0,,,38.0,White,Female,Metastatic,1,13.56666667,,,,,,,,24.0,,
+TCGA-D3-A5GT-01,TCGA-D3-A5GT,TCGA-SKCM,16.01078344,0.0,,,43.0,White,Male,Primary,1,0.766666667,,,,,,,,20.0,0.3116,0.02
+TCGA-D3-A8GB-06,TCGA-D3-A8GB,TCGA-SKCM,30.83801821,1.0,,,48.0,White,Male,Metastatic,1,28.5,,,,,,,,10.0,,
+TCGA-D3-A8GN-06,TCGA-D3-A8GN,TCGA-SKCM,160.9954959,0.0,,,27.0,White,Female,Metastatic,1,6.333333333,,,,,,,,22.0,,
+TCGA-D9-A148-06,TCGA-D9-A148,TCGA-SKCM,151.5271066,0.0,,,40.0,White,Male,Metastatic,1,28.13333333,,,,,,,,21.0,,
+TCGA-DA-A1I1-06,TCGA-DA-A1I1,TCGA-SKCM,222.5071506,0.0,,,55.0,White,Male,Metastatic,1,51.1,,,,,,,,22.0,,
+TCGA-DA-A3F2-06,TCGA-DA-A3F2,TCGA-SKCM,33.92839531,1.0,,,55.0,White,Male,Metastatic,1,,,,,,,,,0.0,,
+TCGA-DA-A3F5-06,TCGA-DA-A3F5,TCGA-SKCM,225.9591676,1.0,,,45.0,White,Male,Metastatic,1,9.866666667,,,,,,,,29.0,,
+TCGA-EB-A24C-01,TCGA-EB-A24C,TCGA-SKCM,20.77785449,0.0,,,56.0,White,Male,Primary,1,10.46666667,,,,,,,,10.0,0.3121,0.37
+TCGA-EB-A24D-01,TCGA-EB-A24D,TCGA-SKCM,21.20524707,0.0,,,72.0,White,Male,Primary,1,23.3,,,,,,,,29.0,0.296,0.54
+TCGA-EB-A57M-01,TCGA-EB-A57M,TCGA-SKCM,15.51763816,1.0,,,56.0,Asian,Male,Primary,1,1.8,,,,,,,,12.0,0.3308,0.0
+TCGA-EB-A5KH-06,TCGA-EB-A5KH,TCGA-SKCM,20.35046191,1.0,,,55.0,Asian,Male,Metastatic,1,1.166666667,,,,,,,,5.0,,
+TCGA-EB-A5SH-06,TCGA-EB-A5SH,TCGA-SKCM,54.0158464,0.0,,,60.0,White,Female,Metastatic,1,2.966666667,,,,,,,,22.0,,
+TCGA-EB-A6QY-01,TCGA-EB-A6QY,TCGA-SKCM,12.55876648,0.0,,,71.0,White,Male,Primary,1,16.76666667,,,,,,,,29.0,0.3271,0.05
+TCGA-EE-A29C-06,TCGA-EE-A29C,TCGA-SKCM,78.9689976,1.0,,,20.0,White,Male,Metastatic,1,11.96666667,,,,,,,,15.0,,
+TCGA-EE-A2GS-06,TCGA-EE-A2GS,TCGA-SKCM,81.20458954,1.0,,,28.0,White,Female,Metastatic,1,10.2,,,,,,,,7.0,,
+TCGA-EE-A2ML-06,TCGA-EE-A2ML,TCGA-SKCM,216.6551599,1.0,,,35.0,White,Male,Metastatic,1,21.93333333,,,,,,,,4.0,,
+TCGA-EE-A3JI-06,TCGA-EE-A3JI,TCGA-SKCM,152.8092843,1.0,,,48.0,White,Male,Metastatic,1,33.2,,,,,,,,21.0,,
+TCGA-ER-A195-06,TCGA-ER-A195,TCGA-SKCM,35.4407075,1.0,,,46.0,White,Male,Metastatic,1,21.73333333,,,,,,,,4.0,,
+TCGA-ER-A19M-06,TCGA-ER-A19M,TCGA-SKCM,61.05138574,1.0,,,36.0,White,Male,Metastatic,1,13.1,,,,,,,,17.0,,
+TCGA-ER-A19N-06,TCGA-ER-A19N,TCGA-SKCM,44.08718809,1.0,,,47.0,White,Male,Metastatic,1,38.26666667,,,,,,,,12.0,,
+TCGA-ER-A19O-06,TCGA-ER-A19O,TCGA-SKCM,,1.0,,,56.0,White,Male,Metastatic,1,7.3,,,,,,,,5.0,,
+TCGA-ER-A19Q-06,TCGA-ER-A19Q,TCGA-SKCM,50.89259296,1.0,,,37.0,White,Female,Metastatic,1,16.26666667,,,,,,,,7.0,,
+TCGA-ER-A1A1-06,TCGA-ER-A1A1,TCGA-SKCM,105.0728211,0.0,,,58.0,White,Male,Metastatic,1,23.3,,,,,,,,0.0,,
+TCGA-ER-A2NF-01,TCGA-ER-A2NF,TCGA-SKCM,28.83256074,1.0,,,53.0,White,Male,Primary,1,1.766666667,,,,,,,,7.0,0.2743,0.0
+TCGA-ER-A2NF-06,TCGA-ER-A2NF,TCGA-SKCM,28.83256074,1.0,,,53.0,White,Male,Metastatic,1,8.933333333,,,,,,,,8.0,,
+TCGA-ER-A2NG-06,TCGA-ER-A2NG,TCGA-SKCM,48.98576454,1.0,,,43.0,White,Female,Metastatic,1,7.533333333,,,,,,,,11.0,,
+TCGA-FR-A3YN-06,TCGA-FR-A3YN,TCGA-SKCM,92.97432357,0.0,,,44.0,White,Male,Metastatic,1,15.46666667,,,,,,,,32.0,,
+TCGA-FR-A44A-06,TCGA-FR-A44A,TCGA-SKCM,174.2117895,0.0,,,29.0,White,Female,Metastatic,1,8.2,,,,,,,,24.0,,
+TCGA-FR-A69P-06,TCGA-FR-A69P,TCGA-SKCM,15.71489628,0.0,,,34.0,White,Female,Metastatic,1,6.166666667,,,,,,,,22.0,,
+TCGA-FR-A729-06,TCGA-FR-A729,TCGA-SKCM,220.7975803,0.0,,,38.0,White,Female,Metastatic,1,24.6,,,,,,,,22.0,,
+TCGA-FR-A7U8-06,TCGA-FR-A7U8,TCGA-SKCM,27.84627018,0.0,,,50.0,White,Male,Metastatic,1,1.0,,,,,,,,9.0,,
+TCGA-FR-A7U9-06,TCGA-FR-A7U9,TCGA-SKCM,18.77239702,0.0,,,63.0,White,Female,Metastatic,1,50.23333333,,,,,,,,15.0,,
+TCGA-FR-A8YD-06,TCGA-FR-A8YD,TCGA-SKCM,36.2626163,1.0,,,56.0,White,Female,Metastatic,1,3.5,,,,,,,,9.0,,
+TCGA-FS-A1ZS-06,TCGA-FS-A1ZS,TCGA-SKCM,148.7983693,0.0,,,54.0,White,Male,Metastatic,1,7.833333333,,,,,,,,19.0,,
+TCGA-FS-A1ZT-06,TCGA-FS-A1ZT,TCGA-SKCM,53.16106125,0.0,,,55.0,White,Male,Metastatic,1,4.9,,,,,,,,4.0,,
+TCGA-FS-A1ZW-06,TCGA-FS-A1ZW,TCGA-SKCM,49.47890982,0.0,,,65.0,White,Male,Metastatic,1,19.7,,,,,,,,12.0,,
+TCGA-FS-A4F0-06,TCGA-FS-A4F0,TCGA-SKCM,77.81832528,0.0,,,67.0,White,Female,Metastatic,1,15.6,,,,,,,,3.0,,
+TCGA-FW-A3R5-06,TCGA-FW-A3R5,TCGA-SKCM,36.95301969,0.0,,,68.0,White,Male,Metastatic,1,1052.2,,,,,,,,,,
+TCGA-FW-A3TV-06,TCGA-FW-A3TV,TCGA-SKCM,13.51218069,0.0,,,57.0,White,Female,Metastatic,1,9.066666667,,,,,,,,5.0,,
+TCGA-GF-A3OT-06,TCGA-GF-A3OT,TCGA-SKCM,9.895781964,0.0,,,58.0,White,Female,Metastatic,1,15.3,,,,,,,,2.0,,
+TCGA-GN-A264-06,TCGA-GN-A264,TCGA-SKCM,117.9274748,1.0,,,60.0,White,Male,Metastatic,1,6.333333333,,,,,,,,16.0,,
+TCGA-GN-A4U3-06,TCGA-GN-A4U3,TCGA-SKCM,121.9055134,0.0,,,30.0,White,Male,Metastatic,1,8.633333333,,,,,,,,28.0,,
+TCGA-GN-A4U4-06,TCGA-GN-A4U4,TCGA-SKCM,39.35299339,0.0,,,73.0,White,Male,Metastatic,1,19.26666667,,,,,,,,2.0,,
+TCGA-GN-A4U5-01,TCGA-GN-A4U5,TCGA-SKCM,38.00506296,0.0,,,61.0,White,Female,Primary,1,9.3,,,,,,,,5.0,0.3185,0.05
+TCGA-GN-A4U8-06,TCGA-GN-A4U8,TCGA-SKCM,48.88713548,0.0,,,51.0,White,Male,Metastatic,1,11.83333333,,,,,,,,3.0,,
+TCGA-GN-A4U9-06,TCGA-GN-A4U9,TCGA-SKCM,22.12578492,1.0,,,71.0,White,Male,Metastatic,1,1.966666667,,,,,,,,22.0,,
+TCGA-HR-A2OH-06,TCGA-HR-A2OH,TCGA-SKCM,65.88420949,1.0,,,46.0,,Female,Metastatic,1,4.0,,,,,,,,,,
+TCGA-QB-AA9O-06,TCGA-QB-AA9O,TCGA-SKCM,18.04911727,1.0,,,73.0,White,Male,Metastatic,1,42.13333333,,,,,,,,15.0,,
+TCGA-W3-A824-06,TCGA-W3-A824,TCGA-SKCM,228.1618832,0.0,,,63.0,White,Male,Metastatic,1,41.13333333,,,,,,,,3.0,,
+TCGA-W3-A825-06,TCGA-W3-A825,TCGA-SKCM,63.02396686,1.0,,,60.0,White,Female,Metastatic,1,30.73333333,,,,,,,,24.0,,
+TCGA-W3-A828-06,TCGA-W3-A828,TCGA-SKCM,121.0836046,1.0,,,66.0,White,Male,Metastatic,1,38.56666667,,,,,,,,2.0,,
+TCGA-W3-AA1Q-06,TCGA-W3-AA1Q,TCGA-SKCM,69.07321564,1.0,,,57.0,White,Male,Metastatic,1,25.56666667,,,,,,,,4.0,,
+TCGA-W3-AA1R-06,TCGA-W3-AA1R,TCGA-SKCM,111.0891935,1.0,,,71.0,White,Male,Metastatic,1,48.6,,,,,,,,11.0,,
+TCGA-W3-AA1V-06,TCGA-W3-AA1V,TCGA-SKCM,42.08173061,1.0,,,63.0,White,Male,Metastatic,1,152.2,,,,,,,,16.0,,
+TCGA-W3-AA1W-06,TCGA-W3-AA1W,TCGA-SKCM,219.1537627,0.0,,,64.0,White,Male,Metastatic,1,19.53333333,,,,,,,,9.0,,
+TCGA-W3-AA21-06,TCGA-W3-AA21,TCGA-SKCM,105.0399448,1.0,,,26.0,White,Male,Metastatic,1,14.26666667,,,,,,,,11.0,,
+TCGA-WE-A8ZM-06,TCGA-WE-A8ZM,TCGA-SKCM,101.324917,0.0,,,70.0,White,Male,Metastatic,1,2.366666667,,,,,,,,18.0,,
+TCGA-WE-AAA0-06,TCGA-WE-AAA0,TCGA-SKCM,40.40503666,0.0,,,47.0,White,Male,Metastatic,1,40.73333333,,,,,,,,4.0,,
+TCGA-WE-AAA4-06,TCGA-WE-AAA4,TCGA-SKCM,24.98602755,0.0,,,56.0,White,Female,Metastatic,1,6.7,,,,,,,,6.0,,
+TCGA-XV-AB01-06,TCGA-XV-AB01,TCGA-SKCM,13.24916987,0.0,,,54.0,White,Female,Metastatic,1,,,,,,,,,,,
+TCGA-YG-AA3O-06,TCGA-YG-AA3O,TCGA-SKCM,37.93931025,1.0,,,62.0,,Male,Metastatic,1,31.33333333,,,,,,,,23.0,,
+TCGA-YG-AA3P-06,TCGA-YG-AA3P,TCGA-SKCM,14.43271855,0.0,,,63.0,,Female,Metastatic,1,2.133333333,,,,,,,,24.0,,

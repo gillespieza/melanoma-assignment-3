@@ -231,7 +231,7 @@ All four modules operate on **per-patient inputs only** — kinetic rate constan
 | 2 | `02_feature_analysis.py` | Mann-Whitney U, Fisher's exact, Youden cutoffs, interaction terms, feature credibility |
 | 3 | `03_cluster_patients.py` | Gaussian Mixture Model (GMM, K=4, full covariance) soft clustering, posterior probability export, PCA/t-SNE projections, model persistence |
 | 4 | `04_phenotype_characterisation.py` | Cluster profiling, phenotype labelling, KM survival. Dual-arm Q3-parameterised Kuznetsov 2-state ODE trajectories: Panel A = Immunotherapy (Anti-PD-1 monotherapy + M2 CAF-rescue combination), Panel B = Targeted Therapy (Vemurafenib BRAFi 500 nM). Per-patient r derived from Q3 pERK/pERK_ref coupling (Module A→B); per-patient c from Q3 checkpoint f_kill (Module D) and CYT. Phenotype-level pheno_r_mult applied in targeted arm to separate NF1-loss (0.68×), M2-High (1.25×), and NRAS-paradox (1.00×) cohorts. |
-| 5 | `05_subgroup_models.py` | Per-phenotype Logistic Regression + RF, LOCO CV vs global Q1 model |
+| 5 | `05_subgroup_models.py` | Soft-weighted GMM probability Random Forest models trained on 10 non-circular features (excluding 9 Phase 3 clustering features), evaluated via LOCO CV vs Global Enriched Baseline |
 | 6 | `06_clinical_utility.py` | Decision Curve Analysis, Net Benefit, NNT, PPV, clinical benchmarks |
 | 7 | `07_treatability_scoring.py` | Treatability Index, Q2 drug integration, Q4 DepMap/LINCS target nominations |
 | — | `08_compare_clustering_algorithms.py` | Algorithmic comparison: K-Means vs Ward vs GMM vs DBSCAN |
@@ -243,7 +243,7 @@ All four modules operate on **per-patient inputs only** — kinetic rate constan
 
 | Module | Purpose |
 |--------|---------|
-| `q5_constants.py` | Cell-type markers, immune signature genes, clustering features, resistance pathways, treatability features, phenotype labels, Q3 ODE params, Q4 target nominations |
+| `q5_constants.py` | Cell-type markers, immune signature genes, clustering features, `PHENOTYPE_PROB_COL` mapping, resistance pathways, treatability features, phenotype labels, Q3 ODE params, Q4 target nominations |
 | `clustering.py` | `prepare_clustering_features()`, `run_kmeans()`, `plot_2d_cluster_projection()` |
 | `phenotyping.py` | `profile_clusters()`, `assign_phenotype_labels()`, violin/radar/heatmap plots |
 | `deconvolution.py` | Transcriptomic cell-type deconvolution from marker panels |
@@ -301,6 +301,7 @@ Q5 internal dependency chain:
 | `run_pipeline.py` (Q1) | Still writes log to project root instead of `logs/` directory | Unresolved |
 | `q5/scripts/04_phenotype_characterisation.py` | Phase 4 now renders a dual-arm Kuznetsov 2-state ODE figure (Panel A: Immunotherapy, Panel B: Targeted Therapy) without IQR confidence shading. Per-patient r derived from Q3 pERK coupling; c from Q3 checkpoint f_kill and CYT. Targeted arm uses phenotype-level pheno_r_mult to achieve visual separation (NF1-loss=0.68×, M2-High=1.25×). All changes confined to `04_phenotype_characterisation.py`; q3-ode-model/ unchanged. | **Resolved** |
 | `q5/scripts/05_subgroup_models.py` | Unused `LogisticRegression` import; magic numbers inline; 183-line `train_and_eval_loco` monolith; `SimpleImputer`+`StandardScaler` duplicated 5×; `PHENOTYPE_SHORT_NAMES` key `"M2 Immunosuppressive"` mismatched `PHENOTYPE_PALETTE` (silent wrong colour); missing docstrings on helpers. | **Resolved** (Phase 5 refactored 2026-07-31) |
+| `q5/scripts/05_subgroup_models.py` & `06_clinical_utility.py` | Feature circularity (53% overlap with Phase 3 clustering features), GMM index instability, missing `TMB_NONSYNONYMOUS`. Resolved by excluding clustering features, establishing `PHENOTYPE_PROB_COL` in `q5_constants.py`, implementing soft GMM mixture weighting, and restoring `TMB_NONSYNONYMOUS` in clinical merge. | **Resolved** (2026-07-31) |
 
 ## Conventions Quick Reference
 

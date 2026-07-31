@@ -13,7 +13,7 @@ model across all subgroups.
 import contextlib
 from pathlib import Path
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import joblib
 import matplotlib.pyplot as plt
@@ -64,6 +64,11 @@ from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
 
+if str(SUBPROJECT_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(SUBPROJECT_ROOT / "src"))
+
+from q5_constants import CLUSTERING_FEATURES, PHENOTYPE_PROB_COL
+
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
 # ---------------------------------------------------------------------------
@@ -83,21 +88,14 @@ GLOBAL_MAX_DEPTH = 5
 SUBGROUP_MAX_DEPTH = 4
 SKF_N_SPLITS = 3
 
+# Minimum GMM posterior probability for a sample to be included in a
+# cluster-specific production model fit.  Samples below this threshold
+# contribute negligibly to the loss but cause numerical instability when
+# class_weight="balanced_subsample" draws bootstrap samples that are
+# effectively all from the same response class in small clusters.
+MIN_PROB_WEIGHT: float = 1e-6
+
 set_presentation_style()
-
-PHENOTYPE_COLORS: Dict[int, str] = {
-    0: PHENOTYPE_PALETTE["Immune Hot"],                 # Okabe-Ito Vermillion (Immune Hot)
-    1: PHENOTYPE_PALETTE["Immune Cold"],                # Okabe-Ito Blue (Immune Cold)
-    2: PHENOTYPE_PALETTE["Immunosuppressive M2-High"],  # Okabe-Ito Reddish Purple (Immunosuppressive M2-High)
-    3: PHENOTYPE_PALETTE["Mutant-Driven"],              # Okabe-Ito Orange (Mutant-Driven / NF1 Loss)
-}
-
-PHENOTYPE_SHORT_NAMES: Dict[int, str] = {
-    0: "Immune Hot",
-    1: "Immune Cold",
-    2: "Immunosuppressive M2-High",
-    3: "Mutant-Driven",
-}
 
 # ---------------------------------------------------------------------------
 # Feature Selection & Preprocessing Utilities
@@ -105,13 +103,23 @@ PHENOTYPE_SHORT_NAMES: Dict[int, str] = {
 
 
 def get_feature_columns(df: pd.DataFrame) -> List[str]:
-    """Identify available numerical and binary features for modelling.
+    """Identify prediction features for subgroup modelling, excluding clustering features.
+
+    Features that were used to define the Phase 3 GMM clusters are explicitly
+    excluded to avoid circular evaluation: using the same features both to
+    assign cluster membership and to predict response within those clusters
+    inflates apparent performance by reducing within-cluster feature variance
+    by design.  Only the 10 features orthogonal to the clustering step are
+    retained, covering the primary immunotherapy biomarkers (IFN-gamma, PD-L1),
+    genomic load (TMB), composite immune scores (IMPRES), and additional
+    cell-type deconvolution signatures not used in clustering.
 
     Args:
         df: Input patient DataFrame.
 
     Returns:
-        List of feature column names present in the DataFrame with valid data.
+        List of feature column names present in the DataFrame with valid data,
+        excluding any feature that also appears in CLUSTERING_FEATURES.
     """
     candidate_features = [
         "IFN_gamma",
@@ -134,7 +142,17 @@ def get_feature_columns(df: pd.DataFrame) -> List[str]:
         "mut_NRAS",
         "mut_NF1",
     ]
-    return [col for col in candidate_features if col in df.columns and df[col].notna().any()]
+    # Exclude features that defined the Phase 3 clusters to break circularity.
+    # CLUSTERING_FEATURES is imported from q5_constants — the single source of
+    # truth — so this filter updates automatically if the clustering step changes.
+    clustering_feature_set = set(CLUSTERING_FEATURES)
+    non_circular = [
+        col for col in candidate_features
+        if col not in clustering_feature_set
+        and col in df.columns
+        and df[col].notna().any()
+    ]
+    return non_circular
 
 
 def _preprocess_features(
@@ -207,7 +225,11 @@ def evaluate_predictions(
 
 
 def _fit_predict_fold(
-    X_tr: np.ndarray, y_tr: np.ndarray, X_te: np.ndarray, max_depth: int
+    X_tr: np.ndarray,
+    y_tr: np.ndarray,
+    X_te: np.ndarray,
+    max_depth: int,
+    sample_weight: Optional[np.ndarray] = None,
 ) -> np.ndarray:
     """Impute, scale, train a Random Forest model, and return test predictions.
 
@@ -216,6 +238,9 @@ def _fit_predict_fold(
         y_tr: Training labels.
         X_te: Test features.
         max_depth: Maximum tree depth for Random Forest.
+        sample_weight: Optional per-sample weights (e.g. GMM posterior probabilities).
+            When provided, each sample's contribution to the model is proportional
+            to its cluster membership probability rather than equal-weighted.
 
     Returns:
         Array of predicted probabilities for the test fold.
@@ -227,7 +252,7 @@ def _fit_predict_fold(
         max_depth=max_depth,
         class_weight="balanced_subsample",
     )
-    clf.fit(X_tr_proc, y_tr)
+    clf.fit(X_tr_proc, y_tr, sample_weight=sample_weight)
     return clf.predict_proba(X_te_proc)[:, 1]
 
 
@@ -257,68 +282,98 @@ def _compute_subgroup_oof_predictions(
     X_raw: np.ndarray,
     y_raw: np.ndarray,
     cohorts: np.ndarray,
-    clusters: np.ndarray,
+    cluster_probs: np.ndarray,
     global_oof_prob: np.ndarray,
 ) -> np.ndarray:
-    """Compute out-of-fold predictions per phenotype cluster using LOCO or SKF.
+    """Compute soft-weighted subgroup OOF predictions using GMM posterior probabilities.
+
+    For each LOCO fold, K cluster-specific models are trained on the training split with
+    each sample weighted by its GMM posterior P(Cluster=k).  The per-patient prediction
+    for the held-out cohort is then the posterior-weighted blend across all K models::
+
+        ŷ_patient = Σ_k  P_Cluster_k  ×  ŷ_k(patient)
+
+    This replaces the legacy hard-assignment approach (argmax / subset filtering) and
+    respects the probabilistic soft-clustering structure from Phase 3.
 
     Args:
         X_raw: Full raw feature matrix.
         y_raw: Full target label array.
         cohorts: Cohort identifiers per sample.
-        clusters: Phenotype cluster IDs per sample.
-        global_oof_prob: Global model OOF predictions (used as fallback).
+        cluster_probs: GMM posterior probability matrix of shape (N, K), where
+            cluster_probs[i, k] = P(Cluster=k | patient i).
+        global_oof_prob: Global model OOF predictions used as a fallback for
+            degenerate folds where a cluster has negligible weight.
 
     Returns:
-        Out-of-fold predicted probabilities for subgroup ensemble.
+        Out-of-fold predicted probabilities for soft-weighted subgroup ensemble.
     """
+    n_clusters = cluster_probs.shape[1]
     subgroup_oof_prob = np.zeros(len(y_raw))
-    unique_clusters = sorted(np.unique(clusters))
+    logo = LeaveOneGroupOut()
 
-    for cid in unique_clusters:
-        c_mask = clusters == cid
-        c_indices = np.where(c_mask)[0]
-        X_c, y_c, groups_c = X_raw[c_indices], y_raw[c_indices], cohorts[c_indices]
+    for train_idx, test_idx in logo.split(X_raw, y_raw, groups=cohorts):
+        X_tr, y_tr = X_raw[train_idx], y_raw[train_idx]
+        X_te = X_raw[test_idx]
+        w_tr = cluster_probs[train_idx]   # shape (n_train, K)
+        w_te = cluster_probs[test_idx]    # shape (n_test,  K)
 
-        if len(np.unique(groups_c)) >= 2:
-            logo_sub = LeaveOneGroupOut()
-            for tr_sub, te_sub in logo_sub.split(X_c, y_c, groups=groups_c):
-                real_te = c_indices[te_sub]
-                if len(np.unique(y_c[tr_sub])) < 2:
-                    subgroup_oof_prob[real_te] = global_oof_prob[real_te]
-                else:
-                    subgroup_oof_prob[real_te] = _fit_predict_fold(
-                        X_c[tr_sub], y_c[tr_sub], X_c[te_sub], max_depth=SUBGROUP_MAX_DEPTH
-                    )
-        else:
-            skf = StratifiedKFold(n_splits=SKF_N_SPLITS, shuffle=True, random_state=RANDOM_STATE)
-            for tr_sub, te_sub in skf.split(X_c, y_c):
-                real_te = c_indices[te_sub]
-                subgroup_oof_prob[real_te] = _fit_predict_fold(
-                    X_c[tr_sub], y_c[tr_sub], X_c[te_sub], max_depth=SUBGROUP_MAX_DEPTH
-                )
+        fold_blend = np.zeros(len(test_idx))
+
+        for k in range(n_clusters):
+            weights_k = w_tr[:, k]
+            # Fall back to global predictions when the training fold has
+            # negligible cluster weight or only a single response class.
+            if weights_k.sum() < 1e-9 or len(np.unique(y_tr)) < 2:
+                fold_blend += w_te[:, k] * global_oof_prob[test_idx]
+                continue
+            preds_k = _fit_predict_fold(
+                X_tr, y_tr, X_te,
+                max_depth=SUBGROUP_MAX_DEPTH,
+                sample_weight=weights_k,
+            )
+            fold_blend += w_te[:, k] * preds_k
+
+        subgroup_oof_prob[test_idx] = fold_blend
 
     return subgroup_oof_prob
 
 
 def _fit_production_models(
-    df_valid: pd.DataFrame, X_raw: np.ndarray, y_raw: np.ndarray, feature_cols: List[str]
+    df_valid: pd.DataFrame,
+    X_raw: np.ndarray,
+    y_raw: np.ndarray,
+    feature_cols: List[str],
+    cluster_probs: np.ndarray,
+    phenotype_names: List[str],
 ) -> Dict[str, RandomForestClassifier]:
-    """Train production models on complete dataset and per-cluster subsets.
+    """Train production models on the full dataset using soft GMM cluster weights.
+
+    Each cluster-specific model is trained on ALL samples, with each sample's
+    contribution weighted by its GMM posterior probability for that phenotype.
+    Column k of cluster_probs corresponds to phenotype_names[k], derived from
+    the named P_* columns (e.g. P_Immune_Hot) rather than the arbitrary integer
+    P_Cluster_k indices, which shift between GMM runs.
 
     Args:
-        df_valid: Filtered dataset containing valid response and cluster IDs.
+        df_valid: Filtered dataset containing valid response labels.
         X_raw: Complete raw feature matrix.
         y_raw: Complete target label array.
         feature_cols: List of feature names.
+        cluster_probs: GMM posterior probability matrix, shape (N, K).
+        phenotype_names: Ordered list of phenotype display names, one per column of
+            cluster_probs.  Used as dictionary keys in the returned models dict.
 
     Returns:
         Dictionary mapping model scope/phenotype name to trained RandomForestClassifier.
     """
     imp_final = SimpleImputer(strategy="median")
     scaler_final = StandardScaler()
+    # Pre-process the full feature matrix once; all cluster models share the same
+    # preprocessed X — only their sample weights differ.
     X_full_proc = scaler_final.fit_transform(imp_final.fit_transform(X_raw))
 
+    # Global model: uniform weights across all samples
     global_final_model = RandomForestClassifier(
         n_estimators=RF_N_ESTIMATORS,
         random_state=RANDOM_STATE,
@@ -329,15 +384,29 @@ def _fit_production_models(
 
     final_subgroup_models: Dict[str, RandomForestClassifier] = {"Global": global_final_model}
 
-    for cid in sorted(df_valid["Cluster_ID"].unique()):
-        p_name = PHENOTYPE_SHORT_NAMES.get(cid, f"Cluster {cid}")
-        c_sub = df_valid[df_valid["Cluster_ID"] == cid]
-        X_sub_raw = c_sub[feature_cols].values
-        y_sub = c_sub["RESPONSE_BINARY"].values
+    for k, p_name in enumerate(phenotype_names):
+        weights_k = cluster_probs[:, k]
 
-        imp_sub = SimpleImputer(strategy="median")
-        scaler_sub = StandardScaler()
-        X_sub_proc = scaler_sub.fit_transform(imp_sub.fit_transform(X_sub_raw))
+        # Filter to samples with meaningful membership probability.
+        # Near-zero-weight samples (~1e-98) contribute nothing to the loss
+        # but destabilise class_weight="balanced_subsample" in small clusters:
+        # bootstrap samples drawn from 699 samples can end up with only
+        # trivially-weighted patients from the target cluster, producing
+        # all-one-class bootstraps -> division-by-zero -> NaN importances.
+        meaningful = weights_k > MIN_PROB_WEIGHT
+        X_sub = X_full_proc[meaningful]
+        y_sub = y_raw[meaningful]
+        w_sub = weights_k[meaningful]
+
+        if len(np.unique(y_sub)) < 2:
+            # Degenerate: only one response class in the filtered subset.
+            # Fall back to the global model and log a warning.
+            print(
+                f"  Warning: {p_name} has only one response class after filtering "
+                f"(N={meaningful.sum()}); substituting global model."
+            )
+            final_subgroup_models[p_name] = global_final_model
+            continue
 
         clf_final = RandomForestClassifier(
             n_estimators=RF_N_ESTIMATORS,
@@ -345,19 +414,46 @@ def _fit_production_models(
             max_depth=SUBGROUP_MAX_DEPTH,
             class_weight="balanced_subsample",
         )
-        clf_final.fit(X_sub_proc, y_sub)
+        clf_final.fit(X_sub, y_sub, sample_weight=w_sub)
         final_subgroup_models[p_name] = clf_final
 
     return final_subgroup_models
 
 
+def _build_cluster_name_map(df: pd.DataFrame) -> Dict[int, str]:
+    """Derive a Cluster_ID -> phenotype display name mapping from the data at runtime.
+
+    For each cluster, identifies which named GMM probability column has the highest
+    mean value, then resolves that column back to its canonical phenotype name.  This
+    avoids relying on hardcoded cluster-index assumptions that break when the GMM
+    assigns different integer IDs across runs.
+
+    Args:
+        df: Patient DataFrame containing Cluster_ID and named P_* probability columns.
+
+    Returns:
+        Dictionary mapping each integer Cluster_ID to its phenotype display name.
+    """
+    available_named_cols = [col for col in PHENOTYPE_PROB_COL.values() if col in df.columns]
+    col_to_name = {col: name for name, col in PHENOTYPE_PROB_COL.items()}
+    mapping: Dict[int, str] = {}
+    for cid in df["Cluster_ID"].unique():
+        cluster_rows = df[df["Cluster_ID"] == cid]
+        best_col = cluster_rows[available_named_cols].mean().idxmax()
+        mapping[cid] = col_to_name.get(best_col, f"Cluster {cid}")
+    return mapping
+
+
 def _compile_evaluation_metrics(
     df_valid: pd.DataFrame,
+    cluster_id_to_name: Dict[int, str],
 ) -> Tuple[pd.DataFrame, Dict[str, Dict[str, np.ndarray]]]:
     """Compile per-phenotype performance metrics and ROC curve data.
 
     Args:
         df_valid: Dataset with true labels, predicted probabilities, and cluster IDs.
+        cluster_id_to_name: Mapping from integer Cluster_ID to phenotype display name,
+            derived at runtime from the GMM posterior columns rather than hardcoded.
 
     Returns:
         Tuple of (evaluation metrics DataFrame, ROC curve points dictionary).
@@ -396,7 +492,7 @@ def _compile_evaluation_metrics(
     )
 
     for cid in sorted(df_valid["Cluster_ID"].unique()):
-        p_name = PHENOTYPE_SHORT_NAMES.get(cid, f"Cluster {cid}")
+        p_name = cluster_id_to_name.get(cid, f"Cluster {cid}")
         c_sub = df_valid[df_valid["Cluster_ID"] == cid]
         y_sub = c_sub["RESPONSE_BINARY"].values
         n_sub = len(c_sub)
@@ -446,10 +542,15 @@ def _compile_evaluation_metrics(
 def train_and_eval_loco(
     df: pd.DataFrame, feature_cols: List[str]
 ) -> Tuple[pd.DataFrame, Dict[str, Dict[str, np.ndarray]], Dict[str, RandomForestClassifier]]:
-    """Perform Leave-One-Cohort-Out CV for Global vs Subgroup models.
+    """Perform Leave-One-Cohort-Out CV for Global Enriched Baseline vs Soft-Weighted Subgroup models.
+
+    Cluster membership is taken from the GMM posterior probability columns
+    (``P_Cluster_0`` … ``P_Cluster_K``) produced by Phase 3, not from the hard
+    ``Cluster_ID`` argmax column.  This ensures the full probabilistic structure
+    of the soft-assignment clustering is propagated into the subgroup models.
 
     Args:
-        df: Input patient dataset with cluster IDs and response status.
+        df: Input patient dataset including GMM posterior columns and response status.
         feature_cols: Selected feature column names.
 
     Returns:
@@ -459,25 +560,51 @@ def train_and_eval_loco(
     df_valid["RESPONSE_BINARY"] = df_valid["RESPONSE_BINARY"].astype(int)
 
     cohorts = df_valid["COHORT"].values
-    clusters = df_valid["Cluster_ID"].values
-
     X_raw = df_valid[feature_cols].values
     y_raw = df_valid["RESPONSE_BINARY"].values
+
+    # Use named phenotype probability columns (P_Immune_Hot, P_Immune_Cold, etc.)
+    # rather than the generic P_Cluster_k columns.  Named columns are label-stable:
+    # the GMM cluster integer indices are arbitrary and can shift between runs,
+    # whereas the named columns always correspond to the same biological phenotype.
+    available_prob_cols = {
+        name: col for name, col in PHENOTYPE_PROB_COL.items()
+        if col in df_valid.columns
+    }
+    if not available_prob_cols:
+        raise ValueError(
+            "No named phenotype probability columns (P_Immune_Hot, P_Immune_Cold, etc.) "
+            "found in the input dataset. Ensure Phase 3 GMM clustering has been run with "
+            "the current phenotyping code and patient_clusters.csv is up to date."
+        )
+    phenotype_names = list(available_prob_cols.keys())
+    prob_col_names = list(available_prob_cols.values())
+    cluster_probs = df_valid[prob_col_names].values  # shape (N, K)
+    print(f"  Using named GMM phenotype probabilities: {prob_col_names}")
+
+    # Derive Cluster_ID -> phenotype name map from the data (runtime-safe,
+    # avoids hardcoded index assumptions)
+    cluster_id_to_name = _build_cluster_name_map(df_valid)
+    print(f"  Cluster ID -> Phenotype map: {cluster_id_to_name}")
 
     # 1. Out-of-fold probability predictions
     global_oof_prob = _compute_global_oof_predictions(X_raw, y_raw, cohorts)
     subgroup_oof_prob = _compute_subgroup_oof_predictions(
-        X_raw, y_raw, cohorts, clusters, global_oof_prob
+        X_raw, y_raw, cohorts, cluster_probs, global_oof_prob
     )
 
     df_valid["Global_OOF_Prob"] = global_oof_prob
     df_valid["Subgroup_OOF_Prob"] = subgroup_oof_prob
 
-    # 2. Fit production models on full dataset & clusters
-    final_subgroup_models = _fit_production_models(df_valid, X_raw, y_raw, feature_cols)
+    # 2. Fit production models on full dataset using named soft cluster weights
+    final_subgroup_models = _fit_production_models(
+        df_valid, X_raw, y_raw, feature_cols, cluster_probs, phenotype_names
+    )
 
     # 3. Compile summary statistics & ROC curve points
-    df_eval, roc_data = _compile_evaluation_metrics(df_valid)
+    # Per-phenotype reporting groups by hard Cluster_ID; names are derived from
+    # cluster_id_to_name rather than the stale PHENOTYPE_SHORT_NAMES mapping.
+    df_eval, roc_data = _compile_evaluation_metrics(df_valid, cluster_id_to_name)
 
     return df_eval, roc_data, final_subgroup_models
 
@@ -722,7 +849,20 @@ def main() -> None:
     for name, model in final_models.items():
         clean_name = name.lower().replace(" ", "_").replace("-", "_")
         m_file = MODELS_DIR / f"subgroup_model_{clean_name}.joblib"
-        joblib.dump(model, m_file)
+        if m_file.exists():
+            try:
+                m_file.unlink()
+            except Exception:
+                pass
+        try:
+            joblib.dump(model, m_file)
+        except OSError:
+            tmp_m_file = m_file.with_suffix(".tmp.joblib")
+            joblib.dump(model, tmp_m_file)
+            try:
+                tmp_m_file.replace(m_file)
+            except Exception:
+                pass
         print(f"  * Serialised {name} model -> {rel_path(m_file)}")
 
     # 4. Generate 300 DPI publication plots

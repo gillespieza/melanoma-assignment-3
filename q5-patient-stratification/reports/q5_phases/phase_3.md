@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-3
   - q5
-created: 2026-07-31 18:55
+created: 2026-07-31 19:36
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 18:55
+updated: 2026-07-31 19:36
 ---
 
 ## 3. Phase 3: Unsupervised Phenotype Stratification (N = 699)
@@ -28,10 +28,10 @@ updated: 2026-07-31 18:55
 
 | Cluster ID   | Biological Phenotype Subtype                                     |   Patient Count (N) | Cohort Share   | Response Rate   |
 |:-------------|:-----------------------------------------------------------------|--------------------:|:---------------|:----------------|
-| Cluster 0    | Immune Cold (Low TIS & Infiltration, Desert)                     |                  22 | 3.1%           | **50.0%**       |
-| Cluster 1    | Mutant-Driven (NF1 Loss & High Response Subtype)                 |                  65 | 9.3%           | **68.8%**       |
-| Cluster 2    | Immune Hot (High TIS & CYT, Inflamed Microenvironment)           |                 304 | 43.5%          | **41.1%**       |
-| Cluster 3    | Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion) |                 308 | 44.1%          | **38.0%**       |
+| Cluster 0    | Immune Cold (Low TIS & Infiltration, Desert)                     |                  22 | 3.1%           | **66.7%**       |
+| Cluster 1    | Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion) |                 305 | 43.6%          | **37.1%**       |
+| Cluster 2    | Immune Hot (High TIS & CYT, Inflamed Microenvironment)           |                 266 | 38.1%          | **37.7%**       |
+| Cluster 3    | Mutant-Driven (NF1 Loss & High Response Subtype)                 |                 106 | 15.2%          | **60.7%**       |
 
 ### Unsupervised Phenotype Cluster Projection (2D PCA)
 
@@ -52,9 +52,9 @@ updated: 2026-07-31 18:55
 > - **Non-Linear Topology**: t-SNE (perplexity=50) preserves local patient neighbourhood structure and non-linear biomarker interactions across the 9 multi-modal clustering features (`TIS`, `CYT`, CD8 T-cells, M1/M2 Macrophages, CAFs, `BRAF`/`NRAS`/`NF1` mutations). Natural within-cluster scatter reflects genuine continuous variation within each immune phenotype.
 
 ### Key Takeaways & Student Summary
-- **Distinct Patient Groups**: GMM soft clustering partitioned $N = 699$ patients (full cohort) into four biological subgroups; within the ICI-treated sub-cohort ($N = 326$), response rates range from **38.0% to 68.8%**.
-- **Highest Response Group**: The **Mutant-Driven (NF1 Loss & High Response Subtype)** subgroup achieves the highest response rate (68.8%), benefiting from favorable immune activation and high driver mutation burden.
-- **Treatment-Resistant Subgroup**: The **Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion)** subgroup exhibits the lowest response rate (38.0%), highlighting the need for targeted combination therapies beyond single-agent PD-1 blockade.
+- **Distinct Patient Groups**: GMM soft clustering partitioned $N = 699$ patients (full cohort) into four biological subgroups; within the ICI-treated sub-cohort ($N = 326$), response rates range from **37.1% to 66.7%**.
+- **Highest Response Group**: The **Immune Cold (Low TIS & Infiltration, Desert)** subgroup achieves the highest response rate (66.7%), benefiting from favorable immune activation and high driver mutation burden.
+- **Treatment-Resistant Subgroup**: The **Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion)** subgroup exhibits the lowest response rate (37.1%), highlighting the need for targeted combination therapies beyond single-agent PD-1 blockade.
 
 > [!NOTE] Student-Friendly Phase 3 Summary
 > Phase 3 performed unsupervised multi-dimensional GMM soft clustering to discover natural biological patient subgroups without relying on outcome labels:

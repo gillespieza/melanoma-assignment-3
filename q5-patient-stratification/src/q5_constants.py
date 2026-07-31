@@ -92,6 +92,17 @@ PHENOTYPE_LABELS: Dict[str, str] = {
     "MUTANT": "Mutant-Driven",
 }
 
+# Mapping from canonical phenotype display name to its Phase 3 GMM output probability column.
+# Keyed by PHENOTYPE_LABELS values to guarantee label consistency across the codebase.
+# Named columns (P_Immune_Hot etc.) are used instead of the raw P_Cluster_k columns because
+# GMM cluster integer indices are arbitrary and can shift between runs; named columns are stable.
+PHENOTYPE_PROB_COL: Dict[str, str] = {
+    "Immune Hot":                "P_Immune_Hot",
+    "Immune Cold":               "P_Immune_Cold",
+    "Immunosuppressive M2-High": "P_Immunosuppressive_M2_High",
+    "Mutant-Driven":             "P_Mutant_Driven",
+}
+
 # Q3 ODE initial parameters mapped per Q5 phenotype
 Q3_ODE_PHENOTYPE_PARAMS: Dict[str, Dict[str, float]] = {
     "Immune Hot": {"T0": 1.0, "E0": 0.8, "M0": 0.2, "a_kill": 0.15},

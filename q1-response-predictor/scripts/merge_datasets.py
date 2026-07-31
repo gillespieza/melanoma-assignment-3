@@ -529,6 +529,33 @@ def _harmonise_clinical(
         else:
             df["IMMUNOTHERAPY"] = 0
 
+    # ------------------------------------------------------------------
+    # Genomic & Neoantigen burden features
+    # ------------------------------------------------------------------
+
+    genomic_numeric_cols = [
+        "TMB_NONSYNONYMOUS",
+        "SNV_NEOANTIGEN",
+        "INDEL_NEOANTIGEN",
+        "FUSION_NEOANTIGEN",
+        "SPLICE_NEOANTIGEN",
+        "CTA_SELF_NEOANTIGEN",
+        "VIRUS_NEOANTIGEN",
+        "ERV_NEOANTIGEN",
+        "TOTAL_NEOANTIGEN",
+        "CNA_PROP",
+        "ANEUPLOIDY_SCORE",
+        "MSI_SCORE_MANTIS",
+        "MSI_SENSOR_SCORE",
+    ]
+
+    for col_name in genomic_numeric_cols:
+        if col_name in df_clin.columns:
+            df[col_name] = pd.to_numeric(
+                df_clin[col_name],
+                errors="coerce",
+            )
+
     df.index.name = "SAMPLE_ID"
 
     return df

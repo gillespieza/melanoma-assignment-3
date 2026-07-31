@@ -45,6 +45,7 @@ from src.styles import (
     STRATEGY_PALETTE,
     set_presentation_style,
 )
+from q5_constants import CLUSTERING_FEATURES, PHENOTYPE_PROB_COL
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
@@ -64,19 +65,14 @@ REPORTS_DIR = SUBPROJECT_ROOT / "reports" / "q5_phases"
 
 set_presentation_style()
 
-PHENOTYPE_SHORT_NAMES: Dict[int, str] = {
-    0: "Immune Hot",
-    1: "Immune Cold",
-    2: "M2 Immunosuppressive",
-    3: "Mutant-Driven",
-}
-
 
 
 
 
 def get_feature_columns(df: pd.DataFrame) -> List[str]:
     """Identify available numerical and binary features for model predictions."""
+def get_feature_columns(df: pd.DataFrame) -> List[str]:
+    """Identify prediction features for subgroup modelling, excluding clustering features."""
     candidate_features = [
         "IFN_gamma",
         "TIS",
@@ -98,7 +94,13 @@ def get_feature_columns(df: pd.DataFrame) -> List[str]:
         "mut_NRAS",
         "mut_NF1",
     ]
-    return [col for col in candidate_features if col in df.columns and df[col].notna().any()]
+    clustering_feature_set = set(CLUSTERING_FEATURES)
+    return [
+        col for col in candidate_features
+        if col not in clustering_feature_set
+        and col in df.columns
+        and df[col].notna().any()
+    ]
 
 
 def compute_net_benefit(
@@ -219,21 +221,26 @@ def generate_predictions(df: pd.DataFrame) -> Dict[str, np.ndarray]:
         clf.fit(X_scaled, y_true)
         pred_global = clf.predict_proba(X_scaled)[:, 1]
 
-    # 2. Phenotype-Stratified Predictions
+    # 2. Phenotype-Stratified Predictions (Soft Mixture)
     pred_stratified = np.zeros(len(df))
-    for p_id, p_name in PHENOTYPE_SHORT_NAMES.items():
-        mask = df["Cluster_ID"] == p_id
-        if not mask.any():
-            continue
+    prob_sum = np.zeros(len(df))
 
+    for p_name, prob_col in PHENOTYPE_PROB_COL.items():
         clean_name = p_name.lower().replace(" ", "_").replace("-", "_")
         sub_file = MODELS_DIR / f"subgroup_model_{clean_name}.joblib"
-
-        if sub_file.exists():
+        if sub_file.exists() and prob_col in df.columns:
             sub_clf = joblib.load(sub_file)
-            pred_stratified[mask] = sub_clf.predict_proba(X_scaled[mask])[:, 1]
+            p_probs = df[prob_col].values
+            pred_stratified += p_probs * sub_clf.predict_proba(X_scaled)[:, 1]
+            prob_sum += p_probs
         else:
-            pred_stratified[mask] = pred_global[mask]
+            p_probs = df[prob_col].values if prob_col in df.columns else np.zeros(len(df))
+            pred_stratified += p_probs * pred_global
+            prob_sum += p_probs
+
+    nonzero_mask = prob_sum > 0
+    pred_stratified[nonzero_mask] = pred_stratified[nonzero_mask] / prob_sum[nonzero_mask]
+    pred_stratified[~nonzero_mask] = pred_global[~nonzero_mask]
 
     # 3. Single-Gene `CD274` (PD-L1) Benchmark Logistic Probability
     if "PD_L1" in df.columns and df["PD_L1"].notna().any():
@@ -429,12 +436,24 @@ def plot_unnecessary_treatments_avoided(df_dca: pd.DataFrame, out_path: Path) ->
     plt.close(fig)
 
 
+def _build_cluster_name_map(df: pd.DataFrame) -> Dict[int, str]:
+    available_named_cols = [col for col in PHENOTYPE_PROB_COL.values() if col in df.columns]
+    col_to_name = {col: name for name, col in PHENOTYPE_PROB_COL.items()}
+    mapping: Dict[int, str] = {}
+    for cid in df["Cluster_ID"].unique():
+        cluster_rows = df[df["Cluster_ID"] == cid]
+        best_col = cluster_rows[available_named_cols].mean().idxmax()
+        mapping[int(cid)] = col_to_name.get(best_col, f"Cluster {cid}")
+    return mapping
+
+
 def plot_net_benefit_by_phenotype(
     df: pd.DataFrame, prob_cols: Dict[str, np.ndarray], pt: float, out_path: Path
 ) -> None:
     """Plot Net Benefit across individual biological phenotypes at fixed decision threshold pt."""
     rows = []
-    for p_id, p_name in PHENOTYPE_SHORT_NAMES.items():
+    cluster_id_to_name = _build_cluster_name_map(df)
+    for p_id, p_name in cluster_id_to_name.items():
         mask = df["Cluster_ID"] == p_id
         if not mask.any():
             continue
