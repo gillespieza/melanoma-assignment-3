@@ -21,6 +21,12 @@ def compute_macrophage_stv(
 ) -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
     """Calculate M1 score, M2 score, M1/M2 ratio, and net STV score using Macrophage STV weights.
 
+    Biological Assumption (Zero-Infiltration Boundary Condition):
+    If a patient sample exhibits zero or unmeasurable macrophage score sums (M1 + M2 == 0),
+    division yields 0/0 (NaN). We assign a neutral polarization ratio of 0.5 to represent
+    a balanced baseline state without artificially biasing downstream clustering toward
+    either M1-hot or M2-suppressive extremes.
+
     Args:
         df_expr: Expression DataFrame (samples x genes).
         stv_path: Path to m1_m2_stv.csv file.
@@ -55,7 +61,14 @@ def compute_macrophage_stv(
     else:
         m2_score = pd.Series(0.0, index=df_expr.index)
 
-    # Compute M1/M2 Ratio
+    # ---------------------------------------------------------------------------
+    # Biological Assumption — Zero-Infiltration Neutral Ratio Fallback:
+    # When both M1 and M2 macrophage scores equal 0 (denom == 0, representing an
+    # immune desert with unmeasurable macrophage infiltration), an unadjusted division
+    # would yield 0/0 (NaN). We assign a neutral ratio of 0.5 to prevent NaN propagation
+    # while maintaining a balanced polarization baseline that does not falsely skew
+    # downstream patient clustering toward M1-hot or M2-suppressive extremes.
+    # ---------------------------------------------------------------------------
     denom = m1_score + m2_score
     m1_m2_ratio = np.where(denom > 0, m1_score / denom, 0.5)
     m1_m2_ratio_series = pd.Series(m1_m2_ratio, index=df_expr.index)
