@@ -61,8 +61,22 @@ def generate_obsidian_frontmatter(
     tags: Optional[List[str]] = None,
     created: Optional[str] = None,
     updated: Optional[str] = None,
+    extra_css_classes: Optional[List[str]] = None,
 ) -> str:
-    """Generates standard Obsidian-compliant YAML frontmatter for reports."""
+    """Generates standard Obsidian-compliant YAML frontmatter for reports.
+
+    Args:
+        title: Optional title for the report.
+        aliases: Optional list of aliases.
+        tags: Optional list of tags.
+        created: Optional creation timestamp (YYYY-MM-DD HH:MM). Defaults to current time.
+        updated: Optional update timestamp (YYYY-MM-DD HH:MM). Defaults to current time.
+        extra_css_classes: Additional cssclass entries appended after ``table-small``
+            (e.g. ``["table-center", "row-alt"]`` for Q5 reports).
+
+    Returns:
+        Formatted YAML frontmatter block enclosed by ``---``.
+    """
     now_str = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
     created_ts = created or now_str
     updated_ts = updated or now_str
@@ -80,14 +94,19 @@ def generate_obsidian_frontmatter(
         for tag in tags:
             lines.append(f"  - {tag}")
 
+    css_classes = ["table-small"] + (extra_css_classes or [])
+    css_lines = ["cssclasses:"] + [f"  - {cls}" for cls in css_classes]
+    lines.extend(css_lines)
     lines.extend([
-        f"created: {created_ts}",
-        "cssclasses:",
-        "  - table-small",
         "obsidianEditingMode: preview",
         "obsidianUIMode: source",
         f"updated: {updated_ts}",
         "---",
     ])
+    # Insert created timestamp immediately after the last tag/alias block
+    # (before cssclasses) to maintain consistent key ordering.
+    created_line = f"created: {created_ts}"
+    css_start = next(i for i, ln in enumerate(lines) if ln == "cssclasses:")
+    lines.insert(css_start, created_line)
 
     return "\n".join(lines)

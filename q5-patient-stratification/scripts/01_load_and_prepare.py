@@ -12,7 +12,7 @@ and exports two unified feature matrices to data/processed/q5/:
 import contextlib
 from pathlib import Path
 import sys
-from typing import Tuple
+from typing import Optional, Tuple
 import numpy as np
 import pandas as pd
 
@@ -47,6 +47,20 @@ from phenotyping import plot_baseline_signature_boxplots
 from q5_constants import IMMUNE_SIGNATURE_MARKERS, M1_M2_NEUTRAL_RATIO
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, PROCESSED_DIR, PROJECT_ROOT, rel_path
+
+# ---------------------------------------------------------------------------
+# Resolve safe_save_csv from the project-root src/utils/io.py explicitly.
+# A direct importlib load is used here because Q1's src/utils/io.py is also
+# on sys.path and would otherwise shadow the project-level module.
+# ---------------------------------------------------------------------------
+import importlib.util as _ilu
+_io_spec = _ilu.spec_from_file_location(
+    "_project_io",
+    Path(__file__).resolve().parent.parent.parent / "src" / "utils" / "io.py",
+)
+_io_mod = _ilu.module_from_spec(_io_spec)
+_io_spec.loader.exec_module(_io_mod)
+safe_save_csv = _io_mod.safe_save_csv
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
@@ -169,31 +183,7 @@ def extract_immune_signatures(df_expr: pd.DataFrame) -> pd.DataFrame:
     return df_sig
 
 
-def safe_save_csv(df: pd.DataFrame, out_file: Path) -> None:
-    """Safely save a DataFrame to CSV, handling potential Windows/Dropbox file locking.
-
-    Attempts to unlink then write the file directly. Falls back to writing a
-    `.tmp.csv` and replacing atomically if the primary path is locked.
-
-    Args:
-        df: DataFrame to serialise.
-        out_file: Destination file path. Parent directories are created automatically.
-    """
-    out_file.parent.mkdir(parents=True, exist_ok=True)
-    if out_file.exists():
-        try:
-            out_file.unlink()
-        except (PermissionError, OSError):
-            pass
-    try:
-        df.to_csv(out_file, index=False)
-    except (PermissionError, OSError):
-        tmp_file = out_file.with_suffix(".tmp.csv")
-        df.to_csv(tmp_file, index=False)
-        try:
-            tmp_file.replace(out_file)
-        except (PermissionError, OSError):
-            print(f"Warning: could not overwrite {out_file.name} directly. Saved to {tmp_file.name}")
+# safe_save_csv is provided by src.utils.io (imported above).
 
 
 def _merge_modalities(
@@ -305,7 +295,7 @@ def _engineer_spatial_indicators(df_master: pd.DataFrame) -> pd.DataFrame:
 
 
 def _build_and_save_matrix(
-    input_dir: Path, output_file: Path, plot_file: Path = None
+    input_dir: Path, output_file: Path, plot_file: Optional[Path] = None
 ) -> pd.DataFrame:
     """Build, serialise, and optionally plot a patient feature matrix.
 

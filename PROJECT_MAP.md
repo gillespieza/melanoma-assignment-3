@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-07-31 (Phase 1 refactored: `01_load_and_prepare.py` decomposed with `_merge_modalities`, `_build_and_save_matrix`, `_print_completion_summary`; `compute_cell_deconvolution` in `deconvolution.py` decomposed with `_score_cell_type_panel`; `IMMUNE_SIGNATURE_MARKERS["TIS"]` expanded to full 21-gene panel in `q5_constants.py`; `phenotyping.py` updated with module-level constants `RESPONSE_BINARY_COL`, `RESPONSE_DISPLAY_LABELS`, `BASELINE_VIOLIN_FEATURES`, updated docstrings, and extracted `_zscore_series` helper; Phase 1 script reference callout box added to `generate_q5_report.py` and `phase_1.md`)
+> **Last updated**: 2026-08-01 (Phase 1 code smell audit: `safe_save_csv` extracted to new `src/utils/io.py`; `generate_obsidian_frontmatter` in `src/utils/formatting.py` extended with `extra_css_classes` param and Q5 `reporting.py` duplicate removed; `_claim_cluster_by_rule` in `phenotyping.py` refactored from mutable-output-param to `Optional[int]` return; `Optional[Path]` annotation fixed on `_build_and_save_matrix`; `suptitle` long line split; trailing blank line removed from `phenotyping.py`)
 
 ## Repository Overview
 
@@ -41,10 +41,10 @@ melanoma-assignment-3/
 | Module | Key Exports |
 |--------|------------|
 | `src/utils/paths.py` | `PROJECT_ROOT`, `CONFIG_DIR`, `RAW_DIR`, `PROCESSED_DIR`, `PLOTS_DIR`, `REPORTS_DIR`, `DATA_DIR`, `rel_path()` |
-| `src/utils/formatting.py` | `generate_obsidian_frontmatter()`, `format_count_percentage()`, `format_median()`, `format_median_iqr()` |
+| `src/utils/formatting.py` | `generate_obsidian_frontmatter()` (supports `extra_css_classes` param), `format_count_percentage()`, `format_median()`, `format_median_iqr()` |
 | `src/utils/plotting.py` | `save_fig()`, `resolve_colors()` |
 | `src/utils/logging.py` | `TeeStream` (dual stdout/log-file stream) |
-| `src/utils/io.py` | CSV loading, safe file writing |
+| `src/utils/io.py` | `safe_save_csv()` — Windows/Dropbox-safe atomic CSV write with `.tmp.csv` fallback |
 | `src/utils/dataframes.py` | DataFrame manipulation helpers |
 | `src/utils/preprocessing.py` | Data cleaning and transformation |
 
@@ -295,7 +295,7 @@ Q5 internal dependency chain:
 | Area | Issue | Status |
 |------|-------|--------|
 | `src/styles.py` L53 & L178 | Duplicate `get_phenotype_color()` definitions (first is legacy, second added later) | Unresolved |
-| `q5/src/reporting.py` | Local `generate_obsidian_frontmatter()` duplicates `src/utils/formatting.py` version | Unresolved |
+| `q5/src/reporting.py` | Local `generate_obsidian_frontmatter()` duplicates `src/utils/formatting.py` version | **Resolved** (2026-08-01: deleted local copy; `reporting.py` now re-exports from `src.utils.formatting`; shared version extended with `extra_css_classes` param) |
 | `q5/src/phenotyping.py` L155–163 | `plot_radar_chart()` and `plot_cluster_heatmap()` are stub `pass` implementations | Unresolved |
 | `q5_constants.py` | `PHENOTYPE_FEATURES` defined but never used | **Resolved** (replaced with central `CLUSTERING_FEATURES` & `PHENOTYPE_PROFILE_FEATURES`) |
 | `run_pipeline.py` (Q1) | Still writes log to project root instead of `logs/` directory | Unresolved |

@@ -74,31 +74,40 @@ def _claim_cluster_by_rule(
     remaining: set,
     cluster_profiles: pd.DataFrame,
     col: str,
-    target_label: str,
     method: str = "idxmax",
-    labels: Optional[Dict[int, str]] = None,
-) -> None:
-    """Assign a phenotype label to a cluster based on feature ranking rule.
+) -> Optional[int]:
+    """Return the cluster ID that wins the specified feature ranking rule.
+
+    Selects among the *remaining* (unclaimed) cluster IDs the one with the
+    highest (``idxmax``) or lowest (``idxmin``) value of ``col``.  Returns
+    ``None`` if no valid selection can be made (column absent, remaining set
+    empty, or all values ≤ 0 when using ``idxmax``).
+
+    The return value is the integer cluster ID, not a label — the caller
+    is responsible for assigning the phenotype name and discarding the ID
+    from *remaining*.  This avoids the mutable-output-parameter anti-pattern
+    and makes the side-effect explicit at every call site.
 
     Args:
         remaining: Set of unclaimed integer cluster IDs.
         cluster_profiles: Summary DataFrame of cluster mean feature values.
         col: Feature column name to rank clusters on.
-        target_label: Phenotype label string to assign.
-        method: Ranking method ('idxmax' or 'idxmin'). Defaults to 'idxmax'.
-        labels: Output dictionary mapping cluster ID to phenotype label string.
+        method: Ranking method (``'idxmax'`` or ``'idxmin'``). Defaults to
+            ``'idxmax'``.
+
+    Returns:
+        Integer cluster ID of the winning cluster, or ``None``.
     """
-    if labels is None or not remaining or col not in cluster_profiles.columns:
-        return
+    if not remaining or col not in cluster_profiles.columns:
+        return None
     rem_list = list(remaining)
-    if method == "idxmax" and cluster_profiles[col].max() > 0:
-        cid = int(cluster_profiles.loc[rem_list, col].idxmax())
-    elif method == "idxmin":
-        cid = int(cluster_profiles.loc[rem_list, col].idxmin())
-    else:
-        return
-    labels[cid] = target_label
-    remaining.discard(cid)
+    if method == "idxmax":
+        if cluster_profiles.loc[rem_list, col].max() <= 0:
+            return None
+        return int(cluster_profiles.loc[rem_list, col].idxmax())
+    if method == "idxmin":
+        return int(cluster_profiles.loc[rem_list, col].idxmin())
+    return None
 
 
 
@@ -136,13 +145,22 @@ def assign_phenotype_labels(cluster_profiles: pd.DataFrame) -> Dict[int, str]:
 
     # 1. Mutant-Driven (NF1 Loss)
     if "mut_NF1" in cluster_profiles.columns and cluster_profiles["mut_NF1"].max() > 0:
-        _claim_cluster_by_rule(remaining, cluster_profiles, "mut_NF1", "Mutant-Driven", "idxmax", labels)
+        cid = _claim_cluster_by_rule(remaining, cluster_profiles, "mut_NF1", "idxmax")
+        if cid is not None:
+            labels[cid] = "Mutant-Driven"
+            remaining.discard(cid)
 
     # 2. Immune Hot (highest TIS among remaining)
-    _claim_cluster_by_rule(remaining, cluster_profiles, "TIS", "Immune Hot", "idxmax", labels)
+    cid = _claim_cluster_by_rule(remaining, cluster_profiles, "TIS", "idxmax")
+    if cid is not None:
+        labels[cid] = "Immune Hot"
+        remaining.discard(cid)
 
     # 3. Immune Cold (lowest TIS among remaining)
-    _claim_cluster_by_rule(remaining, cluster_profiles, "TIS", "Immune Cold", "idxmin", labels)
+    cid = _claim_cluster_by_rule(remaining, cluster_profiles, "TIS", "idxmin")
+    if cid is not None:
+        labels[cid] = "Immune Cold"
+        remaining.discard(cid)
 
     # 4. Immunosuppressive M2-High (sole remainder)
     for cid in remaining:
@@ -215,7 +233,12 @@ def plot_baseline_signature_boxplots(df: pd.DataFrame, save_path: Path) -> None:
         _plot_biomarker_violin(axes_flat[idx], valid_df, feature, palette)
 
     n_patients = len(valid_df)
-    fig.suptitle(f"Baseline Immune & Microenvironmental Biomarker Distributions (N={n_patients})", fontsize=14, fontweight="bold", y=0.98)
+    fig.suptitle(
+        f"Baseline Immune & Microenvironmental Biomarker Distributions (N={n_patients})",
+        fontsize=14,
+        fontweight="bold",
+        y=0.98,
+    )
     save_path.parent.mkdir(parents=True, exist_ok=True)
     save_fig(fig, save_path)
     print(f"Saved facetted biomarker violin plot figure to {rel_path(save_path)}")
@@ -285,5 +308,3 @@ def plot_cluster_heatmap(df: pd.DataFrame, cluster_col: str, feature_cols: List[
     save_path.parent.mkdir(parents=True, exist_ok=True)
     save_fig(fig, save_path)
     print(f"Saved cluster heatmap to {rel_path(save_path)}")
-
-
