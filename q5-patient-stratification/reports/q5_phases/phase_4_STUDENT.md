@@ -70,14 +70,9 @@ Targeted therapy is modelled to act by directly reducing the intrinsic prolifera
 *   **Mutant-Driven**: Achieves near-complete regression in the ODE. However, this cluster is empirically **0% `BRAF` V600E and 100% `NF1` loss-of-function** — an important biological distinction. `NF1` loss drives high constitutive RAS-GTP, and applying BRAFi monotherapy (vemurafenib) to a high-RAS-GTP tumour triggers the **RAF-inhibitor paradox** — paradoxical ERK *activation*, not suppression. The ODE's parameterisation (r=0.04) therefore models a sensitivity that does not apply to this cluster for vemurafenib. The biologically correct targeted agent is **MEK inhibition (Trametinib)**, which acts downstream of RAS and suppresses ERK regardless of RAS-GTP level. This is consistent with the Q4 DepMap recommendation of Dabrafenib + Trametinib combination for this subtype.
 *   **Immune Cold**: Presents the greatest clinical challenge on both arms. The absence of T cells means anti-`PDCD1` has no immune response to unleash. For targeted therapy, the very high `NRAS` mutation rate (90.9%) in this cluster means BRAFi would again trigger the RAF paradox — elevating rather than suppressing ERK activity — producing primary resistance on the targeted arm as well.
 
-## Why This Matters for Patient Stratification
-
-> [!NOTE]
-> **What is being done**: We map our simulated and empirical findings directly to clinical decision-making strategies.
-> **Why we are doing it**: To translate complex systems biology models into actionable guidance for selecting first-line and combination therapies.
-> **What question it answers**: How can we use these four phenotypes to select the right drug for the right patient in the clinic?
-
-Understanding the biological constraints of each phenotype allows for precise treatment matching. Immune Hot patients are prime candidates for immediate checkpoint blockade, while Mutant-Driven patients benefit heavily from targeted kinase inhibitors. Recognising the M2-High phenotype prevents futile monotherapy treatment, highlighting the absolute necessity for combination trials. Finally, identifying the Immune Cold phenotype early avoids exposing patients to toxicities from ineffective standard treatments, directing them instead towards experimental immune-priming clinical trials.
+> [!insight] Why This Matters for Patient Stratification
+> **How can we use these four phenotypes to select the right drug for the right patient in the clinic?**
+> Understanding the biological constraints of each phenotype allows for precise treatment matching. Immune Hot patients are prime candidates for immediate checkpoint blockade, while Mutant-Driven patients benefit heavily from targeted kinase inhibitors. Recognising the M2-High phenotype prevents futile monotherapy treatment, highlighting the absolute necessity for combination trials. Finally, identifying the Immune Cold phenotype early avoids exposing patients to toxicities from ineffective standard treatments, directing them instead towards experimental immune-priming clinical trials.
 
 ## Key Phase Outputs
 
@@ -92,19 +87,12 @@ Understanding the biological constraints of each phenotype allows for precise tr
 | ode_trajectories.png | Two-panel longitudinal simulation figure | Visually demonstrates tumour regression vs resistance under the two therapeutic arms. |
 | cluster_biomarkers.csv | Differential expression results per cluster | Identifies the key genes (e.g., `CD8A`, `CD163`) defining each phenotype's biology. |
 
-## Limitations
+> [!warning] Limitations
+> While the ODE framework provides powerful mechanistic insights, it relies on aggregate parameters derived from bulk RNA sequencing, which cannot fully capture the spatial heterogeneity of the tumour microenvironment. Furthermore, the model assumes uniform drug penetration across all phenotypes. A complete discussion of model assumptions, spatial limitations, and sensitivity analysis is provided in phase_4_LIMITATIONS.md.
 
-> [!NOTE]
-> **What is being done**: We briefly acknowledge the constraints of the current ODE model and stratification approach.
-> **Why we are doing it**: To demonstrate scientific rigour and contextualise the certainty of our simulated predictions.
-> **What question it answers**: What are the boundaries of our current analytical framework?
-
-While the ODE framework provides powerful mechanistic insights, it relies on aggregate parameters derived from bulk RNA sequencing, which cannot fully capture the spatial heterogeneity of the tumour microenvironment. Furthermore, the model assumes uniform drug penetration across all phenotypes. A complete discussion of model assumptions, spatial limitations, and sensitivity analysis is provided in phase_4_LIMITATIONS.md.
-
-## Key Takeaways
-
-*   The analytical pipeline successfully stratifies N=699 patients into four distinct phenotypes with unique therapeutic vulnerabilities.
-*   The **Immune Hot** phenotype leverages high intrinsic T-cell infiltration, resulting in optimal responses to anti-`PDCD1` immunotherapy (41.1% empirical response rate).
-*   The **Mutant-Driven** phenotype is 100% `NF1` loss-of-function with 0% `BRAF` V600E; it is best served by **MEK inhibition (Trametinib)** rather than BRAFi monotherapy — `NF1` loss drives high RAS-GTP, making BRAFi paradoxically stimulatory. Its 68.8% response rate reflects strong immunotherapy responsiveness from high neoantigen burden.
-*   The **M2-High** phenotype demonstrates stromal T-cell exclusion, failing monotherapy but responding to simulated M2-depleting combination therapies.
-*   The **Immune Cold** phenotype is dually resistant: no T cells for immunotherapy to unlock, and high `NRAS` mutation burden (90.9%) that triggers the BRAFi RAF paradox — highlighting a critical unmet need for novel immune-priming strategies.
+> [!insight] Key Takeaways
+> *   The analytical pipeline successfully stratifies N=699 patients into four distinct phenotypes with unique therapeutic vulnerabilities.
+> *   The **Immune Hot** phenotype leverages high intrinsic T-cell infiltration, resulting in optimal responses to anti-`PDCD1` immunotherapy (41.1% empirical response rate).
+> *   The **Mutant-Driven** phenotype is 100% `NF1` loss-of-function with 0% `BRAF` V600E; it is best served by **MEK inhibition (Trametinib)** rather than BRAFi monotherapy — `NF1` loss drives high RAS-GTP, making BRAFi paradoxically stimulatory. Its 68.8% response rate reflects strong immunotherapy responsiveness from high neoantigen burden.
+> *   The **M2-High** phenotype demonstrates stromal T-cell exclusion, failing monotherapy but responding to simulated M2-depleting combination therapies.
+> *   The **Immune Cold** phenotype is dually resistant: no T cells for immunotherapy to unlock, and high `NRAS` mutation burden (90.9%) that triggers the BRAFi RAF paradox — highlighting a critical unmet need for novel immune-priming strategies.

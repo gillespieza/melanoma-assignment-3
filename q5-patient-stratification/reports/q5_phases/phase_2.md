@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-2
   - q5
-created: 2026-07-31 14:18
+created: 2026-07-31 16:36
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 14:18
+updated: 2026-07-31 16:36
 ---
 
 ## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds
@@ -78,9 +78,9 @@ Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patient
 
 | Biomarker Feature   | Optimal Cutoff   | Youden J   | Sensitivity   | Specificity   | AUC-ROC   |
 |:--------------------|:-----------------|:-----------|:--------------|:--------------|:----------|
-| `TIS`               | 0.191            | 0.184      | 57.3%         | 61.1%         | 0.585     |
+| `TIS`               | 0.486            | 0.160      | 39.0%         | 77.0%         | 0.578     |
 | `CYT`               | 0.621            | 0.205      | 32.9%         | 87.6%         | 0.583     |
-| `IFN_gamma`         | 0.439            | 0.170      | 42.7%         | 74.3%         | 0.575     |
+| `IFN_gamma`         | 0.243            | 0.151      | 54.9%         | 60.2%         | 0.566     |
 | `CD8_T_cells`       | 0.069            | 0.184      | 67.1%         | 51.3%         | 0.584     |
 | **`B_cells`**       | **0.430**        | **0.306**  | **53.7%**     | **77.0%**     | **0.632** |
 | `M1_M2_Ratio`       | 1.076            | 0.034      | 6.1%          | 97.3%         | 0.442     |

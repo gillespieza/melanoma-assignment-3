@@ -299,7 +299,7 @@ Q5 internal dependency chain:
 | `q5/src/phenotyping.py` L155–163 | `plot_radar_chart()` and `plot_cluster_heatmap()` are stub `pass` implementations | Unresolved |
 | `q5_constants.py` | `PHENOTYPE_FEATURES` defined but never used | **Resolved** (replaced with central `CLUSTERING_FEATURES` & `PHENOTYPE_PROFILE_FEATURES`) |
 | `run_pipeline.py` (Q1) | Still writes log to project root instead of `logs/` directory | Unresolved |
-| `q5/scripts/04_phenotype_characterisation.py` | `simulate_q3_ode_trajectories()` refactored to simulate dual-arm (Immunotherapy Anti-PD-1 & Targeted Therapy BRAFi/MEKi) dynamic trajectories across all four phenotype clusters, rendering a publication 2-panel figure (`ode_trajectories.png`). | **Resolved** |
+| `q5/scripts/04_phenotype_characterisation.py` | Replaced local 2-state ODE with direct Q3 4-module ODE per-patient Digital Twin integration across N=699 patients, plotting dual-arm Mean ± IQR bands (surfacing RAF paradox for NF1/NRAS mutants). | **Resolved** |
 
 ## Conventions Quick Reference
 
