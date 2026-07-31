@@ -76,6 +76,9 @@ SUBPROJECT_ROOT = find_subproject_root(Path(__file__).resolve())
 DATA_DIR = PROJECT_ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
+LOG_DIR = PROJECT_ROOT / "logs"
+PLOTS_DIR = PROJECT_ROOT / "plots"
+REPORTS_DIR = PROJECT_ROOT / "reports"
 
 
 def format_relative_path(path: Path) -> str:

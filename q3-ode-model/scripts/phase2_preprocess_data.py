@@ -1,274 +1,289 @@
-"""
-Phase 2: Data Pre-processing (TCGA-SKCM Melanoma)
-=================================================
-Reads the already-downloaded TCGA Skin Cutaneous Melanoma data and produces a
-single merged CSV that the BRAF/MEK/ERK ODE simulation (Phase 3) can read.
+#!/usr/bin/env python3
+"""Phase 2: Data Pre-processing (TCGA-SKCM Melanoma)
+
+Reads downloaded TCGA Skin Cutaneous Melanoma data and produces a single merged CSV
+that the BRAF/MEK/ERK ODE simulation (Phase 3) can consume.
 
 Steps:
-  A. Parse clinical survival data      → OS_MONTHS, SURV_STATUS
-  B. Extract 12 pathway genes from RSEM → normalise each gene by its mean
-     (adds PDCD1/CD274 — checkpoint-axis inputs for the anti-PD-1 refactor)
-  B.1 Checkpoint signatures            → IMPRES, PD_L1 (reused from Q1's
-      signatures.py, computed on raw expression so cross-gene comparisons
-      aren't distorted by per-gene mean-normalisation); CYT (Rooney et al.
-      2015) from the already-normalised GZMA/PRF1 columns
-  C. Determine BRAF mutation status    → V600E/K/R/K601E = "mutant"
-  D. Merge everything on SAMPLE_ID     → melanoma_params_full.csv
-
-Usage:
-    python phase2_preprocess_data.py
-
-Output:
-    data/melanoma_params_full.csv
+  A. Parse clinical survival data      -> OS_MONTHS, SURV_STATUS
+  B. Extract 12 pathway genes from RSEM -> normalise each gene by its mean
+  B.1 Checkpoint signatures            -> IMPRES, PD_L1
+  C. Determine BRAF & NRAS status       -> V600E/K/R/K601E = "mutant"
+  D. Merge everything on SAMPLE_ID     -> melanoma_params_full.csv
 """
 
-import os
+import contextlib
+from pathlib import Path
 import sys
+from typing import Set, Tuple
 import warnings
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-# ─── Paths ────────────────────────────────────────────────────────────────────
-BASE_DIR   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ASSIGN_DIR = os.path.dirname(BASE_DIR)
-TCGA_DIR   = os.path.join(ASSIGN_DIR, "q1-response-predictor", "data", "raw",
-                          "skcm_tcga_pan_can_atlas_2018")
-OUT_DIR    = os.path.join(BASE_DIR, "data")
-os.makedirs(OUT_DIR, exist_ok=True)
+# ---------------------------------------------------------------------------
+# Bootstrap project root resolution for top-level imports
+# ---------------------------------------------------------------------------
 
-# Reuse Q1's already-validated checkpoint signatures (IMPRES, PD-L1) instead
-# of re-deriving them here. Falls back gracefully if Q1's module can't be
-# imported (e.g. moved/renamed) — the checkpoint axis in Phase 3 only needs
-# raw PDCD1/CD274 expression, so IMPRES/PD_L1 are context columns, not a
-# hard dependency.
-sys.path.insert(0, os.path.join(ASSIGN_DIR, "q1-response-predictor", "src"))
+SCRIPT_DIR = Path(__file__).resolve().parent
+SUBPROJECT_ROOT = SCRIPT_DIR.parent
+for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
+    if (parent / "data").is_dir() and (parent / "src").is_dir():
+        if str(parent) not in sys.path:
+            sys.path.insert(0, str(parent))
+        break
+
+from src.utils.paths import DATA_DIR, LOG_DIR as ROOT_LOG_DIR, PROJECT_ROOT, RAW_DIR, rel_path
+
+Q1_SRC = PROJECT_ROOT / "q1-response-predictor" / "src"
+if str(Q1_SRC) not in sys.path:
+    sys.path.insert(0, str(Q1_SRC))
+
+# Handle Q1 internal package alias for src.config.constants
 try:
-    from signatures import compute_impres, compute_pd_l1  # type: ignore  # noqa: E402
+    import config.constants as q1_config_constants
+    import sys
+    sys.modules["src.config"] = sys.modules.get("src.config", q1_config_constants)
+    sys.modules["src.config.constants"] = q1_config_constants
+except ImportError:
+    pass
+
+# ---------------------------------------------------------------------------
+# Project Imports
+# ---------------------------------------------------------------------------
+
+from src.biology_constants import (
+    BRAF_ACTIVATING,
+    MODEL_GENES,
+    NRAS_ACTIVATING,
+    SIGNATURE_GENES,
+)
+from src.utils.logging import TeeStream
+
+# Import Q1 checkpoint signature helpers if available
+try:
+    from signatures import compute_impres, compute_pd_l1  # type: ignore # noqa: E402
     HAVE_SIGNATURES = True
-except ImportError as e:
-    warnings.warn(f"Could not import Q1 signatures.py ({e}); "
-                   "IMPRES/PD_L1 columns will be NaN.")
+except (ImportError, ModuleNotFoundError) as err:
+    warnings.warn(f"Could not import Q1 signatures.py ({err}); IMPRES/PD_L1 columns will fallback to NaN.")
     HAVE_SIGNATURES = False
 
-CLINICAL_PATIENT_FILE = os.path.join(TCGA_DIR, "data_clinical_patient.txt")
-CLINICAL_SAMPLE_FILE  = os.path.join(TCGA_DIR, "data_clinical_sample.txt")
-MRNA_FILE             = os.path.join(TCGA_DIR, "data_mrna_seq_v2_rsem.txt")
-MUTATION_FILE         = os.path.join(TCGA_DIR, "data_mutations.txt")
-OUTPUT_FILE           = os.path.join(OUT_DIR, "melanoma_params_full.csv")
+# ---------------------------------------------------------------------------
+# Module-level Constants & Definitions
+# ---------------------------------------------------------------------------
 
-# The 12 genes the BRAF/MEK/ERK/Tumour/Immune/Checkpoint ODE needs:
-#   Signalling cascade
-MODEL_GENES = [
-    "BRAF",     # RAF kinase (V600E = constitutively active)
-    "MAP2K1",   # MEK1
-    "MAP2K2",   # MEK2
-    "MAPK1",    # ERK2
-    "MAPK3",    # ERK1
-    "CDKN2A",   # p16 tumour suppressor
-    "MKI67",    # proliferation marker
-    "CD8A",     # cytotoxic T-cell infiltration
-    "PRF1",     # perforin (immune effector)
-    "GZMA",     # granzyme A (immune effector)
-    "PDCD1",    # PD-1 receptor  — checkpoint-axis input (anti-PD-1 target)
-    "CD274",    # PD-L1 ligand   — checkpoint-axis input
-]
+LOG_PATH = ROOT_LOG_DIR / "q3_phase2_preprocess.log"
+TCGA_DIR = RAW_DIR / "skcm_tcga_pan_can_atlas_2018"
+OUT_DIR = SUBPROJECT_ROOT / "data"
 
-# Unique genes needed by Q1's IMPRES signature (Auslander et al., 2018) plus
-# PD-L1 (CD274). Extracted SEPARATELY, from RAW (not mean-normalised) RSEM
-# values: IMPRES is a set of pairwise comparisons (gene A > gene B) and would
-# be distorted if each gene were divided by a different per-gene mean first.
-SIGNATURE_GENES = sorted({
-    "CD274", "VSIR", "CD28", "CD276", "CD86", "TNFRSF4", "CD200", "CTLA4",
-    "PDCD1", "CD80", "TNFSF9", "HAVCR2", "CD27", "CD40", "TNFRSF14",
-})
+CLINICAL_PATIENT_FILE = TCGA_DIR / "data_clinical_patient.txt"
+CLINICAL_SAMPLE_FILE = TCGA_DIR / "data_clinical_sample.txt"
+MRNA_FILE = TCGA_DIR / "data_mrna_seq_v2_rsem.txt"
+MUTATION_FILE = TCGA_DIR / "data_mutations.txt"
+OUTPUT_FILE = OUT_DIR / "melanoma_params_full.csv"
 
-# Activating BRAF mutations that make the tumour vemurafenib-sensitive.
-# (Class I V600 mutations + the closely-related K601E.)
-BRAF_ACTIVATING = {"p.V600E", "p.V600K", "p.V600R", "p.V600D", "p.K601E"}
 
-# Activating NRAS mutations. These also switch the MAPK pathway ON (high pERK),
-# but are NOT vemurafenib-sensitive — they help set the baseline oncogenic
-# drive without conferring BRAF-inhibitor response.
-NRAS_ACTIVATING = {"p.Q61R", "p.Q61K", "p.Q61L", "p.Q61H",
-                   "p.G12D", "p.G12R", "p.G12C", "p.G13R", "p.G13D"}
+# ---------------------------------------------------------------------------
+# Processing Helpers
+# ---------------------------------------------------------------------------
 
-print("=" * 60)
-print("  Phase 2: Data Pre-processing (TCGA-SKCM Melanoma)")
-print("=" * 60)
+def load_clinical_survival(patient_file: Path, sample_file: Path) -> pd.DataFrame:
+    """Parse and clean clinical patient and sample survival metadata."""
+    print("\n[Step A] Loading clinical survival data...")
+    if not patient_file.exists() or not sample_file.exists():
+        raise FileNotFoundError(f"Missing clinical data files in {rel_path(TCGA_DIR)}")
 
-# ─── Step A: Clinical survival data ──────────────────────────────────────────
-print("\n[Step A] Loading clinical survival data...")
+    clin_patient = pd.read_csv(patient_file, sep="\t", comment="#", low_memory=False)
+    clin_patient = clin_patient[["PATIENT_ID", "OS_MONTHS", "OS_STATUS"]].copy()
 
-clin_patient = pd.read_csv(CLINICAL_PATIENT_FILE, sep="\t", comment="#", low_memory=False)
-clin_patient = clin_patient[["PATIENT_ID", "OS_MONTHS", "OS_STATUS"]].copy()
+    clin_sample = pd.read_csv(sample_file, sep="\t", comment="#", low_memory=False)
+    clin_sample = clin_sample[["PATIENT_ID", "SAMPLE_ID"]].copy()
 
-clin_sample = pd.read_csv(CLINICAL_SAMPLE_FILE, sep="\t", comment="#", low_memory=False)
-clin_sample = clin_sample[["PATIENT_ID", "SAMPLE_ID"]].copy()
+    clinical = clin_sample.merge(clin_patient, on="PATIENT_ID", how="left")
+    clinical["OS_MONTHS"] = pd.to_numeric(clinical["OS_MONTHS"], errors="coerce")
+    clinical = clinical.dropna(subset=["OS_STATUS", "OS_MONTHS"])
+    clinical = clinical[clinical["OS_STATUS"].astype(str).str.strip() != ""]
 
-clinical = clin_sample.merge(clin_patient, on="PATIENT_ID", how="left")
+    mask_keep = (
+        (clinical["OS_MONTHS"] > 1) & (clinical["OS_STATUS"] == "0:LIVING")
+    ) | (clinical["OS_STATUS"] == "1:DECEASED")
+    clinical = clinical[mask_keep].copy()
+    clinical["SURV_STATUS"] = (clinical["OS_STATUS"] == "1:DECEASED").astype(int)
 
-# Numeric survival time; drop rows with no survival info
-clinical["OS_MONTHS"] = pd.to_numeric(clinical["OS_MONTHS"], errors="coerce")
-clinical = clinical.dropna(subset=["OS_STATUS", "OS_MONTHS"])
-clinical = clinical[clinical["OS_STATUS"].astype(str).str.strip() != ""]
+    print(f"  {len(clinical)} samples with valid survival data")
+    print(f"  Events (deceased): {clinical['SURV_STATUS'].sum()} | Censored (living): {(clinical['SURV_STATUS'] == 0).sum()}")
+    return clinical
 
-# Drop living patients with essentially no follow-up (<=1 month, uninformative)
-mask_keep = (
-    (clinical["OS_MONTHS"] > 1) & (clinical["OS_STATUS"] == "0:LIVING")
-) | (clinical["OS_STATUS"] == "1:DECEASED")
-clinical = clinical[mask_keep].copy()
 
-# Binary event: 1 = deceased
-clinical["SURV_STATUS"] = (clinical["OS_STATUS"] == "1:DECEASED").astype(int)
+def extract_checkpoint_signatures(mrna: pd.DataFrame) -> pd.DataFrame:
+    """Extract raw RSEM expression for signature genes and compute IMPRES / PD-L1 scores."""
+    sig_genes_present = [g for g in SIGNATURE_GENES if g in set(mrna["GENE"])]
+    sig_genes_missing = [g for g in SIGNATURE_GENES if g not in set(mrna["GENE"])]
 
-print(f"  {len(clinical)} samples with valid survival data")
-print(f"  Events (deceased): {clinical['SURV_STATUS'].sum()}  |  "
-      f"Censored (living): {(clinical['SURV_STATUS'] == 0).sum()}")
+    if sig_genes_missing:
+        print(f"  NOTE: signature genes missing from RSEM: {sig_genes_missing}")
 
-# ─── Step B: Expression — extract 12 pathway genes ───────────────────────────
-print("\n[Step B] Extracting 12 pathway genes from RSEM file (~60 MB)...")
+    sig_expr_raw = (
+        mrna[mrna["GENE"].isin(sig_genes_present)]
+        .groupby("GENE").mean(numeric_only=True).T
+    )
+    sig_expr_raw.index.name = "SAMPLE_ID"
 
-mrna = pd.read_csv(MRNA_FILE, sep="\t", low_memory=False)
-# Column 1 = Hugo_Symbol, column 2 = Entrez_Gene_Id, rest = samples
-mrna = mrna.drop(columns=["Entrez_Gene_Id"])
-mrna = mrna.rename(columns={"Hugo_Symbol": "GENE"})
-
-missing = [g for g in MODEL_GENES if g not in set(mrna["GENE"])]
-if missing:
-    print(f"  ERROR: genes not found in RSEM file: {missing}")
-    sys.exit(1)
-
-# ─── Step B.0: raw signature genes (IMPRES / PD-L1), BEFORE normalisation ────
-# Taken from the full RSEM matrix directly so IMPRES's pairwise comparisons
-# use genuine relative magnitudes, not per-gene-normalised ones.
-sig_genes_present = [g for g in SIGNATURE_GENES if g in set(mrna["GENE"])]
-sig_genes_missing = [g for g in SIGNATURE_GENES if g not in set(mrna["GENE"])]
-if sig_genes_missing:
-    print(f"  NOTE: signature genes not found in RSEM (IMPRES pairs using them "
-          f"are skipped, not fatal): {sig_genes_missing}")
-
-sig_expr_raw = (mrna[mrna["GENE"].isin(sig_genes_present)]
-                .groupby("GENE").mean(numeric_only=True).T)
-sig_expr_raw.index.name = "SAMPLE_ID"
-
-if HAVE_SIGNATURES and len(sig_genes_present) > 0:
-    checkpoint_sig = pd.DataFrame({
-        "IMPRES": compute_impres(sig_expr_raw),   # Auslander 2018 — baseline checkpoint pressure
-        "PD_L1":  compute_pd_l1(sig_expr_raw),    # CD274 proxy (context/validation column)
-    })
-else:
-    checkpoint_sig = pd.DataFrame(
-        {"IMPRES": np.nan, "PD_L1": np.nan}, index=sig_expr_raw.index)
-checkpoint_sig.index.name = "SAMPLE_ID"
-checkpoint_sig = checkpoint_sig.reset_index()
-print(f"  Checkpoint signatures (IMPRES, PD_L1): {checkpoint_sig.shape[0]} samples "
-      f"({'reused Q1 signatures.py' if HAVE_SIGNATURES else 'UNAVAILABLE — NaN'})")
-
-# Some Hugo symbols appear more than once — collapse duplicates by mean
-expr = mrna[mrna["GENE"].isin(MODEL_GENES)].groupby("GENE").mean(numeric_only=True)
-expr = expr.loc[MODEL_GENES]                      # fix gene order
-expr = expr.T                                     # rows = samples, cols = genes
-expr.index.name = "SAMPLE_ID"
-expr = expr.reset_index()
-
-# RSEM cannot be negative; clip, then normalise each gene by its mean (=> mean 1)
-print("  Normalising each gene by its mean across all patients (mean -> 1.0)...")
-for gene in MODEL_GENES:
-    expr[gene] = expr[gene].clip(lower=0)
-    col_mean = expr[gene].mean()
-    if col_mean > 0:
-        expr[gene] = expr[gene] / col_mean
+    if HAVE_SIGNATURES and len(sig_genes_present) > 0:
+        checkpoint_sig = pd.DataFrame({
+            "IMPRES": compute_impres(sig_expr_raw),
+            "PD_L1": compute_pd_l1(sig_expr_raw),
+        })
     else:
-        print(f"  WARNING: mean of {gene} is 0 — skipping normalisation")
+        checkpoint_sig = pd.DataFrame({"IMPRES": np.nan, "PD_L1": np.nan}, index=sig_expr_raw.index)
 
-# CYT (Rooney et al., 2015): mean of GZMA/PRF1. Built from the ALREADY
-# mean-normalised columns above — a simple within-patient average of two
-# comparably-scaled genes is unaffected by per-gene normalisation (unlike
-# IMPRES's cross-gene comparisons), and this keeps CYT's cohort mean ~1.0,
-# matching the convention Phase 3 uses to scale eta8 (killing rate) per patient.
-expr["CYT"] = (expr["GZMA"] + expr["PRF1"]) / 2.0
+    checkpoint_sig.index.name = "SAMPLE_ID"
+    checkpoint_sig = checkpoint_sig.reset_index()
+    print(f"  Checkpoint signatures computed for {checkpoint_sig.shape[0]} samples")
+    return checkpoint_sig
 
-print(f"  Expression matrix: {expr.shape[0]} samples × {len(MODEL_GENES)} genes "
-      f"(+ CYT)")
 
-# ─── Step C: BRAF mutation status ────────────────────────────────────────────
-print("\n[Step C] Determining BRAF mutation status from mutations file (~550 MB)...")
+def extract_model_expression(mrna_file: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Extract and mean-normalise 12 model genes, compute CYT score, and extract checkpoint signatures."""
+    print("\n[Step B] Extracting 12 pathway genes from RSEM file...")
+    if not mrna_file.exists():
+        raise FileNotFoundError(f"mRNA seq RSEM file not found at {rel_path(mrna_file)}")
 
-# Only read the columns we need to keep memory low
-mut = pd.read_csv(
-    MUTATION_FILE, sep="\t", comment="#", low_memory=False,
-    usecols=["Hugo_Symbol", "HGVSp_Short", "Tumor_Sample_Barcode"],
-)
-braf = mut[mut["Hugo_Symbol"] == "BRAF"].copy()
-braf["is_activating"] = braf["HGVSp_Short"].isin(BRAF_ACTIVATING)
+    mrna = pd.read_csv(mrna_file, sep="\t", low_memory=False)
+    mrna = mrna.drop(columns=["Entrez_Gene_Id"])
+    mrna = mrna.rename(columns={"Hugo_Symbol": "GENE"})
 
-# Per sample: mutant if it carries any activating BRAF variant
-braf_status = (
-    braf.groupby("Tumor_Sample_Barcode")["is_activating"].max()
-    .rename("BRAF_MUT").reset_index()
-    .rename(columns={"Tumor_Sample_Barcode": "SAMPLE_ID"})
-)
-braf_status["BRAF_MUT"] = braf_status["BRAF_MUT"].astype(int)
+    missing = [g for g in MODEL_GENES if g not in set(mrna["GENE"])]
+    if missing:
+        raise KeyError(f"Required model genes not found in RSEM file: {missing}")
 
-# Record the specific activating variant (first one) for reference
-variant_map = (
-    braf[braf["is_activating"]]
-    .groupby("Tumor_Sample_Barcode")["HGVSp_Short"].first()
-    .rename("BRAF_VARIANT").reset_index()
-    .rename(columns={"Tumor_Sample_Barcode": "SAMPLE_ID"})
-)
+    checkpoint_sig = extract_checkpoint_signatures(mrna)
 
-n_v600e = (braf["HGVSp_Short"] == "p.V600E").sum()
-n_v600k = (braf["HGVSp_Short"] == "p.V600K").sum()
-print(f"  BRAF-mutated samples (activating): {braf_status['BRAF_MUT'].sum()}")
-print(f"  (V600E={n_v600e}, V600K={n_v600k}, plus V600R/D/K601E)")
+    expr = mrna[mrna["GENE"].isin(MODEL_GENES)].groupby("GENE").mean(numeric_only=True)
+    expr = expr.loc[MODEL_GENES].T
+    expr.index.name = "SAMPLE_ID"
+    expr = expr.reset_index()
 
-# NRAS status: sets baseline MAPK drive but confers NO vemurafenib response
-nras = mut[mut["Hugo_Symbol"] == "NRAS"].copy()
-nras["is_activating"] = nras["HGVSp_Short"].isin(NRAS_ACTIVATING)
-nras_status = (
-    nras.groupby("Tumor_Sample_Barcode")["is_activating"].max()
-    .rename("NRAS_MUT").reset_index()
-    .rename(columns={"Tumor_Sample_Barcode": "SAMPLE_ID"})
-)
-nras_status["NRAS_MUT"] = nras_status["NRAS_MUT"].astype(int)
-print(f"  NRAS-mutated samples (activating): {nras_status['NRAS_MUT'].sum()}")
+    print("  Normalising each gene by its mean across all patients...")
+    for gene in MODEL_GENES:
+        expr[gene] = expr[gene].clip(lower=0)
+        col_mean = expr[gene].mean()
+        if col_mean > 0:
+            expr[gene] = expr[gene] / col_mean
+        else:
+            print(f"  WARNING: mean of {gene} is 0 - skipping normalisation")
 
-# ─── Step D: Merge everything ────────────────────────────────────────────────
-print("\n[Step D] Merging survival + expression + BRAF status on SAMPLE_ID...")
+    expr["CYT"] = (expr["GZMA"] + expr["PRF1"]) / 2.0
+    print(f"  Expression matrix: {expr.shape[0]} samples x {len(MODEL_GENES)} genes (+ CYT)")
+    return expr, checkpoint_sig
 
-data = clinical.merge(expr, on="SAMPLE_ID", how="inner")
-data = data.merge(braf_status, on="SAMPLE_ID", how="left")
-data = data.merge(variant_map, on="SAMPLE_ID", how="left")
-data = data.merge(nras_status, on="SAMPLE_ID", how="left")
-data = data.merge(checkpoint_sig, on="SAMPLE_ID", how="left")
 
-# Samples with no mutation record = wild-type for our purposes
-data["BRAF_MUT"] = data["BRAF_MUT"].fillna(0).astype(int)
-data["NRAS_MUT"] = data["NRAS_MUT"].fillna(0).astype(int)
-data["BRAF_VARIANT"] = data["BRAF_VARIANT"].fillna("WT")
+def determine_mutation_statuses(mutation_file: Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Parse mutation MAF file for activating BRAF and NRAS variants."""
+    print("\n[Step C] Determining BRAF and NRAS mutation status...")
+    if not mutation_file.exists():
+        raise FileNotFoundError(f"Mutations file not found at {rel_path(mutation_file)}")
 
-# MAPK_DRIVEN = pathway is constitutively ON (BRAF or NRAS activating mutation).
-# Drives baseline pERK. Vemurafenib response is governed separately by BRAF_MUT.
-data["MAPK_DRIVEN"] = ((data["BRAF_MUT"] == 1) | (data["NRAS_MUT"] == 1)).astype(int)
+    mut = pd.read_csv(
+        mutation_file, sep="\t", comment="#", low_memory=False,
+        usecols=["Hugo_Symbol", "HGVSp_Short", "Tumor_Sample_Barcode"],
+    )
 
-data = data.dropna(subset=MODEL_GENES)
+    # BRAF Status
+    braf = mut[mut["Hugo_Symbol"] == "BRAF"].copy()
+    braf["is_activating"] = braf["HGVSp_Short"].isin(BRAF_ACTIVATING)
 
-n_braf = int(data["BRAF_MUT"].sum())
-n_nras = int(((data["NRAS_MUT"] == 1) & (data["BRAF_MUT"] == 0)).sum())
-n_wt = int((data["MAPK_DRIVEN"] == 0).sum())
-print(f"  Final merged dataset: {len(data)} patients")
-print(f"    BRAF-mutant: {n_braf}  |  NRAS-mutant (BRAF-WT): {n_nras}  |  "
-      f"MAPK-quiet WT: {n_wt}")
-n_impres = int(data["IMPRES"].notna().sum())
-print(f"    Checkpoint-axis inputs: PDCD1/CD274 for all {len(data)} patients  |  "
-      f"IMPRES available for {n_impres} patients")
+    braf_status = (
+        braf.groupby("Tumor_Sample_Barcode")["is_activating"].max()
+        .rename("BRAF_MUT").reset_index()
+        .rename(columns={"Tumor_Sample_Barcode": "SAMPLE_ID"})
+    )
+    braf_status["BRAF_MUT"] = braf_status["BRAF_MUT"].astype(int)
 
-# ─── Save ─────────────────────────────────────────────────────────────────────
-data.to_csv(OUTPUT_FILE, index=False)
-print(f"\n  Saved: {OUTPUT_FILE}")
-print(f"  Shape: {data.shape[0]} rows × {data.shape[1]} columns")
+    variant_map = (
+        braf[braf["is_activating"]]
+        .groupby("Tumor_Sample_Barcode")["HGVSp_Short"].first()
+        .rename("BRAF_VARIANT").reset_index()
+        .rename(columns={"Tumor_Sample_Barcode": "SAMPLE_ID"})
+    )
 
-print("\n" + "=" * 60)
-print("  Phase 2 COMPLETE — Ready for Phase 3 (ODE Simulation)")
-print("=" * 60)
+    # NRAS Status
+    nras = mut[mut["Hugo_Symbol"] == "NRAS"].copy()
+    nras["is_activating"] = nras["HGVSp_Short"].isin(NRAS_ACTIVATING)
+    nras_status = (
+        nras.groupby("Tumor_Sample_Barcode")["is_activating"].max()
+        .rename("NRAS_MUT").reset_index()
+        .rename(columns={"Tumor_Sample_Barcode": "SAMPLE_ID"})
+    )
+    nras_status["NRAS_MUT"] = nras_status["NRAS_MUT"].astype(int)
+
+    print(f"  BRAF-mutated samples: {braf_status['BRAF_MUT'].sum()}")
+    print(f"  NRAS-mutated samples: {nras_status['NRAS_MUT'].sum()}")
+    return braf_status, variant_map, nras_status
+
+
+def merge_phase2_data(
+    clinical: pd.DataFrame,
+    expr: pd.DataFrame,
+    braf_status: pd.DataFrame,
+    variant_map: pd.DataFrame,
+    nras_status: pd.DataFrame,
+    checkpoint_sig: pd.DataFrame,
+) -> pd.DataFrame:
+    """Merge survival, gene expression, mutation, and signature datasets."""
+    print("\n[Step D] Merging datasets on SAMPLE_ID...")
+    data = clinical.merge(expr, on="SAMPLE_ID", how="inner")
+    data = data.merge(braf_status, on="SAMPLE_ID", how="left")
+    data = data.merge(variant_map, on="SAMPLE_ID", how="left")
+    data = data.merge(nras_status, on="SAMPLE_ID", how="left")
+    data = data.merge(checkpoint_sig, on="SAMPLE_ID", how="left")
+
+    data["BRAF_MUT"] = data["BRAF_MUT"].fillna(0).astype(int)
+    data["NRAS_MUT"] = data["NRAS_MUT"].fillna(0).astype(int)
+    data["BRAF_VARIANT"] = data["BRAF_VARIANT"].fillna("WT")
+    data["MAPK_DRIVEN"] = ((data["BRAF_MUT"] == 1) | (data["NRAS_MUT"] == 1)).astype(int)
+
+    data = data.dropna(subset=MODEL_GENES)
+    n_braf = int(data["BRAF_MUT"].sum())
+    n_nras = int(((data["NRAS_MUT"] == 1) & (data["BRAF_MUT"] == 0)).sum())
+    n_wt = int((data["MAPK_DRIVEN"] == 0).sum())
+
+    print(f"  Final merged dataset: {len(data)} patients")
+    print(f"    BRAF-mutant: {n_braf} | NRAS-mutant: {n_nras} | MAPK-quiet WT: {n_wt}")
+    return data
+
+
+# ---------------------------------------------------------------------------
+# Main Execution Pipeline
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    """Main execution entry point for Q3 Phase 2 Data Preprocessing."""
+    print("=" * 60)
+    print("  Phase 2: Data Pre-processing (TCGA-SKCM Melanoma)")
+    print("=" * 60)
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    clinical = load_clinical_survival(CLINICAL_PATIENT_FILE, CLINICAL_SAMPLE_FILE)
+    expr, checkpoint_sig = extract_model_expression(MRNA_FILE)
+    braf_status, variant_map, nras_status = determine_mutation_statuses(MUTATION_FILE)
+
+    data = merge_phase2_data(clinical, expr, braf_status, variant_map, nras_status, checkpoint_sig)
+
+    data.to_csv(OUTPUT_FILE, index=False)
+    print(f"\n  Saved merged dataset to: {rel_path(OUTPUT_FILE)}")
+    print(f"  Shape: {data.shape[0]} rows x {data.shape[1]} columns")
+
+    print("\n" + "=" * 60)
+    print("  Phase 2 COMPLETE - Ready for Phase 3 (ODE Simulation)")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    ROOT_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    with open(LOG_PATH, "w", encoding="utf-8") as log_file:
+        stdout_tee = TeeStream(sys.stdout, log_file)
+        stderr_tee = TeeStream(sys.stderr, log_file)
+        with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
+            print(f"Logging console output to {rel_path(LOG_PATH)}")
+            main()
