@@ -5,82 +5,122 @@ and estimate relative cell-type fractions for patient stratification with strict
 """
 
 from pathlib import Path
-from typing import Tuple
+from typing import Dict, Tuple
 import warnings
 import numpy as np
 import pandas as pd
 
-from q5_constants import CELL_TYPE_MARKERS
+from q5_constants import CELL_TYPE_MARKERS, M1_M2_NEUTRAL_RATIO
 
 # Minimum number of valid marker genes required per cell type panel to avoid single-gene noise
 MIN_MARKERS_THRESHOLD: int = 2
 
+
+# ---------------------------------------------------------------------------
+# Private Helpers — Macrophage STV Computation
+# ---------------------------------------------------------------------------
+
+def _load_and_partition_stv_weights(
+    stv_path: Path, expr_genes: set
+) -> Tuple[Dict[str, float], Dict[str, float], Dict[str, float]]:
+    """Load the STV weight matrix and partition genes into M1, M2, and combined sets.
+
+    Args:
+        stv_path: Path to m1_m2_stv.csv containing 'Gene' and 'both_M1M2' columns.
+        expr_genes: Set of gene names present in the patient expression matrix.
+
+    Returns:
+        Tuple of (valid_weights, m1_genes, m2_genes) where:
+        - valid_weights: All STV genes overlapping with expr_genes → signed weight.
+        - m1_genes: Subset with positive weight (pro-inflammatory M1 programme).
+        - m2_genes: Subset with absolute negative weight (immunosuppressive M2 programme).
+    """
+    df_stv = pd.read_csv(stv_path)
+    weights = dict(zip(df_stv["Gene"], df_stv["both_M1M2"]))
+    valid_weights = {g: w for g, w in weights.items() if g in expr_genes}
+    m1_genes = {g: w for g, w in valid_weights.items() if w > 0}
+    m2_genes = {g: abs(w) for g, w in valid_weights.items() if w < 0}
+    return valid_weights, m1_genes, m2_genes
+
+
+def _compute_weighted_score(
+    df_expr: pd.DataFrame, gene_weights: Dict[str, float]
+) -> pd.Series:
+    """Compute a per-sample weighted dot-product score for a given gene-weight set.
+
+    If the gene-weight set is empty (no overlapping genes), returns a zero Series
+    to prevent downstream NaN propagation.
+
+    Args:
+        df_expr: Expression DataFrame (samples x genes).
+        gene_weights: Mapping of gene name to numeric weight.
+
+    Returns:
+        Per-sample score Series, indexed identically to df_expr.
+    """
+    if not gene_weights:
+        return pd.Series(0.0, index=df_expr.index)
+    weights_series = pd.Series(gene_weights)
+    return df_expr[weights_series.index].dot(weights_series)
+
+
+def _compute_m1_m2_ratio(m1_score: pd.Series, m2_score: pd.Series) -> pd.Series:
+    """Compute the M1/(M1+M2) polarisation ratio with a biological boundary fallback.
+
+    Biological Assumption (Zero-Infiltration Boundary Condition):
+    When both M1 and M2 scores equal 0 (immune desert with unmeasurable macrophage
+    infiltration), division yields 0/0. We assign M1_M2_NEUTRAL_RATIO (0.5) to prevent
+    NaN propagation and maintain a balanced polarisation baseline that does not falsely
+    bias downstream clustering toward either M1-hot or M2-suppressive extremes.
+
+    Args:
+        m1_score: Per-sample M1 macrophage activation score.
+        m2_score: Per-sample M2 macrophage immunosuppression score.
+
+    Returns:
+        Per-sample M1/(M1+M2) ratio, with 0.5 assigned where both scores are zero.
+    """
+    denom = m1_score + m2_score
+    ratio = np.where(denom > 0, m1_score / denom, M1_M2_NEUTRAL_RATIO)
+    return pd.Series(ratio, index=m1_score.index)
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
 
 def compute_macrophage_stv(
     df_expr: pd.DataFrame, stv_path: Path
 ) -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
     """Calculate M1 score, M2 score, M1/M2 ratio, and net STV score using Macrophage STV weights.
 
-    Biological Assumption (Zero-Infiltration Boundary Condition):
-    If a patient sample exhibits zero or unmeasurable macrophage score sums (M1 + M2 == 0),
-    division yields 0/0 (NaN). We assign a neutral polarization ratio of 0.5 to represent
-    a balanced baseline state without artificially biasing downstream clustering toward
-    either M1-hot or M2-suppressive extremes.
+    Orchestrates weight loading, partitioning, dot-product scoring, and ratio calculation
+    via private helper functions. See `_compute_m1_m2_ratio` for the zero-infiltration
+    biological assumption governing the ratio fallback value.
 
     Args:
         df_expr: Expression DataFrame (samples x genes).
         stv_path: Path to m1_m2_stv.csv file.
 
     Returns:
-        Tuple containing (m1_score, m2_score, m1_m2_ratio, net_stv_score).
+        Tuple of (m1_score, m2_score, m1_m2_ratio, net_stv_score) as pd.Series,
+        all indexed identically to df_expr.
+
+    Raises:
+        FileNotFoundError: If stv_path does not exist.
     """
     if not stv_path.exists():
         raise FileNotFoundError(f"Macrophage STV matrix not found at {stv_path}")
 
-    df_stv = pd.read_csv(stv_path)
-    weights = dict(zip(df_stv["Gene"], df_stv["both_M1M2"]))
-
-    # Find overlapping genes
     expr_genes = set(df_expr.columns)
-    valid_weights = {g: w for g, w in weights.items() if g in expr_genes}
+    valid_weights, m1_genes, m2_genes = _load_and_partition_stv_weights(stv_path, expr_genes)
 
-    m1_genes = {g: w for g, w in valid_weights.items() if w > 0}
-    m2_genes = {g: abs(w) for g, w in valid_weights.items() if w < 0}
+    m1_score = _compute_weighted_score(df_expr, m1_genes)
+    m2_score = _compute_weighted_score(df_expr, m2_genes)
+    m1_m2_ratio = _compute_m1_m2_ratio(m1_score, m2_score)
+    net_stv_score = _compute_weighted_score(df_expr, valid_weights)
 
-    # Compute M1 score (weighted sum of positive weights)
-    if m1_genes:
-        m1_weights_series = pd.Series(m1_genes)
-        m1_score = df_expr[m1_weights_series.index].dot(m1_weights_series)
-    else:
-        m1_score = pd.Series(0.0, index=df_expr.index)
-
-    # Compute M2 score (weighted sum of absolute negative weights)
-    if m2_genes:
-        m2_weights_series = pd.Series(m2_genes)
-        m2_score = df_expr[m2_weights_series.index].dot(m2_weights_series)
-    else:
-        m2_score = pd.Series(0.0, index=df_expr.index)
-
-    # ---------------------------------------------------------------------------
-    # Biological Assumption — Zero-Infiltration Neutral Ratio Fallback:
-    # When both M1 and M2 macrophage scores equal 0 (denom == 0, representing an
-    # immune desert with unmeasurable macrophage infiltration), an unadjusted division
-    # would yield 0/0 (NaN). We assign a neutral ratio of 0.5 to prevent NaN propagation
-    # while maintaining a balanced polarization baseline that does not falsely skew
-    # downstream patient clustering toward M1-hot or M2-suppressive extremes.
-    # ---------------------------------------------------------------------------
-    denom = m1_score + m2_score
-    m1_m2_ratio = np.where(denom > 0, m1_score / denom, 0.5)
-    m1_m2_ratio_series = pd.Series(m1_m2_ratio, index=df_expr.index)
-
-    # Compute net STV score
-    if valid_weights:
-        all_weights_series = pd.Series(valid_weights)
-        net_stv_score = df_expr[all_weights_series.index].dot(all_weights_series)
-    else:
-        net_stv_score = pd.Series(0.0, index=df_expr.index)
-
-    return m1_score, m2_score, m1_m2_ratio_series, net_stv_score
+    return m1_score, m2_score, m1_m2_ratio, net_stv_score
 
 
 def compute_cell_deconvolution(

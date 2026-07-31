@@ -79,8 +79,28 @@ def _claim_cluster_by_rule(
 def assign_phenotype_labels(cluster_profiles: pd.DataFrame) -> Dict[int, str]:
     """Assign biological phenotype labels to clusters based on empirical profiles.
 
+    Labels are assigned using a sequential rank-based approach on actual computed
+    cluster means, making the assignment robust to K-Means or GMM producing different
+    integer cluster IDs across runs, random seeds, or different datasets. The four
+    rules are applied in priority order, with each cluster claimed at most once:
+
+    1. **Mutant-Driven (NF1 Loss)**: Cluster with the highest ``mut_NF1`` mutation
+       rate. Skipped entirely if ``mut_NF1`` is absent or all-zero.
+    2. **Immune Hot**: Among the remaining clusters, the one with the highest TIS
+       (Tumour Inflammation Score). These patients have high CD8+ infiltration and
+       active IFN-gamma signalling.
+    3. **Immune Cold**: Among the remaining clusters, the one with the lowest TIS.
+       These are immune deserts — low infiltration and low immune activity across all
+       lineages.
+    4. **Immunosuppressive M2-High**: The sole remaining cluster. TIS alone cannot
+       separate M2-suppressed from immune desert — both are cold — but the macrophage
+       polarisation balance (M2-skewed vs. uniformly depleted) is the discriminating
+       biological signal at this step.
+
     Args:
-        cluster_profiles: DataFrame indexed by cluster ID with profiles.
+        cluster_profiles: DataFrame indexed by cluster ID with columns including
+            at minimum ``TIS`` and optionally ``mut_NF1``, ``M1_M2_Ratio``,
+            ``CD8_T_cells``.
 
     Returns:
         Dictionary mapping integer cluster ID to phenotype label string.
@@ -109,8 +129,17 @@ def assign_phenotype_labels(cluster_profiles: pd.DataFrame) -> Dict[int, str]:
 # Visualisation Helpers
 # ---------------------------------------------------------------------------
 
-def _plot_biomarker_violin(ax: plt.Axes, valid_df: pd.DataFrame, feature: str, palette: Dict[str, str]) -> None:
-    """Helper to render a single biomarker violin plot."""
+def _plot_biomarker_violin(
+    ax: plt.Axes, valid_df: pd.DataFrame, feature: str, palette: Dict[str, str]
+) -> None:
+    """Render a single biomarker violin plot with inner quartile lines on the given Axes.
+
+    Args:
+        ax: Matplotlib Axes to draw on.
+        valid_df: Patient DataFrame with a 'Response' string column and the feature column.
+        feature: Column name of the biomarker to plot on the y-axis.
+        palette: Mapping of response label string to hex colour string.
+    """
     sns.violinplot(
         data=valid_df,
         x="Response",
@@ -178,10 +207,14 @@ def plot_radar_chart(profiles: pd.DataFrame, save_path: Path) -> None:
 
     fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(polar=True), dpi=300)
     
+    # Build a fallback colour list for phenotype labels absent from PHENOTYPE_PALETTE.
+    # Use a curated seaborn palette rather than matplotlib's f"C{idx}" defaults.
+    fallback_colours = sns.color_palette("tab10", n_colors=len(profiles))
+
     for idx, (label, row) in enumerate(profiles.iterrows()):
         values = row[numeric_cols].values.flatten().tolist()
         values += values[:1]
-        color = PHENOTYPE_PALETTE.get(str(label), f"C{idx}")
+        color = PHENOTYPE_PALETTE.get(str(label), fallback_colours[idx])
         ax.plot(angles, values, linewidth=2, label=str(label), color=color)
         ax.fill(angles, values, color=color, alpha=0.15)
 

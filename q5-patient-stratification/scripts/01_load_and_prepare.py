@@ -44,7 +44,7 @@ from deconvolution import (
     compute_macrophage_stv,
 )
 from phenotyping import plot_baseline_signature_boxplots
-from q5_constants import IMMUNE_SIGNATURE_MARKERS
+from q5_constants import IMMUNE_SIGNATURE_MARKERS, M1_M2_NEUTRAL_RATIO
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, PROCESSED_DIR, PROJECT_ROOT, rel_path
 
@@ -62,6 +62,11 @@ INPUT_DIR_FULL = PROCESSED_DIR / "merged" / "full"
 
 OUTPUT_DIR = PROCESSED_DIR / "q5"
 STV_PATH = DATA_DIR / "config" / "m1_m2_stv.csv"
+
+# Small pseudocount added before log2 transformation to avoid log(0) = -inf.
+# Value of 0.01 is on the order of the minimum detectable expression difference
+# across RNA-seq cohorts in this study and does not meaningfully shift ratios.
+SPATIAL_LOG_PSEUDOCOUNT: float = 0.01
 
 
 def load_processed_datasets(input_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -165,7 +170,15 @@ def extract_immune_signatures(df_expr: pd.DataFrame) -> pd.DataFrame:
 
 
 def safe_save_csv(df: pd.DataFrame, out_file: Path) -> None:
-    """Safely save a DataFrame to CSV, handling potential Windows/Dropbox file locking."""
+    """Safely save a DataFrame to CSV, handling potential Windows/Dropbox file locking.
+
+    Attempts to unlink then write the file directly. Falls back to writing a
+    `.tmp.csv` and replacing atomically if the primary path is locked.
+
+    Args:
+        df: DataFrame to serialise.
+        out_file: Destination file path. Parent directories are created automatically.
+    """
     out_file.parent.mkdir(parents=True, exist_ok=True)
     if out_file.exists():
         try:
@@ -226,15 +239,47 @@ def build_feature_matrix(input_dir: Path) -> pd.DataFrame:
         df_master = df_master.join(df_genomic_idx, how="left")
 
     print("  Engineering spatial microenvironment indicators...")
-    cd8_val = df_master["CD8_T_cells"] if "CD8_T_cells" in df_master.columns else 0.0
-    caf_val = df_master["CAFs"] if "CAFs" in df_master.columns else 0.0
-    m1_m2 = df_master["M1_M2_Ratio"] if "M1_M2_Ratio" in df_master.columns else 0.5
-
-    df_master["Spatial_CD8_CAF_Distance_Ratio"] = np.log2((np.maximum(cd8_val, 0) + 0.01) / (np.maximum(caf_val, 0) + 0.01))
-    df_master["Spatial_Tumour_Infiltration_Index"] = np.log2((np.maximum(cd8_val, 0) * np.maximum(m1_m2, 0.01) + 0.01) / (np.maximum(caf_val, 0) + 0.01))
+    df_master = _engineer_spatial_indicators(df_master)
 
     df_master = df_master.reset_index()
     print(f"  Result: {len(df_master)} patients x {df_master.shape[1]} features")
+    return df_master
+
+
+def _engineer_spatial_indicators(df_master: pd.DataFrame) -> pd.DataFrame:
+    """Compute log2-ratio spatial microenvironment indicator features.
+
+    Derives two composite spatial scores that proxy the relative balance of
+    cytotoxic T-cell infiltration versus stromal exclusion by cancer-associated
+    fibroblasts (CAFs):
+
+    - **Spatial_CD8_CAF_Distance_Ratio**: log2(CD8 / CAF) — higher values indicate
+      T-cell-rich, stroma-low tumours favourable for immunotherapy.
+    - **Spatial_Tumour_Infiltration_Index**: log2(CD8 × M1_M2_Ratio / CAF) — extends
+      the above by weighting CD8 infiltration by macrophage polarisation balance,
+      rewarding M1-skewed microenvironments over M2-immunosuppressive ones.
+
+    A pseudocount of `SPATIAL_LOG_PSEUDOCOUNT` is added before division to prevent
+    log(0). If source columns are absent (e.g., sparse datasets), scalar fallbacks
+    are applied (0.0 for expression scores, `M1_M2_NEUTRAL_RATIO` for the ratio).
+
+    Args:
+        df_master: Per-patient feature DataFrame (indexed by SAMPLE_ID at call time).
+
+    Returns:
+        df_master with two new columns appended in-place.
+    """
+    cd8_val = df_master["CD8_T_cells"] if "CD8_T_cells" in df_master.columns else 0.0
+    caf_val = df_master["CAFs"] if "CAFs" in df_master.columns else 0.0
+    m1_m2 = df_master["M1_M2_Ratio"] if "M1_M2_Ratio" in df_master.columns else M1_M2_NEUTRAL_RATIO
+    p = SPATIAL_LOG_PSEUDOCOUNT
+
+    df_master["Spatial_CD8_CAF_Distance_Ratio"] = np.log2(
+        (np.maximum(cd8_val, 0) + p) / (np.maximum(caf_val, 0) + p)
+    )
+    df_master["Spatial_Tumour_Infiltration_Index"] = np.log2(
+        (np.maximum(cd8_val, 0) * np.maximum(m1_m2, p) + p) / (np.maximum(caf_val, 0) + p)
+    )
     return df_master
 
 

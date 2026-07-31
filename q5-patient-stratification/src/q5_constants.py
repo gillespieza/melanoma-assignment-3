@@ -10,6 +10,17 @@ from typing import Dict, List
 # Module-level Constants & Definitions
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Biological Assumption — Zero-Infiltration Neutral Ratio Fallback:
+# When a patient sample has no measurable macrophage infiltration (M1 + M2 == 0),
+# the M1/M2 polarisation ratio is undefined (0/0). We assign a neutral value of 0.5
+# representing a balanced baseline that does not bias downstream clustering toward
+# either M1-hot (pro-inflammatory) or M2-suppressive (immunosuppressive) extremes.
+# This constant is the single source of truth used by deconvolution.py and
+# 01_load_and_prepare.py — do not hard-code 0.5 inline in those modules.
+# ---------------------------------------------------------------------------
+M1_M2_NEUTRAL_RATIO: float = 0.5
+
 # Marker gene panels for transcriptomic cell-type deconvolution
 CELL_TYPE_MARKERS: Dict[str, List[str]] = {
     "CD8_T_cells": ["CD8A", "CD8B", "CD3D", "CD3E"],
