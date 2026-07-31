@@ -13,6 +13,7 @@ import contextlib
 from pathlib import Path
 import sys
 from typing import Tuple
+import numpy as np
 import pandas as pd
 
 # ---------------------------------------------------------------------------

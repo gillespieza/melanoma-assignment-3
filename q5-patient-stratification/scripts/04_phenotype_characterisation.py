@@ -9,6 +9,7 @@ parameterised per phenotype.
 import contextlib
 from pathlib import Path
 import sys
+from typing import Dict, List, Tuple
 
 # ---------------------------------------------------------------------------
 # Bootstrap project root resolution for top-level imports
@@ -43,10 +44,11 @@ except ImportError:
     _LIFELINES_AVAILABLE = False
 
 from src.styles import PHENOTYPE_PALETTE, get_phenotype_color, set_presentation_style
-from clustering import CLUSTER_PALETTE
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
+from phenotyping import profile_clusters
+from q5_constants import CLUSTERING_FEATURES
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
@@ -61,29 +63,21 @@ PLOTS_DIR = SUBPROJECT_ROOT / "plots" / "phenotypes"
 set_presentation_style()
 
 
+# ---------------------------------------------------------------------------
+# Profile Calculation & Palette Helpers
+# ---------------------------------------------------------------------------
+
 def compute_phenotype_profiles(df: pd.DataFrame) -> pd.DataFrame:
     """Compute mean biomarker features, cell fractions, and clinical response rates per cluster."""
-    numeric_cols = [
-        c for c in ["TIS", "CYT", "CD8_T_cells", "M1_Macrophages", "M2_Macrophages", "CAFs", "mut_BRAF", "mut_NRAS", "mut_NF1", "RESPONSE_BINARY"]
-        if c in df.columns
-    ]
-    summary = df.groupby("Cluster_ID")[numeric_cols].mean().reset_index()
-    summary["Patient_Count"] = df.groupby("Cluster_ID").size().values
-    summary["Cohort_Percentage"] = (summary["Patient_Count"] / len(df)) * 100
+    feature_cols = CLUSTERING_FEATURES + ["RESPONSE_BINARY"]
+    summary = profile_clusters(df, "Cluster_ID", feature_cols).reset_index()
     return summary
 
 
-def _build_label_palette(df: pd.DataFrame) -> dict:
+def _build_label_palette(df: pd.DataFrame) -> Dict[str, str]:
     """Build a Phenotype_Label -> hex colour mapping using get_phenotype_color.
 
-    Ensures boxplots and KM survival curves use the exact Okabe-Ito colours
-    specified in src/styles.py and project visual guidelines.
-
-    Args:
-        df: Patient DataFrame containing Phenotype_Label column.
-
-    Returns:
-        Dictionary mapping phenotype label string to hex colour code.
+    Ensures boxplots and KM survival curves use the exact Okabe-Ito colours.
     """
     return {
         label: get_phenotype_color(label)
@@ -91,31 +85,32 @@ def _build_label_palette(df: pd.DataFrame) -> dict:
     }
 
 
-def plot_baseline_boxplots(df: pd.DataFrame, save_path: Path) -> None:
-    """Generate 300 DPI publication boxplots comparing core biomarker Z-scores across clusters.
+# ---------------------------------------------------------------------------
+# Plotting & ODE Trajectory Simulation Functions
+# ---------------------------------------------------------------------------
 
-    Colours are resolved from CLUSTER_PALETTE (same integer-keyed mapping used by PCA
-    and UMAP projection plots), so all Q5 figures share a consistent Okabe-Ito palette.
-    """
-    features = [c for c in ["TIS", "CYT", "CD8_T_cells", "M1_Macrophages", "M2_Macrophages", "CAFs"] if c in df.columns]
-
-    # Standardize features for comparable boxplot Z-scores across biomarkers
+def _prepare_boxplot_data(df: pd.DataFrame, features: List[str]) -> pd.DataFrame:
+    """Helper to standardize features for comparable Z-score boxplots."""
     df_plot = df.copy()
     for col in features:
         mean_val = df_plot[col].mean()
         std_val = df_plot[col].std()
         df_plot[col] = (df_plot[col] - mean_val) / (std_val if std_val > 0 else 1.0)
 
-    df_melt = pd.melt(
+    return pd.melt(
         df_plot,
         id_vars=["Cluster_ID", "Phenotype_Label"],
         value_vars=features,
         var_name="Biomarker",
-        value_name="Z_Score"
+        value_name="Z_Score",
     )
 
-    # Derive palette from CLUSTER_PALETTE so colours match PCA/UMAP projection plots exactly
-    label_palette = _build_label_palette(df_plot)
+
+def plot_baseline_boxplots(df: pd.DataFrame, save_path: Path) -> None:
+    """Generate 300 DPI publication boxplots comparing core biomarker Z-scores across clusters."""
+    features = [c for c in ["TIS", "CYT", "CD8_T_cells", "M1_Macrophages", "M2_Macrophages", "CAFs"] if c in df.columns]
+    df_melt = _prepare_boxplot_data(df, features)
+    label_palette = _build_label_palette(df)
 
     fig, ax = plt.subplots(figsize=(12, 6.5), dpi=300)
 
@@ -138,23 +133,22 @@ def plot_baseline_boxplots(df: pd.DataFrame, save_path: Path) -> None:
 
     save_path.parent.mkdir(parents=True, exist_ok=True)
     save_fig(fig, save_path)
-    print(f"Saved baseline signature boxplot to {save_path}")
+    print(f"Saved baseline signature boxplot to {rel_path(save_path)}")
+
+
+def _tumor_immune_ode(t: float, y: List[float], r: float, K: float, c: float, s: float, p: float, g: float, d_E: float, mu: float) -> List[float]:
+    """Q3 Tumour-immune 2-state ODE differential system."""
+    T, E = y
+    dTdt = r * T * (1.0 - T / K) - c * E * T
+    dEdt = s + (p * E * T) / (g + T) - d_E * E - mu * E * T
+    return [dTdt, dEdt]
 
 
 def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
     """Simulate Q3 ODE tumour volume trajectories T(t) per Q5 patient phenotype over 180 days."""
-    def tumor_immune_ode(t, y, r, K, c, s, p, g, d_E, mu):
-        T, E = y
-        dTdt = r * T * (1.0 - T / K) - c * E * T
-        dEdt = s + (p * E * T) / (g + T) - d_E * E - mu * E * T
-        return [dTdt, dEdt]
-
     t_span = (0, 180)
     t_eval = np.linspace(0, 180, 181)
 
-    # Phenotype ODE parameters [r, K, c, s, p, g, d_E, mu], initial [T0, E0]
-    # Cluster IDs match the corrected PHENOTYPE_NAMES mapping in 03_cluster_patients.py:
-    #   0 = Immune Hot, 1 = Immune Cold, 2 = M2 Immunosuppressive, 3 = Mutant-Driven (`NF1`)
     phenotype_params = {
         0: {"name": "Immune Hot Inflamed", "params": [0.18, 1.0, 0.45, 0.10, 0.15, 0.30, 0.05, 0.02], "y0": [0.8, 0.80], "color": PHENOTYPE_PALETTE["Immune Hot"], "ls": "-"},
         1: {"name": "Immune Cold Desert", "params": [0.18, 1.0, 0.15, 0.02, 0.05, 0.30, 0.05, 0.04], "y0": [0.8, 0.15], "color": PHENOTYPE_PALETTE["Immune Cold"], "ls": "-"},
@@ -166,7 +160,7 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
     fig, ax = plt.subplots(figsize=(12, 6.5), dpi=300)
 
     for key, cfg in phenotype_params.items():
-        sol = solve_ivp(tumor_immune_ode, t_span, cfg["y0"], args=tuple(cfg["params"]), t_eval=t_eval)
+        sol = solve_ivp(_tumor_immune_ode, t_span, cfg["y0"], args=tuple(cfg["params"]), t_eval=t_eval)
         lw = 2.5 if key == "rescue" else 2.2
         ax.plot(
             sol.t,
@@ -186,25 +180,31 @@ def simulate_q3_ode_trajectories(df: pd.DataFrame, save_path: Path) -> None:
 
     save_path.parent.mkdir(parents=True, exist_ok=True)
     save_fig(fig, save_path)
-    print(f"Saved Q3 ODE trajectory plot to {save_path}")
+    print(f"Saved Q3 ODE trajectory plot to {rel_path(save_path)}")
+
+
+def _plot_single_cluster_km(ax: plt.Axes, grp: pd.DataFrame, pheno_label: str, color: str) -> None:
+    """Helper to fit and plot a single cluster Kaplan-Meier curve."""
+    median_os = grp["OS_MONTHS"].median()
+    kmf = KaplanMeierFitter()
+    kmf.fit(
+        grp["OS_MONTHS"],
+        event_observed=grp["OS_STATUS"],
+        label=f"{pheno_label}  (N={len(grp)}, median OS={median_os:.1f} mo)",
+    )
+    kmf.plot_survival_function(
+        ax=ax,
+        color=color,
+        ci_show=True,
+        ci_alpha=0.12,
+        linewidth=2.2,
+    )
 
 
 def plot_kaplan_meier_by_phenotype(df: pd.DataFrame, save_path: Path) -> None:
-    """Plot Kaplan-Meier overall survival curves stratified by phenotype cluster.
-
-    Draws one KM curve per phenotype with 95% confidence intervals and annotates the
-    log-rank p-value from a multivariate test across all clusters.
-
-    Args:
-        df:        Patient DataFrame containing Cluster_ID, Phenotype_Label, OS_MONTHS,
-                   and OS_STATUS columns. Rows with missing OS data are silently dropped.
-        save_path: File path to save the 300 DPI PNG figure.
-    """
+    """Plot Kaplan-Meier overall survival curves stratified by phenotype cluster."""
     if not _LIFELINES_AVAILABLE:
-        raise ImportError(
-            "lifelines is required for Kaplan-Meier curves. "
-            "Install with: pip install lifelines"
-        )
+        raise ImportError("lifelines is required for Kaplan-Meier curves. Install with: pip install lifelines")
 
     required_cols = ["OS_MONTHS", "OS_STATUS", "Cluster_ID", "Phenotype_Label"]
     missing = [c for c in required_cols if c not in df.columns]
@@ -220,13 +220,9 @@ def plot_kaplan_meier_by_phenotype(df: pd.DataFrame, save_path: Path) -> None:
         print(f"Skipping KM plot — only {n_valid} patients with OS data (minimum 10 required).")
         return
 
-    # Log-rank test across all clusters
-    lr_result = multivariate_logrank_test(
-        df_km["OS_MONTHS"], df_km["Cluster_ID"], df_km["OS_STATUS"]
-    )
+    lr_result = multivariate_logrank_test(df_km["OS_MONTHS"], df_km["Cluster_ID"], df_km["OS_STATUS"])
     p_val = lr_result.p_value
     p_label = f"p < 0.001" if p_val < 0.001 else f"p = {p_val:.3f}"
-
     label_palette = _build_label_palette(df_km)
 
     fig, ax = plt.subplots(figsize=(12, 6.5), dpi=300)
@@ -235,21 +231,7 @@ def plot_kaplan_meier_by_phenotype(df: pd.DataFrame, save_path: Path) -> None:
         grp = df_km[df_km["Cluster_ID"] == cluster_id]
         pheno_label = grp["Phenotype_Label"].iloc[0]
         color = label_palette.get(pheno_label, f"C{cluster_id}")
-        median_os = grp["OS_MONTHS"].median()
-
-        kmf = KaplanMeierFitter()
-        kmf.fit(
-            grp["OS_MONTHS"],
-            event_observed=grp["OS_STATUS"],
-            label=f"{pheno_label}  (N={len(grp)}, median OS={median_os:.1f} mo)",
-        )
-        kmf.plot_survival_function(
-            ax=ax,
-            color=color,
-            ci_show=True,
-            ci_alpha=0.12,
-            linewidth=2.2,
-        )
+        _plot_single_cluster_km(ax, grp, pheno_label, color)
 
     ax.set_title(
         f"Kaplan-Meier Overall Survival by Phenotype Cluster\n"
@@ -268,6 +250,10 @@ def plot_kaplan_meier_by_phenotype(df: pd.DataFrame, save_path: Path) -> None:
     save_fig(fig, save_path, dpi=300)
     print(f"Saved Kaplan-Meier survival plot to {rel_path(save_path)}")
 
+
+# ---------------------------------------------------------------------------
+# Main Execution Block
+# ---------------------------------------------------------------------------
 
 def main() -> None:
     """Main execution function for Phase 4 phenotype characterisation."""
@@ -290,7 +276,7 @@ def main() -> None:
     plot_baseline_boxplots(df_clusters, PLOTS_DIR / "baseline_signature_boxplots.png")
     simulate_q3_ode_trajectories(df_clusters, PLOTS_DIR / "ode_trajectories.png")
 
-    # 3. Kaplan-Meier survival curves stratified by phenotype (N=699, uses OS data)
+    # 3. Kaplan-Meier survival curves stratified by phenotype
     plot_kaplan_meier_by_phenotype(df_clusters, PLOTS_DIR / "km_survival_by_phenotype.png")
 
     print("=" * 80)
@@ -308,3 +294,4 @@ if __name__ == "__main__":
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
             print(f"Logging console output to {rel_path(LOG_PATH)}")
             main()
+
