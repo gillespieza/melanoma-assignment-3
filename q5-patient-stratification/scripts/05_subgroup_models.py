@@ -20,6 +20,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from sklearn.linear_model import LogisticRegression
+from sklearn.isotonic import IsotonicRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import (
@@ -94,6 +96,20 @@ SKF_N_SPLITS = 3
 # class_weight="balanced_subsample" draws bootstrap samples that are
 # effectively all from the same response class in small clusters.
 MIN_PROB_WEIGHT: float = 1e-6
+
+# Probability Calibration Constants
+# Isotonic regression requires a sufficient number of held-out calibration
+# samples to avoid overfitting (it is a non-parametric, step-function fit).
+# Below this threshold, Platt scaling (sigmoid) is used instead — it is
+# parametric and stable even with small sample counts.
+#
+# cv='prefit' strategy: the base RF is fitted on the full training set (with
+# sample_weight), then CalibratedClassifierCV(cv='prefit') is applied on a
+# held-out calibration split drawn from the effective (non-zero-weight) samples
+# only.  This avoids the NaN probabilities produced by internal CV splits that
+# land entirely on zero-weight hard-assignment patients.
+CALIBRATION_MIN_SAMPLES: int = 50
+CALIBRATION_HOLDOUT_FRAC: float = 0.25  # fraction of effective samples reserved for calibration
 
 set_presentation_style()
 
@@ -224,6 +240,171 @@ def evaluate_predictions(
     }
 
 
+class _LRPredictor:
+    """Thin picklable wrapper around LogisticRegression for Platt scaling.
+
+    ``LogisticRegression.predict`` returns class labels, not probabilities.
+    This wrapper exposes a ``predict(p)`` method that accepts a 1D array of
+    raw RF probabilities and returns calibrated probabilities — matching the
+    ``IsotonicRegression.predict`` interface expected by ``_CalibratedModel``.
+    Being a named top-level class (not an anonymous ``type(...)`` object) makes
+    it picklable by ``joblib``.
+    """
+
+    def __init__(self, lr: LogisticRegression) -> None:
+        self.lr = lr
+
+    def predict(self, p: np.ndarray) -> np.ndarray:
+        """Convert 1D raw probabilities to calibrated probabilities via logistic regression.
+
+        Args:
+            p: 1D array of raw RF positive-class probabilities.
+
+        Returns:
+            1D array of calibrated positive-class probabilities.
+        """
+        return self.lr.predict_proba(p.reshape(-1, 1))[:, 1]
+
+
+class _CalibratedModel:
+    """Lightweight wrapper combining a fitted base classifier with a probability calibrator.
+
+    Stores the fitted ``RandomForestClassifier`` alongside a calibrator
+    (``IsotonicRegression`` or ``LogisticRegression``) trained on a held-out
+    calibration split.  Exposes ``predict_proba`` for drop-in compatibility with
+    the rest of the pipeline and ``feature_importances_`` for plotting.
+
+    This avoids using ``CalibratedClassifierCV`` entirely, which in sklearn >= 1.4
+    removed the ``cv='prefit'`` mode and replaced it with ``ensemble=False`` —
+    but ``ensemble=False`` still internally runs ``cross_val_predict``, which fails
+    when the calibration set contains fewer samples than the default ``cv`` splits.
+    """
+
+    base_clf: RandomForestClassifier
+    # calibrator is either IsotonicRegression or _LRPredictor (both expose predict(p_1d))
+    calibrator: object
+
+    def __init__(self, base_clf: RandomForestClassifier, calibrator: object) -> None:
+        self.base_clf = base_clf
+        self.calibrator = calibrator
+
+    @property
+    def feature_importances_(self) -> np.ndarray:
+        """Proxy to the base RF feature importances."""
+        return self.base_clf.feature_importances_
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        """Return calibrated probability predictions.
+
+        Args:
+            X: Preprocessed feature matrix.
+
+        Returns:
+            Array of shape (N, 2) with [P(class=0), P(class=1)] per sample.
+        """
+        raw_prob = self.base_clf.predict_proba(X)[:, 1]
+        cal_prob = np.clip(self.calibrator.predict(raw_prob), 0.0, 1.0)
+        return np.column_stack([1.0 - cal_prob, cal_prob])
+
+
+def _fit_calibrated_rf(
+    X_tr: np.ndarray,
+    y_tr: np.ndarray,
+    max_depth: int,
+    sample_weight: Optional[np.ndarray] = None,
+) -> "_CalibratedModel":
+    """Fit a base Random Forest and then calibrate its probabilities.
+
+    Uses a two-stage **manual prefit** calibration strategy:
+
+    1. Fit the base ``RandomForestClassifier`` on the full ``(X_tr, y_tr)``
+       training set with the provided ``sample_weight``.  All samples contribute
+       (zero-weighted samples are harmlessly ignored by the RF loss).
+    2. Identify the *effective* subset (``sample_weight > MIN_PROB_WEIGHT`` or all
+       samples when no weights are provided) and hold out
+       ``CALIBRATION_HOLDOUT_FRAC`` of them as a calibration set.
+    3. Score the base RF on the calibration set and fit an ``IsotonicRegression``
+       or ``LogisticRegression`` calibrator to map raw RF probabilities to
+       well-calibrated values.
+
+    This approach is version-safe and avoids the ``ValueError`` that arises from
+    ``CalibratedClassifierCV`` internal CV splits landing on too-few samples.
+
+    Calibration method selection:
+    - **Isotonic regression**: non-parametric, better correction, requires
+      ``n_cal >= CALIBRATION_MIN_SAMPLES`` to avoid overfitting.
+    - **Platt scaling** (logistic regression on raw probabilities): parametric
+      two-parameter fit, stable with small calibration sets.
+
+    Args:
+        X_tr: Preprocessed training feature matrix (already imputed and scaled).
+        y_tr: Binary training labels.
+        max_depth: Maximum tree depth for the base RandomForestClassifier.
+        sample_weight: Optional per-sample GMM posterior weights.  Zero-weight
+            samples are excluded from the calibration split but included in the
+            RF training step.
+
+    Returns:
+        A fitted ``_CalibratedModel`` instance.
+    """
+    # Stage 1: fit the base RF on the full training set
+    base_clf = RandomForestClassifier(
+        n_estimators=RF_N_ESTIMATORS,
+        random_state=RANDOM_STATE,
+        max_depth=max_depth,
+        class_weight="balanced_subsample",
+    )
+    base_clf.fit(X_tr, y_tr, sample_weight=sample_weight)
+
+    # Stage 2: select effective samples for calibration
+    if sample_weight is not None:
+        effective_mask = sample_weight > MIN_PROB_WEIGHT
+    else:
+        effective_mask = np.ones(len(y_tr), dtype=bool)
+
+    X_eff = X_tr[effective_mask]
+    y_eff = y_tr[effective_mask]
+
+    # Hold out CALIBRATION_HOLDOUT_FRAC of the effective samples as a calibration
+    # set.  A stratified split ensures both classes are represented in y_cal.
+    n_eff = len(y_eff)
+    n_cal = max(2, int(np.ceil(n_eff * CALIBRATION_HOLDOUT_FRAC)))
+
+    rng = np.random.default_rng(RANDOM_STATE)
+    idx_eff = np.arange(n_eff)
+    pos_idx = idx_eff[y_eff == 1]
+    neg_idx = idx_eff[y_eff == 0]
+
+    n_cal_pos = max(1, int(round(n_cal * len(pos_idx) / n_eff))) if len(pos_idx) > 0 else 0
+    n_cal_neg = max(1, n_cal - n_cal_pos) if len(neg_idx) > 0 else 0
+    n_cal_pos = min(n_cal_pos, len(pos_idx))
+    n_cal_neg = min(n_cal_neg, len(neg_idx))
+
+    cal_idx = np.concatenate([
+        rng.choice(pos_idx, n_cal_pos, replace=False),
+        rng.choice(neg_idx, n_cal_neg, replace=False),
+    ])
+    X_cal = X_eff[cal_idx]
+    y_cal = y_eff[cal_idx]
+
+    # Stage 3: score base RF on calibration set and fit calibrator
+    raw_cal_prob = base_clf.predict_proba(X_cal)[:, 1]
+
+    if len(y_cal) >= CALIBRATION_MIN_SAMPLES and len(np.unique(y_cal)) == 2:
+        # Isotonic regression: non-parametric, better correction for larger sets
+        calibrator: object = IsotonicRegression(out_of_bounds="clip")
+        calibrator.fit(raw_cal_prob, y_cal)
+    else:
+        # Platt scaling: parametric logistic fit, stable for small calibration sets.
+        # Wrapped in _LRPredictor so the interface (predict(1d_array) -> 1d_array)
+        # is uniform with IsotonicRegression and the model remains picklable.
+        lr = LogisticRegression(C=1.0, solver="lbfgs", max_iter=1000)
+        lr.fit(raw_cal_prob.reshape(-1, 1), y_cal)
+        calibrator = _LRPredictor(lr)
+
+    return _CalibratedModel(base_clf=base_clf, calibrator=calibrator)
+
+
 def _fit_predict_fold(
     X_tr: np.ndarray,
     y_tr: np.ndarray,
@@ -231,7 +412,12 @@ def _fit_predict_fold(
     max_depth: int,
     sample_weight: Optional[np.ndarray] = None,
 ) -> np.ndarray:
-    """Impute, scale, train a Random Forest model, and return test predictions.
+    """Impute, scale, train a calibrated Random Forest model, and return test predictions.
+
+    The Random Forest is wrapped in a two-stage manual prefit calibration
+    (``_CalibratedModel``) to correct the systematic probability compression
+    caused by tree-averaging.  Calibration method (isotonic vs Platt/logistic)
+    is chosen based on effective sample count.
 
     Args:
         X_tr: Training features.
@@ -243,16 +429,10 @@ def _fit_predict_fold(
             to its cluster membership probability rather than equal-weighted.
 
     Returns:
-        Array of predicted probabilities for the test fold.
+        Calibrated predicted probabilities for the test fold.
     """
     X_tr_proc, X_te_proc = _preprocess_features(X_tr, X_te)
-    clf = RandomForestClassifier(
-        n_estimators=RF_N_ESTIMATORS,
-        random_state=RANDOM_STATE,
-        max_depth=max_depth,
-        class_weight="balanced_subsample",
-    )
-    clf.fit(X_tr_proc, y_tr, sample_weight=sample_weight)
+    clf = _fit_calibrated_rf(X_tr_proc, y_tr, max_depth=max_depth, sample_weight=sample_weight)
     return clf.predict_proba(X_te_proc)[:, 1]
 
 
@@ -350,14 +530,19 @@ def _fit_production_models(
     feature_cols: List[str],
     cluster_probs: np.ndarray,
     phenotype_names: List[str],
-) -> Dict[str, RandomForestClassifier]:
-    """Train production models on the full dataset using soft GMM cluster weights.
+) -> Dict[str, "_CalibratedModel"]:
+    """Train calibrated production models on the full dataset using soft GMM cluster weights.
 
     Each cluster-specific model is trained on ALL samples, with each sample's
     contribution weighted by its GMM posterior probability for that phenotype.
     Column k of cluster_probs corresponds to phenotype_names[k], derived from
     the named P_* columns (e.g. P_Immune_Hot) rather than the arbitrary integer
     P_Cluster_k indices, which shift between GMM runs.
+
+    All models are wrapped in ``CalibratedClassifierCV`` to correct the
+    systematic probability compression produced by Random Forest averaging.
+    The calibration method (isotonic vs sigmoid) is selected automatically
+    based on the effective cluster sample count.
 
     Args:
         df_valid: Filtered dataset containing valid response labels.
@@ -369,7 +554,7 @@ def _fit_production_models(
             cluster_probs.  Used as dictionary keys in the returned models dict.
 
     Returns:
-        Dictionary mapping model scope/phenotype name to trained RandomForestClassifier.
+        Dictionary mapping model scope/phenotype name to fitted CalibratedClassifierCV.
     """
     imp_final = SimpleImputer(strategy="median")
     scaler_final = StandardScaler()
@@ -377,16 +562,9 @@ def _fit_production_models(
     # preprocessed X — only their sample weights differ.
     X_full_proc = scaler_final.fit_transform(imp_final.fit_transform(X_raw))
 
-    # Global model: uniform weights across all samples
-    global_final_model = RandomForestClassifier(
-        n_estimators=RF_N_ESTIMATORS,
-        random_state=RANDOM_STATE,
-        max_depth=GLOBAL_MAX_DEPTH,
-        class_weight="balanced_subsample",
-    )
-    global_final_model.fit(X_full_proc, y_raw)
-
-    final_subgroup_models: Dict[str, RandomForestClassifier] = {"Global": global_final_model}
+    # Global model: uniform weights across all samples; use full N for method selection
+    global_calibrated = _fit_calibrated_rf(X_full_proc, y_raw, max_depth=GLOBAL_MAX_DEPTH)
+    final_subgroup_models: Dict[str, "_CalibratedModel"] = {"Global": global_calibrated}
 
     for k, p_name in enumerate(phenotype_names):
         weights_k = cluster_probs[:, k]
@@ -401,24 +579,21 @@ def _fit_production_models(
         X_sub = X_full_proc[meaningful]
         y_sub = y_raw[meaningful]
         w_sub = weights_k[meaningful]
+        n_effective = int(meaningful.sum())
 
         if len(np.unique(y_sub)) < 2:
             # Degenerate: only one response class in the filtered subset.
             # Fall back to the global model and log a warning.
             print(
                 f"  Warning: {p_name} has only one response class after filtering "
-                f"(N={meaningful.sum()}); substituting global model."
+                f"(N={n_effective}); substituting global model."
             )
-            final_subgroup_models[p_name] = global_final_model
+            final_subgroup_models[p_name] = global_calibrated
             continue
 
-        clf_final = RandomForestClassifier(
-            n_estimators=RF_N_ESTIMATORS,
-            random_state=RANDOM_STATE,
-            max_depth=SUBGROUP_MAX_DEPTH,
-            class_weight="balanced_subsample",
+        clf_final = _fit_calibrated_rf(
+            X_sub, y_sub, max_depth=SUBGROUP_MAX_DEPTH, sample_weight=w_sub
         )
-        clf_final.fit(X_sub, y_sub, sample_weight=w_sub)
         final_subgroup_models[p_name] = clf_final
 
     return final_subgroup_models
@@ -545,7 +720,7 @@ def _compile_evaluation_metrics(
 
 def train_and_eval_loco(
     df: pd.DataFrame, feature_cols: List[str]
-) -> Tuple[pd.DataFrame, Dict[str, Dict[str, np.ndarray]], Dict[str, RandomForestClassifier]]:
+) -> Tuple[pd.DataFrame, Dict[str, Dict[str, np.ndarray]], Dict[str, "_CalibratedModel"]]:
     """Perform Leave-One-Cohort-Out CV for Global Enriched Baseline vs Soft-Weighted Subgroup models.
 
     Cluster membership is taken from the GMM posterior probability columns
@@ -748,20 +923,42 @@ def plot_performance_comparison(df_eval: pd.DataFrame, out_path: Path) -> None:
     plt.close(fig)
 
 
+def _extract_feature_importances(clf: "_CalibratedModel") -> Optional[np.ndarray]:
+    """Extract feature importances from a ``_CalibratedModel`` wrapper.
+
+    Delegates directly to ``clf.feature_importances_``, which proxies the
+    underlying ``RandomForestClassifier``.
+
+    Args:
+        clf: A fitted ``_CalibratedModel`` instance.
+
+    Returns:
+        Feature importances array, or None if the underlying model does not
+        expose ``feature_importances_`` (e.g., a fallback model).
+    """
+    if hasattr(clf, "feature_importances_"):
+        return clf.feature_importances_
+    return None
+
+
 def plot_feature_importances(
-    final_models: Dict[str, RandomForestClassifier], feature_cols: List[str], out_path: Path
+    final_models: Dict[str, "_CalibratedModel"], feature_cols: List[str], out_path: Path
 ) -> None:
     """Plot feature importance heatmaps comparing driver weights across phenotypes.
 
+    Importances are extracted from the internal calibrated sub-estimators stored in
+    ``CalibratedClassifierCV.calibrated_classifiers_`` and averaged across CV folds.
+
     Args:
-        final_models: Dictionary of trained production models.
+        final_models: Dictionary of trained calibrated production models.
         feature_cols: Feature names.
         out_path: Output figure path.
     """
     importance_dict = {}
     for p_name, clf in final_models.items():
-        if hasattr(clf, "feature_importances_"):
-            importance_dict[p_name] = clf.feature_importances_
+        importances = _extract_feature_importances(clf)
+        if importances is not None:
+            importance_dict[p_name] = importances
 
     df_imp = pd.DataFrame(importance_dict, index=feature_cols)
     df_imp["Mean_Importance"] = df_imp.mean(axis=1)
