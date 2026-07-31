@@ -222,7 +222,10 @@ def _fit_predict_fold(
     """
     X_tr_proc, X_te_proc = _preprocess_features(X_tr, X_te)
     clf = RandomForestClassifier(
-        n_estimators=RF_N_ESTIMATORS, random_state=RANDOM_STATE, max_depth=max_depth
+        n_estimators=RF_N_ESTIMATORS,
+        random_state=RANDOM_STATE,
+        max_depth=max_depth,
+        class_weight="balanced_subsample",
     )
     clf.fit(X_tr_proc, y_tr)
     return clf.predict_proba(X_te_proc)[:, 1]
@@ -317,7 +320,10 @@ def _fit_production_models(
     X_full_proc = scaler_final.fit_transform(imp_final.fit_transform(X_raw))
 
     global_final_model = RandomForestClassifier(
-        n_estimators=RF_N_ESTIMATORS, random_state=RANDOM_STATE, max_depth=GLOBAL_MAX_DEPTH
+        n_estimators=RF_N_ESTIMATORS,
+        random_state=RANDOM_STATE,
+        max_depth=GLOBAL_MAX_DEPTH,
+        class_weight="balanced_subsample",
     )
     global_final_model.fit(X_full_proc, y_raw)
 
@@ -334,7 +340,10 @@ def _fit_production_models(
         X_sub_proc = scaler_sub.fit_transform(imp_sub.fit_transform(X_sub_raw))
 
         clf_final = RandomForestClassifier(
-            n_estimators=RF_N_ESTIMATORS, random_state=RANDOM_STATE, max_depth=SUBGROUP_MAX_DEPTH
+            n_estimators=RF_N_ESTIMATORS,
+            random_state=RANDOM_STATE,
+            max_depth=SUBGROUP_MAX_DEPTH,
+            class_weight="balanced_subsample",
         )
         clf_final.fit(X_sub_proc, y_sub)
         final_subgroup_models[p_name] = clf_final

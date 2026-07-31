@@ -47,6 +47,7 @@ The initial Phase 5 execution script (`05_subgroup_models.py`) contained several
 | **Magic Numbers** | CV folds (`3`), tree depth (`5`, `4`), seeds (`42`), trees (`100`) hardcoded inline. | Centralised as module-level constants (`RANDOM_STATE`, `RF_N_ESTIMATORS`, etc.). | Single source of truth for hyperparameter configuration. |
 | **Palette Key Mismatch** | `"M2 Immunosuppressive"` key mismatched `PHENOTYPE_PALETTE` key `"Immunosuppressive M2-High"`. | Standardised phenotype short names to `"Immunosuppressive M2-High"`. | Plot color lookup now correctly resolves to Okabe-Ito Reddish Purple (`#CC79A7`). |
 | **Baseline Label Clarity** | Generic label `"Global Q1 Predictor"` obscured that baseline included Phase 1 cell deconvolution. | Renamed label to `"Global Enriched Baseline"` across scripts, figures, and reports. | Explicitly distinguishes enriched global model from original un-enriched Q1 artifact. |
+| **Class Imbalance Handling** | Unweighted Random Forest fitting biased tree splits in imbalanced sub-cohorts. | Added `class_weight="balanced_subsample"` to all Random Forests in `05_subgroup_models.py`. | Re-computes inverse class weights per bootstrap sample tree; improves minority class sensitivity. |
 
 ---
 
@@ -117,7 +118,7 @@ To address these limitations when additional resources and datasets become avail
 | Pipeline Aspect | Current Phase 5 Implementation | Identified Limitation | Recommended Future Fix |
 | :--- | :--- | :--- | :--- |
 | **Sample Size ($N$)** | $N = 195$ trial patients across 4 clusters | Small clusters (*Immune Hot* $N=6$, *Immune Cold* $N=16$) underpowered | Ingest additional trial cohorts (Gide 2019, $N > 500$) |
-| **Class Imbalance** | Unweighted Random Forest fitting | Skewed response rates (38%–69%) bias decision tree splits | Apply SMOTE or `class_weight="balanced"` |
+| **Class Imbalance** | Cost-sensitive `class_weight="balanced_subsample"` | Resolves tree split bias; small sample sizes still restrict SMOTE | SMOTE synthetic oversampling on expanded cohorts |
 | **Validation Scheme** | LOCO CV with Stratified K-Fold fallback | Single-cohort clusters fall back to 3-fold SKF | Group-level sampling across expanded multi-cohort registry |
 | **Probability Calibration** | Raw uncalibrated `predict_proba` | Intermediate probability compression affects PPV/Brier score | Implement post-hoc Platt scaling / Isotonic Regression |
 | **Baseline Comparator** | Global Enriched Baseline (Q1 + deconvolution) | Does not isolate gain of cell deconvolution vs subgrouping | Implement 3-arm benchmark incorporating raw Q1 model |
