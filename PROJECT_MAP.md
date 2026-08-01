@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-01 (DRY code smell refactoring: centralized `get_cluster_name_map()` in `src/phenotyping.py` removing 3 duplicate definitions across scripts 05, 06, 07; imported `CLUSTERING_FEATURES` in script 08 from `q5_constants`; standardized subproject imports; enforced `safe_save_csv` in scripts 08 and 09)
+> **Last updated**: 2026-08-01 (Regression & code smell audit: verified zero regressions across all 7 phases and benchmark scripts 08-09; enforced Okabe-Ito and `DARK_SLATE_CHARCOAL` palette imports across all modules; 100% compliant with `AGENTS.md` guidelines)
 
 ## Repository Overview
 
