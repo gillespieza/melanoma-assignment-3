@@ -40,6 +40,7 @@ from clustering import (
     run_consensus_bootstrap,
 )
 from src.styles import set_presentation_style
+from src.utils.io import safe_save_csv
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 
@@ -85,7 +86,7 @@ def main() -> None:
     )
 
     out_csv = OUTPUT_DIR / "consensus_clustering_k2_k8_metrics.csv"
-    metrics_df.to_csv(out_csv, index=False)
+    safe_save_csv(metrics_df, out_csv)
     print(f"Saved consensus metrics table to {rel_path(out_csv)}")
     print("\nConsensus Clustering Metrics Summary:")
     print(metrics_df.to_string(index=False))

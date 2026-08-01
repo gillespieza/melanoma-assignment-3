@@ -7,12 +7,12 @@ tags:
   - patient-stratification
   - phase-6
   - q5
-created: 2026-08-01 10:54
+created: 2026-08-01 11:04
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 10:54
+updated: 2026-08-01 11:04
 ---
 
 ## 6. Phase 6: Clinical Utility & Decision Curve Analysis
@@ -109,7 +109,7 @@ The findings of Phase 6 demonstrate that withholding immunotherapy from predicte
 - **Arm B (Targeted Therapy)**: Non-responders harboring actionable driver mutations (`BRAF V600` / `NRAS`).
 - **Arm C (Combination / Reversal Therapy)**: Non-responders requiring targetable helper interventions (`CSF1R`, `MDM2`, `AXL`) to overcome microenvironmental resistance.
 
-> [!formula] Phase 6 Script Execution & Software Module Architecture
+> [!formula]+ Phase 6 Script Execution & Software Module Architecture
 > - **Primary Pipeline Execution Scripts**:
 >   - [`06_clinical_utility.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/06_clinical_utility.py): Conducts Decision Curve Analysis (DCA) across decision threshold probabilities ($p_t = 0.05 – 0.85$), calculates Net Benefit (`dca_net_benefit.csv`), computes Positive Predictive Value (PPV), Number Needed to Treat (NNT), and non-responder toxicity avoidance (`clinical_utility_metrics.csv`), generating DCA curves, NNT comparisons, and phenotype net benefit plots (`dca_curves.png`, `nnt_ppv_comparison.png`, `unnecessary_treatments_avoided.png`, `net_benefit_by_phenotype.png`).
 > - **Core Supporting Python Modules**:

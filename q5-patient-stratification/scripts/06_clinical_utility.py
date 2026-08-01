@@ -70,6 +70,7 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
 # ---------------------------------------------------------------------------
 
 from reporting import generate_obsidian_frontmatter
+from phenotyping import get_cluster_name_map
 from src.styles import (
     DARK_SLATE_CHARCOAL,
     PHENOTYPE_PALETTE,
@@ -473,23 +474,12 @@ def plot_unnecessary_treatments_avoided(df_dca: pd.DataFrame, out_path: Path) ->
     plt.close(fig)
 
 
-def _build_cluster_name_map(df: pd.DataFrame) -> Dict[int, str]:
-    available_named_cols = [col for col in PHENOTYPE_PROB_COL.values() if col in df.columns]
-    col_to_name = {col: name for name, col in PHENOTYPE_PROB_COL.items()}
-    mapping: Dict[int, str] = {}
-    for cid in df["Cluster_ID"].unique():
-        cluster_rows = df[df["Cluster_ID"] == cid]
-        best_col = cluster_rows[available_named_cols].mean().idxmax()
-        mapping[int(cid)] = col_to_name.get(best_col, f"Cluster {cid}")
-    return mapping
-
-
 def plot_net_benefit_by_phenotype(
     df: pd.DataFrame, prob_cols: Dict[str, np.ndarray], pt: float, out_path: Path
 ) -> None:
     """Plot Net Benefit across individual biological phenotypes at fixed decision threshold pt."""
     rows = []
-    cluster_id_to_name = _build_cluster_name_map(df)
+    cluster_id_to_name = get_cluster_name_map(df)
     for p_id, p_name in cluster_id_to_name.items():
         mask = df["Cluster_ID"] == p_id
         if not mask.any():

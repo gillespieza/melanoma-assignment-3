@@ -243,7 +243,7 @@ def main() -> None:
     )
 
     doc_sections.append(
-        "> [!INFO] Phase 1 Feature Matrix Architecture & Complete Feature Inventory\n"
+        "> [!INFO]+ Phase 1 Feature Matrix Architecture & Complete Feature Inventory\n"
         f"> - **Transcriptomic Features (17)**:\n"
         ">   - **Core Immune Signatures (6)**: \n"
         ">      1. `TIS` (Tumour Inflammation Signature)\n"
@@ -290,7 +290,7 @@ def main() -> None:
     )
 
     doc_sections.append(
-        "> [!formula] Phase 1 Script Execution & Software Module Architecture\n"
+        "> [!formula]+ Phase 1 Script Execution & Software Module Architecture\n"
         "> - **Primary Pipeline Execution Scripts**:\n"
         ">   - [`01_load_and_prepare.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/01_load_and_prepare.py): Loads preprocessed clinical, expression, and genomic data from `data/processed/merged/`, computes immune signatures (`TIS`, `CYT`, `IFN_gamma`, `CD8_Tcell`), calculates Macrophage STV (`M1_M2_Ratio`), runs transcriptomic cell deconvolution, and exports dual feature matrices (`feature_matrix.csv`, $N_{\\text{ICI}} = 326$; `feature_matrix_full.csv`, $N_{\\text{Full}} = 699$).\n"
         "> - **Core Supporting Python Modules**:\n"
@@ -411,7 +411,7 @@ def main() -> None:
     )
 
     doc_sections.append(
-        "> [!formula] Phase 2 Script Execution & Software Module Architecture\n"
+        "> [!formula]+ Phase 2 Script Execution & Software Module Architecture\n"
         "> - **Primary Pipeline Execution Scripts**:\n"
         ">   - [`02_feature_analysis.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/02_feature_analysis.py): Conducts non-parametric Mann-Whitney U testing and Cohen's d effect size calculations across features (`univariate_feature_associations.csv`), computes Youden J optimal decision cutoffs and ROC curves (`youden_cutoffs.csv`), and evaluates 21 driver mutation $\\times$ immune signature logistic regression interaction terms (`genomic_immune_interactions.csv`, `genomic_interaction_tis_braf.png`, `genomic_immune_interaction_matrix.png`).\n"
         "> - **Core Supporting Python Modules**:\n"
@@ -501,7 +501,7 @@ def main() -> None:
             "> 2. **Soft Probabilistic Assignments**: Full covariance matrices ($\mathbf{\Sigma}_k$) accommodate non-spherical feature correlation and calculate continuous posterior membership probabilities $\\vec{P}_i$.\n"
             "> 3. **Dimensionality Projections**: 2D PCA and non-linear t-SNE projections confirm clear spatial separation, with PC1 capturing T-cell inflammation and PC2 capturing myeloid/stromal exclusion.\n"
             "> 4. **Clinical Takeaway**: Identifying a patient's biological phenotype and probability profile provides the foundation for targeted routing rather than applying a single uniform treatment protocol.\n\n"
-            "> [!formula] Phase 3 Script Execution & Software Module Architecture\n"
+            "> [!formula]+ Phase 3 Script Execution & Software Module Architecture\n"
             "> - **Primary Pipeline Execution Scripts**:\n"
             ">   - [`03_cluster_patients.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/03_cluster_patients.py): Executes Gaussian Mixture Model (GMM) soft clustering ($K=4$, full covariance) across the 9 multi-modal feature space, computes posterior probabilities, exports `gmm_posterior_probabilities.csv` and `patient_clusters.csv`, serialises the fitted model (`gmm_model.pkl`), and generates PCA/t-SNE 2D projections (`pca_clusters.png`, `tsne_clusters.png`).\n"
             ">   - [`08_compare_clustering_algorithms.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/08_compare_clustering_algorithms.py): Benchmarks alternative clustering algorithms (K-Means, HAC, GMM, Spectral Clustering, DBSCAN, Consensus Clustering) across Silhouette, Calinski-Harabasz, Davies-Bouldin, ARI, and response rate spread.\n"
@@ -525,7 +525,7 @@ def main() -> None:
             "> 2. **Soft Probabilistic Assignments**: Full covariance matrices ($\mathbf{\Sigma}_k$) accommodate non-spherical feature correlation and calculate continuous posterior membership probabilities $\\vec{P}_i$.\n"
             "> 3. **Dimensionality Projections**: 2D PCA and non-linear t-SNE projections confirm clear spatial separation, with PC1 capturing T-cell inflammation and PC2 capturing myeloid/stromal exclusion.\n"
             "> 4. **Clinical Takeaway**: Identifying a patient's biological phenotype and probability profile provides the foundation for targeted routing rather than applying a single uniform treatment protocol.\n\n"
-            "> [!formula] Phase 3 Script Execution & Software Module Architecture\n"
+            "> [!formula]+ Phase 3 Script Execution & Software Module Architecture\n"
             "> - **Primary Pipeline Execution Scripts**:\n"
             ">   - [`03_cluster_patients.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/03_cluster_patients.py): Executes Gaussian Mixture Model (GMM) soft clustering ($K=4$, full covariance) across the 9 multi-modal feature space, computes posterior probabilities, exports `gmm_posterior_probabilities.csv` and `patient_clusters.csv`, serialises the fitted model (`gmm_model.pkl`), and generates PCA/t-SNE 2D projections (`pca_clusters.png`, `tsne_clusters.png`).\n"
             ">   - [`08_compare_clustering_algorithms.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/08_compare_clustering_algorithms.py): Benchmarks alternative clustering algorithms (K-Means, HAC, GMM, Spectral Clustering, DBSCAN, Consensus Clustering) across Silhouette, Calinski-Harabasz, Davies-Bouldin, ARI, and response rate spread.\n"
@@ -640,7 +640,7 @@ def main() -> None:
     )
 
     doc_sections.append(
-        "> [!formula] Phase 4 Script Execution & Software Module Architecture\n"
+        "> [!formula]+ Phase 4 Script Execution & Software Module Architecture\n"
         "> - **Primary Pipeline Execution Scripts**:\n"
         ">   - [`04_phenotype_characterisation.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/04_phenotype_characterisation.py): Profiles cluster biomarker distributions (`phenotype_characterisation.csv`), assigns biological phenotype labels, generates 2x3 baseline boxplots (`baseline_signature_boxplots.png`), simulates dynamic 180-day dual-arm Kuznetsov ODE tumour trajectories (`ode_trajectories.png`), and generates Kaplan-Meier overall survival curves stratified by phenotype (`km_survival_by_phenotype.png`).\n"
         "> - **Core Supporting Python Modules**:\n"
@@ -807,7 +807,7 @@ def main() -> None:
     )
 
     doc_sections.append(
-        "> [!formula] Phase 5 Script Execution & Software Module Architecture\n"
+        "> [!formula]+ Phase 5 Script Execution & Software Module Architecture\n"
         "> - **Primary Pipeline Execution Scripts**:\n"
         ">   - [`05_subgroup_models.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/05_subgroup_models.py): Trains soft-weighted GMM probability Random Forest classifiers on 9 non-circular features (`IFN_gamma`, `CD8_Tcell`, `PD_L1`, `M1_M2_Ratio`, `Macrophage_STV_Score`, `CD4_T_cells`, `NK_cells`, `B_cells`, `TMB_NONSYNONYMOUS`), evaluates Leave-One-Cohort-Out (LOCO) CV vs Global Enriched Baseline (`subgroup_models_evaluation.csv`), serialises fitted models (`joblib`), and generates ROC, performance, and Gini feature importance plots (`subgroup_roc_curves.png`, `subgroup_performance_comparison.png`, `subgroup_feature_importances.png`).\n"
         "> - **Core Supporting Python Modules**:\n"
@@ -957,7 +957,7 @@ def main() -> None:
     )
 
     doc_sections.append(
-        "> [!formula] Phase 6 Script Execution & Software Module Architecture\n"
+        "> [!formula]+ Phase 6 Script Execution & Software Module Architecture\n"
         "> - **Primary Pipeline Execution Scripts**:\n"
         ">   - [`06_clinical_utility.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/06_clinical_utility.py): Conducts Decision Curve Analysis (DCA) across decision threshold probabilities ($p_t = 0.05 – 0.85$), calculates Net Benefit (`dca_net_benefit.csv`), computes Positive Predictive Value (PPV), Number Needed to Treat (NNT), and non-responder toxicity avoidance (`clinical_utility_metrics.csv`), generating DCA curves, NNT comparisons, and phenotype net benefit plots (`dca_curves.png`, `nnt_ppv_comparison.png`, `unnecessary_treatments_avoided.png`, `net_benefit_by_phenotype.png`).\n"
         "> - **Core Supporting Python Modules**:\n"
@@ -1107,7 +1107,7 @@ def main() -> None:
     )
 
     doc_sections.append(
-        "> [!formula] Phase 7 Script Execution & Software Module Architecture\n"
+        "> [!formula]+ Phase 7 Script Execution & Software Module Architecture\n"
         "> - **Primary Pipeline Execution Scripts**:\n"
         ">   - [`07_treatability_scoring.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/07_treatability_scoring.py): Implements 3-arm clinical decision tree routing all $N = 699$ patients into **Arm A** (Immunotherapy Monotherapy), **Arm B** (Targeted Therapy integrating Q2 Dabrafenib sensitivity), and **Arm C** (Combination/Reversal integrating Q4 DepMap essentiality targets `CSF1R`, `MDM2`, `AXL`), computes composite Treatability Index (`treatability_scores.csv`), exports arm allocation summary (`treatment_arm_summary.csv`), and generates 3-arm pie, treatability distribution, and waterfall plots (`arm_distribution_pie.png`, `arm_assignment_breakdown.png`, `treatability_index_distribution.png`, `treatability_waterfall.png`).\n"
         "> - **Core Supporting Python Modules**:\n"

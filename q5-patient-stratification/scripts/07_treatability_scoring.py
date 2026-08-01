@@ -40,6 +40,7 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
 # ---------------------------------------------------------------------------
 
 from q5_constants import PHENOTYPE_PROB_COL
+from phenotyping import get_cluster_name_map
 from src.styles import ARM_PALETTE, DARK_SLATE_CHARCOAL, PHENOTYPE_PALETTE, set_presentation_style
 from src.utils.formatting import generate_obsidian_frontmatter
 from src.utils.io import safe_save_csv
@@ -68,16 +69,7 @@ REPORTS_DIR = SUBPROJECT_ROOT / "reports" / "q5_phases"
 set_presentation_style()
 
 
-def _build_cluster_name_map(df: pd.DataFrame) -> Dict[int, str]:
-    """Derive Cluster_ID -> phenotype display name mapping from data at runtime."""
-    available_named_cols = [col for col in PHENOTYPE_PROB_COL.values() if col in df.columns]
-    col_to_name = {col: name for name, col in PHENOTYPE_PROB_COL.items()}
-    mapping: Dict[int, str] = {}
-    for cid in df["Cluster_ID"].unique():
-        cluster_rows = df[df["Cluster_ID"] == cid]
-        best_col = cluster_rows[available_named_cols].mean().idxmax()
-        mapping[int(cid)] = col_to_name.get(best_col, f"Cluster {cid}")
-    return mapping
+
 
 
 def load_q2_dabrafenib_weights() -> Dict[str, float]:
@@ -243,7 +235,7 @@ def assign_treatment_arms(
     q4_target_nominations = []
 
     tis_q60 = df["TIS"].quantile(0.60) if "TIS" in df.columns else 0.0
-    cluster_id_to_name = _build_cluster_name_map(df)
+    cluster_id_to_name = get_cluster_name_map(df)
 
     for idx, row in df_out.iterrows():
         cluster_id = row.get("Cluster_ID", 0)
@@ -303,7 +295,7 @@ def _compute_arm_confidence_scores(df: pd.DataFrame) -> Tuple[pd.Series, pd.Seri
     tis_above_boundary = ((df["TIS"] - tis_q60) / (df["TIS"].std() + 1e-9)).clip(lower=0.0)
     tis_dist_norm = _minmax(tis_above_boundary)
 
-    cluster_id_to_name = _build_cluster_name_map(df)
+    cluster_id_to_name = get_cluster_name_map(df)
     pheno_short = df["Cluster_ID"].map(cluster_id_to_name)
     alignment_score = pd.Series(0.5, index=df.index)
     is_m2 = pheno_short.isin(["M2 Immunosuppressive", "Immunosuppressive M2-High"])
@@ -348,7 +340,7 @@ def compute_recommendation_confidence(df: pd.DataFrame) -> pd.DataFrame:
 def plot_arm_assignment_breakdown(df_assigned: pd.DataFrame, out_path: Path) -> None:
     """Plot distribution of patient allocation across Arm A, B, and C by biological phenotype."""
     df_plot = df_assigned.copy()
-    cluster_id_to_name = _build_cluster_name_map(df_plot)
+    cluster_id_to_name = get_cluster_name_map(df_plot)
     df_plot["Phenotype"] = df_plot["Cluster_ID"].map(cluster_id_to_name)
 
     ct = pd.crosstab(df_plot["Phenotype"], df_plot["Treatment_Arm"], normalize="index") * 100.0
@@ -450,7 +442,7 @@ def _plot_dabrafenib_hist_panel(ax2: plt.Axes, df_plot: pd.DataFrame) -> None:
 def plot_treatability_distributions(df_assigned: pd.DataFrame, out_path: Path) -> None:
     """Plot distribution of Treatability Index and Q2 Dabrafenib Sensitivity Scores."""
     df_plot = df_assigned.copy()
-    cluster_id_to_name = _build_cluster_name_map(df_plot)
+    cluster_id_to_name = get_cluster_name_map(df_plot)
     df_plot["Phenotype"] = df_plot["Cluster_ID"].map(cluster_id_to_name)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
@@ -478,7 +470,7 @@ def _extract_treatability_markdown_metrics(df_assigned: pd.DataFrame) -> Dict[st
     n_armb = arm_counts.get("Arm B: Targeted Therapy", 0)
     n_armc = arm_counts.get("Arm C: Combination/Reversal", 0)
 
-    cluster_id_to_name = _build_cluster_name_map(df_assigned)
+    cluster_id_to_name = get_cluster_name_map(df_assigned)
     pheno_treat = df_assigned.groupby(df_assigned["Cluster_ID"].map(cluster_id_to_name))["Treatability_Index"].mean()
 
     armb_df = df_assigned[df_assigned["Treatment_Arm"] == "Arm B: Targeted Therapy"]
@@ -764,7 +756,7 @@ def main() -> None:
           f"Arm C={int((df_pros_sub['Treatment_Arm'].str.startswith('Arm C')).sum())}")
 
     df_summary = df_assigned.copy()
-    cluster_id_to_name = _build_cluster_name_map(df_summary)
+    cluster_id_to_name = get_cluster_name_map(df_summary)
     df_summary["Phenotype"] = df_summary["Cluster_ID"].map(cluster_id_to_name)
     df_summary = df_summary.groupby(["Phenotype", "Treatment_Arm"]).size().reset_index(name="Patient_Count")
     out_sum_csv = OUTPUT_DIR / "arm_summary_metrics.csv"

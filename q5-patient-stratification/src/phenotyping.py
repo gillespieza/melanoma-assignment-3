@@ -16,6 +16,7 @@ import seaborn as sns
 # Project Imports
 # ---------------------------------------------------------------------------
 
+from q5_constants import PHENOTYPE_PROB_COL
 from src.styles import PHENOTYPE_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.paths import rel_path
 from src.utils.plotting import save_fig
@@ -41,6 +42,23 @@ BASELINE_VIOLIN_FEATURES: List[str] = [
     "M2_Macrophages",
     "CAFs",
 ]
+
+
+def get_cluster_name_map(df: pd.DataFrame) -> Dict[int, str]:
+    """Derive Cluster_ID -> phenotype display name mapping from data at runtime."""
+    available_named_cols = [col for col in PHENOTYPE_PROB_COL.values() if col in df.columns]
+    col_to_name = {col: name for name, col in PHENOTYPE_PROB_COL.items()}
+    mapping: Dict[int, str] = {}
+    if "Cluster_ID" not in df.columns:
+        return mapping
+    for cid in df["Cluster_ID"].unique():
+        cluster_rows = df[df["Cluster_ID"] == cid]
+        if available_named_cols:
+            best_col = cluster_rows[available_named_cols].mean().idxmax()
+            mapping[int(cid)] = col_to_name.get(best_col, f"Cluster {cid}")
+        else:
+            mapping[int(cid)] = f"Cluster {cid}"
+    return mapping
 
 
 # ---------------------------------------------------------------------------

@@ -7,12 +7,12 @@ tags:
   - patient-stratification
   - phase-2
   - q5
-created: 2026-08-01 10:54
+created: 2026-08-01 11:04
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 10:54
+updated: 2026-08-01 11:04
 ---
 
 ## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds
@@ -96,7 +96,7 @@ Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patient
 > 3. **Genomic Mutations Alter Immune Response**: Microenvironmental immune inflammation interacts significantly with oncogenic driver mutations—specifically `BRAF V600` ($\beta = -0.65, p = 0.040$). High T-cell inflammation has a stronger positive predictive value in `BRAF` wild-type tumours than in `BRAF`-mutated tumours.
 > 4. **Rationale for Stratification**: Because single biomarkers yield modest standalone performance and interact with underlying driver mutations, robust patient stratification requires multi-dimensional unsupervised clustering (Phase 3) rather than single-gene tests.
 
-> [!formula] Phase 2 Script Execution & Software Module Architecture
+> [!formula]+ Phase 2 Script Execution & Software Module Architecture
 > - **Primary Pipeline Execution Scripts**:
 >   - [`02_feature_analysis.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/02_feature_analysis.py): Conducts non-parametric Mann-Whitney U testing and Cohen's d effect size calculations across features (`univariate_feature_associations.csv`), computes Youden J optimal decision cutoffs and ROC curves (`youden_cutoffs.csv`), and evaluates 21 driver mutation $\times$ immune signature logistic regression interaction terms (`genomic_immune_interactions.csv`, `genomic_interaction_tis_braf.png`, `genomic_immune_interaction_matrix.png`).
 > - **Core Supporting Python Modules**:

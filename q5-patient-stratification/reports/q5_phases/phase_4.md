@@ -7,12 +7,12 @@ tags:
   - patient-stratification
   - phase-4
   - q5
-created: 2026-08-01 10:54
+created: 2026-08-01 11:04
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 10:54
+updated: 2026-08-01 11:04
 ---
 
 ## 4. Phase 4: Phenotype Characterisation & Q3 ODE Digital Twin Dynamics
@@ -102,7 +102,7 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 > 3. **Prognostic Survival Separation**: Simulated checkpoint tumour burden stratified overall survival, yielding an 82-month median survival gap ($p = 0.0024$).
 > 4. **Mechanistic vs Black-Box ML**: Operating on just 3 mechanistically derived features (`pERK`, BRAFi burden, checkpoint burden), the ODE digital twin achieved an ROC-AUC of **0.666**, outperforming 12-feature Logistic Regression ($0.646$) and Neural Networks ($0.583$) while maintaining total biological transparency.
 
-> [!formula] Phase 4 Script Execution & Software Module Architecture
+> [!formula]+ Phase 4 Script Execution & Software Module Architecture
 > - **Primary Pipeline Execution Scripts**:
 >   - [`04_phenotype_characterisation.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/04_phenotype_characterisation.py): Profiles cluster biomarker distributions (`phenotype_characterisation.csv`), assigns biological phenotype labels, generates 2x3 baseline boxplots (`baseline_signature_boxplots.png`), simulates dynamic 180-day dual-arm Kuznetsov ODE tumour trajectories (`ode_trajectories.png`), and generates Kaplan-Meier overall survival curves stratified by phenotype (`km_survival_by_phenotype.png`).
 > - **Core Supporting Python Modules**:

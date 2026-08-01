@@ -7,12 +7,12 @@ tags:
   - patient-stratification
   - phase-5
   - q5
-created: 2026-08-01 10:54
+created: 2026-08-01 11:04
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 10:54
+updated: 2026-08-01 11:04
 ---
 
 ## 5. Phase 5: Subgroup-Specific Predictive Models
@@ -62,7 +62,7 @@ Phase 5 evaluates whether training cluster-tailored predictive models improves r
 > 3. **Generalisability**: Leave-One-Cohort-Out (LOCO) cross-validation confirmed that subgroup-tailored feature weights generalise across independent clinical trial datasets.
 > 4. **Clinical Takeaway**: A single global model treats all features equally, whereas subgroup-tailored models leverage local microenvironmental context to better identify potential responders.
 
-> [!formula] Phase 5 Script Execution & Software Module Architecture
+> [!formula]+ Phase 5 Script Execution & Software Module Architecture
 > - **Primary Pipeline Execution Scripts**:
 >   - [`05_subgroup_models.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/05_subgroup_models.py): Trains soft-weighted GMM probability Random Forest classifiers on 9 non-circular features (`IFN_gamma`, `CD8_Tcell`, `PD_L1`, `M1_M2_Ratio`, `Macrophage_STV_Score`, `CD4_T_cells`, `NK_cells`, `B_cells`, `TMB_NONSYNONYMOUS`), evaluates Leave-One-Cohort-Out (LOCO) CV vs Global Enriched Baseline (`subgroup_models_evaluation.csv`), serialises fitted models (`joblib`), and generates ROC, performance, and Gini feature importance plots (`subgroup_roc_curves.png`, `subgroup_performance_comparison.png`, `subgroup_feature_importances.png`).
 > - **Core Supporting Python Modules**:

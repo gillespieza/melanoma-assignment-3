@@ -67,6 +67,7 @@ from src.utils.io import safe_save_csv
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
+from phenotyping import get_cluster_name_map
 from q5_constants import CLUSTERING_FEATURES, PHENOTYPE_PROB_COL
 
 # ---------------------------------------------------------------------------
@@ -559,30 +560,6 @@ def _fit_production_models(
     return final_subgroup_models
 
 
-def _build_cluster_name_map(df: pd.DataFrame) -> Dict[int, str]:
-    """Derive a Cluster_ID -> phenotype display name mapping from the data at runtime.
-
-    For each cluster, identifies which named GMM probability column has the highest
-    mean value, then resolves that column back to its canonical phenotype name.  This
-    avoids relying on hardcoded cluster-index assumptions that break when the GMM
-    assigns different integer IDs across runs.
-
-    Args:
-        df: Patient DataFrame containing Cluster_ID and named P_* probability columns.
-
-    Returns:
-        Dictionary mapping each integer Cluster_ID to its phenotype display name.
-    """
-    available_named_cols = [col for col in PHENOTYPE_PROB_COL.values() if col in df.columns]
-    col_to_name = {col: name for name, col in PHENOTYPE_PROB_COL.items()}
-    mapping: Dict[int, str] = {}
-    for cid in df["Cluster_ID"].unique():
-        cluster_rows = df[df["Cluster_ID"] == cid]
-        best_col = cluster_rows[available_named_cols].mean().idxmax()
-        mapping[cid] = col_to_name.get(best_col, f"Cluster {cid}")
-    return mapping
-
-
 def _evaluate_cluster_subgroups(
     df_valid: pd.DataFrame,
     cluster_id_to_name: Dict[int, str],
@@ -723,7 +700,7 @@ def train_and_eval_loco(
 
     # Derive Cluster_ID -> phenotype name map from the data (runtime-safe,
     # avoids hardcoded index assumptions)
-    cluster_id_to_name = _build_cluster_name_map(df_valid)
+    cluster_id_to_name = get_cluster_name_map(df_valid)
     print(f"  Cluster ID -> Phenotype map: {cluster_id_to_name}")
 
     # 1. Out-of-fold probability predictions

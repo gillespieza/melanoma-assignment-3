@@ -47,7 +47,9 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
 # ---------------------------------------------------------------------------
 
 from clustering import run_consensus_bootstrap
-from src.styles import OKABE_ITO, set_presentation_style
+from q5_constants import CLUSTERING_FEATURES
+from src.styles import DARK_SLATE_CHARCOAL, OKABE_ITO, set_presentation_style
+from src.utils.io import safe_save_csv
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
@@ -93,12 +95,6 @@ INPUT_FILE_FULL = PROCESSED_DIR / "q5" / "feature_matrix_full.csv"
 OUTPUT_PLOT    = SUBPROJECT_ROOT / "plots" / "clustering" / "clustering_algorithms_comparison.png"
 OUTPUT_PLOT_COHORT_CMP = SUBPROJECT_ROOT / "plots" / "clustering" / "algorithms_cohort_size_comparison.png"
 OUTPUT_METRICS = PROCESSED_DIR / "q5" / "clustering_metrics_comparison.csv"
-
-# The 9 multi-modal features used for clustering
-CLUSTERING_FEATURES: List[str] = [
-    "TIS", "CYT", "CD8_T_cells", "M1_Macrophages", "M2_Macrophages",
-    "CAFs", "mut_BRAF", "mut_NRAS", "mut_NF1",
-]
 
 # Okabe-Ito Scientific color palette for cluster panels
 CLUSTER_COLORS: List[str] = OKABE_ITO
@@ -245,6 +241,7 @@ def plot_comparison(
     df_clean: pd.DataFrame,
     algorithms: Dict[str, np.ndarray],
     df_metrics: pd.DataFrame,
+    pca_model: PCA,
 ) -> None:
     """Generate and save a 6-panel 2D PCA scatter plot comparing all clustering algorithms.
 
@@ -256,6 +253,7 @@ def plot_comparison(
         df_clean: Patient DataFrame with Dim1/Dim2 PCA coordinates and RESPONSE_BINARY.
         algorithms: Dictionary of algorithm name to cluster label arrays.
         df_metrics: Metrics DataFrame for per-panel silhouette score annotations.
+        pca_model: Fitted 2D PCA model for explained variance ratio lookup.
     """
     fig, axes = plt.subplots(2, 3, figsize=(16, 10), dpi=300)
     axes = axes.flatten()
@@ -271,7 +269,7 @@ def plot_comparison(
         for cid in sorted(np.unique(labels)):
             sub = df_plot[df_plot["Cluster"] == cid]
             if cid == -1:
-                color, marker = "#999999", "x"
+                color, marker = DARK_SLATE_CHARCOAL, "x"
                 label_name = f"Noise (N={len(sub)})"
             else:
                 color = CLUSTER_COLORS[cid % len(CLUSTER_COLORS)]
@@ -279,18 +277,15 @@ def plot_comparison(
                 rr = sub["RESPONSE_BINARY"].mean() * 100
                 label_name = f"C{cid} (N={len(sub)}, RR={rr:.1f}%)"
 
-            ax.scatter(
-                sub["Dim1"], sub["Dim2"],
-                c=color, label=label_name, s=40, alpha=0.8,
-                marker=marker,
-                edgecolor="white" if marker == "o" else color,
-                linewidth=0.3,
-            )
+            scatter_kw = dict(c=color, label=label_name, s=40, alpha=0.8, marker=marker)
+            if marker == "o":
+                scatter_kw.update(edgecolor="white", linewidth=0.3)
+            ax.scatter(sub["Dim1"], sub["Dim2"], **scatter_kw)
 
         sil_val = df_metrics.loc[df_metrics["Algorithm"] == name, "Silhouette Score (High)"].values[0]
         ax.set_title(f"{name}\n(Silhouette: {sil_val})", fontsize=11, fontweight="bold")
-        var1 = pca.explained_variance_ratio_[0] * 100
-        var2 = pca.explained_variance_ratio_[1] * 100
+        var1 = pca_model.explained_variance_ratio_[0] * 100
+        var2 = pca_model.explained_variance_ratio_[1] * 100
         ax.set_xlabel(f"PC1 ({var1:.1f}% Var)", fontsize=9)
         ax.set_ylabel(f"PC2 ({var2:.1f}% Var)", fontsize=9)
         ax.legend(loc="upper right", fontsize=7.5, framealpha=0.85)
@@ -307,12 +302,16 @@ def plot_comparison(
 def plot_silhouette_cohort_comparison(
     df_ici: pd.DataFrame,
     df_full: pd.DataFrame,
+    n_patients_ici: int = 326,
+    n_patients_full: int = 699,
 ) -> None:
     """Generate a side-by-side grouped bar chart of Silhouette Scores across cohort sizes.
 
     Args:
-        df_ici:  Metrics DataFrame for the ICI-only cohort (N≈326).
-        df_full: Metrics DataFrame for the full cohort (N≈699).
+        df_ici:  Metrics DataFrame for the ICI-only cohort.
+        df_full: Metrics DataFrame for the full cohort.
+        n_patients_ici: Number of patients in ICI cohort.
+        n_patients_full: Number of patients in full cohort.
     """
     import numpy as np
 
@@ -324,8 +323,8 @@ def plot_silhouette_cohort_comparison(
     width = 0.35
 
     fig, ax = plt.subplots(figsize=(14, 6))
-    bars_ici  = ax.bar(x - width / 2, sil_ici,  width, label=f"ICI-only  (N={len(df_ici)})",    color=CLUSTER_COLORS[0], edgecolor="black", linewidth=0.8)
-    bars_full = ax.bar(x + width / 2, sil_full, width, label=f"Full cohort (N={len(df_full)})", color=CLUSTER_COLORS[4 % len(CLUSTER_COLORS)], edgecolor="black", linewidth=0.8)
+    bars_ici  = ax.bar(x - width / 2, sil_ici,  width, label=f"ICI-only  (N={n_patients_ici})",  color=CLUSTER_COLORS[0], edgecolor="black", linewidth=0.8)
+    bars_full = ax.bar(x + width / 2, sil_full, width, label=f"Full cohort (N={n_patients_full})", color=CLUSTER_COLORS[4 % len(CLUSTER_COLORS)], edgecolor="black", linewidth=0.8)
 
     for bar in list(bars_ici) + list(bars_full):
         h = bar.get_height()
@@ -388,19 +387,16 @@ def main() -> None:
     # --- Save combined metrics table ---
     df_all_metrics = pd.concat([df_metrics_ici, df_metrics_full], ignore_index=True)
     OUTPUT_METRICS.parent.mkdir(parents=True, exist_ok=True)
-    df_all_metrics.to_csv(OUTPUT_METRICS, index=False)
+    safe_save_csv(df_all_metrics, OUTPUT_METRICS)
 
     print("\nEVALUATION METRICS TABLE (both cohort sizes):")
     print(df_all_metrics.to_string(index=False))
 
     # 6-panel comparison figure on the ICI cohort (primary academic figure)
-    # pca must be accessible in plot_comparison's closure — pass as module-level ref
-    global pca
-    pca = pca_ici
-    plot_comparison(df_clean_ici, algos_ici, df_metrics_ici)
+    plot_comparison(df_clean_ici, algos_ici, df_metrics_ici, pca_ici)
 
     # New: side-by-side silhouette score comparison across cohort sizes
-    plot_silhouette_cohort_comparison(df_metrics_ici, df_metrics_full)
+    plot_silhouette_cohort_comparison(df_metrics_ici, df_metrics_full, len(df_clean_ici), len(df_clean_full))
 
     print(f"\nSaved metrics CSV to: {rel_path(OUTPUT_METRICS)}")
     print("=" * 80)

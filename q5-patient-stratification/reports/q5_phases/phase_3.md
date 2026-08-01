@@ -7,12 +7,12 @@ tags:
   - patient-stratification
   - phase-3
   - q5
-created: 2026-08-01 10:54
+created: 2026-08-01 11:04
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 10:54
+updated: 2026-08-01 11:04
 ---
 
 ## 3. Phase 3: Unsupervised Phenotype Stratification (N = 699)
@@ -61,7 +61,7 @@ updated: 2026-08-01 10:54
 > 3. **Dimensionality Projections**: 2D PCA and non-linear t-SNE projections confirm clear spatial separation, with PC1 capturing T-cell inflammation and PC2 capturing myeloid/stromal exclusion.
 > 4. **Clinical Takeaway**: Identifying a patient's biological phenotype and probability profile provides the foundation for targeted routing rather than applying a single uniform treatment protocol.
 
-> [!formula] Phase 3 Script Execution & Software Module Architecture
+> [!formula]+ Phase 3 Script Execution & Software Module Architecture
 > - **Primary Pipeline Execution Scripts**:
 >   - [`03_cluster_patients.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/03_cluster_patients.py): Executes Gaussian Mixture Model (GMM) soft clustering ($K=4$, full covariance) across the 9 multi-modal feature space, computes posterior probabilities, exports `gmm_posterior_probabilities.csv` and `patient_clusters.csv`, serialises the fitted model (`gmm_model.pkl`), and generates PCA/t-SNE 2D projections (`pca_clusters.png`, `tsne_clusters.png`).
 >   - [`08_compare_clustering_algorithms.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/08_compare_clustering_algorithms.py): Benchmarks alternative clustering algorithms (K-Means, HAC, GMM, Spectral Clustering, DBSCAN, Consensus Clustering) across Silhouette, Calinski-Harabasz, Davies-Bouldin, ARI, and response rate spread.

@@ -7,12 +7,12 @@ tags:
   - patient-stratification
   - phase-1
   - q5
-created: 2026-08-01 10:54
+created: 2026-08-01 11:04
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 10:54
+updated: 2026-08-01 11:04
 ---
 
 ## 1. Phase 1: Multi-Modal Feature Matrix & Microenvironment Deconvolution
@@ -47,7 +47,7 @@ Rather than evaluating ~19,757 genes independently, Phase 1 projects patient exp
 > - **Dimensionality Reduction**: Compressed ~19,757 transcriptomic features into 23 engineered biological signatures (part of a 32-feature multi-modal panel, centered on 9 core baseline biomarkers).
 > - **M1/M2 Polarisation**: The Macrophage STV score captures stromal microenvironmental suppression that operates independently of total T-cell density.
 
-> [!INFO] Phase 1 Feature Matrix Architecture & Complete Feature Inventory
+> [!INFO]+ Phase 1 Feature Matrix Architecture & Complete Feature Inventory
 > - **Transcriptomic Features (17)**:
 >   - **Core Immune Signatures (6)**: 
 >      1. `TIS` (Tumour Inflammation Signature)
@@ -92,7 +92,7 @@ Rather than evaluating ~19,757 genes independently, Phase 1 projects patient exp
 >      8. `B_cells`
 >      9. `CAFs` (used for primary volcano, Youden ROC, and radar visualisations).
 
-> [!formula] Phase 1 Script Execution & Software Module Architecture
+> [!formula]+ Phase 1 Script Execution & Software Module Architecture
 > - **Primary Pipeline Execution Scripts**:
 >   - [`01_load_and_prepare.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/01_load_and_prepare.py): Loads preprocessed clinical, expression, and genomic data from `data/processed/merged/`, computes immune signatures (`TIS`, `CYT`, `IFN_gamma`, `CD8_Tcell`), calculates Macrophage STV (`M1_M2_Ratio`), runs transcriptomic cell deconvolution, and exports dual feature matrices (`feature_matrix.csv`, $N_{\text{ICI}} = 326$; `feature_matrix_full.csv`, $N_{\text{Full}} = 699$).
 > - **Core Supporting Python Modules**:
