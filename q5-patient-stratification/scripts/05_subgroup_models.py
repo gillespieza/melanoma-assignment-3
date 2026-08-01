@@ -20,7 +20,7 @@ Outputs:
 import contextlib
 from pathlib import Path
 import sys
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import joblib
 import matplotlib.pyplot as plt
