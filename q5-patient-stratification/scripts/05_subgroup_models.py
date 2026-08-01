@@ -454,8 +454,9 @@ def _build_subgroup_k_pred(
     if effective_n_tr < MIN_EFFECTIVE_SAMPLES or len(np.unique(y_sub)) < 2:
         return w_te_k * global_oof_test
 
+    X_tr_sub, y_tr_sub, w_tr_sub = X_tr[meaningful], y_tr[meaningful], w_tr_k[meaningful]
     preds_k = _fit_predict_fold(
-        X_tr, y_tr, X_te, max_depth=SUBGROUP_MAX_DEPTH, sample_weight=w_tr_k
+        X_tr_sub, y_tr_sub, X_te, max_depth=SUBGROUP_MAX_DEPTH, sample_weight=w_tr_sub
     )
     return w_te_k * preds_k
 
