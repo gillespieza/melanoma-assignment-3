@@ -15,9 +15,40 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+
+
+class _LRPredictor:
+    """Thin picklable wrapper around LogisticRegression for Platt scaling."""
+
+    def __init__(self, lr: LogisticRegression) -> None:
+        self.lr = lr
+
+    def predict(self, p: np.ndarray) -> np.ndarray:
+        return self.lr.predict_proba(p.reshape(-1, 1))[:, 1]
+
+
+class _CalibratedModel:
+    """Lightweight wrapper combining a fitted base classifier with a probability calibrator."""
+
+    base_clf: RandomForestClassifier
+    calibrator: object
+
+    def __init__(self, base_clf: RandomForestClassifier, calibrator: object) -> None:
+        self.base_clf = base_clf
+        self.calibrator = calibrator
+
+    @property
+    def feature_importances_(self) -> np.ndarray:
+        return self.base_clf.feature_importances_
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        raw_prob = self.base_clf.predict_proba(X)[:, 1]
+        cal_prob = np.clip(self.calibrator.predict(raw_prob), 0.0, 1.0)
+        return np.column_stack([1.0 - cal_prob, cal_prob])
 
 # ---------------------------------------------------------------------------
 # Bootstrap project root resolution for top-level imports
@@ -40,12 +71,14 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
 
 from reporting import generate_obsidian_frontmatter
 from src.styles import (
+    DARK_SLATE_CHARCOAL,
     PHENOTYPE_PALETTE,
     RESPONSE_PALETTE,
     STRATEGY_PALETTE,
     set_presentation_style,
 )
 from q5_constants import CLUSTERING_FEATURES, PHENOTYPE_PROB_COL
+from src.utils.io import safe_save_csv
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
@@ -66,11 +99,6 @@ REPORTS_DIR = SUBPROJECT_ROOT / "reports" / "q5_phases"
 set_presentation_style()
 
 
-
-
-
-def get_feature_columns(df: pd.DataFrame) -> List[str]:
-    """Identify available numerical and binary features for model predictions."""
 def get_feature_columns(df: pd.DataFrame) -> List[str]:
     """Identify prediction features for subgroup modelling, excluding clustering features."""
     candidate_features = [
@@ -197,6 +225,29 @@ def calculate_dca_curves(
     return pd.DataFrame(rows)
 
 
+def _predict_single_gene_benchmarks(
+    df: pd.DataFrame, y_true: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Fit logistic regression on single-gene benchmarks (PD-L1 and High TMB)."""
+    if "PD_L1" in df.columns and df["PD_L1"].notna().any():
+        med_val = df["PD_L1"].median()
+        x_pdl1 = df[["PD_L1"]].copy().fillna(med_val if pd.notna(med_val) else 0.0)
+        lr_pdl1 = LogisticRegression(C=1.0, max_iter=1000).fit(x_pdl1, y_true)
+        pred_pdl1 = lr_pdl1.predict_proba(x_pdl1)[:, 1]
+    else:
+        pred_pdl1 = np.full(len(df), np.mean(y_true))
+
+    if "TMB_NONSYNONYMOUS" in df.columns and df["TMB_NONSYNONYMOUS"].notna().any():
+        med_val = df["TMB_NONSYNONYMOUS"].median()
+        x_tmb = df[["TMB_NONSYNONYMOUS"]].copy().fillna(med_val if pd.notna(med_val) else 0.0)
+        lr_tmb = LogisticRegression(C=1.0, max_iter=1000).fit(x_tmb, y_true)
+        pred_tmb = lr_tmb.predict_proba(x_tmb)[:, 1]
+    else:
+        pred_tmb = np.full(len(df), np.mean(y_true))
+
+    return pred_pdl1, pred_tmb
+
+
 def generate_predictions(df: pd.DataFrame) -> Dict[str, np.ndarray]:
     """Generate predicted response probabilities for Global, Stratified, and Benchmark strategies."""
     feature_cols = get_feature_columns(df)
@@ -210,18 +261,15 @@ def generate_predictions(df: pd.DataFrame) -> Dict[str, np.ndarray]:
 
     y_true = df["RESPONSE_BINARY"].values
 
-    # 1. Global Model Predictions
     global_model_file = MODELS_DIR / "subgroup_model_global.joblib"
     if global_model_file.exists():
         global_clf = joblib.load(global_model_file)
         pred_global = global_clf.predict_proba(X_scaled)[:, 1]
     else:
-        # Fallback logistic regression fit if joblib file is missing
         clf = LogisticRegression(C=1.0, max_iter=1000)
         clf.fit(X_scaled, y_true)
         pred_global = clf.predict_proba(X_scaled)[:, 1]
 
-    # 2. Phenotype-Stratified Predictions (Soft Mixture)
     pred_stratified = np.zeros(len(df))
     prob_sum = np.zeros(len(df))
 
@@ -242,23 +290,7 @@ def generate_predictions(df: pd.DataFrame) -> Dict[str, np.ndarray]:
     pred_stratified[nonzero_mask] = pred_stratified[nonzero_mask] / prob_sum[nonzero_mask]
     pred_stratified[~nonzero_mask] = pred_global[~nonzero_mask]
 
-    # 3. Single-Gene `CD274` (PD-L1) Benchmark Logistic Probability
-    if "PD_L1" in df.columns and df["PD_L1"].notna().any():
-        med_val = df["PD_L1"].median()
-        x_pdl1 = df[["PD_L1"]].copy().fillna(med_val if pd.notna(med_val) else 0.0)
-        lr_pdl1 = LogisticRegression(C=1.0, max_iter=1000).fit(x_pdl1, y_true)
-        pred_pdl1 = lr_pdl1.predict_proba(x_pdl1)[:, 1]
-    else:
-        pred_pdl1 = np.full(len(df), np.mean(y_true))
-
-    # 4. High TMB Benchmark Logistic Probability
-    if "TMB_NONSYNONYMOUS" in df.columns and df["TMB_NONSYNONYMOUS"].notna().any():
-        med_val = df["TMB_NONSYNONYMOUS"].median()
-        x_tmb = df[["TMB_NONSYNONYMOUS"]].copy().fillna(med_val if pd.notna(med_val) else 0.0)
-        lr_tmb = LogisticRegression(C=1.0, max_iter=1000).fit(x_tmb, y_true)
-        pred_tmb = lr_tmb.predict_proba(x_tmb)[:, 1]
-    else:
-        pred_tmb = np.full(len(df), np.mean(y_true))
+    pred_pdl1, pred_tmb = _predict_single_gene_benchmarks(df, y_true)
 
     return {
         "Phenotype-Stratified (Q5)": pred_stratified,
@@ -294,7 +326,7 @@ def plot_dca_curves(df_dca: pd.DataFrame, out_path: Path) -> None:
         sub = df_dca[df_dca["Strategy"] == strat]
         if sub.empty:
             continue
-        color = STRATEGY_PALETTE.get(strat, "#37474F")
+        color = STRATEGY_PALETTE.get(strat, DARK_SLATE_CHARCOAL)
         st = styles.get(strat, {"linestyle": "-", "linewidth": 2.0})
 
         ax.plot(
@@ -324,20 +356,8 @@ def plot_dca_curves(df_dca: pd.DataFrame, out_path: Path) -> None:
     plt.close(fig)
 
 
-def plot_nnt_ppv_comparison(df_dca: pd.DataFrame, target_thresholds: List[float], out_path: Path) -> None:
-    """Generate bar chart comparing NNT and PPV across strategies at target decision thresholds."""
-    df_sub = df_dca[
-        (df_dca["Threshold"].isin(target_thresholds))
-        & (df_dca["Strategy"].isin(["Phenotype-Stratified (Q5)", "Global Predictor (Q1)", "CD274 (PD-L1+)", "High TMB", "Treat All"]))
-    ].copy()
-
-    df_sub["Threshold_Label"] = df_sub["Threshold"].apply(lambda p: f"p_t = {p:.2f}")
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
-
-    palette = [STRATEGY_PALETTE.get(s, "#37474F") for s in df_sub["Strategy"].unique()]
-
-    # Plot 1: Positive Predictive Value (PPV)
+def _plot_ppv_panel(ax1: plt.Axes, df_sub: pd.DataFrame) -> None:
+    """Render Positive Predictive Value (PPV) panel."""
     sns.barplot(
         data=df_sub,
         x="Threshold_Label",
@@ -368,7 +388,9 @@ def plot_nnt_ppv_comparison(df_dca: pd.DataFrame, target_thresholds: List[float]
                 textcoords="offset points",
             )
 
-    # Plot 2: Number Needed to Treat (NNT)
+
+def _plot_nnt_panel(ax2: plt.Axes, df_sub: pd.DataFrame) -> None:
+    """Render Number Needed to Treat (NNT) panel."""
     sns.barplot(
         data=df_sub,
         x="Threshold_Label",
@@ -399,6 +421,21 @@ def plot_nnt_ppv_comparison(df_dca: pd.DataFrame, target_thresholds: List[float]
                 textcoords="offset points",
             )
 
+
+def plot_nnt_ppv_comparison(df_dca: pd.DataFrame, target_thresholds: List[float], out_path: Path) -> None:
+    """Generate bar chart comparing NNT and PPV across strategies at target decision thresholds."""
+    df_sub = df_dca[
+        (df_dca["Threshold"].isin(target_thresholds))
+        & (df_dca["Strategy"].isin(["Phenotype-Stratified (Q5)", "Global Predictor (Q1)", "CD274 (PD-L1+)", "High TMB", "Treat All"]))
+    ].copy()
+
+    df_sub["Threshold_Label"] = df_sub["Threshold"].apply(lambda p: f"p_t = {p:.2f}")
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+    _plot_ppv_panel(ax1, df_sub)
+    _plot_nnt_panel(ax2, df_sub)
+
     plt.tight_layout()
     save_fig(fig, out_path, dpi=300)
     plt.close(fig)
@@ -414,7 +451,7 @@ def plot_unnecessary_treatments_avoided(df_dca: pd.DataFrame, out_path: Path) ->
         sub = df_dca[df_dca["Strategy"] == strat].copy()
         if sub.empty:
             continue
-        color = STRATEGY_PALETTE.get(strat, "#37474F")
+        color = STRATEGY_PALETTE.get(strat, DARK_SLATE_CHARCOAL)
 
         ax.plot(
             sub["Threshold"],
@@ -522,30 +559,31 @@ def generate_phase6_markdown(
     n_responders = int(df["RESPONSE_BINARY"].sum())
     resp_pct = (n_responders / n_patients) * 100.0
 
-    # Extract metrics at threshold pt = 0.30 and 0.50
+def _extract_dca_markdown_metrics(df_dca: pd.DataFrame) -> Dict[str, float]:
+    """Extract key DCA metrics at pt = 0.30 and 0.50 for report generation."""
     sub_30 = df_dca[np.isclose(df_dca["Threshold"], 0.30)]
     sub_50 = df_dca[np.isclose(df_dca["Threshold"], 0.50)]
 
-    def get_strat_val(sub_df, strat, col):
+    def get_val(sub_df: pd.DataFrame, strat: str, col: str) -> float:
         r = sub_df[sub_df["Strategy"] == strat]
-        return r[col].values[0] if not r.empty else np.nan
+        return float(r[col].values[0]) if not r.empty else np.nan
 
-    nb_q5_30 = get_strat_val(sub_30, "Phenotype-Stratified (Q5)", "Net_Benefit")
-    nb_q1_30 = get_strat_val(sub_30, "Global Predictor (Q1)", "Net_Benefit")
-    nb_all_30 = get_strat_val(sub_30, "Treat All", "Net_Benefit")
-    nb_pdl1_30 = get_strat_val(sub_30, "CD274 (PD-L1+)", "Net_Benefit")
+    return {
+        "nb_q5_30": get_val(sub_30, "Phenotype-Stratified (Q5)", "Net_Benefit"),
+        "nb_q1_30": get_val(sub_30, "Global Predictor (Q1)", "Net_Benefit"),
+        "nb_all_30": get_val(sub_30, "Treat All", "Net_Benefit"),
+        "nb_pdl1_30": get_val(sub_30, "CD274 (PD-L1+)", "Net_Benefit"),
+        "nnt_q5_30": get_val(sub_30, "Phenotype-Stratified (Q5)", "NNT"),
+        "nnt_q1_30": get_val(sub_30, "Global Predictor (Q1)", "NNT"),
+        "nnt_all_30": get_val(sub_30, "Treat All", "NNT"),
+        "ppv_q5_30": get_val(sub_30, "Phenotype-Stratified (Q5)", "PPV"),
+        "ppv_all_30": get_val(sub_30, "Treat All", "PPV"),
+        "tn_q5_30": get_val(sub_30, "Phenotype-Stratified (Q5)", "Unnecessary_Treatments_Avoided"),
+        "nb_q5_50": get_val(sub_50, "Phenotype-Stratified (Q5)", "Net_Benefit"),
+        "nb_all_50": get_val(sub_50, "Treat All", "Net_Benefit"),
+    }
 
-    nnt_q5_30 = get_strat_val(sub_30, "Phenotype-Stratified (Q5)", "NNT")
-    nnt_q1_30 = get_strat_val(sub_30, "Global Predictor (Q1)", "NNT")
-    nnt_all_30 = get_strat_val(sub_30, "Treat All", "NNT")
-
-    ppv_q5_30 = get_strat_val(sub_30, "Phenotype-Stratified (Q5)", "PPV")
-    ppv_all_30 = get_strat_val(sub_30, "Treat All", "PPV")
-
-    tn_q5_30 = get_strat_val(sub_30, "Phenotype-Stratified (Q5)", "Unnecessary_Treatments_Avoided")
-
-    nb_q5_50 = get_strat_val(sub_50, "Phenotype-Stratified (Q5)", "Net_Benefit")
-    nb_all_50 = get_strat_val(sub_50, "Treat All", "Net_Benefit")
+    m = _extract_dca_markdown_metrics(df_dca)
 
     frontmatter = generate_obsidian_frontmatter(
         title="Phase 6: Clinical Utility & Decision Impact Analysis",
@@ -568,10 +606,10 @@ def generate_phase6_markdown(
         "",
         "### Key Findings & Benchmark Comparisons",
         "",
-        f"1. **Superior Net Clinical Benefit**: At a standard decision threshold of $p_t = 0.30$, the Q5 Phenotype-Stratified decision system achieves a Net Benefit of **{nb_q5_30:.3f}**, outperforming empirical 'Treat All' (**{nb_all_30:.3f}**), global Q1 prediction (**{nb_q1_30:.3f}**), and single-gene `CD274` (PD-L1+) biomarker selection (**{nb_pdl1_30:.3f}**).",
-        f"2. **Number Needed to Treat (NNT) Reduction**: The Q5 decision model reduces the NNT to achieve one objective clinical response to **{nnt_q5_30:.2f}** at $p_t = 0.30$, compared to an empirical NNT of **{nnt_all_30:.2f}** under 'Treat All' (an improvement of {((nnt_all_30 - nnt_q5_30)/nnt_all_30)*100:.1f}%).",
-        f"3. **Toxicity Avoidance & Precision**: At $p_t = 0.30$, the Q5 system achieves a Positive Predictive Value (PPV) of **{ppv_q5_30*100:.1f}%** (vs **{ppv_all_30*100:.1f}%** for 'Treat All') and successfully spares **{int(tn_q5_30)}** non-responding patients from ineffective monotherapy toxicities.",
-        f"4. **Robustness across Decision Thresholds**: Across all realistic clinical decision ranges ($p_t = 0.20 – 0.50$), the phenotype-stratified model maintains positive net benefit advantage over unstratified empirical treatment (Net Benefit at $p_t = 0.50$: Q5 = **{nb_q5_50:.3f}** vs Treat All = **{nb_all_50:.3f}**).",
+        f"1. **Superior Net Clinical Benefit**: At a standard decision threshold of $p_t = 0.30$, the Q5 Phenotype-Stratified decision system achieves a Net Benefit of **{m['nb_q5_30']:.3f}**, outperforming empirical 'Treat All' (**{m['nb_all_30']:.3f}**), global Q1 prediction (**{m['nb_q1_30']:.3f}**), and single-gene `CD274` (PD-L1+) biomarker selection (**{m['nb_pdl1_30']:.3f}**).",
+        f"2. **Number Needed to Treat (NNT) Reduction**: The Q5 decision model reduces the NNT to achieve one objective clinical response to **{m['nnt_q5_30']:.2f}** at $p_t = 0.30$, compared to an empirical NNT of **{m['nnt_all_30']:.2f}** under 'Treat All' (an improvement of {((m['nnt_all_30'] - m['nnt_q5_30'])/m['nnt_all_30'])*100:.1f}%).",
+        f"3. **Toxicity Avoidance & Precision**: At $p_t = 0.30$, the Q5 system achieves a Positive Predictive Value (PPV) of **{m['ppv_q5_30']*100:.1f}%** (vs **{m['ppv_all_30']*100:.1f}%** for 'Treat All') and successfully spares **{int(m['tn_q5_30'])}** non-responding patients from ineffective monotherapy toxicities.",
+        f"4. **Robustness across Decision Thresholds**: Across all realistic clinical decision ranges ($p_t = 0.20 – 0.50$), the phenotype-stratified model maintains positive net benefit advantage over unstratified empirical treatment (Net Benefit at $p_t = 0.50$: Q5 = **{m['nb_q5_50']:.3f}** vs Treat All = **{m['nb_all_50']:.3f}**).",
         "",
         "![Decision Curve Analysis (DCA): Net Benefit across threshold probabilities for all strategies.](q5-patient-stratification/plots/clinical_utility/dca_curves.png)",
         "",
@@ -639,9 +677,9 @@ def generate_phase6_markdown(
         "> Phase 6 establishes that the Q5 Phenotype-Stratified Decision System translates classification performance into direct clinical utility. Across Decision Curve Analysis (DCA), NNT reduction, PPV enhancement, and toxicity avoidance, multi-feature biological stratification demonstrates clear decision-support superiority over both empirical treatment ('Treat All') and single-gene biomarker benchmarks (`CD274` / PD-L1+ and `TMB_NONSYNONYMOUS`).",
         "",
         "#### Core Analytical Milestones Achieved",
-        f"1. **Net Clinical Gain**: At a standard decision threshold of $p_t = 0.30$, the Q5 decision framework achieves a Net Benefit of **{nb_q5_30:.3f}**, outperforming empirical 'Treat All' (**{nb_all_30:.3f}**) and single-gene `CD274` selection (**{nb_pdl1_30:.3f}**).",
-        f"2. **Therapeutic Efficiency**: Reduces the Number Needed to Treat (NNT) to achieve one objective response to **{nnt_q5_30:.2f}** at $p_t = 0.30$, compared to **{nnt_all_30:.2f}** for 'Treat All' — representing a **{((nnt_all_30 - nnt_q5_30)/nnt_all_30)*100:.1f}%** reduction in futile treatment exposure.",
-        f"3. **Toxicity Sparing & Safety**: Successfully identifies and spares **{int(tn_q5_30)}** predicted non-responders from futile anti-PD-1 monotherapy, protecting patients from severe immune-related adverse events (irAEs) with no loss of treatment efficacy.",
+        f"1. **Net Clinical Gain**: At a standard decision threshold of $p_t = 0.30$, the Q5 decision framework achieves a Net Benefit of **{m['nb_q5_30']:.3f}**, outperforming empirical 'Treat All' (**{m['nb_all_30']:.3f}**) and single-gene `CD274` selection (**{m['nb_pdl1_30']:.3f}**).",
+        f"2. **Therapeutic Efficiency**: Reduces the Number Needed to Treat (NNT) to achieve one objective response to **{m['nnt_q5_30']:.2f}** at $p_t = 0.30$, compared to **{m['nnt_all_30']:.2f}** for 'Treat All' — representing a **{((m['nnt_all_30'] - m['nnt_q5_30'])/m['nnt_all_30'])*100:.1f}%** reduction in futile treatment exposure.",
+        f"3. **Toxicity Sparing & Safety**: Successfully identifies and spares **{int(m['tn_q5_30'])}** predicted non-responders from futile anti-PD-1 monotherapy, protecting patients from severe immune-related adverse events (irAEs) with no loss of treatment efficacy.",
         "4. **Subgroup Decision Logic**: Confirms that biologically resistant microenvironments (*Immune Cold* and *M2 Immunosuppressive*) require conservative gating away from monotherapy and routing into alternative treatment modalities.",
         "",
         "#### Translation to Multi-Arm Decision Engine (Phase 7)",
@@ -683,14 +721,14 @@ def main() -> None:
 
     # 3. Save DCA Net Benefit data CSV
     out_dca_csv = OUTPUT_DIR / "dca_net_benefit.csv"
-    df_dca.to_csv(out_dca_csv, index=False)
+    safe_save_csv(df_dca, out_dca_csv)
     print(f"\nSaved DCA Net Benefit metrics to {rel_path(out_dca_csv)}")
 
     # 4. Save key clinical metrics CSV at cutoffs (pt = 0.20, 0.30, 0.40, 0.50, 0.60)
     target_pts = [0.20, 0.30, 0.40, 0.50, 0.60]
     df_cutoffs = df_dca[df_dca["Threshold"].apply(lambda t: any(np.isclose(t, p) for p in target_pts))].copy()
     out_cutoffs_csv = OUTPUT_DIR / "clinical_utility_metrics.csv"
-    df_cutoffs.to_csv(out_cutoffs_csv, index=False)
+    safe_save_csv(df_cutoffs, out_cutoffs_csv)
     print(f"Saved clinical utility cutoffs summary to {rel_path(out_cutoffs_csv)}")
 
     # 5. Generate publication quality 300 DPI figures
