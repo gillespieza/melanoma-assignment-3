@@ -4,6 +4,13 @@
 Evaluates whether training separate predictive models within discovered patient phenotypes
 improves response prediction performance compared to applying the global Q1 predictive
 model across all subgroups.
+
+Outputs:
+    - Summary CSV: data/processed/q5/subgroup_models_evaluation.csv
+    - Serialised Models: models/subgroup_model_*.joblib
+    - Plots: plots/subgroup_models/subgroup_roc_curves.png,
+             plots/subgroup_models/subgroup_performance_comparison.png,
+             plots/subgroup_models/subgroup_feature_importances.png
 """
 
 # ---------------------------------------------------------------------------
@@ -13,7 +20,7 @@ model across all subgroups.
 import contextlib
 from pathlib import Path
 import sys
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import joblib
 import matplotlib.pyplot as plt
@@ -262,9 +269,11 @@ class _CalibratedModel:
     """Lightweight wrapper combining a fitted base classifier with a probability calibrator."""
 
     base_clf: RandomForestClassifier
-    calibrator: object
+    calibrator: Union[_IdentityPredictor, _LRPredictor, IsotonicRegression]
 
-    def __init__(self, base_clf: RandomForestClassifier, calibrator: object) -> None:
+    def __init__(
+        self, base_clf: RandomForestClassifier, calibrator: Union[_IdentityPredictor, _LRPredictor, IsotonicRegression]
+    ) -> None:
         self.base_clf = base_clf
         self.calibrator = calibrator
 
