@@ -1309,18 +1309,45 @@ def main() -> None:
             treat_hot, treat_cold, treat_m2, treat_mut = float("nan"), float("nan"), float("nan"), float("nan")
 
         # Q2 mean Dabrafenib sensitivity for Arm B patients
-        df_armb = df_treat[df_treat["Treatment_Arm"] == "Arm B: Targeted Therapy"]
+        df_armb = df_treat[df_treat["Treatment_Arm"].str.startswith("Arm B")]
         mean_q2_dab = df_armb["Dabrafenib_Sensitivity_Index"].mean() if (len(df_armb) > 0 and "Dabrafenib_Sensitivity_Index" in df_armb.columns) else float("nan")
 
         # Top Q4 nominated target for Arm C
-        df_armc_rows = df_treat[df_treat["Treatment_Arm"] == "Arm C: Combination/Reversal"]
+        df_armc_rows = df_treat[df_treat["Treatment_Arm"].str.startswith("Arm C")]
         if len(df_armc_rows) > 0 and "Q4_Nominated_Target" in df_armc_rows.columns:
             q4_vc = df_armc_rows["Q4_Nominated_Target"].value_counts()
-            top_q4_target = q4_vc.index[0] if len(q4_vc) > 0 else "CSF1R (M2 TAM Depletion)"
+            raw_target = str(q4_vc.index[0]) if len(q4_vc) > 0 else "CSF1R (M2 TAM Depletion)"
             top_q4_n = int(q4_vc.iloc[0]) if len(q4_vc) > 0 else 0
         else:
-            top_q4_target = "CSF1R (M2 TAM Depletion)"
+            raw_target = "CSF1R (M2 TAM Depletion)"
             top_q4_n = 0
+
+        # Ensure gene symbols in top_q4_target carry backticks per AGENTS.md
+        if raw_target.startswith("CSF1R"):
+            top_q4_target = "`CSF1R` (M2 TAM Depletion)"
+        elif raw_target.startswith("MDM2"):
+            top_q4_target = "`MDM2` (p53 Activation)"
+        elif raw_target.startswith("AXL"):
+            top_q4_target = "`AXL` / STING Pathway"
+        elif raw_target.startswith("HDAC"):
+            top_q4_target = "`HDAC` / Epigenetic Remodeling"
+        else:
+            top_q4_target = raw_target
+
+        # Recommendation Confidence Index & Bands
+        if "Confidence_Band" in df_treat.columns:
+            cb_vc = df_treat["Confidence_Band"].value_counts()
+            n_conf_high = int(cb_vc.get("High", 0))
+            n_conf_mod = int(cb_vc.get("Moderate", 0))
+            n_conf_low = int(cb_vc.get("Low", 0))
+            pct_conf_high = (n_conf_high / n_treat_total) * 100.0
+            pct_conf_mod = (n_conf_mod / n_treat_total) * 100.0
+            pct_conf_low = (n_conf_low / n_treat_total) * 100.0
+        else:
+            n_conf_high, n_conf_mod, n_conf_low = 0, 0, 0
+            pct_conf_high, pct_conf_mod, pct_conf_low = 0.0, 0.0, 0.0
+
+        mean_conf_idx = df_treat["Recommendation_Confidence_Index"].mean() if "Recommendation_Confidence_Index" in df_treat.columns else float("nan")
     else:
         # Fallback when treatability_scores.csv does not exist — raise informative error
         raise FileNotFoundError(
@@ -1343,7 +1370,7 @@ def main() -> None:
         f"Phase 7 operationalises precision patient allocation across $N = {n_treat_total}$ patients. "
         "The decision engine routes patients into three structured therapeutic arms:\n\n"
         f"1. **Arm A: Immunotherapy Monotherapy** ($N = {n_arma}$, **{pct_arma:.1f}%** of cohort): "
-        "Assigned to high-confidence predicted responders (*Immune Hot* phenotype or high TIS scores). "
+        "Assigned to high-confidence predicted responders (*Immune Hot* phenotype or high `TIS` scores). "
         "Received anti-PD-1 monotherapy (*Pembrolizumab* / *Nivolumab*).\n"
         f"2. **Arm B: Targeted Therapy (Q2 Integration)** ($N = {n_armb}$, **{pct_armb:.1f}%** of cohort): "
         "Assigned to predicted non-responders carrying actionable driver mutations (`BRAF V600` or `NRAS`). "
@@ -1352,20 +1379,24 @@ def main() -> None:
         f"3. **Arm C: Combination & Microenvironmental Reversal (Q4 Integration)** ($N = {n_armc}$, **{pct_armc:.1f}%** of cohort): "
         "Assigned to remaining non-responders in immunologically cold or immunosuppressive microenvironments. "
         f"Integrates Q4 DepMap essentiality targets to nominate helper interventions "
-        f"(most frequent nomination: **{top_q4_target}** with $N = {top_q4_n}$ patients).\n"
-    )
-
-    # Treatability Index sub-section
-    doc_sections.append("### Treatability Index Analysis\n")
-    doc_sections.append(
+        f"(most frequent nomination: **{top_q4_target}** with $N = {top_q4_n}$ patients).\n\n"
+        "### Treatability Index & Recommendation Confidence\n\n"
         "The composite **Treatability Index** (0–100 scale) quantifies the biological convertibility of patients based on "
-        "antigen presentation integrity (`B2M`, `TAP1`), interferon-gamma intactness (`IFN_gamma`), and immunosuppressive "
-        "M2 macrophage barriers:\n\n"
-        f"- **Overall Mean Treatability Index**: **{mean_treat_overall:.1f} / 100**\n"
+        "antigen presentation integrity (`B2M`, `TAP1`), interferon-gamma intactness (`IFN_gamma`), immuno-effector density (`CD8_Tcell`), "
+        "and immunosuppressive M2 macrophage barriers (`M2_score`). Sub-score weights are empirically fitted via L2-regularised "
+        "logistic regression on response-annotated patients ($N = 195$), and continuous scores are rescaled using a rank-preserving uniform quantile transformation:\n\n"
+        f"- **Overall Mean Treatability Index**: **{mean_treat_overall:.1f} / 100** (Uniform spread: $\\text{{Median}} = 50.0, \\text{{IQR}} = 50.0$ units)\n"
         f"- **Immune Hot**: **{treat_hot:.1f} / 100** (highest baseline sensitivity)\n"
         f"- **Mutant-Driven**: **{treat_mut:.1f} / 100** (moderate convertibility via MAPK inhibition)\n"
         f"- **M2 Immunosuppressive**: **{treat_m2:.1f} / 100** (convertible via `CSF1R` macrophage depletion)\n"
-        f"- **Immune Cold**: **{treat_cold:.1f} / 100** (lowest baseline; requires `AXL` / STING priming)\n"
+        f"- **Immune Cold**: **{treat_cold:.1f} / 100** (lowest baseline; requires `AXL` / STING priming)\n\n"
+        f"Recommendation confidence is evaluated per patient (overall mean confidence index = **{mean_conf_idx:.1f}/100**):\n\n"
+        f"- **High Confidence** (Index $\\ge 70.0$): $N = {n_conf_high}$ (**{pct_conf_high:.1f}%** of cohort)\n"
+        f"- **Moderate Confidence** ($45.0 – 70.0$): $N = {n_conf_mod}$ (**{pct_conf_mod:.1f}%** of cohort)\n"
+        f"- **Low Confidence** (Index $< 45.0$): $N = {n_conf_low}$ (**{pct_conf_low:.1f}%** of cohort)\n\n"
+        "Sub-arm selection within Arm C incorporates sigmoidal boundary transition weighting "
+        "($w_{\\text{{AXL}}} = \\frac{{1}}{{1 + \\exp(-0.2 \\cdot (\\text{{TI}} - 40.0))}}$) and an explicit **Equipoise Buffer Zone** ($35.0 \\le \\text{{TI}} \\le 45.0$) "
+        "to prevent cliff-edge decision switches for borderline patients.\n"
     )
 
     # Embed Phase 7 plots
@@ -1401,10 +1432,10 @@ def main() -> None:
         )
 
     doc_sections.append(
-        "### Key Takeaways\n"
-        "- **Complete Decision Framework**: Provides clear, actionable routing for 100% of incoming melanoma patients.\n"
-        "- **Mechanistic Target Nomination**: Nominates validated helper targets (`CSF1R`, `MDM2`, `AXL`) to overcome specific resistance mechanisms.\n"
-        "- **Q2/Q4 Integration**: Seamlessly bridges cell line viability models (Q2 Dabrafenib sensitivity) and DepMap essentiality targets (Q4) with clinical patient transcriptomics.\n\n"
+        "> [!INSIGHT] Key Insights & Summary Takeaways\n"
+        "> - **Complete Decision Framework**: Provides clear, actionable routing for 100% of incoming melanoma patients.\n"
+        "> - **Mechanistic Target Nomination**: Nominates validated helper targets (`CSF1R`, `MDM2`, `AXL`) to overcome specific resistance mechanisms.\n"
+        "> - **Q2/Q4 Integration**: Seamlessly bridges cell line viability models (Q2 Dabrafenib sensitivity) and DepMap essentiality targets (Q4) with clinical patient transcriptomics.\n\n"
         "### Final Phase Summary & Clinical Translation\n\n"
         "> [!SUMMARY] Synthesis of Phase 7 Findings\n"
         f"> Phase 7 completes the Q5 Precision Patient Stratification Framework by translating biological subtyping (Phases 3-4) and predictive modelling (Phases 5-6) into an operational **3-Arm Clinical Decision Engine**. By integrating Q2 Dabrafenib viability models and Q4 DepMap essentiality target nominations (`CSF1R`, `MDM2`, `AXL`), the system provides personalised, biologically rational treatment pathways for 100% of $N = {n_treat_total}$ melanoma patients.\n\n"
@@ -1412,7 +1443,7 @@ def main() -> None:
         f"1. **Complete Decision Routing**: Successfully routed $N = {n_treat_total}$ patients into Arm A (**{pct_arma:.1f}%**), Arm B (**{pct_armb:.1f}%**), and Arm C (**{pct_armc:.1f}%**).\n"
         f"2. **Cross-Study Integration**: Incorporated Q2 Dabrafenib sensitivity gene weights to score targeted therapy responsiveness in Arm B (`BRAF` mutants; mean sensitivity = **{mean_q2_dab:.1f}/100**).\n"
         f"3. **Mechanistic Reversal Nominations**: Identified **{top_q4_target}** as the primary helper target for resistant non-responders ($N = {top_q4_n}$ candidates).\n"
-        f"4. **Treatability Metric**: Standardised a composite 0–100 Treatability Index (overall mean = **{mean_treat_overall:.1f}**) to prioritise non-responders for combination clinical trial enrolment.\n"
+        f"4. **Treatability & Confidence Metrics**: Standardised a composite 0–100 Treatability Index (overall mean = **{mean_treat_overall:.1f}**) and Recommendation Confidence Index (mean = **{mean_conf_idx:.1f}/100**, $N = {n_conf_high}$ high-confidence candidates) to prioritise non-responders for combination clinical trial enrolment.\n"
     )
 
     doc_sections.append(

@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-7
   - q5
-created: 2026-08-01 21:33
+created: 2026-08-01 21:41
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 21:33
+updated: 2026-08-01 21:41
 ---
 
 ## 7. Phase 7: 3-Arm Decision Support & Treatability Scoring
@@ -26,19 +26,27 @@ updated: 2026-08-01 21:33
 
 Phase 7 operationalises precision patient allocation across $N = 699$ patients. The decision engine routes patients into three structured therapeutic arms:
 
-1. **Arm A: Immunotherapy Monotherapy** ($N = 364$, **52.1%** of cohort): Assigned to high-confidence predicted responders (*Immune Hot* phenotype or high TIS scores). Received anti-PD-1 monotherapy (*Pembrolizumab* / *Nivolumab*).
+1. **Arm A: Immunotherapy Monotherapy** ($N = 364$, **52.1%** of cohort): Assigned to high-confidence predicted responders (*Immune Hot* phenotype or high `TIS` scores). Received anti-PD-1 monotherapy (*Pembrolizumab* / *Nivolumab*).
 2. **Arm B: Targeted Therapy (Q2 Integration)** ($N = 234$, **33.5%** of cohort): Assigned to predicted non-responders carrying actionable driver mutations (`BRAF V600` or `NRAS`). Integrates the Q2 LASSO cell viability regression model to compute a patient-specific **Dabrafenib Sensitivity Index** (mean Arm B sensitivity = **56.0/100**).
-3. **Arm C: Combination & Microenvironmental Reversal (Q4 Integration)** ($N = 101$, **14.4%** of cohort): Assigned to remaining non-responders in immunologically cold or immunosuppressive microenvironments. Integrates Q4 DepMap essentiality targets to nominate helper interventions (most frequent nomination: **CSF1R (M2 TAM Depletion)** with $N = 67$ patients).
+3. **Arm C: Combination & Microenvironmental Reversal (Q4 Integration)** ($N = 101$, **14.4%** of cohort): Assigned to remaining non-responders in immunologically cold or immunosuppressive microenvironments. Integrates Q4 DepMap essentiality targets to nominate helper interventions (most frequent nomination: **`CSF1R` (M2 TAM Depletion)** with $N = 67$ patients).
 
-### Treatability Index Analysis
+### Treatability Index & Recommendation Confidence
 
-The composite **Treatability Index** (0–100 scale) quantifies the biological convertibility of patients based on antigen presentation integrity (`B2M`, `TAP1`), interferon-gamma intactness (`IFN_gamma`), and immunosuppressive M2 macrophage barriers:
+The composite **Treatability Index** (0–100 scale) quantifies the biological convertibility of patients based on antigen presentation integrity (`B2M`, `TAP1`), interferon-gamma intactness (`IFN_gamma`), immuno-effector density (`CD8_Tcell`), and immunosuppressive M2 macrophage barriers (`M2_score`). Sub-score weights are empirically fitted via L2-regularised logistic regression on response-annotated patients ($N = 195$), and continuous scores are rescaled using a rank-preserving uniform quantile transformation:
 
-- **Overall Mean Treatability Index**: **50.0 / 100**
+- **Overall Mean Treatability Index**: **50.0 / 100** (Uniform spread: $\text{Median} = 50.0, \text{IQR} = 50.0$ units)
 - **Immune Hot**: **65.9 / 100** (highest baseline sensitivity)
 - **Mutant-Driven**: **40.8 / 100** (moderate convertibility via MAPK inhibition)
 - **M2 Immunosuppressive**: **35.3 / 100** (convertible via `CSF1R` macrophage depletion)
 - **Immune Cold**: **25.3 / 100** (lowest baseline; requires `AXL` / STING priming)
+
+Recommendation confidence is evaluated per patient (overall mean confidence index = **56.2/100**):
+
+- **High Confidence** (Index $\ge 70.0$): $N = 173$ (**24.7%** of cohort)
+- **Moderate Confidence** ($45.0 – 70.0$): $N = 306$ (**43.8%** of cohort)
+- **Low Confidence** (Index $< 45.0$): $N = 220$ (**31.5%** of cohort)
+
+Sub-arm selection within Arm C incorporates sigmoidal boundary transition weighting ($w_{\text{{AXL}}} = \frac{{1}}{{1 + \exp(-0.2 \cdot (\text{{TI}} - 40.0))}}$) and an explicit **Equipoise Buffer Zone** ($35.0 \le \text{{TI}} \le 45.0$) to prevent cliff-edge decision switches for borderline patients.
 
 ![3-Arm Clinical Decision System Allocation across Biological Phenotypes.](q5-patient-stratification/plots/treatability/arm_assignment_breakdown.png)
 
@@ -64,10 +72,10 @@ The composite **Treatability Index** (0–100 scale) quantifies the biological c
 >   - **Quantifiable Reversal Potential**: Treatability scoring distinguishes highly convertible non-responders from deeply refractory cases.
 >   - **Direct Cross-Question Synergy**: Successfully bridges Q2 cell line viability predictions with clinical patient transcriptomics.
 
-### Key Takeaways
-- **Complete Decision Framework**: Provides clear, actionable routing for 100% of incoming melanoma patients.
-- **Mechanistic Target Nomination**: Nominates validated helper targets (`CSF1R`, `MDM2`, `AXL`) to overcome specific resistance mechanisms.
-- **Q2/Q4 Integration**: Seamlessly bridges cell line viability models (Q2 Dabrafenib sensitivity) and DepMap essentiality targets (Q4) with clinical patient transcriptomics.
+> [!INSIGHT] Key Insights & Summary Takeaways
+> - **Complete Decision Framework**: Provides clear, actionable routing for 100% of incoming melanoma patients.
+> - **Mechanistic Target Nomination**: Nominates validated helper targets (`CSF1R`, `MDM2`, `AXL`) to overcome specific resistance mechanisms.
+> - **Q2/Q4 Integration**: Seamlessly bridges cell line viability models (Q2 Dabrafenib sensitivity) and DepMap essentiality targets (Q4) with clinical patient transcriptomics.
 
 ### Final Phase Summary & Clinical Translation
 
@@ -77,8 +85,8 @@ The composite **Treatability Index** (0–100 scale) quantifies the biological c
 #### Core Achievements
 1. **Complete Decision Routing**: Successfully routed $N = 699$ patients into Arm A (**52.1%**), Arm B (**33.5%**), and Arm C (**14.4%**).
 2. **Cross-Study Integration**: Incorporated Q2 Dabrafenib sensitivity gene weights to score targeted therapy responsiveness in Arm B (`BRAF` mutants; mean sensitivity = **56.0/100**).
-3. **Mechanistic Reversal Nominations**: Identified **CSF1R (M2 TAM Depletion)** as the primary helper target for resistant non-responders ($N = 67$ candidates).
-4. **Treatability Metric**: Standardised a composite 0–100 Treatability Index (overall mean = **50.0**) to prioritise non-responders for combination clinical trial enrolment.
+3. **Mechanistic Reversal Nominations**: Identified **`CSF1R` (M2 TAM Depletion)** as the primary helper target for resistant non-responders ($N = 67$ candidates).
+4. **Treatability & Confidence Metrics**: Standardised a composite 0–100 Treatability Index (overall mean = **50.0**) and Recommendation Confidence Index (mean = **56.2/100**, $N = 173$ high-confidence candidates) to prioritise non-responders for combination clinical trial enrolment.
 
 > [!formula]+ Phase 7 Script Execution & Software Module Architecture
 > - **Primary Pipeline Execution Scripts**:
