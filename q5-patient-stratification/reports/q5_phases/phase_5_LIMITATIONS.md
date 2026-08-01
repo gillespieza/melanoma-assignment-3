@@ -1,128 +1,82 @@
 ---
-title: "Phase 5: Methodological Audit, Resolved Code Smells & Technical Limitations"
+title: "Phase 5: Limitations, Methodological Critique & Future Directions"
 aliases:
-  - Phase 5 Criticisms & Technical Roadmap
   - Q5 Phase 5 Limitations
 tags:
-  - future-work
-  - limitations
   - melanoma
   - patient-stratification
   - phase-5
+  - limitations
   - q5
-created: 2026-07-31 18:45
+created: 2026-08-01 18:48
 cssclasses:
-  - row-alt
-  - table-center
   - table-small
+  - table-center
+  - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 18:45
+updated: 2026-08-01 18:48
 ---
 
-# Phase 5: Methodological Audit, Resolved Code Smells & Technical Limitations 🔍
+## 5. Phase 5: Methodological Critique & Limitations Evaluation
 
-An analytical audit and limitations report for **Phase 5** in the Question 5 Patient Stratification pipeline, evaluating resolved software code smells alongside technical, statistical, and data-capacity limitations of the subgroup-specific machine learning prediction models.
-
-## 1. Executive Summary & Audit Rationale
-
-> [!NOTE] Analytical Methodology & Rationale
-> - **What is being done**: Systematic evaluation of code refactoring fixes and methodological limitations inherent to Phase 5 subgroup-specific predictive modelling (Random Forest Leave-One-Cohort-Out CV across 4 discovered phenotypes).
-> - **Why we are doing it**: While refactoring eliminated code smells, modularised monolithic functions, and corrected phenotype palette key alignment, statistical performance within individual cluster models remains constrained by small sample sizes, class imbalance, and validation fallbacks.
-> - **What question it answers**: What specific statistical and sample-size limitations affect Phase 5 subgroup predictors, how do we interpret current ROC-AUC/PPV metrics responsibly, and what is the future roadmap for integrating additional clinical datasets?
-
-Phase 5 evaluates whether fitting phenotype-tailored Random Forest classifiers improves immunotherapy response forecasting compared to a *Global Enriched Baseline* ($N = 195$ trial patients with RECIST response labels). While code refactoring resolved all architectural debt (decomposing `train_and_eval_loco`, centralising hyperparameters, fixing `PHENOTYPE_PALETTE` color key lookups, and eliminating DRY duplication), an honest scientific audit requires documenting statistical and data-capacity limitations.
+> [!NOTE] Purpose & Scope of Phase 5 Critique
+> - **Objective**: Critical evaluation of Phase 5 Subgroup-Specific Machine Learning Modelling in its current state across software architecture, statistical validation, biological assumptions, and data constraints.
+> - **Source Data**: Grounded in live execution logs (`logs/05_subgroup_models.log`) and quantitative Leave-One-Cohort-Out (LOCO) evaluation metrics (`data/processed/q5/subgroup_models_evaluation.csv`).
 
 ---
 
-## 2. Overview of Resolved Code Smells & Refactoring Fixes
+### 5.1 Code-Quality & Software Architecture Evaluation
 
-The initial Phase 5 execution script (`05_subgroup_models.py`) contained several software code smells and palette inconsistencies, which have been fully resolved:
-
-| Refactoring Area | Original Code Smell / Defect | Technical Fix Executed | Empirical Validation Result |
-| :--- | :--- | :--- | :--- |
-| **Unused Import** | `LogisticRegression` imported from `sklearn.linear_model` but never instantiated. | Removed unused import; cleaned standard PEP 8 import block. | Zero dead code; import overhead reduced. |
-| **Monolithic Function** | `train_and_eval_loco` (183 lines) handled CV, fitting, metric calculation, and plot formatting. | Decomposed into 6 single-responsibility helper functions ($\le 30$ lines each). | Clean orchestrator function (~20 lines); enhanced testability. |
-| **Code Duplication (DRY)** | `SimpleImputer` + `StandardScaler` sequence repeated 5 times inline. | Encapsulated inside `_preprocess_features(X_train, X_test)`. | Eliminates redundant pre-processing code across cross-validation loops. |
-| **Magic Numbers** | CV folds (`3`), tree depth (`5`, `4`), seeds (`42`), trees (`100`) hardcoded inline. | Centralised as module-level constants (`RANDOM_STATE`, `RF_N_ESTIMATORS`, etc.). | Single source of truth for hyperparameter configuration. |
-| **Palette Key Mismatch** | `"M2 Immunosuppressive"` key mismatched `PHENOTYPE_PALETTE` key `"Immunosuppressive M2-High"`. | Standardised phenotype short names to `"Immunosuppressive M2-High"`. | Plot color lookup now correctly resolves to Okabe-Ito Reddish Purple (`#CC79A7`). |
-| **Baseline Label Clarity** | Generic label `"Global Q1 Predictor"` obscured that baseline included Phase 1 cell deconvolution. | Renamed label to `"Global Enriched Baseline"` across scripts, figures, and reports. | Explicitly distinguishes enriched global model from original un-enriched Q1 artifact. |
-| **Class Imbalance Handling** | Unweighted Random Forest fitting biased tree splits in imbalanced sub-cohorts. | Added `class_weight="balanced_subsample"` to all Random Forests in `05_subgroup_models.py`. | Re-computes inverse class weights per bootstrap sample tree; improves minority class sensitivity. |
+> [!WARNING] Software Architecture & Pipeline Edge-Case Constraints
+> - **Degenerate Out-of-Fold (OOF) Prediction Fallbacks**: In the current pipeline, 27 out-of-fold patient slots (primarily in the *Mutant-Driven* $N=9$ and *Immune Cold* $N=28$ subgroups) encounter single-class training folds during Leave-One-Cohort-Out cross-validation. When a LOCO test fold removes an entire clinical trial containing all positive responders, Platt scaling (`LogisticRegression`) and Isotonic Regression fail to fit. The architecture safely catches these edge cases using pass-through calibrators (`_IdentityPredictor`) and replaces the 27 degenerate OOF slots with predictions from the global model. While defensively robust, this fallback introduces hybrid prediction logic into the evaluation matrix.
+> - **Soft GMM Weighting vs Sample Inflation**: Subgroup Random Forest models are fitted using GMM posterior probabilities ($\vec{P}_i$) as sample weights (`sample_weight = P_k`). While sound in principle, samples with low posterior probability ($P_k \in [10^{-6}, 0.10]$) still exert weak sample-weight influence, effectively inflating the sample count during tree splitting without contributing strong phenotype-specific signal.
 
 ---
 
-## 3. In-Depth Analysis of Technical & Statistical Limitations
+### 5.2 Statistical Weaknesses & Methodological Limitations
 
-### 1. Severely Underpowered Clusters & Asymmetric Sample Size Distribution
-- **Technical Limitation**: Within the RECIST response-labeled trial sub-cohort ($N = 195$), sample sizes across individual phenotypes are highly asymmetric:
-  - *Mutant-Driven*: $N = 100$ ($51.3\%$)
-  - *Immunosuppressive M2-High*: $N = 73$ ($37.4\%$)
-  - *Immune Cold*: $N = 16$ ($8.2\%$)
-  - *Immune Hot*: $N = 6$ ($3.1\%$)
-- **Statistical Risk**: ROC-AUC calculations in small clusters (*Immune Hot* $N=6$, *Immune Cold* $N=16$) suffer from high variance and wide confidence intervals. For instance, an AUC of 0.222 in *Immune Hot* ($N=6$) is driven by only 3 responding vs 3 non-responding patients, rendering the metric statistically uninformative.
-- **Timeline & Data Constraint**: Acquiring additional clinical trial cohorts requires raw FASTQ/BAM re-processing and harmonisation, which is beyond the current project timeline. This is explicitly noted as a primary study limitation, with future dataset expansion identified as the definitive resolution.
-
-### 2. Unweighted Loss Functions & Class Imbalance
-- **Technical Limitation**: Response rates vary across phenotypes ($38.0\%$ in *Mutant-Driven* to $68.8\%$ in *Immune Cold*). Current Random Forest classifiers do not employ class-weighted loss functions (`class_weight="balanced"`) or synthetic oversampling (SMOTE).
-- **Methodological Risk**: In small clusters with skewed responder ratios, unweighted decision trees favor the majority class, leading to low precision or low recall in minority classes.
-
-### 3. Leave-One-Cohort-Out (LOCO) CV Fallback to Stratified K-Fold
-- **Technical Limitation**: When a phenotype cluster contains samples from only one clinical trial cohort (or when a single cohort lacks both binary outcome classes), LOCO CV cannot leave out a cohort. The script silently falls back to 3-fold `StratifiedKFold`.
-- **Validation Risk**: While necessary to avoid execution failure, Stratified K-Fold does not guarantee strict cohort-level independence, slightly over-estimating out-of-fold performance compared to true leave-one-cohort-out validation.
-
-### 4. Uncalibrated Random Forest Probability Predictions
-- **Technical Limitation**: Raw Random Forest `predict_proba` outputs tend to concentrate around intermediate values (0.3–0.7) and are not probability-calibrated.
-- **Analytical Risk**: Brier scores and decision-threshold metrics (PPV/NPV) reflect uncalibrated probabilities. Post-hoc calibration (Platt scaling or Isotonic Regression) was omitted due to small fold sample sizes.
-
-### 5. Absence of a 3-Arm Baseline Comparison (Original Q1 Artifact)
-- **Technical Limitation**: Current Phase 5 benchmarks *Subgroup Models* against a *Global Enriched Baseline* (Q1 features + Phase 1 cell deconvolution). It does not include the original un-enriched Q1 model artifact (`q1-response-predictor/models/`) as a 3rd comparison arm.
-- **Analytical Risk**: Without a 3-arm comparison, we cannot directly separate the incremental gain provided by adding cell-deconvolution features from the gain provided by phenotype-specific cluster training.
+> [!WARNING] Statistical Power & Cross-Validation Degradation
+> - **Severe Sample Size Imbalance**: While the overall evaluated trial cohort contains $N = 195$ patients with ground-truth immunotherapy response labels, partitioning patients into four GMM biological phenotypes yields extreme sample imbalance:
+>   - *Immune Hot*: $N = 103$ ($46$ Responders, $44.7\%$ response rate)
+>   - *Immunosuppressive M2-High*: $N = 55$ ($20$ Responders, $36.4\%$ response rate)
+>   - *Immune Cold*: $N = 28$ ($11$ Responders, $39.3\%$ response rate)
+>   - *Mutant-Driven*: $N = 9$ ($5$ Responders, $55.6\%$ response rate)
+> - **LOCO CV Performance Degradation**: Training separate classifiers within small subgroups reduces effective sample size, leading to lower overall cohort ROC-AUC for the Subgroup Ensemble ($0.501$) compared to the Global Enriched Baseline ($0.550$, $\Delta = -0.049$).
+> - **Extremely Small Subgroup CV Folds**: In the *Mutant-Driven* phenotype ($N = 9$), Leave-One-Cohort-Out CV splits 9 patients across 4 clinical cohorts, leaving folds with as few as 1 or 2 patients. This results in an artificially depressed subgroup ROC-AUC of $0.300$ (vs $0.900$ for the global baseline), despite achieving improvements in Recall ($20.0\%$ vs $0.0\%$) and Positive Predictive Value ($33.3\%$ vs $0.0\%$).
 
 ---
 
-## 4. Strategic Recommendations & Future Dataset Expansion Roadmap
+### 5.3 Biological Assumptions & Domain Constraints
 
-To address these limitations when additional resources and datasets become available, we propose a four-stage technical roadmap:
-
-```
-+-----------------------------------------------------------------------------------+
-|                        FUTURE PIPELINE ENHANCEMENT ROADMAP                         |
-+-----------------------------------------------------------------------------------+
-| 1. Additional Clinical Trial Data Integration (Gide 2019, Riaz Expansion, TCGA)   |
-| 2. Class-Balanced & Calibrated Subgroup Classifiers (SMOTE + Platt Scaling)       |
-| 3. Three-Arm Benchmark (Original Q1 vs Global Enriched vs Subgroup Specific)      |
-| 4. Bootstrap Confidence Intervals & DeLong AUC Statistical Significance Tests     |
-+-----------------------------------------------------------------------------------+
-```
-
-### 1. Additional Clinical Trial Data Integration (Dataset Expansion)
-- **Proposed Solution**: Ingest additional published anti-PD-1/CTLA-4 melanoma cohorts (e.g. *Gide et al. 2019*, *Nathanson et al. 2017*, expanded *TCGA-SKCM* immunotherapy sub-cohorts) as they become harmonised.
-- **Expected Benefit**: Expands total response-labeled sample size from $N = 195$ to $N > 500$, bringing small clusters (*Immune Hot*, *Immune Cold*) above $N \ge 50$ for robust, high-powered ROC-AUC and LOCO CV evaluation.
-
-### 2. Class Imbalance Mitigation & Probability Calibration
-- **Proposed Solution**: Implement SMOTE oversampling for minority outcome classes within small clusters and apply 5-fold cross-validated Platt scaling (sigmoid calibration) to final Random Forest probability outputs.
-- **Expected Benefit**: Improves Positive Predictive Value (PPV), Brier calibration scores, and clinical decision threshold reliability.
-
-### 3. Three-Arm Comparative Benchmark
-- **Proposed Solution**: Integrate the original serialised Q1 model (`q1-response-predictor/models/logistic_regression_final.pkl`) into `05_subgroup_models.py` as an explicit 3rd evaluation arm.
-- **Expected Benefit**: Dissects the exact performance gain attributable to transcriptomic cell-type deconvolution versus subgroup-specific model recalibration.
-
-### 4. Statistical Significance Testing & Confidence Bands
-- **Proposed Solution**: Compute 1,000-bootstrap percentile confidence intervals for all subgroup ROC-AUC scores and perform DeLong tests to evaluate whether subgroup model improvements over the global baseline reach statistical significance ($p < 0.05$).
-- **Expected Benefit**: Replaces point estimates with rigorous confidence bounds suitable for peer-reviewed publication.
+> [!WARNING] Biological Modeling & Feature Selection Constraints
+> - **Strict Exclusion of Clustering Features**: To prevent circular reasoning, the candidate feature set for Phase 5 subgroup models ($9$ features: `IFN_gamma`, `CD8_Tcell`, `PD_L1`, `M1_M2_Ratio`, `Macrophage_STV_Score`, `CD4_T_cells`, `NK_cells`, `B_cells`, `TMB_NONSYNONYMOUS`) strictly excludes the 6 Stage 1 GMM continuous clustering features (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`). While methodologically rigorous, excluding `TIS` and `CYT` prevents subgroup classifiers from exploiting subtle non-linear interactions within core cytotoxic signatures.
+> - **Assumption of Discrete Decision Boundaries**: Fitting separate Random Forest classifiers within distinct GMM phenotypes assumes that biological microenvironments operate on decoupled predictive hyperplanes. In reality, tumour microenvironments exist on a continuous spectrum, and hard phenotype partitioning can misclassify patients situated near GMM cluster boundaries.
+> - **Static Pre-Treatment Biomarkers**: All features are derived from baseline, pre-treatment RNA-seq and WES profiling. Static baseline measurements cannot capture dynamic immune cell recruitment, adaptive immune resistance (`PD-L1` upregulation), or clonal evolution occurring under active anti-PD-1 therapy.
 
 ---
 
-## 5. Comprehensive Methodological Audit & Future Roadmap Matrix
+### 5.4 Computational & Data Constraints
 
-| Pipeline Aspect | Current Phase 5 Implementation | Identified Limitation | Recommended Future Fix |
-| :--- | :--- | :--- | :--- |
-| **Sample Size ($N$)** | $N = 195$ trial patients across 4 clusters | Small clusters (*Immune Hot* $N=6$, *Immune Cold* $N=16$) underpowered | Ingest additional trial cohorts (Gide 2019, $N > 500$) |
-| **Class Imbalance** | Cost-sensitive `class_weight="balanced_subsample"` | Resolves tree split bias; small sample sizes still restrict SMOTE | SMOTE synthetic oversampling on expanded cohorts |
-| **Validation Scheme** | LOCO CV with Stratified K-Fold fallback | Single-cohort clusters fall back to 3-fold SKF | Group-level sampling across expanded multi-cohort registry |
-| **Probability Calibration** | Raw uncalibrated `predict_proba` | Intermediate probability compression affects PPV/Brier score | Implement post-hoc Platt scaling / Isotonic Regression |
-| **Baseline Comparator** | Global Enriched Baseline (Q1 + deconvolution) | Does not isolate gain of cell deconvolution vs subgrouping | Implement 3-arm benchmark incorporating raw Q1 model |
-| **Statistical Testing** | Point-estimate ROC-AUC & PPV | No confidence intervals or p-values for AUC deltas | 1,000-bootstrap CIs and DeLong significance testing |
+> [!WARNING] Data Coverage & Measurement Resolution Constraints
+> - **Outcome Label Bottleneck**: Although Phase 3 stratification establishes biological phenotype assignments for all $N = 699$ patients across the combined dataset (including TCGA-SKCM biological reference), Phase 5 predictive model evaluation is constrained to the $N = 195$ ICI-treated patients with curated $CR/PR/PD$ clinical response labels across the Hugo 2016, Riaz 2017, and Liu 2019 trials.
+> - **Lack of Spatial & Single-Cell Resolution**: Bulk RNA-seq transcriptomic cell deconvolution estimates total cell type fractions but lacks spatial resolution. It cannot determine whether CD8+ T-cells are physically in contact with tumour cells (inflamed) or trapped in peri-tumoural stroma by CAFs (excluded).
 
-> [!INSIGHT] Final Technical Takeaway
-> The Phase 5 refactoring successfully eliminated code smells, modularised functions, and corrected visual palette lookups. While small sample sizes in *Immune Hot* ($N=6$) and *Immune Cold* ($N=16$) limit statistical power in the current dataset, formally documenting this limitation and establishing a dataset-expansion roadmap ensures scientific transparency and clear direction for future pipeline iterations.
+---
+
+### 5.5 Actionable Improvements & Future Iterations
+
+> [!INSIGHT] Prioritised Roadmap for Future Subgroup Modelling Iterations
+> 1. **Hierarchical / Transfer Learning Architectures**: Instead of fitting completely independent Random Forest models per subgroup, adopt a hierarchical Bayesian or multi-task neural network architecture. This allows global features to share statistical strength across the full cohort while permitting phenotype-specific adapter layers to fine-tune local feature weights.
+> 2. **Continuous GMM Weight-Regularised Classifiers**: Replace hard subgroup partitioning with soft sample-weighted ensemble classifiers that dynamically weight predictions based on each patient's full continuous GMM posterior probability vector $\vec{P}_i = [P_{\text{Hot}}, P_{\text{Cold}}, P_{\text{M2}}, P_{\text{Mut}}]$.
+> 3. **Nested Feature Selection & Feature Expansion**: Incorporate additional non-circular genomic and microenvironmental features (e.g. `HLA-A/B/C` antigen presentation expression, `JAK1`/`STAT1` loss-of-function variants, tertiary lymphoid structure signatures) to provide broader signal for small subgroups.
+> 4. **Synthetic Minority Oversampling (SMOTE) for Small LOCO Folds**: Apply SMOTE or adaptive synthetic sampling within small cross-validation training folds (such as *Mutant-Driven* $N=9$) to mitigate single-class calibration failures during LOCO CV.
+
+---
+
+### Key Takeaways
+
+> [!INSIGHT] Key Takeaways: Phase 5 Methodological Critique
+> - **Trade-Off Between Global Pooling & Local Tailoring**: Global models benefit from large sample pooling ($N = 195$, AUC = $0.550$), whereas subgroup models suffer from sample fragmentation in small clusters (*Mutant-Driven* $N = 9$, AUC = $0.300$), despite improving localized precision (PPV = $50.0\%$ in *M2-High* vs $37.5\%$).
+> - **Robust Edge-Case Fallbacks**: The current implementation handles LOCO CV single-class fold failures via 27 global model fallbacks, ensuring pipeline stability.
+> - **Path to Optimization**: Future iterations should transition from isolated subgroup classifiers to hierarchical multi-task models that combine global feature pooling with phenotype-specific adaptation.
