@@ -60,6 +60,7 @@ MIN_SAMPLES_FOR_ELLIPSE: int = 3
 # Default Model & Consensus Parameters
 DEFAULT_N_COMPONENTS: int = 4
 DEFAULT_RANDOM_STATE: int = 42
+DEFAULT_SPECTRAL_NEIGHBORS: int = 15
 CDF_GRID_POINTS: int = 100
 
 
@@ -473,9 +474,9 @@ def transform_mahalanobis_space(
 
 def run_spectral_manifold(
     X_scaled: np.ndarray,
-    n_clusters: int = 4,
-    n_neighbors: int = 15,
-    random_state: int = 42,
+    n_clusters: int = DEFAULT_N_COMPONENTS,
+    n_neighbors: int = DEFAULT_SPECTRAL_NEIGHBORS,
+    random_state: int = DEFAULT_RANDOM_STATE,
 ) -> Tuple[SpectralClustering, np.ndarray]:
     """Fit Spectral Manifold Clustering on Graph Laplacian eigenvectors using nearest-neighbors affinity.
 

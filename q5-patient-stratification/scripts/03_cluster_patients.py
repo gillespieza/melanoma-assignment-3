@@ -51,6 +51,9 @@ from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
 
 from clustering import (
+    DEFAULT_N_COMPONENTS,
+    DEFAULT_RANDOM_STATE,
+    DEFAULT_SPECTRAL_NEIGHBORS,
     plot_2d_cluster_projection,
     plot_spatial_microenvironment_violins,
     prepare_clustering_features,
@@ -164,7 +167,12 @@ def _fit_and_save_gmm_model(
 ) -> Tuple[GaussianMixture, np.ndarray, np.ndarray, List[str]]:
     """Fit Gaussian Mixture Model (GMM, K=4, full covariance) and persist model artifacts."""
     feature_cols = [c for c in CLUSTERING_FEATURES if c in df_clean.columns]
-    gmm, labels, probs = run_gmm(X_scaled, n_components=4, covariance_type="full", random_state=42)
+    gmm, labels, probs = run_gmm(
+        X_scaled,
+        n_components=DEFAULT_N_COMPONENTS,
+        covariance_type="full",
+        random_state=DEFAULT_RANDOM_STATE,
+    )
 
     gmm_model_path = OUTPUT_DIR / "gmm_model.pkl"
     legacy_model_path = OUTPUT_DIR / "kmeans_model.pkl"
@@ -256,8 +264,18 @@ def _evaluate_mahalanobis_spectral_comparisons(
 ) -> Dict[str, float]:
     """Evaluate Mahalanobis GMM transformation and Spectral Manifold clustering benchmarks."""
     X_mahalanobis, _ = transform_mahalanobis_space(X_scaled)
-    gmm_mah, labels_mah, _ = run_gmm(X_mahalanobis, n_components=4, covariance_type="full")
-    _, spectral_labels = run_spectral_manifold(X_scaled, n_clusters=4, n_neighbors=15)
+    gmm_mah, labels_mah, _ = run_gmm(
+        X_mahalanobis,
+        n_components=DEFAULT_N_COMPONENTS,
+        covariance_type="full",
+        random_state=DEFAULT_RANDOM_STATE,
+    )
+    _, spectral_labels = run_spectral_manifold(
+        X_scaled,
+        n_clusters=DEFAULT_N_COMPONENTS,
+        n_neighbors=DEFAULT_SPECTRAL_NEIGHBORS,
+        random_state=DEFAULT_RANDOM_STATE,
+    )
 
     gmm_metrics = compute_clustering_metrics(X_scaled, labels, gmm)
     mah_metrics = compute_clustering_metrics(X_mahalanobis, labels_mah, gmm_mah)
@@ -303,9 +321,15 @@ def _compare_cohort_quality(
 
 def main() -> None:
     """Main execution function for patient clustering on full cohort using GMM soft clustering & Mahalanobis space."""
-    print(f"Starting Phase 3 Unsupervised Patient Stratification (GMM + Mahalanobis + Spatial, Project root: {rel_path(PROJECT_ROOT)})")
+    print(
+        f"Starting Phase 3 Unsupervised Patient Stratification "
+        f"(GMM + Mahalanobis + Spatial, Project root: {rel_path(PROJECT_ROOT)})"
+    )
     if not INPUT_FILE_FULL.exists():
-        raise FileNotFoundError(f"Missing full-cohort feature matrix at {rel_path(INPUT_FILE_FULL)}. Run 01_load_and_prepare.py first.")
+        raise FileNotFoundError(
+            f"Missing full-cohort feature matrix at {rel_path(INPUT_FILE_FULL)}. "
+            "Run 01_load_and_prepare.py first."
+        )
 
     df_matrix = pd.read_csv(INPUT_FILE_FULL)
     print(f"Loaded full-cohort feature matrix: {len(df_matrix)} patients x {df_matrix.shape[1]} features")
@@ -333,9 +357,13 @@ def main() -> None:
     print(f"Total Stratified Patients: {len(df_clean)}")
     for cid, name in sorted(phenotype_names.items()):
         cnt = int(np.sum(labels == cid))
-        n_ici = int((df_clean[df_clean["Cluster_ID"] == cid]["IMMUNOTHERAPY"] == 1).sum()) if "IMMUNOTHERAPY" in df_clean.columns else 0
+        is_ici = df_clean[df_clean["Cluster_ID"] == cid]["IMMUNOTHERAPY"] == 1 if "IMMUNOTHERAPY" in df_clean.columns else False
+        n_ici = int(is_ici.sum()) if "IMMUNOTHERAPY" in df_clean.columns else 0
         mean_p = np.mean(probs[:, cid])
-        print(f"  * Cluster {cid} [{name}]: N={cnt} ({cnt/len(df_clean)*100:.1f}%), Mean P={mean_p:.3f}, ICI-treated={n_ici}")
+        print(
+            f"  * Cluster {cid} [{name}]: N={cnt} ({cnt / len(df_clean) * 100:.1f}%), "
+            f"Mean P={mean_p:.3f}, ICI-treated={n_ici}"
+        )
     print("=" * 80)
 
 
