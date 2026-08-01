@@ -2,6 +2,12 @@
 # This ensures consistent line endings across Windows, macOS, and Linux,
 # and silences "LF will be replaced by CRLF" warnings.
 * text=auto eol=lf
+*.py text eol=lf
+*.csv text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
 
 # Explicitly mark binary files to prevent git from mangling them.
 *.png binary
