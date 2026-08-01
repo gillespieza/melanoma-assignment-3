@@ -1,116 +1,155 @@
 ---
-title: "Phase 7 Methodological Evaluation & Limitations Report"
+title: "Phase 7: Limitations, Assumptions & Future Directions"
 aliases:
-  - Phase 7 Limitations
-  - Q5 Phase 7 Methodological Appraisal
+  - Q5 Phase 7 Limitations
 tags:
   - melanoma
   - patient-stratification
   - phase-7
+  - q5
   - limitations
-  - treatability-scoring
-created: 2026-08-01 21:33
+created: 2026-08-01 21:44
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 21:33
+updated: 2026-08-01 21:44
 ---
 
-# Phase 7: 3-Arm Decision Support & Treatability Scoring — Methodological Appraisal & Limitations Report
+## Phase 7: Limitations, Assumptions & Future Directions
 
-> [!WARNING] Methodological Scope & Evaluation Notice
-> This document provides a rigorous, graduate-level critical appraisal of Phase 7 (`07_treatability_scoring.py`) in its current state. It evaluates the statistical assumptions, biological simplifications, dataset constraints, and software architecture boundary conditions across $N = 699$ patients ($N = 326$ retrospective ICI-treated patients with known response annotations, $N = 373$ prospective un-annotated patients).
-
-## 1. Statistical & Methodological Weaknesses
-
-> [!WARNING] Mathematical Formulation & Decision Tree Weaknesses
-> - **What is being evaluated**: The mathematical properties of the empirical Treatability Index ($0 – 100$), decision tree routing rules, and recommendation confidence scoring.
-> - **Why it matters**: Clinical decision support frameworks must maintain robust statistical separation without introducing artificial boundary penalties or over-interpreting non-linear biomarker interactions.
-
-### 1.1 Non-Linear Quantile Scaling Distribution Flattening
-The Treatability Index utilizes a rank-preserving uniform quantile transformation (`QuantileTransformer(output_distribution='uniform')`) across raw composite scores. While this eliminates single-patient boundary outlier compression and forces the interquartile range ($\text{IQR}$) to span exactly $50.00$ units ($\text{Q1} = 25.00, \text{Q3} = 75.00$, $\text{Median} = 50.00, \text{Mean} = 50.00$), uniform quantile scaling transforms continuous raw score distances into a flat uniform density $U[0, 100]$. Consequently, metric distance between patients in the central distribution reflects relative sample rank order rather than absolute biological difference in immune infiltrate intensity.
-
-### 1.2 Binary L2-Logistic Regression Weight Estimation
-Empirical weights ($w_{\text{AgPres}} = -0.0247, w_{\text{IFN}} = 0.3751, w_{\text{Effector}} = 0.1096, w_{\text{Barrier}} = -0.2966$) are estimated using L2-regularised logistic regression ($C = 1.0$) trained on $N = 195$ response-annotated ICI-treated patients (`RESPONSE_BINARY`). While this significantly outperforms static heuristic weights ($\text{ROC-AUC} = 0.5956, p = 0.0228$), fitting weights against a binary response outcome ignores time-to-event censorship in overall survival ($\text{OS}$) and progression-free survival ($\text{PFS}$). Furthermore, negative weighting on antigen presentation ($-0.0247$) indicates collinearity with `IFN_gamma` signaling ($+0.3751$) in unadjusted multi-variable models.
-
-### 1.3 Soft Sigmoidal Boundary Transition & Equipoise Zone Implementation
-To resolve deterministic cliff-edge effects in Arm C sub-arm selection, a logistic sigmoid transition function ($w_{\text{AXL}} = \frac{1}{1 + \exp(-0.2 \cdot (\text{TI} - 40.0))}$) and an explicit equipoise buffer zone ($[35.0, 45.0]$) have been implemented. For patients within the buffer zone, recommendations report dual candidate probabilities rather than a sharp binary switch. However, discrete boundaries remain at the top level between Arm A ($q = 0.60$ `TIS` threshold) and Arm B driver mutation overrides.
-
-### 1.4 Continuous Evidence-Based Confidence Scoring (NRAS Cap Removed)
-Recommendation confidence scores ($0 – 100$) are categorised into three continuous bands: *High* ($\ge 0.70$), *Moderate* ($0.45 – 0.70$), and *Low* ($< 0.45$). To eliminate hard step penalties, the artificial ceiling capping `NRAS`-mutant patients at *Moderate* status was removed. `NRAS` status is weighted continuously via `MUT_STRENGTH_NRAS` ($0.70$ vs $1.00$ for `BRAF` V600). Patients with `NRAS` mutations presenting with exceptional Q2 target sensitivity ($>88/100$) can now reach *High* confidence status ($N = 173$ high-confidence patients total, $+10$ pts), reflecting evidence-based patient-specific scoring.
+> [!NOTE] Scope & Purpose of This Appraisal
+> - **What is being appraised**: The current state of Phase 7 (`07_treatability_scoring.py`), which routes $N = 699$ patients into three therapeutic arms and produces Treatability Index scores, Q4 target nominations, and Recommendation Confidence bands.
+> - **Why we are doing it**: No analytical pipeline is free of assumptions and constraints. A rigorous self-appraisal is essential for academic transparency, for calibrating downstream clinical confidence, and for prioritising the highest-impact improvements in future iterations.
+> - **What question it answers**: What are the current methodological, statistical, biological, and data constraints of Phase 7, and where should effort be focused next?
 
 ---
 
-## 2. Biological & Clinical Assumptions
+## 1. Statistical Weaknesses
 
-> [!WARNING] Biological Simplifications & Clinical Translation Assumptions
-> - **What is being evaluated**: Theoretical assumptions regarding microenvironmental reversal, driver mutation hierarchy, and cell line target translation.
-> - **Why it matters**: Translating computational subtype nominations into clinical decision support requires accounting for in vivo resistance mechanisms and drug toxicity constraints.
+### 1.1 Moderate Treatability Index Discriminative Power
 
-### 2.1 Monotherapy vs Combination Synergy Assumptions
-Arm C ($N = 101$, $14.4\%$ of total cohort) nominates combination reversal strategies:
-- *Immunosuppressive M2-High*: Anti-PD-1 + `CSF1R` inhibitor (Pexidartinib) for TAM reprogramming.
-- *Mutant-Driven*: Anti-PD-1 + `MDM2` antagonist (Idasanutlin) for `p53` reactivation.
-- *Immune Cold*: Anti-PD-1 + `AXL` inhibitor (Bemcentinib) or `HDAC` inhibitor + chemotherapy.
+The Treatability Index achieves a ROC-AUC of **0.5956** on the $N = 195$ response-annotated patients used for L2-regularised logistic regression weight fitting. This is only marginally above the null (AUC = 0.50), indicating that the current four-component index (`B2M`/`TAP1` antigen presentation, `IFN_gamma`, `CD8_Tcell`, `M2_score`) has limited independent predictive value for binary immunotherapy response. The index is useful for biological stratification and rank-ordering, but should not be interpreted as a clinically validated response predictor.
 
-This framework assumes additive therapeutic efficacy when pairing immune checkpoint blockade with microenvironmental modulators. In clinical settings, combination immunotherapies frequently encounter overlapping toxicity profiles, Grade 3–4 immune-related adverse events (irAEs), and counter-regulatory immunosuppressive feedbacks (such as compensatory upregulation of `TIM-3` or `LAG3`).
+> [!WARNING] Limitation 1.1
+> A Treatability Index ROC-AUC of **0.5956** on $N = 195$ patients is insufficient for clinical decision support in isolation. External prospective validation in an independent cohort is required before any clinical translation is attempted.
 
-### 2.2 Hierarchical Driver Mutation Override
-The decision tree prioritises driver mutation status (`BRAF` V600 and `NRAS`) in Arm B ($N = 234$) over underlying microenvironmental phenotype features for non-Arm A candidates. Among $N = 256$ patients in the *Immunosuppressive M2-High* phenotype, $N = 173$ ($67.6\%$) are routed to Arm B due to co-occurring `BRAF` or `NRAS` mutations. Routing M2-macrophage-dense tumours primarily to targeted kinase inhibitors assumes oncogenic MAPK signaling overrides TAM-mediated immunosuppression, ignoring potential resistance driven by dense stromal barriers.
+### 1.2 Small Empirical Weight Fitting Sample
 
-### 2.3 Cell-Line DepMap Target Translation
-Arm C target nominations (`CSF1R`, `MDM2`, `AXL`) rely on Q4 DepMap cancer dependency screens and LINCS perturbational signatures. DepMap essentiality scores are derived from in vitro monoculture cell lines lacking an intact immune system, functional vasculature, or spatial tissue architecture. Translating monoculture essentialities to human in vivo tumour microenvironments assumes bulk transcriptomic proxy scores reflect cell-type-specific protein expression and cell-cell spatial interactions.
+The L2-regularised logistic regression that derives sub-score weights is fitted on only **195 response-annotated patients** out of the full $N = 699$ cohort. The remaining 504 patients ($326$ ICI-treated with known response but filtered on data availability, $373$ prospective TCGA-SKCM) do not contribute to weight estimation. This is a small, potentially selection-biased training set given the 4-dimensional feature space and the modest signal in individual components.
+
+> [!WARNING] Limitation 1.2
+> The 4-component logistic regression is fitted on $N = 195$ samples. This yields approximately 49 samples per predictor variable — within acceptable range, but borderline for L2-regularised logistic regression. Cross-validated weight stability estimates have not been computed; it is unknown whether the derived weights ($w_{\text{AgPres}} = -0.0247$, $w_{\text{IFN}} = +0.3751$, $w_{\text{Effector}} = +0.1096$, $w_{\text{Barrier}} = -0.2966$) are stable across bootstrap resamples.
+
+### 1.3 Confidence Index Asymmetry Across Arms
+
+The Recommendation Confidence Index is structurally asymmetric across the three arms. Per the live output:
+
+| Arm | Mean Confidence | High ($N$) | Moderate ($N$) | Low ($N$) |
+|-----|----------------|-----------|--------------|---------|
+| Arm A: Immunotherapy ($N = 364$) | 47.6 / 100 | 37 | 137 | 190 |
+| Arm B: Targeted Therapy ($N = 234$) | 69.0 / 100 | 119 | 111 | 4 |
+| Arm C: Combination/Reversal ($N = 101$) | 57.0 / 100 | 17 | 58 | 26 |
+
+Arm A patients — the largest arm at 52.1% of the cohort — receive a mean confidence of only **47.6/100**, with **190 patients (52.2% of Arm A)** rated Low confidence. This reflects that high-confidence immunotherapy recommendation currently requires both strong *Immune Hot* phenotype membership and a high Treatability Index, conditions many *Immune Hot* patients satisfy by phenotype but not index score. This asymmetry may paradoxically assign the lowest confidence to the arm with the strongest biological rationale.
+
+> [!WARNING] Limitation 1.3
+> Arm A has the lowest mean confidence index (47.6/100) despite immunotherapy being the most evidence-backed intervention for *Immune Hot* melanoma. The confidence formula should be re-examined to ensure that phenotype strength (GMM posterior $P_{\text{Immune Hot}}$) contributes more directly to Arm A confidence scoring.
+
+---
+
+## 2. Biological Assumptions
+
+### 2.1 Q2 Dabrafenib Sensitivity Generalisation to Patient Transcriptomics
+
+Arm B Dabrafenib Sensitivity Index scores (mean = **56.0/100**, std = **14.2**, range = **11.1–100.0**) are derived from a Q2 LASSO model trained on 24 gene features from CCLE cancer cell line viability data. Applying cell-line-derived gene expression weights to bulk patient RNA-seq transcriptomics assumes that the transcriptomic predictors of Dabrafenib sensitivity in controlled cell culture transfer directly to the complex, heterogeneous in vivo tumour microenvironment. This is a strong assumption: stromal contamination, tumour purity variation, and cell-line-specific growth conditions all reduce the validity of this transfer.
+
+> [!WARNING] Limitation 2.1
+> The Q2 Dabrafenib Sensitivity Index applies cell-line-derived LASSO weights to bulk patient RNA-seq. No direct validation against patient clinical response to Dabrafenib has been performed. Arm B scores should be treated as a relative rank-ordering of drug sensitivity, not an absolute sensitivity prediction.
+
+### 2.2 Arm C Q4 Target Nominations Are Not Patient-Personalised
+
+`CSF1R` (M2 TAM Depletion) is nominated for **67/101 (66.3%)** of Arm C patients, `MDM2` for **21/101 (20.8%)**, `HDAC`/Epigenetic Remodeling for **10/101 (9.9%)**, and `AXL`/STING Pathway for only **3/101 (3.0%)**. These nominations derive from Q4 DepMap CRISPR essentiality data mapped to tumour phenotype, not from individual patient CRISPR screens or personalised genomic data. The same `CSF1R` nomination applies uniformly to all *M2 Immunosuppressive* patients in Arm C regardless of their individual M2 macrophage burden, `CSF1R` expression level, or co-occurring genetic alterations.
+
+> [!WARNING] Limitation 2.2
+> Q4 target nominations are phenotype-level rather than patient-level. A patient in the *M2 Immunosuppressive* sub-group receives `CSF1R` as their nominated target irrespective of their individual `CSF1R` expression, M2 macrophage score, or co-occurring driver mutation status. Patient-level `CSF1R` expression quantiles are not currently incorporated into nomination logic.
+
+### 2.3 Arm Boundaries Are Deterministic on Phenotype, Not Probability-Weighted
+
+Arm assignment uses a deterministic decision tree based on GMM-derived `Phenotype_Label` (the modal cluster assignment). However, many patients have non-trivial posterior probabilities across multiple phenotypes — particularly patients near cluster boundaries. The live arm summary confirms that **23 non–Immune-Hot patients are assigned to Arm A** (16 *M2 Immunosuppressive*, 6 *Mutant-Driven*, 1 *Immune Cold*), and similarly **173 M2-Immunosuppressive patients go to Arm B**. These allocations may be appropriate given mutation status, but the routing logic ignores uncertainty in the GMM posterior: a patient with $P_{\text{Immune Hot}} = 0.52$ and $P_{\text{M2}} = 0.48$ is treated identically to one with $P_{\text{Immune Hot}} = 0.99$.
+
+> [!WARNING] Limitation 2.3
+> Arm routing is deterministic on modal phenotype label. GMM posterior uncertainty is not propagated into arm assignment probability or confidence scoring. Patients with borderline phenotype membership are allocated with the same confidence as high-certainty members.
+
+### 2.4 Immune Cold Sub-Arm Sigmoidal Parameters Are Heuristic
+
+The sigmoidal boundary transition for Arm C *Immune Cold* sub-arm selection (midpoint $= 40.0$, steepness $k = 0.2$, equipoise zone $[35.0, 45.0]$) was calibrated by analytical reasoning rather than from empirical data. No optimisation of these parameters against patient outcome data has been performed. The shape and midpoint of the sigmoidal curve are therefore approximations that impose a smooth transition where the true biological decision boundary is unknown.
 
 ---
 
 ## 3. Computational & Data Constraints
 
-> [!WARNING] Dataset Resolution & Cohort Heterogeneity Constraints
-> - **What is being evaluated**: Cohort distribution, prospective dataset integration, and confidence score proportions across $N = 699$ patients.
-> - **Why it matters**: Clinical utility estimates are constrained by sample sizes, retrospective sequencing batch effects, and un-annotated prospective cohorts.
+### 3.1 Weight Fitting Uses Only ICI-Treated, Response-Annotated Patients
 
-### 3.1 Retrospective Cohort Heterogeneity ($N = 699$)
-Phase 7 evaluates patient stratification across $N = 699$ total samples pooled from four clinical cohorts:
-- $N = 326$ Retrospective ICI-Treated Patients (known clinical response annotations): Arm A = $185$ ($56.7\%$), Arm B = $85$ ($26.1\%$), Arm C = $56$ ($17.2\%$).
-- $N = 373$ Prospective Un-annotated Patients (TCGA-SKCM benchmark): Arm A = $179$ ($48.0\%$), Arm B = $149$ ($39.9\%$), Arm C = $45$ ($12.1\%$).
+The L2 logistic regression is fitted exclusively on the **195 patients** with a non-null `RESPONSE_BINARY` label. These are drawn from the three ICI clinical trial cohorts (Liu 2019, Hugo 2016, Riaz 2017) and represent a specific subpopulation: patients enrolled in immune checkpoint inhibitor trials, predominantly anti-PD-1 monotherapy. The **373 TCGA-SKCM prospective patients** — who comprise **53.4%** of the full cohort — contribute no information to weight fitting despite being the majority. The fitted weights may be systematically biased towards trial-eligible patient characteristics (performance status, prior treatment, tissue biopsy timing).
 
-Integrating multi-study transcriptomic datasets introduces technical batch effects, variation in sequencing depth, and biopsy timing differences (pre-treatment baseline vs on-treatment).
+> [!WARNING] Limitation 3.1
+> Weight fitting on $N = 195$ trial-enrolled patients risks systematic bias: TCGA-SKCM ($N = 373$), which constitutes the majority of the cohort, is entirely excluded from weight calibration. Treatability Index weights are calibrated on a trial-selected, survival-enriched, ICI-treated population and may not generalise to the broader TCGA-SKCM prospective subset.
 
-### 3.2 Moderate-to-Low Recommendation Confidence Proportion ($75.3\%$)
-Across the $N = 699$ cohort, recommendation confidence scoring yields the following distribution:
-- **High Confidence** ($\ge 0.70$): $N = 173$ patients ($24.7\%$)
-- **Moderate Confidence** ($0.45 – 0.70$): $N = 306$ patients ($43.8\%$)
-- **Low Confidence** ($< 0.45$): $N = 220$ patients ($31.5\%$)
+### 3.2 No Cross-Validated Confidence Interval on Treatability Weights
 
-Three-quarters ($75.3\%$) of all evaluated patients receive *Moderate* or *Low* confidence recommendations. This highlights biological ambiguity for patients presenting with intermediate `TIS` scores, borderline driver mutation VAFs, or mixed M1/M2 macrophage infiltrate ratios.
+The empirical logistic regression weights are reported as point estimates ($w_{\text{AgPres}} = -0.0247$, $w_{\text{IFN}} = +0.3751$, $w_{\text{Effector}} = +0.1096$, $w_{\text{Barrier}} = -0.2966$) with no bootstrap confidence intervals or cross-validated stability metrics. Given the small sample ($N = 195$), the width of the 95% confidence interval around these weights could be substantial, particularly for `AgPres` which is near zero. A weight whose confidence interval straddles zero does not provide reliable directional guidance.
 
----
+### 3.3 No Survival Outcome Integration
 
-## 4. Code Quality & Software Architecture Evaluation
+Phase 7 routes patients based on immunotherapy response prediction (binary CR/PR vs PD), Dabrafenib sensitivity index, and TME phenotype. It does not incorporate overall survival (OS) or progression-free survival (PFS) data, despite OS months and OS status columns being present in the dataset. Treatment arm allocation that maximises short-term response probability may not maximise survival benefit, particularly for Arm B (`BRAF`-targeted) patients where acquired resistance to BRAF inhibition is a well-established clinical challenge.
 
-> [!WARNING] Code Quality & Software Engineering Appraisal
-> - **What is being evaluated**: Module structure, function complexity, type safety, and architectural decoupling in `07_treatability_scoring.py`.
-> - **Why it matters**: Clean code guarantees maintainability, reproducibility, and seamless integration with downstream pipelines and dashboards.
+> [!WARNING] Limitation 3.3
+> Arm assignments are optimised for predicted immunotherapy response (binary), not survival. OS and PFS columns are available in `treatability_scores.csv` but are not integrated into the routing or confidence logic. A survival-weighted routing objective would provide a more clinically meaningful decision criterion.
 
-### 4.1 Modular Quality & AST Conformance
-The current implementation in `07_treatability_scoring.py` satisfies strict software engineering standards:
-- **Function Line-Length Compliance**: All $36$ functions in the script are strictly $\le 30$ lines long.
-- **Import Organisation**: All imports (`sklearn`, `pandas`, `numpy`, `matplotlib`) are positioned at the module top level; no deferred lazy imports remain inside function bodies.
-- **Type Safety**: Function signatures carry complete Python type annotations, including `Optional[Tuple[...]]` for defaulted parameters.
-- **Centralised Constants**: Phenotype display strings (`PHENO_NAME_M2_SHORT`, `PHENO_NAME_M2_HIGH`, `PHENO_NAME_IMMUNE_COLD`, `PHENO_NAME_IMMUNE_HOT`), confidence thresholds (`CONF_HIGH_THRESHOLD`, `CONF_MOD_THRESHOLD`), and sigmoidal parameters (`SIGMOID_MIDPOINT`, `SIGMOID_STEEP_K`, `EQUIPOL_LOWER_BOUND`, `EQUIPOL_UPPER_BOUND`) are defined in the module-level constants block.
+### 3.4 Arm C `AXL`/STING Pathway Arm Is Critically Under-Populated
 
-### 4.2 Architectural Decoupling Opportunity
-Currently, `07_treatability_scoring.py` combines core decision rules (`assign_treatment_arms`, `compute_recommendation_confidence`, `calculate_treatability_index`) with standalone CLI script orchestration and file I/O. Extracting decision functions into a dedicated module within `src/treatability.py` would allow external interactive web dashboards or sensitivity engines to import and execute scoring logic without triggering script-level file reads.
+Only **3/101 (3.0%)** of Arm C patients are nominated for `AXL`/STING pathway priming. This small subgroup is insufficient to draw any statistically robust conclusions about the effectiveness of this nomination, and the sigmoidal Equipoise Buffer Zone ($[35.0, 45.0]$) that governs `AXL` vs `HDAC` sub-arm selection affects only the minority of Arm C patients (those with Treatability Index in the transition zone). The practical clinical utility of the `AXL` nomination cannot be assessed with $N = 3$.
 
 ---
 
-## 5. Key Takeaways & Prioritised Future Directions
+## 4. Code Quality
 
-> [!INSIGHT] Key Insights & Prioritised Actionable Improvements
-> 1. **Survival-Based Cox Proportional Hazards Weighting (High Priority)**: Upgrade binary L2 logistic regression weights ($N = 195$) to a multi-variable Cox proportional hazards survival model incorporating time-to-event overall survival ($\text{OS}$) and progression-free survival ($\text{PFS}$).
-> 2. **Probabilistic Soft Multi-Arm Assignment (High Priority)**: Extend sigmoidal sub-arm smoothing to top-level Arm A/B/C routing, replacing deterministic conditional branching (`if/else`) with continuous multi-arm membership probabilities that integrate Phase 3 GMM posterior probabilities ($P_{\text{Immune\_Hot}}$, $P_{\text{M2\_High}}$, $P_{\text{Mutant\_Driven}}$, $P_{\text{Immune\_Cold}}$) with Q2 Dabrafenib sensitivity scores.
-> 3. **Non-Linear Sigmoid / Rank Transformation Hybrids (Medium Priority)**: Replace flat uniform quantile transformation ($U[0, 100]$) with a hybrid logistic-sigmoid transformation that preserves relative biological distance near clinical decision boundaries while capping extreme outliers.
-> 4. **Decoupled Engine Module (`src/treatability.py`) (Medium Priority)**: Move core decision logic from `07_treatability_scoring.py` into a reusable `src/treatability.py` package to support lightweight real-time prediction in interactive dashboards.
+> [!NOTE] Code Quality Status
+> Phase 7 (`07_treatability_scoring.py`) has undergone four refactoring passes as documented in `PROJECT_MAP.md`. The current state is:
+> - **Function length compliance**: 36/36 functions $\le 30$ lines ✅
+> - **AST smell audit**: 0 code smells detected ✅
+> - **DRY compliance**: Shared z-score, min-max, and phenotype-column helpers in place ✅
+
+### 4.1 `treatability.py` Src Module Is a Stub
+
+The software architecture callout in `phase_7.md` references `src/treatability.py` as implementing `assign_treatment_arms`, `compute_treatability_index`, and plotting functions. In the current pipeline, all of this logic lives directly in `07_treatability_scoring.py`. The `src/treatability.py` module either does not exist or is an empty stub, meaning the architecture documentation overstates the modularity of the current implementation.
+
+### 4.2 No Unit Tests for Arm Routing Logic
+
+The 3-arm decision tree, sigmoidal boundary weights, and confidence banding thresholds are not covered by any automated unit tests. Refactoring or future parameter changes (e.g., adjusting `CONF_HIGH_THRESHOLD`, `SIGMOID_MIDPOINT`, or `EQUIPOL_LOWER_BOUND`) carry an unquantified risk of silently altering patient routing outcomes without triggering any test failure.
+
+### 4.3 Arm B `NRAS` Confidence Lacks Biological Sub-Stratification
+
+`NRAS`-mutant patients in Arm B ($N = 96$) are routed to targeted therapy with a single continuous confidence penalty (`MUT_STRENGTH_NRAS = 0.70`) applied uniformly to all `NRAS` subtypes. `NRAS` mutations are clinically and biologically heterogeneous — `NRAS Q61` activating mutations confer different MEK/ERK signalling intensities than rarer `NRAS` variants. No sub-stratification by `NRAS` codon is currently applied, meaning confidence weighting conflates clinically distinct `NRAS` disease subsets.
+
+---
+
+> [!INSIGHT] Key Insights & Prioritised Future Directions
+> The following improvements are ranked by estimated scientific impact:
+>
+> **Priority 1 — Statistical**
+> - **Bootstrap weight stability analysis**: Compute 1,000-sample bootstrap confidence intervals on the four logistic regression weights. Any weight whose 95% CI crosses zero should be flagged as unreliable and considered for removal from the index.
+> - **Survival-weighted routing objective**: Integrate OS/PFS data as a secondary routing criterion to move beyond binary response prediction towards survival-optimised arm allocation.
+>
+> **Priority 2 — Biological**
+> - **Patient-level `CSF1R` expression integration**: Replace phenotype-level Q4 target nominations with patient-level nomination logic using quantile-stratified `CSF1R` / `AXL` / `MDM2` expression from the patient RNA-seq matrix.
+> - **GMM posterior uncertainty propagation**: Replace deterministic phenotype-label-based arm routing with a probability-weighted allocation (e.g., expected arm assignment $= \sum_k P_k \cdot \text{Arm}(k)$) to propagate cluster uncertainty into routing decisions.
+> - **Arm A confidence recalibration**: Incorporate `P_Immune_Hot` GMM posterior probability directly into Arm A confidence scoring to prevent *Immune Hot* patients with high phenotype certainty from receiving Low confidence assignments.
+>
+> **Priority 3 — Computational**
+> - **External cohort validation**: Validate the Treatability Index on an independent ICI trial cohort not included in this analysis (e.g., Hellmann 2018 or Snyder 2014) to assess generalisation beyond the three training cohorts.
+> - **Unit test coverage**: Implement parametric unit tests for arm routing, confidence banding, and sigmoidal weighting functions to ensure refactoring safety.
+> - **`src/treatability.py` modularisation**: Migrate arm assignment and scoring logic from `07_treatability_scoring.py` into `src/treatability.py` to match the documented architecture and enable reuse across pipeline steps.
