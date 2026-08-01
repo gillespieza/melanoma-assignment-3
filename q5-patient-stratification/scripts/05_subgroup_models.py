@@ -86,7 +86,6 @@ RANDOM_STATE = 42
 RF_N_ESTIMATORS = 100
 GLOBAL_MAX_DEPTH = 5
 SUBGROUP_MAX_DEPTH = 4
-SKF_N_SPLITS = 3
 
 # Minimum GMM posterior probability for a sample to be included in a
 # cluster-specific production model fit.  Samples below this threshold
@@ -963,7 +962,6 @@ def _print_performance_summary(df_eval: pd.DataFrame) -> None:
         sub_df = df_eval[df_eval["Phenotype"] == phenotype]
         g_auc = sub_df[sub_df["Model_Scope"] == "Global Enriched Baseline"]["ROC_AUC"].values[0]
         s_auc = sub_df[sub_df["Model_Scope"] != "Global Enriched Baseline"]["ROC_AUC"].values[0]
-        g_ppv = sub_df[sub_df["Model_Scope"] == "Global Enriched Baseline"]["PPV"].values[0]
         s_ppv = sub_df[sub_df["Model_Scope"] != "Global Enriched Baseline"]["PPV"].values[0]
 
         diff_auc = s_auc - g_auc if not np.isnan(s_auc) and not np.isnan(g_auc) else 0.0
