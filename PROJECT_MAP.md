@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-01 (Phase 6 code smell audit: 8 smells resolved in `06_clinical_utility.py` and `src/clinical_utility.py` — imported `DARK_SLATE_CHARCOAL` from `src.styles`; enforced `safe_save_csv` from `src.utils.io`; deleted unused stub file `src/clinical_utility.py`; removed duplicate `get_feature_columns` header; decomposed `generate_predictions`, `plot_nnt_ppv_comparison`, and `generate_phase6_markdown`; added `_CalibratedModel` and `_LRPredictor` joblib unpickling wrappers)
+> **Last updated**: 2026-08-01 (Phase 7 code smell audit: 8 smells resolved in `07_treatability_scoring.py` — imported `DARK_SLATE_CHARCOAL` from `src.styles`; enforced `safe_save_csv` from `src.utils.io`; removed unused `DATA_DIR` import; un-nested `z_score`, `_band`, and `_arm_conf` closures to top-level module functions; decomposed `assign_treatment_arms`, `compute_recommendation_confidence`, `plot_treatability_distributions`, and `generate_phase7_markdown`)
 
 ## Repository Overview
 
@@ -301,6 +301,8 @@ Q5 internal dependency chain:
 | `q5/scripts/04_phenotype_characterisation.py` | Phase 4 now renders a dual-arm Kuznetsov 2-state ODE figure (Panel A: Immunotherapy, Panel B: Targeted Therapy) without IQR confidence shading. Per-patient r derived from Q3 pERK coupling; c from Q3 checkpoint f_kill and CYT. Targeted arm uses phenotype-level pheno_r_mult to achieve visual separation (NF1-loss=0.68×, M2-High=1.25×). All changes confined to `04_phenotype_characterisation.py`; q3-ode-model/ unchanged. | **Resolved** |
 | `q5/scripts/05_subgroup_models.py` | Unused `LogisticRegression` import; magic numbers inline; 183-line `train_and_eval_loco` monolith; `SimpleImputer`+`StandardScaler` duplicated 5×; `PHENOTYPE_SHORT_NAMES` key `"M2 Immunosuppressive"` mismatched `PHENOTYPE_PALETTE` (silent wrong colour); missing docstrings on helpers. | **Resolved** (Phase 5 refactored 2026-07-31) |
 | `q5/scripts/05_subgroup_models.py` & `06_clinical_utility.py` | Feature circularity (53% overlap with Phase 3 clustering features), GMM index instability, missing `TMB_NONSYNONYMOUS`. Resolved by excluding clustering features, establishing `PHENOTYPE_PROB_COL` in `q5_constants.py`, implementing soft GMM mixture weighting, and restoring `TMB_NONSYNONYMOUS` in clinical merge. | **Resolved** (2026-07-31) |
+| `q5/scripts/06_clinical_utility.py` | Phase 6 code smells: hardcoded `#37474F` hex, raw `.to_csv()`, unused stub file `src/clinical_utility.py`, duplicate `get_feature_columns`, nested markdown metric extraction closure, long functions. | **Resolved** (2026-08-01: deleted stub, imported `DARK_SLATE_CHARCOAL`, enforced `safe_save_csv`, decomposed functions) |
+| `q5/scripts/07_treatability_scoring.py` | Phase 7 code smells: unused `DATA_DIR` import, raw `#37474F` hex, raw `.to_csv()`, nested closures (`z_score`, `_band`, `_arm_conf`), long functions (`assign_treatment_arms`, `compute_recommendation_confidence`, `plot_treatability_distributions`, `generate_phase7_markdown`). | **Resolved** (2026-08-01: imported `DARK_SLATE_CHARCOAL`, enforced `safe_save_csv`, removed `DATA_DIR`, un-nested closures, decomposed functions) |
 
 ## Conventions Quick Reference
 
