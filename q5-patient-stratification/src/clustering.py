@@ -35,14 +35,6 @@ from src.utils.plotting import save_fig
 
 set_presentation_style()
 
-# Phenotype Cluster Index Colors matching PHENOTYPE_PALETTE.
-# Default mapping; overridden dynamically by c_name in plot_2d_cluster_projection.
-CLUSTER_PALETTE = {
-    0: PHENOTYPE_PALETTE["Immune Hot"],                 # Crimson Red (#D55E00)
-    1: PHENOTYPE_PALETTE["Immune Cold"],                # Okabe-Ito Blue (#0072B2)
-    2: PHENOTYPE_PALETTE["Immunosuppressive M2-High"],  # Okabe-Ito Reddish Purple (#CC79A7)
-    3: PHENOTYPE_PALETTE["Mutant-Driven"],              # Okabe-Ito Orange (#E69F00)
-}
 
 # 2D Cluster Projection Visualization Constants
 KDE_BANDWIDTH: float = 0.25
@@ -252,7 +244,7 @@ def plot_2d_cluster_projection(
 
     save_path.parent.mkdir(parents=True, exist_ok=True)
     save_fig(fig, save_path)
-    print(f"Saved {method.upper()} 2D cluster projection plot to {save_path}")
+    print(f"Saved {method.upper()} 2D cluster projection plot to {rel_path(save_path)}")
 
 
 def _compute_coclustering_matrix(

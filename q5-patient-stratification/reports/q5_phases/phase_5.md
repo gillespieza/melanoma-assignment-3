@@ -7,12 +7,14 @@ tags:
   - patient-stratification
   - phase-5
   - q5
-created: 2026-08-01 11:50
+created: 2026-08-01 13:58
 cssclasses:
   - table-small
+  - table-center
+  - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 11:50
+updated: 2026-08-01 13:58
 ---
 
 ## 5. Phase 5: Subgroup-Specific Predictive Models
@@ -50,12 +52,12 @@ Phase 5 evaluates whether training cluster-tailored predictive models improves r
 > - **`B_cells` Infiltration in M2 Immunosuppressive**: `B_cells` abundance emerges as the top predictive marker in the *M2 Immunosuppressive* subgroup (Gini importance = 0.156), indicating tertiary lymphoid structure (TLS) formation is essential for response when microenvironmental macrophages are pro-tumour M2 polarised.
 > - **Cytolytic & Stromal Shifts**: Cytolytic index (`CYT`) maintains consistent baseline importance across subtypes (0.081–0.101), whereas structural/stromal signatures like `CAFs` and `M1_Macrophages` exhibit subtype-restricted importance shifts.
 
-### Key Takeaways & Student Summary
+### Key Takeaways & Model Insights
 - **Tailored Feature Weights**: Subgroup models capture non-linear interactions unique to specific tumour microenvironments.
 - **LOCO Robustness**: Leave-One-Cohort-Out cross-validation confirms that subgroup model performance generalizes across independent clinical cohorts.
 - **Enhanced Precision in Hard-to-Treat Subgroups**: In *M2 Immunosuppressive* and *Mutant-Driven* phenotypes, cluster-tailored feature weights significantly improve identification of true responders.
 
-> [!NOTE] Student-Friendly Phase 5 Summary
+> [!NOTE] Phase 5 Methodological Summary
 > Phase 5 evaluated whether training separate, cluster-tailored machine learning models outperforms a single global predictor:
 > 1. **Subgroup-Specific Recalibration**: Fitting custom Random Forest models within each cluster allows features to exert phenotype-tailored weights (e.g. `Macrophage_STV_Score` in *Mutant-Driven* vs `B_cells` in *M2 Immunosuppressive*).
 > 2. **Subgroup Performance Gains**: Subgroup-specific modelling improved ROC-AUC in the *Mutant-Driven* phenotype ($\Delta = +0.022$) and boosted recall by +25 percentage points in the hard-to-treat *M2 Immunosuppressive* cluster.

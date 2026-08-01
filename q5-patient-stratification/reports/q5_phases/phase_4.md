@@ -7,12 +7,14 @@ tags:
   - patient-stratification
   - phase-4
   - q5
-created: 2026-08-01 11:50
+created: 2026-08-01 13:58
 cssclasses:
   - table-small
+  - table-center
+  - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 11:50
+updated: 2026-08-01 13:58
 ---
 
 ## 4. Phase 4: Phenotype Characterisation & ODE Digital Twin Dynamics
@@ -89,13 +91,13 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 > - **Interpretable Superiority**: Using only **three mechanistically derived features** (baseline pERK, BRAFi tumour burden, and checkpoint tumour burden), the ODE digital twin achieves **ROC-AUC = 0.666**, outperforming 12-feature Logistic Regression ($0.646$) and Neural Networks ($0.583$).
 > - **Orthogonal Protein Validation**: ODE-predicted baseline pERK correlates significantly with TCGA Reverse-Phase Protein Array (RPPA) measured phospho-ERK ($n = 310, r = 0.175, p = 0.002$), confirming that the kinetic parameters capture true cellular signalling.
 
-### Key Takeaways & Student Summary
+### Key Takeaways & Dynamic Insights
 - **Dynamic Response Prediction**: 180-day ODE simulations capture temporal tumour regression curves that match clinical response outcomes.
 - **Biological Rationale for Combination Therapy**: Proves mathematically why *M2 Immunosuppressive* patients fail single-agent anti-PD-1 and require dual-agent macrophage/CAF targeting.
 - **Clinical Prognostic Power**: ODE checkpoint tumour burden produces a highly significant 82-month survival separation ($p = 0.0024$).
 - **Mechanistic Efficiency**: 3-feature ODE model beats 12-feature Logistic Regression and Neural Networks while remaining completely transparent and biologically grounded.
 
-> [!NOTE] Student-Friendly Phase 4 Summary
+> [!NOTE] Phase 4 Methodological Summary
 > Phase 4 integrated the Question 3 differential-equation (ODE) dynamic model to simulate patient tumour trajectories over time:
 > 1. **Dynamic Trajectory Simulation**: 180-day ODE simulations parameterised by kinetic rate constants successfully reproduced observed clinical response profiles (complete clearance in *Immune Hot* vs uncontrolled growth in *M2 Immunosuppressive*).
 > 2. **Mechanistic Rationale for Combination Therapy**: Simulations proved mathematically that *M2 Immunosuppressive* patients fail anti-PD-1 monotherapy due to macrophage-mediated T-cell suppression, but achieve complete tumour clearance when combined with M2-depleting agents.

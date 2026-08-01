@@ -1,20 +1,23 @@
 ---
 title: "Phase 2: Feature Analysis, Youden Cutoffs & Genomic Interactions (Q1)"
-aliases: Q5 Phase 2
+aliases:
+  - Q5 Phase 2
 tags:
   - melanoma
   - patient-stratification
   - phase-2
   - q5
-created: 2026-08-01 12:38
+created: 2026-08-01 13:58
 cssclasses:
   - table-small
+  - table-center
+  - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 12:39
+updated: 2026-08-01 13:58
 ---
 
-# 2. Phase 2: Deep Feature Interpretation & Decision Thresholds
+## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds
 
 > [!NOTE] Analytical Methodology & Rationale
 > - **What is being done**: Performing non-parametric univariate association testing (Mann-Whitney U, Cohen's d), Youden threshold optimisation, and logistic regression interaction modelling.
@@ -26,7 +29,7 @@ Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patient
 - **Youden Decision Thresholds**: Youden's J statistic ($J = \text{Sensitivity} + \text{Specificity} - 1$) defines optimal clinical thresholds for categorising continuous signature scores into high/low risk groups.
 - **Genomic Synergy & Interaction**: Logistic regression confirms significant interaction terms between `TIS` and `BRAF` mutation status ($p < 0.05$), demonstrating that T-cell inflammation has a stronger predictive value in `BRAF` wild-type tumours.
 
-## Ranked Biomarker Feature Associations (Cohen's d Effect Size)
+### Ranked Biomarker Feature Associations (Cohen's d Effect Size)
 
 ![Ranked Biomarker Feature Associations](q5-patient-stratification/plots/feature_analysis/biomarker_volcano_plot.png)
 
@@ -35,7 +38,7 @@ Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patient
 > - **What the Dashed Lines Mean ($|d| < 0.20$)**: Features lying inside the two dashed lines have weak, negligible differences (>92% overlap between patient groups) and cannot reliably separate responders on their own.
 > - **What Lies Outside ($|d| \ge 0.20$)**: Features extending beyond the dashed lines show meaningful biological separation (e.g. green `B_cells` in Responders, red `Macrophage_STV_Score` in Non-Responders) and serve as strong inputs for clinical decision cutoffs.
 
-## Receiver Operating Characteristic (ROC) & Youden Decision Cutoffs
+### Receiver Operating Characteristic (ROC) & Youden Decision Cutoffs
 
 ![Youden ROC Curves](q5-patient-stratification/plots/feature_analysis/youden_roc_curves.png)
 
@@ -48,7 +51,7 @@ Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patient
 > - **Modest Standalone Accuracy (AUC $\approx 0.58$)**: Single biomarkers (`TIS`, `CYT`, `CD8_T_cells`) achieve modest predictive accuracy ($58\%$) because immunotherapy resistance is multi-factorial—a single gene or cell type misses stromal exclusion (CAFs) and M2 macrophage immunosuppression.
 > - **Core Motivation for Question 5**: This modest univariate performance proves why rigid single-biomarker tests fail in clinical practice and establishes the essential rationale for **Phase 3 (Unsupervised Multidimensional Clustering)** and **Phase 7 (Multi-Arm Decision Trees)**.
 
-### Youden Optimal Decision Threshold Metrics
+#### Youden Optimal Decision Threshold Metrics
 
 | Biomarker Feature      | Optimal Cutoff   | Youden J   | Sensitivity   | Specificity   | AUC-ROC   |
 |:-----------------------|:-----------------|:-----------|:--------------|:--------------|:----------|
@@ -60,7 +63,7 @@ Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patient
 | `M1_M2_Ratio`          | 1.076            | 0.034      | 6.1%          | 97.3%         | 0.442     |
 | `Macrophage_STV_Score` | -16.628          | 0.027      | 100.0%        | 2.7%          | 0.413     |
 
-## Genomic Synergy: TIS x BRAF Interaction Analysis
+### Genomic Synergy: TIS x BRAF Interaction Analysis
 
 ![Genomic Interaction TIS x BRAF](q5-patient-stratification/plots/feature_analysis/genomic_interaction_tis_braf.png)
 
@@ -69,7 +72,7 @@ Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patient
 > - **Clinical Class Trial Anchor**: `BRAF V600` is the primary oncogenic driver mutation in ~40-50% of cutaneous melanomas. In clinical oncology, `BRAF` mutation status dictates whether a patient receives Targeted Therapy (Dabrafenib/Trametinib) vs Immunotherapy (anti-PD-1).
 > - **Primary Benchmark**: Testing `TIS` $\times$ `BRAF` provides the primary benchmark for whether oncogenic MAPK activation dampens T-cell inflammation before expanding to all 21 driver $\times$ signature permutations below.
 
-## Multi-Permutation Genomic x Immune Interaction Matrix
+### Multi-Permutation Genomic x Immune Interaction Matrix
 
 ![Genomic Immune Interaction Matrix](q5-patient-stratification/plots/feature_analysis/genomic_immune_interaction_matrix.png)
 
@@ -83,7 +86,7 @@ Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patient
 > - **Validation of Initial Hypothesis**: The comprehensive interaction matrix confirms that `TIS` $\times$ `BRAF` ($\beta = -0.65, p = 0.040$) is indeed the single statistically significant driver-microenvironment interaction ($p < 0.05$), validating our initial analytical focus on this key biomarker pair.
 > - **Borderline Cells Highlight `BRAF` Again**: Every borderline significant interaction ($p < 0.10$) occurs exclusively within the `BRAF` column: `BRAF` $\times$ `B_cells` ($\beta = -0.59, p = 0.073$), `BRAF` $\times$ `CD8_T_cells` ($\beta = -0.57, p = 0.074$), `BRAF` $\times$ `IFN_gamma` ($\beta = -0.53, p = 0.087$). This repeatedly points to `BRAF` oncogenic signalling as the dominant genomic modifier of microenvironmental immunity.
 
-## Key Takeaways
+### Key Takeaways
 > [!INSIGHT] Key Takeaways: Phase 2 Feature Analysis & Stratification Rationale
 > - **Best Standalone Marker**: `B_cells` is the single best individual marker for distinguishing responders from non-responders (AUC = 0.632).
 > - **Modest Standalone Predictive Power**: While inflammatory signatures (`TIS`, `CYT`, `CD8_T_cells`) and B-cell abundance (`B_cells`) show statistically significant elevation in responders, their standalone predictive accuracy is modest (AUC $\approx 0.58–0.63$). No single biomarker acts as a sole determinant of response.

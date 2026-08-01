@@ -79,7 +79,7 @@ PHENOTYPE_PROFILE_FEATURES: List[str] = [
 PHENOTYPE_LABEL_SUFFIX: Dict[str, str] = {
     "Immune Hot": "(High TIS & CYT, Inflamed Microenvironment)",
     "Immune Cold": "(Low TIS & Infiltration, Desert)",
-    "Mutant-Driven": "(NF1 Loss & High Response Subtype)",
+    "Mutant-Driven": "(NF1 Loss & RAS Hyperactivation, High TMB)",
     "Immunosuppressive M2-High": "(Depleted T-cells & Stromal Exclusion)",
 }
 

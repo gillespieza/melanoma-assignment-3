@@ -138,9 +138,12 @@ def build_section_callout(what: str, why: str, question: str) -> str:
     )
 
 
+
+
 def main() -> None:
     """Main execution function for generating the Q5 Graduate Student Markdown Report."""
     print(f"Starting Q5 Markdown Report Generation (Project root: {rel_path(PROJECT_ROOT)})")
+
 
     # Load data matrices dynamically
     df_feat = pd.read_csv(FEATURE_MATRIX_FILE) if FEATURE_MATRIX_FILE.exists() else pd.DataFrame()
@@ -515,30 +518,63 @@ def main() -> None:
     doc_sections.append(f"## 3. Phase 3: Unsupervised Phenotype Stratification (N = {n_patients_full})\n")
     doc_sections.append(
         build_section_callout(
-            what="Applying Gaussian Mixture Models (GMM, $K=4$) with full covariance matrices to feature matrices, calculating soft posterior probabilities, and generating 2D Principal Component projections.",
-            why="Unsupervised clustering discovers natural biological patient subgroups without outcome bias. Soft probabilistic GMM clustering accommodates non-spherical correlated feature distributions and quantifies patient membership uncertainty.",
-            question="What distinct patient clusters emerge from multi-dimensional biological profiling, and how are patients soft-partitioned across biological phenotypes?",
+            what="Applying Gaussian Mixture Models (GMM, $K=4$) with full covariance matrices to the 9-feature multi-modal immune and genomic feature space, calculating soft posterior probabilities, and generating 2D Principal Component and t-SNE manifold projections.",
+            why="Unsupervised clustering discovers natural tumour microenvironment archetypes without outcome bias. Grounding phenotype discovery in the full cohort ($N = 699$, including TCGA-SKCM biological reference) ensures that the resulting phenotypes reflect the complete biological landscape rather than a trial-selected population.",
+            question="What distinct tumour microenvironment phenotypes emerge from multi-dimensional immune and genomic profiling across $N = 699$ patients, and which therapeutic modality — `BRAF`/MEK targeted inhibition, immune checkpoint blockade, or combination strategies — does each phenotype indicate?",
         )
     )
 
-    # Live computation of cluster summary table and takeaways
+    # Live computation of cluster summary table — biology and treatment routing focused
     if not df_clusters.empty and "Cluster_ID" in df_clusters.columns:
         cluster_summary = []
         for cid in sorted(df_clusters["Cluster_ID"].unique()):
             sub = df_clusters[df_clusters["Cluster_ID"] == cid]
             cnt = len(sub)
             pct = (cnt / len(df_clusters)) * 100
-            rr = sub["RESPONSE_BINARY"].mean() * 100 if "RESPONSE_BINARY" in sub.columns else 0.0
             label = sub["Phenotype_Label"].iloc[0] if "Phenotype_Label" in sub.columns else f"Cluster {cid}"
+
+            braf_pct = sub["mut_BRAF"].mean() * 100 if "mut_BRAF" in sub.columns else 0.0
+            nras_pct = sub["mut_NRAS"].mean() * 100 if "mut_NRAS" in sub.columns else 0.0
+            nf1_pct = sub["mut_NF1"].mean() * 100 if "mut_NF1" in sub.columns else 0.0
+
+            # Biology-first treatment routing rationale per phenotype
+            if cid == 0:
+                routing = (
+                    f"Desert/excluded TME: absent T-cell infiltration, low CYT, low TIS. "
+                    f"High `BRAF` ({braf_pct:.1f}%) + `NRAS` ({nras_pct:.1f}%) co-mutation drives constitutive MAPK activation. "
+                    "Primary routing: **`BRAF`/MEK targeted inhibition**; ICI monotherapy unlikely to engage without prior immune priming."
+                )
+            elif cid == 1:
+                routing = (
+                    f"M2-polarised macrophages and CAF-mediated stromal exclusion block effector T-cell entry. "
+                    f"`NRAS`-mutated ({nras_pct:.1f}%); no `BRAF` driver. "
+                    "Primary routing: **dual M2-depleting agent + checkpoint combination** to remodel the immunosuppressive stroma."
+                )
+            elif cid == 2:
+                routing = (
+                    f"Inflamed TME with high TIS and CYT, but 100% `BRAF`-mutated. "
+                    "MAPK oncogenic signalling counteracts T-cell activation (`TIS` $\\times$ `BRAF` $\\beta = -0.65$). "
+                    "Primary routing: **sequential `BRAF`/MEK inhibition → checkpoint therapy** to exploit both MAPK debulking and immune reactivation."
+                )
+            elif cid == 3:
+                routing = (
+                    f"`NF1` loss-of-function ({nf1_pct:.1f}%) drives RAS hyperactivation with elevated TMB and neoantigen burden. "
+                    "Primary routing: **immune checkpoint blockade** leveraging high immunogenicity; MEK inhibition as adjunct for RAS pathway suppression."
+                )
+            else:
+                routing = "Biological routing rationale not yet defined for this cluster."
 
             cluster_summary.append({
                 "Cluster ID": f"Cluster {cid}",
-                "Biological Phenotype Subtype": f"{label}",
-                "Patient Count (N)": cnt,
+                "Biological Phenotype Subtype": label,
+                "N (Total)": cnt,
                 "Cohort Share": f"{pct:.1f}%",
-                "Response Rate": f"**{rr:.1f}%**",
+                "`BRAF` Mut": f"{braf_pct:.1f}%",
+                "`NRAS` Mut": f"{nras_pct:.1f}%",
+                "`NF1` Mut": f"{nf1_pct:.1f}%",
+                "Therapeutic Routing Rationale": routing,
             })
-        
+
         doc_sections.append("### Unsupervised Phenotype Cluster Summary\n")
         doc_sections.append(format_markdown_table(pd.DataFrame(cluster_summary)) + "\n")
 
@@ -549,9 +585,9 @@ def main() -> None:
         doc_sections.append(
             "> [!INFO] Figure Interpretation: 2D Principal Component Cluster Projection\n"
             f"> - **What this plot shows**: 2D Principal Component Projection of $N = {n_patients_full}$ patients colour-coded by their multi-modal GMM phenotype cluster ($K=4$). Shaded confidence ellipses mark cluster boundaries.\n"
-            "> - **Axis 1 (Horizontal)**: Principal Component 1 captures immune activation and lymphocytic T-cell density (separating Inflamed Hot vs Desert Cold tumours).\n"
-            "> - **Axis 2 (Vertical)**: Principal Component 2 captures macrophage polarisation (M1/M2 ratio) and stromal CAF exclusion.\n"
-            "> - **Clinical Value**: Discovers discrete patient subgroups with distinct treatment response profiles without relying on biased outcome labels.\n"
+            "> - **Axis 1 (Horizontal)**: Principal Component 1 captures immune activation and lymphocytic T-cell density, separating Immune Hot (inflamed) from Immune Cold (desert/excluded) tumour microenvironments.\n"
+            "> - **Axis 2 (Vertical)**: Principal Component 2 captures myeloid polarisation and stromal architecture — separating M2-macrophage/CAF-excluded phenotypes from `NF1`-driven mutant phenotypes.\n"
+            "> - **Biological Value**: Confirms that the four GMM phenotypes occupy distinct regions of the biological feature space, validating that the clustering captures genuine TME archetypes rather than algorithmic artefacts.\n"
         )
 
     if PHASE3_UMAP_PLOT_PATH.exists():
@@ -567,28 +603,24 @@ def main() -> None:
             "Natural within-cluster scatter reflects genuine continuous variation within each immune phenotype.\n"
         )
 
-    # Dynamic plain-language takeaways
+    # Biology-centric takeaways — treatment routing, not ICI response
     if not df_clusters.empty and "Cluster_ID" in df_clusters.columns:
-        # Find highest response cluster and lowest response cluster live
-        cluster_rrs = df_clusters.groupby("Cluster_ID")["RESPONSE_BINARY"].mean() * 100
-        best_cid = cluster_rrs.idxmax()
-        worst_cid = cluster_rrs.idxmin()
-        best_name = df_clusters[df_clusters["Cluster_ID"] == best_cid]["Phenotype_Label"].iloc[0].strip()
-        worst_name = df_clusters[df_clusters["Cluster_ID"] == worst_cid]["Phenotype_Label"].iloc[0].strip()
-        best_rr_val = cluster_rrs[best_cid]
-        worst_rr_val = cluster_rrs[worst_cid]
+        n_clusters = df_clusters["Cluster_ID"].nunique()
 
         doc_sections.append(
-            "### Key Takeaways & Student Summary\n"
-            f"- **Distinct Patient Groups**: GMM soft clustering partitioned $N = {n_patients_full}$ patients (full cohort) into four biological subgroups; within the ICI-treated sub-cohort ($N = {n_patients}$), response rates range from **{worst_rr_val:.1f}% to {best_rr_val:.1f}%**.\n"
-            f"- **Highest Response Group**: The **{best_name}** subgroup achieves the highest response rate ({best_rr_val:.1f}%), benefiting from favorable immune activation and high driver mutation burden.\n"
-            f"- **Treatment-Resistant Subgroup**: The **{worst_name}** subgroup exhibits the lowest response rate ({worst_rr_val:.1f}%), highlighting the need for targeted combination therapies beyond single-agent PD-1 blockade.\n\n"
-            "> [!NOTE] Student-Friendly Phase 3 Summary\n"
-            "> Phase 3 performed unsupervised multi-dimensional GMM soft clustering to discover natural biological patient subgroups without relying on outcome labels:\n"
-            "> 1. **Four Distinct Phenotypes**: Gaussian Mixture Models ($K=4$) partitioned patients into *Immune Hot (High TIS & CYT, Inflamed Microenvironment)*, *Immune Cold (Low TIS & Infiltration, Desert)*, *Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion)*, and *Mutant-Driven (NF1 Loss & High Response Subtype)* phenotypes across 9 biomarker axes.\n"
-            "> 2. **Soft Probabilistic Assignments**: Full covariance matrices ($\mathbf{\Sigma}_k$) accommodate non-spherical feature correlation and calculate continuous posterior membership probabilities $\\vec{P}_i$.\n"
-            "> 3. **Dimensionality Projections**: 2D PCA and non-linear t-SNE projections confirm clear spatial separation, with PC1 capturing T-cell inflammation and PC2 capturing myeloid/stromal exclusion.\n"
-            "> 4. **Clinical Takeaway**: Identifying a patient's biological phenotype and probability profile provides the foundation for targeted routing rather than applying a single uniform treatment protocol.\n\n"
+            "### Key Takeaways & Biological Insights\n"
+            f"> [!INSIGHT] Key Insights: Phase 3 Unsupervised Phenotype Stratification\n"
+            f"> - **Four Distinct TME Archetypes**: GMM soft clustering partitioned $N = {n_patients_full}$ patients into {n_clusters} tumour microenvironment phenotypes defined by T-cell infiltration, macrophage polarisation, stromal architecture, and oncogenic driver mutation signature — not by treatment outcome.\n"
+            "> - **Immune Activation Axis (PC1)**: Principal Component 1 separates *Immune Hot* (high TIS & CYT, inflamed) from *Immune Cold* (desert/excluded, absent T-cell infiltration) phenotypes — the primary axis of immunological responsiveness.\n"
+            "> - **Myeloid/Stromal Axis (PC2)**: Principal Component 2 separates *M2-High* (macrophage-polarised, CAF-excluded stroma) from *Mutant-Driven* (`NF1` loss, high TMB neoantigen load) phenotypes — the oncogenic and stromal axis.\n"
+            "> - **`BRAF`–Immunity Paradox**: The *Immune Hot* cluster is 100% `BRAF`-mutated — the most inflammatory TME is paradoxically driven by constitutive MAPK signalling. This creates a dual oncogenic–immune target amenable to sequential `BRAF`/MEK inhibition followed by checkpoint re-engagement.\n"
+            f"> - **Treatment Routing Foundation**: These {n_clusters} phenotypes define the biological basis for precision therapeutic routing — `BRAF`/MEK targeted therapy, immune checkpoint blockade, or combination strategies — evaluated quantitatively in Phase 5.\n\n"
+            "> [!NOTE] Phase 3 Methodological Summary\n"
+            "> Phase 3 performed unsupervised multi-dimensional GMM soft clustering across the full $N = 699$ cohort to discover biological patient subgroups without outcome bias:\n"
+            "> 1. **Four Distinct Phenotypes**: Gaussian Mixture Models ($K=4$, full covariance) partitioned patients into *Immune Hot (High TIS & CYT, Inflamed Microenvironment)*, *Immune Cold (Low TIS & Infiltration, Desert)*, *Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion)*, and *Mutant-Driven (`NF1` Loss & High TMB)* phenotypes across 9 biomarker axes.\n"
+            "> 2. **Soft Probabilistic Assignments**: Full covariance matrices ($\mathbf{\Sigma}_k$) accommodate non-spherical feature correlation and compute continuous posterior membership probabilities $\\vec{P}_i$ — quantifying biological uncertainty at patient level.\n"
+            "> 3. **Full-Cohort Grounding**: Clustering on $N = 699$ (including TCGA-SKCM biological reference) anchors phenotype definitions to the complete melanoma TME landscape rather than a trial-selected subset.\n"
+            "> 4. **Dimensionality Projections**: 2D PCA and non-linear t-SNE projections confirm clear spatial separation, validating that the four GMM phenotypes capture genuine TME archetypes.\n\n"
             "> [!formula]+ Phase 3 Script Execution & Software Module Architecture\n"
             "> - **Primary Pipeline Execution Scripts**:\n"
             ">   - [`03_cluster_patients.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/03_cluster_patients.py): Executes Gaussian Mixture Model (GMM) soft clustering ($K=4$, full covariance) across the 9 multi-modal feature space, computes posterior probabilities, exports `gmm_posterior_probabilities.csv` and `patient_clusters.csv`, serialises the fitted model (`gmm_model.pkl`), and generates PCA/t-SNE 2D projections (`pca_clusters.png`, `tsne_clusters.png`).\n"
@@ -604,15 +636,18 @@ def main() -> None:
         )
     else:
         doc_sections.append(
-            "### Key Takeaways & Student Summary\n"
-            "- **Distinct Patient Groups**: Unsupervised clustering separates patients into four distinct biological subgroups.\n"
-            "- **Subgroup Sensitivity**: Response rates vary significantly across immune hot, immune cold, and driver-mutated phenotypes.\n\n"
-            "> [!NOTE] Student-Friendly Phase 3 Summary\n"
-            "> Phase 3 performed unsupervised multi-dimensional GMM soft clustering to discover natural biological patient subgroups without relying on outcome labels:\n"
-            "> 1. **Four Distinct Phenotypes**: Gaussian Mixture Models ($K=4$) partitioned patients into *Immune Hot (High TIS & CYT, Inflamed Microenvironment)*, *Immune Cold (Low TIS & Infiltration, Desert)*, *Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion)*, and *Mutant-Driven (NF1 Loss & High Response Subtype)* phenotypes across 9 biomarker axes.\n"
-            "> 2. **Soft Probabilistic Assignments**: Full covariance matrices ($\mathbf{\Sigma}_k$) accommodate non-spherical feature correlation and calculate continuous posterior membership probabilities $\\vec{P}_i$.\n"
-            "> 3. **Dimensionality Projections**: 2D PCA and non-linear t-SNE projections confirm clear spatial separation, with PC1 capturing T-cell inflammation and PC2 capturing myeloid/stromal exclusion.\n"
-            "> 4. **Clinical Takeaway**: Identifying a patient's biological phenotype and probability profile provides the foundation for targeted routing rather than applying a single uniform treatment protocol.\n\n"
+            "### Key Takeaways & Biological Insights\n"
+            "> [!INSIGHT] Key Insights: Phase 3 Unsupervised Phenotype Stratification\n"
+            "> - **Four Distinct TME Archetypes**: GMM soft clustering partitioned patients into four tumour microenvironment phenotypes defined by immune infiltration, macrophage polarisation, stromal architecture, and driver mutation signature.\n"
+            "> - **Immune Activation Axis (PC1)**: Separates *Immune Hot* (inflamed) from *Immune Cold* (desert/excluded) phenotypes.\n"
+            "> - **Myeloid/Stromal Axis (PC2)**: Separates *M2-High* (macrophage-excluded) from *Mutant-Driven* (`NF1` loss, high TMB) phenotypes.\n"
+            "> - **Treatment Routing Foundation**: Each phenotype maps to a distinct therapeutic modality — `BRAF`/MEK targeted inhibition, checkpoint immunotherapy, or combination strategies.\n\n"
+            "> [!NOTE] Phase 3 Methodological Summary\n"
+            "> Phase 3 performed unsupervised multi-dimensional GMM soft clustering across the full $N = 699$ cohort to discover biological patient subgroups without outcome bias:\n"
+            "> 1. **Four Distinct Phenotypes**: Gaussian Mixture Models ($K=4$, full covariance) partitioned patients into *Immune Hot*, *Immune Cold*, *M2-High*, and *Mutant-Driven* phenotypes across 9 biomarker axes.\n"
+            "> 2. **Soft Probabilistic Assignments**: Full covariance matrices ($\mathbf{\Sigma}_k$) accommodate non-spherical feature correlation and compute continuous posterior membership probabilities $\\vec{P}_i$.\n"
+            "> 3. **Full-Cohort Grounding**: Clustering on $N = 699$ anchors phenotypes in the complete melanoma TME biological landscape.\n"
+            "> 4. **Dimensionality Projections**: 2D PCA and t-SNE projections confirm clear spatial separation, validating genuine TME archetypes.\n\n"
             "> [!formula]+ Phase 3 Script Execution & Software Module Architecture\n"
             "> - **Primary Pipeline Execution Scripts**:\n"
             ">   - [`03_cluster_patients.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/03_cluster_patients.py): Executes Gaussian Mixture Model (GMM) soft clustering ($K=4$, full covariance) across the 9 multi-modal feature space, computes posterior probabilities, exports `gmm_posterior_probabilities.csv` and `patient_clusters.csv`, serialises the fitted model (`gmm_model.pkl`), and generates PCA/t-SNE 2D projections (`pca_clusters.png`, `tsne_clusters.png`).\n"
@@ -714,12 +749,12 @@ def main() -> None:
         )
 
     doc_sections.append(
-        "### Key Takeaways & Student Summary\n"
+        "### Key Takeaways & Dynamic Insights\n"
         "- **Dynamic Response Prediction**: 180-day ODE simulations capture temporal tumour regression curves that match clinical response outcomes.\n"
         "- **Biological Rationale for Combination Therapy**: Proves mathematically why *M2 Immunosuppressive* patients fail single-agent anti-PD-1 and require dual-agent macrophage/CAF targeting.\n"
         "- **Clinical Prognostic Power**: ODE checkpoint tumour burden produces a highly significant 82-month survival separation ($p = 0.0024$).\n"
         "- **Mechanistic Efficiency**: 3-feature ODE model beats 12-feature Logistic Regression and Neural Networks while remaining completely transparent and biologically grounded.\n\n"
-        "> [!NOTE] Student-Friendly Phase 4 Summary\n"
+        "> [!NOTE] Phase 4 Methodological Summary\n"
         "> Phase 4 integrated the Question 3 differential-equation (ODE) dynamic model to simulate patient tumour trajectories over time:\n"
         "> 1. **Dynamic Trajectory Simulation**: 180-day ODE simulations parameterised by kinetic rate constants successfully reproduced observed clinical response profiles (complete clearance in *Immune Hot* vs uncontrolled growth in *M2 Immunosuppressive*).\n"
         "> 2. **Mechanistic Rationale for Combination Therapy**: Simulations proved mathematically that *M2 Immunosuppressive* patients fail anti-PD-1 monotherapy due to macrophage-mediated T-cell suppression, but achieve complete tumour clearance when combined with M2-depleting agents.\n"
@@ -882,11 +917,11 @@ def main() -> None:
         doc_sections.append("".join(imp_callout_lines))
 
     doc_sections.append(
-        "### Key Takeaways & Student Summary\n"
+        "### Key Takeaways & Model Insights\n"
         "- **Tailored Feature Weights**: Subgroup models capture non-linear interactions unique to specific tumour microenvironments.\n"
         "- **LOCO Robustness**: Leave-One-Cohort-Out cross-validation confirms that subgroup model performance generalizes across independent clinical cohorts.\n"
         "- **Enhanced Precision in Hard-to-Treat Subgroups**: In *M2 Immunosuppressive* and *Mutant-Driven* phenotypes, cluster-tailored feature weights significantly improve identification of true responders.\n\n"
-        "> [!NOTE] Student-Friendly Phase 5 Summary\n"
+        "> [!NOTE] Phase 5 Methodological Summary\n"
         "> Phase 5 evaluated whether training separate, cluster-tailored machine learning models outperforms a single global predictor:\n"
         "> 1. **Subgroup-Specific Recalibration**: Fitting custom Random Forest models within each cluster allows features to exert phenotype-tailored weights (e.g. `Macrophage_STV_Score` in *Mutant-Driven* vs `B_cells` in *M2 Immunosuppressive*).\n"
         "> 2. **Subgroup Performance Gains**: Subgroup-specific modelling improved ROC-AUC in the *Mutant-Driven* phenotype ($\\Delta = +0.022$) and boosted recall by +25 percentage points in the hard-to-treat *M2 Immunosuppressive* cluster.\n"
@@ -1236,10 +1271,12 @@ def main() -> None:
         phase_path = PER_PHASE_DIR / f"phase_{phase_num}.md"
         
         # Prepend phase-specific Obsidian YAML frontmatter
+        # Include table-center and row-alt per AGENTS.md Rule 15 (required cssclasses for reports)
         pf_frontmatter = generate_obsidian_frontmatter(
             title=phase_titles.get(phase_num, f"Q5 Patient Stratification - Phase {phase_num}"),
             aliases=[f"Q5 Phase {phase_num}"],
             tags=["melanoma", "patient-stratification", f"phase-{phase_num}", "q5"],
+            extra_css_classes=["table-center", "row-alt"],
         )
         with open(phase_path, "w", encoding="utf-8") as pf:
             pf.write(pf_frontmatter + "\n\n" + phase_content)
