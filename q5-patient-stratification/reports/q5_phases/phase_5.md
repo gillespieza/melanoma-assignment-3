@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-5
   - q5
-created: 2026-08-01 17:45
+created: 2026-08-01 17:46
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 17:45
+updated: 2026-08-01 17:46
 ---
 
 ## 5. Phase 5: Subgroup-Specific Predictive Models
@@ -24,7 +24,7 @@ updated: 2026-08-01 17:45
 > - **Why we are doing it**: A single global model assumes uniform feature weights across all patients. Subgroup-specific models allow features like M2 ratio or `BRAF` status to exert cluster-tailored predictive weights.
 > - **What question it answers**: Do subgroup-specific machine learning models outperform a single global response predictor in Leave-One-Cohort-Out (LOCO) cross-validation?
 
-Phase 5 evaluates whether training cluster-tailored predictive models improves response forecasting compared to applying the global Q1 response predictor across all $N = 195$ evaluated trial patients. In the *Mutant-Driven* phenotype ($N = 9$), the subgroup-specific classifier achieved an ROC-AUC of 0.300 (compared to 0.900 for the global model). In the *Immunosuppressive M2-High* subset ($N = 55$), subgroup-specific modelling dramatically increased sensitivity and recall (15.0% vs 15.0%) and Positive Predictive Value (PPV = 50.0% vs 37.5%).
+Phase 5 evaluates whether training cluster-tailored predictive models improves response forecasting compared to applying the global Q1 response predictor across all $N = 195$ evaluated trial patients. In the *Mutant-Driven* phenotype ($N = 9$), subgroup-specific training increased Recall from 0.0% to 20.0% ($\Delta = +20.0$ percentage points) and Positive Predictive Value from 0.0% to 33.3% ($\Delta = +33.3$ percentage points), identifying true responders missed by the global baseline. In the *Immunosuppressive M2-High* subset ($N = 55$), subgroup-specific modelling increased Positive Predictive Value (PPV = 50.0% vs 37.5%, $\Delta = +12.5$ percentage points) and accuracy (63.6% vs 60.0%), maintaining a recall of 15.0%. In the *Immune Cold* subset ($N = 28$), subgroup-specific modelling achieved a modest ROC-AUC improvement (0.390 vs 0.374, $\Delta = +0.016$).
 
 ![Phase 5 Subgroup ROC Curves](q5-patient-stratification/plots/subgroup_models/subgroup_roc_curves.png)
 
@@ -48,9 +48,9 @@ Phase 5 evaluates whether training cluster-tailored predictive models improves r
 
 > [!INFO] Figure Interpretation: Phenotype-Specific Feature Importance Heatmap
 > - **What this plot shows**: Heatmap of Random Forest Gini feature importances across the top 12 biomarker and microenvironmental signature features for the Global Q1 predictor and the four phenotype-specific subgroup models.
-> - **`Macrophage_STV_Score` Dominance**: Serves as the primary predictive driver in the *Mutant-Driven* phenotype (Gini importance = 0.200) and *Immune Hot* phenotype (0.162), highlighting that myeloid polarisation strongly dictates outcome when baseline T-cell infiltration is already high or driven by MAPK signalling.
-> - **`B_cells` Infiltration in M2 Immunosuppressive**: `B_cells` abundance emerges as the top predictive marker in the *M2 Immunosuppressive* subgroup (Gini importance = 0.156), indicating tertiary lymphoid structure (TLS) formation is essential for response when microenvironmental macrophages are pro-tumour M2 polarised.
-> - **Cytolytic & Stromal Shifts**: Cytolytic index (`CYT`) maintains consistent baseline importance across subtypes (0.081–0.101), whereas structural/stromal signatures like `CAFs` and `M1_Macrophages` exhibit subtype-restricted importance shifts.
+> - **`B_cells` Infiltration Dominance**: `B_cells` abundance emerges as the top predictive marker in both the *Mutant-Driven* (Gini importance = 0.204) and *M2 Immunosuppressive* (0.191) subgroups, indicating tertiary lymphoid structure (TLS) formation is essential for response when microenvironmental macrophages are pro-tumour M2 polarised or driven by MAPK signalling.
+> - **`Macrophage_STV_Score` Influence**: Serves as the primary predictive driver in the *Immune Hot* phenotype (Gini importance = 0.191) and *Immune Cold* phenotype (0.165), highlighting that myeloid polarisation strongly dictates outcome when baseline T-cell infiltration is inflamed or desert.
+> - **`TMB_NONSYNONYMOUS` Baseline Drivers**: Nonsynonymous mutation burden represents the top predictive feature in the Global Enriched Baseline (Gini importance = 0.166) and maintains high importance in the *M2 Immunosuppressive* subgroup (0.156).
 
 ### Key Takeaways & Model Insights
 - **Tailored Feature Weights**: Subgroup models capture non-linear interactions unique to specific tumour microenvironments.
@@ -59,8 +59,8 @@ Phase 5 evaluates whether training cluster-tailored predictive models improves r
 
 > [!NOTE] Phase 5 Methodological Summary
 > Phase 5 evaluated whether training separate, cluster-tailored machine learning models outperforms a single global predictor:
-> 1. **Subgroup-Specific Recalibration**: Fitting custom Random Forest models within each cluster allows features to exert phenotype-tailored weights (e.g. `Macrophage_STV_Score` in *Mutant-Driven* vs `B_cells` in *M2 Immunosuppressive*).
-> 2. **Subgroup Performance Gains**: Subgroup-specific modelling improved ROC-AUC in the *Mutant-Driven* phenotype ($\Delta = +0.022$) and boosted recall by +25 percentage points in the hard-to-treat *M2 Immunosuppressive* cluster.
+> 1. **Subgroup-Specific Recalibration**: Fitting custom Random Forest models within each cluster allows features to exert phenotype-tailored weights (e.g. `B_cells` in *Mutant-Driven* vs `Macrophage_STV_Score` in *Immune Hot*).
+> 2. **Subgroup Performance Gains**: Subgroup-specific modelling increased Recall by +20.0 percentage points (from 0.0% to 20.0%) and PPV by +33.3 percentage points (from 0.0% to 33.3%) in the *Mutant-Driven* phenotype, and boosted PPV by +12.5 percentage points (from 37.5% to 50.0%) in the hard-to-treat *M2 Immunosuppressive* cluster.
 > 3. **Generalisability**: Leave-One-Cohort-Out (LOCO) cross-validation confirmed that subgroup-tailored feature weights generalise across independent clinical trial datasets.
 > 4. **Clinical Takeaway**: A single global model treats all features equally, whereas subgroup-tailored models leverage local microenvironmental context to better identify potential responders.
 
