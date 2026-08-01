@@ -34,7 +34,7 @@ from sklearn.metrics import (
     roc_auc_score,
     roc_curve,
 )
-from sklearn.model_selection import LeaveOneGroupOut, StratifiedKFold
+from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.preprocessing import StandardScaler
 
 # ---------------------------------------------------------------------------
@@ -57,18 +57,16 @@ if str(SUBPROJECT_ROOT / "src") not in sys.path:
 # ---------------------------------------------------------------------------
 
 from src.styles import (
+    DARK_SLATE_CHARCOAL,
     PHENOTYPE_PALETTE,
     RESPONSE_PALETTE,
     STRATEGY_PALETTE,
     set_presentation_style,
 )
+from src.utils.io import safe_save_csv
 from src.utils.logging import TeeStream
 from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
-
-if str(SUBPROJECT_ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(SUBPROJECT_ROOT / "src"))
-
 from q5_constants import CLUSTERING_FEATURES, PHENOTYPE_PROB_COL
 
 # ---------------------------------------------------------------------------
@@ -307,66 +305,10 @@ class _CalibratedModel:
         return np.column_stack([1.0 - cal_prob, cal_prob])
 
 
-def _fit_calibrated_rf(
-    X_tr: np.ndarray,
-    y_tr: np.ndarray,
-    max_depth: int,
-    sample_weight: Optional[np.ndarray] = None,
-) -> "_CalibratedModel":
-    """Fit a base Random Forest and then calibrate its probabilities.
-
-    Uses a two-stage **manual prefit** calibration strategy:
-
-    1. Fit the base ``RandomForestClassifier`` on the full ``(X_tr, y_tr)``
-       training set with the provided ``sample_weight``.  All samples contribute
-       (zero-weighted samples are harmlessly ignored by the RF loss).
-    2. Identify the *effective* subset (``sample_weight > MIN_PROB_WEIGHT`` or all
-       samples when no weights are provided) and hold out
-       ``CALIBRATION_HOLDOUT_FRAC`` of them as a calibration set.
-    3. Score the base RF on the calibration set and fit an ``IsotonicRegression``
-       or ``LogisticRegression`` calibrator to map raw RF probabilities to
-       well-calibrated values.
-
-    This approach is version-safe and avoids the ``ValueError`` that arises from
-    ``CalibratedClassifierCV`` internal CV splits landing on too-few samples.
-
-    Calibration method selection:
-    - **Isotonic regression**: non-parametric, better correction, requires
-      ``n_cal >= CALIBRATION_MIN_SAMPLES`` to avoid overfitting.
-    - **Platt scaling** (logistic regression on raw probabilities): parametric
-      two-parameter fit, stable with small calibration sets.
-
-    Args:
-        X_tr: Preprocessed training feature matrix (already imputed and scaled).
-        y_tr: Binary training labels.
-        max_depth: Maximum tree depth for the base RandomForestClassifier.
-        sample_weight: Optional per-sample GMM posterior weights.  Zero-weight
-            samples are excluded from the calibration split but included in the
-            RF training step.
-
-    Returns:
-        A fitted ``_CalibratedModel`` instance.
-    """
-    # Stage 1: fit the base RF on the full training set
-    base_clf = RandomForestClassifier(
-        n_estimators=RF_N_ESTIMATORS,
-        random_state=RANDOM_STATE,
-        max_depth=max_depth,
-        class_weight="balanced_subsample",
-    )
-    base_clf.fit(X_tr, y_tr, sample_weight=sample_weight)
-
-    # Stage 2: select effective samples for calibration
-    if sample_weight is not None:
-        effective_mask = sample_weight > MIN_PROB_WEIGHT
-    else:
-        effective_mask = np.ones(len(y_tr), dtype=bool)
-
-    X_eff = X_tr[effective_mask]
-    y_eff = y_tr[effective_mask]
-
-    # Hold out CALIBRATION_HOLDOUT_FRAC of the effective samples as a calibration
-    # set.  A stratified split ensures both classes are represented in y_cal.
+def _select_calibration_split(
+    X_eff: np.ndarray, y_eff: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Select stratified calibration holdout subset from effective training samples."""
     n_eff = len(y_eff)
     n_cal = max(2, int(np.ceil(n_eff * CALIBRATION_HOLDOUT_FRAC)))
 
@@ -384,20 +326,39 @@ def _fit_calibrated_rf(
         rng.choice(pos_idx, n_cal_pos, replace=False),
         rng.choice(neg_idx, n_cal_neg, replace=False),
     ])
-    X_cal = X_eff[cal_idx]
-    y_cal = y_eff[cal_idx]
+    return X_eff[cal_idx], y_eff[cal_idx]
 
-    # Stage 3: score base RF on calibration set and fit calibrator
+
+def _fit_calibrated_rf(
+    X_tr: np.ndarray,
+    y_tr: np.ndarray,
+    max_depth: int,
+    sample_weight: Optional[np.ndarray] = None,
+) -> "_CalibratedModel":
+    """Fit a base Random Forest and then calibrate its probabilities."""
+    base_clf = RandomForestClassifier(
+        n_estimators=RF_N_ESTIMATORS,
+        random_state=RANDOM_STATE,
+        max_depth=max_depth,
+        class_weight="balanced_subsample",
+    )
+    base_clf.fit(X_tr, y_tr, sample_weight=sample_weight)
+
+    if sample_weight is not None:
+        effective_mask = sample_weight > MIN_PROB_WEIGHT
+    else:
+        effective_mask = np.ones(len(y_tr), dtype=bool)
+
+    X_eff = X_tr[effective_mask]
+    y_eff = y_tr[effective_mask]
+
+    X_cal, y_cal = _select_calibration_split(X_eff, y_eff)
     raw_cal_prob = base_clf.predict_proba(X_cal)[:, 1]
 
     if len(y_cal) >= CALIBRATION_MIN_SAMPLES and len(np.unique(y_cal)) == 2:
-        # Isotonic regression: non-parametric, better correction for larger sets
         calibrator: object = IsotonicRegression(out_of_bounds="clip")
         calibrator.fit(raw_cal_prob, y_cal)
     else:
-        # Platt scaling: parametric logistic fit, stable for small calibration sets.
-        # Wrapped in _LRPredictor so the interface (predict(1d_array) -> 1d_array)
-        # is uniform with IsotonicRegression and the model remains picklable.
         lr = LogisticRegression(C=1.0, solver="lbfgs", max_iter=1000)
         lr.fit(raw_cal_prob.reshape(-1, 1), y_cal)
         calibrator = _LRPredictor(lr)
@@ -623,52 +584,13 @@ def _build_cluster_name_map(df: pd.DataFrame) -> Dict[int, str]:
     return mapping
 
 
-def _compile_evaluation_metrics(
+def _evaluate_cluster_subgroups(
     df_valid: pd.DataFrame,
     cluster_id_to_name: Dict[int, str],
-) -> Tuple[pd.DataFrame, Dict[str, Dict[str, np.ndarray]]]:
-    """Compile per-phenotype performance metrics and ROC curve data.
-
-    Args:
-        df_valid: Dataset with true labels, predicted probabilities, and cluster IDs.
-        cluster_id_to_name: Mapping from integer Cluster_ID to phenotype display name,
-            derived at runtime from the GMM posterior columns rather than hardcoded.
-
-    Returns:
-        Tuple of (evaluation metrics DataFrame, ROC curve points dictionary).
-    """
+) -> Tuple[List[Dict[str, float]], Dict[str, Dict[str, np.ndarray]]]:
+    """Evaluate predictions per phenotype cluster subgroup."""
     results_list = []
     roc_data: Dict[str, Dict[str, np.ndarray]] = {}
-
-    g_all = evaluate_predictions(df_valid["RESPONSE_BINARY"].values, df_valid["Global_OOF_Prob"].values)
-    s_all = evaluate_predictions(df_valid["RESPONSE_BINARY"].values, df_valid["Subgroup_OOF_Prob"].values)
-
-    n_total = len(df_valid)
-    n_resp_total = int(df_valid["RESPONSE_BINARY"].sum())
-    resp_rate_total = df_valid["RESPONSE_BINARY"].mean() * 100.0
-
-    results_list.append(
-        {
-            "Cluster_ID": -1,
-            "Phenotype": "Overall Cohort",
-            "Model_Scope": "Global Enriched Baseline",
-            "N": n_total,
-            "Responders": n_resp_total,
-            "Response_Rate": resp_rate_total,
-            **g_all,
-        }
-    )
-    results_list.append(
-        {
-            "Cluster_ID": -1,
-            "Phenotype": "Overall Cohort",
-            "Model_Scope": "Subgroup Ensemble",
-            "N": n_total,
-            "Responders": n_resp_total,
-            "Response_Rate": resp_rate_total,
-            **s_all,
-        }
-    )
 
     for cid in sorted(df_valid["Cluster_ID"].unique()):
         p_name = cluster_id_to_name.get(cid, f"Cluster {cid}")
@@ -714,6 +636,45 @@ def _compile_evaluation_metrics(
             "fpr_subgroup": fpr_s,
             "tpr_subgroup": tpr_s,
         }
+
+    return results_list, roc_data
+
+
+def _compile_evaluation_metrics(
+    df_valid: pd.DataFrame,
+    cluster_id_to_name: Dict[int, str],
+) -> Tuple[pd.DataFrame, Dict[str, Dict[str, np.ndarray]]]:
+    """Compile per-phenotype performance metrics and ROC curve data."""
+    g_all = evaluate_predictions(df_valid["RESPONSE_BINARY"].values, df_valid["Global_OOF_Prob"].values)
+    s_all = evaluate_predictions(df_valid["RESPONSE_BINARY"].values, df_valid["Subgroup_OOF_Prob"].values)
+
+    n_total = len(df_valid)
+    n_resp_total = int(df_valid["RESPONSE_BINARY"].sum())
+    resp_rate_total = df_valid["RESPONSE_BINARY"].mean() * 100.0
+
+    results_list = [
+        {
+            "Cluster_ID": -1,
+            "Phenotype": "Overall Cohort",
+            "Model_Scope": "Global Enriched Baseline",
+            "N": n_total,
+            "Responders": n_resp_total,
+            "Response_Rate": resp_rate_total,
+            **g_all,
+        },
+        {
+            "Cluster_ID": -1,
+            "Phenotype": "Overall Cohort",
+            "Model_Scope": "Subgroup Ensemble",
+            "N": n_total,
+            "Responders": n_resp_total,
+            "Response_Rate": resp_rate_total,
+            **s_all,
+        },
+    ]
+
+    sub_results, roc_data = _evaluate_cluster_subgroups(df_valid, cluster_id_to_name)
+    results_list.extend(sub_results)
 
     return pd.DataFrame(results_list), roc_data
 
@@ -808,7 +769,7 @@ def _plot_single_roc_panel(
     ax.plot(
         r_dict["fpr_global"],
         r_dict["tpr_global"],
-        color="#37474F",
+        color=DARK_SLATE_CHARCOAL,
         linestyle="--",
         linewidth=2,
         label=f"Global Enriched (AUC = {g_auc:.3f})",
@@ -1037,12 +998,7 @@ def main() -> None:
 
     # 2. Save evaluation summary CSV
     out_eval_csv = OUTPUT_DIR / "subgroup_models_evaluation.csv"
-    if out_eval_csv.exists():
-        try:
-            out_eval_csv.unlink()
-        except Exception:
-            pass
-    df_eval.to_csv(out_eval_csv, index=False)
+    safe_save_csv(df_eval, out_eval_csv)
     print(f"\nSaved subgroup models evaluation summary to {rel_path(out_eval_csv)}")
 
     # 3. Serialise trained models to models/ directory
@@ -1050,20 +1006,7 @@ def main() -> None:
     for name, model in final_models.items():
         clean_name = name.lower().replace(" ", "_").replace("-", "_")
         m_file = MODELS_DIR / f"subgroup_model_{clean_name}.joblib"
-        if m_file.exists():
-            try:
-                m_file.unlink()
-            except Exception:
-                pass
-        try:
-            joblib.dump(model, m_file)
-        except OSError:
-            tmp_m_file = m_file.with_suffix(".tmp.joblib")
-            joblib.dump(model, tmp_m_file)
-            try:
-                tmp_m_file.replace(m_file)
-            except Exception:
-                pass
+        joblib.dump(model, m_file)
         print(f"  * Serialised {name} model -> {rel_path(m_file)}")
 
     # 4. Generate 300 DPI publication plots
