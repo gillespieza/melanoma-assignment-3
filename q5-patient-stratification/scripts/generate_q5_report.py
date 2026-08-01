@@ -540,7 +540,7 @@ def main() -> None:
         )
 
     # Section 4: Phase 4 Phenotype Characterisation & Q3 ODE Digital Twin Dynamics
-    doc_sections.append("## 4. Phase 4: Phenotype Characterisation & Q3 ODE Digital Twin Dynamics\n")
+    doc_sections.append("## 4. Phase 4: Phenotype Characterisation & ODE Digital Twin Dynamics\n")
     doc_sections.append(
         build_section_callout(
             what="Coupling multi-dimensional biomarker signatures with a four-module literature-parameterised ODE system (RAF dimerisation, 8-state MAPK cascade, tumour-immune clearance, and PD-1/PD-L1 checkpoint axis) to simulate 180-day dynamic trajectories, stratify overall survival, and validate against RPPA protein measurements.",
