@@ -121,6 +121,13 @@ Arm B (targeted therapy) patients receive the highest average confidence (mean =
 
 ---
 
+> [!INSIGHT] Key Takeaways
+> - **100% patient coverage is achievable**: By combining immune phenotyping, driver mutation status, drug sensitivity scores, and essentiality targets, the 3-arm framework generates a biologically motivated treatment plan for every single patient — leaving no one without an actionable pathway.
+> - **Phenotype drives treatment philosophy**: The *Immune Hot* phenotype almost exclusively populates Arm A (341 of 364 patients), confirming that a patient's tumour microenvironment biology — not just their mutation profile — is the strongest determinant of which therapeutic strategy to pursue.
+> - **Cross-study integration is feasible and informative**: Q2 cell-line drug viability data and Q4 DepMap CRISPR screens can be meaningfully projected onto patient transcriptomics to generate individual drug sensitivity scores and ranked target nominations, even without patient-specific experimental data.
+> - **Recommendation confidence reveals where we are certain — and where we are not**: Only 24.7% of patients (N = 173) receive a High confidence recommendation, signalling that the field still lacks sufficient biological resolution to make high-confidence precision treatment decisions for the majority of patients.
+> - **Non-response is not a dead end**: Phase 7 reframes immunotherapy non-response as an opportunity for microenvironmental remodelling and targeted combination therapy, directly nominating actionable agents (`CSF1R`, `MDM2`, `AXL`) that address the specific resistance mechanism in each patient's tumour.
+
 ## Limitations & Future Directions
 
 > [!WARNING] Current Limitations of the Phase 7 Framework
