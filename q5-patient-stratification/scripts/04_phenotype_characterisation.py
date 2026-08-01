@@ -137,9 +137,6 @@ def plot_baseline_boxplots(df: pd.DataFrame, save_path: Path) -> None:
     print(f"Saved baseline signature boxplot to {rel_path(save_path)}")
 
 
-
-
-
 # ---------------------------------------------------------------------------
 # Q3 4-Module ODE Digital Twin Per-Patient Simulation
 # ---------------------------------------------------------------------------
@@ -292,7 +289,6 @@ def _simulate_patient_trajectory(
     row: pd.Series, t_eval: np.ndarray, arm: str, pERK_ref: float, pheno_label: str
 ) -> np.ndarray:
     """Simulate a single patient's 180-day relative tumour volume trajectory T(t) / K starting at T(0)=1.0."""
-    from scipy.integrate import solve_ivp
     r, c, E_0, p_rate = _derive_q3_patient_params(row, arm, pERK_ref, pheno_label)
     y0 = [1.0, E_0]
     sol = solve_ivp(_kuznetsov_ode, (t_eval[0], t_eval[-1]), y0, args=(r, c, p_rate),
