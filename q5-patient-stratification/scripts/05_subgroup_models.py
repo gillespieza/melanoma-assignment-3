@@ -760,7 +760,7 @@ def _plot_single_roc_panel(
         linewidth=2.5,
         label=f"Subgroup Model (AUC = {s_auc:.3f})",
     )
-    ax.plot([0, 1], [0, 1], color="#9E9E9E", linestyle=":", linewidth=1)
+    ax.plot([0, 1], [0, 1], color=DARK_SLATE_CHARCOAL, linestyle=":", linewidth=1)
 
     ax.set_title(f"{p_name} (N = {n_pts})", fontsize=13, fontweight="bold")
     ax.set_xlabel("1 - Specificity (False Positive Rate)", fontsize=11)

@@ -45,6 +45,7 @@ from src.biology_constants import (
     KEY_IMMUNE_FEATURES,
 )
 from src.styles import (
+    DARK_SLATE_CHARCOAL,
     OKABE_ITO,
     PHENOTYPE_PALETTE,
     RESPONSE_PALETTE,
@@ -95,9 +96,6 @@ P_VALUE_FLOOR: float = 1e-15
 # Vertical offsets for the two annotation text lines within each heatmap cell (fraction of cell height)
 CELL_BETA_Y_OFFSET: float = 0.36   # Top line: β interaction coefficient label
 CELL_PVAL_Y_OFFSET: float = 0.68   # Bottom line: p-value label
-
-# Dark slate charcoal color for plot borders, lines, and legends
-DARK_SLATE_CHARCOAL: str = "#37474F"
 
 set_presentation_style()
 

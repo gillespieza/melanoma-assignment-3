@@ -25,7 +25,7 @@ from sklearn.preprocessing import StandardScaler
 # ---------------------------------------------------------------------------
 
 from q5_constants import CLUSTERING_FEATURES
-from src.styles import PHENOTYPE_PALETTE, get_phenotype_color, set_presentation_style
+from src.styles import OKABE_ITO, PHENOTYPE_PALETTE, get_phenotype_color, set_presentation_style
 from src.utils.paths import rel_path
 from src.utils.plotting import save_fig
 
@@ -244,7 +244,7 @@ def plot_2d_cluster_projection(
         loc=legend_loc,
         frameon=True,
         facecolor="white",
-        edgecolor="#CCCCCC",
+        edgecolor="#E5E7EB",
         framealpha=0.95,
         fontsize=9,
         title_fontsize=10,
@@ -396,7 +396,7 @@ def plot_consensus_delta_area(
     ks = sorted(list(delta_area_dict.keys()))
     deltas = [delta_area_dict[k] for k in ks]
 
-    ax2.plot(ks, deltas, marker="o", color="#0072B2", linewidth=2.2, markersize=8, label="Relative Delta Area $\\Delta(K)$")
+    ax2.plot(ks, deltas, marker="o", color=OKABE_ITO[0], linewidth=2.2, markersize=8, label="Relative Delta Area $\\Delta(K)$")
     for k, d in zip(ks, deltas):
         ax2.annotate(f"{d:.3f}", (k, d), textcoords="offset points", xytext=(0, 7), ha="center", fontsize=9, fontweight="bold")
 
