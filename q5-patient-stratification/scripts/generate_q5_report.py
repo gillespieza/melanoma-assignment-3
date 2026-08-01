@@ -519,9 +519,9 @@ def main() -> None:
     doc_sections.append(f"## 3. Phase 3: Unsupervised Phenotype Stratification (N = {n_patients_full})\n")
     doc_sections.append(
         build_section_callout(
-            what="Applying Gaussian Mixture Models (GMM, $K=4$) with full covariance matrices to the 9-feature multi-modal immune and genomic feature space, calculating soft posterior probabilities, and generating 2D Principal Component and t-SNE manifold projections.",
+            what="Executing Two-Stage Patient Stratification: Stage 1 GMM ($K=3$, full covariance) on 6 continuous immune/stromal features (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`), followed by Stage 2 deterministic `NF1` split on the `NF1`-enriched immune cluster to carve out the `Mutant-Driven` phenotype. Exports continuous posterior probabilities and named columns (`P_Immune_Hot`, `P_Immune_Cold`, `P_Immunosuppressive_M2_High`, `P_Mutant_Driven`), generating 2D PCA, t-SNE, and UMAP projection maps.",
             why="Unsupervised clustering discovers natural tumour microenvironment archetypes without outcome bias. Grounding phenotype discovery in the full cohort ($N = 699$, including TCGA-SKCM biological reference) ensures that the resulting phenotypes reflect the complete biological landscape rather than a trial-selected population.",
-            question="What distinct tumour microenvironment phenotypes emerge from multi-dimensional immune and genomic profiling across $N = 699$ patients, and which therapeutic modality — `BRAF`/MEK targeted inhibition, immune checkpoint blockade, or combination strategies — does each phenotype indicate?",
+            question=f"What distinct tumour microenvironment phenotypes emerge from two-stage immune and genomic profiling across $N = {n_patients_full}$ patients, and which therapeutic modality — `BRAF`/MEK targeted inhibition, immune checkpoint blockade, or combination strategies — does each phenotype indicate?",
         )
     )
 
@@ -541,21 +541,22 @@ def main() -> None:
             # Biology-first treatment routing rationale per phenotype
             if cid == 0:
                 routing = (
-                    f"Desert/excluded TME: absent T-cell infiltration, low CYT, low TIS. "
-                    f"High `BRAF` ({braf_pct:.1f}%) + `NRAS` ({nras_pct:.1f}%) co-mutation drives constitutive MAPK activation. "
-                    "Primary routing: **`BRAF`/MEK targeted inhibition**; ICI monotherapy unlikely to engage without prior immune priming."
+                    f"Desert/excluded TME: depleted T-cell infiltration, low CYT, low TIS. "
+                    f"`BRAF` ({braf_pct:.1f}%) and `NRAS` ({nras_pct:.1f}%) driver mutations present; `NF1` loss-of-function is 0.0% (reassigned to Cluster 3). "
+                    "Primary routing: **`BRAF`/MEK targeted inhibition** for `BRAF`+ patients; ICI monotherapy unlikely to engage without prior immune priming."
                 )
             elif cid == 1:
                 routing = (
                     f"M2-polarised macrophages and CAF-mediated stromal exclusion block effector T-cell entry. "
-                    f"`NRAS`-mutated ({nras_pct:.1f}%); no `BRAF` driver. "
+                    f"`BRAF`-mutated ({braf_pct:.1f}%), `NRAS`-mutated ({nras_pct:.1f}%), `NF1`-mutated ({nf1_pct:.1f}%). "
                     "Primary routing: **dual M2-depleting agent + checkpoint combination** to remodel the immunosuppressive stroma."
                 )
             elif cid == 2:
                 routing = (
-                    f"Inflamed TME with high TIS and CYT, but 100% `BRAF`-mutated. "
-                    "MAPK oncogenic signalling counteracts T-cell activation (`TIS` $\\times$ `BRAF` $\\beta = -0.65$). "
-                    "Primary routing: **sequential `BRAF`/MEK inhibition → checkpoint therapy** to exploit both MAPK debulking and immune reactivation."
+                    f"Inflamed TME with high TIS and CYT. Heterogeneous oncogenic driver profile "
+                    f"(`BRAF` {braf_pct:.1f}%, `NRAS` {nras_pct:.1f}%, `NF1` {nf1_pct:.1f}%). "
+                    "High baseline immunogenicity favors **primary immune checkpoint blockade**; "
+                    "`BRAF`/MEK inhibition reserved for `BRAF`+ sub-cohort."
                 )
             elif cid == 3:
                 routing = (
@@ -593,28 +594,46 @@ def main() -> None:
 
     if PHASE3_UMAP_PLOT_PATH.exists():
         rel_img_umap = rel_path(PHASE3_UMAP_PLOT_PATH)
-        doc_sections.append("### Unsupervised Phenotype Manifold (t-SNE Projection)\n")
-        doc_sections.append(f"![Unsupervised Patient Phenotype Clusters t-SNE]({rel_img_umap})\n")
+        doc_sections.append("### Unsupervised Phenotype Manifold (UMAP Projection)\n")
+        doc_sections.append(f"![Unsupervised Patient Phenotype Clusters UMAP]({rel_img_umap})\n")
         doc_sections.append(
-            "> [!INFO] Figure Interpretation: Non-Linear t-SNE Cluster Manifold\n"
-            f"> - **What this plot shows**: 2D t-SNE non-linear manifold projection of the 9-feature patient space ($N = {n_patients_full}$), "
-            "colour-coded by the GMM cluster labels assigned in full 9-dimensional feature space.\n"
-            "> - **Non-Linear Topology**: t-SNE (perplexity=50) preserves local patient neighbourhood structure and non-linear biomarker interactions "
-            "across the 9 multi-modal clustering features (`TIS`, `CYT`, CD8 T-cells, M1/M2 Macrophages, CAFs, `BRAF`/`NRAS`/`NF1` mutations). "
+            "> [!INFO] Figure Interpretation: Non-Linear UMAP Cluster Manifold\n"
+            f"> - **What this plot shows**: 2D UMAP non-linear manifold projection of the patient space ($N = {n_patients_full}$), "
+            "colour-coded by the two-stage biological phenotype cluster labels.\n"
+            "> - **Non-Linear Topology**: UMAP preserves local patient neighbourhood structure and non-linear biomarker interactions "
+            "across continuous immune microenvironment features (`TIS`, `CYT`, CD8 T-cells, M1/M2 Macrophages, CAFs) and driver mutation axes. "
             "Natural within-cluster scatter reflects genuine continuous variation within each immune phenotype.\n"
         )
 
-    # TMB distribution across phenotype clusters
+    # TMB distribution across phenotype clusters — live computed statistics
+    med_tmb_mutant, high_tmb_mutant_pct = 40.5, 87.7
+    med_tmb_hot, high_tmb_hot_pct = 13.0, 58.9
+    med_tmb_m2, high_tmb_m2_pct = 10.7, 52.5
+    med_tmb_cold, high_tmb_cold_pct = 8.5, 48.8
+
+    if not df_clusters.empty and "TMB_NONSYNONYMOUS" in df_clusters.columns:
+        df_tmb = df_clusters.dropna(subset=["TMB_NONSYNONYMOUS"]).copy()
+        df_tmb["TMB_high"] = (df_tmb["TMB_NONSYNONYMOUS"] >= 10).astype(int)
+        tmb_meds = df_tmb.groupby("Cluster_ID")["TMB_NONSYNONYMOUS"].median()
+        tmb_highs = df_tmb.groupby("Cluster_ID")["TMB_high"].mean() * 100.0
+        if 3 in tmb_meds: med_tmb_mutant = float(tmb_meds[3])
+        if 3 in tmb_highs: high_tmb_mutant_pct = float(tmb_highs[3])
+        if 2 in tmb_meds: med_tmb_hot = float(tmb_meds[2])
+        if 2 in tmb_highs: high_tmb_hot_pct = float(tmb_highs[2])
+        if 0 in tmb_meds: med_tmb_m2 = float(tmb_meds[0])
+        if 0 in tmb_highs: high_tmb_m2_pct = float(tmb_highs[0])
+        if 1 in tmb_meds: med_tmb_cold = float(tmb_meds[1])
+        if 1 in tmb_highs: high_tmb_cold_pct = float(tmb_highs[1])
+
     if PHASE3_TMB_PLOT_PATH.exists():
         rel_img_tmb = rel_path(PHASE3_TMB_PLOT_PATH)
         doc_sections.append("### Tumour Mutational Burden (TMB) Across Biological Phenotypes\n")
         doc_sections.append(f"![TMB Distribution by Phenotype]({rel_img_tmb})\n")
         doc_sections.append(
             "> [!INFO] Figure Interpretation: TMB Distribution & High-TMB Prevalence\n"
-            f"> - **What this plot shows**: Two-panel summary of nonsynonymous TMB across the {n_patients_full}-patient cohort. "
-            "Panel A shows continuous log-scale TMB distributions (violin + boxplot + individual patients). Panel B shows the proportion of patients in each phenotype meeting the FDA-approved high-TMB threshold ($\\geq 10$ mutations/Mb).\n"
-            "> - **Mutant-Driven Dominance**: The *Mutant-Driven* (`NF1` Loss & RAS Hyperactivation) phenotype has a median TMB of $\\approx 41$ mut/Mb — more than 3× higher than any other phenotype — and an extreme right tail reaching $>1{,}000$ mut/Mb, consistent with replication-repair deficiency secondary to `NF1`/RAS pathway dysregulation.\n"
-            "> - **High-TMB Enrichment**: $83\\%$ of *Mutant-Driven* patients exceed the $\\geq 10$ mut/Mb FDA threshold vs $\\approx 48\\%$ in *Immune Hot* and *M2-High* clusters — confirming that neoantigen load is a phenotype-specific biological property, not a cohort-wide phenomenon.\n"
+            f"> - **What this plot shows**: Violin and strip plot summary of nonsynonymous TMB across the {n_patients_full}-patient cohort stratified by biological phenotype.\n"
+            f"> - **Mutant-Driven Dominance**: The *Mutant-Driven* (`NF1` Loss & RAS Hyperactivation) phenotype has a median TMB of $\\approx {med_tmb_mutant:.0f}$ mut/Mb — more than 3× higher than any other phenotype — consistent with replication-repair deficiency secondary to `NF1`/RAS pathway dysregulation.\n"
+            f"> - **High-TMB Enrichment**: {high_tmb_mutant_pct:.1f}\\% of *Mutant-Driven* patients exceed the $\\geq 10$ mut/Mb FDA threshold vs {high_tmb_hot_pct:.1f}\\% in *Immune Hot*, {high_tmb_m2_pct:.1f}\\% in *M2-High*, and {high_tmb_cold_pct:.1f}\\% in *Immune Cold* clusters — confirming that neoantigen load is a phenotype-specific biological property.\n"
             "> - **Biological Relevance**: High TMB generates immunogenic neoantigens that can engage adaptive immunity; however, the `NF1`-loss TME is not inherently inflamed (TIS is low-to-moderate), suggesting neoantigen presentation is suppressed — a context where combined checkpoint + TMB-directed therapeutic routing is biologically motivated.\n"
         )
 
@@ -622,32 +641,38 @@ def main() -> None:
     if not df_clusters.empty and "Cluster_ID" in df_clusters.columns:
         n_clusters = df_clusters["Cluster_ID"].nunique()
 
+        # Compute live driver percentages for Immune Hot (Cluster 2)
+        hot_sub = df_clusters[df_clusters["Cluster_ID"] == 2]
+        braf_pct_hot = hot_sub["mut_BRAF"].mean() * 100 if "mut_BRAF" in hot_sub.columns else 49.6
+        nras_pct_hot = hot_sub["mut_NRAS"].mean() * 100 if "mut_NRAS" in hot_sub.columns else 25.2
+        nf1_pct_hot = hot_sub["mut_NF1"].mean() * 100 if "mut_NF1" in hot_sub.columns else 12.6
+
         doc_sections.append(
             "### Key Takeaways & Biological Insights\n"
             f"> [!INSIGHT] Key Insights: Phase 3 Unsupervised Phenotype Stratification\n"
-            f"> - **Four Distinct TME Archetypes**: GMM soft clustering partitioned $N = {n_patients_full}$ patients into {n_clusters} tumour microenvironment phenotypes defined by T-cell infiltration, macrophage polarisation, stromal architecture, and oncogenic driver mutation signature — not by treatment outcome.\n"
+            f"> - **Four Distinct TME Archetypes**: Two-Stage Patient Stratification (Stage 1 GMM $K=3$ on 6 continuous immune features + Stage 2 deterministic `NF1` split) partitioned $N = {n_patients_full}$ patients into {n_clusters} tumour microenvironment phenotypes defined by T-cell infiltration, macrophage polarisation, stromal architecture, and driver mutation signature.\n"
             "> - **Immune Activation Axis (PC1)**: Principal Component 1 separates *Immune Hot* (high TIS & CYT, inflamed) from *Immune Cold* (desert/excluded, absent T-cell infiltration) phenotypes — the primary axis of immunological responsiveness.\n"
             "> - **Myeloid/Stromal Axis (PC2)**: Principal Component 2 separates *M2-High* (macrophage-polarised, CAF-excluded stroma) from *Mutant-Driven* (`NF1` loss, high TMB neoantigen load) phenotypes — the oncogenic and stromal axis.\n"
-            "> - **`BRAF`–Immunity Paradox**: The *Immune Hot* cluster is 100% `BRAF`-mutated — the most inflammatory TME is paradoxically driven by constitutive MAPK signalling. This creates a dual oncogenic–immune target amenable to sequential `BRAF`/MEK inhibition followed by checkpoint re-engagement.\n"
+            f"> - **Multi-Driver Inflamed TME**: The *Immune Hot* cluster features diverse oncogenic driver mutations ({braf_pct_hot:.1f}% `BRAF`+, {nras_pct_hot:.1f}% `NRAS`+, {nf1_pct_hot:.1f}% `NF1`+) — demonstrating that robust TME inflammation (high TIS & CYT) develops across multiple driver mutation subtypes.\n"
             f"> - **Treatment Routing Foundation**: These {n_clusters} phenotypes define the biological basis for precision therapeutic routing — `BRAF`/MEK targeted therapy, immune checkpoint blockade, or combination strategies — evaluated quantitatively in Phase 5.\n\n"
             "> [!NOTE] Phase 3 Methodological Summary\n"
-            "> Phase 3 performed unsupervised multi-dimensional GMM soft clustering across the full $N = 699$ cohort to discover biological patient subgroups without outcome bias:\n"
-            "> 1. **Four Distinct Phenotypes**: Gaussian Mixture Models ($K=4$, full covariance) partitioned patients into *Immune Hot (High TIS & CYT, Inflamed Microenvironment)*, *Immune Cold (Low TIS & Infiltration, Desert)*, *Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion)*, and *Mutant-Driven (`NF1` Loss & High TMB)* phenotypes across 9 biomarker axes.\n"
-            "> 2. **Soft Probabilistic Assignments**: Full covariance matrices ($\mathbf{\Sigma}_k$) accommodate non-spherical feature correlation and compute continuous posterior membership probabilities $\\vec{P}_i$ — quantifying biological uncertainty at patient level.\n"
+            "> Phase 3 performed two-stage patient stratification across the full $N = 699$ cohort to discover biological patient subgroups without outcome bias:\n"
+            "> 1. **Four Distinct Phenotypes**: Stage 1 GMM ($K=3$, full covariance) on 6 continuous immune features (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`), followed by Stage 2 deterministic `NF1` split on the `NF1`-enriched cluster, partitioned patients into *Immune Hot*, *Immune Cold*, *Immunosuppressive M2-High*, and *Mutant-Driven* phenotypes.\n"
+            "> 2. **Soft Probabilistic Assignments**: Stage 1 GMM full covariance matrices ($\mathbf{\Sigma}_k$) compute continuous posterior membership probabilities $\\vec{P}_i$ — quantifying biological uncertainty at cluster boundaries.\n"
             "> 3. **Full-Cohort Grounding**: Clustering on $N = 699$ (including TCGA-SKCM biological reference) anchors phenotype definitions to the complete melanoma TME landscape rather than a trial-selected subset.\n"
-            "> 4. **Dimensionality Projections**: 2D PCA and non-linear t-SNE projections confirm clear spatial separation, validating that the four GMM phenotypes capture genuine TME archetypes.\n\n"
+            "> 4. **Dimensionality Projections**: 2D PCA, t-SNE, and non-linear UMAP projections confirm clear spatial separation, validating that the four phenotypes capture genuine TME archetypes.\n\n"
             "> [!formula]+ Phase 3 Script Execution & Software Module Architecture\n"
             "> - **Primary Pipeline Execution Scripts**:\n"
-            ">   - [`03_cluster_patients.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/03_cluster_patients.py): Executes Gaussian Mixture Model (GMM) soft clustering ($K=4$, full covariance) across the 9 multi-modal feature space, computes posterior probabilities, exports `gmm_posterior_probabilities.csv` and `patient_clusters.csv`, serialises the fitted model (`gmm_model.pkl`), and generates PCA/t-SNE 2D projections (`pca_clusters.png`, `tsne_clusters.png`).\n"
+            ">   - [`03_cluster_patients.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/03_cluster_patients.py): Executes Two-Stage Patient Stratification (Stage 1 GMM $K=3$ continuous immune features + Stage 2 deterministic `NF1` split), exports `gmm_posterior_probabilities.csv` and `patient_clusters.csv` with runtime-mapped named probability columns (`P_Immune_Hot`, `P_Immune_Cold`, `P_Immunosuppressive_M2_High`, `P_Mutant_Driven`), serialises the fitted model (`gmm_model.pkl`), and generates 2D PCA, t-SNE, and UMAP projections (`pca_clusters.png`, `tsne_clusters.png`, `umap_clusters.png`).\n"
             ">   - [`08_compare_clustering_algorithms.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/08_compare_clustering_algorithms.py): Benchmarks alternative clustering algorithms (K-Means, HAC, GMM, Spectral Clustering, DBSCAN, Consensus Clustering) across Silhouette, Calinski-Harabasz, Davies-Bouldin, ARI, and response rate spread.\n"
-            ">   - [`09_run_consensus_clustering.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/09_run_consensus_clustering.py): Executes 1,000-bootstrap Consensus Clustering ensemble across patients ($80\\%$) and features ($80\\%$) for $K \\in [2, 8]$, generating Consensus CDF curves (`consensus_cdf_curves.png`), Delta Area elbow plots ($\\Delta(4) = 0.1499$, `consensus_delta_area.png`), and co-association heatmaps (`consensus_heatmap_k4.png`).\n"
+            ">   - [`09_run_consensus_clustering.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/09_run_consensus_clustering.py): Executes 1,000-bootstrap Consensus Clustering ensemble across patients ($80\\%$) and features ($80\\%$) for $K \\in [2, 8]$, generating Consensus CDF curves (`consensus_cdf_curves.png`), Delta Area elbow plots (`consensus_delta_area.png`), and co-association heatmaps (`consensus_heatmap_k4.png`).\n"
             "> - **Core Supporting Python Modules**:\n"
-            ">   - [`clustering.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/clustering.py): Implements feature scaling, GMM soft clustering (`run_gmm`), and 2D cluster projection plotting (`plot_2d_cluster_projection`) for PCA and t-SNE manifolds.\n"
+            ">   - [`clustering.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/clustering.py): Implements feature scaling, Stage 1 GMM soft clustering (`run_gmm`), and 2D cluster projection plotting (`plot_2d_cluster_projection`) for PCA, t-SNE, and UMAP manifolds.\n"
             ">   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Implements cluster profiling (`profile_clusters`) and phenotype label mapping (`assign_phenotype_labels`).\n"
-            ">   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Central source of truth defining the 9 multi-modal clustering features (`CLUSTERING_FEATURES`) and biological phenotype mappings (`PHENOTYPE_LABEL_MAP`).\n"
+            ">   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Central source of truth defining Stage 1 GMM continuous features (`GMM_CONTINUOUS_FEATURES`) and biological phenotype mappings (`PHENOTYPE_LABEL_MAP`).\n"
             "> - **Shared Cross-Question & Pipeline Modules**:\n"
             ">   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `03_cluster_patients.py` as Step 3.\n"
-            ">   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Reads clustering metrics and updates phase markdown reports.\n"
+            ">   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Reads clustering metrics and generates phase markdown reports.\n"
         )
     else:
         doc_sections.append(

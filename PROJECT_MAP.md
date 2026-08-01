@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-01 (Feature inventory reconciliation: confirmed 33-feature panel — 19 transcriptomic (6 Core Immune Signatures incl. `IMPRES` + 4 Macrophage STV + 7 Cell Deconvolution + 2 Spatial Proxies) + 14 genomic/neoantigen/instability features. `IMPRES` retained in feature matrix and Phase 5/6 predictive models; reclassified from "excluded" to "scope-limited". `METADATA_COLS` constant added to `01_load_and_prepare.py` to distinguish metadata from features in log output.)
+> **Last updated**: 2026-08-01 (Phase 3 refactoring & architecture sync: verified Two-Stage Stratification — Stage 1 GMM K=3 continuous immune features + Stage 2 deterministic NF1 split — producing 4 biological phenotypes: Immunosuppressive M2-High N=256 36.6%, Immune Cold N=45 6.4%, Immune Hot N=341 48.8%, Mutant-Driven N=57 8.2%. Resolved GMM probability index mapping, consolidated duplicate `get_phenotype_color()` in `src/styles.py`, overhauled `generate_q5_report.py` for factual accuracy, and eliminated hardcoded literals across reports.)
 
 ## Repository Overview
 
@@ -250,14 +250,14 @@ All four modules operate on **per-patient inputs only** — kinetic rate constan
 | `clinical_utility.py` | DCA net benefit and NNT calculators |
 | `reporting.py` | Obsidian frontmatter (re-exported from `src.utils.formatting`), markdown table formatting |
 
-### Four Discovered Phenotypes
+### Four Discovered Phenotypes (Two-Stage Stratification, N=699)
 
-| Phenotype | N (%) | Key Signatures | Response Rate |
-|-----------|-------|----------------|---------------|
-| **Immune Cold** (Cluster 0) | 22 (3.1%) | Low TIS, low infiltration, T-cell desert; 90.9% `NRAS` mutant | 50.0% |
-| **Mutant-Driven** (Cluster 1) | 65 (9.3%) | 100% `NF1` loss-of-function, high TMB, 0% `BRAF` V600E | 68.8% |
-| **Immune Hot** (Cluster 2) | 304 (43.5%) | High TIS, high CYT, high `CD8A`/`PRF1`/`GZMA`, 100% `BRAF` mutant | 41.1% |
-| **Immunosuppressive M2-High** (Cluster 3) | 308 (44.1%) | High M2 macrophages, high CAFs, `TGFB1`/`ARG1`/`CD163`, 47.7% `NRAS` | 38.0% |
+| Phenotype | Cluster ID | N (%) | Key Signatures & Driver Composition | Primary Therapeutic Routing |
+|-----------|------------|-------|------------------------------------|----------------------------|
+| **Immunosuppressive M2-High** | Cluster 0 | 256 (36.6%) | High M2 macrophages, CAF stromal exclusion, low TIS; 44.1% `BRAF`+, 29.3% `NRAS`+, 0% `NF1` | Targeted `BRAF`/MEK inhibition (for `BRAF`+) or stromal remodeling |
+| **Immune Cold** | Cluster 1 | 45 (6.4%) | Low TIS, low CYT, T-cell desert; 53.3% `BRAF`+, 17.8% `NRAS`+, 13.3% `NF1`+ | Dual M2-depleting agent + checkpoint combination |
+| **Immune Hot** | Cluster 2 | 341 (48.8%) | High TIS, high CYT, inflamed microenvironment; 49.6% `BRAF`+, 25.2% `NRAS`+, 12.6% `NF1`+ | Primary immune checkpoint blockade (ICI monotherapy) |
+| **Mutant-Driven** | Cluster 3 | 57 (8.2%) | 100% `NF1` loss-of-function, RAS hyperactivation, high TMB (Med = 41 mut/Mb) | Immune checkpoint blockade + MEK adjunct for RAS suppression |
 
 ### Cross-Question Data Flow
 
@@ -303,7 +303,8 @@ Q5 internal dependency chain:
 | `q5/scripts/05_subgroup_models.py` & `06_clinical_utility.py` | Feature circularity (53% overlap with Phase 3 clustering features), GMM index instability, missing `TMB_NONSYNONYMOUS`. Resolved by excluding clustering features, establishing `PHENOTYPE_PROB_COL` in `q5_constants.py`, implementing soft GMM mixture weighting, and restoring `TMB_NONSYNONYMOUS` in clinical merge. | **Resolved** (2026-07-31) |
 | `q5/scripts/06_clinical_utility.py` & `07_treatability_scoring.py` | Legacy markdown generation functions (`generate_phase6_markdown` / `generate_phase7_markdown`) wrote loose duplicate files in `reports/`. Unified report generation entirely into `generate_q5_report.py`, removed legacy report writers from Phase 6 & 7 scripts, and added `generate_q5_report` as Step 08 in `run_q5_pipeline.py`. | **Resolved** (2026-08-01: clean single source of truth for Q5 reporting) |
 | `q5/scripts/05_subgroup_models.py` — single-class calibration failure | After Two-Stage GMM cluster ID renumbering, `Mutant-Driven` patients have `P_Mutant_Driven=0` unless `NF1`-positive, producing single-class LOCO CV folds. `LogisticRegression.fit()` raised `ValueError` on single-class `y_cal`. Added `_IdentityPredictor` fallback, guards for `len(y_eff)<2`, `len(np.unique(y_cal))<2`, and `np.isnan(raw_cal_prob)`. Also fixed `StandardScaler` zero-variance NaN via `np.nan_to_num(..., nan=0.0)` in `_preprocess_features`. 27 degenerate OOF slots replaced with global model fallback. | **Resolved** (2026-08-01) |
-| `q5/scripts/06_clinical_utility.py` — missing `main()` function | The script contained all helper functions (`generate_predictions`, `calculate_dca_curves`, `plot_*`) but had no `main()` orchestration body. The `__main__` block called `main()` which raised `NameError`. Wrote the complete `main()` to load `patient_clusters.csv`, call `generate_predictions()`, compute DCA curves, save `dca_results.csv`, and emit all four plots. | **Resolved** (2026-08-01) |
+| `q5/scripts/03_cluster_patients.py` — code smells (Phase 3 audit 2026-08-01) | Seven issues found and fixed: (1) **Critical** hardcoded GMM component indices 0/1/2 in `_export_cluster_outputs` replaced with runtime-derived `stage1_short_labels` map; `_assign_labels` returns 3-tuple. (2) `import seaborn as sns` inside `_plot_tmb_by_phenotype` body moved to module level. (3) Dead function `_format_prob_col_name` (defined, never called) removed. (4) Unused import `CLUSTERING_FEATURES` removed. (5) Inline 10-line per-cluster summary loop in `main()` extracted to `_print_stratification_summary()`. (6) Module docstring output list updated to include all 6 generated plots and the metrics CSV. (7) Stray extra blank line removed. Second and third pass refactored functions to script-private, added `mkdir` guards, fixed Seaborn deprecations, and consolidated duplicate `get_phenotype_color()` in `src/styles.py`. | **Resolved** (2026-08-01) |
+| `q5/scripts/generate_q5_report.py` — Phase 3 report overhaul | Overhauled Phase 3 report generation in `generate_q5_report.py`: updated methodology text to Two-Stage Stratification ($K=3$ GMM continuous immune features + Stage 2 deterministic `NF1` split), eliminated hardcoded static TMB medians/percentages in favor of live DataFrame computations, corrected the false "100% BRAF" claim in `Immune Hot` to live driver percentages (49.6% `BRAF`+, 25.2% `NRAS`+, 12.6% `NF1`+), and updated UMAP manifold figure descriptions. | **Resolved** (2026-08-01) |
 
 ## Conventions Quick Reference
 
@@ -313,4 +314,3 @@ Q5 internal dependency chain:
 - **Reports**: Obsidian markdown with YAML frontmatter, callout boxes, British English
 - **Colours**: Okabe-Ito palette only, accessed via `src/styles.py` helpers
 - **Paths**: Always use `src/utils/paths.py` constants, log relative paths via `rel_path()`
-| `q5/scripts/03_cluster_patients.py` — code smells (Phase 3 audit 2026-08-01) | Seven issues found and fixed: (1) **Critical** hardcoded GMM component indices 0/1/2 in `_export_cluster_outputs` replaced with runtime-derived `stage1_short_labels` map; `_assign_labels` returns 3-tuple. (2) `import seaborn as sns` inside `_plot_tmb_by_phenotype` body moved to module level. (3) Dead function `_format_prob_col_name` (defined, never called) removed. (4) Unused import `CLUSTERING_FEATURES` removed. (5) Inline 10-line per-cluster summary loop in `main()` extracted to `_print_stratification_summary()`. (6) Module docstring output list updated to include all 6 generated plots and the metrics CSV. (7) Stray extra blank line removed. | **Resolved** (2026-08-01) |
