@@ -176,7 +176,7 @@ def extract_immune_signatures(df_expr: pd.DataFrame) -> pd.DataFrame:
         df_sig = extract_all_signatures(df_expr)
         print("  Extracted immune signatures via shared Q1 module.")
     except (ImportError, ModuleNotFoundError, AttributeError) as err:
-        print(f"  Q1 module fallback (reason: {err}). Computing signatures locally.")
+        print(f"  [WARNING] Q1 module import failed ({err}). Falling back to local signature calculation.", file=sys.stderr)
         df_sig = pd.DataFrame(index=df_expr.index)
 
         if "CD274" in df_expr.columns:

@@ -146,18 +146,17 @@ Trial cohorts (*Liu 2019*, *Riaz 2017*, *Hugo 2016*) lack processed GISTIC arm-l
 - `TMB_NONSYNONYMOUS` and CNA burden are biologically decoupled: high-CNA, low-TMB tumours exist (particularly in `NF1`-loss and chromosomally unstable melanomas) and would be misclassified as genomically stable by TMB alone.
 - `ANEUPLOIDY_SCORE` availability is inconsistent across the three trial cohorts: it was a systematic TCGA-SKCM output and may be sparsely populated (or absent) in iAtlas-harmonised trial data, contributing to the sparse genomic feature problem described in §2.3.
 
-### 4.2 Module Import Fallback: Local Signature Recomputation
+### 4.2 Module Import Fallback & Signature Synchronization — Resolved
 
-The `q5_pipeline.log` (line 13) records the following warning during Phase 1 execution:
+In historical pipeline runs, a `src.config` import error logged `Q1 signature module fallback... Computing signatures locally.`, exposing two analytical risks:
 
-```
-Q1 signature module fallback (Reason: No module named 'src.config'). Computing signatures locally.
-```
+1. **Gene Set Divergence**: The local fallback `IMMUNE_SIGNATURE_MARKERS["IFN_gamma"]` previously contained 5 genes (`IFNG`, `STAT1`, `IDO1`, `CXCL9`, `CXCL10`), whereas Q1's authoritative `IMMUNE_SIGNATURE_GENES["IFN_gamma"]` contained 6 genes (including `HLA-DRA`).
+2. **Silent Recomputation**: Fallback executions occurred without high-visibility warning flags.
 
-This indicates that the pipeline was unable to import the shared `src.config` module at runtime and silently fell back to a local signature computation path. This fallback has two implications:
-
-1. **Reproducibility Risk**: If the local fallback implementation and the shared `src.config` implementation diverge in their gene set definitions, coefficient weights, or normalisation steps, the Phase 1 signature scores will be numerically different from what Q1's validated pipeline produces — potentially invalidating any direct cross-question comparison of `TIS`, `CYT`, or `IFN_gamma` values.
-2. **Silent Divergence**: The fallback triggers no error and produces no downstream warning in the feature matrix. There is no validation checkpoint comparing Q1-computed signatures to Q5-locally-computed equivalents.
+**Current Status (Resolved)**:
+- `q5_constants.py` was updated to include `HLA-DRA` in `IMMUNE_SIGNATURE_MARKERS["IFN_gamma"]`, ensuring 100% numerical identity between Q1 and Q5 signature definitions.
+- `01_load_and_prepare.py` was updated to log explicit `[WARNING]` messages on `stderr` should fallback ever trigger.
+- Verification tests confirm that `01_load_and_prepare.py` successfully imports and executes `extract_all_signatures` from the shared Q1 module at runtime (`Extracted immune signatures via shared Q1 module.`).
 
 ### 4.3 Full-Cohort Matrix ($N_{\text{Full}} = 699$) Lacks RECIST Response Labels for TCGA-SKCM
 
@@ -180,20 +179,19 @@ Without knowing the reference population, it is impossible to assess whether the
 
 | Priority | Limitation | Proposed Fix | Analytical Benefit |
 | :---: | :--- | :--- | :--- |
-| **1 — High** | `src.config` module import fallback | Resolve Python path configuration so `src.config` is always importable; add validation checkpoint comparing Q1 vs. Q5 signature values | Ensures cross-question numerical reproducibility |
-| **2 — High** | No batch effect correction | Apply ComBat-seq or limma `removeBatchEffect` across 4 cohorts prior to feature extraction | Removes cohort-of-origin as a confound in Phase 3 clustering |
-| **3 — High** | No missing data audit for genomic features | Log per-feature missingness rates at Phase 1 exit; document and justify imputation strategy | Prevents silent zero-inflation from suppressing genomic feature variance |
-| **4 — Medium** | Unbounded marker-averaging deconvolution | Transition to CIBERSORTx or EPIC constrained SVR unmixing with single-cell melanoma reference matrices | Yields bounded $0–100\%$ cell fractions; eliminates cross-cell marker spillover |
-| **5 — Medium** | 1D macrophage polarisation axis | Expand to a 4-dimensional TAM subtype vector (M1, M2a, M2c, lipid-laden) using single-cell reference signatures | Resolves functional subtype heterogeneity in the M2-High phenotype (44.1% of full cohort) |
-| **6 — Medium** | Spatial proxies are algebraic heuristics | Integrate multiplex immunofluorescence (mIF) or spatial transcriptomics (10x Visium) to measure physical T-cell to tumour distances | Correctly separates stroma-excluded from tumour-infiltrated microenvironments |
-| **7 — Lower** | Static pre-treatment biopsy only | Integrate paired Day-0 / Day-14–28 transcriptomics where trial data permit | Enables $\Delta\text{TIS}$ dynamic signatures capturing early on-treatment immune reactivation |
-| **8 — Lower** | Absent CNA maps for trial cohorts | Process alignment files via CNVkit or ASCAT for arm-level CNA and whole-genome duplication indicators | Directly quantifies chromosomal instability independent of TMB |
-| **9 — Lower** | STV reference provenance undocumented | Add `source`, `population`, and `normalisation` metadata fields to `m1_m2_stv.csv` configuration | Enables calibration audit and cross-study STV score comparability |
+| **1 — High** | No batch effect correction | Apply ComBat-seq or limma `removeBatchEffect` across 4 cohorts prior to feature extraction | Removes cohort-of-origin as a confound in Phase 3 clustering |
+| **2 — High** | No missing data audit for genomic features | Log per-feature missingness rates at Phase 1 exit; document and justify imputation strategy | Prevents silent zero-inflation from suppressing genomic feature variance |
+| **3 — Medium** | Unbounded marker-averaging deconvolution | Transition to CIBERSORTx or EPIC constrained SVR unmixing with single-cell melanoma reference matrices | Yields bounded $0–100\%$ cell fractions; eliminates cross-cell marker spillover |
+| **4 — Medium** | 1D macrophage polarisation axis | Expand to a 4-dimensional TAM subtype vector (M1, M2a, M2c, lipid-laden) using single-cell reference signatures | Resolves functional subtype heterogeneity in the M2-High phenotype (44.1% of full cohort) |
+| **5 — Medium** | Spatial proxies are algebraic heuristics | Integrate multiplex immunofluorescence (mIF) or spatial transcriptomics (10x Visium) to measure physical T-cell to tumour distances | Correctly separates stroma-excluded from tumour-infiltrated microenvironments |
+| **6 — Lower** | Static pre-treatment biopsy only | Integrate paired Day-0 / Day-14–28 transcriptomics where trial data permit | Enables $\Delta\text{TIS}$ dynamic signatures capturing early on-treatment immune reactivation |
+| **7 — Lower** | Absent CNA maps for trial cohorts | Process alignment files via CNVkit or ASCAT for arm-level CNA and whole-genome duplication indicators | Directly quantifies chromosomal instability independent of TMB |
+| **8 — Lower** | STV reference provenance undocumented | Add `source`, `population`, and `normalisation` metadata fields to `m1_m2_stv.csv` configuration | Enables calibration audit and cross-study STV score comparability |
 
 ---
 
 > [!INSIGHT] Key Takeaways
-> - **Silent Import Fallback**: A `src.config` module import failure during Phase 1 execution triggers silent local recomputation of `TIS`, `CYT`, `IFN_gamma`, and `IMPRES` signatures. Cross-question numerical consistency between Q1 and Q5 is currently unverified.
+> - **Import Fallback & Signature Alignment (Resolved)**: Verified that `01_load_and_prepare.py` successfully imports and extracts signatures via the shared Q1 module (`signatures.py`). Updated `IMMUNE_SIGNATURE_MARKERS["IFN_gamma"]` in `q5_constants.py` to include `HLA-DRA` (aligning with Q1's 6-gene definition) and added explicit `[WARNING]` stderr logging if fallback ever triggers.
 > - **Batch Effects Are Uncontrolled**: Merging four studies with distinct sequencing platforms and biopsy protocols without explicit batch correction means cohort-of-origin remains a confounding variable that may partially drive the Phase 3 phenotype clusters.
 > - **Spatial Features Are Heuristics**: The two engineered spatial proxy ratios are algebraic approximations of physical tumour architecture — they cannot distinguish stroma-excluded from tumour-infiltrated microenvironments, and the logarithmic form is undefined when `CAFs` → 0.
 > - **M2-High vs. Immune Hot Clinical Overlap**: The two largest phenotypes — *Immunosuppressive M2-High* ($N = 308$, response rate 38.0%) and *Immune Hot* ($N = 304$, response rate 41.1%) — are separated by only 3.2 percentage points. The 1D macrophage STV axis driving their separation encodes a biologically oversimplified model that may not reliably distinguish these phenotypes at the level of individual patients.

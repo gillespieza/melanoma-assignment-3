@@ -40,7 +40,7 @@ IMMUNE_SIGNATURE_MARKERS: Dict[str, List[str]] = {
         "LAG3", "NKG7", "PDCD1LG2", "PSMB10", "STAT1", "TIGIT",
     ],
     "CYT": ["PRF1", "GZMA"],
-    "IFN_gamma": ["IFNG", "STAT1", "IDO1", "CXCL9", "CXCL10"],
+    "IFN_gamma": ["IFNG", "CXCL9", "CXCL10", "IDO1", "HLA-DRA", "STAT1"],
     "CD8_Tcell": ["CD8A", "CD8B"],
 }
 
