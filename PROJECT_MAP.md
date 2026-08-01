@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-01 (Phase 5 code smell audit: 7 smells resolved in `05_subgroup_models.py` — imported `DARK_SLATE_CHARCOAL` from `src.styles`; enforced `safe_save_csv` from `src.utils.io`; removed unused `StratifiedKFold` import and redundant `sys.path` check; decomposed `_fit_calibrated_rf` by extracting `_select_calibration_split`; decomposed `_compile_evaluation_metrics` by extracting `_evaluate_cluster_subgroups`; cleaned bare `except Exception:` blocks)
+> **Last updated**: 2026-08-01 (Phase 6 code smell audit: 8 smells resolved in `06_clinical_utility.py` and `src/clinical_utility.py` — imported `DARK_SLATE_CHARCOAL` from `src.styles`; enforced `safe_save_csv` from `src.utils.io`; deleted unused stub file `src/clinical_utility.py`; removed duplicate `get_feature_columns` header; decomposed `generate_predictions`, `plot_nnt_ppv_comparison`, and `generate_phase6_markdown`; added `_CalibratedModel` and `_LRPredictor` joblib unpickling wrappers)
 
 ## Repository Overview
 
