@@ -53,16 +53,17 @@ PHENOTYPE_PALETTE = {
 }
 
 
-def get_phenotype_color(label: str) -> str:
-    """Resolve color for a phenotype label string (handles base name or full descriptive label)."""
-    if not isinstance(label, str):
-        return "#37474F"
-    if label in PHENOTYPE_PALETTE:
-        return PHENOTYPE_PALETTE[label]
+def get_phenotype_color(phenotype_name: str, default: str = "#37474F") -> str:
+    """Returns the standardised hex colour code for a given phenotype subtype label (case-insensitive substring match)."""
+    if not isinstance(phenotype_name, str):
+        return default
+    if phenotype_name in PHENOTYPE_PALETTE:
+        return PHENOTYPE_PALETTE[phenotype_name]
+    pheno_lower = phenotype_name.lower()
     for key, color in PHENOTYPE_PALETTE.items():
-        if key in label:
+        if key.lower() in pheno_lower:
             return color
-    return "#37474F"
+    return default
 
 
 # Full ordered Okabe-Ito palette list for generic sequential categorical encoding
@@ -179,9 +180,4 @@ def get_cohort_color(cohort_name: str, default: str = "#37474F") -> str:
     return default
 
 
-def get_phenotype_color(phenotype_name: str, default: str = "#37474F") -> str:
-    """Returns the standardised hex colour code for a given phenotype subtype label."""
-    for key, color in PHENOTYPE_PALETTE.items():
-        if key.lower() in phenotype_name.lower():
-            return color
-    return default
+

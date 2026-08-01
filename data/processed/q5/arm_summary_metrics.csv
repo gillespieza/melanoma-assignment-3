@@ -1,11 +1,11 @@
 Phenotype,Treatment_Arm,Patient_Count
-Immune Cold,Arm A: Immunotherapy,9
-Immune Cold,Arm B: Targeted Therapy,10
-Immune Cold,Arm C: Combination/Reversal,3
-Immune Hot,Arm A: Immunotherapy,266
-Immunosuppressive M2-High,Arm A: Immunotherapy,102
-Immunosuppressive M2-High,Arm B: Targeted Therapy,95
-Immunosuppressive M2-High,Arm C: Combination/Reversal,108
-Mutant-Driven,Arm A: Immunotherapy,36
-Mutant-Driven,Arm B: Targeted Therapy,43
-Mutant-Driven,Arm C: Combination/Reversal,27
+Immune Cold,Arm A: Immunotherapy,1
+Immune Cold,Arm B: Targeted Therapy,31
+Immune Cold,Arm C: Combination/Reversal,13
+Immune Hot,Arm A: Immunotherapy,341
+Immunosuppressive M2-High,Arm A: Immunotherapy,16
+Immunosuppressive M2-High,Arm B: Targeted Therapy,173
+Immunosuppressive M2-High,Arm C: Combination/Reversal,67
+Mutant-Driven,Arm A: Immunotherapy,6
+Mutant-Driven,Arm B: Targeted Therapy,30
+Mutant-Driven,Arm C: Combination/Reversal,21

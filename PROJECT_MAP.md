@@ -229,7 +229,7 @@ All four modules operate on **per-patient inputs only** — kinetic rate constan
 |-------|--------|---------|
 | 1 | `01_load_and_prepare.py` | Load merged data, compute signatures (TIS, CYT, IFN-γ, CD8_Tcell, IMPRES), M1/M2 STV deconvolution, cell-type estimates, and spatial proxy indicators across 33 multi-modal features (19 transcriptomic + 14 genomic) |
 | 2 | `02_feature_analysis.py` | Mann-Whitney U, Fisher's exact, Youden cutoffs, interaction terms, feature credibility |
-| 3 | `03_cluster_patients.py` | Gaussian Mixture Model (GMM, K=4, full covariance) soft clustering, posterior probability export, PCA/t-SNE projections, model persistence |
+| 3 | `03_cluster_patients.py` | **Two-Stage GMM**: Stage 1 GMM (K=3, full covariance) on 6 continuous immune/stromal features (TIS, CYT, CD8_T_cells, M1/M2_Macrophages, CAFs); Stage 2 deterministic NF1 split produces 4 final phenotypes. Exports named probability columns (P_Immune_Hot, P_Immune_Cold, P_Immunosuppressive_M2_High, P_Mutant_Driven) mapped via runtime-safe label-to-index resolution. PCA/t-SNE/UMAP projections, TMB violin, spatial violins, model persistence. |
 | 4 | `04_phenotype_characterisation.py` | Cluster profiling, phenotype labelling, KM survival. Dual-arm Q3-parameterised Kuznetsov 2-state ODE trajectories: Panel A = Immunotherapy (Anti-PD-1 monotherapy + M2 CAF-rescue combination), Panel B = Targeted Therapy (Vemurafenib BRAFi 500 nM). Per-patient r derived from Q3 pERK/pERK_ref coupling (Module A→B); per-patient c from Q3 checkpoint f_kill (Module D) and CYT. Phenotype-level pheno_r_mult applied in targeted arm to separate NF1-loss (0.68×), M2-High (1.25×), and NRAS-paradox (1.00×) cohorts. |
 | 5 | `05_subgroup_models.py` | Soft-weighted GMM probability Random Forest models trained on 10 non-circular features (excluding 9 Phase 3 clustering features), evaluated via LOCO CV vs Global Enriched Baseline |
 | 6 | `06_clinical_utility.py` | Decision Curve Analysis, Net Benefit, NNT, PPV, clinical benchmarks |
@@ -244,8 +244,8 @@ All four modules operate on **per-patient inputs only** — kinetic rate constan
 | Module | Purpose |
 |--------|---------|
 | `q5_constants.py` | Cell-type markers, immune signature genes, clustering features, `PHENOTYPE_PROB_COL` mapping, resistance pathways, treatability features, phenotype labels, Q3 ODE params, Q4 target nominations |
-| `clustering.py` | `prepare_clustering_features()`, `run_kmeans()`, `plot_2d_cluster_projection()` |
-| `phenotyping.py` | `profile_clusters()`, `assign_phenotype_labels()`, violin/radar/heatmap plots |
+| `clustering.py` | `prepare_clustering_features()`, `run_gmm()` (Two-stage GMM, K=3 continuous features + Stage 2 NF1 split), `plot_2d_cluster_projection()` (PCA, t-SNE, UMAP). `run_kmeans()` is a deprecated legacy alias. |
+| `phenotyping.py` | `profile_clusters()`, `assign_phenotype_labels()`, `plot_baseline_signature_boxplots()` (implemented). `plot_radar_chart()` and `plot_cluster_heatmap()` are implemented but **not called** by any current pipeline script — they are uncalled exports. |
 | `deconvolution.py` | Transcriptomic cell-type deconvolution from marker panels |
 | `clinical_utility.py` | DCA net benefit and NNT calculators |
 | `reporting.py` | Obsidian frontmatter (re-exported from `src.utils.formatting`), markdown table formatting |
@@ -293,15 +293,17 @@ Q5 internal dependency chain:
 
 | Area | Description | Status |
 |------|-------|--------|
-| `src/styles.py` L53 & L178 | Duplicate `get_phenotype_color()` definitions (first is legacy, second added later) | Unresolved |
+| `src/styles.py` L53 & L178 | Duplicate `get_phenotype_color()` definitions (first is legacy, second added later) | **Resolved** (2026-08-01: duplicate definition at L53 removed) |
 | `q5/src/reporting.py` | Local `generate_obsidian_frontmatter()` duplicates `src/utils/formatting.py` version | **Resolved** (2026-08-01: deleted local copy; `reporting.py` now re-exports from `src.utils.formatting`; shared version extended with `extra_css_classes` param) |
-| `q5/src/phenotyping.py` L155–163 | `plot_radar_chart()` and `plot_cluster_heatmap()` are stub `pass` implementations | Unresolved |
+| `q5/src/phenotyping.py` | `plot_radar_chart()` and `plot_cluster_heatmap()` are fully implemented but are **not called by any pipeline script**. They are uncalled exports — dead code in the execution path. | Unresolved |
 | `q5_constants.py` | `PHENOTYPE_FEATURES` defined but never used | **Resolved** (replaced with central `CLUSTERING_FEATURES` & `PHENOTYPE_PROFILE_FEATURES`) |
 | `run_pipeline.py` (Q1) | Still writes log to project root instead of `logs/` directory | Unresolved |
 | `q5/scripts/04_phenotype_characterisation.py` | Phase 4 now renders a dual-arm Kuznetsov 2-state ODE figure (Panel A: Immunotherapy, Panel B: Targeted Therapy) without IQR confidence shading. Per-patient r derived from Q3 pERK coupling; c from Q3 checkpoint f_kill and CYT. Targeted arm uses phenotype-level pheno_r_mult to achieve visual separation (NF1-loss=0.68×, M2-High=1.25×). All changes confined to `04_phenotype_characterisation.py`; q3-ode-model/ unchanged. | **Resolved** |
 | `q5/scripts/05_subgroup_models.py` | Unused `LogisticRegression` import; magic numbers inline; 183-line `train_and_eval_loco` monolith; `SimpleImputer`+`StandardScaler` duplicated 5×; `PHENOTYPE_SHORT_NAMES` key `"M2 Immunosuppressive"` mismatched `PHENOTYPE_PALETTE` (silent wrong colour); missing docstrings on helpers. | **Resolved** (Phase 5 refactored 2026-07-31) |
 | `q5/scripts/05_subgroup_models.py` & `06_clinical_utility.py` | Feature circularity (53% overlap with Phase 3 clustering features), GMM index instability, missing `TMB_NONSYNONYMOUS`. Resolved by excluding clustering features, establishing `PHENOTYPE_PROB_COL` in `q5_constants.py`, implementing soft GMM mixture weighting, and restoring `TMB_NONSYNONYMOUS` in clinical merge. | **Resolved** (2026-07-31) |
 | `q5/scripts/06_clinical_utility.py` & `07_treatability_scoring.py` | Legacy markdown generation functions (`generate_phase6_markdown` / `generate_phase7_markdown`) wrote loose duplicate files in `reports/`. Unified report generation entirely into `generate_q5_report.py`, removed legacy report writers from Phase 6 & 7 scripts, and added `generate_q5_report` as Step 08 in `run_q5_pipeline.py`. | **Resolved** (2026-08-01: clean single source of truth for Q5 reporting) |
+| `q5/scripts/05_subgroup_models.py` — single-class calibration failure | After Two-Stage GMM cluster ID renumbering, `Mutant-Driven` patients have `P_Mutant_Driven=0` unless `NF1`-positive, producing single-class LOCO CV folds. `LogisticRegression.fit()` raised `ValueError` on single-class `y_cal`. Added `_IdentityPredictor` fallback, guards for `len(y_eff)<2`, `len(np.unique(y_cal))<2`, and `np.isnan(raw_cal_prob)`. Also fixed `StandardScaler` zero-variance NaN via `np.nan_to_num(..., nan=0.0)` in `_preprocess_features`. 27 degenerate OOF slots replaced with global model fallback. | **Resolved** (2026-08-01) |
+| `q5/scripts/06_clinical_utility.py` — missing `main()` function | The script contained all helper functions (`generate_predictions`, `calculate_dca_curves`, `plot_*`) but had no `main()` orchestration body. The `__main__` block called `main()` which raised `NameError`. Wrote the complete `main()` to load `patient_clusters.csv`, call `generate_predictions()`, compute DCA curves, save `dca_results.csv`, and emit all four plots. | **Resolved** (2026-08-01) |
 
 ## Conventions Quick Reference
 
@@ -311,3 +313,4 @@ Q5 internal dependency chain:
 - **Reports**: Obsidian markdown with YAML frontmatter, callout boxes, British English
 - **Colours**: Okabe-Ito palette only, accessed via `src/styles.py` helpers
 - **Paths**: Always use `src/utils/paths.py` constants, log relative paths via `rel_path()`
+| `q5/scripts/03_cluster_patients.py` — code smells (Phase 3 audit 2026-08-01) | Seven issues found and fixed: (1) **Critical** hardcoded GMM component indices 0/1/2 in `_export_cluster_outputs` replaced with runtime-derived `stage1_short_labels` map; `_assign_labels` returns 3-tuple. (2) `import seaborn as sns` inside `_plot_tmb_by_phenotype` body moved to module level. (3) Dead function `_format_prob_col_name` (defined, never called) removed. (4) Unused import `CLUSTERING_FEATURES` removed. (5) Inline 10-line per-cluster summary loop in `main()` extracted to `_print_stratification_summary()`. (6) Module docstring output list updated to include all 6 generated plots and the metrics CSV. (7) Stray extra blank line removed. | **Resolved** (2026-08-01) |

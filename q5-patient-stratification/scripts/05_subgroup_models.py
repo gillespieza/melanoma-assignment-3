@@ -174,6 +174,12 @@ def _preprocess_features(
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Impute missing values using median and scale features via StandardScaler.
 
+    Zero-variance columns in a training fold (e.g. a heavily down-weighted
+    GMM subgroup fold where all remaining effective samples share the same
+    feature value) cause StandardScaler to produce NaN via division by zero.
+    These are replaced with 0 (the feature mean in standardised space) so
+    that the Random Forest receives finite inputs.
+
     Args:
         X_train: Raw feature matrix for training fold.
         X_test: Raw feature matrix for test fold.
@@ -183,8 +189,8 @@ def _preprocess_features(
     """
     imp = SimpleImputer(strategy="median")
     scaler = StandardScaler()
-    X_tr_proc = scaler.fit_transform(imp.fit_transform(X_train))
-    X_te_proc = scaler.transform(imp.transform(X_test))
+    X_tr_proc = np.nan_to_num(scaler.fit_transform(imp.fit_transform(X_train)), nan=0.0)
+    X_te_proc = np.nan_to_num(scaler.transform(imp.transform(X_test)), nan=0.0)
     return X_tr_proc, X_te_proc
 
 
@@ -208,9 +214,10 @@ def evaluate_predictions(
     """
     y_pred = (y_prob >= threshold).astype(int)
     has_two_classes = len(np.unique(y_true)) > 1
+    prob_is_finite = not np.isnan(y_prob).any()
 
-    auc = roc_auc_score(y_true, y_prob) if has_two_classes else np.nan
-    pr_auc = average_precision_score(y_true, y_prob) if has_two_classes else np.nan
+    auc = roc_auc_score(y_true, y_prob) if (has_two_classes and prob_is_finite) else np.nan
+    pr_auc = average_precision_score(y_true, y_prob) if (has_two_classes and prob_is_finite) else np.nan
     prec = precision_score(y_true, y_pred, zero_division=0)
     rec = recall_score(y_true, y_pred, zero_division=0)
     f1 = f1_score(y_true, y_pred, zero_division=0)
@@ -236,6 +243,13 @@ def evaluate_predictions(
         "PPV": ppv,
         "NPV": npv,
     }
+
+
+class _IdentityPredictor:
+    """Pass-through calibrator fallback when calibration fold lacks multiple classes."""
+
+    def predict(self, p: np.ndarray) -> np.ndarray:
+        return np.asarray(p, dtype=float)
 
 
 class _LRPredictor:
@@ -352,10 +366,18 @@ def _fit_calibrated_rf(
     X_eff = X_tr[effective_mask]
     y_eff = y_tr[effective_mask]
 
-    X_cal, y_cal = _select_calibration_split(X_eff, y_eff)
-    raw_cal_prob = base_clf.predict_proba(X_cal)[:, 1]
+    if len(y_eff) < 2 or len(np.unique(y_eff)) < 2:
+        return _CalibratedModel(base_clf=base_clf, calibrator=_IdentityPredictor())
 
-    if len(y_cal) >= CALIBRATION_MIN_SAMPLES and len(np.unique(y_cal)) == 2:
+    X_cal, y_cal = _select_calibration_split(X_eff, y_eff)
+    if len(y_cal) < 2 or len(np.unique(y_cal)) < 2:
+        return _CalibratedModel(base_clf=base_clf, calibrator=_IdentityPredictor())
+
+    raw_cal_prob = base_clf.predict_proba(X_cal)[:, 1]
+    if np.isnan(raw_cal_prob).any():
+        return _CalibratedModel(base_clf=base_clf, calibrator=_IdentityPredictor())
+
+    if len(y_cal) >= CALIBRATION_MIN_SAMPLES:
         calibrator: object = IsotonicRegression(out_of_bounds="clip")
         calibrator.fit(raw_cal_prob, y_cal)
     else:
@@ -708,6 +730,14 @@ def train_and_eval_loco(
     subgroup_oof_prob = _compute_subgroup_oof_predictions(
         X_raw, y_raw, cohorts, cluster_probs, global_oof_prob
     )
+
+    # Replace any residual NaN predictions (degenerate folds) with the global
+    # model's OOF estimate as a conservative fallback before evaluation.
+    nan_mask = np.isnan(subgroup_oof_prob)
+    if nan_mask.any():
+        n_nan = nan_mask.sum()
+        print(f"  WARNING: {n_nan} NaN OOF predictions replaced with global model fallback.")
+        subgroup_oof_prob = np.where(nan_mask, global_oof_prob, subgroup_oof_prob)
 
     df_valid["Global_OOF_Prob"] = global_oof_prob
     df_valid["Subgroup_OOF_Prob"] = subgroup_oof_prob

@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-3
   - q5
-created: 2026-08-01 13:58
+created: 2026-08-01 15:37
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 13:58
+updated: 2026-08-01 15:37
 ---
 
 ## 3. Phase 3: Unsupervised Phenotype Stratification (N = 699)
@@ -28,10 +28,10 @@ updated: 2026-08-01 13:58
 
 | Cluster ID   | Biological Phenotype Subtype                                     |   N (Total) | Cohort Share   | `BRAF` Mut   | `NRAS` Mut   | `NF1` Mut   | Therapeutic Routing Rationale                                                                                                                                                                                                                                                                    |
 |:-------------|:-----------------------------------------------------------------|------------:|:---------------|:-------------|:-------------|:------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Cluster 0    | Immune Cold (Low TIS & Infiltration, Desert)                     |          22 | 3.1%           | 72.7%        | 77.3%        | 0.0%        | Desert/excluded TME: absent T-cell infiltration, low CYT, low TIS. High `BRAF` (72.7%) + `NRAS` (77.3%) co-mutation drives constitutive MAPK activation. Primary routing: **`BRAF`/MEK targeted inhibition**; ICI monotherapy unlikely to engage without prior immune priming.                   |
-| Cluster 1    | Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion) |         305 | 43.6%          | 0.0%         | 47.9%        | 0.0%        | M2-polarised macrophages and CAF-mediated stromal exclusion block effector T-cell entry. `NRAS`-mutated (47.9%); no `BRAF` driver. Primary routing: **dual M2-depleting agent + checkpoint combination** to remodel the immunosuppressive stroma.                                                |
-| Cluster 2    | Immune Hot (High TIS & CYT, Inflamed Microenvironment)           |         266 | 38.1%          | 100.0%       | 0.0%         | 0.0%        | Inflamed TME with high TIS and CYT, but 100% `BRAF`-mutated. MAPK oncogenic signalling counteracts T-cell activation (`TIS` $\times$ `BRAF` $\beta = -0.65$). Primary routing: **sequential `BRAF`/MEK inhibition → checkpoint therapy** to exploit both MAPK debulking and immune reactivation. |
-| Cluster 3    | Mutant-Driven (NF1 Loss & RAS Hyperactivation, High TMB)         |         106 | 15.2%          | 38.7%        | 22.6%        | 100.0%      | `NF1` loss-of-function (100.0%) drives RAS hyperactivation with elevated TMB and neoantigen burden. Primary routing: **immune checkpoint blockade** leveraging high immunogenicity; MEK inhibition as adjunct for RAS pathway suppression.                                                       |
+| Cluster 0    | Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion) |         256 | 36.6%          | 44.1%        | 29.3%        | 0.0%        | Desert/excluded TME: absent T-cell infiltration, low CYT, low TIS. High `BRAF` (44.1%) + `NRAS` (29.3%) co-mutation drives constitutive MAPK activation. Primary routing: **`BRAF`/MEK targeted inhibition**; ICI monotherapy unlikely to engage without prior immune priming.                   |
+| Cluster 1    | Immune Cold (Low TIS & Infiltration, Desert)                     |          45 | 6.4%           | 53.3%        | 17.8%        | 13.3%       | M2-polarised macrophages and CAF-mediated stromal exclusion block effector T-cell entry. `NRAS`-mutated (17.8%); no `BRAF` driver. Primary routing: **dual M2-depleting agent + checkpoint combination** to remodel the immunosuppressive stroma.                                                |
+| Cluster 2    | Immune Hot (High TIS & CYT, Inflamed Microenvironment)           |         341 | 48.8%          | 49.6%        | 25.2%        | 12.6%       | Inflamed TME with high TIS and CYT, but 100% `BRAF`-mutated. MAPK oncogenic signalling counteracts T-cell activation (`TIS` $\times$ `BRAF` $\beta = -0.65$). Primary routing: **sequential `BRAF`/MEK inhibition → checkpoint therapy** to exploit both MAPK debulking and immune reactivation. |
+| Cluster 3    | Mutant-Driven (NF1 Loss & RAS Hyperactivation, High TMB)         |          57 | 8.2%           | 29.8%        | 31.6%        | 100.0%      | `NF1` loss-of-function (100.0%) drives RAS hyperactivation with elevated TMB and neoantigen burden. Primary routing: **immune checkpoint blockade** leveraging high immunogenicity; MEK inhibition as adjunct for RAS pathway suppression.                                                       |
 
 ### Unsupervised Phenotype Cluster Projection (2D PCA)
 
@@ -45,11 +45,21 @@ updated: 2026-08-01 13:58
 
 ### Unsupervised Phenotype Manifold (t-SNE Projection)
 
-![Unsupervised Patient Phenotype Clusters t-SNE](q5-patient-stratification/plots/clustering/tsne_clusters.png)
+![Unsupervised Patient Phenotype Clusters t-SNE](q5-patient-stratification/plots/clustering/umap_clusters.png)
 
 > [!INFO] Figure Interpretation: Non-Linear t-SNE Cluster Manifold
 > - **What this plot shows**: 2D t-SNE non-linear manifold projection of the 9-feature patient space ($N = 699$), colour-coded by the GMM cluster labels assigned in full 9-dimensional feature space.
 > - **Non-Linear Topology**: t-SNE (perplexity=50) preserves local patient neighbourhood structure and non-linear biomarker interactions across the 9 multi-modal clustering features (`TIS`, `CYT`, CD8 T-cells, M1/M2 Macrophages, CAFs, `BRAF`/`NRAS`/`NF1` mutations). Natural within-cluster scatter reflects genuine continuous variation within each immune phenotype.
+
+### Tumour Mutational Burden (TMB) Across Biological Phenotypes
+
+![TMB Distribution by Phenotype](q5-patient-stratification/plots/clustering/tmb_by_phenotype_comparison.png)
+
+> [!INFO] Figure Interpretation: TMB Distribution & High-TMB Prevalence
+> - **What this plot shows**: Two-panel summary of nonsynonymous TMB across the 699-patient cohort. Panel A shows continuous log-scale TMB distributions (violin + boxplot + individual patients). Panel B shows the proportion of patients in each phenotype meeting the FDA-approved high-TMB threshold ($\geq 10$ mutations/Mb).
+> - **Mutant-Driven Dominance**: The *Mutant-Driven* (`NF1` Loss & RAS Hyperactivation) phenotype has a median TMB of $\approx 41$ mut/Mb — more than 3× higher than any other phenotype — and an extreme right tail reaching $>1{,}000$ mut/Mb, consistent with replication-repair deficiency secondary to `NF1`/RAS pathway dysregulation.
+> - **High-TMB Enrichment**: $83\%$ of *Mutant-Driven* patients exceed the $\geq 10$ mut/Mb FDA threshold vs $\approx 48\%$ in *Immune Hot* and *M2-High* clusters — confirming that neoantigen load is a phenotype-specific biological property, not a cohort-wide phenomenon.
+> - **Biological Relevance**: High TMB generates immunogenic neoantigens that can engage adaptive immunity; however, the `NF1`-loss TME is not inherently inflamed (TIS is low-to-moderate), suggesting neoantigen presentation is suppressed — a context where combined checkpoint + TMB-directed therapeutic routing is biologically motivated.
 
 ### Key Takeaways & Biological Insights
 > [!INSIGHT] Key Insights: Phase 3 Unsupervised Phenotype Stratification

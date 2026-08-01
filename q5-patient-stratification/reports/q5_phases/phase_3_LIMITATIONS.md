@@ -1,125 +1,215 @@
 ---
-title: "Phase 3: Methodological Audit, Resolved Baseline Weaknesses & New Technical Limitations"
-aliases:
-  - Phase 3 Criticisms & Technical Roadmap
-  - Q5 Phase 3 Limitations
+title: "Phase 3 Limitations: Unsupervised Patient Stratification"
+aliases: Q5 Phase 3 Limitations
 tags:
-  - future-work
   - limitations
   - melanoma
   - patient-stratification
   - phase-3
   - q5
-created: 2026-07-31 13:20
+created: 2026-08-01 14:06
 cssclasses:
   - row-alt
   - table-center
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 14:13
+updated: 2026-08-01 14:09
 ---
 
-# Phase 3: Methodological Audit, Resolved Baseline Weaknesses & New Technical Limitations 🔍
+# Phase 3 Limitations & Future Directions: Unsupervised Patient Stratification
 
-An analytical audit and limitations report for **Phase 3** in the Question 5 Patient Stratification pipeline, evaluating resolved baseline weaknesses alongside newly emerging methodological, biological, and computational limitations of the enhanced Gaussian Mixture Model (GMM), 1,000-bootstrap consensus, log2 spatial microenvironment, and Mahalanobis/Spectral manifold pipeline.
+> [!NOTE] Scope & Purpose of This Document  
+> This document evaluates Phase 3 of the Q5 Patient Stratification pipeline in its **current state** across four domains: code quality, statistical methodology, biological assumptions, and computational/data constraints. All metrics are sourced directly from live pipeline outputs (`patient_clusters.csv`, `gmm_posterior_probabilities.csv`, `mahalanobis_spectral_metrics.csv`, `03_cluster_patients.log`) and `PROJECT_MAP.md`. Improvements are ranked by scientific impact.
 
-## 1. Executive Summary & Audit Rationale
+---
 
-> [!NOTE] Analytical Methodology & Rationale
-> - **What is being done**: Systematic evaluation of both resolved baseline weaknesses and newly emerging limitations of the updated Phase 3 stratification pipeline (GMM soft clustering, 1,000-bootstrap consensus, log2 spatial indicators, Mahalanobis space, and Spectral Manifold clustering).
-> - **Why we are doing it**: While transitioning from hard K-Means to soft GMM consensus clustering resolved spherical assumptions and spatial blindness, advanced multivariate and graph-based models introduce new trade-offs (covariance parameter inflation, bioinformatic proxy assumptions, graph hyperparameter sensitivity, and asymmetric sub-cohort sample sizes).
-> - **What question it answers**: What specific new technical and biological limitations arise from the enhanced Phase 3 stratification engine, and how can future iterations resolve them?
+# 1. Code Quality
 
-Phase 3 successfully upgraded patient stratification from rigid Euclidean K-Means to probabilistic Gaussian Mixture Models ($K=4$, full covariance $\mathbf{\Sigma}_k$), backed by 1,000 bootstrap iterations ($\Delta(4) = 0.1499$ elbow) and log2 spatial microenvironment indicators. However, an honest scientific audit requires identifying the new technical limitations introduced by these advanced methods.
+> [!NOTE] What Is Being Evaluated  
+> Structural and maintainability issues in the Phase 3 source modules (`clustering.py`, `phenotyping.py`, `q5_constants.py`) as they exist today — not historical issues that have been resolved.
 
-## 2. Overview of Resolved Baseline Weaknesses (Fixes #1–#4)
+## 1.1 Stub Implementations in `phenotyping.py`
 
-The initial baseline K-Means pipeline suffered from four primary failure modes, all of which have been resolved:
+Per `PROJECT_MAP.md` (Known Technical Debt), `plot_radar_chart()` and `plot_cluster_heatmap()` in `phenotyping.py` (lines 155–163) are `pass` stubs. These functions are registered and exported by the module but produce no output. Any calling code that depends on them silently succeeds without generating the intended artefact, making the failure invisible in pipeline logs. This is a silent no-op code smell.
 
-| Baseline Limitation | Original Issue | Technical Fix Executed | Empirical Validation Result |
-| :--- | :--- | :--- | :--- |
-| **Spherical Geometry** | K-Means assumed hyper-spherical isotropic clusters in Euclidean space. | GMM full covariance matrix ($\mathbf{\Sigma}_k$) | Accommodates feature correlation (`TIS` vs `CYT`, $r > 0.70$). |
-| **Hard Binary Labels** | Borderline patients forced into rigid bins (Silhouette = $0.2526$). | Soft GMM posterior probabilities ($\vec{P}_i$) | Continuous probability vectors exported to `gmm_posterior_probabilities.csv`. |
-| **Random Seed Instability** | Single-run centroid sensitivity. | 1,000-bootstrap Consensus Ensemble | Confirmed $K=4$ as Delta Area elbow ($\Delta(4) = 0.1499$). |
-| **Spatial Blindness** | Bulk RNA-seq could not separate desert from stroma exclusion. | Log2 spatial distance ratios (`CD8` vs `CAF`) | Proved stromal exclusion ($43.6\%$) dominates true deserts ($3.1\%$). |
+**Impact**: Moderate. No figures are lost because the pipeline does not currently call these functions in its primary execution path — but the dead interface creates a false impression of feature completeness.
 
-> [!INSIGHT] Resolution Summary
-> Resolving baseline weaknesses significantly improved biological realism. However, implementing probabilistic covariance matrices, bioinformatic spatial ratios, and Graph Laplacians introduces a distinct set of **new technical limitations** detailed below.
+**Fix (Priority 2)**: Implement `plot_radar_chart()` using a `matplotlib.patches.FancyArrowPatch` polar axis to visualise per-phenotype median feature profiles; implement `plot_cluster_heatmap()` as a seaborn `clustermap` of the 9 clustering features scaled per-feature. Both should call `save_fig()` from `src.utils.plotting`.
 
-## 3. In-Depth Analysis of New Technical & Biological Limitations
+## 1.2 Duplicate `get_phenotype_color()` in `src/styles.py`
 
-### 1. Parametric Covariance Inflation & Overfitting Risk ($K \cdot \frac{D(D+1)}{2}$)
-- **New Limitation**: Fitting full $D \times D$ covariance matrices ($\mathbf{\Sigma}_k$) across $K=4$ clusters and $D=9$ features requires estimating $4 \times \frac{9 \times 10}{2} = 180$ covariance parameters.
-- **Methodological Risk**: While $N=699$ patients provides sufficient degrees of freedom for 9 features, expanding the feature set in future iterations ($D > 20$) leads to quadratic parameter growth ($K \frac{D(D+1)}{2} > 800$), risking covariance matrix singularity, numerical instability, and overfitting.
-- **Analytical Impact**: High-dimensional GMMs require explicit regularization ($\alpha \mathbf{I}$) or factorized covariance constraints (e.g. diagonal or tied covariance) to prevent degenerate Gaussian components.
+Per `PROJECT_MAP.md` (L296), `src/styles.py` contains two definitions of `get_phenotype_color()` at lines 53 and 178. Python silently uses the second definition; the first is dead code that will never execute. Any future change made to the first definition will have no effect, creating a maintenance hazard.
 
-### 2. Bioinformatic Proxy Nature of Spatial Microenvironment Indicators
-- **New Limitation**: `Spatial_CD8_CAF_Distance_Ratio` ($\log_2\frac{\text{CD8} + 0.01}{\text{CAF} + 0.01}$) and `Spatial_Tumour_Infiltration_Index` are derived from bulk transcriptomic deconvolution, not direct physical micrometer cell-to-cell measurements.
-- **Biological Risk**: While transcriptomic ratios provide a robust proxy for T-cell density relative to CAF barriers, bulk RNA-seq cannot measure actual physical tissue histology distances (e.g. micrometer distance from CD8+ T cells to malignant tumour nests vs fibrotic stroma).
-- **Clinical Impact**: Discrepancies between transcriptomic cell abundance ratios and true spatial architecture may occur in densely vascularized or necrotic lesion areas.
+**Impact**: Low (currently working correctly because the second definition is used), but risks introducing silent divergence if the file is edited.
 
-### 3. Graph Laplacian Hyperparameter Sensitivity ($n_{\text{neighbors}}$ in Spectral Clustering)
-- **New Limitation**: Spectral Manifold Clustering depends on the k-nearest-neighbors graph hyperparameter ($n_{\text{neighbors}}=15$).
-- **Statistical Risk**: If $n_{\text{neighbors}}$ is set too small ($k < 5$), the patient affinity graph fractures into disconnected subcomponents; if set too large ($k > 50$), global shortcut edges blur non-linear manifold structure back into standard Euclidean space.
-- **Visual & Cluster Impact**: Small variations in graph construction hyperparameters alter Graph Laplacian eigenvectors, influencing boundary patient assignments along non-linear manifolds.
+**Fix (Priority 3)**: Remove the first definition (L53) and retain the second (L178). Add a brief inline comment explaining why a single definition exists.
 
-### 4. Asymmetric Sub-Cohort Sample Sizes & Deep Desert Rarity ($3.1\%$, $N=22$)
-- **New Limitation**: Data-driven GMM soft clustering reveals a highly asymmetric phenotype size distribution:
-  - `Immunosuppressive M2-High`: $N=305$ ($43.6\%$)
-  - `Immune Hot`: $N=266$ ($38.1\%$)
-  - `Mutant-Driven`: $N=106$ ($15.2\%$)
-  - `Immune Cold`: $N=22$ ($3.1\%$)
-- **Statistical Risk**: The small sample size of the true `Immune Cold` deep desert subgroup ($N=22$, $3.1\%$) reduces statistical power for downstream Phase 5 subgroup-specific predictive modeling and Kaplan-Meier survival evaluations.
-- **Analytical Impact**: Standard classification models trained on small sub-cohorts suffer from class imbalance, requiring synthetic oversampling or penalized loss functions.
+## 1.3 `clustering.py` Module Name Mismatch
 
-### 5. Computational Complexity of 1,000-Bootstrap Consensus Runs
-- **New Limitation**: Executing $1,000 \times 7 = 7,000$ clustering runs across $N=699$ patients requires $O(B \cdot K \cdot N^2)$ operations for pairwise co-association matrix updates.
-- **Operational Risk**: While vectorized in NumPy (~2.5 minutes runtime), running 1,000 bootstraps on larger clinical registries ($N > 10,000$) becomes computationally expensive without GPU acceleration or parallel processing.
+`PROJECT_MAP.md` lists `clustering.py` as exporting `run_kmeans()`, but Phase 3 now uses `run_gmm()` internally. The legacy `run_kmeans()` export is preserved for backwards compatibility (`gmm_model.pkl` is also saved as `kmeans_model.pkl` per the log output). This naming inconsistency will mislead future contributors into believing the pipeline runs K-Means when it runs GMM.
 
-> [!WARNING] Summary of New Limitations
-> The new pipeline trades simple K-Means assumptions for higher parametric complexity, graph hyperparameter sensitivity, bioinformatic spatial proxy assumptions, and asymmetric sub-cohort sample sizes.
+**Impact**: Low (functionality correct), but creates documentation drift and violates the principle of least surprise.
 
-## 4. Strategic Recommendations for Future Pipeline Iterations
+**Fix (Priority 3)**: Remove the `kmeans_model.pkl` legacy fallback write and deprecate `run_kmeans()` with a `DeprecationWarning`. Update `PROJECT_MAP.md` module table accordingly.
 
-To address these new technical limitations in future project iterations, we recommend four concrete extensions:
+---
 
-```
-+-----------------------------------------------------------------------------------+
-|                        FUTURE PIPELINE ENHANCEMENT ROADMAP                         |
-+-----------------------------------------------------------------------------------+
-| 1. Physical Spatial Slide Validation (10x Visium / Xenium / mIF mICR Slide Data)  |
-| 2. Regularised / Factorised Covariance GMM (Tied / Diagonal for High-D Features)  |
-| 3. Adaptive Graph Laplacian Construction (Self-Tuning Local Distance Metrics)     |
-| 4. Subgroup Imbalance Handling (Synthetic Resampling for Deep Deserts N=22)       |
-+-----------------------------------------------------------------------------------+
-```
+# 2. Statistical Weaknesses
 
-### 1. Physical Spatial Slide Validation (Direct Spatial Omics Integration)
-- **Proposed Solution**: Validate bioinformatic log2 spatial ratios using physical single-cell spatial transcriptomics (10x Visium, Xenium) or multiplex immunofluorescence (mIF).
-- **Expected Benefit**: Replaces transcriptomic deconvolution proxies with actual micrometer cell-to-cell distance measurements from intact tumour tissue slices.
+> [!WARNING] Current Statistical Limitations  
+> The following issues represent genuine statistical threats to the validity of the Phase 3 clustering solution, not implementation errors. They are limitations of the current methodological choices that future work should address.
 
-### 2. Regularised & Factorised Covariance Constraints for High-Dimensionality
-- **Proposed Solution**: For feature sets with $D > 20$, implement factorised covariance GMMs (e.g. `covariance_type="tied"` or `"diagonal"`) with Ledoit-Wolf shrinkage covariance estimation.
-- **Expected Benefit**: Prevents parameter inflation and covariance matrix singularity while preserving soft probabilistic membership vectors.
+## 2.1 Near-Degenerate Posterior Probability Distributions
 
-### 3. Adaptive Graph Construction for Spectral Manifolds
-- **Proposed Solution**: Implement self-tuning local bandwidth selection ($k_i = \text{distance to } k\text{-th neighbor}$) for Spectral Clustering graph construction.
-- **Expected Benefit**: Automatically adjusts local graph density across dense (Immune Hot/M2-High) and sparse (Immune Cold desert) regions without manual $n_{\text{neighbors}}$ tuning.
+The live `gmm_posterior_probabilities.csv` reveals a critical statistical pathology: **698 of 699 patients (99.9%) have a maximum posterior probability ≥ 0.99**, with a median max-posterior of exactly 1.0. Only 1 patient (0.1%) falls below the 0.70 ambiguity threshold; zero patients are genuinely uncertain (<0.50).
 
-### 4. Class Imbalance Mitigation for Subgroup Predictive Modeling
-- **Proposed Solution**: Apply SMOTE (Synthetic Minority Over-sampling Technique) or class-weighted loss functions when training Phase 5 subgroup predictive models on the rare `Immune Cold` subgroup ($N=22$).
-- **Expected Benefit**: Protects downstream predictive models from minority class suppression caused by asymmetric phenotype sizes.
+> [!WARNING] This Pattern Indicates Hard, Not Soft, Clustering  
+> A well-specified GMM with full covariance matrices on a 9-dimensional continuous feature space should produce a meaningful posterior uncertainty distribution — particularly for patients near cluster boundaries. A posterior distribution concentrated at 0 or 1 is characteristic of **degenerate GMM fitting**, where the model collapses to near-deterministic assignments. This defeats the stated scientific rationale for choosing GMM over K-Means (soft, probabilistic assignments).
 
-## 5. Comprehensive Methodological Audit & Future Roadmap Matrix
+**Root Cause (Likely)**: The 9 clustering features include 3 binary mutation indicators (`mut_BRAF`, `mut_NRAS`, `mut_NF1`). When binary features are mixed with continuous immune scores (TIS, CYT, etc.) in a GMM with full covariance, the mutation binary split can dominate the likelihood function and drive clusters to hard boundaries. The mutation features are effectively operating as a hard partition key, overriding the continuous uncertainty signal from the immune features.
 
-| Pipeline Aspect | Baseline K-Means | Current GMM + Spatial Pipeline | Newly Identified Limitation | Recommended Future Fix |
-| :--- | :--- | :--- | :--- | :--- |
-| **Cluster Geometry** | Hard spherical Euclidean | Full covariance $\mathbf{\Sigma}_k$ soft GMM | Parameter inflation for $D > 20$ | Regularised / Tied GMM covariance ($\alpha \mathbf{I}$) |
-| **Spatial Resolution** | Bulk deconvolution only | Log2 CD8/CAF distance ratios | Bioinformatic proxy (no physical slides) | 10x Visium / Xenium physical spatial metrics |
-| **Graph Topology** | Linear hyperplanes | Graph Laplacian Spectral Manifold | Sensitive to $n_{\text{neighbors}}$ graph tuning | Self-tuning local bandwidth graph construction |
-| **Phenotype Balance** | Equal spherical split | Data-driven asymmetric sizes | Small `Immune Cold` desert ($N=22, 3.1\%$) | Synthetic oversampling / class-weighted loss |
-| **Compute Scale** | Single-run fast fit | 1,000-bootstrap ensemble | $O(B \cdot K \cdot N^2)$ runtime for large $N$ | GPU-accelerated parallel co-occurrence matrix updates |
+**Evidence from Metrics**:
+- Standard Scaled GMM Silhouette: **0.1906** (poor — suggests cluster overlap in the continuous immune space)
+- Mahalanobis-Transformed GMM Silhouette: **0.1951** (marginal improvement)
+- Spectral Manifold Silhouette: **0.2063** (best, still moderate)
+- Log-Likelihood: **+6.50** (standard scaling) vs **+4.38** (Mahalanobis) — neither indicates a well-separated generative model
 
-> [!INSIGHT] Final Technical Takeaway
-> The updated Phase 3 pipeline successfully resolved baseline spherical assumptions and spatial blindness. The newly identified limitations (covariance parameter inflation, bioinformatic spatial proxies, graph hyperparameter tuning, and asymmetric sub-cohort sizes) provide a clear, actionable roadmap for future high-throughput spatial transcriptomics iterations.
+All three Silhouette scores fall below the commonly accepted threshold of 0.25–0.30 for well-separated clusters in a biological feature space.
+
+**Fix (Priority 1)**: Pre-process the binary mutation indicators separately from the continuous immune scores. Either: (a) embed mutations as a stratification variable _after_ continuous-feature GMM fitting; or (b) use a mixed-data model (e.g., latent class analysis or a variational autoencoder latent space) that treats binary and continuous features with their appropriate likelihoods.
+
+## 2.2 $K=4$ Selection Lacks Rigorous Statistical Justification
+
+The consensus clustering Delta Area $\Delta(4) = 0.1499$ supports $K=4$ clusters, but the Delta Area plot (`consensus_delta_area.png`) has not been supplemented with formal model-selection criteria applied directly to the GMM:
+
+- **BIC for the full-cohort GMM** is reported as **−7,656.2** (standard scaling) and **−4,682.2** (Mahalanobis) in `mahalanobis_spectral_metrics.csv`. No BIC curve across $K \in [2, 8]$ has been computed and compared for the GMM itself — only the consensus clustering bootstrap ensemble was used for $K$ selection.
+- The ICI-only cohort evaluation (N=326) reports **AIC = 4,501,941.2 and BIC = 4,502,770.5** — values many orders of magnitude larger than the full-cohort BIC, suggesting the ICI-only scaling is not comparable (likely raw log-likelihood ×N rather than normalised).
+
+**Fix (Priority 1)**: Fit GMM models for $K \in [2, 8]$ on the full cohort and plot BIC against $K$. The minimum BIC value identifies the statistically optimal number of Gaussian components. Cross-validate this against the existing consensus clustering result.
+
+## 2.3 Immune Cold Cluster is Severely Underpowered
+
+The _Immune Cold_ phenotype contains only **$N=22$ patients (3.1%)** of the full cohort ($N=699$). Of these, only 15 were ICI-treated. A GMM component fitted on 22 observations across a 9-dimensional feature space is statistically fragile:
+
+- The full covariance matrix $\boldsymbol{\Sigma}_k \in \mathbb{R}^{9 \times 9}$ requires estimating $9 \times 10 / 2 = 45$ unique covariance parameters from 22 observations — fewer observations than free parameters.
+- This guarantees that the _Immune Cold_ covariance matrix is either near-singular or regularised (added noise diagonal), making the posterior probabilities computed for this component unreliable.
+
+**Fix (Priority 2)**: Apply a minimum-component regularisation: enforce a minimum expected cluster size of $\geq 30$ observations before fitting the full covariance. For $N<30$ components, constrain to a diagonal (tied) covariance. Document the regularisation decision in the script.
+
+## 2.4 No Permutation Test for Cluster Stability
+
+The 1,000-bootstrap consensus clustering in `09_run_consensus_clustering.py` demonstrates that $K=4$ clusters are reproducible across sub-samples, but this does not test whether the clustering is non-random. No permutation test (random label shuffle → compare Silhouette to observed Silhouette) has been applied to confirm that the observed Silhouette score of 0.19–0.21 exceeds a null distribution.
+
+**Fix (Priority 2)**: Run 100 permutations of the feature matrix (row-shuffle each feature independently to break structure) and compute Silhouette scores. If observed Silhouette exceeds the 95th percentile of permuted Silhouettes, the clustering is confirmed as non-random.
+
+---
+
+# 3. Biological Assumptions
+
+> [!WARNING] Key Biological Assumptions Under-Validated in Phase 3  
+> These are assumptions embedded in the current feature set and phenotype definitions that are scientifically reasonable but not directly validated against external biological references in Phase 3.
+
+## 3.1 TIS, CYT, and Deconvolution Scores Conflate Distinct Biological Processes
+
+The 9 clustering features include TIS, CYT, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, and CAFs — all derived from RNA-seq gene expression. At least two of these pairs are expected to be **biologically correlated by construction**:
+
+- `TIS` (Tumour Inflammation Score) and `CYT` (Cytolytic Activity) both measure cytotoxic immune activity and share core genes (`PRF1`, `GZMA`, `GZMB`). Including both may disproportionately weight the cytotoxic immune axis in the GMM — which is confirmed by the empirical PC1 loadings (TIS: +0.46, CYT: +0.45, `CD8_T_cells`: +0.45 — three near-identical loadings).
+- The PC1 axis therefore primarily captures one biological construct (cytotoxic immunity) measured three times, not three independent biological dimensions.
+
+**Fix (Priority 2)**: Conduct a Variance Inflation Factor (VIF) analysis on the 9 clustering features. If VIF > 5 for TIS, CYT, or CD8_T_cells against each other, consider retaining only the most mechanistically independent representative (e.g., CYT alone, as it is directly tied to cytolytic killing capacity per Rooney et al. 2015).
+
+## 3.2 Binary Mutation Encoding Does Not Capture Variant Allele Frequency or Co-Mutation Complexity
+
+`mut_BRAF`, `mut_NRAS`, and `mut_NF1` are encoded as binary indicators (0/1). This discards:
+
+- **Variant Allele Frequency (VAF)**: A patient with `BRAF V600E` VAF of 0.85 (clonal, dominant) is biologically distinct from one with VAF 0.12 (subclonal). Both are encoded identically.
+- **Co-mutation patterns**: The _Immune Cold_ cluster is 72.7% `BRAF`-mutated and 77.3% `NRAS`-mutated simultaneously. `BRAF`/`NRAS` co-mutation is biologically unusual and may represent data quality artefacts from multi-region sampling rather than a genuine co-driver biology. Phase 3 does not validate this.
+- **`NF1` loss-of-function specificity**: `mut_NF1` is a binary indicator, but `NF1` mutations are heterogeneous (missense vs truncating vs deletion). Only truncating/splicing mutations reliably cause loss-of-function consistent with RAS hyperactivation.
+
+**Fix (Priority 2)**: Replace binary mutation indicators with continuous VAF scores where available. For `NF1`, restrict the positive indicator to truncating/splicing/large-deletion variants using the variant classification field in `mutations_cleaned.csv`.
+
+## 3.3 TCGA-SKCM Reference Cohort Dominates Cluster Geometry (63.4% of Patients)
+
+TCGA-SKCM contributes **443 of 699 patients (63.4%)** to the full-cohort clustering. The three ICI-treated clinical trial cohorts (Liu 2019, Hugo 2016, Riaz 2017) contribute only 256 patients combined. The GMM phenotype geometry is therefore primarily shaped by untreated TCGA-SKCM patients, whose tumour microenvironments may differ systematically from anti-PD-1-eligible trial patients:
+
+- TCGA-SKCM includes resected metastatic samples; ICI trials preferentially enrol patients with measurable metastatic disease
+- TCGA RNA-seq uses RSEM/FPKM normalisation; iAtlas data uses a different harmonisation pipeline — batch effects between sources are handled by per-cohort Z-score normalisation in Phase 1, but residual technical variation may inflate between-cohort distances relative to within-phenotype biological variation
+
+**Fix (Priority 1)**: Perform a sensitivity analysis: refit the GMM on ICI-trial patients only ($N=256$), and compare phenotype assignments to the full-cohort GMM. If $>85\%$ of patients receive the same phenotype label, the full-cohort geometry is validated. If concordance falls below 85%, the TCGA-SKCM dominance is distorting phenotype boundaries relevant to therapeutic routing.
+
+## 3.4 Spatial Proxy Features Are Estimated, Not Measured
+
+`CAFs` (Cancer-Associated Fibroblasts) and `M2_Macrophages` are deconvolution estimates derived from marker gene expression — not directly measured from histology or flow cytometry. Deconvolution from bulk RNA-seq:
+
+- Assumes a fixed reference signature matrix for each cell type
+- Cannot distinguish cells present but transcriptionally silenced from cells absent
+- Is confounded by tumour purity (high tumour cell fraction dilutes immune signal)
+
+The biological interpretation that _Immunosuppressive M2-High_ patients have "high M2 macrophages and CAF-mediated stromal exclusion" rests entirely on transcriptomic proxies with no direct cellular validation.
+
+**Fix (Priority 3)**: Cross-reference the M2-High phenotype against available TIMER2.0 or CIBERSORT immune deconvolution estimates in TCGA-SKCM (publicly available) and report the Spearman correlation between Phase 3 deconvolution scores and TIMER2.0 estimates as an external validation metric.
+
+---
+
+# 4. Computational & Data Constraints
+
+> [!NOTE] Infrastructure and Data Constraints in Current Phase 3  
+> These are limitations imposed by available data, computational resources, and pipeline design decisions — not methodological errors.
+
+## 4.1 GMM Fitting on 699 Patients with 9 Features: Underdetermined for $K=4$ Full Covariance
+
+A GMM with $K=4$ and full covariance matrices on a $d=9$ dimensional space requires estimating:
+
+$$K \cdot \left[\mu_d + \frac{d(d+1)}{2} + 1 \right] = 4 \cdot [9 + 45 + 1] = 220 \text{ free parameters}$$
+
+With $N=699$ observations, the ratio of observations to parameters is approximately 3.2:1 — technically feasible but at the low end of what is considered statistically adequate ($\geq 5$:1 is a common rule of thumb). The _Immune Cold_ component ($N=22$) is severely below this threshold individually (see §2.3 above).
+
+**Fix (Priority 2)**: Consider a **tied covariance** GMM (all $K$ components share the same $\boldsymbol{\Sigma}$), which reduces the parameter count to $\frac{d(d+1)}{2} + K \cdot (d + 1) = 45 + 40 = 85$ parameters — a 3:1 ratio improvement — as a robustness check.
+
+## 4.2 t-SNE Non-Reproducibility
+
+t-SNE with `perplexity=50` is stochastic. The `tsne_clusters.png` figure will differ across runs even with a fixed `random_state` if the scikit-learn version changes, because the Barnes-Hut approximation implementation is version-sensitive. This means the t-SNE manifold in `phase_3.md` is not scientifically reproducible across environments.
+
+**Fix (Priority 2)**: Replace t-SNE with **UMAP** (`umap-learn` package), which is also non-linear but is deterministic given fixed `random_state` and `n_neighbors`, converges faster, and preserves both local and global structure. Log the UMAP version alongside the figure.
+
+## 4.3 No Held-Out Validation Cohort for Phenotype Stability
+
+Phase 3 fits GMM phenotypes on all 699 available patients. There is no independent external cohort on which to validate that the four discovered phenotypes replicate. The ICI-only sub-cohort evaluation in the log (`Silhouette=0.2387 on N=326`) applies the same fitted model — this is internal validation, not independent replication.
+
+**Fix (Priority 1)**: Identify a published independent melanoma RNA-seq cohort (e.g., Gide et al. 2019, Nathanson et al. 2017) with mutation and bulk transcriptomic data available, apply the fitted `gmm_model.pkl` to project patients into the four phenotypes, and report phenotype prevalence and biomarker profiles. Concordance with the discovery cohort distributions would constitute genuine external validation.
+
+## 4.4 Batch Effects Between TCGA-SKCM and iAtlas Cohorts Are Partially Mitigated But Not Formally Tested
+
+Phase 1 applies per-cohort Z-score normalisation to harmonise TIS/CYT/deconvolution scores across iAtlas (Liu, Hugo, Riaz) and TCGA-SKCM. However, no formal batch correction (e.g., ComBat, Harmony) has been applied, and no UMAP or PCA coloured by cohort (rather than phenotype) has been generated to visualise residual batch structure.
+
+**Fix (Priority 2)**: Generate a PCA projection coloured by `COHORT` rather than phenotype label. If cohorts form visually distinct regions in the same PCA space used for clustering, batch effects are inflating between-cohort variance and may be artificially driving cluster boundaries. Apply ComBat normalisation and re-evaluate clustering stability.
+
+---
+
+# 5. Key Takeaways & Prioritised Improvements
+
+> [!INSIGHT] Phase 3 Limitations: Key Insights
+> - **Most Critical (Priority 1)**: The GMM posterior probabilities are effectively degenerate — 99.9% of patients have max-posterior ≥ 0.99 — indicating the binary mutation features are driving near-hard assignments and eliminating the probabilistic uncertainty that justifies GMM over K-Means. This should be addressed before interpreting soft-assignment downstream results.
+> - **Statistically Fragile**: _Immune Cold_ ($N=22$) has fewer patients than GMM free parameters for its covariance matrix ($d=9 \Rightarrow 45$ covariance parameters), making its component estimate unreliable.
+> - **Cohort Imbalance**: TCGA-SKCM contributes 63.4% of all patients ($N=443$); the phenotype geometry is anchored primarily in untreated TCGA biology, not ICI-trial biology. A sensitivity analysis (ICI-only GMM) is the highest-priority validation step.
+> - **Biological Redundancy in Features**: TIS, CYT, and `CD8_T_cells` load near-identically on PC1 (+0.46, +0.45, +0.45), suggesting the immune activation axis is triple-counted. VIF analysis should confirm whether feature reduction improves cluster separation.
+> - **t-SNE Non-Reproducibility**: Stochastic across environments — replace with UMAP for deterministic and scientifically reproducible manifold projection.
+
+## Prioritised Fix Schedule
+
+| Priority | Issue | Effort | Expected Impact |
+|:--------:|:------|:------:|:----------------|
+| **1** | Separate binary mutation features from continuous GMM fit | Medium | Restores genuine soft-assignment uncertainty; meaningful posterior probabilities |
+| **1** | GMM BIC curve across $K \in [2,8]$ for formal model selection | Low | Confirms or challenges $K=4$; publishable justification |
+| **1** | ICI-only GMM sensitivity analysis ($N=256$) | Low | Validates that TCGA-SKCM dominance is not distorting phenotypes |
+| **1** | External cohort validation (apply `gmm_model.pkl` to Gide/Nathanson) | High | Only route to genuine independent replication |
+| **2** | VIF analysis on 9 clustering features; drop redundant features | Low | Reduces PC1 triple-counting; improves Silhouette |
+| **2** | VAF-weighted or allele-specific `NF1`/`BRAF`/`NRAS` encoding | Medium | Biologically more faithful mutation representation |
+| **2** | Permutation test for Silhouette significance | Low | Confirms clustering is non-random vs null |
+| **2** | Regularised (diagonal/tied) covariance for small components | Low | Stabilises _Immune Cold_ covariance estimate |
+| **2** | Replace t-SNE with UMAP (deterministic, reproducible) | Low | Reproducible manifold; better global structure preservation |
+| **2** | PCA coloured by cohort to assess batch structure | Low | Diagnoses TCGA-SKCM batch contamination of cluster geometry |
+| **3** | Implement `plot_radar_chart()` and `plot_cluster_heatmap()` stubs | Medium | Completes intended phenotype visualisation suite |
+| **3** | Remove duplicate `get_phenotype_color()` from `src/styles.py` L53 | Low | Eliminates silent dead code |
+| **3** | Deprecate `run_kmeans()` / `kmeans_model.pkl` legacy fallback | Low | Removes naming confusion between K-Means and GMM |

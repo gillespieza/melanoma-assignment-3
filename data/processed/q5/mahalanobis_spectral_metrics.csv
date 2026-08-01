@@ -1,4 +1,4 @@
 Method,Silhouette,Calinski_Harabasz,Davies_Bouldin,Log_Likelihood,AIC,BIC
-GMM (Standard Scaled + Spatial),0.1906,77.4,2.4283,6.5025,-8652.6,-7656.2
-GMM (Mahalanobis Transformed),0.1951,94.1,1.8651,4.3753,-5678.6,-4682.2
-Spectral Manifold (Graph Laplacian),0.2063,98.8,2.0027,,,
+GMM (Standard Scaled + Spatial),0.2043,229.9,1.7377,-4.2329,6083.7,6461.3
+GMM (Mahalanobis Transformed),0.2025,49.8,2.3818,-7.9196,11237.6,11615.2
+Spectral Manifold (Graph Laplacian),0.2737,463.7,1.1209,,,

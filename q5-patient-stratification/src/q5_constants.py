@@ -50,18 +50,29 @@ SPATIAL_MICROENVIRONMENT_FEATURES: List[str] = [
     "Spatial_Tumour_Infiltration_Index",
 ]
 
-# Features utilized for patient clustering (9 primary multi-modal features)
-CLUSTERING_FEATURES: List[str] = [
+# Stage 1 GMM clustering features: continuous immune and stromal signals only.
+# Binary mutation indicators are EXCLUDED here to prevent degenerate near-zero
+# within-cluster variance from collapsing GMM posteriors to hard 0/1 assignments.
+GMM_CONTINUOUS_FEATURES: List[str] = [
     "TIS",
     "CYT",
     "CD8_T_cells",
     "M1_Macrophages",
     "M2_Macrophages",
     "CAFs",
+]
+
+# Stage 2 deterministic stratification: binary driver mutation indicators.
+# Applied AFTER Stage 1 GMM to split the NF1-enriched immune cluster.
+MUTATION_STRATIFICATION_FEATURES: List[str] = [
     "mut_BRAF",
     "mut_NRAS",
     "mut_NF1",
 ]
+
+# Full 9-feature union retained for reference, downstream profiling, and
+# backwards-compatible tooling (e.g. 08_compare_clustering_algorithms.py).
+CLUSTERING_FEATURES: List[str] = GMM_CONTINUOUS_FEATURES + MUTATION_STRATIFICATION_FEATURES
 
 # Features utilized for phenotype profiling and label assignment (includes spatial indicators)
 PHENOTYPE_PROFILE_FEATURES: List[str] = [

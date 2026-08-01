@@ -98,8 +98,9 @@ PHASE2_ROC_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "youden_roc_c
 PHASE2_INTERACTION_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "genomic_interaction_tis_braf.png"
 PHASE2_MATRIX_PATH = SUBPROJECT_ROOT / "plots" / "feature_analysis" / "genomic_immune_interaction_matrix.png"
 PHASE3_PCA_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "clustering" / "pca_clusters.png"
-PHASE3_UMAP_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "clustering" / "tsne_clusters.png"
+PHASE3_UMAP_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "clustering" / "umap_clusters.png"
 PHASE3_CLUSTER_PLOT_PATH = PHASE3_PCA_PLOT_PATH
+PHASE3_TMB_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "clustering" / "tmb_by_phenotype_comparison.png"
 PHASE4_ODE_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "phenotypes" / "ode_trajectories.png"
 
 # Phase 5 Subgroup Model Paths
@@ -601,6 +602,20 @@ def main() -> None:
             "> - **Non-Linear Topology**: t-SNE (perplexity=50) preserves local patient neighbourhood structure and non-linear biomarker interactions "
             "across the 9 multi-modal clustering features (`TIS`, `CYT`, CD8 T-cells, M1/M2 Macrophages, CAFs, `BRAF`/`NRAS`/`NF1` mutations). "
             "Natural within-cluster scatter reflects genuine continuous variation within each immune phenotype.\n"
+        )
+
+    # TMB distribution across phenotype clusters
+    if PHASE3_TMB_PLOT_PATH.exists():
+        rel_img_tmb = rel_path(PHASE3_TMB_PLOT_PATH)
+        doc_sections.append("### Tumour Mutational Burden (TMB) Across Biological Phenotypes\n")
+        doc_sections.append(f"![TMB Distribution by Phenotype]({rel_img_tmb})\n")
+        doc_sections.append(
+            "> [!INFO] Figure Interpretation: TMB Distribution & High-TMB Prevalence\n"
+            f"> - **What this plot shows**: Two-panel summary of nonsynonymous TMB across the {n_patients_full}-patient cohort. "
+            "Panel A shows continuous log-scale TMB distributions (violin + boxplot + individual patients). Panel B shows the proportion of patients in each phenotype meeting the FDA-approved high-TMB threshold ($\\geq 10$ mutations/Mb).\n"
+            "> - **Mutant-Driven Dominance**: The *Mutant-Driven* (`NF1` Loss & RAS Hyperactivation) phenotype has a median TMB of $\\approx 41$ mut/Mb — more than 3× higher than any other phenotype — and an extreme right tail reaching $>1{,}000$ mut/Mb, consistent with replication-repair deficiency secondary to `NF1`/RAS pathway dysregulation.\n"
+            "> - **High-TMB Enrichment**: $83\\%$ of *Mutant-Driven* patients exceed the $\\geq 10$ mut/Mb FDA threshold vs $\\approx 48\\%$ in *Immune Hot* and *M2-High* clusters — confirming that neoantigen load is a phenotype-specific biological property, not a cohort-wide phenomenon.\n"
+            "> - **Biological Relevance**: High TMB generates immunogenic neoantigens that can engage adaptive immunity; however, the `NF1`-loss TME is not inherently inflamed (TIS is low-to-moderate), suggesting neoantigen presentation is suppressed — a context where combined checkpoint + TMB-directed therapeutic routing is biologically motivated.\n"
         )
 
     # Biology-centric takeaways — treatment routing, not ICI response

@@ -541,6 +541,65 @@ def plot_net_benefit_by_phenotype(
     plt.close(fig)
 
 
+def main() -> None:
+    """Orchestrate Phase 6: Decision Curve Analysis and Clinical Utility Assessment.
+
+    Loads the clustered patient dataset produced by Phase 3, generates predicted
+    response probabilities for each clinical strategy (phenotype-stratified Q5 model,
+    global Q1 predictor, single-gene benchmarks), computes Net Benefit across decision
+    thresholds via Decision Curve Analysis, and saves all evaluation plots and metrics.
+    """
+    print("\n" + "=" * 80)
+    print("Starting Phase 6: Clinical Utility Assessment (Project root: .)")
+    print("=" * 80)
+
+    PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # ------------------------------------------------------------------
+    # Load patient cluster data
+    # ------------------------------------------------------------------
+    if not INPUT_FILE.exists():
+        raise FileNotFoundError(
+            f"Patient cluster file not found: {rel_path(INPUT_FILE)}. "
+            "Run Phase 3 (03_cluster_patients.py) first."
+        )
+    df = pd.read_csv(INPUT_FILE)
+    df_valid = df.dropna(subset=["RESPONSE_BINARY"]).copy()
+    df_valid["RESPONSE_BINARY"] = df_valid["RESPONSE_BINARY"].astype(int)
+    print(f"Loaded {len(df_valid)} patients with known response status.")
+
+    # ------------------------------------------------------------------
+    # Generate predicted probabilities for all strategies
+    # ------------------------------------------------------------------
+    prob_cols = generate_predictions(df_valid)
+
+    # ------------------------------------------------------------------
+    # Decision Curve Analysis across threshold range
+    # ------------------------------------------------------------------
+    thresholds = np.linspace(0.01, 0.99, 99)
+    df_dca = calculate_dca_curves(df_valid, prob_cols, thresholds)
+
+    dca_csv_path = OUTPUT_DIR / "dca_results.csv"
+    df_dca.to_csv(dca_csv_path, index=False)
+    print(f"Saved DCA results to {rel_path(dca_csv_path)}")
+
+    # ------------------------------------------------------------------
+    # Generate plots
+    # ------------------------------------------------------------------
+    dca_plot_file = PLOTS_DIR / "dca_net_benefit_curves.png"
+    nnt_plot_file = PLOTS_DIR / "nnt_ppv_comparison.png"
+    tox_plot_file = PLOTS_DIR / "unnecessary_treatments_avoided.png"
+    pheno_plot_file = PLOTS_DIR / "net_benefit_by_phenotype.png"
+
+    target_thresholds = [0.20, 0.30, 0.40]
+    fixed_pt = 0.30
+
+    plot_dca_curves(df_dca, dca_plot_file)
+    plot_nnt_ppv_comparison(df_dca, target_thresholds, nnt_plot_file)
+    plot_unnecessary_treatments_avoided(df_dca, tox_plot_file)
+    plot_net_benefit_by_phenotype(df_valid, prob_cols, fixed_pt, pheno_plot_file)
+
     print("\nGenerated Plots:")
     print(f"  1. {rel_path(dca_plot_file)}")
     print(f"  2. {rel_path(nnt_plot_file)}")
@@ -560,3 +619,4 @@ if __name__ == "__main__":
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
             print(f"Logging console output to {rel_path(LOG_PATH)}")
             main()
+

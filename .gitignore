@@ -236,3 +236,4 @@ scratch/
 
 .DS_Store
 *.bak
+repomix-output.xml
