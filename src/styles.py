@@ -16,6 +16,9 @@ COHORT_PALETTE = {
     "Pooled Trials": "#009E73",           # Okabe-Ito Bluish Green Benchmark
 }
 
+# Neutral / Reference Colors
+DARK_SLATE_CHARCOAL = "#37474F"           # Dark Slate Charcoal Reference
+
 # Clinical Response Mappings (Okabe-Ito Status Palette)
 RESPONSE_PALETTE = {
     "CR/PR": "#009E73",                   # Okabe-Ito Bluish Green (Positive Response)
