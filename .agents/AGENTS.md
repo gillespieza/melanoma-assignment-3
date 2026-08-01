@@ -179,4 +179,12 @@ When fixing code smells or refactoring code in this repository, follow these gui
     **The specific failure mode this rule prevents:**
     > ✗ *"IMPRES was excluded from the panel"* — written after reading code intent, without checking whether `IMPRES` is a column in `feature_matrix.csv`.
     > ✓ *"`IMPRES` appears in column 16 of `feature_matrix.csv`; it is retained in the 33-feature panel. Its scope is limited to Phase 5/6 predictive models rather than the TME deconvolution core."*
+17. **Windows & PowerShell Command Execution Safety**: When executing terminal commands on Windows (`pwsh`):
+    - **Avoid Complex `python -c` Inline Strings**: Never pass complex, multi-line, or nested-quote Python strings via `python -c "..."`. PowerShell strips and mangles quotes inside command arguments, leading to `SyntaxError: unterminated string literal`.
+    - **Use Scratch Files for Snippets**: Write non-trivial Python verification snippets to a scratch script file (e.g. using `write_to_file` into `scratch/check_snippet.py` or `.scratch/`) and execute `python scratch/check_snippet.py`.
+    - **PowerShell Compatibility**: Ensure all shell commands use flags and syntax compatible with PowerShell on Windows (e.g. forward slashes or escaped backslashes for paths, standard pwsh cmdlets or cross-platform binaries).
+    - **Explicit UTF-8 File Encoding**: Always explicitly specify `encoding="utf-8"` when reading or writing text files in Python scripts (`open(..., encoding="utf-8")`, `Path.read_text(encoding="utf-8")`, `Path.write_text(..., encoding="utf-8")`) to prevent Windows default `cp1252` `UnicodeDecodeError` failures.
+    - **Console Output UTF-8 Encoding**: Reconfigure standard output encoding in scripts printing non-ASCII/Unicode characters (e.g., `sys.stdout.reconfigure(encoding="utf-8")` or `encoding="utf-8"` in log streams) to avoid `UnicodeEncodeError: 'charmap' codec can't encode character` when running on Windows.
+
+
 

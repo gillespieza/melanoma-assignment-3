@@ -13,12 +13,14 @@ predicted non-responders to immunotherapy sensitivity.
 import contextlib
 from pathlib import Path
 import sys
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import QuantileTransformer
 
 # ---------------------------------------------------------------------------
 # Bootstrap project root resolution for top-level imports
@@ -104,11 +106,24 @@ ALIGN_SCORE_COLD_HIGH: float = 0.75
 ALIGN_SCORE_COLD_LOW: float = 0.50
 ALIGN_SCORE_DEFAULT: float = 0.50
 
+# Phenotype display name constants
+PHENO_NAME_M2_SHORT: str = "M2 Immunosuppressive"
+PHENO_NAME_M2_HIGH: str = "Immunosuppressive M2-High"
+PHENO_NAME_IMMUNE_COLD: str = "Immune Cold"
+PHENO_NAME_IMMUNE_HOT: str = "Immune Hot"
+
+# Sigmoidal boundary smoothing parameters for Arm C Immune Cold therapy selection
+SIGMOID_MIDPOINT: float = 40.0
+SIGMOID_STEEP_K: float = 0.2
+EQUIPOL_LOWER_BOUND: float = 35.0
+EQUIPOL_UPPER_BOUND: float = 45.0
+
 # Numerical safety and plot thresholds
 STD_EPSILON: float = 1e-9
 BAR_ANNOTATION_MIN_HEIGHT: float = 5.0
 KDE_MIN_UNIQUE_VALUES: int = 3
 KDE_MIN_VARIANCE: float = 1e-3
+MIN_QUANTILE_SAMPLES: int = 10  # Minimum N required for QuantileTransformer; falls back to min-max below
 
 set_presentation_style()
 
@@ -193,8 +208,56 @@ def _z_score(series: pd.Series, df_index: pd.Index) -> pd.Series:
     return (s - s.mean()) / std
 
 
+def _get_default_treatability_weights() -> Tuple[float, float, float, float]:
+    """Return default heuristic component weights for Treatability Index."""
+    return (
+        TREAT_WEIGHT_AG_PRES,
+        TREAT_WEIGHT_IFN,
+        TREAT_WEIGHT_EFFECTOR,
+        -TREAT_WEIGHT_M2_BARRIER,
+    )
+
+
+def _build_treatability_feature_matrix(df: pd.DataFrame) -> pd.DataFrame:
+    """Build component feature matrix for empirical weight fitting."""
+    ag_pres, ifn_path, effector, barrier, _ = _compute_treatability_raw_components(df)
+    return pd.DataFrame(
+        {
+            "ag_pres": ag_pres,
+            "ifn_path": ifn_path,
+            "effector": effector,
+            "barrier": barrier,
+        },
+        index=df.index,
+    )
+
+
+def fit_empirical_treatability_weights(
+    df: pd.DataFrame,
+) -> Tuple[float, float, float, float]:
+    """Fit L2-regularised logistic regression to derive empirical component weights for Treatability Index."""
+    if "RESPONSE_BINARY" not in df.columns or df["RESPONSE_BINARY"].dropna().nunique() < 2:
+        print("Response annotations unavailable for fitting. Using default heuristic weights.")
+        return _get_default_treatability_weights()
+
+    X = _build_treatability_feature_matrix(df)
+    valid_mask = df["RESPONSE_BINARY"].notna()
+    X_tr, y_tr = X[valid_mask], df.loc[valid_mask, "RESPONSE_BINARY"].astype(int)
+
+    clf = LogisticRegression(C=1.0, solver="lbfgs", random_state=42)
+    clf.fit(X_tr, y_tr)
+    c = clf.coef_[0]
+
+    print(
+        f"Fitted empirical weights (N={len(X_tr)}): "
+        f"AgPres={c[0]:.4f}, IFN={c[1]:.4f}, Effector={c[2]:.4f}, Barrier={c[3]:.4f}"
+    )
+    return (float(c[0]), float(c[1]), float(c[2]), float(c[3]))
+
+
 def _compute_treatability_raw_components(
     df: pd.DataFrame,
+    weights: Optional[Tuple[float, float, float, float]] = None,
 ) -> Tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
     """Compute normalized z-scores and raw weighted treatability component series."""
     z_tis = _safe_z_score(df, "TIS")
@@ -204,32 +267,47 @@ def _compute_treatability_raw_components(
     z_m1m2 = _safe_z_score(df, "M1_M2_Ratio")
     z_m2 = _safe_z_score(df, "M2_score")
 
-    ag_pres_score = AG_PRES_CYT_WEIGHT * z_cyt + AG_PRES_TIS_WEIGHT * z_tis
-    ifn_pathway_score = z_ifn
-    immuno_effector = z_cd8 + z_m1m2
-    immunosuppressive_barrier = z_m2
+    ag_pres = AG_PRES_CYT_WEIGHT * z_cyt + AG_PRES_TIS_WEIGHT * z_tis
+    ifn_path = z_ifn
+    effector = z_cd8 + z_m1m2
+    barrier = z_m2
 
-    raw_treatability = (
-        TREAT_WEIGHT_AG_PRES * ag_pres_score +
-        TREAT_WEIGHT_IFN * ifn_pathway_score +
-        TREAT_WEIGHT_EFFECTOR * immuno_effector -
-        TREAT_WEIGHT_M2_BARRIER * immunosuppressive_barrier
+    w_ag, w_ifn, w_eff, w_bar = _get_default_treatability_weights() if weights is None else weights
+    raw_treatability = w_ag * ag_pres + w_ifn * ifn_path + w_eff * effector + w_bar * barrier
+    return ag_pres, ifn_path, effector, barrier, raw_treatability
+
+
+def _rank_scale_treatability_index(raw_treatability: pd.Series) -> np.ndarray:
+    """Rescale raw treatability scores to 0-100 via rank-preserving quantile transformation.
+
+    Uses QuantileTransformer (uniform output) to map each patient to their rank-order
+    percentile, eliminating boundary-outlier compression inherent in linear min-max scaling.
+    Falls back to linear min-max for very small cohorts (N < MIN_QUANTILE_SAMPLES).
+    """
+    values = raw_treatability.values.reshape(-1, 1)
+    n = len(values)
+
+    if n < MIN_QUANTILE_SAMPLES:
+        # Linear min-max fallback for tiny cohorts
+        min_t, max_t = values.min(), values.max()
+        if max_t > min_t:
+            return 100.0 * (values.ravel() - min_t) / (max_t - min_t)
+        return np.full(n, 50.0)
+
+    qt = QuantileTransformer(
+        output_distribution="uniform",
+        n_quantiles=min(n, 1000),
+        random_state=42,
     )
-    return ag_pres_score, ifn_pathway_score, immuno_effector, immunosuppressive_barrier, raw_treatability
-
-
-def _scale_treatability_index(raw_treatability: pd.Series, df_len: int) -> np.ndarray:
-    """Rescale raw treatability scores into a 0-100 index."""
-    min_t, max_t = raw_treatability.min(), raw_treatability.max()
-    if max_t > min_t and not np.isnan(max_t):
-        return 100.0 * (raw_treatability - min_t) / (max_t - min_t)
-    return np.full(df_len, 50.0)
+    scaled = qt.fit_transform(values).ravel()
+    return (scaled * 100.0).clip(0.0, 100.0)
 
 
 def calculate_treatability_index(df: pd.DataFrame) -> Tuple[np.ndarray, pd.DataFrame]:
-    """Calculate composite Treatability Index (0-100) and component sub-scores."""
-    ag_pres, ifn_path, effector, barrier, raw_t = _compute_treatability_raw_components(df)
-    treatability_index = _scale_treatability_index(raw_t, len(df))
+    """Calculate composite Treatability Index (0-100) and component sub-scores using empirical weights."""
+    weights = fit_empirical_treatability_weights(df)
+    ag_pres, ifn_path, effector, barrier, raw_t = _compute_treatability_raw_components(df, weights=weights)
+    treatability_index = _rank_scale_treatability_index(raw_t)
 
     df_components = pd.DataFrame(
         {
@@ -248,17 +326,27 @@ def calculate_treatability_index(df: pd.DataFrame) -> Tuple[np.ndarray, pd.DataF
 # Treatment Arm Allocation Rules
 # ---------------------------------------------------------------------------
 
+def _compute_sigmoidal_therapy_weights(treat_idx: float) -> Tuple[float, float]:
+    """Compute logistic sigmoidal transition weights (w_axl, w_hdac) around Treatability Index midpoint."""
+    w_axl = float(1.0 / (1.0 + np.exp(-SIGMOID_STEEP_K * (treat_idx - SIGMOID_MIDPOINT))))
+    return w_axl, 1.0 - w_axl
+
+
 def _evaluate_arm_c_therapy(pheno_name: str, treat_idx: float) -> Tuple[str, str]:
     """Determine recommended therapy and Q4 target nomination for Arm C combination patients."""
-    if pheno_name in ("M2 Immunosuppressive", "Immunosuppressive M2-High"):
+    if pheno_name in (PHENO_NAME_M2_SHORT, PHENO_NAME_M2_HIGH):
         rx = "Anti-PD-1 + CSF1R Inhibitor (Pexidartinib) [Macrophage Reprogramming]"
         q4_target = "CSF1R (M2 TAM Depletion)"
-    elif pheno_name == "Immune Cold":
-        if treat_idx > TREATABILITY_CONVERSION_THRESHOLD:
-            rx = "Anti-PD-1 + AXL Inhibitor (Bemcentinib) [STING / Type-I IFN Priming]"
+    elif pheno_name == PHENO_NAME_IMMUNE_COLD:
+        w_axl, w_hdac = _compute_sigmoidal_therapy_weights(treat_idx)
+        if EQUIPOL_LOWER_BOUND <= treat_idx <= EQUIPOL_UPPER_BOUND:
+            rx = f"Equipoise Zone: Anti-PD-1 + AXL ({w_axl*100:.1f}%) / HDAC ({w_hdac*100:.1f}%)"
+            q4_target = "AXL / STING & HDAC (Dual Candidate)"
+        elif treat_idx > EQUIPOL_UPPER_BOUND:
+            rx = f"Anti-PD-1 + AXL Inhibitor (Bemcentinib) [STING Priming; Prob: {w_axl*100:.1f}%]"
             q4_target = "AXL / STING Pathway"
         else:
-            rx = "Chemotherapy (Dacarbazine) / HDAC Inhibitor + Anti-PD-1"
+            rx = f"Chemotherapy / HDAC Inhibitor + Anti-PD-1 [Epigenetic Remodeling; Prob: {w_hdac*100:.1f}%]"
             q4_target = "HDAC / Epigenetic Remodeling"
     else:
         rx = "Anti-PD-1 + MDM2 Antagonist (Idasanutlin) [p53 Reactivation]"
@@ -275,7 +363,7 @@ def _evaluate_patient_arm(
     response = row.get("RESPONSE_BINARY", np.nan)
     tis_val = row.get("TIS", 0.0)
 
-    if pheno_name == "Immune Hot" or (tis_val > tis_q60 and response != 0):
+    if pheno_name == PHENO_NAME_IMMUNE_HOT or (tis_val > tis_q60 and response != 0):
         return (
             "Arm A: Immunotherapy",
             "Anti-PD-1 Monotherapy (Pembrolizumab / Nivolumab)",
@@ -332,10 +420,10 @@ def _minmax(series: pd.Series) -> pd.Series:
     return (series - lo) / (hi - lo) if hi > lo else pd.Series(0.5, index=series.index)
 
 
-def _assign_confidence_band(raw_score: float, is_nras_only: bool) -> str:
-    """Return 'High' / 'Moderate' / 'Low'; NRAS-only Arm B patients are capped at Moderate."""
+def _assign_confidence_band(raw_score: float) -> str:
+    """Return 'High' / 'Moderate' / 'Low' confidence band based on raw score thresholds."""
     if raw_score >= CONF_HIGH_THRESHOLD:
-        return "Moderate" if is_nras_only else "High"
+        return "High"
     return "Moderate" if raw_score >= CONF_MOD_THRESHOLD else "Low"
 
 
@@ -371,19 +459,19 @@ def _compute_arm_c_confidence(
     )
 
 
-def _build_alignment_scores(df: pd.DataFrame) -> pd.Series:
+def _build_alignment_scores(df: pd.DataFrame, cluster_map: Optional[Dict[int, str]] = None) -> pd.Series:
     """Build phenotype-specific alignment scores for Arm C confidence weighting."""
-    cluster_id_to_name = get_cluster_name_map(df)
+    cluster_id_to_name = cluster_map if cluster_map is not None else get_cluster_name_map(df)
     pheno_short = df["Cluster_ID"].map(cluster_id_to_name)
     alignment_score = pd.Series(ALIGN_SCORE_DEFAULT, index=df.index)
-    alignment_score[pheno_short.isin(["M2 Immunosuppressive", "Immunosuppressive M2-High"])] = ALIGN_SCORE_M2
-    alignment_score[(pheno_short == "Immune Cold") & (df["Treatability_Index"] > TREATABILITY_CONVERSION_THRESHOLD)] = ALIGN_SCORE_COLD_HIGH
-    alignment_score[(pheno_short == "Immune Cold") & (df["Treatability_Index"] <= TREATABILITY_CONVERSION_THRESHOLD)] = ALIGN_SCORE_COLD_LOW
+    alignment_score[pheno_short.isin([PHENO_NAME_M2_SHORT, PHENO_NAME_M2_HIGH])] = ALIGN_SCORE_M2
+    alignment_score[(pheno_short == PHENO_NAME_IMMUNE_COLD) & (df["Treatability_Index"] > TREATABILITY_CONVERSION_THRESHOLD)] = ALIGN_SCORE_COLD_HIGH
+    alignment_score[(pheno_short == PHENO_NAME_IMMUNE_COLD) & (df["Treatability_Index"] <= TREATABILITY_CONVERSION_THRESHOLD)] = ALIGN_SCORE_COLD_LOW
     return alignment_score
 
 
-def _compute_arm_confidence_scores(df: pd.DataFrame) -> Tuple[pd.Series, pd.Series]:
-    """Compute raw confidence scores and NRAS-only masks per arm."""
+def _compute_arm_confidence_scores(df: pd.DataFrame) -> pd.Series:
+    """Compute raw confidence scores per arm."""
     tis_q60 = df["TIS"].quantile(TIS_HIGH_QUANTILE) if "TIS" in df.columns else 0.0
     tis_norm = _safe_minmax(df, "TIS")
     ifn_norm = _safe_minmax(df, "IFN_gamma")
@@ -394,7 +482,8 @@ def _compute_arm_confidence_scores(df: pd.DataFrame) -> Tuple[pd.Series, pd.Seri
 
     tis_above_boundary = ((df["TIS"] - tis_q60) / (df["TIS"].std() + STD_EPSILON)).clip(lower=0.0)
     tis_dist_norm = _minmax(tis_above_boundary)
-    alignment_score = _build_alignment_scores(df)
+    cluster_map = get_cluster_name_map(df)
+    alignment_score = _build_alignment_scores(df, cluster_map=cluster_map)
 
     arm_col = df["Treatment_Arm"]
     mask_a = arm_col.str.startswith("Arm A")
@@ -405,20 +494,16 @@ def _compute_arm_confidence_scores(df: pd.DataFrame) -> Tuple[pd.Series, pd.Seri
     conf_raw[mask_a] = _compute_arm_a_confidence(tis_dist_norm, ifn_norm, cd8_norm, mask_a)
     conf_raw[mask_b] = _compute_arm_b_confidence(df, dab_norm, mask_b)
     conf_raw[mask_c] = _compute_arm_c_confidence(alignment_score, treat_norm, m2_norm_inv, mask_c)
-
-    nras_only = (df["mut_BRAF"] != 1) & (df["mut_NRAS"] == 1) & mask_b
-    return conf_raw, nras_only
+    return conf_raw
 
 
 def compute_recommendation_confidence(df: pd.DataFrame) -> pd.DataFrame:
     """Compute arm-specific Recommendation_Confidence_Index (0-100) and Confidence_Band."""
     df_out = df.copy()
-    conf_raw, nras_only = _compute_arm_confidence_scores(df)
+    conf_raw = _compute_arm_confidence_scores(df)
 
     df_out["Recommendation_Confidence_Index"] = (conf_raw * 100.0).clip(0.0, 100.0).round(2)
-    df_out["Confidence_Band"] = [
-        _assign_confidence_band(raw, nras) for raw, nras in zip(conf_raw, nras_only)
-    ]
+    df_out["Confidence_Band"] = [_assign_confidence_band(raw) for raw in conf_raw]
     return df_out
 
 
