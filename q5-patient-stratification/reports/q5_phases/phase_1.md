@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-1
   - q5
-created: 2026-08-01 15:58
+created: 2026-08-01 17:43
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 15:58
+updated: 2026-08-01 17:43
 ---
 
 ## 1. Phase 1: Multi-Modal Feature Matrix & Microenvironment Deconvolution
@@ -53,11 +53,11 @@ Rather than evaluating ~19,757 genes independently, Phase 1 projects patient exp
 
 > [!INSIGHT] Key Takeaways
 > - **Dual-Matrix Dataflow**: Established a dual dataflow pipeline isolating response-labeled ICI trials ($N_{\text{ICI}} = 326$) for predictive modelling while embedding the full cohort ($N_{\text{Full}} = 699$) for unsupervised manifold learning.
-> - **Dimensionality Reduction**: Compressed ~19,757 transcriptomic features into 19 engineered biological signatures (part of a 33-feature multi-modal panel, centered on 9 core baseline biomarkers).
+> - **Dimensionality Reduction**: Compressed ~19,757 transcriptomic features into 18 engineered biological signatures (part of a 32-feature multi-modal panel, centered on 9 core baseline biomarkers).
 > - **M1/M2 Polarisation**: The Macrophage STV score captures stromal microenvironmental suppression that operates independently of total T-cell density.
 
 > [!INFO]+ Phase 1 Feature Matrix Architecture & Complete Feature Inventory
-> - **Transcriptomic Features (19)**:
+> - **Transcriptomic Features (18)**:
 >   - **Core Immune Signatures (6)**: 
 >      1. `TIS` (Tumour Inflammation Signature)
 >      2. `CYT` (Cytolytic Index)

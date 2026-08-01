@@ -7,14 +7,14 @@ tags:
   - patient-stratification
   - phase-2
   - q5
-created: 2026-08-01 15:58
+created: 2026-08-01 17:43
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 15:58
+updated: 2026-08-01 17:43
 ---
 
 ## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds
@@ -57,7 +57,7 @@ Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patient
 |:-----------------------|:-----------------|:-----------|:--------------|:--------------|:----------|
 | `TIS`                  | 0.191            | 0.184      | 57.3%         | 61.1%         | 0.585     |
 | `CYT`                  | 0.621            | 0.205      | 32.9%         | 87.6%         | 0.583     |
-| `IFN_gamma`            | 0.243            | 0.151      | 54.9%         | 60.2%         | 0.566     |
+| `IFN_gamma`            | 0.439            | 0.170      | 42.7%         | 74.3%         | 0.575     |
 | `CD8_T_cells`          | 0.069            | 0.184      | 67.1%         | 51.3%         | 0.584     |
 | **`B_cells`**          | **0.430**        | **0.306**  | **53.7%**     | **77.0%**     | **0.632** |
 | `M1_M2_Ratio`          | 1.076            | 0.034      | 6.1%          | 97.3%         | 0.442     |
@@ -84,7 +84,7 @@ Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patient
 
 > [!INSIGHT] Analytical Validation: Heatmap Confirms Primary Focus on TIS x BRAF
 > - **Validation of Initial Hypothesis**: The comprehensive interaction matrix confirms that `TIS` $\times$ `BRAF` ($\beta = -0.65, p = 0.040$) is indeed the single statistically significant driver-microenvironment interaction ($p < 0.05$), validating our initial analytical focus on this key biomarker pair.
-> - **Borderline Cells Highlight `BRAF` Again**: Every borderline significant interaction ($p < 0.10$) occurs exclusively within the `BRAF` column: `BRAF` $\times$ `B_cells` ($\beta = -0.59, p = 0.073$), `BRAF` $\times$ `CD8_T_cells` ($\beta = -0.57, p = 0.074$), `BRAF` $\times$ `IFN_gamma` ($\beta = -0.53, p = 0.087$). This repeatedly points to `BRAF` oncogenic signalling as the dominant genomic modifier of microenvironmental immunity.
+> - **Borderline Cells Highlight `BRAF` Again**: Every borderline significant interaction ($p < 0.10$) occurs exclusively within the `BRAF` column: `BRAF` $\times$ `IFN_gamma` ($\beta = -0.57, p = 0.064$), `BRAF` $\times$ `B_cells` ($\beta = -0.59, p = 0.073$), `BRAF` $\times$ `CD8_T_cells` ($\beta = -0.57, p = 0.074$). This repeatedly points to `BRAF` oncogenic signalling as the dominant genomic modifier of microenvironmental immunity.
 
 ### Key Takeaways
 > [!INSIGHT] Key Takeaways: Phase 2 Feature Analysis & Stratification Rationale

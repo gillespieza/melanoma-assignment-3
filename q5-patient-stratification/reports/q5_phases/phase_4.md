@@ -7,20 +7,20 @@ tags:
   - patient-stratification
   - phase-4
   - q5
-created: 2026-08-01 15:58
+created: 2026-08-01 17:43
 cssclasses:
   - table-small
   - table-center
   - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 15:58
+updated: 2026-08-01 17:43
 ---
 
 ## 4. Phase 4: Phenotype Characterisation & ODE Digital Twin Dynamics
 
 > [!NOTE] Analytical Methodology & Rationale
-> - **What is being done**: Coupling multi-dimensional biomarker signatures with a four-module literature-parameterised ODE system (RAF dimerisation, 8-state MAPK cascade, tumour-immune clearance, and PD-1/PD-L1 checkpoint axis) to simulate 180-day dynamic trajectories, stratify overall survival, and validate against RPPA protein measurements.
+> - **What is being done**: Coupling multi-dimensional biomarker signatures with a four-module literature-parameterised ODE system (RAF dimerisation, 8-state MAPK cascade, tumour-immune clearance, and PD-1/PD-L1 checkpoint axis) to simulate 180-day dynamic trajectories, stratify overall survival by phenotype cluster, and validate against RPPA protein measurements.
 > - **Why we are doing it**: Integrating Q3 ODE dynamic models allows dynamic prediction of tumour regression over time, provides mechanistic survival stratification without black-box ML, and identifies which resistant phenotypes require combination rescue therapy.
 > - **What question it answers**: How do simulated tumour trajectories respond to anti-PD-1 monotherapy vs combination therapy, and how accurately does the 3-feature ODE digital twin stratify survival compared to machine learning?
 
@@ -48,18 +48,27 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 ![Q3 ODE Tumour Trajectories](q5-patient-stratification/plots/phenotypes/ode_trajectories.png)
 
 > [!INFO] Figure Interpretation: Q3 ODE Trajectory Simulations
-> - **What this plot shows**: Dynamic 180-day relative tumour volume $T(t)/K$ trajectories simulated using the Kuznetsov-de Pillis ODE system parameterised by cluster biomarker means.
-> - **Complete Regression ($T(180) \to 0.00$)**: *Immune Hot* (solid crimson) achieves complete tumour burden clearance by Day 60. *Mutant-Driven* (solid orange) achieves complete tumour burden clearance by Day 90–120.
-> - **Immune Cold Desert ($T(180) = 0.52$)**: *Immune Cold* (solid blue) exhibits incomplete tumour regression due to severe effector T-cell paucity and low initial influx rate ($s = 0.02$).
-> - **Resistance & Combination Rescue**: *M2 Immunosuppressive* under anti-PD-1 monotherapy (dotted purple) experiences uncontrolled growth ($T(180) = 0.94$). Adding an M2-depleting agent (dashed purple) restores T-cell killing efficiency ($c \to 0.40$), driving complete tumour regression ($T(180) \to 0.00$).
+> - **What this plot shows**: Dual-arm 180-day relative tumour volume $T(t)/K$ trajectories: Panel A shows per-patient ODE simulations aggregated as phenotype-level mean curves under Immunotherapy (Anti-PD-1 monotherapy and M2-rescue combination); Panel B shows the same patients under Targeted Therapy (BRAFi Vemurafenib 500 nM). Per-patient tumour growth rate $r$ is derived from Q3 Modules A→B pERK coupling; killing rate $c$ from Q3 Module D checkpoint occupancy.
+> - **Complete Regression (Panel A)**: *Immune Hot* achieves near-complete tumour burden clearance ($T(180) = 0.11$). *Mutant-Driven* also achieves effective clearance ($T(180) = 0.76$) via high immunogenicity from elevated TMB and neoantigen load.
+> - **Immune Cold Desert ($T(180) = 0.96$)**: *Immune Cold* (Panel A) exhibits incomplete tumour regression due to severe effector T-cell paucity and low initial infiltration.
+> - **Resistance & Combination Rescue**: *M2 Immunosuppressive* under anti-PD-1 monotherapy (dotted line, Panel A) experiences uncontrolled growth ($T(180) = 0.91$). Adding an M2-depleting agent (dashed line) restores T-cell killing efficiency, driving effective tumour regression ($T(180) = 0.46$).
 
-### Overall Survival Stratification by ODE Checkpoint Tumour Burden
+### Overall Survival Stratification by Biological Phenotype Cluster
 
-![KM Checkpoint Survival](q3-ode-model/outputs/plots/km_checkpoint_tumour_burden.png)
+![KM Survival by Phenotype](q5-patient-stratification/plots/phenotypes/km_survival_by_phenotype.png)
 
-> [!INFO] Figure Interpretation: Kaplan-Meier Survival Stratification
-> - **What this plot shows**: Kaplan-Meier overall survival curves for SKCM patients stratified by ODE-simulated checkpoint tumour burden.
-> - **Statistical Significance ($p = 0.0024$)**: High checkpoint tumour burden identifies refractory disease, producing an 82-month median survival gap (148 months low burden vs 66 months high burden, $p = 0.0024$).
+> [!INFO] Figure Interpretation: Kaplan-Meier Survival by Phenotype Cluster
+> - **What this plot shows**: Kaplan-Meier overall survival curves for $N = 677$ patients with OS data, stratified by the four biological phenotype clusters (log-rank p < 0.001).
+> - **Worst Prognosis**: *Immune Cold* (Cluster 1) has the lowest median OS (11.4 months), consistent with the T-cell desert phenotype failing to engage immunotherapy.
+> - **Best Prognosis**: *Mutant-Driven* patients benefit from high TMB-driven immunogenicity. *Immune Hot* (Cluster 2) and *M2-High* show similar median OS (~27–29 months) but differ in treatment arm routing.
+
+### Q3 Orthogonal Validation: ODE Checkpoint Tumour Burden Stratifies Survival
+
+![Q3 KM Checkpoint Survival](q3-ode-model/outputs/plots/km_checkpoint_tumour_burden.png)
+
+> [!INFO] Figure Interpretation: Q3 Kaplan-Meier Survival by ODE Checkpoint Burden
+> - **What this plot shows**: Kaplan-Meier overall survival curves for TCGA-SKCM patients stratified by ODE-simulated anti-PD-1 checkpoint tumour burden (Q3 Phase 4).
+> - **Statistical Significance (p = 0.0024)**: High checkpoint tumour burden identifies checkpoint-refractory disease. Low-burden patients have a median OS of 148 months vs 66 months for high-burden patients — a 82-month median survival gap (p = 0.0024).
 
 ### Orthogonal Protein Validation & ML Performance Benchmark
 
@@ -68,49 +77,49 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 > [!INFO] Figure Interpretation: Independent Orthogonal Protein Validation (RPPA)
 > - **What is being done**: Correlating mechanistic ODE-predicted baseline `pERK` levels against independent, experimentally measured `pERK` (`MAPK_pT202_Y204`) and `pMEK` (`MEK1_pS217_S221`) protein levels from TCGA-SKCM Reverse-Phase Protein Array (RPPA) assays ($N = 310$).
 > - **Why we are doing it**: To validate whether the 12-gene transcriptomic ODE digital twin captures physical protein-level signalling dynamics using an orthogonal experimental platform rather than relying solely on self-referential gene expression data.
-> - **What question it answers**: Does the ODE mechanistic model accurately predict physical downstream signalling activation at the protein level? Yes, showing a statistically significant positive correlation with measured `pERK` ($r = 0.175, p = 0.00203$) and confirming that `NRAS`-mutant tumours exhibit the highest baseline `pERK` activation ($p = 3.16 \times 10^{-9}$).
+> - **What question it answers**: Does the ODE mechanistic model accurately predict physical downstream signalling activation at the protein level? Yes — statistically significant positive correlation with measured `pERK` ($r = 0.175$, $p = 2.03 \times 10^{-3}$) confirms the kinetic parameters capture true cellular signalling. `NRAS`-mutant tumours exhibit the highest baseline `pERK` activation ($p = 3.16 \times 10^{-9}$, Mann-Whitney U).
 
 
 ![ML vs ODE Benchmark](q3-ode-model/outputs/plots/ml_vs_ode_comparison.png)
 
 > [!INFO] Figure Interpretation: Machine Learning vs. Mechanistic ODE Benchmark
-> - **What is being done**: Benchmarking 5-fold cross-validated ROC-AUC performance for predicting clinical response between pure machine learning architectures (Random Forest, Logistic Regression, Neural Network) trained on 12 raw gene expression features versus a simple Logistic Regression classifier operating on only 3 mechanistic ODE digital twin output features (`pERK`, BRAFi tumour burden, anti-PD-1 checkpoint burden).
+> - **What is being done**: Benchmarking 5-fold cross-validated ROC-AUC performance for predicting clinical response between pure machine learning architectures (Random Forest, Logistic Regression, Neural Network) trained on 12 raw gene expression features versus a Logistic Regression classifier operating on only 3 mechanistic ODE digital twin output features (`pERK`, BRAFi tumour burden, anti-PD-1 checkpoint burden).
 > - **Why we are doing it**: To evaluate whether compressing high-dimensional transcriptomics into biologically grounded, differential-equation-based dynamic readouts retains or improves predictive performance while eliminating black-box opacity.
-> - **What question it answers**: Does a mechanistic dynamic ODE digital twin achieve competitive predictive performance compared to black-box machine learning? Yes, achieving an ROC-AUC of **0.666** ($\pm 0.074$) with only **3 interpretable features**, outperforming linear Logistic Regression (**0.646**) and Neural Networks (**0.583**), and performing within $0.02$ AUC of complex 12-feature Random Forests (**0.686**).
+> - **What question it answers**: Does a mechanistic dynamic ODE digital twin achieve competitive predictive performance compared to black-box machine learning? Yes — achieving an ROC-AUC of **0.666** ($\pm 0.074$) with only **3 interpretable features**, outperforming 12-feature Logistic Regression (**0.646**) and Neural Networks (**0.583**), and performing within $0.02$ AUC of complex 12-feature Random Forests (**0.686**).
 
 
 | Model Architecture | Feature Count | 5-Fold CV ROC-AUC | Interpretability & Clinical Utility |
 | :--- | :---: | :---: | :--- |
 | **Random Forest** | 12 | **0.686** | Black-box ensemble; non-linear feature interactions |
-| **ODE Digital Twin** | **3** | **0.666** | **Fully mechanistic & interpretable** (pERK, BRAFi burden, anti-PD-1 burden) |
+| **ODE Digital Twin** | **3** | **0.666** | **Fully mechanistic & interpretable** (`pERK`, BRAFi burden, anti-PD-1 burden) |
 | **Logistic Regression** | 12 | 0.646 | Linear statistical baseline |
 | **Neural Network** | 12 | 0.583 | Deep learning baseline; overfits on moderate N |
 
 
 > [!INSIGHT] Analytical Validation: Mechanistic ODE Rivals Machine Learning
-> - **Interpretable Superiority**: Using only **three mechanistically derived features** (baseline pERK, BRAFi tumour burden, and checkpoint tumour burden), the ODE digital twin achieves **ROC-AUC = 0.666**, outperforming 12-feature Logistic Regression ($0.646$) and Neural Networks ($0.583$).
-> - **Orthogonal Protein Validation**: ODE-predicted baseline pERK correlates significantly with TCGA Reverse-Phase Protein Array (RPPA) measured phospho-ERK ($n = 310, r = 0.175, p = 0.002$), confirming that the kinetic parameters capture true cellular signalling.
+> - **Interpretable Superiority**: Using only **3 mechanistically derived features** (baseline `pERK`, BRAFi tumour burden, and checkpoint tumour burden), the ODE digital twin achieves **ROC-AUC = 0.666**, outperforming 12-feature Logistic Regression ($0.646$) and Neural Networks ($0.583$).
+> - **Orthogonal Protein Validation**: ODE-predicted baseline `pERK` correlates significantly with TCGA Reverse-Phase Protein Array (RPPA) measured phospho-ERK ($n = 310$, $r = 0.175$, $p = 2.03 \times 10^{-3}$), confirming that the kinetic parameters capture true cellular signalling.
 
 ### Key Takeaways & Dynamic Insights
-- **Dynamic Response Prediction**: 180-day ODE simulations capture temporal tumour regression curves that match clinical response outcomes.
+- **Dynamic Response Prediction**: 180-day per-patient ODE simulations, aggregated as phenotype-level mean trajectories, capture temporal tumour regression curves that match clinical response outcomes.
 - **Biological Rationale for Combination Therapy**: Proves mathematically why *M2 Immunosuppressive* patients fail single-agent anti-PD-1 and require dual-agent macrophage/CAF targeting.
-- **Clinical Prognostic Power**: ODE checkpoint tumour burden produces a highly significant 82-month survival separation ($p = 0.0024$).
+- **Clinical Prognostic Power**: ODE checkpoint tumour burden (Q3 Phase 4) produces a statistically significant 82-month survival separation (p = 0.0024).
 - **Mechanistic Efficiency**: 3-feature ODE model beats 12-feature Logistic Regression and Neural Networks while remaining completely transparent and biologically grounded.
 
 > [!NOTE] Phase 4 Methodological Summary
 > Phase 4 integrated the Question 3 differential-equation (ODE) dynamic model to simulate patient tumour trajectories over time:
-> 1. **Dynamic Trajectory Simulation**: 180-day ODE simulations parameterised by kinetic rate constants successfully reproduced observed clinical response profiles (complete clearance in *Immune Hot* vs uncontrolled growth in *M2 Immunosuppressive*).
-> 2. **Mechanistic Rationale for Combination Therapy**: Simulations proved mathematically that *M2 Immunosuppressive* patients fail anti-PD-1 monotherapy due to macrophage-mediated T-cell suppression, but achieve complete tumour clearance when combined with M2-depleting agents.
-> 3. **Prognostic Survival Separation**: Simulated checkpoint tumour burden stratified overall survival, yielding an 82-month median survival gap ($p = 0.0024$).
+> 1. **Dynamic Trajectory Simulation**: 180-day per-patient ODE simulations (dual-arm: Panel A Immunotherapy, Panel B BRAFi Targeted Therapy), aggregated as phenotype-level mean trajectories, successfully reproduced observed clinical response profiles (near-complete clearance in *Immune Hot* vs uncontrolled growth in *M2 Immunosuppressive*).
+> 2. **Mechanistic Rationale for Combination Therapy**: Simulations proved mathematically that *M2 Immunosuppressive* patients fail anti-PD-1 monotherapy due to macrophage-mediated T-cell suppression, but achieve effective tumour regression when combined with M2-depleting agents.
+> 3. **Prognostic Survival Separation**: Simulated checkpoint tumour burden stratified overall survival, yielding a 82-month median survival gap (p = 0.0024).
 > 4. **Mechanistic vs Black-Box ML**: Operating on just 3 mechanistically derived features (`pERK`, BRAFi burden, checkpoint burden), the ODE digital twin achieved an ROC-AUC of **0.666**, outperforming 12-feature Logistic Regression ($0.646$) and Neural Networks ($0.583$) while maintaining total biological transparency.
 
 > [!formula]+ Phase 4 Script Execution & Software Module Architecture
 > - **Primary Pipeline Execution Scripts**:
->   - [`04_phenotype_characterisation.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/04_phenotype_characterisation.py): Profiles cluster biomarker distributions (`phenotype_characterisation.csv`), assigns biological phenotype labels, generates 2x3 baseline boxplots (`baseline_signature_boxplots.png`), simulates dynamic 180-day dual-arm Kuznetsov ODE tumour trajectories (`ode_trajectories.png`), and generates Kaplan-Meier overall survival curves stratified by phenotype (`km_survival_by_phenotype.png`).
+>   - [`04_phenotype_characterisation.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/04_phenotype_characterisation.py): Profiles cluster biomarker distributions (`phenotype_characterisation.csv`), assigns biological phenotype labels, generates baseline Z-score boxplots (`baseline_signature_boxplots.png`), simulates dynamic 180-day dual-arm Kuznetsov ODE tumour trajectories (`ode_trajectories.png`), exports final T(180) values per arm and phenotype (`ode_trajectory_summary.json`), and generates Kaplan-Meier overall survival curves stratified by phenotype (`km_survival_by_phenotype.png`).
 > - **Core Supporting Python Modules**:
->   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Implements cluster profiling (`profile_clusters`), rank-based biological phenotype labelling (`assign_phenotype_labels`), and profile visualisations (`plot_baseline_signature_boxplots`, `plot_radar_chart`, `plot_cluster_heatmap`).
->   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Central source of truth for phenotype display labels (`PHENOTYPE_LABELS`), GMM probability column mappings (`PHENOTYPE_PROB_COL`), and Q3 ODE simulation parameters (`Q3_ODE_PHENOTYPE_PARAMS`).
+>   - [`phenotyping.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/phenotyping.py): Implements cluster profiling (`profile_clusters`) and rank-based biological phenotype labelling (`assign_phenotype_labels`). Note: `plot_radar_chart` and `plot_cluster_heatmap` are implemented as library exports but are not invoked by the current pipeline.
+>   - [`q5_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/src/q5_constants.py): Central source of truth for phenotype display labels (`PHENOTYPE_LABELS`) and GMM probability column mappings (`PHENOTYPE_PROB_COL`).
 > - **Shared Cross-Question & Pipeline Modules**:
->   - [`q3-ode-model`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q3-ode-model): 4-module ODE digital twin system coupling RAF dimerisation, MAPK cascade, Kuznetsov tumour-immune dynamics, and PD-1/PD-L1 checkpoint axis.
+>   - [`q3-ode-model`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q3-ode-model): 4-module ODE digital twin system. Exports `outputs/results/ml_vs_ode_comparison.csv`, `survival_summary.txt`, and `rppa_validation_summary.txt` consumed by this report generator.
 >   - [`run_q5_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/run_q5_pipeline.py): Master pipeline orchestrator executing `04_phenotype_characterisation.py` as Step 4.
->   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles live statistical summaries and generates phase markdown reports.
+>   - [`generate_q5_report.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q5-patient-stratification/scripts/generate_q5_report.py): Compiles live statistical summaries from Q3 result files and generates phase markdown reports.
