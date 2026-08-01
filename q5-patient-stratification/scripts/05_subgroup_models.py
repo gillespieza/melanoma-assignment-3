@@ -429,6 +429,28 @@ def _compute_global_oof_predictions(
     return global_oof_prob
 
 
+def _build_subgroup_k_pred(
+    X_tr: np.ndarray,
+    y_tr: np.ndarray,
+    X_te: np.ndarray,
+    w_tr_k: np.ndarray,
+    w_te_k: np.ndarray,
+    global_oof_test: np.ndarray,
+) -> np.ndarray:
+    """Predict positive class probabilities for cluster k in fold, falling back to global model if sparse."""
+    meaningful = w_tr_k > MIN_PROB_WEIGHT
+    effective_n_tr = meaningful.sum()
+    y_sub = y_tr[meaningful]
+
+    if effective_n_tr < MIN_EFFECTIVE_SAMPLES or len(np.unique(y_sub)) < 2:
+        return w_te_k * global_oof_test
+
+    preds_k = _fit_predict_fold(
+        X_tr, y_tr, X_te, max_depth=SUBGROUP_MAX_DEPTH, sample_weight=w_tr_k
+    )
+    return w_te_k * preds_k
+
+
 def _predict_subgroup_fold(
     X_tr: np.ndarray,
     y_tr: np.ndarray,
@@ -437,35 +459,13 @@ def _predict_subgroup_fold(
     w_te: np.ndarray,
     global_oof_test: np.ndarray,
 ) -> np.ndarray:
-    """Predict test sample response for a single LOCO fold blended across K cluster models.
-
-    Args:
-        X_tr: Training features.
-        y_tr: Training labels.
-        X_te: Test features.
-        w_tr: Training fold cluster weights matrix (N_tr, K).
-        w_te: Test fold cluster weights matrix (N_te, K).
-        global_oof_test: Fallback global predictions for test set.
-
-    Returns:
-        Blended test prediction array.
-    """
+    """Predict test sample response for a single LOCO fold blended across K cluster models."""
     n_clusters = w_tr.shape[1]
     fold_blend = np.zeros(X_te.shape[0])
     for k in range(n_clusters):
-        weights_k = w_tr[:, k]
-        meaningful = weights_k > MIN_PROB_WEIGHT
-        effective_n_tr = meaningful.sum()
-        y_sub = y_tr[meaningful]
-
-        if effective_n_tr < MIN_EFFECTIVE_SAMPLES or len(np.unique(y_sub)) < 2:
-            fold_blend += w_te[:, k] * global_oof_test
-            continue
-
-        preds_k = _fit_predict_fold(
-            X_tr, y_tr, X_te, max_depth=SUBGROUP_MAX_DEPTH, sample_weight=weights_k
+        fold_blend += _build_subgroup_k_pred(
+            X_tr, y_tr, X_te, w_tr[:, k], w_te[:, k], global_oof_test
         )
-        fold_blend += w_te[:, k] * preds_k
     return fold_blend
 
 
@@ -476,23 +476,12 @@ def _compute_subgroup_oof_predictions(
     cluster_probs: np.ndarray,
     global_oof_prob: np.ndarray,
 ) -> np.ndarray:
-    """Compute soft-weighted subgroup OOF predictions using GMM posterior probabilities.
-
-    Args:
-        X_raw: Full raw feature matrix.
-        y_raw: Target labels.
-        cohorts: Cohort identifiers.
-        cluster_probs: GMM posterior matrix (N, K).
-        global_oof_prob: Global fallback OOF array.
-
-    Returns:
-        Subgroup ensemble OOF probability array.
-    """
+    """Compute soft-weighted subgroup OOF predictions using GMM posterior probabilities."""
     subgroup_oof_prob = np.zeros(len(y_raw))
     logo = LeaveOneGroupOut()
 
     for train_idx, test_idx in logo.split(X_raw, y_raw, groups=cohorts):
-        fold_blend = _predict_subgroup_fold(
+        subgroup_oof_prob[test_idx] = _predict_subgroup_fold(
             X_raw[train_idx],
             y_raw[train_idx],
             X_raw[test_idx],
@@ -500,7 +489,6 @@ def _compute_subgroup_oof_predictions(
             cluster_probs[test_idx],
             global_oof_prob[test_idx],
         )
-        subgroup_oof_prob[test_idx] = fold_blend
 
     return subgroup_oof_prob
 
@@ -576,48 +564,26 @@ def _fit_production_models(
     return final_models
 
 
+def _build_cluster_subgroup_results(
+    cid: int, p_name: str, n_sub: int, n_resp: int, resp_rate: float, g_met: Dict[str, float], s_met: Dict[str, float]
+) -> Tuple[Dict[str, float], Dict[str, float]]:
+    """Format evaluation dictionary records for global baseline and subgroup specific models."""
+    g_res = {"Cluster_ID": cid, "Phenotype": p_name, "Model_Scope": "Global Enriched Baseline", "N": n_sub, "Responders": n_resp, "Response_Rate": resp_rate, **g_met}
+    s_res = {"Cluster_ID": cid, "Phenotype": p_name, "Model_Scope": "Subgroup Specific", "N": n_sub, "Responders": n_resp, "Response_Rate": resp_rate, **s_met}
+    return g_res, s_res
+
+
 def _evaluate_single_cluster_subgroup(
     c_sub: pd.DataFrame, cid: int, p_name: str
 ) -> Tuple[Dict[str, float], Dict[str, float], Dict[str, np.ndarray]]:
-    """Evaluate global vs subgroup model metrics and ROC data for a single cluster.
-
-    Args:
-        c_sub: Cluster subset DataFrame.
-        cid: Cluster integer ID.
-        p_name: Phenotype display name.
-
-    Returns:
-        Tuple of (global_result_dict, subgroup_result_dict, roc_points_dict).
-    """
+    """Evaluate global vs subgroup model metrics and ROC data for a single cluster."""
     y_sub = c_sub["RESPONSE_BINARY"].values
-    n_sub = len(c_sub)
-    n_resp = int(y_sub.sum())
-    resp_rate = y_sub.mean() * 100.0
+    g_prob, s_prob = c_sub["Global_OOF_Prob"].values, c_sub["Subgroup_OOF_Prob"].values
+    g_met, s_met = evaluate_predictions(y_sub, g_prob), evaluate_predictions(y_sub, s_prob)
 
-    g_prob = c_sub["Global_OOF_Prob"].values
-    s_prob = c_sub["Subgroup_OOF_Prob"].values
-
-    g_met = evaluate_predictions(y_sub, g_prob)
-    s_met = evaluate_predictions(y_sub, s_prob)
-
-    g_res = {
-        "Cluster_ID": cid,
-        "Phenotype": p_name,
-        "Model_Scope": "Global Enriched Baseline",
-        "N": n_sub,
-        "Responders": n_resp,
-        "Response_Rate": resp_rate,
-        **g_met,
-    }
-    s_res = {
-        "Cluster_ID": cid,
-        "Phenotype": p_name,
-        "Model_Scope": "Subgroup Specific",
-        "N": n_sub,
-        "Responders": n_resp,
-        "Response_Rate": resp_rate,
-        **s_met,
-    }
+    g_res, s_res = _build_cluster_subgroup_results(
+        cid, p_name, len(c_sub), int(y_sub.sum()), y_sub.mean() * 100.0, g_met, s_met
+    )
 
     fpr_g, tpr_g, _ = roc_curve(y_sub, g_prob)
     fpr_s, tpr_s, _ = roc_curve(y_sub, s_prob)
@@ -630,15 +596,7 @@ def _evaluate_cluster_subgroups(
     df_valid: pd.DataFrame,
     cluster_id_to_name: Dict[int, str],
 ) -> Tuple[List[Dict[str, float]], Dict[str, Dict[str, np.ndarray]]]:
-    """Evaluate predictions per phenotype cluster subgroup.
-
-    Args:
-        df_valid: Input dataset with OOF predictions.
-        cluster_id_to_name: Map from Cluster_ID to phenotype display name.
-
-    Returns:
-        Tuple of (results_list, roc_data_dict).
-    """
+    """Evaluate predictions per phenotype cluster subgroup."""
     results_list = []
     roc_data: Dict[str, Dict[str, np.ndarray]] = {}
 
@@ -652,47 +610,29 @@ def _evaluate_cluster_subgroups(
     return results_list, roc_data
 
 
+def _build_overall_cohort_results(
+    df_valid: pd.DataFrame
+) -> List[Dict[str, float]]:
+    """Build evaluation result records for overall cohort global and subgroup ensemble."""
+    y_true = df_valid["RESPONSE_BINARY"].values
+    g_all = evaluate_predictions(y_true, df_valid["Global_OOF_Prob"].values)
+    s_all = evaluate_predictions(y_true, df_valid["Subgroup_OOF_Prob"].values)
+
+    n_tot, n_resp = len(df_valid), int(y_true.sum())
+    resp_rate = y_true.mean() * 100.0
+
+    return [
+        {"Cluster_ID": -1, "Phenotype": "Overall Cohort", "Model_Scope": "Global Enriched Baseline", "N": n_tot, "Responders": n_resp, "Response_Rate": resp_rate, **g_all},
+        {"Cluster_ID": -1, "Phenotype": "Overall Cohort", "Model_Scope": "Subgroup Ensemble", "N": n_tot, "Responders": n_resp, "Response_Rate": resp_rate, **s_all},
+    ]
+
+
 def _compile_evaluation_metrics(
     df_valid: pd.DataFrame,
     cluster_id_to_name: Dict[int, str],
 ) -> Tuple[pd.DataFrame, Dict[str, Dict[str, np.ndarray]]]:
-    """Compile per-phenotype performance metrics and ROC curve data.
-
-    Args:
-        df_valid: Input dataset with OOF predictions.
-        cluster_id_to_name: Cluster ID to phenotype mapping.
-
-    Returns:
-        Tuple of (evaluation DataFrame, ROC curve data dict).
-    """
-    g_all = evaluate_predictions(df_valid["RESPONSE_BINARY"].values, df_valid["Global_OOF_Prob"].values)
-    s_all = evaluate_predictions(df_valid["RESPONSE_BINARY"].values, df_valid["Subgroup_OOF_Prob"].values)
-
-    n_total = len(df_valid)
-    n_resp_total = int(df_valid["RESPONSE_BINARY"].sum())
-    resp_rate_total = df_valid["RESPONSE_BINARY"].mean() * 100.0
-
-    results_list = [
-        {
-            "Cluster_ID": -1,
-            "Phenotype": "Overall Cohort",
-            "Model_Scope": "Global Enriched Baseline",
-            "N": n_total,
-            "Responders": n_resp_total,
-            "Response_Rate": resp_rate_total,
-            **g_all,
-        },
-        {
-            "Cluster_ID": -1,
-            "Phenotype": "Overall Cohort",
-            "Model_Scope": "Subgroup Ensemble",
-            "N": n_total,
-            "Responders": n_resp_total,
-            "Response_Rate": resp_rate_total,
-            **s_all,
-        },
-    ]
-
+    """Compile per-phenotype performance metrics and ROC curve data."""
+    results_list = _build_overall_cohort_results(df_valid)
     sub_results, roc_data = _evaluate_cluster_subgroups(df_valid, cluster_id_to_name)
     results_list.extend(sub_results)
 
@@ -738,32 +678,39 @@ def train_and_eval_loco(
     df_valid = df.dropna(subset=["RESPONSE_BINARY"]).copy()
     df_valid["RESPONSE_BINARY"] = df_valid["RESPONSE_BINARY"].astype(int)
 
-    cohorts = df_valid["COHORT"].values
-    X_raw = df_valid[feature_cols].values
-    y_raw = df_valid["RESPONSE_BINARY"].values
+def _assign_oof_predictions(
+    df_valid: pd.DataFrame, global_oof: np.ndarray, subgroup_oof: np.ndarray
+) -> pd.DataFrame:
+    """Attach out-of-fold predictions to DataFrame, using global fallback for NaNs."""
+    nan_mask = np.isnan(subgroup_oof)
+    if nan_mask.any():
+        print(f"  WARNING: {nan_mask.sum()} NaN OOF predictions replaced with global model fallback.")
+        subgroup_oof = np.where(nan_mask, global_oof, subgroup_oof)
 
+    df_valid["Global_OOF_Prob"] = global_oof
+    df_valid["Subgroup_OOF_Prob"] = subgroup_oof
+    return df_valid
+
+
+def train_and_eval_loco(
+    df: pd.DataFrame, feature_cols: List[str]
+) -> Tuple[pd.DataFrame, Dict[str, Dict[str, np.ndarray]], Dict[str, _CalibratedModel]]:
+    """Perform Leave-One-Cohort-Out CV for Global Enriched Baseline vs Soft-Weighted Subgroup models."""
+    df_valid = df.dropna(subset=["RESPONSE_BINARY"]).copy()
+    df_valid["RESPONSE_BINARY"] = df_valid["RESPONSE_BINARY"].astype(int)
+
+    cohorts, X_raw, y_raw = df_valid["COHORT"].values, df_valid[feature_cols].values, df_valid["RESPONSE_BINARY"].values
     phenotype_names, prob_col_names, cluster_probs = _extract_phenotype_probabilities(df_valid)
-    print(f"  Using named GMM phenotype probabilities: {prob_col_names}")
 
+    print(f"  Using named GMM phenotype probabilities: {prob_col_names}")
     cluster_id_to_name = get_cluster_name_map(df_valid)
     print(f"  Cluster ID -> Phenotype map: {cluster_id_to_name}")
 
-    global_oof_prob = _compute_global_oof_predictions(X_raw, y_raw, cohorts)
-    subgroup_oof_prob = _compute_subgroup_oof_predictions(
-        X_raw, y_raw, cohorts, cluster_probs, global_oof_prob
-    )
+    global_oof = _compute_global_oof_predictions(X_raw, y_raw, cohorts)
+    subgroup_oof = _compute_subgroup_oof_predictions(X_raw, y_raw, cohorts, cluster_probs, global_oof)
 
-    nan_mask = np.isnan(subgroup_oof_prob)
-    if nan_mask.any():
-        print(f"  WARNING: {nan_mask.sum()} NaN OOF predictions replaced with global model fallback.")
-        subgroup_oof_prob = np.where(nan_mask, global_oof_prob, subgroup_oof_prob)
-
-    df_valid["Global_OOF_Prob"] = global_oof_prob
-    df_valid["Subgroup_OOF_Prob"] = subgroup_oof_prob
-
-    final_subgroup_models = _fit_production_models(
-        df_valid, X_raw, y_raw, feature_cols, cluster_probs, phenotype_names
-    )
+    df_valid = _assign_oof_predictions(df_valid, global_oof, subgroup_oof)
+    final_subgroup_models = _fit_production_models(df_valid, X_raw, y_raw, feature_cols, cluster_probs, phenotype_names)
     df_eval, roc_data = _compile_evaluation_metrics(df_valid, cluster_id_to_name)
 
     return df_eval, roc_data, final_subgroup_models
@@ -774,41 +721,28 @@ def train_and_eval_loco(
 # ---------------------------------------------------------------------------
 
 
-def _plot_single_roc_panel(
-    ax: plt.Axes,
-    p_name: str,
-    r_dict: Dict[str, np.ndarray],
-    g_row: pd.Series,
-    s_row: pd.Series,
+def _draw_roc_curves(
+    ax: plt.Axes, p_name: str, r_dict: Dict[str, np.ndarray], g_auc: float, s_auc: float
 ) -> None:
-    """Helper to render a single ROC curve subplot panel for a phenotype.
-
-    Args:
-        ax: Subplot Axes.
-        p_name: Phenotype name.
-        r_dict: Dict with ROC points.
-        g_row: Global model metrics row.
-        s_row: Subgroup model metrics row.
-    """
+    """Draw global and subgroup ROC curves on panel axes."""
     ax.plot(
-        r_dict["fpr_global"],
-        r_dict["tpr_global"],
-        color=DARK_SLATE_CHARCOAL,
-        linestyle="--",
-        linewidth=2,
-        label=f"Global Enriched (AUC = {g_row['ROC_AUC']:.3f})",
+        r_dict["fpr_global"], r_dict["tpr_global"],
+        color=DARK_SLATE_CHARCOAL, linestyle="--", linewidth=2,
+        label=f"Global Enriched (AUC = {g_auc:.3f})",
     )
-
-    phenotype_color = get_phenotype_color(p_name)
     ax.plot(
-        r_dict["fpr_subgroup"],
-        r_dict["tpr_subgroup"],
-        color=phenotype_color,
-        linestyle="-",
-        linewidth=2.5,
-        label=f"Subgroup Model (AUC = {s_row['ROC_AUC']:.3f})",
+        r_dict["fpr_subgroup"], r_dict["tpr_subgroup"],
+        color=get_phenotype_color(p_name), linestyle="-", linewidth=2.5,
+        label=f"Subgroup Model (AUC = {s_auc:.3f})",
     )
     ax.plot([0, 1], [0, 1], color=DARK_SLATE_CHARCOAL, linestyle=":", linewidth=1)
+
+
+def _plot_single_roc_panel(
+    ax: plt.Axes, p_name: str, r_dict: Dict[str, np.ndarray], g_row: pd.Series, s_row: pd.Series
+) -> None:
+    """Helper to render a single ROC curve subplot panel for a phenotype."""
+    _draw_roc_curves(ax, p_name, r_dict, g_row["ROC_AUC"], s_row["ROC_AUC"])
 
     ax.set_title(f"{p_name} (N = {int(g_row['N'])})", fontsize=13, fontweight="bold")
     ax.set_xlabel("1 - Specificity (False Positive Rate)", fontsize=11)
@@ -863,13 +797,8 @@ def _annotate_bars(ax: plt.Axes) -> None:
             )
 
 
-def plot_performance_comparison(df_eval: pd.DataFrame, out_path: Path) -> None:
-    """Generate comparative bar chart of metrics across phenotypes.
-
-    Args:
-        df_eval: DataFrame containing evaluation metrics.
-        out_path: File path to save output figure.
-    """
+def _prepare_performance_melt_df(df_eval: pd.DataFrame) -> pd.DataFrame:
+    """Prepare melted metric DataFrame for comparative bar chart."""
     df_plot = df_eval[df_eval["Phenotype"] != "Overall Cohort"].copy()
     metrics = ["ROC_AUC", "PR_AUC", "Precision", "Recall"]
 
@@ -880,24 +809,22 @@ def plot_performance_comparison(df_eval: pd.DataFrame, out_path: Path) -> None:
         value_name="Score",
     )
     df_melt["Metric"] = df_melt["Metric"].replace({"ROC_AUC": "ROC-AUC", "PR_AUC": "PR-AUC"})
+    return df_melt
+
+
+def plot_performance_comparison(df_eval: pd.DataFrame, out_path: Path) -> None:
+    """Generate comparative bar chart of metrics across phenotypes."""
+    df_melt = _prepare_performance_melt_df(df_eval)
 
     fig, ax = plt.subplots(figsize=(12, 6))
     sns.barplot(
-        data=df_melt,
-        x="Phenotype",
-        y="Score",
-        hue="Model_Scope",
-        palette=STRATEGY_PALETTE,
-        ax=ax,
-        edgecolor="black",
-        linewidth=0.8,
+        data=df_melt, x="Phenotype", y="Score", hue="Model_Scope",
+        palette=STRATEGY_PALETTE, ax=ax, edgecolor="black", linewidth=0.8,
     )
 
     ax.set_title(
         "Subgroup Model vs Global Enriched Baseline Performance across Melanoma Phenotypes",
-        fontsize=13,
-        fontweight="bold",
-        pad=12,
+        fontsize=13, fontweight="bold", pad=12,
     )
     ax.set_xlabel("Biological Phenotype Subgroup", fontsize=11, fontweight="bold")
     ax.set_ylabel("Cross-Validation Score (LOCO CV)", fontsize=11, fontweight="bold")
@@ -912,29 +839,16 @@ def plot_performance_comparison(df_eval: pd.DataFrame, out_path: Path) -> None:
 
 
 def _extract_feature_importances(clf: _CalibratedModel) -> Optional[np.ndarray]:
-    """Extract feature importances from a _CalibratedModel wrapper.
-
-    Args:
-        clf: A fitted _CalibratedModel instance.
-
-    Returns:
-        Feature importances array, or None.
-    """
+    """Extract feature importances from a _CalibratedModel wrapper."""
     if hasattr(clf, "feature_importances_"):
         return clf.feature_importances_
     return None
 
 
-def plot_feature_importances(
-    final_models: Dict[str, _CalibratedModel], feature_cols: List[str], out_path: Path
-) -> None:
-    """Plot feature importance heatmaps comparing driver weights across phenotypes.
-
-    Args:
-        final_models: Dictionary of trained calibrated production models.
-        feature_cols: Feature names.
-        out_path: Output figure path.
-    """
+def _build_importance_dataframe(
+    final_models: Dict[str, _CalibratedModel], feature_cols: List[str]
+) -> pd.DataFrame:
+    """Build and rank top feature importance DataFrame across phenotypes."""
     importance_dict = {}
     for p_name, clf in final_models.items():
         importances = _extract_feature_importances(clf)
@@ -944,18 +858,20 @@ def plot_feature_importances(
     df_imp = pd.DataFrame(importance_dict, index=feature_cols)
     df_imp["Mean_Importance"] = df_imp.mean(axis=1)
     df_imp = df_imp.sort_values(by="Mean_Importance", ascending=False).drop(columns=["Mean_Importance"])
-    top_df_imp = df_imp.head(TOP_N_IMPORTANCES)
+    return df_imp.head(TOP_N_IMPORTANCES)
+
+
+def plot_feature_importances(
+    final_models: Dict[str, _CalibratedModel], feature_cols: List[str], out_path: Path
+) -> None:
+    """Plot feature importance heatmaps comparing driver weights across phenotypes."""
+    top_df_imp = _build_importance_dataframe(final_models, feature_cols)
 
     fig, ax = plt.subplots(figsize=(10, 7))
     sns.heatmap(
-        top_df_imp,
-        annot=True,
-        fmt=".3f",
-        cmap="YlGnBu",
+        top_df_imp, annot=True, fmt=".3f", cmap="YlGnBu",
         cbar_kws={"label": "Random Forest Gini Importance"},
-        ax=ax,
-        linewidths=0.5,
-        linecolor=GRID_LINE_COLOR,
+        ax=ax, linewidths=0.5, linecolor=GRID_LINE_COLOR,
     )
 
     ax.set_title("Phenotype-Specific Feature Importance Profiles (Top 12 Features)", fontsize=13, fontweight="bold", pad=12)
@@ -968,11 +884,7 @@ def plot_feature_importances(
 
 
 def _print_performance_summary(df_eval: pd.DataFrame) -> None:
-    """Print clean summary table of cross-validation performance to stdout.
-
-    Args:
-        df_eval: Evaluation metrics DataFrame.
-    """
+    """Print clean summary table of cross-validation performance to stdout."""
     print("Summary of Cross-Validation Performance (Global Enriched Baseline vs Subgroup Model):")
     for phenotype in df_eval["Phenotype"].unique():
         sub_df = df_eval[df_eval["Phenotype"] == phenotype]
@@ -987,11 +899,7 @@ def _print_performance_summary(df_eval: pd.DataFrame) -> None:
 
 
 def _serialize_production_models(final_models: Dict[str, _CalibratedModel]) -> None:
-    """Serialise trained production models to models/ directory.
-
-    Args:
-        final_models: Map of model name to trained model.
-    """
+    """Serialise trained production models to models/ directory."""
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     for name, model in final_models.items():
         clean_name = name.lower().replace(" ", "_").replace("-", "_")
@@ -1006,17 +914,7 @@ def _generate_phase5_plots(
     final_models: Dict[str, _CalibratedModel],
     feature_cols: List[str],
 ) -> Tuple[Path, Path, Path]:
-    """Generate 300 DPI publication plots for Phase 5.
-
-    Args:
-        roc_data: Dict with ROC points.
-        df_eval: Metric evaluation DataFrame.
-        final_models: Map of model name to trained model.
-        feature_cols: Selected feature names.
-
-    Returns:
-        Tuple of paths to (roc_plot, comp_plot, imp_plot).
-    """
+    """Generate 300 DPI publication plots for Phase 5."""
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
     roc_plot_file = PLOTS_DIR / "subgroup_roc_curves.png"
     comp_plot_file = PLOTS_DIR / "subgroup_performance_comparison.png"
@@ -1034,24 +932,28 @@ def _generate_phase5_plots(
 # ---------------------------------------------------------------------------
 
 
+def _load_and_validate_clusters() -> pd.DataFrame:
+    """Load and validate patient clusters CSV file."""
+    if not INPUT_FILE.exists():
+        raise FileNotFoundError(f"Missing patient clusters file at {rel_path(INPUT_FILE)}. Run Phase 3 first.")
+    df_clusters = pd.read_csv(INPUT_FILE)
+    print(f"Loaded patient dataset: {len(df_clusters)} patients across {df_clusters['COHORT'].nunique()} cohorts")
+    return df_clusters
+
+
 def main() -> None:
     """Main execution entry point for Phase 5 Subgroup Predictive Modelling."""
     print("=" * 80)
     print(f"Starting Phase 5: Subgroup-Specific Predictive Modelling (Project root: {rel_path(PROJECT_ROOT)})")
     print("=" * 80)
 
-    if not INPUT_FILE.exists():
-        raise FileNotFoundError(f"Missing patient clusters file at {rel_path(INPUT_FILE)}. Run Phase 3 first.")
-
-    df_clusters = pd.read_csv(INPUT_FILE)
-    print(f"Loaded patient dataset: {len(df_clusters)} patients across {df_clusters['COHORT'].nunique()} cohorts")
-
+    df_clusters = _load_and_validate_clusters()
     feature_cols = get_feature_columns(df_clusters)
-    print(f"Selected {len(feature_cols)} biomarker & genomic features for subgroup modelling:")
-    print(f"  * {', '.join(feature_cols)}")
+    print(f"Selected {len(feature_cols)} biomarker & genomic features for subgroup modelling:\n  * {', '.join(feature_cols)}")
 
     df_eval, roc_data, final_models = train_and_eval_loco(df_clusters, feature_cols)
 
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     out_eval_csv = OUTPUT_DIR / "subgroup_models_evaluation.csv"
     safe_save_csv(df_eval, out_eval_csv)
     print(f"\nSaved subgroup models evaluation summary to {rel_path(out_eval_csv)}")
