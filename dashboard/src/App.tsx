@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { getPhenotypeColor } from "./data/palette";
 import Header, { type ViewKey } from "./components/Header";
 import CohortTable, { buildRows } from "./components/CohortTable";
 import FeaturedCards from "./components/FeaturedCards";
@@ -12,7 +13,7 @@ import { loadCohort, type Cohort } from "./data/cohort";
 
 /**
  * Minimal hash routing: `#/cohort`, `#/patient/TCGA-XX-XXXX`, `#/guide`.
- * No router dependency and no storage APIs — it just makes a patient view
+ * No router dependency and no storage APIs – it just makes a patient view
  * linkable and survivable across a refresh, which matters during a live demo.
  */
 function readHash(): { view: ViewKey; id: string | null } {
@@ -130,6 +131,7 @@ export default function App() {
         ) : (
           <div className="space-y-4">
             <CohortHeadline cohort={cohort} rows={rows} />
+            <Q5SummaryStrip meta={cohort.meta} />
             <MethodsStrip />
             <FeaturedCards rows={rows} onOpen={openPatient} />
             <CohortTable rows={rows} onOpen={openPatient} />
@@ -148,7 +150,6 @@ export default function App() {
   );
 }
 
-// Cohort landing headline
 
 function CohortHeadline({
   cohort,
@@ -158,29 +159,25 @@ function CohortHeadline({
   rows: ReturnType<typeof buildRows>;
 }) {
   const discordant = rows.filter((r) => r.agreement === "discordant").length;
-  const concordant = rows.filter((r) => r.agreement === "concordant").length;
+  const q5Scored = cohort.meta.nQ5Scored ?? cohort.patients.filter((p) => p.q5).length;
+  const highConf = cohort.meta.nHighConf ?? cohort.patients.filter((p) => p.q5?.confidenceBand === "High").length;
 
   const tiles = [
     { label: "Patients", value: cohort.patients.length, tone: "text-clinical-ink" },
-    { label: "BRAF V600", value: cohort.patients.filter((p) => p.braf !== "WT").length, tone: "text-clinical-bluedark" },
-    { label: "Methods concordant", value: concordant, tone: "text-green-700" },
+    { label: "Q5-scored", value: q5Scored, tone: "text-okabe-purple-dark" },
+    { label: "High confidence", value: highConf, tone: "text-green-700" },
     { label: "Methods split", value: discordant, tone: "text-amber-700" },
   ];
 
   return (
     <div className="rounded-2xl border border-clinical-border bg-white px-4 py-4 shadow-card sm:px-5">
-      {/* Stacked by default; the tiles only sit alongside the text once there is
-          genuinely room for both, otherwise they overflow on narrow screens. */}
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
         <div className="min-w-0 xl:flex-1">
           <h1 className="text-[16px] font-extrabold tracking-tight text-clinical-ink sm:text-[17px]">
-            Melanoma cohort · multi-method triage
+            Melanoma cohort · multi-method triage & Q5 stratification
           </h1>
           <p className="mt-1 max-w-3xl text-[12.5px] leading-relaxed text-clinical-muted">
-            Every patient below is a real TCGA-SKCM case with a full ODE digital twin. Each is scored
-            independently by the statistical and mechanistic methods, then integrated into one ranked
-            recommendation. The cases where the methods <span className="font-bold">disagree</span> are
-            the ones worth a consultant&apos;s attention.
+            Every patient below is a real TCGA-SKCM case with a full ODE digital twin and Q5 Two-Stage GMM phenotype assignment. Each is scored independently by statistical and mechanistic methods, then integrated into a ranked recommendation.
           </p>
         </div>
         <div className="grid shrink-0 grid-cols-2 gap-2.5 sm:grid-cols-4">
@@ -203,7 +200,58 @@ function CohortHeadline({
   );
 }
 
-// Archetype workbench — the original v1 experience: three editable patients whose
+function Q5SummaryStrip({ meta }: { meta: Cohort["meta"] }) {
+  const stats = meta.q5PhenotypeStats ?? [];
+  if (!stats.length) return null;
+
+  const totalN = stats.reduce((acc, s) => acc + s.n, 0);
+
+  return (
+    <div className="rounded-xl border border-clinical-border bg-white p-3.5 shadow-card">
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-[11px] font-extrabold uppercase tracking-wide text-clinical-ink">
+          Q5 Phenotype Distribution (N={totalN} Multi-Cohort Benchmark)
+        </div>
+        <div className="text-[11px] font-semibold text-clinical-muted">
+          Two-Stage GMM Phenotyping
+        </div>
+      </div>
+
+      <div className="flex h-3 w-full overflow-hidden rounded-full border border-clinical-border bg-clinical-bg">
+        {stats.map((s) => {
+          const color = getPhenotypeColor(s.label);
+          return (
+            <div
+              key={s.label}
+              style={{ width: `${s.cohortPct}%`, backgroundColor: color }}
+              title={`${s.label}: ${s.n} patients (${s.cohortPct}%)`}
+            />
+          );
+        })}
+      </div>
+
+      <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {stats.map((s) => {
+          const shortLabel = s.label.split("(")[0].trim();
+          const color = getPhenotypeColor(shortLabel);
+          return (
+            <div key={s.label} className="flex items-center justify-between rounded-lg border border-clinical-border bg-clinical-bg px-2.5 py-1.5">
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                <span className="truncate text-[11px] font-bold text-clinical-ink">{shortLabel}</span>
+              </div>
+              <span className="tabular text-[11px] font-bold text-clinical-muted shrink-0">
+                {s.n} ({s.cohortPct.toFixed(0)}%)
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Archetype workbench – the original v1 experience: three editable patients whose
 // molecular fields re-run the logic live. Kept for the scripted demo.
 
 
@@ -213,7 +261,7 @@ function LoadingState() {
   return (
     <Panel className="flex min-h-[420px] items-center justify-center text-center">
       <div className="max-w-md">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-clinical-teal/10 text-clinical-tealdark">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-okabe-purple/10 text-okabe-purple-dark">
           <Loader2 size={26} className="animate-spin" />
         </div>
         <h2 className="text-[17px] font-extrabold text-clinical-ink">Loading cohort</h2>

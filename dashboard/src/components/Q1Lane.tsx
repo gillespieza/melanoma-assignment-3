@@ -52,7 +52,7 @@ function Gauge({ value }: { value: number }) {
         <path
           d="M 18 70 A 52 52 0 0 1 122 70"
           fill="none"
-          stroke={pct >= 50 ? "#0f766e" : "#5b6b7c"}
+          stroke={pct >= 50 ? "#CC79A7" : "#5b6b7c"}
           strokeWidth={12}
           strokeLinecap="round"
           strokeDasharray={`${dash} ${circumference}`}
@@ -105,7 +105,7 @@ function AwaitingState({ note, validation }: { note: string; validation: Q1Valid
 
           {validation && (
             <p className="mt-3 text-[12.5px] leading-relaxed text-clinical-ink">
-              The models themselves <span className="font-bold">are</span> validated — see the
+              The models themselves <span className="font-bold">are</span> validated – see the
               cohort-level accuracy panel below, computed on{" "}
               <span className="tabular font-bold">{validation.n}</span> held-out trial patients with
               real response outcomes.
@@ -157,7 +157,7 @@ export default function Q1Lane({
       icon={<BrainCircuit size={16} />}
       right={
         q1 ? (
-          <Pill tone="teal">Scored</Pill>
+          <Pill tone="okabe-purple">Scored</Pill>
         ) : (
           <Pill tone="neutral">
             <Hourglass size={11} /> Awaiting inference
@@ -213,7 +213,7 @@ export default function Q1Lane({
                       {SIGNATURE_LABELS[key] ?? key}
                     </div>
                     <div className="tabular text-[15px] font-extrabold text-clinical-ink">
-                      {value === null ? "—" : value.toFixed(2)}
+                      {value === null ? "–" : value.toFixed(2)}
                     </div>
                   </div>
                 ))}
@@ -223,7 +223,7 @@ export default function Q1Lane({
 
           <p className="text-[11.5px] leading-snug text-clinical-muted">
             Cohort of origin: {q1.cohort}. Produced by the trained Q1 models from this
-            patient&apos;s gene-expression profile — a real prediction, not a derived score.
+            patient&apos;s gene-expression profile – a real prediction, not a derived score.
           </p>
         </div>
       )}

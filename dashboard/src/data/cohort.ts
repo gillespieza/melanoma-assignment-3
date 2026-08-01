@@ -25,7 +25,7 @@ export interface Q1Prediction {
   features: Q1Features;
   cohort: string;
   /** "ensemble-only" when the source supplied a single score with no per-model
-   *  or signature breakdown — the lane then shows the gauge alone. */
+   *  or signature breakdown – the lane then shows the gauge alone. */
   detail?: "ensemble-only" | "full";
 }
 
@@ -49,27 +49,70 @@ export interface TreatmentLine {
   agents: string[];
 }
 
-/** What TCGA recorded this patient as actually having been treated with —
+/** What TCGA recorded this patient as actually having been treated with –
  *  recorded for ~46% of the cohort; TCGA simply has no data for the rest. */
 export interface TreatmentHistory {
   recorded: boolean;
-  /** Grouped by TREATMENT_TYPE, each with its own named agent(s) — type first,
+  /** Grouped by TREATMENT_TYPE, each with its own named agent(s) – type first,
    *  agent(s) underneath, so a reader doesn't have to guess which drug maps to
    *  which category. */
   lines: TreatmentLine[];
-  /** Received a checkpoint inhibitor (ipilimumab / pembrolizumab / nivolumab) —
+  /** Received a checkpoint inhibitor (ipilimumab / pembrolizumab / nivolumab) –
    *  the anti-PD-1 axis Q3 simulates. */
   checkpointInhibitor: boolean;
-  /** Received a BRAF/MEK inhibitor (vemurafenib / dabrafenib / trametinib) —
+  /** Received a BRAF/MEK inhibitor (vemurafenib / dabrafenib / trametinib) –
    *  the BRAFi axis Q3 simulates. */
   targetedTherapy: boolean;
   chemotherapy: boolean;
   radiation: boolean;
 }
 
+export interface Q5Phenotype {
+  label: string;
+  shortLabel: string;
+  clusterId: number;
+  probabilities: {
+    immuneHot: number;
+    immuneCold: number;
+    m2High: number;
+    mutantDriven: number;
+  };
+  treatabilityIndex: number | null;
+  dabrafenibSensitivity: number | null;
+  treatmentArm: "A" | "B" | "C";
+  recommendedTherapy: string;
+  confidenceBand: "Low" | "Moderate" | "High";
+  q4NominatedTarget: string;
+}
+
+export interface Q5PhenotypeStats {
+  clusterId: number;
+  label: string;
+  n: number;
+  cohortPct: number;
+  responseRate: number | null;
+  tis: number | null;
+  cyt: number | null;
+}
+
+export interface Q5OdeTrajectory {
+  [phenotype: string]: {
+    immuno_mono: number;
+    immuno_rescue: number;
+    targeted: number;
+  };
+}
+
+export interface Q5SubgroupAuc {
+  phenotype: string;
+  auc: number | null;
+  n: number;
+}
+
 export interface CohortPatient {
   id: string;
   sampleId: string;
+  cohort?: string;
 
   // --- molecular (real, from the Q3 simulation inputs) ---
   braf: BrafCall;
@@ -79,7 +122,7 @@ export interface CohortPatient {
   pdl1Expr: number;
   /** Raw PDCD1 (PD-1) mRNA. */
   pdcd1Expr: number;
-  /** Percentile rank of CD274 across the cohort, 0-100 — the display "PD-L1 %". */
+  /** Percentile rank of CD274 across the cohort, 0-100 – the display "PD-L1 %". */
   pdl1Pct: number;
   pdcd1Pct: number;
 
@@ -102,22 +145,23 @@ export interface CohortPatient {
   brafiBaseline: number;
   antipd1Baseline: number;
   /** False when the ODE settled at a numerically-zero tumour compartment, i.e.
-   *  the twin has nothing to say for this patient — this is NOT "no response". */
+   *  the twin has nothing to say for this patient – this is NOT "no response". */
   brafiInformative: boolean;
   antipd1Informative: boolean;
   brafiReduction: number;
   antipd1Reduction: number;
   /** Percentile of this reduction among informative twins, 0-100. Null when the
-   *  twin is uninformative — this is what puts the mechanistic read-out on the
+   *  twin is uninformative – this is what puts the mechanistic read-out on the
    *  same footing as the statistical one for the agreement comparison. */
   brafiReductionPct: number | null;
   antipd1ReductionPct: number | null;
   brafiOptimalDose: number | null;
   antipd1OptimalDose: number | null;
 
-  // --- Q1 / Q4 ---
+  // --- Q1 / Q4 / Q5 ---
   q1: Q1Prediction | null;
   q4: Q4Block;
+  q5: Q5Phenotype | null;
 
   // --- treatment actually received (real, from TCGA clin_cleaned.csv) ---
   treatment: TreatmentHistory;
@@ -159,11 +203,17 @@ export interface Q1Validation {
 export interface CohortMeta {
   generated: string;
   source: string;
+  tcgaOnly?: boolean;
   nQ3: number;
   nQ1Tcga: number;
+  nQ5Scored?: number;
+  nHighConf?: number;
   doseAxis: number[];
   q1Validation: Q1Validation | null;
   q1Note: string;
+  q5PhenotypeStats?: Q5PhenotypeStats[];
+  q5OdeTrajectory?: Q5OdeTrajectory;
+  q5SubgroupAuc?: Q5SubgroupAuc[];
 }
 
 export interface Cohort {
@@ -185,7 +235,7 @@ export async function loadCohort(): Promise<Cohort> {
 /**
  * Composite of the real checkpoint-axis biomarkers (PD-L1, PD-1, TMB percentiles).
  * This is the statistical immunotherapy read-out we fall back to while the Q1
- * models cannot score the TCGA cohort. It is measured data, not a model output —
+ * models cannot score the TCGA cohort. It is measured data, not a model output –
  * the UI must label it as a biomarker composite, never as "Q1".
  */
 export function biomarkerComposite(p: CohortPatient): number {

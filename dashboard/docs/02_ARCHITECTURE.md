@@ -40,7 +40,7 @@ Two views, toggled in the Header:
 Keep the existing 3 archetypes as **featured quick-pick cards** on the Cohort view for
 the scripted live demo.
 
-### Patient view — the multi-lane story
+### Patient view – the multi-lane story
 
 Vertical stack (or responsive grid) of method "lanes", each a `Panel`:
 
@@ -80,12 +80,12 @@ q1_predictions.csv ─(merged at build)─┘
 ```
 
 - `cohort.json` is the single source of truth, generated once (see `03_DATA_SCHEMAS.md`).
-  It already contains each patient's real Q3 dose-response + molecular fields, and — once
-  the user runs inference — the merged Q1 probabilities.
+  It already contains each patient's real Q3 dose-response + molecular fields, and – once
+  the user runs inference – the merged Q1 probabilities.
 - App loads `cohort.json` from `public/` via `fetch` on mount (or imports a bundled JSON).
 - No network calls beyond that static file.
 
-### The Q5 integration engine (`lib/integrationEngine.ts`) — NEW
+### The Q5 integration engine (`lib/integrationEngine.ts`) – NEW
 
 This generalises the current `decisionEngine.triage()`. Signature:
 
@@ -136,4 +136,4 @@ New lib: `integrationEngine.ts`, `cohort.ts` (loader/types).
 
 421 patients × (2 curves × 10 pts + scalar fields) is small (~200–400 KB JSON). Fine to
 bundle or fetch. Virtualise the table only if scroll feels heavy (probably unnecessary).
-Recharts is the heaviest dep; the v1 bundle is ~690 KB (203 KB gzip) — acceptable for a demo.
+Recharts is the heaviest dep; the v1 bundle is ~690 KB (203 KB gzip) – acceptable for a demo.

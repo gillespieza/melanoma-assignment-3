@@ -6,6 +6,9 @@
   "description": "Q5 clinical decision-support cockpit for the Melanoma Digital Twin project (UCD AI in Personalised Medicine).",
   "scripts": {
     "dev": "vite",
+    "extract-palette": "python scripts/extract_palette.py",
+    "build-cohort": "node scripts/build_cohort.mjs",
+    "prebuild": "npm run extract-palette && npm run build-cohort",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"

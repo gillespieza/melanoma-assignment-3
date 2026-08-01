@@ -23,7 +23,7 @@ export function Panel({
     >
       {title && (
         <div className="flex items-center gap-2.5 border-b border-clinical-border px-5 py-3.5">
-          {icon && <span className="text-clinical-tealdark">{icon}</span>}
+          {icon && <span className="text-okabe-purple-dark">{icon}</span>}
           <div className="leading-tight">
             <h2 className="text-[13.5px] font-bold tracking-tight text-clinical-ink">{title}</h2>
             {subtitle && <p className="text-[11.5px] text-clinical-muted">{subtitle}</p>}
@@ -41,11 +41,12 @@ export function Pill({
   tone = "neutral",
 }: {
   children: ReactNode;
-  tone?: "neutral" | "teal" | "blue" | "amber" | "rose" | "green";
+  tone?: "neutral" | "teal" | "blue" | "amber" | "rose" | "green" | "okabe-purple";
 }) {
   const map: Record<string, string> = {
     neutral: "bg-clinical-bg text-clinical-muted border-clinical-border",
-    teal: "bg-clinical-teal/10 text-clinical-tealdark border-clinical-teal/20",
+    teal: "bg-okabe-purple/10 text-okabe-purple-dark border-okabe-purple/20",
+    "okabe-purple": "bg-okabe-purple/10 text-okabe-purple-dark border-okabe-purple/20",
     blue: "bg-clinical-blue/10 text-clinical-bluedark border-clinical-blue/20",
     amber: "bg-amber-50 text-amber-700 border-amber-200",
     rose: "bg-rose-50 text-rose-700 border-rose-200",
@@ -72,11 +73,11 @@ export function Stat({
   label: string;
   value: ReactNode;
   unit?: string;
-  tone?: "ink" | "teal" | "blue" | "rose";
+  tone?: "ink" | "teal" | "blue" | "rose" | "okabe-purple";
 }) {
   const color =
-    tone === "teal"
-      ? "text-clinical-tealdark"
+    tone === "teal" || tone === "okabe-purple"
+      ? "text-okabe-purple-dark"
       : tone === "blue"
         ? "text-clinical-bluedark"
         : tone === "rose"

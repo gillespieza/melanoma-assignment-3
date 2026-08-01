@@ -1,6 +1,6 @@
 import { BrainCircuit, FlaskConical, Waves, ShieldAlert, Layers, ChevronRight } from "lucide-react";
 
-// The five methods, in one line. Q5 is marked as the destination — the point
+// The five methods, in one line. Q5 is marked as the destination – the point
 // where the other four converge into one recommendation.
 
 const METHODS = [
@@ -44,7 +44,7 @@ export default function MethodsStrip() {
               className={
                 "flex-1 rounded-xl border px-3 py-2.5 " +
                 (m.isDestination
-                  ? "border-clinical-tealdark/35 bg-clinical-teal/[0.07]"
+                  ? "border-okabe-purple-dark/35 bg-okabe-purple/[0.07]"
                   : "border-clinical-border bg-white")
               }
             >
@@ -53,14 +53,14 @@ export default function MethodsStrip() {
                   size={14}
                   className={
                     "shrink-0 " +
-                    (m.isDestination ? "text-clinical-tealdark" : "text-clinical-muted")
+                    (m.isDestination ? "text-okabe-purple-dark" : "text-clinical-muted")
                   }
                 />
                 <span className="text-[12.5px] font-bold leading-tight text-clinical-ink">
                   {m.name}
                 </span>
                 {m.isDestination && (
-                  <span className="ml-auto shrink-0 whitespace-nowrap rounded-full bg-clinical-tealdark px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-white">
+                  <span className="ml-auto shrink-0 whitespace-nowrap rounded-full bg-okabe-purple-dark px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-white">
                     You are here
                   </span>
                 )}

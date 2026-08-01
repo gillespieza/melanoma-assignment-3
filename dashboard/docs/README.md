@@ -1,17 +1,17 @@
-# OncoTwin Dashboard — Handoff & Build Docs
+# OncoTwin Dashboard – Handoff & Build Docs
 
 **Read this first.** This folder is a self-contained brief for building the
 OncoTwin clinical decision-support dashboard (the visual deliverable for **Q5**
-of the Melanoma Digital Twin project). It is written so a *fresh session* — even
-with a smaller model — can produce high-quality output without re-deriving
+of the Melanoma Digital Twin project). It is written so a *fresh session* – even
+with a smaller model – can produce high-quality output without re-deriving
 context. Follow the docs in order; each is focused and concrete.
 
 ## The one-paragraph summary
 
 We are building a premium, clinician-facing web dashboard that presents a
-melanoma patient's **full multi-method story** — the Q1 gene-expression ML
+melanoma patient's **full multi-method story** – the Q1 gene-expression ML
 predictor, Q2 cell-line validation, the Q3 ODE digital twin, and Q4 resistance
-analysis — all converging into a single ranked **Q5 treatment recommendation**
+analysis – all converging into a single ranked **Q5 treatment recommendation**
 that a consultant oncologist confirms. It runs over a browsable cohort of ~421
 real TCGA-SKCM patients. It is front-end only (React + TS + Vite + Tailwind +
 Recharts); all model outputs are baked into data files, no live backend.
@@ -29,7 +29,7 @@ Recharts); all model outputs are baked into data files, no live backend.
 | `07_SESSION_LOG.md` | **Current state, git/deploy setup, and how to wire in the Q2 cell-line data** |
 | `08_USER_GUIDE.md` | Complete, zero-assumed-background explanation of every screen, field, and term for anyone using the dashboard (not building it) |
 
-## Current status — BUILD PLAN COMPLETE
+## Current status – BUILD PLAN COMPLETE
 
 The multi-method v2 described in these docs is **built, verified and committed** on
 `the-dashboard`. Steps 0–7 of `05_BUILD_PLAN.md` are all done and their acceptance
@@ -52,7 +52,7 @@ real per-patient rows ever appear in `q1_predictions.csv`.
 
 ## How to work in the next session
 
-1. Read `06_DECISIONS.md` first — it now carries the root-cause analysis and decisions
+1. Read `06_DECISIONS.md` first – it now carries the root-cause analysis and decisions
    D10–D15 taken during the build.
 2. If the goal is genuine per-patient Q1: that is **Q1-pipeline work**, not dashboard work
    (fix the TCGA gene panel + normalisation, then re-run `q1_infer.py` and

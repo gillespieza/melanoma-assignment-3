@@ -2,7 +2,7 @@
 
 ## The academic project
 
-UCD "AI in Personalised Medicine" group assignment: **Melanoma Digital Twin** — a
+UCD "AI in Personalised Medicine" group assignment: **Melanoma Digital Twin** – a
 computational-biology pipeline predicting how melanoma patients respond to
 treatment. Group presentation date: **August 4th**. The dashboard is the visual
 representation of **Q5**.
@@ -18,7 +18,7 @@ The project is split into five questions, each a *different method*:
 | **Q5** | Whole team | Integration | Combine Q1–Q4 into a **treatment decision tree**. **← the dashboard is this.** |
 
 The key insight driving the current design: **the ODE (Q3) is only one method.**
-The dashboard must tell the *integrated* story — multiple methods converging on one
+The dashboard must tell the *integrated* story – multiple methods converging on one
 recommendation, with a "methods agree / disagree" signal. That agreement signal is
 the most impressive thing to show a clinical panel (e.g. "the ML predictor *and* the
 mechanistic model both favour immunotherapy → high-confidence call").
@@ -28,7 +28,7 @@ mechanistic model both favour immunotherapy → high-confidence call").
 The app is **decision support**, not an oracle. It presents ranked, evidence-anchored
 options; the **consultant oncologist confirms the final plan and is accountable**.
 Every screen should reinforce this. There is a consultant sign-off step. The
-signed-off consultant persona is **Dr. Aoife Gallagher** (fictional Irish name — do
+signed-off consultant persona is **Dr. Aoife Gallagher** (fictional Irish name – do
 NOT use real names).
 
 ### How real melanoma treatment decisions actually work (use this for the logic)
@@ -37,7 +37,7 @@ NOT use real names).
 - **BRAF V600 status** (a DNA test) decides whether targeted therapy is even possible.
 - Current guidelines favour **immunotherapy first** for most advanced patients
   (DREAMseq: 72% vs 52% alive at 2y immuno-first; SECOMBIT confirms), even for
-  BRAF-mutant disease — because immunotherapy responses are *durable*, while targeted
+  BRAF-mutant disease – because immunotherapy responses are *durable*, while targeted
   responses are fast but hit *resistance*.
 - **Targeted therapy (BRAF/MEK)** is reserved for BRAF-mutant patients needing rapid
   control (high LDH, bulky/symptomatic) or when immunotherapy is unsuitable.
@@ -45,12 +45,12 @@ NOT use real names).
   to PD-L1-low patients. Q1's expression signature is the project's *better-than-PD-L1*
   contribution.
 - Gene-expression signatures (Q1) are currently a **research tool**, not routine
-  clinical practice — frame the app as a near-future decision aid. This is honest and
+  clinical practice – frame the app as a near-future decision aid. This is honest and
   defensible.
 
 ## The user
 
-Jinish — nursing/clinical background, not a developer. Explanations should be plain.
+Jinish – nursing/clinical background, not a developer. Explanations should be plain.
 Values scientific honesty ("is this real?" must have a good answer). Prefers concise,
 direct communication. The dashboard must look **premium / clinical-grade** ("like $100M
 software"), clinical-white aesthetic, highly professional.

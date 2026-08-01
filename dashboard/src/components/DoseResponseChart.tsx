@@ -15,9 +15,9 @@ import { Panel, Pill, Stat } from "./ui";
 
 // Q3 lane · the patient's OWN simulated dose-response sweep.
 //
-// This is raw digital-twin output — the tumour burden the ODE predicts at each
+// This is raw digital-twin output – the tumour burden the ODE predicts at each
 // drug dose, as a percentage of that patient's untreated baseline. Arm colours
-// follow the locked design system: targeted = blue, immunotherapy = teal.
+// follow the locked design system: targeted = blue, immunotherapy = okabe-purple.
 
 const INK = "#5b6b7c";
 
@@ -39,10 +39,10 @@ export default function DoseResponseChart({
 
   return (
     <Panel
-      title="Q3 · ODE Digital Twin — Dose Response"
+      title="Q3 · ODE Digital Twin – Dose Response"
       subtitle="Simulated tumour burden across the drug-dose sweep, for this patient specifically"
       icon={<Waves size={16} />}
-      right={<Pill tone="teal">Raw model output</Pill>}
+      right={<Pill tone="okabe-purple">Raw model output</Pill>}
     >
       {!anyInformative ? (
         <div className="rounded-xl border border-dashed border-clinical-border bg-clinical-bg/60 p-5">
@@ -57,7 +57,7 @@ export default function DoseResponseChart({
               <p className="mt-1.5 max-w-2xl text-[12.5px] leading-relaxed text-clinical-muted">
                 For this patient the ODE settles at a numerically-zero tumour compartment, so the
                 simulated arms carry no usable signal. This is <span className="font-bold">not</span>{" "}
-                a prediction of drug resistance — the model simply has nothing to say here, and the
+                a prediction of drug resistance – the model simply has nothing to say here, and the
                 recommendation falls back to the statistical and molecular evidence alone.
               </p>
               <p className="mt-2 text-[11.5px] text-clinical-muted">
@@ -73,26 +73,26 @@ export default function DoseResponseChart({
           <div className="mb-3 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <Stat
               label="BRAFi reduction"
-              value={patient.brafiInformative ? `${Math.round(patient.brafiReduction * 100)}` : "—"}
+              value={patient.brafiInformative ? `${Math.round(patient.brafiReduction * 100)}` : "–"}
               unit={patient.brafiInformative ? "%" : undefined}
               tone="blue"
             />
             <Stat
               label="Anti-PD-1 reduction"
               value={
-                patient.antipd1Informative ? `${Math.round(patient.antipd1Reduction * 100)}` : "—"
+                patient.antipd1Informative ? `${Math.round(patient.antipd1Reduction * 100)}` : "–"
               }
               unit={patient.antipd1Informative ? "%" : undefined}
-              tone="teal"
+              tone="okabe-purple"
             />
             <Stat
               label="Optimal BRAFi dose"
-              value={patient.brafiOptimalDose !== null ? patient.brafiOptimalDose.toFixed(2) : "—"}
+              value={patient.brafiOptimalDose !== null ? patient.brafiOptimalDose.toFixed(2) : "–"}
             />
             <Stat
               label="Optimal anti-PD-1"
               value={
-                patient.antipd1OptimalDose !== null ? patient.antipd1OptimalDose.toFixed(2) : "—"
+                patient.antipd1OptimalDose !== null ? patient.antipd1OptimalDose.toFixed(2) : "–"
               }
             />
           </div>
@@ -156,9 +156,9 @@ export default function DoseResponseChart({
                     type="monotone"
                     dataKey="antipd1"
                     name="Anti-PD-1"
-                    stroke="#0f766e"
+                    stroke="#CC79A7"
                     strokeWidth={3}
-                    dot={{ r: 3, strokeWidth: 0, fill: "#0f766e" }}
+                    dot={{ r: 3, strokeWidth: 0, fill: "#CC79A7" }}
                     connectNulls
                   />
                 )}
@@ -168,7 +168,7 @@ export default function DoseResponseChart({
 
           <p className="mt-2 text-[11.5px] leading-snug text-clinical-muted">
             {patient.braf === "WT" && patient.brafiInformative
-              ? "Note the flat — or rising — BRAF-inhibitor curve: this is the RAF paradox, which the ODE reproduces mechanistically in BRAF wild-type tumours."
+              ? "Note the flat – or rising – BRAF-inhibitor curve: this is the RAF paradox, which the ODE reproduces mechanistically in BRAF wild-type tumours."
               : "Each curve is this patient's own simulation, normalised to their untreated baseline so the two arms are directly comparable."}
           </p>
         </>

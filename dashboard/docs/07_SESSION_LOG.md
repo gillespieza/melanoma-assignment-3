@@ -14,20 +14,20 @@ The v1 Q3-only dashboard was rebuilt into the multi-method Q5 version described 
 
 ### Data layer
 - `dashboard/scripts/build_cohort.mjs` generates `public/cohort.json` (421 patients)
-  from the real Q3 sweeps, TCGA clinical data, and the Q1 outputs. Idempotent —
+  from the real Q3 sweeps, TCGA clinical data, and the Q1 outputs. Idempotent –
   re-run any time with `node scripts/build_cohort.mjs`.
 
 ### Engines
-- `src/lib/scoring.ts` — the scoring core (arm confidence, OS anchoring, tiering).
-- `src/lib/integrationEngine.ts` — Q5 integration + the methods-agreement signal.
-- `src/lib/whatIf.ts` — applies hypothetical edits and swaps in cohort-average
+- `src/lib/scoring.ts` – the scoring core (arm confidence, OS anchoring, tiering).
+- `src/lib/integrationEngine.ts` – Q5 integration + the methods-agreement signal.
+- `src/lib/whatIf.ts` – applies hypothetical edits and swaps in cohort-average
   curves when an edit invalidates the patient's real ODE run.
-- `src/lib/forecast.ts` — 12-month forecast + survival curves from ranked options.
+- `src/lib/forecast.ts` – 12-month forecast + survival curves from ranked options.
 
 ### Views (two, not three)
-- **Cohort** — headline + stat tiles, the five-method strip, three featured real
+- **Cohort** – headline + stat tiles, the five-method strip, three featured real
   patients, filterable 421-row table, and the Q1 accuracy panel.
-- **Patient** — passport → what-if bar → run gate → recommendation + agreement
+- **Patient** – passport → what-if bar → run gate → recommendation + agreement
   badge + ranked options → method detail behind Q1/Q2/Q3/Q4/decision-path tabs.
 
 The old **Archetypes** view was removed once the what-if explorer made it
@@ -58,8 +58,8 @@ Q1 validation     n=195, AUC 0.593 (Riaz 0.766, Liu 0.584, Hugo 0.451)
 | D21 | Renamed from "OncoTwin™" to **Melanoma Digital Twin** | Invented product branding read wrong on a student project. |
 | D22 | Entry animations are CSS, chart series animation disabled | Content whose visibility depends on a JS animation completing can render blank. Unacceptable for a projected demo. |
 
-### The live-vs-precomputed split — say this if asked
-- **Live in the browser:** all Q5 logic — scoring, ranking, tiering, methods
+### The live-vs-precomputed split – say this if asked
+- **Live in the browser:** all Q5 logic – scoring, ranking, tiering, methods
   agreement, decision path, forecast/survival curves. Every what-if edit re-runs it.
 - **Precomputed:** the Q3 ODE solutions (Python) and the Q1 predictions (sklearn).
 
@@ -71,7 +71,7 @@ That split is normal for deployed clinical software. Do not claim the ODE solves
 
 | Branch | State |
 |--------|-------|
-| `main` | Q3 merged and **pushed to `origin`** (gillespieza). Merge commit `e7e1a4c` — 47 additions under `q3-ode-model/` + 2 lines in `.gitignore`. Nothing of anyone else's modified. |
+| `main` | Q3 merged and **pushed to `origin`** (gillespieza). Merge commit `e7e1a4c` – 47 additions under `q3-ode-model/` + 2 lines in `.gitignore`. Nothing of anyone else's modified. |
 | `the-dashboard` | Merged up to date with `main` (`36d704c`). Pushed to **`personal`** only. |
 
 ```
@@ -82,7 +82,7 @@ personal  → Dublindeveloper/melanoma-digital-twin    (private; the-dashboard t
 **The dashboard must not go to `origin`.** It is not in main's tree, and
 `the-dashboard` tracks `personal`. Just never run `git add .` while on `main`.
 
-Watch the `.gitignore` `/lib/` rule — it is anchored deliberately. Unanchored,
+Watch the `.gitignore` `/lib/` rule – it is anchored deliberately. Unanchored,
 `lib/` also matches `dashboard/src/lib/` and silently drops the engine source
 from every commit. This already happened once.
 
@@ -99,7 +99,7 @@ Q2 (cell-line drug-response validation of the Q1 signature) is the one method no
 yet wired in. It currently renders as an honest "pending" card in the Q2 tab.
 
 ### Where it plugs in
-`dashboard/src/components/Q2Evidence.tsx` — the `EVIDENCE` array near the top.
+`dashboard/src/components/Q2Evidence.tsx` – the `EVIDENCE` array near the top.
 The last entry has `status: "pending"`. That is the only thing to change.
 
 ### What to ask Gift for
@@ -124,7 +124,7 @@ Flip the pending entry to `status: "established"` and fill in the real numbers:
   status: "established",
   claim: "Q1 signature tracks drug sensitivity in melanoma cell lines",
   detail: "The Q1 expression signature was applied to melanoma cell lines with "
-        + "measured drug response — an orthogonal test of the same signature.",
+        + "measured drug response – an orthogonal test of the same signature.",
   stat: "n = __ · Spearman r = __ · p = __",
 },
 ```
@@ -143,7 +143,7 @@ Prefer **A** if it lands the night before. Prefer **B** if there is a clear day.
 
 ### Do not
 - Invent a correlation or a p-value. If the data does not arrive, the pending card
-  is the honest outcome and it is fine to present it that way — it shows you knew
+  is the honest outcome and it is fine to present it that way – it shows you knew
   what was missing.
 - Change the Q2 tab to claim per-patient cell-line evidence. Q2 is cohort-level.
 
@@ -152,14 +152,14 @@ Prefer **A** if it lands the night before. Prefer **B** if there is a clear day.
 ## 5 · Other loose ends
 
 - **`stash@{0}`** holds 90 Q1 plots/models + literature PDFs from before a branch
-  switch. Most now come from `main` as tracked files, so it is probably redundant —
+  switch. Most now come from `main` as tracked files, so it is probably redundant –
   check, then `git stash drop`.
 - **Q1 TCGA per-model breakdown.** `q1_infer.py` still cannot score TCGA (missing
-  IMPRES co-stimulatory genes + normalisation mismatch — root cause in
+  IMPRES co-stimulatory genes + normalisation mismatch – root cause in
   `06_DECISIONS.md`). Not blocking; only affects the per-model bars.
 - **Q1 calibration.** The models push most patients above 0.5 against a 42% true
   response rate. The accuracy panel states this plainly. Do not quote the raw
-  probability as a clinical probability — the *ranking* carries the signal.
+  probability as a clinical probability – the *ranking* carries the signal.
 
 ### Verification before any demo
 ```bash

@@ -3,7 +3,7 @@ import type { CohortPatient } from "../data/cohort";
 import { biomarkerComposite, pdl1Band } from "../data/cohort";
 import { PDL1_HIGH, buildRankedOptions, scoreArms, type ScoringContext } from "./scoring";
 
-// Q5 — the integration engine.
+// Q5 – the integration engine.
 //
 // This is the synthesis step: it takes each method's independent read-out for a
 // real TCGA patient and combines them into one ranked recommendation, while
@@ -56,7 +56,7 @@ export interface IntegratedResult {
 const FAVOURABLE = 0.5;
 
 /**
- * Rapid-control pressure. TCGA has no LDH, so stage IV stands in for it — and we
+ * Rapid-control pressure. TCGA has no LDH, so stage IV stands in for it – and we
  * say so in the decision path rather than implying a lab value we don't have.
  * The what-if explorer can supply an explicit LDH, which then takes precedence.
  */
@@ -125,7 +125,7 @@ function assessAgreement(
       concordance,
       statistical,
       mechanistic,
-      headline: "Methods split — consultant review",
+      headline: "Methods split – consultant review",
       detail: statFavours
         ? "The data-driven read-out favours immunotherapy but the mechanistic twin does not. " +
           "The biology and the statistics disagree; this patient warrants MDT discussion."
@@ -141,8 +141,8 @@ function assessAgreement(
       statistical,
       mechanistic,
       headline: bothFavour
-        ? "ML + ODE agree — immunotherapy favoured"
-        : "ML + ODE agree — immunotherapy unfavoured",
+        ? "ML + ODE agree – immunotherapy favoured"
+        : "ML + ODE agree – immunotherapy unfavoured",
       detail: bothFavour
         ? "Both the statistical and the mechanistic method independently predict checkpoint benefit."
         : "Both methods independently predict poor checkpoint benefit; weight the alternative lanes.",
@@ -166,23 +166,63 @@ export function integrate(p: CohortPatient): IntegratedResult {
   const mechanistic = mechanisticPosition(p);
   const agreement = assessAgreement(statistical, mechanistic);
 
-  // The Q1 slot in the shared scoring core takes the statistical position —
-  // real Q1 output when it exists, the measured biomarker composite otherwise.
   const ctx: ScoringContext = {
     brafMut: p.braf !== "WT",
     pdl1: p.pdl1Pct,
     signature: Math.round(statistical.value * 100),
     highLdh: hasRapidControlPressure(p),
-    ecog: 0, // performance status is not recorded in TCGA
+    ecog: 0,
     age: p.age ?? 60,
     immunoReduction: p.antipd1Informative ? p.antipd1Reduction : 0,
     targetedReduction: p.brafiInformative ? p.brafiReduction : 0,
   };
 
-  const scores = scoreArms(ctx);
-  const options = buildRankedOptions(ctx, scores);
-  const primary = options.find((o) => o.tier === "primary") ?? options[0];
+  let options: RankedOption[];
+  let primaryKey: TherapyKey;
 
+  if (p.q5) {
+    const q5ArmMap: Record<"A" | "B" | "C", TherapyKey> = {
+      A: "immuno",
+      B: "targeted",
+      C: "combo",
+    };
+    primaryKey = q5ArmMap[p.q5.treatmentArm] ?? "immuno";
+
+    const baseOptions = buildRankedOptions(ctx, scoreArms(ctx));
+    
+    // Override the primary option with Q5's explicit recommendation details
+    options = baseOptions.map((opt) => {
+      if (opt.arm.key === primaryKey) {
+        const confidence = p.q5!.treatabilityIndex !== null 
+          ? Math.round(p.q5!.treatabilityIndex) 
+          : opt.confidence;
+        return {
+          ...opt,
+          confidence,
+          tier: "primary" as const,
+          rationale: p.q5!.recommendedTherapy || opt.rationale,
+          evidence: `Q5 Stratification: ${p.q5!.shortLabel} (${p.q5!.confidenceBand} Confidence)`,
+          caution: p.q5!.q4NominatedTarget 
+            ? `Q4 Target nominated: ${p.q5!.q4NominatedTarget}` 
+            : opt.caution,
+        };
+      } else {
+        return {
+          ...opt,
+          tier: opt.tier === "primary" ? ("alternative" as const) : opt.tier,
+        };
+      }
+    });
+    // Ensure primary option is first
+    options.sort((a, b) => (a.tier === "primary" ? -1 : b.tier === "primary" ? 1 : 0));
+  } else {
+    const scores = scoreArms(ctx);
+    options = buildRankedOptions(ctx, scores);
+    const primary = options.find((o) => o.tier === "primary") ?? options[0];
+    primaryKey = primary.arm.key;
+  }
+
+  const primary = options.find((o) => o.tier === "primary") ?? options[0];
   const evidence: MethodPosition[] = [statistical];
   if (mechanistic) evidence.push(mechanistic);
 
@@ -190,7 +230,7 @@ export function integrate(p: CohortPatient): IntegratedResult {
     options,
     path: buildPath(p, ctx, agreement, primary.arm.label),
     headline: `${primary.arm.label} · ${primary.confidence}% model confidence · predicted median OS ${primary.medianOsMonths} mo`,
-    primaryKey: primary.arm.key,
+    primaryKey,
     agreement,
     evidence,
     context: ctx,
@@ -203,15 +243,14 @@ function buildPath(
   agreement: AgreementResult,
   recommendation: string
 ): DecisionNode[] {
-  const band = pdl1Band(p.pdl1Pct);
-  return [
+  const nodes: DecisionNode[] = [
     {
       id: "stage",
       label: p.stage === "Unknown" ? "Stage not recorded" : `Stage ${p.stage}`,
       detail: p.ldhOverride
-        ? `LDH ${p.ldhOverride.toLowerCase()}${ctx.highLdh ? " — rapid-control pressure" : ""}`
+        ? `LDH ${p.ldhOverride.toLowerCase()}${ctx.highLdh ? " – rapid-control pressure" : ""}`
         : ctx.highLdh
-          ? "Stage IV — rapid-control pressure (LDH not recorded in TCGA)"
+          ? "Stage IV – rapid-control pressure (LDH not recorded in TCGA)"
           : "No rapid-control pressure recorded",
     },
     {
@@ -220,14 +259,27 @@ function buildPath(
       detail: ctx.brafMut
         ? "Targeted therapy is on the table"
         : p.nras === "Mutant"
-          ? "NRAS-mutant — no BRAF/MEK option, MEK-directed salvage only"
+          ? "NRAS-mutant – no BRAF/MEK option, MEK-directed salvage only"
           : "No BRAF/MEK option",
     },
-    {
+  ];
+
+  if (p.q5) {
+    nodes.push({
+      id: "phenotype",
+      label: `Q5 · ${p.q5.shortLabel}`,
+      detail: `Treatability Index ${p.q5.treatabilityIndex !== null ? p.q5.treatabilityIndex.toFixed(0) : 'N/A'}/100 · ${p.q5.confidenceBand} confidence`,
+    });
+  } else {
+    const band = pdl1Band(p.pdl1Pct);
+    nodes.push({
       id: "pdl1",
       label: `PD-L1 ${band.toLowerCase()} · ${p.pdl1Pct}th percentile`,
       detail: p.pdl1Pct >= PDL1_HIGH ? "Immuno-favourable biology" : "Immuno-cold biology",
-    },
+    });
+  }
+
+  nodes.push(
     {
       id: "agreement",
       label: agreement.headline,
@@ -239,7 +291,9 @@ function buildPath(
     {
       id: "rec",
       label: recommendation,
-      detail: "Proposed — pending consultant sign-off",
-    },
-  ];
+      detail: "Proposed – pending consultant sign-off",
+    }
+  );
+
+  return nodes;
 }

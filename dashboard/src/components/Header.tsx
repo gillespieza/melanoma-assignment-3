@@ -28,7 +28,7 @@ export default function Header({
           aria-label="Back to cohort"
           className="flex items-center gap-3 rounded-lg text-left transition hover:opacity-80"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-clinical-tealdark text-white shadow-card">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-okabe-purple-dark text-white shadow-card">
             <Activity size={20} strokeWidth={2.4} />
           </span>
           <span className="leading-tight">

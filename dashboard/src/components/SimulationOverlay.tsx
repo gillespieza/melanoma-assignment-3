@@ -42,10 +42,10 @@ export default function SimulationOverlay({
             className="w-[440px] max-w-[92vw] rounded-3xl border border-white/50 bg-white p-7 shadow-lift"
           >
             <div className="flex items-center gap-3">
-              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-clinical-tealdark text-white">
+              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-okabe-purple-dark text-white">
                 <Activity size={22} />
                 <motion.span
-                  className="absolute inset-0 rounded-xl border-2 border-clinical-teal"
+                  className="absolute inset-0 rounded-xl border-2 border-okabe-purple"
                   animate={{ scale: [1, 1.35], opacity: [0.7, 0] }}
                   transition={{ duration: 1.2, repeat: Infinity }}
                 />
@@ -69,7 +69,7 @@ export default function SimulationOverlay({
                     className={
                       "flex items-center gap-3 rounded-xl border px-3.5 py-2.5 transition " +
                       (state === "done"
-                        ? "border-clinical-teal/30 bg-clinical-teal/5"
+                        ? "border-okabe-purple/30 bg-okabe-purple/5"
                         : state === "active"
                           ? "border-clinical-blue/40 bg-clinical-blue/5"
                           : "border-clinical-border bg-clinical-bg opacity-60")
@@ -77,7 +77,7 @@ export default function SimulationOverlay({
                   >
                     <span className="flex h-6 w-6 items-center justify-center">
                       {state === "done" ? (
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-clinical-tealdark text-white">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-okabe-purple-dark text-white">
                           <Check size={14} strokeWidth={3} />
                         </span>
                       ) : state === "active" ? (
@@ -99,7 +99,7 @@ export default function SimulationOverlay({
 
             <div className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-clinical-bg">
               <motion.div
-                className="h-full rounded-full bg-clinical-tealdark"
+                className="h-full rounded-full bg-okabe-purple-dark"
                 initial={{ width: "0%" }}
                 animate={{ width: `${(step / ODE_MODULES.length) * 100}%` }}
                 transition={{ ease: "easeOut" }}

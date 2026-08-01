@@ -21,7 +21,7 @@ export default function TumourForecastChart({ forecast }: { forecast: Forecast }
       title="Tumour Burden Forecast"
       subtitle="Projected tumour burden (% of baseline) over 12 months, per therapy lane"
       icon={<LineIcon size={16} />}
-      right={<Pill tone="teal">Anchored to ODE dose-response</Pill>}
+      right={<Pill tone="okabe-purple">Anchored to ODE dose-response</Pill>}
     >
       <div className="h-[290px] w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -78,7 +78,7 @@ export default function TumourForecastChart({ forecast }: { forecast: Forecast }
               type="monotone"
               dataKey="immuno"
               name="Immunotherapy (anti-PD-1)"
-              stroke="#0f766e"
+              stroke="#CC79A7"
               strokeWidth={3}
               dot={false}
             />

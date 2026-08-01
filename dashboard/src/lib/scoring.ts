@@ -2,7 +2,7 @@ import type { RankedOption, TherapyArm, TherapyKey } from "../data/types";
 import { KM_FACTS } from "../data/model";
 
 // Shared scoring core, used by integrationEngine.integrate() for every patient
-// — real or edited in the what-if explorer. Keeping the maths in one place
+// – real or edited in the what-if explorer. Keeping the maths in one place
 // means a hypothetical profile and a real patient with the same values always
 // produce the same recommendation.
 //
@@ -135,7 +135,7 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
           : "No targetable driver; checkpoint blockade is the standard first-line lane.",
       evidence: "DREAMseq: 72% vs 52% alive at 2y (immuno-first). NCCN Cat 1 first-line.",
       caution: highLdh
-        ? "Slower to act — risky if disease is rapidly progressing."
+        ? "Slower to act – risky if disease is rapidly progressing."
         : "Immune-related toxicity; ~40% grade 3-4 with the ipi/nivo doublet.",
       tier: "alternative",
     },
@@ -145,9 +145,9 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
       medianOsMonths: brafMut ? osFor("targeted", targetedReduction) : 0,
       burdenReduction: brafMut ? targetedReduction : 0,
       rationale: !brafMut
-        ? "No BRAF V600 mutation — BRAF/MEK inhibitors have no target (RAF paradox risk)."
+        ? "No BRAF V600 mutation – BRAF/MEK inhibitors have no target (RAF paradox risk)."
         : highLdh
-          ? "Fast, deep response — appropriate for rapid control of bulky/symptomatic disease."
+          ? "Fast, deep response – appropriate for rapid control of bulky/symptomatic disease."
           : "Effective but responses are often not durable; resistance emerges.",
       evidence: "COLUMBUS: encorafenib+binimetinib median OS 33.6 mo in BRAF-V600.",
       caution: brafMut

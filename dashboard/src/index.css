@@ -4,6 +4,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --primary: #CC79A7;
+  --primary-dark: #b85f94;
+  --teal: #CC79A7;
+  --okabe-purple: #CC79A7;
+}
+
 html,
 body,
 #root {
@@ -38,7 +45,7 @@ body {
   }
 
   /* Entry animation for content that must never depend on JS to become visible.
-     Used where a blank panel would break a live demo — CSS keeps the resting
+     Used where a blank panel would break a live demo – CSS keeps the resting
      state visible even if scripted animation never runs. */
   .animate-fade-up {
     animation: fade-up 0.35s ease-out both;
@@ -129,7 +136,7 @@ body {
 .guide-prose blockquote {
   margin: 0 0 12px;
   padding: 8px 14px;
-  border-left: 3px solid #0f766e;
+  border-left: 3px solid #CC79A7;
   background: #f6f8fb;
   border-radius: 0 8px 8px 0;
   color: #5b6b7c;

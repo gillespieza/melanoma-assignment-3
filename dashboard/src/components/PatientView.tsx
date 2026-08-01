@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Play,
   Sparkles,
+  Layers,
   BrainCircuit,
   FlaskConical,
   Waves,
@@ -19,6 +20,7 @@ import { applyWhatIf, changedFields, NO_EDITS, type WhatIfEdits } from "../lib/w
 import PatientPassport from "./PatientPassport";
 import WhatIfBar from "./WhatIfBar";
 import SimulationOverlay from "./SimulationOverlay";
+import Q5PhenotypePanel from "./Q5PhenotypePanel";
 import Q1Lane from "./Q1Lane";
 import Q2Evidence from "./Q2Evidence";
 import DoseResponseChart from "./DoseResponseChart";
@@ -38,9 +40,10 @@ import { Panel } from "./ui";
 // but only one method is on screen at a time so the page never reads as a wall
 // of panels.
 
-type TabKey = "q1" | "q2" | "q3" | "q4" | "path";
+type TabKey = "q5" | "q1" | "q2" | "q3" | "q4" | "path";
 
 const TABS: { key: TabKey; label: string; icon: typeof BrainCircuit }[] = [
+  { key: "q5", label: "Q5 · Stratification", icon: Layers },
   { key: "q1", label: "Q1 · ML predictor", icon: BrainCircuit },
   { key: "q2", label: "Q2 · Validation", icon: FlaskConical },
   { key: "q3", label: "Q3 · Digital twin", icon: Waves },
@@ -67,7 +70,7 @@ export default function PatientView({
   const [running, setRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [tab, setTab] = useState<TabKey>("q3");
+  const [tab, setTab] = useState<TabKey>("q5");
 
   // Reset the whole workbench when a different patient is opened.
   const [lastId, setLastId] = useState(realPatient.id);
@@ -76,7 +79,7 @@ export default function PatientView({
     setEdits(NO_EDITS);
     setHasRun(false);
     setSelectedKey(null);
-    setTab("q3");
+    setTab("q5");
   }
 
   const changed = changedFields(realPatient, edits);
@@ -109,7 +112,7 @@ export default function PatientView({
       <div className="flex flex-wrap items-center gap-2.5">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 rounded-lg border border-clinical-border bg-white px-3 py-1.5 text-[12.5px] font-bold text-clinical-ink transition hover:border-clinical-tealdark hover:text-clinical-tealdark"
+          className="flex items-center gap-1.5 rounded-lg border border-clinical-border bg-white px-3 py-1.5 text-[12.5px] font-bold text-clinical-ink transition hover:border-okabe-purple-dark hover:text-okabe-purple-dark"
         >
           <ArrowLeft size={14} /> Back to cohort
         </button>
@@ -121,14 +124,14 @@ export default function PatientView({
           <button
             onClick={() => onStep(-1)}
             aria-label="Previous patient"
-            className="rounded-lg border border-clinical-border bg-white p-1.5 text-clinical-ink transition hover:border-clinical-tealdark hover:text-clinical-tealdark"
+            className="rounded-lg border border-clinical-border bg-white p-1.5 text-clinical-ink transition hover:border-okabe-purple-dark hover:text-okabe-purple-dark"
           >
             <ChevronLeft size={15} />
           </button>
           <button
             onClick={() => onStep(1)}
             aria-label="Next patient"
-            className="rounded-lg border border-clinical-border bg-white p-1.5 text-clinical-ink transition hover:border-clinical-tealdark hover:text-clinical-tealdark"
+            className="rounded-lg border border-clinical-border bg-white p-1.5 text-clinical-ink transition hover:border-okabe-purple-dark hover:text-okabe-purple-dark"
           >
             <ChevronRight size={15} />
           </button>
@@ -152,12 +155,12 @@ export default function PatientView({
           {synthetic && <SyntheticNotice changed={changed} />}
 
           {/* --- the answer --- */}
-          <div className="flex items-center gap-3 rounded-2xl border border-clinical-tealdark/25 bg-gradient-to-r from-clinical-teal/10 to-clinical-blue/5 px-5 py-3.5 shadow-card">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-clinical-tealdark text-white">
+          <div className="flex items-center gap-3 rounded-2xl border border-okabe-purple-dark/25 bg-gradient-to-r from-okabe-purple/10 to-clinical-blue/5 px-5 py-3.5 shadow-card">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-okabe-purple-dark text-white">
               <Sparkles size={17} />
             </div>
             <div>
-              <div className="text-[10.5px] font-bold uppercase tracking-wide text-clinical-tealdark">
+              <div className="text-[10.5px] font-bold uppercase tracking-wide text-okabe-purple-dark">
                 Integrated recommendation
               </div>
               <div className="text-[14.5px] font-extrabold tracking-tight text-clinical-ink">
@@ -184,7 +187,7 @@ export default function PatientView({
                   className={
                     "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12.5px] font-bold transition " +
                     (tab === key
-                      ? "bg-clinical-tealdark text-white shadow-card"
+                      ? "bg-okabe-purple-dark text-white shadow-card"
                       : "text-clinical-muted hover:bg-clinical-bg hover:text-clinical-ink")
                   }
                 >
@@ -194,6 +197,7 @@ export default function PatientView({
             </div>
 
             <div className="mt-4 space-y-4">
+              {tab === "q5" && <Q5PhenotypePanel patient={patient} meta={meta} />}
               {tab === "q1" && (
                 <Q1Lane
                   patient={patient}
@@ -229,7 +233,7 @@ function RunGate({ patient, onRun }: { patient: CohortPatient; onRun: () => void
   return (
     <Panel className="text-center">
       <div className="mx-auto max-w-lg py-6">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-clinical-teal/10 text-clinical-tealdark">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-okabe-purple/10 text-okabe-purple-dark">
           <Waves size={26} />
         </div>
         <h2 className="text-[17px] font-extrabold text-clinical-ink">
@@ -242,7 +246,7 @@ function RunGate({ patient, onRun }: { patient: CohortPatient; onRun: () => void
         </p>
         <button
           onClick={onRun}
-          className="mx-auto mt-5 flex items-center gap-2 rounded-xl bg-clinical-tealdark px-6 py-3 text-[13.5px] font-bold text-white shadow-lift transition hover:brightness-110"
+          className="mx-auto mt-5 flex items-center gap-2 rounded-xl bg-okabe-purple-dark px-6 py-3 text-[13.5px] font-bold text-white shadow-lift transition hover:brightness-110"
         >
           <Play size={16} /> Run Digital-Twin Simulation
         </button>

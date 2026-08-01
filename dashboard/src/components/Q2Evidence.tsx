@@ -1,11 +1,11 @@
 import { FlaskConical, CheckCircle2, Hourglass } from "lucide-react";
 import { Panel, Pill } from "./ui";
 
-// Q2 · Experimental validation — cohort-level evidence, never per-patient.
+// Q2 · Experimental validation – cohort-level evidence, never per-patient.
 //
 // Two independent checks: the RPPA proteomic validation of the Q3 twin, and the
 // cell-line drug-response model (q2-viability-predictor/, GDSC2 + DepMap). The
-// cell-line entry deliberately keeps its own stability caveat on screen — the
+// cell-line entry deliberately keeps its own stability caveat on screen – the
 // headline correlation alone overstates it.
 
 interface Evidence {
@@ -21,7 +21,7 @@ const EVIDENCE: Evidence[] = [
     claim: "ODE-predicted pERK tracks measured protein levels",
     detail:
       "Simulated baseline pERK compared against reverse-phase protein array (RPPA) measurements in " +
-      "the same TCGA patients — an independent, wet-lab readout the model never saw.",
+      "the same TCGA patients – an independent, wet-lab readout the model never saw.",
     stat: "n = 310 · Pearson r = 0.175 · p = 0.002",
   },
   {
@@ -37,7 +37,7 @@ const EVIDENCE: Evidence[] = [
     claim: "Three ODE outputs rival twelve raw clinical features",
     detail:
       "The mechanistic twin reaches comparable discrimination to a random forest trained on four " +
-      "times as many inputs — the biology is doing real work, not curve-fitting.",
+      "times as many inputs – the biology is doing real work, not curve-fitting.",
     stat: "ODE AUC 0.666 ± 0.074 vs RF 0.686 ± 0.046",
   },
   {
@@ -45,10 +45,10 @@ const EVIDENCE: Evidence[] = [
     claim: "LASSO model predicts BRAF-inhibitor sensitivity in melanoma cell lines",
     detail:
       "Trained on GDSC2 drug-response data and DepMap gene expression, melanoma cell lines only " +
-      "(not the Q1 signature — a separate model). Of five drugs tested, Dabrafenib was the only " +
+      "(not the Q1 signature – a separate model). Of five drugs tested, Dabrafenib was the only " +
       "defensible result: the two chemotherapy agents had almost no viability variation to predict, " +
       "and PLX-4720 was a genuine model failure. Refit across 5 random train/test splits to check " +
-      "stability — the model is directionally right but not reliable on any single split.",
+      "stability – the model is directionally right but not reliable on any single split.",
     stat: "Dabrafenib: best-split r = 0.75 (n = 8) · mean r = 0.28 across 5 refits (range -0.29 to 0.75)",
   },
 ];

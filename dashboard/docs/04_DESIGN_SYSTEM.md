@@ -1,6 +1,6 @@
 # 04 · Design System
 
-**Bar:** premium clinical-grade software — think Epic / modern medical SaaS. Calm,
+**Bar:** premium clinical-grade software – think Epic / modern medical SaaS. Calm,
 trustworthy, dense-but-legible, tabular numerics. Clinical white (chosen direction),
 teal/blue accents. NOT dark, NOT playful.
 
@@ -50,15 +50,15 @@ controls `rounded-lg/xl`.
 
 The methods-agreement badge is the centerpiece of Q5. Design it to read instantly:
 - **Concordant** → green badge, both method icons lit, "ML + ODE agree".
-- **Discordant** → amber badge, "Methods split — consultant review", show both positions.
+- **Discordant** → amber badge, "Methods split – consultant review", show both positions.
 Put a small two-dot or converging-arrows glyph. This is the thing that makes the multi-method
-story legible in one glance — invest in it.
+story legible in one glance – invest in it.
 
 ## Quality checklist (the "$100M" bar)
 
 - Consistent 4/8px spacing rhythm; nothing visually misaligned.
 - Numbers formatted (1 decimal for %, integer months); units in muted small caps.
 - Empty/loading/awaiting states are designed, not raw text.
-- Charts: no default recharts styling leaking through — custom axis ticks, hairline grids,
+- Charts: no default recharts styling leaking through – custom axis ticks, hairline grids,
   rounded tooltips (see existing chart components for the established style).
 - Hover/active states on every interactive element.

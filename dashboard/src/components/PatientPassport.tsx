@@ -1,9 +1,10 @@
 import { IdCard, Dna, Microscope, Syringe } from "lucide-react";
 import type { CohortPatient } from "../data/cohort";
 import { pdl1Band } from "../data/cohort";
+import { getPhenotypeColor } from "../data/palette";
 import { Panel, Pill } from "./ui";
 
-// Patient passport — who this patient is, in the two registers a melanoma MDT
+// Patient passport – who this patient is, in the two registers a melanoma MDT
 // actually uses: demographics/staging and molecular profile.
 // Every value here is real TCGA-SKCM data.
 
@@ -26,8 +27,8 @@ function Field({ label, value, muted }: { label: string; value: string; muted?: 
 const CHECKPOINT_AGENTS = new Set(["Ipilimumab", "Pembrolizumab", "Nivolumab"]);
 const TARGETED_AGENTS = new Set(["Vemurafenib", "Dabrafenib", "Trametinib"]);
 
-function agentTone(agent: string): "teal" | "blue" | "neutral" {
-  if (CHECKPOINT_AGENTS.has(agent)) return "teal";
+function agentTone(agent: string): "teal" | "blue" | "neutral" | "okabe-purple" {
+  if (CHECKPOINT_AGENTS.has(agent)) return "okabe-purple";
   if (TARGETED_AGENTS.has(agent)) return "blue";
   return "neutral";
 }
@@ -48,22 +49,42 @@ export default function PatientPassport({
       title={patient.id}
       subtitle={
         modified.length
-          ? `Hypothetical variant — ${modified.join(", ")} edited`
+          ? `Hypothetical variant – ${modified.join(", ")} edited`
           : `TCGA-SKCM · sample ${patient.sampleId}`
       }
       icon={<IdCard size={16} />}
       right={
         <div className="flex flex-wrap items-center justify-end gap-1.5">
           {modified.length > 0 && <Pill tone="amber">Modified</Pill>}
-          <Pill tone={brafMut ? "blue" : "neutral"}>
-            <Dna size={11} /> BRAF {brafMut ? "V600" : "WT"}
-          </Pill>
-          <Pill tone={patient.nras === "Mutant" ? "amber" : "neutral"}>
-            NRAS {patient.nras === "Mutant" ? "mut" : "WT"}
-          </Pill>
-          <Pill tone={band === "High" ? "teal" : band === "Intermediate" ? "neutral" : "rose"}>
-            <Microscope size={11} /> PD-L1 {band.toLowerCase()}
-          </Pill>
+          {patient.q5 ? (
+            <>
+              <Pill tone="neutral">
+                <span
+                  className="h-2.5 w-2.5 rounded-full shrink-0 mr-1 inline-block"
+                  style={{ backgroundColor: getPhenotypeColor(patient.q5.shortLabel) }}
+                />
+                {patient.q5.shortLabel}
+              </Pill>
+              <Pill tone={patient.q5.confidenceBand === "High" ? "green" : patient.q5.confidenceBand === "Moderate" ? "amber" : "neutral"}>
+                {patient.q5.confidenceBand} Conf
+              </Pill>
+              <Pill tone="neutral">
+                TI {patient.q5.treatabilityIndex !== null ? patient.q5.treatabilityIndex.toFixed(0) : "–"}/100
+              </Pill>
+            </>
+          ) : (
+            <>
+              <Pill tone={brafMut ? "blue" : "neutral"}>
+                <Dna size={11} /> BRAF {brafMut ? "V600" : "WT"}
+              </Pill>
+              <Pill tone={patient.nras === "Mutant" ? "amber" : "neutral"}>
+                NRAS {patient.nras === "Mutant" ? "mut" : "WT"}
+              </Pill>
+              <Pill tone={band === "High" ? "okabe-purple" : band === "Intermediate" ? "neutral" : "rose"}>
+                <Microscope size={11} /> PD-L1 {band.toLowerCase()}
+              </Pill>
+            </>
+          )}
         </div>
       }
     >
@@ -127,7 +148,7 @@ export default function PatientPassport({
                   : patient.treatment.targetedTherapy
                     ? "a BRAF/MEK inhibitor"
                     : "a checkpoint inhibitor"}{" "}
-                — directly comparable to the {patient.treatment.targetedTherapy && patient.treatment.checkpointInhibitor
+                – directly comparable to the {patient.treatment.targetedTherapy && patient.treatment.checkpointInhibitor
                   ? "BRAFi and anti-PD-1 arms"
                   : patient.treatment.targetedTherapy
                     ? "BRAFi arm"
@@ -139,7 +160,7 @@ export default function PatientPassport({
               !patient.treatment.targetedTherapy &&
               (patient.treatment.chemotherapy || patient.treatment.radiation) && (
                 <p className="mt-2 text-[11.5px] leading-snug text-clinical-muted">
-                  Chemotherapy and radiotherapy are not modelled by any method here — no ODE arm exists
+                  Chemotherapy and radiotherapy are not modelled by any method here – no ODE arm exists
                   for either. In melanoma today both are largely palliative or adjuvant, not
                   survival-directed the way checkpoint or BRAF/MEK blockade is, so this is shown as
                   historical record only, not a comparator for the twin.
@@ -155,7 +176,7 @@ export default function PatientPassport({
 
       <p className="mt-4 border-t border-clinical-border pt-3 text-[11.5px] leading-snug text-clinical-muted">
         TCGA does not record LDH or ECOG performance status. Where the decision logic would normally
-        weigh rapid-control pressure, stage IV stands in — shown explicitly in the decision path.
+        weigh rapid-control pressure, stage IV stands in – shown explicitly in the decision path.
       </p>
     </Panel>
   );

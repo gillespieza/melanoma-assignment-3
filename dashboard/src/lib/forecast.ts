@@ -116,7 +116,7 @@ function survivalCurve(medianMonths: number, horizon = 120): number[] {
 export interface Survival {
   points: SurvivalPoint[];
   recMedian: number;
-  /** Null when there is no distinct second lane — better than drawing a
+  /** Null when there is no distinct second lane – better than drawing a
    *  duplicate curve and implying a choice the patient does not have. */
   altMedian: number | null;
   altLabel: string | null;

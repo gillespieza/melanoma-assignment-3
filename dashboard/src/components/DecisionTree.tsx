@@ -22,14 +22,14 @@ export default function DecisionTree({ path }: { path: DecisionNode[] }) {
                 className={
                   "flex-1 rounded-xl border p-3.5 " +
                   (isFinal
-                    ? "border-clinical-tealdark bg-clinical-tealdark text-white shadow-lift"
+                    ? "border-okabe-purple-dark bg-okabe-purple-dark text-white shadow-lift"
                     : "border-clinical-border bg-clinical-bg")
                 }
               >
                 <div className="flex items-center gap-1.5">
                   <CircleDot
                     size={13}
-                    className={isFinal ? "text-white" : "text-clinical-tealdark"}
+                    className={isFinal ? "text-white" : "text-okabe-purple-dark"}
                   />
                   <span
                     className={

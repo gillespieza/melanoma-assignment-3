@@ -73,7 +73,7 @@ function MethodCard({
           <div
             className={
               "h-full rounded-full transition-[width] duration-500 ease-out " +
-              (favours ? "bg-clinical-tealdark" : "bg-clinical-muted")
+              (favours ? "bg-okabe-purple-dark" : "bg-clinical-muted")
             }
             style={{ width: `${Math.round(position.value * 100)}%` }}
           />
@@ -86,7 +86,7 @@ function MethodCard({
       <div
         className={
           "mt-2 text-[11px] font-bold uppercase tracking-wide " +
-          (favours ? "text-clinical-tealdark" : "text-clinical-muted")
+          (favours ? "text-okabe-purple-dark" : "text-clinical-muted")
         }
       >
         {favours ? "Favours immunotherapy" : "Does not favour immunotherapy"}
@@ -142,14 +142,14 @@ export default function AgreementBadge({ agreement }: { agreement: AgreementResu
         <MethodCard
           position={agreement.mechanistic}
           kind="Mechanistic"
-          icon={<Waves size={13} className="text-clinical-tealdark" />}
+          icon={<Waves size={13} className="text-okabe-purple-dark" />}
         />
       </div>
 
       {agreement.statistical.source === "biomarker" && (
         <p className="mt-3 rounded-lg border border-clinical-border bg-white/70 px-3 py-2 text-[11.5px] leading-snug text-clinical-muted">
           <span className="font-bold text-clinical-ink">Provenance:</span> the statistical side is a
-          measured biomarker composite, not the Q1 ML model — the Q1 models have not scored the TCGA
+          measured biomarker composite, not the Q1 ML model – the Q1 models have not scored the TCGA
           cohort. This panel switches to real Q1 probabilities automatically once they are available.
         </p>
       )}

@@ -41,7 +41,7 @@ function Segmented<T extends string>({
             className={
               "rounded-md px-2.5 py-1 text-[12px] font-bold transition " +
               (value === o.value
-                ? "bg-clinical-tealdark text-white"
+                ? "bg-okabe-purple-dark text-white"
                 : "text-clinical-muted hover:bg-clinical-bg hover:text-clinical-ink")
             }
           >
@@ -87,7 +87,7 @@ export default function WhatIfBar({
           <FlaskConical size={13} /> What-if explorer
         </span>
         <span className="text-[12px] text-clinical-muted">
-          Change a field — every method below re-runs instantly.
+          Change a field – every method below re-runs instantly.
         </span>
         {changed.length > 0 && (
           <button
@@ -155,7 +155,7 @@ export default function WhatIfBar({
             max={100}
             value={pdl1}
             onChange={(e) => set({ pdl1Pct: Number(e.target.value) })}
-            className="w-full accent-clinical-tealdark"
+            className="w-full accent-okabe-purple-dark"
             aria-label="PD-L1 percentile"
           />
           <div className="mt-0.5 flex justify-between text-[10px] text-clinical-muted">

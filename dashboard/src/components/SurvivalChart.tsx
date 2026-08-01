@@ -28,7 +28,7 @@ export default function SurvivalChart({ survival }: { survival: Survival }) {
       icon={<HeartPulse size={16} />}
     >
       <div className="mb-3 grid grid-cols-2 gap-2.5">
-        <Stat label="Median OS · recommended" value={recMedian} unit="mo" tone="teal" />
+        <Stat label="Median OS · recommended" value={recMedian} unit="mo" tone="okabe-purple" />
         {hasAlt ? (
           <Stat
             label={`Median OS · ${altLabel ?? "alternative"}`}
@@ -53,8 +53,8 @@ export default function SurvivalChart({ survival }: { survival: Survival }) {
           <AreaChart data={points} margin={{ top: 6, right: 10, left: -10, bottom: 4 }}>
             <defs>
               <linearGradient id="recFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#0f766e" stopOpacity={0.28} />
-                <stop offset="100%" stopColor="#0f766e" stopOpacity={0.02} />
+                <stop offset="0%" stopColor="#CC79A7" stopOpacity={0.28} />
+                <stop offset="100%" stopColor="#CC79A7" stopOpacity={0.02} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#eef2f6" />
@@ -92,7 +92,7 @@ export default function SurvivalChart({ survival }: { survival: Survival }) {
               type="monotone"
               dataKey="recommended"
               name="Recommended"
-              stroke="#0f766e"
+              stroke="#CC79A7"
               strokeWidth={3}
               fill="url(#recFill)"
             />

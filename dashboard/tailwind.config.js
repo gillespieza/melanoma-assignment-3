@@ -4,6 +4,11 @@ export default {
   theme: {
     extend: {
       colors: {
+        'okabe-purple': {
+          DEFAULT: '#CC79A7',
+          dark: '#b85f94',
+          light: '#e0a0c4',
+        },
         // Clinical-white SaaS palette
         clinical: {
           bg: "#f6f8fb",
@@ -11,8 +16,8 @@ export default {
           border: "#e6ebf1",
           ink: "#0f2033",
           muted: "#5b6b7c",
-          teal: "#0ea5a4",
-          tealdark: "#0f766e",
+          teal: "#CC79A7",
+          tealdark: "#b85f94",
           blue: "#2563eb",
           bluedark: "#1e40af",
           amber: "#d97706",

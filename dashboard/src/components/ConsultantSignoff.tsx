@@ -30,7 +30,7 @@ export default function ConsultantSignoff({
           {selected ? (
             <span className="text-clinical-ink">
               Confirmed plan:{" "}
-              <span className="font-extrabold text-clinical-tealdark">{selected.arm.label}</span> —{" "}
+              <span className="font-extrabold text-okabe-purple-dark">{selected.arm.label}</span> –{" "}
               {selected.arm.regimen}
             </span>
           ) : (

@@ -44,7 +44,9 @@ PHENOTYPE_PALETTE = {
     "Immune Hot (High TIS & CYT, Inflamed Microenvironment)": "#D55E00",
     "Immune Cold": "#0072B2",                                                              # Okabe-Ito Blue (Cold / Excluded)
     "Immune Cold (Low TIS & Infiltration, Desert)": "#0072B2",
-    "Immunosuppressive M2-High": "#CC79A7",                                                # Reddish Purple (M2 Macrophage)
+    "M2-High": "#CC79A7",                                                                  # Reddish Purple (M2 Macrophage)
+    "M2": "#CC79A7",
+    "Immunosuppressive M2-High": "#CC79A7",
     "Immunosuppressive M2-High (Depleted T-cells & Stromal Exclusion)": "#CC79A7",
     "M2 Immunosuppressive": "#CC79A7",
     "M2 Immunosuppressive (High M2 Macrophages & CAFs)": "#CC79A7",
@@ -54,15 +56,21 @@ PHENOTYPE_PALETTE = {
 
 
 def get_phenotype_color(phenotype_name: str, default: str = "#37474F") -> str:
-    """Returns the standardised hex colour code for a given phenotype subtype label (case-insensitive substring match)."""
+    """Returns the standardised hex colour code for a given phenotype subtype label (case-insensitive match)."""
     if not isinstance(phenotype_name, str):
         return default
     if phenotype_name in PHENOTYPE_PALETTE:
         return PHENOTYPE_PALETTE[phenotype_name]
     pheno_lower = phenotype_name.lower()
     for key, color in PHENOTYPE_PALETTE.items():
-        if key.lower() in pheno_lower:
+        if key.lower() == pheno_lower:
             return color
+    for key, color in PHENOTYPE_PALETTE.items():
+        key_lower = key.lower()
+        if key_lower in pheno_lower or pheno_lower in key_lower:
+            return color
+    if "m2" in pheno_lower:
+        return "#CC79A7"
     return default
 
 

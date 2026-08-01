@@ -6,7 +6,7 @@ import { PDL1_HIGH } from "./scoring";
 //
 // A cohort patient's ODE curves belong to their REAL molecular profile. The
 // moment a clinician changes BRAF status or PD-L1, those curves no longer
-// describe the hypothetical patient on screen — so we swap in the closest real
+// describe the hypothetical patient on screen – so we swap in the closest real
 // subgroup-average sweep instead of silently keeping curves that no longer apply.
 //
 // The UI badges any edited patient as hypothetical. Nothing here ever writes

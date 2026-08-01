@@ -16,16 +16,16 @@ import { Target, Gauge } from "lucide-react";
 import type { Q1Validation } from "../data/cohort";
 import { Panel, Pill, Stat } from "./ui";
 
-// Q1 model accuracy — measured, not claimed.
+// Q1 model accuracy – measured, not claimed.
 //
 // Computed at build time from prob_ensemble vs the REAL response labels of the
 // held-out ICI trial cohorts (Liu 2019, Riaz 2017, Hugo 2016). This is the
 // evidence that the ML lane is genuinely predictive.
 //
-// Palette: responders #0ea5a4 / non-responders #d97706 — validated for CVD
+// Palette: responders #CC79A7 / non-responders #d97706 – validated for CVD
 // separation; the sub-3:1 contrast on the teal is relieved by direct labels.
 
-const RESPONDER = "#0ea5a4";
+const RESPONDER = "#CC79A7";
 const NON_RESPONDER = "#d97706";
 const INK = "#5b6b7c";
 const GRID = "#eef2f6";
@@ -40,7 +40,7 @@ const TOOLTIP_STYLE = {
 function aucTone(auc: number | null) {
   if (auc === null) return "neutral" as const;
   if (auc >= 0.7) return "green" as const;
-  if (auc >= 0.6) return "teal" as const;
+  if (auc >= 0.6) return "okabe-purple" as const;
   return "amber" as const;
 }
 
@@ -57,7 +57,7 @@ function ConfusionGrid({
       <div className="tabular text-[18px] font-extrabold leading-tight">{value}</div>
     </div>
   );
-  const rate = (v: number | null) => (v === null ? "—" : `${(v * 100).toFixed(0)}%`);
+  const rate = (v: number | null) => (v === null ? "–" : `${(v * 100).toFixed(0)}%`);
 
   return (
     <div className="rounded-xl border border-clinical-border bg-white p-3.5">
@@ -68,7 +68,7 @@ function ConfusionGrid({
         </div>
       </div>
       <div className="mt-2.5 grid grid-cols-2 gap-2">
-        {cell("True responder", stats.tp, "border-clinical-teal/30 bg-clinical-teal/10 text-clinical-tealdark")}
+        {cell("True responder", stats.tp, "border-okabe-purple/30 bg-okabe-purple/10 text-okabe-purple-dark")}
         {cell("False positive", stats.fp, "border-amber-200 bg-amber-50 text-amber-700")}
         {cell("False negative", stats.fn, "border-amber-200 bg-amber-50 text-amber-700")}
         {cell("True non-responder", stats.tn, "border-clinical-border bg-clinical-bg text-clinical-ink")}
@@ -99,24 +99,24 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
   return (
     <Panel
       title="Q1 · Model Accuracy on Held-Out Trials"
-      subtitle="Measured against real response outcomes in the ICI trial cohorts — not a claim, a result"
+      subtitle="Measured against real response outcomes in the ICI trial cohorts – not a claim, a result"
       icon={<Target size={16} />}
-      right={<Pill tone={aucTone(validation.auc)}>AUC {validation.auc?.toFixed(3) ?? "—"}</Pill>}
+      right={<Pill tone={aucTone(validation.auc)}>AUC {validation.auc?.toFixed(3) ?? "–"}</Pill>}
     >
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
         {/* ---- left: headline numbers + per-cohort table ---- */}
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-2.5">
             <Stat label="Patients" value={validation.n} tone="ink" />
-            <Stat label="Responders" value={validation.responders} tone="teal" />
+            <Stat label="Responders" value={validation.responders} tone="okabe-purple" />
             <Stat
               label="AUC"
-              value={validation.auc?.toFixed(3) ?? "—"}
-              tone={validation.auc && validation.auc >= 0.7 ? "teal" : "ink"}
+              value={validation.auc?.toFixed(3) ?? "–"}
+              tone={validation.auc && validation.auc >= 0.7 ? "okabe-purple" : "ink"}
             />
           </div>
 
-          {/* Per-cohort breakdown — also serves as the chart's table view. */}
+          {/* Per-cohort breakdown – also serves as the chart's table view. */}
           <div className="overflow-hidden rounded-xl border border-clinical-border">
             <table className="w-full text-left">
               <thead className="bg-clinical-bg">
@@ -140,13 +140,13 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
                         className={
                           "tabular text-[12.5px] font-extrabold " +
                           (c.auc && c.auc >= 0.7
-                            ? "text-clinical-tealdark"
+                            ? "text-okabe-purple-dark"
                             : c.auc && c.auc >= 0.6
                               ? "text-clinical-ink"
                               : "text-amber-700")
                         }
                       >
-                        {c.auc?.toFixed(3) ?? "—"}
+                        {c.auc?.toFixed(3) ?? "–"}
                       </span>
                     </td>
                   </tr>
@@ -165,7 +165,7 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
         <div className="space-y-4">
           <div className="rounded-xl border border-clinical-border bg-white p-3.5">
             <div className="mb-1 flex items-center gap-1.5 text-[11.5px] font-bold text-clinical-ink">
-              <Gauge size={13} className="text-clinical-tealdark" /> Predicted probability vs true
+              <Gauge size={13} className="text-okabe-purple-dark" /> Predicted probability vs true
               outcome
             </div>
             <p className="mb-2 text-[11px] leading-snug text-clinical-muted">
@@ -271,7 +271,7 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
                     type="monotone"
                     dataKey="tpr"
                     name="Sensitivity"
-                    stroke="#0f766e"
+                    stroke="#CC79A7"
                     strokeWidth={2}
                     dot={false}
                   />
@@ -279,7 +279,7 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
               </ResponsiveContainer>
             </div>
             <p className="mt-1.5 text-[11px] leading-snug text-clinical-muted">
-              Dashed diagonal = chance. Area under this curve is {validation.auc?.toFixed(3) ?? "—"}.
+              Dashed diagonal = chance. Area under this curve is {validation.auc?.toFixed(3) ?? "–"}.
             </p>
           </div>
         </div>
@@ -287,12 +287,12 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
 
       <p className="mt-4 border-t border-clinical-border pt-3 text-[11.5px] leading-relaxed text-clinical-muted">
         <span className="font-bold text-clinical-ink">Reading this honestly:</span> discrimination
-        varies sharply by cohort — strong in Riaz 2017 (AUC{" "}
-        {validation.byCohort.find((c) => c.cohort.startsWith("Riaz"))?.auc?.toFixed(3) ?? "—"}),
+        varies sharply by cohort – strong in Riaz 2017 (AUC{" "}
+        {validation.byCohort.find((c) => c.cohort.startsWith("Riaz"))?.auc?.toFixed(3) ?? "–"}),
         around chance in the small Hugo 2016 set (n=
-        {validation.byCohort.find((c) => c.cohort.startsWith("Hugo"))?.n ?? "—"}). The models are also
-        poorly calibrated — they push most patients above 0.5 against a true response rate of{" "}
-        {(responseRate * 100).toFixed(0)}% — so the tuned threshold matters more than the raw
+        {validation.byCohort.find((c) => c.cohort.startsWith("Hugo"))?.n ?? "–"}). The models are also
+        poorly calibrated – they push most patients above 0.5 against a true response rate of{" "}
+        {(responseRate * 100).toFixed(0)}% – so the tuned threshold matters more than the raw
         probability. The ranking carries the signal; the absolute number should not be read as a
         clinical probability.
       </p>

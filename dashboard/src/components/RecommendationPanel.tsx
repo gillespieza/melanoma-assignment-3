@@ -3,7 +3,7 @@ import { Panel, Pill } from "./ui";
 import { Stethoscope, TrendingUp, ShieldAlert, BookOpen, Check, Ban } from "lucide-react";
 
 function tierPill(tier: RankedOption["tier"]) {
-  if (tier === "primary") return <Pill tone="teal">Primary recommendation</Pill>;
+  if (tier === "primary") return <Pill tone="okabe-purple">Primary recommendation</Pill>;
   if (tier === "alternative") return <Pill tone="blue">Alternative</Pill>;
   return <Pill tone="rose">Not recommended</Pill>;
 }
@@ -12,7 +12,7 @@ function ConfidenceBar({ value, muted }: { value: number; muted?: boolean }) {
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-clinical-bg">
       <div
-        className={"h-full rounded-full " + (muted ? "bg-clinical-border" : "bg-clinical-tealdark")}
+        className={"h-full rounded-full " + (muted ? "bg-clinical-border" : "bg-okabe-purple-dark")}
         style={{ width: `${value}%` }}
       />
     </div>
@@ -34,7 +34,7 @@ function OptionCard({
       className={
         "rounded-2xl border p-4 transition " +
         (opt.tier === "primary"
-          ? "border-clinical-tealdark bg-clinical-teal/[0.04] shadow-card"
+          ? "border-okabe-purple-dark bg-okabe-purple/[0.04] shadow-card"
           : isNo
             ? "border-clinical-border bg-clinical-bg opacity-75"
             : "border-clinical-border bg-white")
@@ -62,7 +62,7 @@ function OptionCard({
           <div
             className={
               "tabular text-[26px] font-extrabold leading-none " +
-              (isNo ? "text-clinical-muted" : "text-clinical-tealdark")
+              (isNo ? "text-clinical-muted" : "text-okabe-purple-dark")
             }
           >
             {opt.confidence}
@@ -116,7 +116,7 @@ function OptionCard({
             "mt-3.5 flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-[12.5px] font-bold transition " +
             (selected
               ? "bg-clinical-green text-white"
-              : "border border-clinical-tealdark text-clinical-tealdark hover:bg-clinical-teal/10")
+              : "border border-okabe-purple-dark text-okabe-purple-dark hover:bg-okabe-purple/10")
           }
         >
           {selected ? (

@@ -1,17 +1,21 @@
 import { useMemo, useState } from "react";
 import { Search, Users, ArrowUpDown, ChevronRight, X } from "lucide-react";
 import type { CohortPatient } from "../data/cohort";
-import { pdl1Band } from "../data/cohort";
+import { getPhenotypeColor } from "../data/palette";
 import { integrate, type AgreementStatus } from "../lib/integrationEngine";
 import { Panel, Pill } from "./ui";
 
-// The cohort browser — all 421 real TCGA-SKCM patients, searchable, filterable
+// The cohort browser – all 421 real TCGA-SKCM patients, searchable, filterable
 // and sortable, with the Q5 recommendation and methods-agreement resolved for
 // every row so the clinician can scan for the interesting cases (the discordant
 // ones) rather than clicking through blindly.
 
 export interface CohortRow {
   patient: CohortPatient;
+  cohort: string;
+  phenotype: string;
+  treatabilityIndex: number | null;
+  confidenceBand: "Low" | "Moderate" | "High" | "N/A";
   recommendation: string;
   recommendationKey: string;
   confidence: number;
@@ -24,8 +28,13 @@ export function buildRows(patients: CohortPatient[]): CohortRow[] {
   return patients.map((patient) => {
     const result = integrate(patient);
     const primary = result.options.find((o) => o.tier === "primary") ?? result.options[0];
+    const q5 = patient.q5;
     return {
       patient,
+      cohort: patient.cohort ?? "TCGA-SKCM",
+      phenotype: q5?.shortLabel ?? "Unknown",
+      treatabilityIndex: q5?.treatabilityIndex ?? null,
+      confidenceBand: q5?.confidenceBand ?? "N/A",
       recommendation: primary.arm.label,
       recommendationKey: primary.arm.key,
       confidence: primary.confidence,
@@ -42,16 +51,18 @@ const AGREEMENT_PILL: Record<AgreementStatus, { label: string; tone: "green" | "
   unavailable: { label: "Single method", tone: "neutral" },
 };
 
-const REC_TONE: Record<string, "teal" | "blue" | "amber"> = {
-  immuno: "teal",
+const REC_TONE: Record<string, "okabe-purple" | "blue" | "amber"> = {
+  immuno: "okabe-purple",
   targeted: "blue",
   combo: "amber",
 };
 
-type SortKey = "id" | "statistical" | "antipd1" | "brafi" | "confidence" | "recommendation";
+type SortKey = "id" | "phenotype" | "treatability" | "statistical" | "antipd1" | "brafi" | "confidence" | "recommendation";
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "id", label: "Patient ID" },
+  { key: "phenotype", label: "Phenotype" },
+  { key: "treatability", label: "Treatability Index" },
   { key: "statistical", label: "Response evidence" },
   { key: "antipd1", label: "Anti-PD-1 reduction" },
   { key: "brafi", label: "BRAFi reduction" },
@@ -78,7 +89,7 @@ function Select({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-clinical-border bg-white px-2.5 py-1.5 text-[12px] font-semibold text-clinical-ink outline-none transition hover:border-clinical-teal focus:border-clinical-tealdark focus:ring-2 focus:ring-clinical-teal/20"
+        className="rounded-lg border border-clinical-border bg-white px-2.5 py-1.5 text-[12px] font-semibold text-clinical-ink outline-none transition hover:border-okabe-purple focus:border-okabe-purple-dark focus:ring-2 focus:ring-okabe-purple/20"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -98,8 +109,7 @@ export default function CohortTable({
   onOpen: (id: string) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [braf, setBraf] = useState("all");
-  const [pdl1, setPdl1] = useState("all");
+  const [phenotypeFilter, setPhenotypeFilter] = useState("all");
   const [agreement, setAgreement] = useState("all");
   const [treatment, setTreatment] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("id");
@@ -108,10 +118,9 @@ export default function CohortTable({
 
   const filtered = useMemo(() => {
     const q = query.trim().toUpperCase();
-    const out = rows.filter(({ patient, agreement: a }) => {
+    const out = rows.filter(({ patient, phenotype, agreement: a }) => {
       if (q && !patient.id.toUpperCase().includes(q)) return false;
-      if (braf !== "all" && (braf === "mut" ? patient.braf === "WT" : patient.braf !== "WT")) return false;
-      if (pdl1 !== "all" && pdl1Band(patient.pdl1Pct) !== pdl1) return false;
+      if (phenotypeFilter !== "all" && phenotype.toLowerCase() !== phenotypeFilter.toLowerCase()) return false;
       if (agreement !== "all" && a !== agreement) return false;
       if (treatment === "recorded" && !patient.treatment.recorded) return false;
       if (treatment === "unrecorded" && patient.treatment.recorded) return false;
@@ -120,6 +129,8 @@ export default function CohortTable({
 
     const value = (r: CohortRow): number | string => {
       switch (sortKey) {
+        case "phenotype": return r.phenotype;
+        case "treatability": return r.treatabilityIndex ?? -1;
         case "statistical": return r.statistical;
         case "antipd1": return r.patient.antipd1Reduction;
         case "brafi": return r.patient.brafiReduction;
@@ -135,16 +146,15 @@ export default function CohortTable({
       const cmp = typeof av === "string" ? av.localeCompare(bv as string) : (av as number) - (bv as number);
       return descending ? -cmp : cmp;
     });
-  }, [rows, query, braf, pdl1, agreement, treatment, sortKey, descending]);
+  }, [rows, query, phenotypeFilter, agreement, treatment, sortKey, descending]);
 
   const visible = filtered.slice(0, limit);
   const hasFilters =
-    query !== "" || braf !== "all" || pdl1 !== "all" || agreement !== "all" || treatment !== "all";
+    query !== "" || phenotypeFilter !== "all" || agreement !== "all" || treatment !== "all";
 
   const reset = () => {
     setQuery("");
-    setBraf("all");
-    setPdl1("all");
+    setPhenotypeFilter("all");
     setAgreement("all");
     setTreatment("all");
   };
@@ -152,10 +162,10 @@ export default function CohortTable({
   return (
     <Panel
       title="Patient Cohort"
-      subtitle={`${rows.length} TCGA-SKCM patients with a full digital twin`}
+      subtitle={`${rows.length} TCGA-SKCM patients with full Q5 phenotyping & digital twin`}
       icon={<Users size={16} />}
       right={
-        <Pill tone={filtered.length === rows.length ? "neutral" : "teal"}>
+        <Pill tone={filtered.length === rows.length ? "neutral" : "okabe-purple"}>
           {filtered.length} shown
         </Pill>
       }
@@ -171,29 +181,20 @@ export default function CohortTable({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search patient ID…"
-            className="w-full rounded-lg border border-clinical-border bg-white py-1.5 pl-8 pr-3 text-[12.5px] font-semibold text-clinical-ink outline-none transition placeholder:font-normal placeholder:text-clinical-muted hover:border-clinical-teal focus:border-clinical-tealdark focus:ring-2 focus:ring-clinical-teal/20"
+            className="w-full rounded-lg border border-clinical-border bg-white py-1.5 pl-8 pr-3 text-[12.5px] font-semibold text-clinical-ink outline-none transition placeholder:font-normal placeholder:text-clinical-muted hover:border-okabe-purple focus:border-okabe-purple-dark focus:ring-2 focus:ring-okabe-purple/20"
           />
         </div>
 
         <Select
-          label="BRAF"
-          value={braf}
-          onChange={setBraf}
+          label="Phenotype"
+          value={phenotypeFilter}
+          onChange={setPhenotypeFilter}
           options={[
-            { value: "all", label: "All" },
-            { value: "mut", label: "V600 mutant" },
-            { value: "wt", label: "Wild-type" },
-          ]}
-        />
-        <Select
-          label="PD-L1"
-          value={pdl1}
-          onChange={setPdl1}
-          options={[
-            { value: "all", label: "All" },
-            { value: "High", label: "High" },
-            { value: "Intermediate", label: "Intermediate" },
-            { value: "Low", label: "Low" },
+            { value: "all", label: "All Phenotypes" },
+            { value: "Immune Hot", label: "Immune Hot" },
+            { value: "Immune Cold", label: "Immune Cold" },
+            { value: "M2-High", label: "M2-High" },
+            { value: "Mutant-Driven", label: "Mutant-Driven" },
           ]}
         />
         <Select
@@ -201,7 +202,7 @@ export default function CohortTable({
           value={agreement}
           onChange={setAgreement}
           options={[
-            { value: "all", label: "All" },
+            { value: "all", label: "All Agreements" },
             { value: "concordant", label: "Concordant" },
             { value: "partial", label: "Partial" },
             { value: "discordant", label: "Discordant" },
@@ -213,7 +214,7 @@ export default function CohortTable({
           value={treatment}
           onChange={setTreatment}
           options={[
-            { value: "all", label: "All" },
+            { value: "all", label: "All Treatments" },
             { value: "recorded", label: "Recorded" },
             { value: "unrecorded", label: "Not recorded" },
           ]}
@@ -227,7 +228,7 @@ export default function CohortTable({
         <button
           onClick={() => setDescending((d) => !d)}
           title={descending ? "Descending" : "Ascending"}
-          className="flex items-center gap-1 rounded-lg border border-clinical-border bg-white px-2.5 py-1.5 text-[11.5px] font-bold text-clinical-ink transition hover:border-clinical-teal hover:text-clinical-tealdark"
+          className="flex items-center gap-1 rounded-lg border border-clinical-border bg-white px-2.5 py-1.5 text-[11.5px] font-bold text-clinical-ink transition hover:border-okabe-purple hover:text-okabe-purple-dark"
         >
           <ArrowUpDown size={13} /> {descending ? "Desc" : "Asc"}
         </button>
@@ -246,7 +247,7 @@ export default function CohortTable({
         <div className="rounded-xl border border-dashed border-clinical-border bg-clinical-bg/60 px-4 py-10 text-center">
           <p className="text-[13px] font-bold text-clinical-ink">No patients match these filters</p>
           <p className="mt-1 text-[12px] text-clinical-muted">
-            Try clearing the search or widening the molecular filters.
+            Try clearing the search or widening the phenotype filters.
           </p>
         </div>
       ) : (
@@ -255,9 +256,9 @@ export default function CohortTable({
             <thead>
               <tr className="border-b border-clinical-border text-[10px] font-bold uppercase tracking-wide text-clinical-muted">
                 <th className="py-2 pr-3">Patient</th>
-                <th className="py-2 pr-3">BRAF</th>
-                <th className="py-2 pr-3">NRAS</th>
-                <th className="py-2 pr-3">PD-L1</th>
+                <th className="py-2 pr-3">Q5 Phenotype</th>
+                <th className="py-2 pr-3 text-right">TI</th>
+                <th className="py-2 pr-3">Confidence</th>
                 <th className="py-2 pr-3 text-right">Response evidence</th>
                 <th className="py-2 pr-3 text-right">Anti-PD-1 ↓</th>
                 <th className="py-2 pr-3 text-right">BRAFi ↓</th>
@@ -267,54 +268,42 @@ export default function CohortTable({
               </tr>
             </thead>
             <tbody>
-              {visible.map(({ patient, recommendation, recommendationKey, confidence, agreement: a, statistical }) => {
-                const band = pdl1Band(patient.pdl1Pct);
+              {visible.map(({ patient, phenotype, treatabilityIndex, confidenceBand, recommendation, recommendationKey, confidence, agreement: a, statistical }) => {
+                const phenoColor = getPhenotypeColor(phenotype);
                 const pill = AGREEMENT_PILL[a];
                 return (
                   <tr
                     key={patient.id}
                     onClick={() => onOpen(patient.id)}
-                    className="cursor-pointer border-b border-clinical-border transition hover:bg-clinical-teal/[0.05]"
+                    className="cursor-pointer border-b border-clinical-border transition hover:bg-okabe-purple/[0.05]"
                   >
                     <td className="py-2.5 pr-3 text-[12.5px] font-bold text-clinical-ink">
                       {patient.id}
                     </td>
                     <td className="py-2.5 pr-3">
-                      <span
-                        className={
-                          "text-[12px] font-bold " +
-                          (patient.braf === "WT" ? "text-clinical-muted" : "text-clinical-bluedark")
-                        }
-                      >
-                        {patient.braf === "WT" ? "WT" : "V600"}
-                      </span>
-                    </td>
-                    <td className="py-2.5 pr-3">
-                      <span
-                        className={
-                          "text-[12px] font-bold " +
-                          (patient.nras === "WT" ? "text-clinical-muted" : "text-amber-700")
-                        }
-                      >
-                        {patient.nras === "WT" ? "WT" : "mut"}
-                      </span>
-                    </td>
-                    <td className="py-2.5 pr-3">
-                      <span className="tabular text-[12px] font-semibold text-clinical-ink">
-                        {band}{" "}
-                        <span className="text-[11px] font-normal text-clinical-muted">
-                          ({patient.pdl1Pct})
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: phenoColor }} />
+                        <span className="text-[12px] font-bold text-clinical-ink">
+                          {phenotype}
                         </span>
-                      </span>
+                      </div>
+                    </td>
+                    <td className="tabular py-2.5 pr-3 text-right text-[12.5px] font-bold text-clinical-ink">
+                      {treatabilityIndex !== null ? treatabilityIndex.toFixed(0) : "–"}
+                    </td>
+                    <td className="py-2.5 pr-3">
+                      <Pill tone={confidenceBand === "High" ? "green" : confidenceBand === "Moderate" ? "amber" : "neutral"}>
+                        {confidenceBand}
+                      </Pill>
                     </td>
                     <td className="tabular py-2.5 pr-3 text-right text-[12.5px] font-bold text-clinical-ink">
                       {Math.round(statistical * 100)}
                     </td>
                     <td className="tabular py-2.5 pr-3 text-right text-[12.5px] text-clinical-ink">
-                      {patient.antipd1Informative ? `${Math.round(patient.antipd1Reduction * 100)}%` : "—"}
+                      {patient.antipd1Informative ? `${Math.round(patient.antipd1Reduction * 100)}%` : "–"}
                     </td>
                     <td className="tabular py-2.5 pr-3 text-right text-[12.5px] text-clinical-ink">
-                      {patient.brafiInformative ? `${Math.round(patient.brafiReduction * 100)}%` : "—"}
+                      {patient.brafiInformative ? `${Math.round(patient.brafiReduction * 100)}%` : "–"}
                     </td>
                     <td className="py-2.5 pr-3">
                       <div className="flex items-center gap-1.5">
@@ -342,9 +331,9 @@ export default function CohortTable({
         <div className="mt-3.5 text-center">
           <button
             onClick={() => setLimit((l) => l + 100)}
-            className="rounded-lg border border-clinical-tealdark px-4 py-2 text-[12.5px] font-bold text-clinical-tealdark transition hover:bg-clinical-teal/10"
+            className="rounded-lg border border-okabe-purple-dark px-4 py-2 text-[12.5px] font-bold text-okabe-purple-dark transition hover:bg-okabe-purple/10"
           >
-            Show more — {filtered.length - visible.length} remaining
+            Show more – {filtered.length - visible.length} remaining
           </button>
         </div>
       )}
