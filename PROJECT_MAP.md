@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-01 (Phase 3 code smell audit: 9 smells resolved in `03_cluster_patients.py` & `src/clustering.py` — enforced `safe_save_csv` from `src.utils.io` across CSV outputs; updated `Optional[GaussianMixture]` and `Optional[Dict[int, str]]` type hints; extracted probability column formatting helper `_format_prob_col_name`; extracted 4 constants `DEFAULT_N_COMPONENTS`, `DEFAULT_RANDOM_STATE`, `MIN_SAMPLES_FOR_ELLIPSE`, `CDF_GRID_POINTS`; decomposed `run_consensus_bootstrap` into helper functions; split `plot_consensus_cdf_and_delta_area` into single-responsibility plot functions)
+> **Last updated**: 2026-08-01 (Phase 4 code smell audit: 6 smells resolved in `04_phenotype_characterisation.py` & `src/styles.py` — exported `DARK_SLATE_CHARCOAL = "#37474F"` from `src/styles.py`; enforced `safe_save_csv` from `src.utils.io`; removed unused `PHENOTYPE_PALETTE` import; decomposed `_derive_q3_patient_params` into 3 calculation helpers; decomposed `simulate_q3_ode_trajectories` into Panel A & Panel B plot helpers; cleaned PEP 8 spacing)
 
 ## Repository Overview
 
