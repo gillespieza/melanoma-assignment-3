@@ -551,14 +551,6 @@ def plot_net_benefit_by_phenotype(
     plt.close(fig)
 
 
-def generate_phase6_markdown(
-    df: pd.DataFrame, df_dca: pd.DataFrame, df_cutoffs: pd.DataFrame, out_path: Path
-) -> None:
-    """Generate reports/q5_phases/phase_6.md dynamically with live evaluated metrics."""
-    n_patients = len(df)
-    n_responders = int(df["RESPONSE_BINARY"].sum())
-    resp_pct = (n_responders / n_patients) * 100.0
-
 def _extract_dca_markdown_metrics(df_dca: pd.DataFrame) -> Dict[str, float]:
     """Extract key DCA metrics at pt = 0.30 and 0.50 for report generation."""
     sub_30 = df_dca[np.isclose(df_dca["Threshold"], 0.30)]
@@ -582,6 +574,15 @@ def _extract_dca_markdown_metrics(df_dca: pd.DataFrame) -> Dict[str, float]:
         "nb_q5_50": get_val(sub_50, "Phenotype-Stratified (Q5)", "Net_Benefit"),
         "nb_all_50": get_val(sub_50, "Treat All", "Net_Benefit"),
     }
+
+
+def generate_phase6_markdown(
+    df: pd.DataFrame, df_dca: pd.DataFrame, df_cutoffs: pd.DataFrame, out_path: Path
+) -> None:
+    """Generate reports/q5_phases/phase_6.md dynamically with live evaluated metrics."""
+    n_patients = len(df)
+    n_responders = int(df["RESPONSE_BINARY"].sum())
+    resp_pct = (n_responders / n_patients) * 100.0
 
     m = _extract_dca_markdown_metrics(df_dca)
 
