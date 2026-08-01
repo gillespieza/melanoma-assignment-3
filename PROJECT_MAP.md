@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-01 (Dashboard Q5 integration – Phase 1: Build pipeline, type definitions, integration engine, UI components. All 421 TCGA-SKCM patients now carry Q5 phenotype, Treatability Index, GMM probabilities, and recommended therapy arm. `FeaturedCards`, `CohortTable`, `PatientPassport`, and `PatientView` updated to surface Q5 labels. `Q5PhenotypePanel` and `Q5SummaryStrip` components added. BRAF × PD-L1 heuristic superseded by Q5 GMM stratification.)
+> **Last updated**: 2026-08-02 (Added `Q5 Enhanced ML Predictor` tab to patient workbench navigation; relabeled Treatability Index score in recommendation cards to TI score /100; centralized `M1_MACROPHAGE_GENES` and `M2_MACROPHAGE_GENES` in `src/biology_constants.py`; updated `q1-response-predictor` feature extraction to 8 signatures including `Macrophage_STV_Score` and `M1_M2_Ratio`).
 
 ## Repository Overview
 
@@ -35,7 +35,7 @@ melanoma-assignment-3/
 | Module | Purpose |
 |--------|---------|
 | `src/styles.py` | All Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`, `PHENOTYPE_PALETTE`, `MUTATION_PALETTE`, etc.), `set_presentation_style()`, `get_cohort_color()`, `get_phenotype_color()`. Single source of truth for visual identity. |
-| `src/biology_constants.py` | Centralised biological domain constants: `NON_SILENT` variant classes, gene panels (IFN-γ, antigen presentation, checkpoint), `COHORT_DIRS` mappings. |
+| `src/biology_constants.py` | Centralised biological domain constants: `NON_SILENT` variant classes, gene panels (IFN-γ, antigen presentation, checkpoint, `M1_MACROPHAGE_GENES`, `M2_MACROPHAGE_GENES`), `COHORT_DIRS` mappings. |
 
 ### Utilities (`src/utils/`)
 
@@ -324,6 +324,7 @@ Q5 internal dependency chain:
 | `q5/scripts/07_treatability_scoring.py` – Sigmoidal Boundary Smoothing (Phase 7 fix 2026-08-01) | Resolved deterministic cutoff boundaries and cliff-edge effects in Arm C sub-arm selection by implementing logistic sigmoidal transition weighting ($w_{\text{AXL}} = 1 / (1 + \exp(-0.2 \cdot (\text{TI} - 40.0)))$) and an explicit Equipoise Buffer Zone ($[35.0, 45.0]$) in `_evaluate_arm_c_therapy()`. 36/36 functions pass AST check $\le 30$ lines, 0 AST code smells remaining. | **Resolved** (2026-08-01: sigmoidal boundary smoothing) |
 | `q5/scripts/07_treatability_scoring.py` – NRAS Confidence Capping Removal (Phase 7 fix 2026-08-01) | Removed hard capping rule in `_assign_confidence_band()` that forced `NRAS`-mutant Arm B patients to `Moderate` status regardless of Q2 sensitivity score. Retained continuous `MUT_STRENGTH_NRAS` ($0.70$) weighting in `_compute_arm_b_confidence()`; $+10$ `NRAS`-mutant patients with exceptional Q2 sensitivity ($>88/100$) now reach `High` confidence ($N_{\text{High}} = 173$). 36/36 functions pass AST check $\le 30$ lines, 0 AST code smells remaining. | **Resolved** (2026-08-01: NRAS confidence capping removal) |
 | Dashboard BRAF × PD-L1 heuristic | `FeaturedCards` and `CohortTable` previously used hard BRAF/PD-L1 cutoffs to define 3 clinical archetypes. Replaced with Q5 Two-Stage GMM phenotype labels (Immune Hot / Cold / M2-High / Mutant-Driven) from `treatability_scores.csv`. `PatientPassport` pills now show Q5 phenotype + Confidence + TI. Integration engine decision path replaces the `"pdl1"` node with a `"phenotype"` node when `patient.q5` is present. | **Resolved** (2026-08-01: Q5 dashboard integration) |
+| Dashboard Q5 Enhanced ML Predictor & Score Relabeling | Added `Q5 Enhanced ML Predictor` tab to patient workbench navigation; relabeled Treatability Index score in recommendation cards to `TI Score` (`/100`) to eliminate confusion with statistical confidence; centralized `M1_MACROPHAGE_GENES` and `M2_MACROPHAGE_GENES` in `src/biology_constants.py`; updated `q1-response-predictor` signature extraction to 8 signatures (`+ Macrophage_STV_Score, + M1_M2_Ratio`). | **Resolved** (2026-08-02) |
 
 ## Dashboard Subproject (`dashboard/`)
 
@@ -341,10 +342,11 @@ Q5 internal dependency chain:
 | `src/data/palette.ts` | Auto-generated colour helpers (`getPhenotypeColor`, `getCohortColor`, `getArmColor`). Do **not** edit manually. |
 | `src/lib/integrationEngine.ts` | Q5 integration – derives ranked options from `patient.q5` when present, falls back to `scoreArms()`. |
 | `src/components/Q5PhenotypePanel.tsx` | Per-patient Q5 panel: phenotype badge, GMM probability bar, Treatability Index, ODE trajectory. |
+| `src/components/Q5MlPredictorPanel.tsx` | Per-patient enhanced ML predictor panel: subgroup Random Forest model, 33-feature panel, head-to-head comparison, feature importances, cross-validation metrics. |
 | `src/components/FeaturedCards.tsx` | Landing page archetype cards – 4 phenotype examples (Immune Hot / Cold / M2-High / Mutant-Driven). |
 | `src/components/CohortTable.tsx` | Searchable/filterable patient table with Q5 Phenotype, TI, and Confidence Band columns. |
 | `src/components/PatientPassport.tsx` | Patient header pills – Q5 phenotype + confidence + TI when `q5` present; falls back to BRAF/PD-L1 pills. |
-| `src/components/PatientView.tsx` | Full patient workbench with Q5 tab as the default landing tab. |
+| `src/components/PatientView.tsx` | Full patient workbench with 7 tabs (`Q5 · Stratification`, `Q1 · ML predictor`, `Q2 · Validation`, `Q3 · Digital twin`, `Q4 · Resistance`, `Q5 Enhanced ML Predictor`, `Decision path`). |
 
 ### Build Pipeline
 

@@ -229,7 +229,7 @@ export function integrate(p: CohortPatient): IntegratedResult {
   return {
     options,
     path: buildPath(p, ctx, agreement, primary.arm.label),
-    headline: `${primary.arm.label} · ${primary.confidence}% model confidence · predicted median OS ${primary.medianOsMonths} mo`,
+    headline: `${primary.arm.label} · TI score ${primary.confidence}/100 · predicted median OS ${primary.medianOsMonths} mo`,
     primaryKey,
     agreement,
     evidence,

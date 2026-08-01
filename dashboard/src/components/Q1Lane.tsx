@@ -32,41 +32,50 @@ function ordinal(n: number): string {
   return ["th", "st", "nd", "rd"][n % 10] ?? "th";
 }
 
-/** Radial P(response) gauge. */
-function Gauge({ value }: { value: number }) {
+/** Radial P(response) gauge with cohort-relative percentile rank pill. */
+function Gauge({ value, rank }: { value: number; rank?: number | null }) {
   const pct = Math.round(value * 100);
   const radius = 52;
   const circumference = 2 * Math.PI * radius;
   const dash = (value * circumference) / 2;
 
   return (
-    <div className="relative flex h-[120px] w-[150px] shrink-0 items-end justify-center">
-      <svg viewBox="0 0 140 78" className="absolute inset-0 h-full w-full">
-        <path
-          d="M 18 70 A 52 52 0 0 1 122 70"
-          fill="none"
-          stroke="#e6ebf1"
-          strokeWidth={12}
-          strokeLinecap="round"
-        />
-        <path
-          d="M 18 70 A 52 52 0 0 1 122 70"
-          fill="none"
-          stroke={pct >= 50 ? "#CC79A7" : "#5b6b7c"}
-          strokeWidth={12}
-          strokeLinecap="round"
-          strokeDasharray={`${dash} ${circumference}`}
-        />
-      </svg>
-      <div className="relative pb-1 text-center">
-        <div className="tabular text-[30px] font-extrabold leading-none text-clinical-ink">
-          {pct}
-          <span className="text-[15px]">%</span>
-        </div>
-        <div className="text-[10px] font-bold uppercase tracking-wide text-clinical-muted">
-          P(response)
+    <div className="flex flex-col items-center">
+      <div className="relative flex h-[120px] w-[150px] shrink-0 items-end justify-center">
+        <svg viewBox="0 0 140 78" className="absolute inset-0 h-full w-full">
+          <path
+            d="M 18 70 A 52 52 0 0 1 122 70"
+            fill="none"
+            stroke="#e6ebf1"
+            strokeWidth={12}
+            strokeLinecap="round"
+          />
+          <path
+            d="M 18 70 A 52 52 0 0 1 122 70"
+            fill="none"
+            stroke={pct >= 50 ? "#CC79A7" : "#5b6b7c"}
+            strokeWidth={12}
+            strokeLinecap="round"
+            strokeDasharray={`${dash} ${circumference}`}
+          />
+        </svg>
+        <div className="relative pb-1 text-center">
+          <div className="tabular text-[30px] font-extrabold leading-none text-clinical-ink">
+            {pct}
+            <span className="text-[15px]">%</span>
+          </div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-clinical-muted">
+            P(response)
+          </div>
         </div>
       </div>
+      {rank !== null && rank !== undefined && (
+        <div className="mt-1 text-center">
+          <Pill tone="okabe-purple">
+            {rank}{ordinal(rank)} percentile
+          </Pill>
+        </div>
+      )}
     </div>
   );
 }
@@ -143,12 +152,13 @@ export default function Q1Lane({
   cohortRank?: number | null;
 }) {
   const q1 = patient.q1;
+  const rank = q1?.pResponsePct ?? cohortRank;
   const hasPerModel = q1 ? Object.values(q1.perModel).some((v) => v !== null) : false;
   const hasFeatures = q1 ? Object.values(q1.features).some((v) => v !== null) : false;
   const rankLabel =
-    cohortRank === null || cohortRank === undefined
+    rank === null || rank === undefined
       ? "against the cohort"
-      : `in the ${cohortRank}${ordinal(cohortRank)} percentile`;
+      : `in the ${rank}${ordinal(rank)} percentile`;
 
   return (
     <Panel
@@ -170,7 +180,7 @@ export default function Q1Lane({
       ) : (
         <div className="space-y-5">
           <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center">
-            <Gauge value={q1.pResponse} />
+            <Gauge value={q1.pResponse} rank={rank} />
             <div className="min-w-0 flex-1 space-y-2">
               {hasPerModel ? (
                 <>

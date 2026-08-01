@@ -5,10 +5,10 @@
 @tailwind utilities;
 
 :root {
-  --primary: #CC79A7;
-  --primary-dark: #b85f94;
-  --teal: #CC79A7;
-  --okabe-purple: #CC79A7;
+  --primary: #56B4E9;
+  --primary-dark: #3ba0dc;
+  --teal: #56B4E9;
+  --okabe-purple: #56B4E9;
 }
 
 html,
@@ -136,7 +136,7 @@ body {
 .guide-prose blockquote {
   margin: 0 0 12px;
   padding: 8px 14px;
-  border-left: 3px solid #CC79A7;
+  border-left: 3px solid #56B4E9;
   background: #f6f8fb;
   border-radius: 0 8px 8px 0;
   color: #5b6b7c;

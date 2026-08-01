@@ -21,6 +21,8 @@ export interface Q1Features {
 export interface Q1Prediction {
   /** Ensemble P(response to checkpoint blockade), 0-1. */
   pResponse: number;
+  /** Cohort-relative percentile rank of P(response), 0-100. */
+  pResponsePct?: number | null;
   perModel: Record<"lr" | "rf" | "xgb" | "svm" | "enet", number | null>;
   features: Q1Features;
   cohort: string;
@@ -200,6 +202,22 @@ export interface Q1Validation {
   roc: { fpr: number; tpr: number }[];
 }
 
+export interface Q5SubgroupEvalEntry {
+  clusterId: number;
+  phenotype: string;
+  modelScope: string;
+  n: number;
+  responders: number;
+  responseRate: number;
+  rocAuc: number | null;
+  prAuc: number | null;
+  precision: number | null;
+  recall: number | null;
+  f1Score: number | null;
+  accuracy: number | null;
+  brierScore: number | null;
+}
+
 export interface CohortMeta {
   generated: string;
   source: string;
@@ -214,6 +232,7 @@ export interface CohortMeta {
   q5PhenotypeStats?: Q5PhenotypeStats[];
   q5OdeTrajectory?: Q5OdeTrajectory;
   q5SubgroupAuc?: Q5SubgroupAuc[];
+  q5SubgroupEvaluation?: Q5SubgroupEvalEntry[];
 }
 
 export interface Cohort {

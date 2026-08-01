@@ -57,7 +57,7 @@ function OptionCard({
         </div>
         <div className="text-right">
           <div className="text-[10.5px] font-semibold uppercase tracking-wide text-clinical-muted">
-            Confidence
+            TI Score
           </div>
           <div
             className={
@@ -66,7 +66,7 @@ function OptionCard({
             }
           >
             {opt.confidence}
-            <span className="text-[13px]">%</span>
+            <span className="text-[13px]">/100</span>
           </div>
         </div>
       </div>

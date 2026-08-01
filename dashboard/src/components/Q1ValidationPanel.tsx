@@ -106,9 +106,10 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
         {/* ---- left: headline numbers + per-cohort table ---- */}
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-4 gap-2.5">
             <Stat label="Patients" value={validation.n} tone="ink" />
             <Stat label="Responders" value={validation.responders} tone="okabe-purple" />
+            <Stat label="Non-responders" value={validation.n - validation.responders} tone="rose" />
             <Stat
               label="AUC"
               value={validation.auc?.toFixed(3) ?? "–"}
@@ -124,6 +125,7 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
                   <th className="px-3 py-2">Cohort</th>
                   <th className="px-3 py-2 text-right">n</th>
                   <th className="px-3 py-2 text-right">Responders</th>
+                  <th className="px-3 py-2 text-right">Non-responders</th>
                   <th className="px-3 py-2 text-right">AUC</th>
                 </tr>
               </thead>
@@ -134,6 +136,9 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
                     <td className="tabular px-3 py-2 text-right text-[12.5px] text-clinical-ink">{c.n}</td>
                     <td className="tabular px-3 py-2 text-right text-[12.5px] text-clinical-ink">
                       {c.responders}
+                    </td>
+                    <td className="tabular px-3 py-2 text-right text-[12.5px] text-clinical-ink">
+                      {c.n - c.responders}
                     </td>
                     <td className="px-3 py-2 text-right">
                       <span

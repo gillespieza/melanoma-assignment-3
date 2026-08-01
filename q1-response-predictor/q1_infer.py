@@ -77,7 +77,16 @@ def _project_root(start: Path) -> Path:
 
 DATA_DIR = _project_root(HERE) / "data"
 MODELS_DIR = HERE / "models"
-FEATURES = ["IFN_gamma", "TIS", "CYT", "CD8_Tcell", "IMPRES", "PD_L1"]
+FEATURES = [
+    "IFN_gamma",
+    "TIS",
+    "CYT",
+    "CD8_Tcell",
+    "IMPRES",
+    "PD_L1",
+    "Macrophage_STV_Score",
+    "M1_M2_Ratio",
+]
 
 MODEL_FILES = {
     "lr": "final_lr_model.pkl",

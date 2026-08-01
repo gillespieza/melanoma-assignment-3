@@ -1,6 +1,7 @@
-import { Layers, Target, Activity, ShieldAlert, Award, Compass } from "lucide-react";
+import { Layers, Target, Activity, ShieldAlert, Award, Compass, HelpCircle } from "lucide-react";
 import type { CohortMeta, CohortPatient } from "../data/cohort";
 import { getPhenotypeColor, getArmColor } from "../data/palette";
+import { getPhenotypeDescription } from "./PatientPassport";
 import { Panel, Pill } from "./ui";
 
 interface Props {
@@ -53,8 +54,17 @@ export default function Q5PhenotypePanel({ patient, meta }: Props) {
           {/* Assigned Phenotype Tile */}
           <div className="rounded-xl border border-clinical-border bg-clinical-bg p-4 flex flex-col justify-between">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-clinical-muted flex items-center gap-1">
-                <Compass size={12} /> Assigned Phenotype
+              <div className="text-[10px] font-bold uppercase tracking-wide text-clinical-muted flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <Compass size={12} /> Assigned Phenotype
+                </span>
+                <div className="group relative cursor-help">
+                  <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition" />
+                  <div className="pointer-events-none absolute left-0 top-full z-30 mt-1 hidden w-72 rounded-xl border border-clinical-border bg-white p-3 text-left text-[11px] font-normal normal-case leading-snug text-clinical-muted shadow-lift group-hover:block">
+                    <div className="font-bold text-clinical-ink">{q5.shortLabel} Phenotype</div>
+                    <div className="mt-1 text-[11px] text-clinical-muted">{getPhenotypeDescription(q5.shortLabel)}</div>
+                  </div>
+                </div>
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <span

@@ -1,8 +1,25 @@
-import { IdCard, Dna, Microscope, Syringe } from "lucide-react";
+import { IdCard, Dna, Microscope, Syringe, HelpCircle } from "lucide-react";
 import type { CohortPatient } from "../data/cohort";
 import { pdl1Band } from "../data/cohort";
 import { getPhenotypeColor } from "../data/palette";
 import { Panel, Pill } from "./ui";
+
+export function getPhenotypeDescription(label: string): string {
+  const l = label.toLowerCase();
+  if (l.includes("hot")) {
+    return "Inflamed microenvironment with high T-cell infiltration (TIS & CYT) and elevated PD-L1 expression. Primary candidate for immune checkpoint blockade (Arm A).";
+  }
+  if (l.includes("cold")) {
+    return "T-cell desert phenotype with profound immune exclusion and low baseline biomarkers. Requires combination rescue strategies (Arm C) like M2 macrophage depletion.";
+  }
+  if (l.includes("m2")) {
+    return "Immunosuppressive microenvironment dominated by M2-like macrophages and stromal exclusion. Primary candidate for targeted BRAF/MEK therapy (Arm B) or stromal remodelling.";
+  }
+  if (l.includes("mutant") || l.includes("nf1")) {
+    return "Genomically driven subtype characterized by 100% NF1 loss-of-function, RAS hyperactivation, and high TMB. Candidate for ICI combined with MEK inhibitor adjuncts.";
+  }
+  return "Assigned Q5 patient phenotype cluster based on Gaussian Mixture Model stratification.";
+}
 
 // Patient passport – who this patient is, in the two registers a melanoma MDT
 // actually uses: demographics/staging and molecular profile.
@@ -58,13 +75,20 @@ export default function PatientPassport({
           {modified.length > 0 && <Pill tone="amber">Modified</Pill>}
           {patient.q5 ? (
             <>
-              <Pill tone="neutral">
-                <span
-                  className="h-2.5 w-2.5 rounded-full shrink-0 mr-1 inline-block"
-                  style={{ backgroundColor: getPhenotypeColor(patient.q5.shortLabel) }}
-                />
-                {patient.q5.shortLabel}
-              </Pill>
+              <div className="group relative inline-flex items-center cursor-help">
+                <Pill tone="neutral">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full shrink-0 mr-1 inline-block"
+                    style={{ backgroundColor: getPhenotypeColor(patient.q5.shortLabel) }}
+                  />
+                  {patient.q5.shortLabel}
+                  <HelpCircle size={10} className="ml-1 text-clinical-muted group-hover:text-okabe-purple transition inline-block" />
+                </Pill>
+                <div className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden w-72 rounded-xl border border-clinical-border bg-white p-3 text-left text-[11px] font-normal normal-case leading-snug text-clinical-muted shadow-lift group-hover:block">
+                  <div className="font-bold text-clinical-ink">{patient.q5.shortLabel} Phenotype</div>
+                  <div className="mt-1 text-[11px] text-clinical-muted">{getPhenotypeDescription(patient.q5.shortLabel)}</div>
+                </div>
+              </div>
               <Pill tone={patient.q5.confidenceBand === "High" ? "green" : patient.q5.confidenceBand === "Moderate" ? "amber" : "neutral"}>
                 {patient.q5.confidenceBand} Conf
               </Pill>

@@ -105,6 +105,8 @@ IMMUNE_SIGNATURES = [
     "CD8_Tcell",
     "IMPRES",
     "PD_L1",
+    "Macrophage_STV_Score",
+    "M1_M2_Ratio",
 ]
 
 IMMUNE_SIGNATURE_LABELS = {
@@ -114,7 +116,15 @@ IMMUNE_SIGNATURE_LABELS = {
     "CD8_Tcell": "CD8 T-Cell Abundance Signature",
     "IMPRES": "Immune Predictive Score (IMPRES)",
     "PD_L1": "PD-L1 Transcript Proxy",
+    "Macrophage_STV_Score": "Macrophage STV Spatial Barrier Score",
+    "M1_M2_Ratio": "M1/M2 Macrophage Polarization Ratio",
 }
+
+try:
+    from src.biology_constants import M1_MACROPHAGE_GENES, M2_MACROPHAGE_GENES
+except ImportError:
+    M1_MACROPHAGE_GENES = ["NOS2", "TNF", "IL1B", "CD68", "FCGR3A"]
+    M2_MACROPHAGE_GENES = ["CD163", "MSR1", "MRC1", "CSF1R", "TGFB1"]
 
 IMMUNE_SIGNATURE_GENES = {
     "IFN_gamma": ["IFNG", "CXCL9", "CXCL10", "IDO1", "HLA-DRA", "STAT1"],
@@ -130,6 +140,8 @@ IMMUNE_SIGNATURE_GENES = {
         "CTLA4", "PDCD1", "CD80", "TNFSF9", "HAVCR2", "CD27", "CD40", "TNFRSF14",
     ],
     "PD_L1": ["CD274"],
+    "M1_Macrophage": M1_MACROPHAGE_GENES,
+    "M2_Macrophage": M2_MACROPHAGE_GENES,
 }
 
 # 15 gene pairs of IMPRES signature (Auslander et al., 2018)

@@ -81,11 +81,11 @@ A sortable, filterable, searchable table of all 421 patients. Columns:
 
 - **Patient** – anonymised TCGA patient ID (e.g. `TCGA-D3-A1Q1`).
 - **Q5 Phenotype** – colour-coded dot and short label (Immune Hot, Immune Cold, M2-High, Mutant-Driven).
-- **TI (Treatability Index)** – 0–100 composite score combining antigen presentation, IFN-γ signaling, and microenvironmental barriers.
-- **Confidence** – Q5 recommendation confidence band (**High**, **Moderate**, **Low**).
-- **Response evidence** – 0–100 composite score summarising baseline statistical response evidence.
-- **Anti-PD-1 ↓** and **BRAFi ↓** – percentage tumour reduction achieved in Q3 ODE simulations.
-- **Q5 recommendation** – top-ranked treatment arm (Arm A: Immunotherapy, Arm B: Targeted, Arm C: Combination) with model confidence %.
+- **Phenotype confidence** – Q5 GMM phenotype assignment confidence band (**High**, **Moderate**, **Low**). Reflects how clearly the patient sits inside their assigned cluster based on the GMM posterior probability across all four subgroups. High means the model is unambiguous; Low means the patient falls near a cluster boundary. This is the more principled confidence metric — it comes directly from the statistical model.
+- **TI (Treatability Index)** – 0–100 quantile-scaled composite score quantifying overall therapeutic tractability by combining antigen presentation capacity, IFN-γ signaling, and microenvironmental barriers (macrophage STV score, stromal CAF exclusion). Hovering over the **TI** header in the patient table reveals an interactive popover hint explaining this metric.
+- **ICI tumour ↓** and **BRAFi ↓** – projected percentage tumour burden reduction under each treatment arm, as simulated by the Q3 ODE digital-twin model. ICI refers to Anti-PD-1 checkpoint immunotherapy; BRAFi refers to BRAF inhibitor therapy (e.g. Dabrafenib + Trametinib). A dash (–) indicates the simulation was uninformative for that patient. Hovering over either column header reveals a popover with this explanation.
+- **Q5 recommendation** – top-ranked treatment arm (Arm A: Immunotherapy, Arm B: Targeted, Arm C: Combination).
+- **Rec. confidence** – 0–100 heuristic score from the integration engine reflecting how strongly the recommended arm scores over the alternatives for this patient. Inputs include PD-L1 percentile, IFN-γ signature, BRAF status, LDH, ECOG performance status, and Q3 ODE tumour reduction. This is a relative ranking signal, not a probability of clinical response — see **Phenotype confidence** for the statistically grounded certainty estimate.
 - **Agreement** – concordance status between statistical and mechanistic models (Concordant, Partial, Discordant, Single method).
 
 Above the table are controls: Search patient ID, Phenotype filter dropdown, Agreement filter, Treatment history filter, and Sort options (including Treatability Index).
@@ -159,7 +159,14 @@ Proteomic RPPA pERK validation (r = 0.175, p = 0.002), rank order significance (
 ### 6.5 Q4 · Resistance
 Rule-based resistance risk assessment, escape mechanisms, and ordered reserve/salvage targets.
 
-### 6.6 Decision path
+### 6.6 Q5 Enhanced ML Predictor
+- **Assigned Subgroup Model:** phenotype-specific Random Forest model trained within cluster boundaries.
+- **33-Feature Enriched Panel:** incorporates Macrophage STV Score, CAF Exclusion, M1/M2 Ratio, Antigen Presentation (APM), `NF1` loss-of-function, `BRAF/NRAS` status, and TMB.
+- **Head-to-Head Comparison:** side-by-side matrix comparing the global 6-feature Q1 model against the Q5 33-feature subgroup model.
+- **Feature Importance Profile:** top predictive feature weights for the patient's assigned subgroup model.
+- **Empirical Evaluation Matrix:** cross-validation metrics (`ROC-AUC`, `PR-AUC`, `Precision`, `Recall`, `F1`, `Accuracy`, `Brier Score`) across all 4 phenotypes.
+
+### 6.7 Decision path
 Flowchart tracing patient decision tree logic: Stage/LDH → BRAF/NRAS → Q5 Phenotype → Methods Agreement → Recommendation.
 
 ---
@@ -168,6 +175,7 @@ Flowchart tracing patient decision tree logic: Stage/LDH → BRAF/NRAS → Q5 Ph
 
 - **Q5 Two-Stage GMM Phenotyping** – Unsupervised machine-learning stratification combining 3-component Gaussian Mixture Model (GMM) continuous immune clustering with Stage 2 deterministic genomic driver classification (`NF1` loss-of-function).
 - **Treatability Index (TI)** – Quantile-scaled 0–100 score quantifying overall therapeutic tractability by combining antigen presentation, IFN-γ signaling, effector cell infiltration, and microenvironmental barriers.
+- **Phenotype confidence** – GMM posterior-probability-derived band (High/Moderate/Low) reflecting how unambiguously the Q5 model assigns a patient to their phenotype cluster. Distinct from the arm confidence % shown next to the therapy recommendation, which is a heuristic scoring signal.
 - **Immune Hot** – Inflamed phenotype with high TIS and CYT signatures; primary candidate for immunotherapy.
 - **Immune Cold** – T-cell desert phenotype with low immune infiltration; candidate for Arm C combination rescue.
 - **M2-High** – Immunosuppressive phenotype dominated by M2 macrophages and stromal exclusion; candidate for targeted therapy or M2-depleting agents.

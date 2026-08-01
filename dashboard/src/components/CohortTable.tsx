@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Users, ArrowUpDown, ChevronRight, X } from "lucide-react";
+import { Search, Users, ArrowUpDown, ChevronRight, X, HelpCircle } from "lucide-react";
 import type { CohortPatient } from "../data/cohort";
 import { getPhenotypeColor } from "../data/palette";
 import { integrate, type AgreementStatus } from "../lib/integrationEngine";
@@ -57,17 +57,17 @@ const REC_TONE: Record<string, "okabe-purple" | "blue" | "amber"> = {
   combo: "amber",
 };
 
-type SortKey = "id" | "phenotype" | "treatability" | "statistical" | "antipd1" | "brafi" | "confidence" | "recommendation";
+type SortKey = "id" | "phenotype" | "treatability" | "antipd1" | "brafi" | "confidence" | "recommendation" | "recconfidence";
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "id", label: "Patient ID" },
   { key: "phenotype", label: "Phenotype" },
   { key: "treatability", label: "Treatability Index" },
-  { key: "statistical", label: "Response evidence" },
-  { key: "antipd1", label: "Anti-PD-1 reduction" },
-  { key: "brafi", label: "BRAFi reduction" },
-  { key: "confidence", label: "Confidence" },
+  { key: "antipd1", label: "ICI tumour reduction" },
+  { key: "brafi", label: "BRAFi tumour reduction" },
+  { key: "confidence", label: "Phenotype confidence" },
   { key: "recommendation", label: "Recommendation" },
+  { key: "recconfidence", label: "Recommendation confidence" },
 ];
 
 function Select({
@@ -131,7 +131,7 @@ export default function CohortTable({
       switch (sortKey) {
         case "phenotype": return r.phenotype;
         case "treatability": return r.treatabilityIndex ?? -1;
-        case "statistical": return r.statistical;
+        case "recconfidence": return r.confidence;
         case "antipd1": return r.patient.antipd1Reduction;
         case "brafi": return r.patient.brafiReduction;
         case "confidence": return r.confidence;
@@ -257,18 +257,74 @@ export default function CohortTable({
               <tr className="border-b border-clinical-border text-[10px] font-bold uppercase tracking-wide text-clinical-muted">
                 <th className="py-2 pr-3">Patient</th>
                 <th className="py-2 pr-3">Q5 Phenotype</th>
-                <th className="py-2 pr-3 text-right">TI</th>
-                <th className="py-2 pr-3">Confidence</th>
-                <th className="py-2 pr-3 text-right">Response evidence</th>
-                <th className="py-2 pr-3 text-right">Anti-PD-1 ↓</th>
-                <th className="py-2 pr-3 text-right">BRAFi ↓</th>
+                <th className="py-2 pr-3">
+                  <div className="group relative inline-flex items-center gap-1 cursor-help">
+                    <span>Phenotype confidence</span>
+                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition" />
+                    <div className="pointer-events-none absolute left-0 top-full z-30 mt-1.5 hidden w-72 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-lift group-hover:block">
+                      <div className="text-[11px] font-bold text-clinical-ink">Phenotype Assignment Confidence</div>
+                      <div className="mt-1 text-[11px] font-normal normal-case leading-snug text-clinical-muted">
+                        How confidently the Q5 GMM places this patient in their assigned phenotype cluster. Derived from the GMM posterior probability across all four subgroups — a High patient sits clearly inside one cluster; Low means they fall near a boundary between clusters.
+                      </div>
+                    </div>
+                  </div>
+                </th>
+                <th className="py-2 pr-3 text-right">
+                  <div className="group relative inline-flex items-center justify-end gap-1 cursor-help">
+                    <span>TI (%)</span>
+                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition" />
+                    <div className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden w-64 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-lift group-hover:block">
+                      <div className="text-[11px] font-bold text-clinical-ink">Treatability Index (0–100)</div>
+                      <div className="mt-1 text-[11px] font-normal normal-case leading-snug text-clinical-muted">
+                        Quantifies overall therapeutic tractability by combining antigen presentation, IFN-γ signaling, and microenvironmental barriers.
+                      </div>
+                    </div>
+                  </div>
+                </th>
+
+                <th className="py-2 pr-3 text-right">
+                  <div className="group relative inline-flex items-center justify-end gap-1 cursor-help">
+                    <span>ICI tumour ↓</span>
+                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition" />
+                    <div className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden w-64 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-lift group-hover:block">
+                      <div className="text-[11px] font-bold text-clinical-ink">ICI Tumour Burden Reduction</div>
+                      <div className="mt-1 text-[11px] font-normal normal-case leading-snug text-clinical-muted">
+                        Projected percentage tumour burden reduction under Anti-PD-1 immunotherapy (ICI), as simulated by the Q3 ODE digital-twin model. A dash (–) means the simulation was uninformative for this patient.
+                      </div>
+                    </div>
+                  </div>
+                </th>
+                <th className="py-2 pr-3 text-right">
+                  <div className="group relative inline-flex items-center justify-end gap-1 cursor-help">
+                    <span>BRAFi ↓</span>
+                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition" />
+                    <div className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden w-64 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-lift group-hover:block">
+                      <div className="text-[11px] font-bold text-clinical-ink">BRAFi Tumour Burden Reduction</div>
+                      <div className="mt-1 text-[11px] font-normal normal-case leading-snug text-clinical-muted">
+                        Projected percentage tumour burden reduction under BRAF inhibitor therapy (e.g. Dabrafenib + Trametinib), as simulated by the Q3 ODE digital-twin model. A dash (–) means the simulation was uninformative for this patient.
+                      </div>
+                    </div>
+                  </div>
+                </th>
                 <th className="py-2 pr-3">Q5 recommendation</th>
+                <th className="py-2 pr-3 text-right">
+                  <div className="group relative inline-flex items-center justify-end gap-1 cursor-help">
+                    <span>Rec. confidence</span>
+                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition" />
+                    <div className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden w-72 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-lift group-hover:block">
+                      <div className="text-[11px] font-bold text-clinical-ink">Recommendation Confidence</div>
+                      <div className="mt-1 text-[11px] font-normal normal-case leading-snug text-clinical-muted">
+                        A 0–100 heuristic score ranking how strongly the integration engine favours the recommended arm over the alternatives. Inputs: PD-L1 percentile, IFN-γ signature, BRAF status, LDH, ECOG, and Q3 ODE tumour reduction. Not a probability of clinical response — use Phenotype confidence for the model-grounded certainty estimate.
+                      </div>
+                    </div>
+                  </div>
+                </th>
                 <th className="py-2 pr-3">Agreement</th>
                 <th className="py-2" />
               </tr>
             </thead>
             <tbody>
-              {visible.map(({ patient, phenotype, treatabilityIndex, confidenceBand, recommendation, recommendationKey, confidence, agreement: a, statistical }) => {
+              {visible.map(({ patient, phenotype, treatabilityIndex, confidenceBand, recommendation, recommendationKey, confidence, agreement: a }) => {
                 const phenoColor = getPhenotypeColor(phenotype);
                 const pill = AGREEMENT_PILL[a];
                 return (
@@ -288,17 +344,15 @@ export default function CohortTable({
                         </span>
                       </div>
                     </td>
-                    <td className="tabular py-2.5 pr-3 text-right text-[12.5px] font-bold text-clinical-ink">
-                      {treatabilityIndex !== null ? treatabilityIndex.toFixed(0) : "–"}
-                    </td>
                     <td className="py-2.5 pr-3">
                       <Pill tone={confidenceBand === "High" ? "green" : confidenceBand === "Moderate" ? "amber" : "neutral"}>
                         {confidenceBand}
                       </Pill>
                     </td>
                     <td className="tabular py-2.5 pr-3 text-right text-[12.5px] font-bold text-clinical-ink">
-                      {Math.round(statistical * 100)}
+                      {treatabilityIndex !== null ? treatabilityIndex.toFixed(0) : "–"}
                     </td>
+
                     <td className="tabular py-2.5 pr-3 text-right text-[12.5px] text-clinical-ink">
                       {patient.antipd1Informative ? `${Math.round(patient.antipd1Reduction * 100)}%` : "–"}
                     </td>
@@ -306,12 +360,10 @@ export default function CohortTable({
                       {patient.brafiInformative ? `${Math.round(patient.brafiReduction * 100)}%` : "–"}
                     </td>
                     <td className="py-2.5 pr-3">
-                      <div className="flex items-center gap-1.5">
-                        <Pill tone={REC_TONE[recommendationKey] ?? "neutral"}>{recommendation}</Pill>
-                        <span className="tabular text-[11px] font-bold text-clinical-muted">
-                          {confidence}%
-                        </span>
-                      </div>
+                      <Pill tone={REC_TONE[recommendationKey] ?? "neutral"}>{recommendation}</Pill>
+                    </td>
+                    <td className="tabular py-2.5 pr-3 text-right text-[12.5px] font-bold text-clinical-ink">
+                      {confidence}%
                     </td>
                     <td className="py-2.5 pr-3">
                       <Pill tone={pill.tone}>{pill.label}</Pill>

@@ -5,9 +5,9 @@ export default {
     extend: {
       colors: {
         'okabe-purple': {
-          DEFAULT: '#CC79A7',
-          dark: '#b85f94',
-          light: '#e0a0c4',
+          DEFAULT: '#56B4E9',
+          dark: '#3ba0dc',
+          light: '#82ccf4',
         },
         // Clinical-white SaaS palette
         clinical: {

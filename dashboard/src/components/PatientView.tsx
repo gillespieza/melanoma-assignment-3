@@ -21,6 +21,7 @@ import PatientPassport from "./PatientPassport";
 import WhatIfBar from "./WhatIfBar";
 import SimulationOverlay from "./SimulationOverlay";
 import Q5PhenotypePanel from "./Q5PhenotypePanel";
+import Q5MlPredictorPanel from "./Q5MlPredictorPanel";
 import Q1Lane from "./Q1Lane";
 import Q2Evidence from "./Q2Evidence";
 import DoseResponseChart from "./DoseResponseChart";
@@ -40,7 +41,7 @@ import { Panel } from "./ui";
 // but only one method is on screen at a time so the page never reads as a wall
 // of panels.
 
-type TabKey = "q5" | "q1" | "q2" | "q3" | "q4" | "path";
+type TabKey = "q5" | "q1" | "q2" | "q3" | "q4" | "q5ml" | "path";
 
 const TABS: { key: TabKey; label: string; icon: typeof BrainCircuit }[] = [
   { key: "q5", label: "Q5 · Stratification", icon: Layers },
@@ -48,6 +49,7 @@ const TABS: { key: TabKey; label: string; icon: typeof BrainCircuit }[] = [
   { key: "q2", label: "Q2 · Validation", icon: FlaskConical },
   { key: "q3", label: "Q3 · Digital twin", icon: Waves },
   { key: "q4", label: "Q4 · Resistance", icon: ShieldAlert },
+  { key: "q5ml", label: "Q5 Enhanced ML Predictor", icon: Sparkles },
   { key: "path", label: "Decision path", icon: GitBranch },
 ];
 
@@ -198,6 +200,7 @@ export default function PatientView({
 
             <div className="mt-4 space-y-4">
               {tab === "q5" && <Q5PhenotypePanel patient={patient} meta={meta} />}
+              {tab === "q5ml" && <Q5MlPredictorPanel patient={patient} meta={meta} />}
               {tab === "q1" && (
                 <Q1Lane
                   patient={patient}

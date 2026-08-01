@@ -54,6 +54,10 @@ KEY_IMMUNE_FEATURES: List[str] = [
     "Macrophage_STV_Score",
 ]
 
+# Macrophage polarization marker gene sets
+M1_MACROPHAGE_GENES: List[str] = ["NOS2", "TNF", "IL1B", "CD68", "FCGR3A"]
+M2_MACROPHAGE_GENES: List[str] = ["CD163", "MSR1", "MRC1", "CSF1R", "TGFB1"]
+
 # Primary driver mutation columns for genomic interaction modeling
 KEY_DRIVER_MUTATIONS: List[str] = [
     "mut_BRAF",

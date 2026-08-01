@@ -511,6 +511,25 @@ function buildSubgroupAuc(rows) {
     }));
 }
 
+/** Parse subgroup_models_evaluation.csv into full q5SubgroupEvaluation array. */
+function buildSubgroupEvaluation(rows) {
+  return rows.map((r) => ({
+    clusterId:    num(r.Cluster_ID) ?? -1,
+    phenotype:    r.Phenotype ?? "",
+    modelScope:   r.Model_Scope ?? "",
+    n:            num(r.N) ?? 0,
+    responders:   num(r.Responders) ?? 0,
+    responseRate: round(num(r.Response_Rate), 2),
+    rocAuc:       round(num(r.ROC_AUC), 4),
+    prAuc:        round(num(r.PR_AUC), 4),
+    precision:    round(num(r.Precision), 4),
+    recall:       round(num(r.Recall), 4),
+    f1Score:      round(num(r.F1_Score), 4),
+    accuracy:     round(num(r.Accuracy), 4),
+    brierScore:   round(num(r.Brier_Score), 4),
+  }));
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -560,8 +579,10 @@ function main() {
     ? JSON.parse(readFileSync(PATHS.q5Ode, "utf8"))
     : {};
 
-  const q5SubgroupAuc = existsSync(PATHS.q5Auc)
-    ? buildSubgroupAuc(readCsv(PATHS.q5Auc))
+  const subgroupModelsCsv = existsSync(PATHS.q5Auc) ? readCsv(PATHS.q5Auc) : [];
+
+  const q5SubgroupAuc = subgroupModelsCsv.length
+    ? buildSubgroupAuc(subgroupModelsCsv)
     : [];
 
   // Pass 1 – assemble per-patient draft
@@ -623,6 +644,13 @@ function main() {
   const brafiRedPct   = rankWithin((p) => p.brafiInformative,   (p) => p.brafiReduction);
   const antipd1RedPct = rankWithin((p) => p.antipd1Informative, (p) => p.antipd1Reduction);
 
+  // Compute Q1 pResponse cohort-relative percentile ranks across patients with Q1 data
+  const q1PrespPool = draft.map((p) => q1ByPatient.get(p.id)?.pResponse ?? null);
+  const validQ1Indices = q1PrespPool.map((v, i) => (v !== null ? i : null)).filter((i) => i !== null);
+  const q1Values = validQ1Indices.map((i) => q1PrespPool[i]);
+  const q1Percentiles = percentileRanks(q1Values);
+  const q1RankLkp = new Map(validQ1Indices.map((idx, i) => [draft[idx].id, q1Percentiles[i]]));
+
   const patients = draft.map((p, i) => {
     const withPct = {
       ...p,
@@ -632,9 +660,11 @@ function main() {
       brafiReductionPct:  brafiRedPct(p),
       antipd1ReductionPct: antipd1RedPct(p),
     };
+    const rawQ1 = q1ByPatient.get(p.id) ?? null;
+    const q1 = rawQ1 ? { ...rawQ1, pResponsePct: q1RankLkp.get(p.id) ?? null } : null;
     return {
       ...withPct,
-      q1: q1ByPatient.get(p.id) ?? null,
+      q1,
       q4: deriveQ4(withPct),
       q5: q5ByPatient.get(p.id) ?? null,
     };
@@ -662,6 +692,7 @@ function main() {
       q5PhenotypeStats,
       q5OdeTrajectory,
       q5SubgroupAuc,
+      q5SubgroupEvaluation: buildSubgroupEvaluation(subgroupModelsCsv),
     },
     patients,
   };
