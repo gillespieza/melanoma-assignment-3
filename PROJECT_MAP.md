@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-01 (Phase 7 code smell audit: 8 smells resolved in `07_treatability_scoring.py` — imported `DARK_SLATE_CHARCOAL` from `src.styles`; enforced `safe_save_csv` from `src.utils.io`; removed unused `DATA_DIR` import; un-nested `z_score`, `_band`, and `_arm_conf` closures to top-level module functions; decomposed `assign_treatment_arms`, `compute_recommendation_confidence`, `plot_treatability_distributions`, and `generate_phase7_markdown`)
+> **Last updated**: 2026-08-01 (DRY code smell refactoring: centralized `get_cluster_name_map()` in `src/phenotyping.py` removing 3 duplicate definitions across scripts 05, 06, 07; imported `CLUSTERING_FEATURES` in script 08 from `q5_constants`; standardized subproject imports; enforced `safe_save_csv` in scripts 08 and 09)
 
 ## Repository Overview
 
