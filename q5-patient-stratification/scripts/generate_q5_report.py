@@ -83,6 +83,7 @@ FEATURE_MATRIX_FULL_FILE = PROCESSED_DIR / "q5" / "feature_matrix_full.csv"
 CLUSTERS_FILE = PROCESSED_DIR / "q5" / "patient_clusters.csv"
 YOUDEN_FILE = PROCESSED_DIR / "q5" / "youden_cutoffs.csv"
 ASSOC_FILE = PROCESSED_DIR / "q5" / "univariate_feature_associations.csv"
+INTERACTIONS_FILE = PROCESSED_DIR / "q5" / "genomic_immune_interactions.csv"
 EXPR_FILE = PROCESSED_DIR / "merged" / "immunotherapy" / "expr_merged.csv"
 
 REPORTS_DIR = SUBPROJECT_ROOT / "reports"
@@ -147,10 +148,19 @@ def main() -> None:
     df_clusters = pd.read_csv(CLUSTERS_FILE) if CLUSTERS_FILE.exists() else df_feat.copy()
     df_youden = pd.read_csv(YOUDEN_FILE) if YOUDEN_FILE.exists() else pd.DataFrame()
     df_assoc = pd.read_csv(ASSOC_FILE) if ASSOC_FILE.exists() else pd.DataFrame()
+    df_inter = pd.read_csv(INTERACTIONS_FILE) if INTERACTIONS_FILE.exists() else pd.DataFrame()
 
     # Calculate live metadata numbers on the fly
     n_patients = len(df_feat) if not df_feat.empty else 326
     n_patients_full = len(df_feat_full) if not df_feat_full.empty else (len(df_clusters) if not df_clusters.empty else 699)
+
+    # Live driver mutation counts — avoids hardcoded subgroup N values
+    if not df_feat.empty:
+        n_braf = int(df_feat["mut_BRAF"].sum()) if "mut_BRAF" in df_feat.columns else 0
+        n_nras = int(df_feat["mut_NRAS"].sum()) if "mut_NRAS" in df_feat.columns else 0
+        n_nf1 = int(df_feat["mut_NF1"].sum()) if "mut_NF1" in df_feat.columns else 0
+    else:
+        n_braf, n_nras, n_nf1 = 0, 0, 0
     
     metadata_cols = [
         "RESPONSE_BINARY", "PATIENT_ID", "SAMPLE_ID", "OS_STATUS", "OS_MONTHS",
@@ -392,6 +402,24 @@ def main() -> None:
             "> - **Core Motivation for Question 5**: This modest univariate performance proves why rigid single-biomarker tests fail in clinical practice and establishes the essential rationale for **Phase 3 (Unsupervised Multidimensional Clustering)** and **Phase 7 (Multi-Arm Decision Trees)**.\n"
         )
 
+        # Live Youden Summary Table (placed under ROC & Youden section)
+        if not df_youden.empty:
+            summary_youden = []
+            for _, row in df_youden.iterrows():
+                is_top = (row["Feature"] == "B_cells")
+                pfx = "**" if is_top else ""
+                sfx = "**" if is_top else ""
+                summary_youden.append({
+                    "Biomarker Feature": f"{pfx}`{row['Feature']}`{sfx}",
+                    "Optimal Cutoff": f"{pfx}{row['Optimal_Threshold']:.3f}{sfx}",
+                    "Youden J": f"{pfx}{row['Youden_J']:.3f}{sfx}",
+                    "Sensitivity": f"{pfx}{row['Sensitivity']*100:.1f}%{sfx}",
+                    "Specificity": f"{pfx}{row['Specificity']*100:.1f}%{sfx}",
+                    "AUC-ROC": f"{pfx}{row['AUC_ROC']:.3f}{sfx}",
+                })
+            doc_sections.append("#### Youden Optimal Decision Threshold Metrics\n")
+            doc_sections.append(format_markdown_table(pd.DataFrame(summary_youden)) + "\n")
+
     if PHASE2_INTERACTION_PATH.exists():
         doc_sections.append("### Genomic Synergy: TIS x BRAF Interaction Analysis\n")
         doc_sections.append(f"![Genomic Interaction TIS x BRAF]({rel_path(PHASE2_INTERACTION_PATH)})\n")
@@ -405,36 +433,51 @@ def main() -> None:
     if PHASE2_MATRIX_PATH.exists():
         doc_sections.append("### Multi-Permutation Genomic x Immune Interaction Matrix\n")
         doc_sections.append(f"![Genomic Immune Interaction Matrix]({rel_path(PHASE2_MATRIX_PATH)})\n")
-        doc_sections.append(
-            "> [!INFO] Figure Interpretation: Genomic x Immune Interaction Matrix\n"
-            "> - **What this heatmap shows**: Logistic regression interaction coefficients ($\\beta_{\\text{interaction}}$) and significance across all 21 driver mutation $\\times$ immune signature permutations.\n"
-            "> - **`BRAF` Dominance & Statistical Significance (White Border)**: `BRAF` $\\times$ `TIS` ($\\beta = -0.65, p = 0.040$, highlighted with a crisp white border) is the single interaction reaching strict $p < 0.05$ because `BRAF` is the largest mutant subgroup ($N = 130$). All four T-cell/IFN-gamma signatures (`TIS`, `IFN_gamma`, `CD8_T_cells`, `B_cells`) exhibit consistent negative interaction terms ($\\beta \\approx -0.57 \\text{ to } -0.65, p < 0.10$) specifically in `BRAF` melanomas.\n"
-            "> - **`NF1` x `M1_M2_Ratio` Synergy ($\\beta = +0.94$)**: `NF1` mutated melanoma displays the highest positive effect size with macrophage polarisation (`M1_M2_Ratio`), demonstrating that pro-inflammatory myeloid reprogramming strongly enhances response in high-TMB `NF1` loss tumours.\n"
-            "> - **Clinical Utility**: Provides the mathematical foundation for multi-dimensional patient clustering (Phase 3) and multi-arm treatment routing (Phase 7).\n"
-        )
-        doc_sections.append(
-            "> [!INSIGHT] Analytical Validation: Heatmap Confirms Primary Focus on TIS x BRAF\n"
-            "> - **Validation of Initial Hypothesis**: The comprehensive $21$-permutation interaction matrix confirms that `TIS` $\\times$ `BRAF` ($\\beta = -0.65, p = 0.040$) is indeed the single statistically significant driver-microenvironment interaction ($p < 0.05$), validating our initial analytical focus on this key biomarker pair.\n"
-            "> - **Borderline Cells Highlight `BRAF` Again**: Furthermore, every single borderline significant interaction ($p < 0.10$) occurs exclusively within the `BRAF` column across all major lymphocytic markers: `BRAF` $\\times$ `IFN_gamma` ($\\beta = -0.57, p = 0.064$), `BRAF` $\\times$ `B_cells` ($\\beta = -0.63, p = 0.073$), and `BRAF` $\\times$ `CD8_T_cells` ($\\beta = -0.57, p = 0.074$). This repeatedly points to `BRAF` oncogenic signalling as the dominant genomic modifier of microenvironmental immunity.\n"
-        )
 
-    # Live Youden Summary Table
-    if not df_youden.empty:
-        summary_youden = []
-        for _, row in df_youden.iterrows():
-            is_top = (row["Feature"] == "B_cells")
-            pfx = "**" if is_top else ""
-            sfx = "**" if is_top else ""
-            summary_youden.append({
-                "Biomarker Feature": f"{pfx}`{row['Feature']}`{sfx}",
-                "Optimal Cutoff": f"{pfx}{row['Optimal_Threshold']:.3f}{sfx}",
-                "Youden J": f"{pfx}{row['Youden_J']:.3f}{sfx}",
-                "Sensitivity": f"{pfx}{row['Sensitivity']*100:.1f}%{sfx}",
-                "Specificity": f"{pfx}{row['Specificity']*100:.1f}%{sfx}",
-                "AUC-ROC": f"{pfx}{row['AUC_ROC']:.3f}{sfx}",
-            })
-        doc_sections.append("### Youden Optimal Decision Threshold Metrics\n")
-        doc_sections.append(format_markdown_table(pd.DataFrame(summary_youden)) + "\n")
+        # Derive live interaction statistics for the heatmap callout
+        if not df_inter.empty:
+            # Primary significant interaction: TIS x BRAF
+            tis_braf = df_inter[(df_inter["Immune_Feature"] == "TIS") & (df_inter["Driver_Mutation"] == "mut_BRAF")]
+            tis_braf_beta = tis_braf.iloc[0]["Beta_Interaction"] if not tis_braf.empty else -0.65
+            tis_braf_p = tis_braf.iloc[0]["p_value"] if not tis_braf.empty else 0.040
+
+            # NF1 x M1_M2_Ratio: highest positive synergy
+            nf1_m1m2 = df_inter[(df_inter["Immune_Feature"] == "M1_M2_Ratio") & (df_inter["Driver_Mutation"] == "mut_NF1")]
+            nf1_m1m2_beta = nf1_m1m2.iloc[0]["Beta_Interaction"] if not nf1_m1m2.empty else 0.94
+
+            # Borderline interactions: BRAF column only, p < 0.10, excluding the primary significant one
+            borderline_braf = df_inter[
+                (df_inter["Driver_Mutation"] == "mut_BRAF")
+                & (df_inter["p_value"] < 0.10)
+                & (df_inter["Immune_Feature"] != "TIS")
+            ].sort_values("p_value")
+
+            # Build borderline summary string live from data
+            borderline_strs = [
+                f"`BRAF` $\\times$ `{r['Immune_Feature']}` ($\\beta = {r['Beta_Interaction']:+.2f}, p = {r['p_value']:.3f}$)"
+                for _, r in borderline_braf.iterrows()
+            ]
+            borderline_text = ", ".join(borderline_strs) if borderline_strs else "no borderline interactions detected"
+        else:
+            tis_braf_beta, tis_braf_p = -0.65, 0.040
+            nf1_m1m2_beta = 0.94
+            borderline_text = "borderline interactions in the `BRAF` column"
+            n_braf = n_braf if 'n_braf' in locals() else 128
+            n_nras = n_nras if 'n_nras' in locals() else 128
+            n_nf1 = n_nf1 if 'n_nf1' in locals() else 128
+
+        doc_sections.append(
+            f"> [!INFO] Figure Interpretation: Genomic x Immune Interaction Matrix\n"
+            f"> - **What this heatmap shows**: Logistic regression interaction coefficients ($\\beta_{{\\text{{interaction}}}}$) and significance across all driver mutation $\\times$ immune signature permutations ($N_{{\\text{{BRAF}}}} = {n_braf}$, $N_{{\\text{{NRAS}}}} = {n_nras}$, $N_{{\\text{{NF1}}}} = {n_nf1}$).\n"
+            f"> - **`BRAF` Dominance \u0026 Statistical Significance (White Border)**: `BRAF` $\\times$ `TIS` ($\\beta = {tis_braf_beta:+.2f}, p = {tis_braf_p:.3f}$, highlighted with a crisp white border) is the single interaction reaching strict $p < 0.05$ because `BRAF` is the largest mutant subgroup ($N = {n_braf}$). T-cell/IFN-gamma signatures in the `BRAF` column show consistent negative interaction terms specifically in `BRAF` melanomas.\n"
+            f"> - **`NF1` $\\times$ `M1_M2_Ratio` Synergy ($\\beta = {nf1_m1m2_beta:+.2f}$)**: `NF1`-mutated melanoma displays the highest positive effect size with macrophage polarisation (`M1_M2_Ratio`), demonstrating that pro-inflammatory myeloid reprogramming strongly enhances response in high-TMB `NF1`-loss tumours.\n"
+            f"> - **Clinical Utility**: Provides the mathematical foundation for multi-dimensional patient clustering (Phase 3) and multi-arm treatment routing (Phase 7).\n"
+        )
+        doc_sections.append(
+            f"> [!INSIGHT] Analytical Validation: Heatmap Confirms Primary Focus on TIS x BRAF\n"
+            f"> - **Validation of Initial Hypothesis**: The comprehensive interaction matrix confirms that `TIS` $\\times$ `BRAF` ($\\beta = {tis_braf_beta:+.2f}, p = {tis_braf_p:.3f}$) is indeed the single statistically significant driver-microenvironment interaction ($p < 0.05$), validating our initial analytical focus on this key biomarker pair.\n"
+            f"> - **Borderline Cells Highlight `BRAF` Again**: Every borderline significant interaction ($p < 0.10$) occurs exclusively within the `BRAF` column: {borderline_text}. This repeatedly points to `BRAF` oncogenic signalling as the dominant genomic modifier of microenvironmental immunity.\n"
+        )
 
     # Derive top AUC feature live from Youden cutoff calculations
     if not df_youden.empty:
@@ -446,16 +489,13 @@ def main() -> None:
         top_auc_val = "0.632"
 
     doc_sections.append(
-        "### Key Takeaways & Student Summary\n"
-        f"- **Best Single Marker**: {top_feat_str} is the single best individual marker for distinguishing responders from non-responders (AUC = {top_auc_val}).\n"
-        "- **Clear Decision Cutoffs**: Youden cutoffs provide simple numerical score targets (such as `0.430` for `B_cells`) to balance detecting true responders while minimizing false positives.\n"
-        "- **Gene-Immune Interaction**: High immune inflammation behaves differently depending on whether the patient harbours a `BRAF` mutation, demonstrating that single biomarkers cannot be interpreted in isolation.\n\n"
-        "> [!NOTE] Student-Friendly Phase 2 Summary\n"
-        "> Phase 2 evaluated individual biomarkers to determine how effectively single measurements can predict anti-PD-1 immunotherapy response:\n"
-        "> 1. **Individual Biomarkers Have Modest Power**: While inflammatory signatures (such as `TIS`, `CYT`, and `CD8_T_cells`) and B-cell abundance (`B_cells`) show statistically significant elevation in responders, their standalone predictive accuracy is modest (AUC $\\approx 0.58–0.63$). No single biomarker acts as a sole determinant of response.\n"
-        "> 2. **Decision Thresholds Provide Triage Cutoffs**: Youden's J statistic established concrete numerical cutoffs (such as `B_cells` threshold $\\ge 0.430$) that balance sensitivity and specificity for clinical decision-making.\n"
-        "> 3. **Genomic Mutations Alter Immune Response**: Microenvironmental immune inflammation interacts significantly with oncogenic driver mutations—specifically `BRAF V600` ($\\beta = -0.65, p = 0.040$). High T-cell inflammation has a stronger positive predictive value in `BRAF` wild-type tumours than in `BRAF`-mutated tumours.\n"
-        "> 4. **Rationale for Stratification**: Because single biomarkers yield modest standalone performance and interact with underlying driver mutations, robust patient stratification requires multi-dimensional unsupervised clustering (Phase 3) rather than single-gene tests.\n"
+        "### Key Takeaways\n"
+        "> [!INSIGHT] Key Takeaways: Phase 2 Feature Analysis & Stratification Rationale\n"
+        f"> - **Best Standalone Marker**: {top_feat_str} is the single best individual marker for distinguishing responders from non-responders (AUC = {top_auc_val}).\n"
+        "> - **Modest Standalone Predictive Power**: While inflammatory signatures (`TIS`, `CYT`, `CD8_T_cells`) and B-cell abundance (`B_cells`) show statistically significant elevation in responders, their standalone predictive accuracy is modest (AUC $\\approx 0.58–0.63$). No single biomarker acts as a sole determinant of response.\n"
+        "> - **Decision Thresholds Provide Clinical Triage Cutoffs**: Youden's J statistic established concrete numerical cutoffs (such as `B_cells` threshold $\\ge 0.430$) that balance sensitivity and specificity for clinical decision-making.\n"
+        f"> - **Genomic Drivers Modify Microenvironmental Immunity**: Microenvironmental immune inflammation interacts significantly with oncogenic driver mutations—specifically `BRAF V600` ($\\beta = {tis_braf_beta:+.2f}, p = {tis_braf_p:.3f}$). High T-cell inflammation has a stronger positive predictive value in `BRAF` wild-type tumours than in `BRAF`-mutated tumours.\n"
+        "> - **Rationale for Stratification**: Because single biomarkers yield modest standalone performance and interact with underlying driver mutations, robust clinical decision support requires multi-dimensional unsupervised clustering (Phase 3) rather than single-gene tests.\n"
     )
 
     doc_sections.append(

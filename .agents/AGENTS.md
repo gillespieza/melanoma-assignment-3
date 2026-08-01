@@ -149,6 +149,7 @@ When fixing code smells or refactoring code in this repository, follow these gui
       2. **Why we are doing it**
       3. **What question it answers**
     - **Include Key Takeaways & Key Insights**: Contain a **Key Takeaways** or **Key Insights** subsection summarizing the core scientific/clinical insights. All Key Takeaways / Key Insights sections MUST be placed in `> [!INSIGHT]` callout boxes (never `> [!IMPORTANT]`).
+    - **Student Report Limitations Callout Requirement (`phase_x_STUDENT.md`)**: All Limitations & Future Directions sections in `phase_x_STUDENT.md` report files MUST be rendered within `> [!WARNING]` callout boxes.
 16. **Ground-Truth-First Report Verification Protocol**: Before writing or updating any claim in a phase report about what features, methods, or values the pipeline *uses* or *produces*, you MUST verify against live output files — not code, comments, or prior documentation. Violating this rule is what causes "excluded feature" claims to contradict the actual CSV, and count mismatches between reports and runtime logs.
 
     **Step 1 — Read the output file, not the code.**

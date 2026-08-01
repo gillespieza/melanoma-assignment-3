@@ -234,8 +234,5 @@ data/processed/**/expr_merged.csv
 scratch/
 **/scratch/
 
-# Agent stuff
-.agents
-
 .DS_Store
 *.bak
