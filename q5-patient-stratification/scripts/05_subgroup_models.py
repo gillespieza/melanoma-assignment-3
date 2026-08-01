@@ -202,24 +202,13 @@ def _compute_confusion_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[s
 def evaluate_predictions(
     y_true: np.ndarray, y_prob: np.ndarray, threshold: float = 0.5
 ) -> Dict[str, float]:
-    """Calculate comprehensive classification metrics.
-
-    Args:
-        y_true: Ground truth binary labels.
-        y_prob: Predicted positive-class probabilities.
-        threshold: Decision threshold for binarising predictions.
-
-    Returns:
-        Dictionary of computed metric names and values.
-    """
+    """Calculate comprehensive classification metrics."""
     y_pred = (y_prob >= threshold).astype(int)
-    has_two_classes = len(np.unique(y_true)) > 1
-    prob_is_finite = not np.isnan(y_prob).any()
+    valid = (len(np.unique(y_true)) > 1) and (not np.isnan(y_prob).any())
 
-    auc = roc_auc_score(y_true, y_prob) if (has_two_classes and prob_is_finite) else np.nan
-    pr_auc = average_precision_score(y_true, y_prob) if (has_two_classes and prob_is_finite) else np.nan
+    auc = roc_auc_score(y_true, y_prob) if valid else np.nan
+    pr_auc = average_precision_score(y_true, y_prob) if valid else np.nan
 
-    cm_metrics = _compute_confusion_metrics(y_true, y_pred)
     return {
         "ROC_AUC": auc,
         "PR_AUC": pr_auc,
@@ -228,7 +217,7 @@ def evaluate_predictions(
         "F1_Score": f1_score(y_true, y_pred, zero_division=0),
         "Accuracy": accuracy_score(y_true, y_pred),
         "Brier_Score": brier_score_loss(y_true, y_prob),
-        **cm_metrics,
+        **_compute_confusion_metrics(y_true, y_pred),
     }
 
 
@@ -328,17 +317,10 @@ def _select_calibration_split(
     return X_eff[cal_idx], y_eff[cal_idx]
 
 
-def _fit_calibrator(base_clf: RandomForestClassifier, X_eff: np.ndarray, y_eff: np.ndarray) -> object:
-    """Fit isotonic or Platt scaling calibrator on stratified holdout subset.
-
-    Args:
-        base_clf: Trained base Random Forest classifier.
-        X_eff: Effective non-zero feature matrix.
-        y_eff: Effective label array.
-
-    Returns:
-        Fitted calibrator instance exposing predict(p_1d).
-    """
+def _fit_calibrator(
+    base_clf: RandomForestClassifier, X_eff: np.ndarray, y_eff: np.ndarray
+) -> Union[_IdentityPredictor, _LRPredictor, IsotonicRegression]:
+    """Fit isotonic or Platt scaling calibrator on stratified holdout subset."""
     if len(y_eff) < 2 or len(np.unique(y_eff)) < 2:
         return _IdentityPredictor()
 
@@ -347,7 +329,7 @@ def _fit_calibrator(base_clf: RandomForestClassifier, X_eff: np.ndarray, y_eff: 
         return _IdentityPredictor()
 
     raw_cal_prob = base_clf.predict_proba(X_cal)[:, 1]
-    if np.isnan(raw_cal_prob).any():
+    if np.isnan(raw_cal_prob).any() or np.std(raw_cal_prob) < 1e-6:
         return _IdentityPredictor()
 
     if len(y_cal) >= CALIBRATION_MIN_SAMPLES:
@@ -510,29 +492,12 @@ def _fit_single_phenotype_production_model(
     p_name: str,
     global_calibrated: _CalibratedModel,
 ) -> _CalibratedModel:
-    """Fit a calibrated production model for a single phenotype subgroup.
-
-    Args:
-        X_full_proc: Processed full feature matrix.
-        y_raw: Full target label array.
-        weights_k: Sample weights for target phenotype.
-        p_name: Phenotype display name.
-        global_calibrated: Fallback global calibrated model.
-
-    Returns:
-        Fitted _CalibratedModel for phenotype subgroup.
-    """
+    """Fit a calibrated production model for a single phenotype subgroup."""
     meaningful = weights_k > MIN_PROB_WEIGHT
-    X_sub = X_full_proc[meaningful]
-    y_sub = y_raw[meaningful]
-    w_sub = weights_k[meaningful]
-    n_effective = int(meaningful.sum())
+    X_sub, y_sub, w_sub = X_full_proc[meaningful], y_raw[meaningful], weights_k[meaningful]
 
     if len(np.unique(y_sub)) < 2:
-        print(
-            f"  Warning: {p_name} has only one response class after filtering "
-            f"(N={n_effective}); substituting global model."
-        )
+        print(f"  Warning: {p_name} has only one response class (N={int(meaningful.sum())}); substituting global model.")
         return global_calibrated
 
     return _fit_calibrated_rf(X_sub, y_sub, max_depth=SUBGROUP_MAX_DEPTH, sample_weight=w_sub)
@@ -546,21 +511,8 @@ def _fit_production_models(
     cluster_probs: np.ndarray,
     phenotype_names: List[str],
 ) -> Dict[str, _CalibratedModel]:
-    """Train calibrated production models on full dataset using soft GMM cluster weights.
-
-    Args:
-        df_valid: Input dataset with valid labels.
-        X_raw: Raw feature matrix.
-        y_raw: Label array.
-        feature_cols: Selected feature names.
-        cluster_probs: GMM probability matrix.
-        phenotype_names: Ordered phenotype names.
-
-    Returns:
-        Dict mapping phenotype name to fitted _CalibratedModel.
-    """
-    imp_final = SimpleImputer(strategy="median")
-    scaler_final = StandardScaler()
+    """Train calibrated production models on full dataset using soft GMM cluster weights."""
+    imp_final, scaler_final = SimpleImputer(strategy="median"), StandardScaler()
     X_full_proc = np.nan_to_num(scaler_final.fit_transform(imp_final.fit_transform(X_raw)), nan=0.0)
 
     global_calibrated = _fit_calibrated_rf(X_full_proc, y_raw, max_depth=GLOBAL_MAX_DEPTH)
@@ -672,21 +624,6 @@ def _extract_phenotype_probabilities(df_valid: pd.DataFrame) -> Tuple[List[str],
     cluster_probs = df_valid[prob_col_names].values
     return phenotype_names, prob_col_names, cluster_probs
 
-
-def train_and_eval_loco(
-    df: pd.DataFrame, feature_cols: List[str]
-) -> Tuple[pd.DataFrame, Dict[str, Dict[str, np.ndarray]], Dict[str, _CalibratedModel]]:
-    """Perform Leave-One-Cohort-Out CV for Global Enriched Baseline vs Soft-Weighted Subgroup models.
-
-    Args:
-        df: Input patient dataset including GMM posterior columns and response status.
-        feature_cols: Selected feature column names.
-
-    Returns:
-        Tuple containing evaluation DataFrame, ROC curve data, and trained production models.
-    """
-    df_valid = df.dropna(subset=["RESPONSE_BINARY"]).copy()
-    df_valid["RESPONSE_BINARY"] = df_valid["RESPONSE_BINARY"].astype(int)
 
 def _assign_oof_predictions(
     df_valid: pd.DataFrame, global_oof: np.ndarray, subgroup_oof: np.ndarray
