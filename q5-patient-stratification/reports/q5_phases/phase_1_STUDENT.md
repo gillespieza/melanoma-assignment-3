@@ -90,14 +90,15 @@ By combining these complementary biological dimensions into a single matrix, Pha
 
 ## 5. Limitations & Future Directions
 
-Derived directly from the Phase 1 Limitations Audit (`phase_1_LIMITATIONS.md`), key analytical considerations for downstream interpretation include:
-
-1. **Uncontrolled Inter-Cohort Batch Effects**: Merging four independent studies without explicit batch correction means study-of-origin could act as a confounding variable in downstream clustering. *Hugo 2016* represents a smaller sub-cohort ($N = 27$) compared to *Liu 2019* ($N = 122$).
-2. **Genomic Feature Missingness**: While transcriptomic features achieve 100% completeness, specific genomic metrics exhibit high missingness (such as Aneuploidy Score at 79.4% missingness and MSI scores at 97.9% missingness across trial cohorts), requiring careful handling during machine learning.
-3. **Spatial Proxies as Algebraic Approximations**: The CD8-to-CAF distance ratio and Tumour Infiltration Index are mathematical log-ratios of bulk expression, not physical spatial measurements from tissue imaging.
-4. **One-Dimensional Macrophage Axis**: The M1/M2 polarisation ratio simplifies a complex, continuous spectrum of macrophage functional states into a single numerical scale.
-
-**Future Iterations**: Priority improvements include implementing ComBat-seq batch correction across source cohorts, transitioning from marker-averaging to constrained single-cell RNA-seq deconvolution (CIBERSORTx), and integrating multiplex immunofluorescence to validate physical cell-cell distances.
+> [!WARNING] Methodological Limitations & Analytical Constraints
+> Derived directly from the Phase 1 Limitations Audit (`phase_1_LIMITATIONS.md`), key analytical considerations for downstream interpretation include:
+> 
+> 1. **Uncontrolled Inter-Cohort Batch Effects**: Merging four independent studies without explicit batch correction means study-of-origin could act as a confounding variable in downstream clustering. *Hugo 2016* represents a smaller sub-cohort ($N = 27$) compared to *Liu 2019* ($N = 122$).
+> 2. **Genomic Feature Missingness**: While transcriptomic features achieve 100% completeness, specific genomic metrics exhibit high missingness (such as Aneuploidy Score at 79.4% missingness and MSI scores at 97.9% missingness across trial cohorts), requiring careful handling during machine learning.
+> 3. **Spatial Proxies as Algebraic Approximations**: The CD8-to-CAF distance ratio and Tumour Infiltration Index are mathematical log-ratios of bulk expression, not physical spatial measurements from tissue imaging.
+> 4. **One-Dimensional Macrophage Axis**: The M1/M2 polarisation ratio simplifies a complex, continuous spectrum of macrophage functional states into a single numerical scale.
+> 
+> **Future Iterations**: Priority improvements include implementing ComBat-seq batch correction across source cohorts, transitioning from marker-averaging to constrained single-cell RNA-seq deconvolution (CIBERSORTx), and integrating multiplex immunofluorescence to validate physical cell-cell distances.
 
 ---
 
