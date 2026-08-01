@@ -119,7 +119,7 @@ CANDIDATE_PREDICTION_FEATURES: List[str] = [
 ]
 
 # Minimum GMM posterior probability for sample inclusion in weighted fits
-MIN_PROB_WEIGHT: float = 1e-6
+MIN_PROB_WEIGHT: float = 0.05
 
 # Probability Calibration & Platt Scaling Constants
 CALIBRATION_MIN_SAMPLES: int = 50
