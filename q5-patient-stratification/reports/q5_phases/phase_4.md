@@ -1,5 +1,5 @@
 ---
-title: "Phase 4: Phenotype Characterisation & Dynamic ODE Tumour Burden Trajectories"
+title: "Phase 4: Phenotype Characterisation & ODE Digital Twin Dynamics (Q3)"
 aliases:
   - Q5 Phase 4
 tags:
@@ -7,15 +7,15 @@ tags:
   - patient-stratification
   - phase-4
   - q5
-created: 2026-08-01 11:06
+created: 2026-08-01 11:18
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 11:06
+updated: 2026-08-01 11:18
 ---
 
-## 4. Phase 4: Phenotype Characterisation & Q3 ODE Digital Twin Dynamics
+## 4. Phase 4: Phenotype Characterisation & ODE Digital Twin Dynamics
 
 > [!NOTE] Analytical Methodology & Rationale
 > - **What is being done**: Coupling multi-dimensional biomarker signatures with a four-module literature-parameterised ODE system (RAF dimerisation, 8-state MAPK cascade, tumour-immune clearance, and PD-1/PD-L1 checkpoint axis) to simulate 180-day dynamic trajectories, stratify overall survival, and validate against RPPA protein measurements.

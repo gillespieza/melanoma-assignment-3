@@ -118,7 +118,7 @@ Phase 1 condenses ~19,757 genes into 17 transcriptomic features and 9 genomic/TM
 > - **Immune Hot Characteristics**: Immunotherapy Responders (CR/PR) exhibit significantly higher baseline levels of `TIS`, `CYT`, `IFN_gamma`, and `CD8_Tcell` than Non-Responders (PD).
 > - **Stromal Exclusion Mechanisms**: Non-responders frequently present with elevated `CAFs` (scar tissue walls) or low `M1_M2_Ratio` ("Double Agent" dominance), demonstrating that high stromal density or M2 macrophage polarization suppresses immune efficacy even in tumours with modest T-cell presence.
 
-> [!IMPORTANT] Key Takeaways
+> [!INSIGHT] Key Takeaways
 > - **Feature Compression**: Transformed raw high-dimensional transcriptomics (~19,757 genes) into 17 interpretable biological signatures across 26 total clinical, genomic, and microenvironmental features.
 > - **Dual Cohort Architecture**: Standardized `feature_matrix.csv` ($N_{\text{ICI}} = 326$) for response prediction models and `feature_matrix_full.csv` ($N_{\text{Full}} = 699$) for unsupervised stratification and 3-arm decision tree routing.
 > - **Microenvironment Profiling**: Captured stromal immune exclusion via the 14,837-gene Macrophage STV score, providing a quantitative basis for identifying combination-therapy candidates.

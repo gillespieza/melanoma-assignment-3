@@ -1,5 +1,5 @@
 ---
-title: "Phase 7: 3-Arm Decision Support System & Treatability Scoring"
+title: "Phase 7: 3-Arm Decision Support System & Treatability Scoring (Q1–Q4)"
 aliases:
   - Q5 Phase 7
 tags:
@@ -7,12 +7,12 @@ tags:
   - patient-stratification
   - phase-7
   - q5
-created: 2026-08-01 11:06
+created: 2026-08-01 11:18
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 11:06
+updated: 2026-08-01 11:18
 ---
 
 ## 7. Phase 7: 3-Arm Decision Support & Treatability Scoring

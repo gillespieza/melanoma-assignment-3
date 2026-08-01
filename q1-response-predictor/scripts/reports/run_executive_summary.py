@@ -169,6 +169,7 @@ def run_model_evaluations():
                 'best_loco': best_auc_str
             })
         except Exception:
+            pass
     fallbacks = {
         'Support Vector Machine (SVM)': ('**0.718 ± 0.082**', '**0.717** (Riaz 2017) / **0.657** (Liu 2019)'),
         'Random Forest': ('0.710 ± 0.094', '0.678 (Riaz 2017) / 0.580 (Liu 2019)'),
@@ -240,7 +241,7 @@ Build a binary immunotherapy response predictor (CR/PR vs. PD) for cutaneous mel
 
 ![Overall Survival by Immunotherapy Response (RECIST)](../plots/clinical/km_os_by_response.png)
 
-> [!IMPORTANT]
+> [!INSIGHT]
 > **Prognostic Impact of RECIST Response**:
 > Stratifying overall survival by objective RECIST response status (**Responder** [CR/PR] vs **Non-responder** [PD]) confirms that clinical response to anti-PD-1 therapy is a extraordinarily strong surrogate endpoint for long-term overall survival:
 > * **Liu 2019 ($N = {stats['liu']['n']}$)**: Log-rank $p < 0.0001$. Non-responders exhibit steep early mortality (median OS ~10.5 months), whereas >70% of responders remain alive beyond 50 months of follow-up.
@@ -267,7 +268,7 @@ Build a binary immunotherapy response predictor (CR/PR vs. PD) for cutaneous mel
 
 ![PCA Batch Effect Assessment Across Full Cohort](../plots/biomarkers/batch_effect_pca.png)
 
-> [!IMPORTANT]  
+> [!INSIGHT]  
 > **Imperative for Batch Effect Evaluation & Correction**:  
 > Panel A demonstrates why raw transcriptomic datasets from different clinical trials cannot simply be merged without prior batch effect evaluation and correction. In the uncorrected principal component space (PC1: {pca_stats['raw_pc1']:.1f}%, PC2: {pca_stats['raw_pc2']:.1f}%), samples cluster strictly by study cohort of origin (TCGA-SKCM vs. Liu 2019, Hugo 2016, Riaz 2017) rather than biological phenotype or clinical response status. These technical batch effects stem from systemic differences in sequencing platforms, library preparation protocols, and capture kits. Training predictive models directly on uncorrected multi-cohort data causes classifiers to learn study-specific technical noise, leading to catastrophic failure when evaluated on independent patient cohorts.  
 >  
@@ -301,7 +302,7 @@ Tumour Mutational Burden and transcriptomic immune signatures are essentially un
         content += f"| **{row['model']}** | {row['cv_auc']} | {row['best_loco']} |\n"
 
     content += f"""
-> [!important] Performance Gap Between Pooled CV and LOCO  
+> [!insight] Performance Gap Between Pooled CV and LOCO  
 > Pooled 5-fold CV estimates (~0.71–0.72 AUC) substantially overestimate out-of-cohort performance. Strict LOCO validation, where an entire cohort is held out, yields AUCs in the 0.43–0.72 range, reflecting the true difficulty of cross-study generalisation with small clinical trial datasets ($N = 27\text{{\-\-}}122$). SVM demonstrates superior margin-based stability across heterogeneous study cohorts.
 
 ### 4. Hugo 2016 is an Unreliable Validation Fold

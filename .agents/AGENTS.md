@@ -148,5 +148,5 @@ When fixing code smells or refactoring code in this repository, follow these gui
       1. **What is being done**
       2. **Why we are doing it**
       3. **What question it answers**
-    - **Include Key Takeaways**: Contain a **Key Takeaways** subsection summarizing the core scientific/clinical insights.
+    - **Include Key Takeaways & Key Insights**: Contain a **Key Takeaways** or **Key Insights** subsection summarizing the core scientific/clinical insights. All Key Takeaways / Key Insights sections MUST be placed in `> [!INSIGHT]` callout boxes (never `> [!IMPORTANT]`).
 

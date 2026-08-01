@@ -45,7 +45,7 @@ Phase 3 acts as the central biological foundation of the Question 5 stratificati
 
 ## 3. Why This Matters for Patient Stratification (Q5)
 
-> [!IMPORTANT] Clinical Relevance & Precision Medicine Rationale
+> [!INSIGHT] Clinical Relevance & Precision Medicine Rationale
 > Applying a uniform single-agent checkpoint blockade protocol across all melanoma patients leads to non-response in over 50% of cases. Stratifying patients into distinct biological phenotypes enables:
 > 1. **Avoiding One-Size-Fits-All Therapy**: Identifying which patients possess inflamed microenvironments versus stroma-excluded or driver-mutated barriers.
 > 2. **Quantifying Classification Uncertainty**: Soft probabilistic GMM clustering provides continuous membership scores, alerting clinicians when a patient sits on the boundary between two biological phenotypes.

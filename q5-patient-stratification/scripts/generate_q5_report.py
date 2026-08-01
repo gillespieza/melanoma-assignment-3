@@ -236,7 +236,7 @@ def main() -> None:
         doc_sections.append(f"![Baseline Biomarker Feature Distributions]({rel_box})\n")
 
     doc_sections.append(
-        "> [!IMPORTANT] Key Takeaways\n"
+        "> [!INSIGHT] Key Takeaways\n"
         f"> - **Dual-Matrix Dataflow**: Established a dual dataflow pipeline isolating response-labeled ICI trials ($N_{{\\text{{ICI}}}} = {n_patients}$) for predictive modelling while embedding the full cohort ($N_{{\\text{{Full}}}} = {n_patients_full}$) for unsupervised manifold learning.\n"
         f"> - **Dimensionality Reduction**: Compressed ~{n_genes:,} transcriptomic features into {n_tx_features} engineered biological signatures (part of a {n_bio_features}-feature multi-modal panel, centered on {n_core_biomarkers} core baseline biomarkers).\n"
         "> - **M1/M2 Polarisation**: The Macrophage STV score captures stromal microenvironmental suppression that operates independently of total T-cell density.\n"
@@ -1128,13 +1128,13 @@ def main() -> None:
     # Assemble full content in-memory for splitting (not written to disk)
     full_report_content = "\n".join(doc_sections)
     phase_titles = {
-        "1": "Phase 1: Feature Engineering & Baseline Signature Distribution",
-        "2": "Phase 2: Feature Analysis, Youden Cutoffs & Genomic Interactions",
+        "1": "Phase 1: Feature Engineering & Baseline Signature Distribution (Q1)",
+        "2": "Phase 2: Feature Analysis, Youden Cutoffs & Genomic Interactions (Q1)",
         "3": "Phase 3: Unsupervised Patient Stratification & Manifold Projections",
-        "4": "Phase 4: Phenotype Characterisation & Dynamic ODE Tumour Burden Trajectories",
-        "5": "Phase 5: Subgroup-Specific Predictive Modelling & Machine Learning Evaluation",
-        "6": "Phase 6: Clinical Utility, Net Benefit & Decision Curve Analysis",
-        "7": "Phase 7: 3-Arm Decision Support System & Treatability Scoring",
+        "4": "Phase 4: Phenotype Characterisation & ODE Digital Twin Dynamics (Q3)",
+        "5": "Phase 5: Subgroup-Specific Predictive Modelling & Machine Learning Evaluation (Q1)",
+        "6": "Phase 6: Clinical Utility, Net Benefit & Decision Curve Analysis (Q1)",
+        "7": "Phase 7: 3-Arm Decision Support System & Treatability Scoring (Q1–Q4)",
     }
 
     import re
@@ -1166,7 +1166,9 @@ def main() -> None:
     with open(index_path, "w", encoding="utf-8") as idx:
         idx.write(idx_frontmatter + "\n\n# Q5 Phase‑Specific Reports\n\n")
         for i in range(1, len(matches) + 1):
-            idx.write(f"- [Phase {i} Report]({rel_path(PER_PHASE_DIR / f'phase_{i}.md')})\n")
+            p_num = str(i)
+            title = phase_titles.get(p_num, f"Phase {i} Report")
+            idx.write(f"- [{title}]({rel_path(PER_PHASE_DIR / f'phase_{i}.md')})\n")
 
     print("=" * 80)
     print("GRADUATE STUDENT MARKDOWN REPORT SPLITTING COMPLETE")

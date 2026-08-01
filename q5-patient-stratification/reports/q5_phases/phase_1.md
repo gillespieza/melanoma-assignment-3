@@ -1,5 +1,5 @@
 ---
-title: "Phase 1: Feature Engineering & Baseline Signature Distribution"
+title: "Phase 1: Feature Engineering & Baseline Signature Distribution (Q1)"
 aliases:
   - Q5 Phase 1
 tags:
@@ -7,12 +7,12 @@ tags:
   - patient-stratification
   - phase-1
   - q5
-created: 2026-08-01 11:06
+created: 2026-08-01 11:18
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 11:06
+updated: 2026-08-01 11:18
 ---
 
 ## 1. Phase 1: Multi-Modal Feature Matrix & Microenvironment Deconvolution
@@ -42,7 +42,7 @@ Rather than evaluating ~19,757 genes independently, Phase 1 projects patient exp
 
 ![Baseline Biomarker Feature Distributions](q5-patient-stratification/plots/phenotypes/baseline_response_violins.png)
 
-> [!IMPORTANT] Key Takeaways
+> [!INSIGHT] Key Takeaways
 > - **Dual-Matrix Dataflow**: Established a dual dataflow pipeline isolating response-labeled ICI trials ($N_{\text{ICI}} = 326$) for predictive modelling while embedding the full cohort ($N_{\text{Full}} = 699$) for unsupervised manifold learning.
 > - **Dimensionality Reduction**: Compressed ~19,757 transcriptomic features into 23 engineered biological signatures (part of a 32-feature multi-modal panel, centered on 9 core baseline biomarkers).
 > - **M1/M2 Polarisation**: The Macrophage STV score captures stromal microenvironmental suppression that operates independently of total T-cell density.

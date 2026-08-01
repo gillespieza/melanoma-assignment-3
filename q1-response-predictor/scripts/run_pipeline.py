@@ -165,7 +165,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
     best_model_label = model_names.get(best_model_key, best_model_key.upper())
     report_lines.append("\n")
     report_lines.append(
-        f"> [!important] Best Generalising Model: {model_short[best_model_key]}\n"
+        f"> [!insight] Best Generalising Model: {model_short[best_model_key]}\n"
         f"> **{best_model_label}** achieves the highest mean cross-cohort AUC of **{best_mean:.3f}** across all three held-out LOCO test cohorts, "
         f"making it the strongest generaliser in this evaluation. "
         f"See the individual model sections below for full confusion matrices, ROC curves, and calibration diagnostics.\n\n"
@@ -268,7 +268,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
             "Precision-Recall (PR) curves evaluate positive predictive value across recall levels, which is particularly vital for immunotherapy trial datasets where response rates vary between 31% and 52% across clinical cohorts.\n\n"
         )
         report_lines.append(
-            "> [!important] Key Insights & Diagnostic Takeaways\n"
+            "> [!insight] Key Insights & Diagnostic Takeaways\n"
             "> - **Standard vs. Multimodal Discrimination**: Integrating somatic driver mutations (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) alongside transcriptomic signatures provides subtle calibration stabilization but does not significantly alter cross-cohort AUC-ROC or Average Precision (AP). This confirms that transcriptomic immune microenvironment activation remains the predominant driver of anti-PD-1 treatment response.\n"
             "> - **Precision-Recall Dynamics & Clinical Utility**: Precision-Recall curves demonstrate that high precision can be achieved at lower recall thresholds (e.g. prioritising high-confidence responders), but precision drops when attempting to capture all potential responders in low-inflamed cohorts.\n"
             "> - **Cross-Cohort Heterogeneity**: Held-out trial dataset performance demonstrates robust signal transfer in Riaz 2017 and Liu 2019, whereas Hugo 2016 exhibits higher variance due to its smaller cohort sample size.\n\n"
@@ -358,7 +358,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
             "orange/red curves indicate low-predicted-probability patients (predicted non-responders)._\n\n"
         )
         report_lines.append(
-            "> [!important] Key Takeaways: Overall Survival Stratification\n"
+            "> [!insight] Key Takeaways: Overall Survival Stratification\n"
             "> - Patients predicted as likely responders (high probability) consistently trend toward longer overall survival across cohorts, even when the log-rank test does not reach statistical significance.\n"
             "> - The TCGA-SKCM validation cohort ($N > 400$) provides the most statistically powered test of survival stratification, reflecting the correlation between transcriptomic immune activation and long-term melanoma prognosis.\n"
             "> - Despite non-significant p-values in smaller clinical trial cohorts (Hugo 2016, Liu 2019, Riaz 2017), the directional trend is consistent with the known biology of IFN-γ immune activation and anti-PD-1 treatment benefit.\n\n"

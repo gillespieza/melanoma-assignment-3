@@ -82,7 +82,7 @@ Targeted therapy is modelled by directly suppressing intrinsic tumour cell proli
 ## Why This Matters for Patient Stratification (Q5)
 Understanding the biological boundaries of each phenotype enables precise clinical decision-making:
 
-> [!important] Clinical Relevance
+> [!insight] Clinical Relevance
 > 1.  **Immune Hot Patients**: Prime candidates for immediate anti-`PDCD1` monotherapy or standard `BRAF` / MEK inhibitor combination therapy. High baseline T-cell infiltration ensures robust immune clearance once checkpoint restraint is removed.
 > 2.  **Immunosuppressive M2-High Patients**: Should not receive anti-`PDCD1` monotherapy alone. Stratification identifies the urgent need for front-line combination protocols pairing checkpoint inhibitors with M2 macrophage-depleting or CAF-targeting agents to breach stromal exclusion.
 > 3.  **Mutant-Driven (`NF1`-Loss) Patients**: Benefit significantly from immunotherapy due to high neoantigen burden. When targeted therapy is required, treatment must utilise MEK inhibitors (Trametinib) rather than `BRAF` inhibitor monotherapy to avoid paradoxical ERK activation.

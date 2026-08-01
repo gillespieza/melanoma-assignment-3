@@ -1,5 +1,5 @@
 ---
-title: "Phase 2: Feature Analysis, Youden Cutoffs & Genomic Interactions"
+title: "Phase 2: Feature Analysis, Youden Cutoffs & Genomic Interactions (Q1)"
 aliases:
   - Q5 Phase 2
 tags:
@@ -7,12 +7,12 @@ tags:
   - patient-stratification
   - phase-2
   - q5
-created: 2026-08-01 11:06
+created: 2026-08-01 11:18
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 11:06
+updated: 2026-08-01 11:18
 ---
 
 ## 2. Phase 2: Deep Feature Interpretation & Decision Thresholds

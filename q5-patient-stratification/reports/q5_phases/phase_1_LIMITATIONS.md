@@ -89,7 +89,7 @@ To address these limitations in future iterations of Question 5, we propose five
 | **Macrophage Subtypes** | 1D M1/M2 binary ratio (`M1_M2_Ratio`) | 4-state single-cell macrophage vector | scRNA-seq reference matrices | Resolves M2a/M2c subtype heterogeneity and therapeutic drug targets. |
 | **Biopsy Timing** | Static pre-treatment snapshot (Day 0) | Longitudinal paired biopsy modeling ($\Delta$ scores) | Paired Day 0 & Day 14–28 RNA-seq | Observes early on-treatment T-cell expansion and adaptive resistance. |
 
-> [!IMPORTANT] Key Takeaways & Strategic Future Roadmap
+> [!INSIGHT] Key Takeaways & Strategic Future Roadmap
 > - **Methodological Evolution**: Moving from marker averaging to CIBERSORTx SVR unmixing will eliminate arbitrary score scaling and cross-cell spillover.
 > - **Spatial Resolution**: Integrating spatial transcriptomics (10x Visium) resolves the spatial blindness of bulk RNA-seq, allowing precise detection of stroma-excluded tumours.
 > - **Multi-Omics Precision**: Processing raw WGS/SNP-arrays for direct arm-level CNA calls will eliminate reliance on indirect TMB proxies for chromosomal instability.

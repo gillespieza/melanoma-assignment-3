@@ -44,7 +44,7 @@ The initial baseline K-Means pipeline suffered from four primary failure modes, 
 | **Random Seed Instability** | Single-run centroid sensitivity. | 1,000-bootstrap Consensus Ensemble | Confirmed $K=4$ as Delta Area elbow ($\Delta(4) = 0.1499$). |
 | **Spatial Blindness** | Bulk RNA-seq could not separate desert from stroma exclusion. | Log2 spatial distance ratios (`CD8` vs `CAF`) | Proved stromal exclusion ($43.6\%$) dominates true deserts ($3.1\%$). |
 
-> [!IMPORTANT] Resolution Summary
+> [!INSIGHT] Resolution Summary
 > Resolving baseline weaknesses significantly improved biological realism. However, implementing probabilistic covariance matrices, bioinformatic spatial ratios, and Graph Laplacians introduces a distinct set of **new technical limitations** detailed below.
 
 ## 3. In-Depth Analysis of New Technical & Biological Limitations
@@ -121,5 +121,5 @@ To address these new technical limitations in future project iterations, we reco
 | **Phenotype Balance** | Equal spherical split | Data-driven asymmetric sizes | Small `Immune Cold` desert ($N=22, 3.1\%$) | Synthetic oversampling / class-weighted loss |
 | **Compute Scale** | Single-run fast fit | 1,000-bootstrap ensemble | $O(B \cdot K \cdot N^2)$ runtime for large $N$ | GPU-accelerated parallel co-occurrence matrix updates |
 
-> [!IMPORTANT] Final Technical Takeaway
+> [!INSIGHT] Final Technical Takeaway
 > The updated Phase 3 pipeline successfully resolved baseline spherical assumptions and spatial blindness. The newly identified limitations (covariance parameter inflation, bioinformatic spatial proxies, graph hyperparameter tuning, and asymmetric sub-cohort sizes) provide a clear, actionable roadmap for future high-throughput spatial transcriptomics iterations.

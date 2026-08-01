@@ -175,7 +175,7 @@ Evaluating genomic metrics (TMB, Aneuploidy Score) against continuous transcript
 
 ![Genomic Burden vs Immune Signature Correlation Heatmap](../../plots/biomarkers/extended_immune_correlations.png)
 
-> [!IMPORTANT] The Multimodal Pitch
+> [!INSIGHT] The Multimodal Pitch
 > **Genomic burden and immune signatures are orthogonal (independent)**. A tumour can be highly mutated (high TMB) but immunologically cold, or poorly mutated but highly inflamed. Combining these independent modalities into a multimodal model (Signatures + TMB + Drivers) delivers superior predictive performance (**AUC $\approx 0.72$**).
 
 ### 5.3. Inter-Signature Correlations & Multivariate Drivers

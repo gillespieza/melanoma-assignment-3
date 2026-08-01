@@ -289,9 +289,9 @@ Q5 internal dependency chain:
   deconvolution.py ← 01_load_and_prepare.py
 ```
 
-## Known Technical Debt
+### Known Technical Debt & Recent Resolution History
 
-| Area | Issue | Status |
+| Area | Description | Status |
 |------|-------|--------|
 | `src/styles.py` L53 & L178 | Duplicate `get_phenotype_color()` definitions (first is legacy, second added later) | Unresolved |
 | `q5/src/reporting.py` | Local `generate_obsidian_frontmatter()` duplicates `src/utils/formatting.py` version | **Resolved** (2026-08-01: deleted local copy; `reporting.py` now re-exports from `src.utils.formatting`; shared version extended with `extra_css_classes` param) |
@@ -301,8 +301,7 @@ Q5 internal dependency chain:
 | `q5/scripts/04_phenotype_characterisation.py` | Phase 4 now renders a dual-arm Kuznetsov 2-state ODE figure (Panel A: Immunotherapy, Panel B: Targeted Therapy) without IQR confidence shading. Per-patient r derived from Q3 pERK coupling; c from Q3 checkpoint f_kill and CYT. Targeted arm uses phenotype-level pheno_r_mult to achieve visual separation (NF1-loss=0.68×, M2-High=1.25×). All changes confined to `04_phenotype_characterisation.py`; q3-ode-model/ unchanged. | **Resolved** |
 | `q5/scripts/05_subgroup_models.py` | Unused `LogisticRegression` import; magic numbers inline; 183-line `train_and_eval_loco` monolith; `SimpleImputer`+`StandardScaler` duplicated 5×; `PHENOTYPE_SHORT_NAMES` key `"M2 Immunosuppressive"` mismatched `PHENOTYPE_PALETTE` (silent wrong colour); missing docstrings on helpers. | **Resolved** (Phase 5 refactored 2026-07-31) |
 | `q5/scripts/05_subgroup_models.py` & `06_clinical_utility.py` | Feature circularity (53% overlap with Phase 3 clustering features), GMM index instability, missing `TMB_NONSYNONYMOUS`. Resolved by excluding clustering features, establishing `PHENOTYPE_PROB_COL` in `q5_constants.py`, implementing soft GMM mixture weighting, and restoring `TMB_NONSYNONYMOUS` in clinical merge. | **Resolved** (2026-07-31) |
-| `q5/scripts/06_clinical_utility.py` | Phase 6 code smells: hardcoded `#37474F` hex, raw `.to_csv()`, unused stub file `src/clinical_utility.py`, duplicate `get_feature_columns`, nested markdown metric extraction closure, long functions. | **Resolved** (2026-08-01: deleted stub, imported `DARK_SLATE_CHARCOAL`, enforced `safe_save_csv`, decomposed functions) |
-| `q5/scripts/07_treatability_scoring.py` | Phase 7 code smells: unused `DATA_DIR` import, raw `#37474F` hex, raw `.to_csv()`, nested closures (`z_score`, `_band`, `_arm_conf`), long functions (`assign_treatment_arms`, `compute_recommendation_confidence`, `plot_treatability_distributions`, `generate_phase7_markdown`). | **Resolved** (2026-08-01: imported `DARK_SLATE_CHARCOAL`, enforced `safe_save_csv`, removed `DATA_DIR`, un-nested closures, decomposed functions) |
+| `q5/scripts/06_clinical_utility.py` & `07_treatability_scoring.py` | Legacy markdown generation functions (`generate_phase6_markdown` / `generate_phase7_markdown`) wrote loose duplicate files in `reports/`. Unified report generation entirely into `generate_q5_report.py`, removed legacy report writers from Phase 6 & 7 scripts, and added `generate_q5_report` as Step 08 in `run_q5_pipeline.py`. | **Resolved** (2026-08-01: clean single source of truth for Q5 reporting) |
 
 ## Conventions Quick Reference
 

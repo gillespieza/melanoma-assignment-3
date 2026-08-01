@@ -49,6 +49,7 @@ SCRIPTS = [
     ("05_subgroup_models", "05_subgroup_models"),
     ("06_clinical_utility", "06_clinical_utility"),
     ("07_treatability_scoring", "07_treatability_scoring"),
+    ("08_generate_q5_report", "generate_q5_report"),
 ]
 
 

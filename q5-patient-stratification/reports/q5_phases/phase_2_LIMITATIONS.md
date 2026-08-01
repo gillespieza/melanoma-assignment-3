@@ -92,7 +92,7 @@ To address these limitations in future iterations of Question 5, we propose five
 | **Driver Imbalance** | Unweighted interaction regression | Power-weighted regression & bootstrap resampling | Custom Resampling Pipelines | Equalises statistical power across `BRAF`, `NRAS`, and `NF1` subgroups. |
 | **Treatment History** | Pre-treatment biopsy snapshot | Prior therapy & washout annotation | Clinical Metadata Curation | Eliminates confounding from prior BRAF/MEK inhibitor exposure. |
 
-> [!IMPORTANT] Key Takeaways & Strategic Future Roadmap
+> [!INSIGHT] Key Takeaways & Strategic Future Roadmap
 > - **Continuous Modelling**: Moving from rigid Youden binary step-functions to continuous GAM splines preserves quantitative biological information.
 > - **Multi-Testing Rigour**: Implementing Benjamini-Hochberg FDR control ensures that only true biological interactions guide downstream clinical decision trees.
 > - **Spatial Structural Validation**: Combining bulk B-cell scores with spatial TLS image quantification resolves the functional state of humoral microenvironmental immunity.

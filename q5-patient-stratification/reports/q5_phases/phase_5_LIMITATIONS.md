@@ -124,5 +124,5 @@ To address these limitations when additional resources and datasets become avail
 | **Baseline Comparator** | Global Enriched Baseline (Q1 + deconvolution) | Does not isolate gain of cell deconvolution vs subgrouping | Implement 3-arm benchmark incorporating raw Q1 model |
 | **Statistical Testing** | Point-estimate ROC-AUC & PPV | No confidence intervals or p-values for AUC deltas | 1,000-bootstrap CIs and DeLong significance testing |
 
-> [!IMPORTANT] Final Technical Takeaway
+> [!INSIGHT] Final Technical Takeaway
 > The Phase 5 refactoring successfully eliminated code smells, modularised functions, and corrected visual palette lookups. While small sample sizes in *Immune Hot* ($N=6$) and *Immune Cold* ($N=16$) limit statistical power in the current dataset, formally documenting this limitation and establishing a dataset-expansion roadmap ensures scientific transparency and clear direction for future pipeline iterations.
