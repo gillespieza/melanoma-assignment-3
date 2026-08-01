@@ -110,7 +110,7 @@ PHASE5_COMP_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "subgroup_models" / "subgrou
 PHASE5_IMP_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "subgroup_models" / "subgroup_feature_importances.png"
 
 # Phase 6 Clinical Utility Paths
-DCA_NET_BENEFIT_FILE = PROCESSED_DIR / "q5" / "dca_net_benefit.csv"
+DCA_NET_BENEFIT_FILE = PROCESSED_DIR / "q5" / "dca_results.csv"
 CLINICAL_UTILITY_FILE = PROCESSED_DIR / "q5" / "clinical_utility_metrics.csv"
 PHASE6_DCA_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "clinical_utility" / "dca_curves.png"
 PHASE6_NNT_PLOT_PATH = SUBPROJECT_ROOT / "plots" / "clinical_utility" / "nnt_ppv_comparison.png"
@@ -1151,7 +1151,7 @@ def main() -> None:
         """Safely look up a DCA metric at a given threshold and strategy."""
         if df.empty:
             return float("nan")
-        sub = df[np.isclose(df["Threshold"], threshold, atol=0.01) & (df["Strategy"] == strategy)]
+        sub = df[(df["Threshold"].round(2) == round(threshold, 2)) & (df["Strategy"] == strategy)]
         return sub[col].values[0] if not sub.empty else float("nan")
 
     nb_q5_30 = _get_dca_val(df_dca, 0.30, "Phenotype-Stratified (Q5)", "Net_Benefit")
@@ -1201,11 +1201,11 @@ def main() -> None:
             f"> [!INFO] Understanding Number Needed to Treat (NNT) & Positive Predictive Value (PPV): Explanation & Takeaways\n"
             f"> - **What this plot is showing**: Side-by-side comparison of **Positive Predictive Value (PPV / Precision)** and **Number Needed to Treat (NNT)** across decision strategies at key clinical decision thresholds ($p_t = 0.30$ and $p_t = 0.50$). NNT is defined mathematically as $\\text{{NNT}} = \\frac{{1}}{{\\text{{PPV}}}}$, representing the average number of patients that must receive anti-PD-1 monotherapy to achieve one objective complete or partial clinical response.\n"
             f"> - **How to interpret the plot**:\n"
-            f">   1. **Positive Predictive Value (PPV, Left Panel)**: Higher bars are better. PPV indicates the proportion of treated patients who achieve objective response. Under empirical 'Treat All', PPV equals the baseline population response rate ($42.1\\%$). Model-guided strategies increase PPV by filtering out predicted non-responders.\n"
-            f">   2. **Number Needed to Treat (NNT, Right Panel)**: Lower bars are better. An unselected 'Treat All' strategy requires treating $2.38$ patients to achieve $1$ response. A lower NNT indicates greater therapeutic efficiency, minimising unhelpful drug exposure.\n"
+            f">   1. **Positive Predictive Value (PPV, Left Panel)**: Higher bars are better. PPV indicates the proportion of treated patients who achieve objective response. Under empirical 'Treat All', PPV equals the baseline population response rate ({resp_pct:.1f}\\%). Model-guided strategies increase PPV by filtering out predicted non-responders.\n"
+            f">   2. **Number Needed to Treat (NNT, Right Panel)**: Lower bars are better. An unselected 'Treat All' strategy requires treating {nnt_all_30:.2f} patients to achieve 1 response. A lower NNT indicates greater therapeutic efficiency, minimising unhelpful drug exposure.\n"
             f"> - **Key Takeaways**:\n"
             f">   - **Superior Clinical Efficiency**: At $p_t = 0.30$, the Q5 Phenotype-Stratified system reduces NNT to **{nnt_q5_30:.2f}** (vs **{nnt_all_30:.2f}** for Treat All), achieving a **{nnt_improvement:.1f}\\% improvement** in treatment efficiency.\n"
-            f">   - **Enhanced Precision**: The Q5 system increases PPV to **{ppv_q5_30*100:.1f}\\%** (vs **42.1\\%** for Treat All), ensuring a higher proportion of treated patients derive true clinical benefit.\n"
+            f">   - **Enhanced Precision**: The Q5 system increases PPV to **{ppv_q5_30*100:.1f}\\%** (vs **{resp_pct:.1f}\\%** for Treat All), ensuring a higher proportion of treated patients derive true clinical benefit.\n"
             f">   - **Clinical Decision Impact**: Higher decision thresholds ($p_t = 0.50$) further optimise precision and reduce NNT, allowing clinicians to tailor treatment aggressiveness to individual patient risk profiles.\n"
         )
 
@@ -1221,7 +1221,7 @@ def main() -> None:
             f">   3. **Subgroup Heterogeneity**: Demonstrates why a single global model or empirical 'Treat All' strategy fails in immunologically cold or immunosuppressive microenvironments.\n"
             f"> - **Why does the Global Predictor (Q1) appear higher than Q5 within subgroups?**\n"
             f">   The Q1 model was trained on the **full patient population without phenotype awareness**, so its predicted probabilities are calibrated to the average patient, not to the biology of each subgroup. When its predictions are sliced post-hoc by phenotype and Net Benefit is measured within that slice, Q1 can appear artificially elevated because it is not constrained by cluster-specific feature weights. Crucially, Q1 cannot distinguish between patients who fail immunotherapy for *different biological reasons* — it treats an *Immune Cold* patient identically to a *Mutant-Driven* patient who happens to share similar overall risk scores.\n"
-            f">   By contrast, the Q5 model **deliberately self-limits** within difficult subgroups: in *Immune Cold* patients, Q5 correctly predicts low response probability (Net Benefit = 0.089), reducing false positives and avoiding futile monotherapy — even if this lowers the within-cluster Net Benefit metric. This conservative behaviour is *clinically desirable*, not a weakness.\n"
+            f">   By contrast, the Q5 model **deliberately self-limits** within difficult subgroups: in *Immune Cold* patients, Q5 correctly predicts low response probability (low Net Benefit), reducing false positives and avoiding futile monotherapy — even if this lowers the within-cluster Net Benefit metric. This conservative behaviour is *clinically desirable*, not a weakness.\n"
             f">   The most informative comparison is on the **Decision Curve Analysis (DCA) plot** evaluated across the full pooled population, where the Q5 system's phenotype-stratified routing demonstrates its true value: routing patients to Arm A (Immunotherapy), Arm B (Targeted Therapy), or Arm C (Combination) based on resistance mechanism rather than assigning a single uniform treatment.\n"
             f"> - **Key Takeaways**:\n"
             f">   - **Q1 Superiority is a Calibration Artefact**: Higher Q1 Net Benefit within individual subgroups reflects cross-cluster contamination of predictions, not genuine superiority. Q1 cannot adapt its decision logic to phenotype-specific biology.\n"
