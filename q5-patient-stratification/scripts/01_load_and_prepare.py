@@ -82,6 +82,15 @@ STV_PATH = DATA_DIR / "config" / "m1_m2_stv.csv"
 # across RNA-seq cohorts in this study and does not meaningfully shift ratios.
 SPATIAL_LOG_PSEUDOCOUNT: float = 0.01
 
+# Columns carried in the feature matrix that are metadata / clinical labels,
+# not engineered biological features. Used to compute the correct feature count
+# in log output and to prevent accidental inclusion in downstream models.
+METADATA_COLS: list = [
+    "SAMPLE_ID", "PATIENT_ID", "COHORT",
+    "OS_MONTHS", "OS_STATUS", "RESPONSE", "RESPONSE_BINARY",
+    "AGE", "RACE", "SEX", "SPECIMEN_TYPE", "IMMUNOTHERAPY",
+]
+
 
 def load_processed_datasets(input_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Load and validate preprocessed multi-modal clinical, transcriptomic, and genomic datasets.
@@ -326,12 +335,17 @@ def _print_completion_summary(
         df_full: Full feature matrix DataFrame.
         plot_file_ici: Path to output violin plot image.
     """
+    # Compute the count of engineered features (exclude metadata / clinical columns).
+    n_feat_ici  = sum(1 for c in df_ici.columns  if c not in METADATA_COLS)
+    n_feat_full = sum(1 for c in df_full.columns if c not in METADATA_COLS)
     print("=" * 80)
     print("FEATURE MATRIX PREPARATION & PLOTTING COMPLETE")
     print(f"ICI-only matrix  (Phases 2/5/6): {rel_path(out_ici)}  "
-          f"[{len(df_ici)} patients, {df_ici.shape[1]} features]")
+          f"[{len(df_ici)} patients, {n_feat_ici} engineered features + "
+          f"{len(df_ici.columns) - n_feat_ici} metadata cols]")
     print(f"Full matrix      (Phases 3/4/7): {rel_path(out_full)} "
-          f"[{len(df_full)} patients, {df_full.shape[1]} features]")
+          f"[{len(df_full)} patients, {n_feat_full} engineered features + "
+          f"{len(df_full.columns) - n_feat_full} metadata cols]")
     print(f"Violin plot (ICI cohort)        : {rel_path(plot_file_ici)}")
     print("=" * 80)
 

@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-01 (Regression & code smell audit: verified zero regressions across all 7 phases and benchmark scripts 08-09; enforced Okabe-Ito and `DARK_SLATE_CHARCOAL` palette imports across all modules; 100% compliant with `AGENTS.md` guidelines)
+> **Last updated**: 2026-08-01 (Feature inventory reconciliation: confirmed 33-feature panel — 19 transcriptomic (6 Core Immune Signatures incl. `IMPRES` + 4 Macrophage STV + 7 Cell Deconvolution + 2 Spatial Proxies) + 14 genomic/neoantigen/instability features. `IMPRES` retained in feature matrix and Phase 5/6 predictive models; reclassified from "excluded" to "scope-limited". `METADATA_COLS` constant added to `01_load_and_prepare.py` to distinguish metadata from features in log output.)
 
 ## Repository Overview
 
@@ -227,7 +227,7 @@ All four modules operate on **per-patient inputs only** — kinetic rate constan
 
 | Phase | Script | Purpose |
 |-------|--------|---------|
-| 1 | `01_load_and_prepare.py` | Load merged data, compute signatures (TIS, CYT, IMPRES), M1/M2 STV deconvolution, cell-type estimates |
+| 1 | `01_load_and_prepare.py` | Load merged data, compute signatures (TIS, CYT, IFN-γ, CD8_Tcell, IMPRES), M1/M2 STV deconvolution, cell-type estimates, and spatial proxy indicators across 33 multi-modal features (19 transcriptomic + 14 genomic) |
 | 2 | `02_feature_analysis.py` | Mann-Whitney U, Fisher's exact, Youden cutoffs, interaction terms, feature credibility |
 | 3 | `03_cluster_patients.py` | Gaussian Mixture Model (GMM, K=4, full covariance) soft clustering, posterior probability export, PCA/t-SNE projections, model persistence |
 | 4 | `04_phenotype_characterisation.py` | Cluster profiling, phenotype labelling, KM survival. Dual-arm Q3-parameterised Kuznetsov 2-state ODE trajectories: Panel A = Immunotherapy (Anti-PD-1 monotherapy + M2 CAF-rescue combination), Panel B = Targeted Therapy (Vemurafenib BRAFi 500 nM). Per-patient r derived from Q3 pERK/pERK_ref coupling (Module A→B); per-patient c from Q3 checkpoint f_kill (Module D) and CYT. Phenotype-level pheno_r_mult applied in targeted arm to separate NF1-loss (0.68×), M2-High (1.25×), and NRAS-paradox (1.00×) cohorts. |

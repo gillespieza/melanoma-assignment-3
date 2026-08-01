@@ -7,12 +7,12 @@ tags:
   - patient-stratification
   - phase-1
   - q5
-created: 2026-08-01 11:18
+created: 2026-08-01 11:40
 cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-01 11:18
+updated: 2026-08-01 11:40
 ---
 
 ## 1. Phase 1: Multi-Modal Feature Matrix & Microenvironment Deconvolution
@@ -34,9 +34,16 @@ Phase 1 establishes the foundational dataflow architecture by integrating harmon
 
 ### Biological Feature Engineering & Microenvironment Deconvolution
 Rather than evaluating ~19,757 genes independently, Phase 1 projects patient expression profiles onto curated biological axes:
-- **Core Immune Signatures**: Tumour Inflammation Signature (`TIS`), Cytolytic Index (`CYT`, mean of `PRF1` and `GZMA`), Interferon-gamma (`IFN_gamma`), and `CD274` (`PD-L1`) expression.
+- **Core Immune Signatures**: Tumour Inflammation Signature (`TIS`), Cytolytic Index (`CYT`, mean of `PRF1` and `GZMA`), Interferon-gamma (`IFN_gamma`), `CD8_Tcell` ($CD8A/B$ gene average), `CD274` (`PD-L1`) expression, and the Immune Predictive Score (`IMPRES`).
 - **Macrophage STV (`M1_M2_Ratio`)**: Computed using a linear Signature Transcript Vector ($W_g$, 14,835 genes) to quantify the microenvironmental balance between pro-inflammatory M1 macrophages ($W_g > 0$) and pro-tumour M2 macrophages ($W_g < 0$).
-- **Transcriptomic Cell Deconvolution**: Marker-based signature scores estimating the relative infiltration abundance of CD8+ T cells (`CD8_Tcell`), CD4+ T cells, NK cells, B cells, M1 Macrophages, M2 Macrophages, and Cancer-Associated Fibroblasts (`CAFs`).
+- **Transcriptomic Cell Deconvolution**: Marker-based signature scores estimating the relative infiltration abundance of CD8+ T cells (`CD8_T_cells`), CD4+ T cells (`CD4_T_cells`), NK cells (`NK_cells`), B cells (`B_cells`), M1 Macrophages (`M1_Macrophages`), M2 Macrophages (`M2_Macrophages`), and Cancer-Associated Fibroblasts (`CAFs`).
+- **Engineered Spatial Microenvironment Indicators**: Spatial proxy ratios quantifying cytotoxic T-cell penetration versus stromal exclusion: `Spatial_CD8_CAF_Distance_Ratio` ($\log_2(\text{CD8} / \text{CAF})$) and `Spatial_Tumour_Infiltration_Index` ($\log_2(\text{CD8} \times \text{M1\_M2\_Ratio} / \text{CAF})$).
+
+> [!NOTE] Methodological Scope Note: IMPRES in the Q5 Feature Panel
+> The Immune Predictive Score (`IMPRES`, *Auslander et al., 2018*) evaluates 15 pairwise boolean comparisons between co-stimulatory and co-inhibitory immune checkpoint genes.
+> - **Scope**: `IMPRES` is **retained** in the 33-feature panel and used as a candidate predictor in **Phase 5** (Subgroup Predictive Modelling) and **Phase 6** (Clinical Utility Analysis). It is **not** part of the TME deconvolution core (Macrophage STV, cell-type fractions, or spatial proxy indicators) because it encodes a discrete checkpoint pairwise logic rather than a continuous microenvironment abundance estimate.
+> - **Known Limitation**: Key co-stimulatory partners (`CD28`, `CD86`, `CD80`, `CD40`, `CD200`, `TNFRSF4`, `VSIR`) are absent or unmapped in a subset of merged multi-study expression matrices. Where co-stimulatory genes are missing, `IMPRES` is computed over a reduced pair set — producing a score that may underestimate true checkpoint activity for those samples.
+> - **Collinearity**: `IMPRES` exhibits moderate collinearity with continuous T-cell signatures (`TIS`, `CYT`, $r_s > 0.75$). Phase 5 regularisation (Random Forest, LOCO CV) mitigates this.
 
 ### Baseline Biomarker Feature Distributions
 
@@ -44,18 +51,18 @@ Rather than evaluating ~19,757 genes independently, Phase 1 projects patient exp
 
 > [!INSIGHT] Key Takeaways
 > - **Dual-Matrix Dataflow**: Established a dual dataflow pipeline isolating response-labeled ICI trials ($N_{\text{ICI}} = 326$) for predictive modelling while embedding the full cohort ($N_{\text{Full}} = 699$) for unsupervised manifold learning.
-> - **Dimensionality Reduction**: Compressed ~19,757 transcriptomic features into 23 engineered biological signatures (part of a 32-feature multi-modal panel, centered on 9 core baseline biomarkers).
+> - **Dimensionality Reduction**: Compressed ~19,757 transcriptomic features into 19 engineered biological signatures (part of a 33-feature multi-modal panel, centered on 9 core baseline biomarkers).
 > - **M1/M2 Polarisation**: The Macrophage STV score captures stromal microenvironmental suppression that operates independently of total T-cell density.
 
 > [!INFO]+ Phase 1 Feature Matrix Architecture & Complete Feature Inventory
-> - **Transcriptomic Features (17)**:
+> - **Transcriptomic Features (19)**:
 >   - **Core Immune Signatures (6)**: 
 >      1. `TIS` (Tumour Inflammation Signature)
 >      2. `CYT` (Cytolytic Index)
 >      3. `IFN_gamma` (Interferon-gamma signalling)
->      4. `CD8_Tcell` ($CD8A/B$)
->      5. `IMPRES`
->      6. `PD_L1` (`CD274`).
+>      4. `CD8_Tcell` ($CD8A/B$ gene average)
+>      5. `PD_L1` (`CD274`).
+>      6. `IMPRES` (Immune Predictive Score — retained for Phase 5/6 predictive modelling).
 >   - **Macrophage STV Metrics (4)**: 
 >      1. `M1_score`
 >      2. `M2_score`
@@ -69,18 +76,26 @@ Rather than evaluating ~19,757 genes independently, Phase 1 projects patient exp
 >      5. `M1_Macrophages`
 >      6. `M2_Macrophages`
 >      7. `CAFs` (Cancer-Associated Fibroblasts).
-> - **9 Genomic, TMB & Neoantigen Features**:
+>   - **Spatial Microenvironment Indicators (2)**: 
+>      1. `Spatial_CD8_CAF_Distance_Ratio` (log2 CD8 / CAF proxy ratio)
+>      2. `Spatial_Tumour_Infiltration_Index` (log2 CD8 x M1_M2_Ratio / CAF index).
+> - **14 Genomic, TMB, Neoantigen & Genomic Instability Features**:
 >   - **Driver Mutations (3)**: 
 >      1. `mut_BRAF`
 >      2. `mut_NRAS`
 >      3. `mut_NF1` (binary oncogenic driver status).
->   - **TMB & Neoantigen Burden (6)**: 
+>   - **TMB, Neoantigen Burden & Genomic Instability (11)**: 
 >      1. `TMB_NONSYNONYMOUS`
 >      2. `SNV_NEOANTIGEN`
 >      3. `INDEL_NEOANTIGEN`
 >      4. `FUSION_NEOANTIGEN`
 >      5. `SPLICE_NEOANTIGEN`
->      6. `CTA_SELF_NEOANTIGEN`.
+>      6. `CTA_SELF_NEOANTIGEN`
+>      7. `VIRUS_NEOANTIGEN`
+>      8. `ERV_NEOANTIGEN`
+>      9. `ANEUPLOIDY_SCORE`
+>      10. `MSI_SCORE_MANTIS`
+>      11. `MSI_SENSOR_SCORE`.
 > - **9 Core Baseline Biomarkers (Primary Subset)**: 
 >      1. `TIS`
 >      2. `CYT`

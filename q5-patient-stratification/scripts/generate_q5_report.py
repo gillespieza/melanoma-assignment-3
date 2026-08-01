@@ -8,6 +8,38 @@ plot images over raw tables, and exports the report to reports/q5_patient_strati
 Rule Enforcement: ALL reported numbers (sample sizes N, percentages, response rates, medians, IQRs,
 feature counts, gene counts, p-values, AUCs, Youden cutoffs) are computed on the fly from live data objects and never hardcoded.
 Executive Summary is un-numbered so section numbers stay perfectly synced with Phase numbers (Phases 1-7).
+
+---------------------------------------------------------------------------
+GROUND-TRUTH-FIRST VERIFICATION CHECKLIST (AGENTS.md Rule 16)
+---------------------------------------------------------------------------
+Before editing any section of this script that generates claims about features,
+methods, or values the pipeline produces, complete these checks in order:
+
+  1. READ THE OUTPUT CSV — not the code.
+     Inspect data/processed/q5/feature_matrix.csv directly:
+       df = pd.read_csv("data/processed/q5/feature_matrix.csv")
+       print(df.columns.tolist(), df.shape)
+     Code comments and prior docs reflect intent, not reality.
+
+  2. SEPARATE METADATA FROM FEATURES.
+     Never use df.shape[1] as the feature count. Subtract METADATA_COLS
+     (defined in 01_load_and_prepare.py) to get the engineered feature count.
+     The matrix currently has 33 engineered features + 12 metadata cols = 45 total.
+
+  3. VERIFY CLAIMED EXCLUSIONS AGAINST THE FILE.
+     If this script says a feature was "dropped" or "excluded", confirm it is
+     ABSENT from the CSV column list. If it is present in the CSV — even if
+     intent was to drop it — document it as retained and scope-limited, not excluded.
+     Example: IMPRES was documented as excluded but was present in column 16.
+
+  4. CROSS-CHECK COUNTS AGAINST RUNTIME LOGS.
+     If logs/q5_pipeline.log disagrees with the CSV column count, the CSV wins.
+     Investigate the log discrepancy; do not propagate the log's wrong count.
+
+  5. USE DYNAMIC VALUES.
+     All counts and N values in report text must be computed from live DataFrames
+     (n_bio_features, n_tx_features, n_patients, etc.) — never hardcoded literals.
+---------------------------------------------------------------------------
 """
 
 import contextlib
@@ -125,17 +157,19 @@ def main() -> None:
         "RESPONSE", "DATASET", "COHORT", "IMMUNOTHERAPY", "AGE", "RACE", "SEX", "SPECIMEN_TYPE"
     ]
     genomic_cols = [
-        "TMB_NONSYNONYMOUS", "mut_BRAF", "mut_NRAS", "mut_NF1",
-        "SNV_NEOANTIGEN", "INDEL_NEOANTIGEN", "FUSION_NEOANTIGEN", "SPLICE_NEOANTIGEN", "CTA_SELF_NEOANTIGEN"
+        "mut_BRAF", "mut_NRAS", "mut_NF1",
+        "TMB_NONSYNONYMOUS", "SNV_NEOANTIGEN", "INDEL_NEOANTIGEN", "FUSION_NEOANTIGEN",
+        "SPLICE_NEOANTIGEN", "CTA_SELF_NEOANTIGEN", "VIRUS_NEOANTIGEN", "ERV_NEOANTIGEN",
+        "ANEUPLOIDY_SCORE", "MSI_SCORE_MANTIS", "MSI_SENSOR_SCORE"
     ]
     if not df_feat.empty:
         all_feature_cols = [c for c in df_feat.columns if c not in metadata_cols]
         tx_feature_cols = [c for c in all_feature_cols if c not in genomic_cols]
-        n_bio_features = len(all_feature_cols)  # 26 multi-modal features
-        n_tx_features = len(tx_feature_cols)    # 17 transcriptomic features
+        n_bio_features = len(all_feature_cols)  # 32 multi-modal features
+        n_tx_features = len(tx_feature_cols)    # 18 transcriptomic features
     else:
-        n_bio_features = 26
-        n_tx_features = 17
+        n_bio_features = 33
+        n_tx_features = 19
     n_core_biomarkers = 9  # Core baseline panel (TIS, CYT, PD-L1, STV, CD8, CD4, NK, B, CAF)
 
     if EXPR_FILE.exists():
@@ -201,7 +235,7 @@ def main() -> None:
     if STV_FILE.exists():
         n_stv_genes = len(pd.read_csv(STV_FILE))
     else:
-        n_stv_genes = 14837
+        n_stv_genes = 14835
 
     if not df_feat_full.empty and "COHORT" in df_feat_full.columns:
         n_cohorts_full = df_feat_full["COHORT"].nunique()
@@ -211,7 +245,7 @@ def main() -> None:
     if not df_feat.empty and "COHORT" in df_feat.columns:
         n_cohorts_ici = df_feat["COHORT"].nunique()
     else:
-        n_cohorts_ici = 3
+        n_cohorts_ici = 4
 
     doc_sections.append(
         f"Phase 1 establishes the foundational dataflow architecture by integrating harmonised multi-modal data across {n_cohorts_full} melanoma studies (*Liu 2019*, *Riaz 2017*, *Hugo 2016*, and *TCGA-SKCM*). "
@@ -225,9 +259,15 @@ def main() -> None:
         f"   - **Downstream Routing**: Powers response-agnostic biological discovery and decision support: **Phase 3** (Unsupervised Patient Stratification & Manifold Projections), **Phase 4** (Phenotype Characterisation & Dynamic Trajectories), and **Phase 7** (3-Arm Decision Support & Treatability Index Scoring).\n\n"
         f"### Biological Feature Engineering & Microenvironment Deconvolution\n"
         f"Rather than evaluating ~{n_genes:,} genes independently, Phase 1 projects patient expression profiles onto curated biological axes:\n"
-        f"- **Core Immune Signatures**: Tumour Inflammation Signature (`TIS`), Cytolytic Index (`CYT`, mean of `PRF1` and `GZMA`), Interferon-gamma (`IFN_gamma`), and `CD274` (`PD-L1`) expression.\n"
+        f"- **Core Immune Signatures**: Tumour Inflammation Signature (`TIS`), Cytolytic Index (`CYT`, mean of `PRF1` and `GZMA`), Interferon-gamma (`IFN_gamma`), `CD8_Tcell` ($CD8A/B$ gene average), `CD274` (`PD-L1`) expression, and the Immune Predictive Score (`IMPRES`).\n"
         f"- **Macrophage STV (`M1_M2_Ratio`)**: Computed using a linear Signature Transcript Vector ($W_g$, {n_stv_genes:,} genes) to quantify the microenvironmental balance between pro-inflammatory M1 macrophages ($W_g > 0$) and pro-tumour M2 macrophages ($W_g < 0$).\n"
-        f"- **Transcriptomic Cell Deconvolution**: Marker-based signature scores estimating the relative infiltration abundance of CD8+ T cells (`CD8_Tcell`), CD4+ T cells, NK cells, B cells, M1 Macrophages, M2 Macrophages, and Cancer-Associated Fibroblasts (`CAFs`).\n"
+        f"- **Transcriptomic Cell Deconvolution**: Marker-based signature scores estimating the relative infiltration abundance of CD8+ T cells (`CD8_T_cells`), CD4+ T cells (`CD4_T_cells`), NK cells (`NK_cells`), B cells (`B_cells`), M1 Macrophages (`M1_Macrophages`), M2 Macrophages (`M2_Macrophages`), and Cancer-Associated Fibroblasts (`CAFs`).\n"
+        f"- **Engineered Spatial Microenvironment Indicators**: Spatial proxy ratios quantifying cytotoxic T-cell penetration versus stromal exclusion: `Spatial_CD8_CAF_Distance_Ratio` ($\\log_2(\\text{{CD8}} / \\text{{CAF}})$) and `Spatial_Tumour_Infiltration_Index` ($\\log_2(\\text{{CD8}} \\times \\text{{M1\\_M2\\_Ratio}} / \\text{{CAF}})$).\n\n"
+        f"> [!NOTE] Methodological Scope Note: IMPRES in the Q5 Feature Panel\n"
+        f"> The Immune Predictive Score (`IMPRES`, *Auslander et al., 2018*) evaluates 15 pairwise boolean comparisons between co-stimulatory and co-inhibitory immune checkpoint genes.\n"
+        f"> - **Scope**: `IMPRES` is **retained** in the 33-feature panel and used as a candidate predictor in **Phase 5** (Subgroup Predictive Modelling) and **Phase 6** (Clinical Utility Analysis). It is **not** part of the TME deconvolution core (Macrophage STV, cell-type fractions, or spatial proxy indicators) because it encodes a discrete checkpoint pairwise logic rather than a continuous microenvironment abundance estimate.\n"
+        f"> - **Known Limitation**: Key co-stimulatory partners (`CD28`, `CD86`, `CD80`, `CD40`, `CD200`, `TNFRSF4`, `VSIR`) are absent or unmapped in a subset of merged multi-study expression matrices. Where co-stimulatory genes are missing, `IMPRES` is computed over a reduced pair set — producing a score that may underestimate true checkpoint activity for those samples.\n"
+        f"> - **Collinearity**: `IMPRES` exhibits moderate collinearity with continuous T-cell signatures (`TIS`, `CYT`, $r_s > 0.75$). Phase 5 regularisation (Random Forest, LOCO CV) mitigates this.\n"
     )
 
     if PHASE1_VIOLIN_PATH.exists():
@@ -244,14 +284,14 @@ def main() -> None:
 
     doc_sections.append(
         "> [!INFO]+ Phase 1 Feature Matrix Architecture & Complete Feature Inventory\n"
-        f"> - **Transcriptomic Features (17)**:\n"
+        f"> - **Transcriptomic Features ({n_tx_features})**:\n"
         ">   - **Core Immune Signatures (6)**: \n"
         ">      1. `TIS` (Tumour Inflammation Signature)\n"
         ">      2. `CYT` (Cytolytic Index)\n"
         ">      3. `IFN_gamma` (Interferon-gamma signalling)\n"
-        ">      4. `CD8_Tcell` ($CD8A/B$)\n"
-        ">      5. `IMPRES`\n"
-        ">      6. `PD_L1` (`CD274`).\n"
+        ">      4. `CD8_Tcell` ($CD8A/B$ gene average)\n"
+        ">      5. `PD_L1` (`CD274`).\n"
+        ">      6. `IMPRES` (Immune Predictive Score — retained for Phase 5/6 predictive modelling).\n"
         ">   - **Macrophage STV Metrics (4)**: \n"
         ">      1. `M1_score`\n"
         ">      2. `M2_score`\n"
@@ -265,18 +305,26 @@ def main() -> None:
         ">      5. `M1_Macrophages`\n"
         ">      6. `M2_Macrophages`\n"
         ">      7. `CAFs` (Cancer-Associated Fibroblasts).\n"
-        "> - **9 Genomic, TMB & Neoantigen Features**:\n"
+        ">   - **Spatial Microenvironment Indicators (2)**: \n"
+        ">      1. `Spatial_CD8_CAF_Distance_Ratio` (log2 CD8 / CAF proxy ratio)\n"
+        ">      2. `Spatial_Tumour_Infiltration_Index` (log2 CD8 x M1_M2_Ratio / CAF index).\n"
+        "> - **14 Genomic, TMB, Neoantigen & Genomic Instability Features**:\n"
         ">   - **Driver Mutations (3)**: \n"
         ">      1. `mut_BRAF`\n"
         ">      2. `mut_NRAS`\n"
         ">      3. `mut_NF1` (binary oncogenic driver status).\n"
-        ">   - **TMB & Neoantigen Burden (6)**: \n"
+        ">   - **TMB, Neoantigen Burden & Genomic Instability (11)**: \n"
         ">      1. `TMB_NONSYNONYMOUS`\n"
         ">      2. `SNV_NEOANTIGEN`\n"
         ">      3. `INDEL_NEOANTIGEN`\n"
         ">      4. `FUSION_NEOANTIGEN`\n"
         ">      5. `SPLICE_NEOANTIGEN`\n"
-        ">      6. `CTA_SELF_NEOANTIGEN`.\n"
+        ">      6. `CTA_SELF_NEOANTIGEN`\n"
+        ">      7. `VIRUS_NEOANTIGEN`\n"
+        ">      8. `ERV_NEOANTIGEN`\n"
+        ">      9. `ANEUPLOIDY_SCORE`\n"
+        ">      10. `MSI_SCORE_MANTIS`\n"
+        ">      11. `MSI_SENSOR_SCORE`.\n"
         "> - **9 Core Baseline Biomarkers (Primary Subset)**: \n"
         ">      1. `TIS`\n"
         ">      2. `CYT`\n"

@@ -149,4 +149,33 @@ When fixing code smells or refactoring code in this repository, follow these gui
       2. **Why we are doing it**
       3. **What question it answers**
     - **Include Key Takeaways & Key Insights**: Contain a **Key Takeaways** or **Key Insights** subsection summarizing the core scientific/clinical insights. All Key Takeaways / Key Insights sections MUST be placed in `> [!INSIGHT]` callout boxes (never `> [!IMPORTANT]`).
+16. **Ground-Truth-First Report Verification Protocol**: Before writing or updating any claim in a phase report about what features, methods, or values the pipeline *uses* or *produces*, you MUST verify against live output files — not code, comments, or prior documentation. Violating this rule is what causes "excluded feature" claims to contradict the actual CSV, and count mismatches between reports and runtime logs.
+
+    **Step 1 — Read the output file, not the code.**
+    For any claim about features, columns, or sample sizes, inspect the actual output CSV directly:
+    ```python
+    import pandas as pd
+    df = pd.read_csv("data/processed/q5/feature_matrix.csv")
+    print(df.columns.tolist(), df.shape)
+    ```
+    Do NOT derive counts from code comments, docstrings, variable names, or prior documentation — these reflect *intent*, not *reality*.
+
+    **Step 2 — Separate metadata from engineered features.**
+    Never report `df.shape[1]` as a "feature count". Identify metadata / clinical label columns (e.g. `SAMPLE_ID`, `PATIENT_ID`, `COHORT`, outcome labels) and subtract them explicitly. Use a named constant (e.g. `METADATA_COLS`) — never a bare magic number.
+
+    **Step 3 — Verify claimed exclusions against the file.**
+    If the report will state a feature was "dropped", "excluded", or "removed":
+    - Confirm it is **absent** from the output CSV column list.
+    - If it **is present** in the CSV: it is *retained*, regardless of intent in the code or comments.
+    - If it **is referenced** in any downstream script's feature list: document it as retained and scope-limited, not excluded. The file is the source of truth; code comments are aspirational.
+
+    **Step 4 — Cross-check counts against runtime logs.**
+    If a pipeline log exists (e.g. `logs/q5_pipeline.log`), compare its logged column/feature counts against your Step 1 direct CSV inspection. If they disagree, the CSV inspection wins — investigate the log discrepancy rather than trusting the log blindly.
+
+    **Step 5 — Use dynamic values in all report text.**
+    Every number in a markdown report (N, feature count, response rate, cluster size) MUST be computed from the live data object at report-generation time. If the report generator contains a hardcoded count (e.g. `n = 32`), replace it with a live computation (e.g. `len([c for c in df.columns if c not in METADATA_COLS])`).
+
+    **The specific failure mode this rule prevents:**
+    > ✗ *"IMPRES was excluded from the panel"* — written after reading code intent, without checking whether `IMPRES` is a column in `feature_matrix.csv`.
+    > ✓ *"`IMPRES` appears in column 16 of `feature_matrix.csv`; it is retained in the 33-feature panel. Its scope is limited to Phase 5/6 predictive models rather than the TME deconvolution core."*
 

@@ -1,7 +1,7 @@
 ---
-title: "Phase 1: Methodological Limitations, Biological Criticisms & Future Iterations"
+title: "Phase 1: Statistical Weaknesses, Biological Assumptions & Computational Constraints"
 aliases:
-  - Phase 1 Criticisms & Future Roadmap
+  - Phase 1 Limitations Audit
   - Q5 Phase 1 Limitations
 tags:
   - future-work
@@ -10,86 +10,191 @@ tags:
   - patient-stratification
   - phase-1
   - q5
-created: 2026-07-31 11:18
+created: 2026-08-01 11:30
 cssclasses:
   - row-alt
   - table-center
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-07-31 11:19
+updated: 2026-08-01 11:30
 ---
 
-# Phase 1: Methodological Limitations, Biological Criticisms & Future Iterations 🔍
+# Phase 1: Statistical Weaknesses, Biological Assumptions & Computational Constraints 🔍
 
-An analytical audit of **Phase 1** in the Question 5 Patient Stratification pipeline, detailing methodological constraints, biological criticisms, and actionable technical solutions for future iterations.
+A rigorous analytical audit of **Phase 1** in the Question 5 Patient Stratification pipeline. This document evaluates the current state of Phase 1's statistical methodology, biological assumptions, and data constraints. All metrics are sourced directly from `PROJECT_MAP.md`, the `phase_1.md` report, and the `q5_pipeline.log` runtime output.
 
-## 1. Executive Summary & Audit Rationale
-While Phase 1 successfully compresses ~19,757 raw transcriptomic features into an interpretable 26-feature multi-modal panel, several implicit assumptions constrain diagnostic sensitivity and spatial accuracy.
+> [!NOTE] Audit Scope & Rationale
+> - **What is being evaluated**: The statistical rigour, biological validity, and computational constraints of Phase 1's multi-modal feature engineering pipeline as it currently operates.
+> - **Why this matters**: Phase 1 outputs (`feature_matrix.csv`, $N_{\text{ICI}} = 326$; `feature_matrix_full.csv`, $N_{\text{Full}} = 699$) propagate directly into all seven downstream phases. Any systematic bias, unmeasured variance, or violated assumption introduced here compounds across the entire Q5 analytical stack.
+> - **What question it answers**: Where does Phase 1's methodology introduce statistical noise, biological misrepresentation, or data gaps that could distort downstream clustering, predictive modelling, and clinical utility analysis?
 
-## 2. In-Depth Analysis of Limitations & Criticisms
+---
 
-### 1. Methodological Limitation: Marker Averaging vs. Constrained Linear Unmixing
-- **Current Approach**: Transcriptomic cell deconvolution (`compute_cell_deconvolution`) computes relative infiltration scores by taking the sample-wise mean log-expression across 3–5 marker genes per cell type.
-- **Scientific Criticism**: It does not solve a formal constrained linear unmixing or support vector regression problem (such as CIBERSORTx or EPIC: $Y = X \cdot B$, subject to $\sum B = 1, B \ge 0$). Marker averaging produces **unbounded, arbitrary score units** rather than true, non-negative cell-type percentage proportions ($0–100\%$).
-- **Biological Impact**: Marker genes such as `TNF` or `TGFB1` are expressed across multiple cell types (e.g. tumour cells, endothelial cells, or activated lymphocytes), inducing cross-cell-type expression spillover and potential correlation artifacts.
+## 1. Feature Inventory: Runtime vs. Documentation — Resolved
 
-### 2. Biological Limitation: Spatial Blindness of Bulk RNA-Seq
-- **Current Approach**: Bulk RNA-seq homogenises the entire tumour biopsy core into a single average expression profile prior to sequencing.
-- **Scientific Criticism**: Bulk transcriptomics cannot distinguish between an **Immune-Excluded** tumour (where CD8+ T cells and `CAFs` are both abundant, but T cells are physically trapped in the stroma surrounding the tumour margin) vs. an **Immune-Infiltrated (Hot)** tumour (where T cells physically infiltrate the malignant cell nest).
-- **Clinical Impact**: Two patients with identical bulk `CD8_T_cells` and `CAFs` scores may experience completely opposite clinical outcomes due to spatial microenvironmental architecture that bulk sequencing inherently erases.
+> [!NOTE] Audit Finding: Resolved — 33 Engineered Features Confirmed
+> During audit, the `q5_pipeline.log` recorded `Total Features: 40` whilst documentation described a **32-feature panel**. Investigation revealed the log was reporting `df.shape[1]` on the full DataFrame, including 12 non-feature metadata and clinical columns (`SAMPLE_ID`, `PATIENT_ID`, `COHORT`, `OS_MONTHS`, `OS_STATUS`, `RESPONSE`, `RESPONSE_BINARY`, `AGE`, `RACE`, `SEX`, `SPECIMEN_TYPE`, `IMMUNOTHERAPY`). Inspection of `feature_matrix.csv` confirmed the true engineered feature count is **33**, not 32 — the undocumented 33rd feature was `IMPRES` (Immune Predictive Score), which was being computed by the Q1 signature fallback path and retained in the matrix.
 
-### 3. Technical Limitation: Absence of Direct Copy Number Alteration (CNA) Maps
-- **Current Approach**: Trial cohorts (_Liu 2019_, _Riaz 2017_, _Hugo 2016_) lack processed GISTIC arm-level Copy Number Alteration (CNA) files.
-- **Scientific Criticism**: Chromosomal instability (high aneuploidy burden) is a major driver of immune exclusion and anti-PD-1 (`CD274`) resistance. Phase 1 relies on Whole Exome Sequencing (WES) mutational burden (`TMB_NONSYNONYMOUS`) and single-gene transcript levels (`PTEN`, `CDKN2A`) as indirect proxies.
-- **Data Impact**: Tumour Mutational Burden (TMB) and CNA burden can be decoupled (e.g. high-CNA, low-TMB tumours exist), leaving a potential blind spot for chromosomal structural variation.
+The discrepancy had three components:
 
-### 4. Biological Oversimplification: 1D Macrophage Polarisation Axis
-- **Current Approach**: The Macrophage STV score collapses macrophage biology into a 1D scalar balance (`M1_M2_Ratio`).
-- **Scientific Criticism**: In human tumours, Tumour-Associated Macrophages (TAMs) exist along a continuous, multi-dimensional functional spectrum (e.g. M2a, M2b, M2c, tissue-resident, lipid-laden) rather than a strict binary M1 (antitumour) vs. M2 (pro-tumour) axis.
+- **Stale log count**: `_print_completion_summary()` in `01_load_and_prepare.py` used `df.shape[1]` (44 total columns) rather than the count of engineered feature columns. Fixed by adding a `METADATA_COLS` module-level constant and computing the feature count as `shape[1] - len(METADATA_COLS)`. The log now correctly reports `33 engineered features + 12 metadata cols`.
+- **Undocumented `IMPRES` column**: The Immune Predictive Score was computed by the Q1 signature fallback path and present in the output CSV, but omitted from the Phase 1 feature inventory. Resolution: `IMPRES` is **retained** in the 33-feature panel and used as a candidate predictor in Phase 5 (Subgroup Predictive Modelling) and Phase 6 (Clinical Utility Analysis). It is **not** part of the TME deconvolution core. The documentation has been updated accordingly.
+- **No target leakage**: `RESPONSE_BINARY` is stored as a metadata column alongside the features for downstream supervised use. It is not an engineered feature and is excluded from the Phase 3 unsupervised clustering feature set by `prepare_clustering_features()`.
 
-### 5. Sampling Limitation: Static Pre-Treatment Snapshots
-- **Current Approach**: Phase 1 feature matrices are constructed exclusively from baseline, pre-treatment biopsies.
-- **Scientific Criticism**: Tumour microenvironments are dynamic and evolve rapidly under therapeutic pressure (e.g. on-treatment T-cell recruitment, acquired resistance mutations, and adaptive `CD274` / PD-L1 upregulation). A static pre-treatment snapshot cannot capture early on-treatment immune dynamics occurring 2–4 weeks post-infusion.
+**Current status**: Resolved. The feature matrix contains **33 engineered features + 12 metadata columns = 45 total columns**. Documentation and log output are now consistent.
 
-> [!WARNING] Summary of Impact on Downstream Phases  
-> Unbounded deconvolution scores and spatial blindness can propagate unmeasured variance into Phase 3 unsupervised clustering and Phase 5 subgroup predictive models, leading to potential misclassification of stroma-excluded tumours as immune-hot.
+---
 
-## 3. Proposed Fixes & Strategic Roadmap for Future Project Iterations
+## 2. Statistical Weaknesses
 
-To address these limitations in future iterations of Question 5, we propose five concrete technical enhancements:
+> [!NOTE] What, Why & What It Answers
+> - **What**: Evaluating where Phase 1's quantitative methodology departs from statistical best practice.
+> - **Why**: Unbounded or non-comparable score units, uncontrolled inter-cohort batch effects, and missing imputation diagnostics can all introduce systematic bias that survives standardisation and distorts downstream dimensionality reduction.
+> - **What it answers**: Which statistical properties of the Phase 1 feature matrix are weakly justified and require explicit validation before predictive claims can be made?
 
-### Proposed Fix 1: Transition to CIBERSORTx / Single-Cell Reference Deconvolution
-- **Technical Solution**: Replace marker gene averaging with CIBERSORTx or EPIC support vector regression using single-cell RNA-seq (scRNA-seq) melanoma reference matrices (e.g. Jerby-Arnon et al. or Tirosh et al.).
-- **Expected Benefit**: Yields true, absolute cell-type fractions ($0–100\%$) subject to sum-to-one constraints, eliminating marker spillover and arbitrary scaling units.
+### 2.1 Unbounded, Arbitrary Score Units from Marker Averaging
 
-### Proposed Fix 2: Integration of Spatial Transcriptomics & Multiplex Immunofluorescence (mIF)
-- **Technical Solution**: Incorporate spatial transcriptomics (10x Visium / Xenium) or 7-colour multiplex immunofluorescence (mIF) image quantification.
-- **Expected Benefit**: Formally calculates a **Spatial Infiltration Distance Metric** (distance from CD8+ T cells to malignant cells vs distance to `CAFs`), enabling the model to explicitly separate _Immune-Excluded_ from _Immune-Infiltrated_ phenotypes.
+Phase 1 estimates relative cell-type infiltration by computing the sample-wise mean log-expression across a fixed panel of 3–5 marker genes per cell type (e.g. `CD8_T_cells` from `CD8A`, `CD8B`). This produces scores in arbitrary log-expression units that are:
 
-### Proposed Fix 3: Direct WGS / SNP-Array Processing for Arm-Level CNA & Aneuploidy
-- **Technical Solution**: Process raw BAM/CRAM alignment files using CNVkit or ASCAT to generate explicit arm-level Copy Number Alteration (CNA) fractional loss/gain vectors and whole-genome duplication (WGD) indicators.
-- **Expected Benefit**: Directly quantifies chromosomal instability independent of TMB, closing the proxy gap for immune exclusion driven by aneuploidy.
+- **Unbounded**: Unlike constrained deconvolution (e.g. CIBERSORTx), there is no sum-to-one constraint ($\sum \hat{f}_k = 1$) enforcing non-negative fractional proportions. Scores can exceed biologically meaningful ranges without triggering any warning.
+- **Not Proportional**: The mean of two log-expression values is not equivalent to a weighted linear mixture model. A doubling of `CD8A` expression does not correspond to a doubling of CD8+ T-cell proportion.
+- **Cross-Cell Spillover**: Marker genes such as `TGFB1` and `TNF` are expressed across multiple cell types (tumour cells, endothelial cells, myeloid cells). Their inclusion in a single-cell-type marker panel introduces cross-contamination signal without correction.
 
-### Proposed Fix 4: Multi-State Macrophage Deconvolution via Single-Cell Signatures
-- **Technical Solution**: Expand the 1D STV score into a 4-dimensional macrophage vector capturing distinct subtypes: $\text{TAM}_{\text{Pro-inflammatory}}$ (M1), $\text{TAM}_{\text{Angiogenic}}$ (M2a), $\text{TAM}_{\text{Immunosuppressive}}$ (M2c), and $\text{TAM}_{\text{Lipid-Laden}}$.
-- **Expected Benefit**: Captures functional macrophage plasticity and resolves fine-grained immunosuppressive mechanisms.
+### 2.2 Absence of Batch Effect Correction Between Cohorts
 
-### Proposed Fix 5: Longitudinal Paired Baseline & On-Treatment Biopsy Modelling
-- **Technical Solution**: Integrate paired baseline (Day 0) and early on-treatment (Day 14–28) biopsy transcriptomics.
-- **Expected Benefit**: Calculates dynamic **Delta Signatures** ($\Delta \text{TIS} = \text{TIS}_{\text{Day28}} - \text{TIS}_{\text{Day0}}$), capturing early T-cell expansion and adaptive immune reactivation that static baseline biopsies cannot observe.
+The ICI feature matrix ($N_{\text{ICI}} = 326$) merges RNA-seq data from four independent studies: *Liu 2019*, *Riaz 2017*, *Hugo 2016*, and *TCGA-SKCM* (ICI subset). These cohorts differ in:
 
-## 4. Comprehensive Roadmap Comparison Matrix
+- **Sequencing Platform**: iAtlas harmonised data (Liu, Riaz, Hugo) vs. TCGA RSEM (TCGA-SKCM), introducing systematic expression scaling differences even after log-transformation.
+- **Library Preparation**: Poly-A selection vs. rRNA depletion protocols alter the relative abundance of immune cell transcripts in bulk RNA-seq.
+- **Biopsy Site & Timing**: Pre-treatment surgical resections (TCGA-SKCM) vs. pre-treatment fine needle aspirates or core needle biopsies (trial cohorts) yield structurally different TME compositions.
 
-| Limitation Category | Current Phase 1 Method | Proposed Technical Fix | Primary Tool / Platform | Expected Clinical & Analytical Benefit |
-| :--- | :--- | :--- | :--- | :--- |
-| **Cell Deconvolution** | Mean marker log-expression averaging | Constrained SVR linear unmixing | CIBERSORTx / EPIC | Bounded $0–100\%$ absolute cell fractions; no marker spillover. |
-| **Spatial Architecture** | Bulk RNA-seq homogenisation | Spatial transcriptomics & mIF | 10x Visium / Xenium / mIF | Accurately separates stroma-excluded from tumour-infiltrated T cells. |
-| **Genomic Instability** | Indirect TMB & single-gene expression proxies | Direct WGS / SNP-array copy number callouts | CNVkit / ASCAT / GISTIC 2.0 | Direct measurement of arm-level CNA and aneuploidy-driven exclusion. |
-| **Macrophage Subtypes** | 1D M1/M2 binary ratio (`M1_M2_Ratio`) | 4-state single-cell macrophage vector | scRNA-seq reference matrices | Resolves M2a/M2c subtype heterogeneity and therapeutic drug targets. |
-| **Biopsy Timing** | Static pre-treatment snapshot (Day 0) | Longitudinal paired biopsy modeling ($\Delta$ scores) | Paired Day 0 & Day 14–28 RNA-seq | Observes early on-treatment T-cell expansion and adaptive resistance. |
+Phase 1 applies no explicit inter-cohort batch correction (e.g. ComBat-seq, limma `removeBatchEffect`). The Macrophage STV gene weights (`m1_m2_stv.csv`, 14,835 genes) were derived from a separate reference and may not be calibrated to any of the four study-specific expression distributions.
 
-> [!INSIGHT] Key Takeaways & Strategic Future Roadmap
-> - **Methodological Evolution**: Moving from marker averaging to CIBERSORTx SVR unmixing will eliminate arbitrary score scaling and cross-cell spillover.
-> - **Spatial Resolution**: Integrating spatial transcriptomics (10x Visium) resolves the spatial blindness of bulk RNA-seq, allowing precise detection of stroma-excluded tumours.
-> - **Multi-Omics Precision**: Processing raw WGS/SNP-arrays for direct arm-level CNA calls will eliminate reliance on indirect TMB proxies for chromosomal instability.
+**Statistical consequence**: Cohort identity may function as an uncontrolled confounding variable in unsupervised clustering (Phase 3), causing phenotype clusters to partially reflect study-of-origin rather than true biological microenvironment states.
+
+### 2.3 No Missing Data Audit or Imputation Strategy Documentation
+
+The pipeline log records successful loading of 326 patients across all three data modalities (clinical, expression, genomic). However, Phase 1 does not log:
+
+- The fraction of patients with missing values in any of the 14 genomic features (`TMB_NONSYNONYMOUS`, `ANEUPLOIDY_SCORE`, `MSI_SCORE_MANTIS`, `MSI_SENSOR_SCORE`, six neoantigen burden columns, three driver mutation flags).
+- The imputation strategy applied to genomic features prior to feature matrix export (e.g. zero-imputation for missing mutation calls, median imputation for continuous TMB, or complete-case exclusion).
+
+Genomic features such as `FUSION_NEOANTIGEN`, `VIRUS_NEOANTIGEN`, and `ERV_NEOANTIGEN` are likely sparse (high zero-inflation) across the 326-patient ICI cohort, as systematic neoantigen prediction was not a uniform data collection requirement across all three trial cohorts. Silent zero-imputation of missing genomic values is statistically equivalent to asserting that unmeasured patients have zero neoantigens, which could artificially depress genomic feature variance and weaken their contribution to Phase 3 clustering.
+
+### 2.4 No Normalisation Equivalence Validation Across the Dual Matrix Split
+
+Phase 1 outputs two matrices derived from overlapping but non-identical patient sets: the ICI matrix ($N_{\text{ICI}} = 326$) and the full-cohort matrix ($N_{\text{Full}} = 699$). Features shared between both matrices (e.g. `TIS`, `CYT`, `M1_M2_Ratio`) are computed independently on each patient set, but **no validation is performed** to confirm that their distributional properties are equivalent between the two matrices.
+
+If TCGA-SKCM patients (the additional $N = 373$ in the full-cohort matrix) systematically differ in expression scale from the ICI cohort — as is expected given platform differences — then the full-cohort feature matrix will have different marginal distributions for every transcriptomic feature. Any inter-cohort comparison or visualisation that combines statistics from both matrices without acknowledging this divergence is potentially misleading.
+
+---
+
+## 3. Biological Assumptions
+
+> [!NOTE] What, Why & What It Answers
+> - **What**: Examining where Phase 1 encodes biological simplifications that may not generalise across patient subgroups or tumour contexts.
+> - **Why**: Biologically incorrect assumptions embedded in feature construction propagate into phenotype labels and clinical recommendations, creating a false sense of mechanistic interpretability.
+> - **What it answers**: Which biological model choices in Phase 1 are unsupported oversimplifications that limit the validity of downstream phenotype characterisation?
+
+### 3.1 Spatial Proxy Ratios Are Algebraic Heuristics, Not Physical Distances
+
+Phase 1 introduces two engineered spatial microenvironment indicators:
+
+- `Spatial_CD8_CAF_Distance_Ratio`: $\log_2(\text{CD8\_T\_cells} / \text{CAFs})$
+- `Spatial_Tumour_Infiltration_Index`: $\log_2(\text{CD8\_T\_cells} \times \text{M1\_M2\_Ratio} / \text{CAFs})$
+
+These are algebraic ratios of bulk deconvolution scores, not measurements of physical intercellular distances. They assume that a high `CD8_T_cells / CAFs` bulk RNA-seq ratio *implies* cytotoxic T-cell penetration into the malignant nest — an inference that is biologically unjustified. In a stroma-excluded tumour, CD8+ T cells accumulate at the tumour margin without penetrating the core; both `CD8_T_cells` and `CAFs` bulk scores would be elevated simultaneously, potentially producing a ratio close to unity despite a physically excluded architecture.
+
+Furthermore, the logarithmic ratio is undefined (or $-\infty$) when `CAFs` → 0, requiring an implicit numerical floor that is not documented.
+
+### 3.2 One-Dimensional Macrophage Polarisation (M1/M2 Binary Axis)
+
+The `M1_M2_Ratio` and `Macrophage_STV_Score` collapse the entire landscape of tumour-associated macrophage (TAM) biology into a single signed scalar: positive values represent M1 pro-inflammatory dominance, negative values represent M2 pro-tumour dominance.
+
+In human melanoma, TAMs occupy a continuous, multi-dimensional functional spectrum encompassing distinct subtypes (e.g. angiogenic M2a, immunosuppressive M2c, tissue-resident FOLR2+ macrophages, and lipid-laden macrophages) that exert mechanistically distinct effects on CD8+ T-cell function and anti-PD-1 efficacy. Collapsing this heterogeneity onto a 1D axis discards functional subtype information that is potentially critical for distinguishing the *Immunosuppressive M2-High* phenotype (Cluster 3, $N = 308$, 44.1% of full cohort) from the *Immune Hot* phenotype (Cluster 2, $N = 304$, 43.5%) — the two most prevalent and most clinically important groups, separated by only a 3.2-percentage-point response rate difference (38.0% vs. 41.1%).
+
+### 3.3 Static Pre-Treatment Snapshots Cannot Capture Dynamic TME Remodelling
+
+All Phase 1 features are derived from baseline, pre-treatment biopsies. The tumour microenvironment undergoes rapid and substantial remodelling within 2–4 weeks of anti-PD-1 infusion, including:
+
+- T-cell proliferative bursts and spatial redistribution into the tumour core
+- Adaptive `CD274` (PD-L1) upregulation as a tumour-intrinsic resistance mechanism
+- Macrophage repolarisation from M2-like to inflammatory states driven by interferon signalling
+
+A baseline `TIS` score cannot distinguish a patient whose immune response is genuinely quiescent (true non-responder) from one whose immune response is suppressed but remains inducible (pseudo-non-responder who would respond with adequate co-stimulation). This ambiguity is a primary source of false-negative predictions for patients who exhibit delayed responses.
+
+### 3.4 Marker Gene Panels Assume Cross-Cohort Gene Coverage Uniformity
+
+The 3–5 marker genes per cell type defined in `q5_constants.py` (`CELL_TYPE_MARKERS`) are assumed to be present and reliably quantified in all four source cohorts. The `IMPRES` score (*Auslander et al., 2018*) — retained in the 33-feature panel for Phase 5/6 predictive modelling — highlights a concrete example of this risk: key co-stimulatory partners (`CD28`, `CD86`, `CD80`, `CD40`, `CD200`, `TNFRSF4`, `VSIR`) are absent or unmapped in a subset of merged multi-study expression matrices. Where genes are missing, the `IMPRES` score is computed over a reduced pair set, producing a systematically lower value for those samples without any missingness flag. No systematic audit has been conducted to verify that all marker genes across all seven deconvolved cell types (`CD8_T_cells`, `CD4_T_cells`, `NK_cells`, `B_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`) achieve 100% coverage across all four cohorts.
+
+If one or more marker genes are missing in a subset of samples, the cell-type marker mean is silently computed over a reduced gene set, producing a systematically lower score for those samples without any missingness flag in the exported feature matrix.
+
+---
+
+## 4. Computational & Data Constraints
+
+> [!NOTE] What, Why & What It Answers
+> - **What**: Identifying data availability gaps and computational modelling choices that limit Phase 1's completeness and reproducibility.
+> - **Why**: Constraints in input data propagate into feature completeness, and computational fallback behaviours (e.g. module import failures) risk silent result divergence between execution environments.
+> - **What it answers**: What are the hard data and infrastructure boundaries within which Phase 1 currently operates, and where do they introduce analytical blind spots?
+
+### 4.1 Absence of Direct Copy Number Alteration Maps
+
+Trial cohorts (*Liu 2019*, *Riaz 2017*, *Hugo 2016*) lack processed GISTIC arm-level Copy Number Alteration (CNA) files. Phase 1 relies on `ANEUPLOIDY_SCORE` and single-gene expression levels as indirect proxies for chromosomal instability. Critically:
+
+- `TMB_NONSYNONYMOUS` and CNA burden are biologically decoupled: high-CNA, low-TMB tumours exist (particularly in `NF1`-loss and chromosomally unstable melanomas) and would be misclassified as genomically stable by TMB alone.
+- `ANEUPLOIDY_SCORE` availability is inconsistent across the three trial cohorts: it was a systematic TCGA-SKCM output and may be sparsely populated (or absent) in iAtlas-harmonised trial data, contributing to the sparse genomic feature problem described in §2.3.
+
+### 4.2 Module Import Fallback: Local Signature Recomputation
+
+The `q5_pipeline.log` (line 13) records the following warning during Phase 1 execution:
+
+```
+Q1 signature module fallback (Reason: No module named 'src.config'). Computing signatures locally.
+```
+
+This indicates that the pipeline was unable to import the shared `src.config` module at runtime and silently fell back to a local signature computation path. This fallback has two implications:
+
+1. **Reproducibility Risk**: If the local fallback implementation and the shared `src.config` implementation diverge in their gene set definitions, coefficient weights, or normalisation steps, the Phase 1 signature scores will be numerically different from what Q1's validated pipeline produces — potentially invalidating any direct cross-question comparison of `TIS`, `CYT`, or `IFN_gamma` values.
+2. **Silent Divergence**: The fallback triggers no error and produces no downstream warning in the feature matrix. There is no validation checkpoint comparing Q1-computed signatures to Q5-locally-computed equivalents.
+
+### 4.3 Full-Cohort Matrix ($N_{\text{Full}} = 699$) Lacks RECIST Response Labels for TCGA-SKCM
+
+The full-cohort feature matrix (`feature_matrix_full.csv`, $N_{\text{Full}} = 699$) incorporates the complete TCGA-SKCM reference cohort ($N = 443$), the majority of whom were **not treated with anti-PD-1 immunotherapy** and therefore lack RECIST clinical response labels (`RESPONSE_BINARY`).
+
+This creates a fundamental interpretability constraint for any Phase 3 or Phase 4 analysis derived from the full-cohort matrix:
+
+- Phenotype labelling (e.g. *Immune Hot*, *Immunosuppressive M2-High*) that was validated against immunotherapy response rates in the ICI matrix ($N_{\text{ICI}} = 326$) cannot be directly extended to the TCGA-SKCM patients without an explicit biological validation step.
+- Kaplan-Meier survival analysis in Phase 4 uses overall survival (OS) as a response surrogate for TCGA-SKCM patients, but OS conflates immunotherapy benefit with the effects of surgery, targeted therapy, and natural disease history in an unselected population.
+
+### 4.4 STV Reference Matrix Provenance & Calibration Gap
+
+The Macrophage Signature Transcript Vector is computed against `m1_m2_stv.csv` (14,835 genes per `phase_1.md`; 14,837 per `PROJECT_MAP.md` — a minor unresolved discrepancy). The biological provenance of this reference — the original study, cell line, or patient population from which M1/M2 gene weights were derived — is not documented in any accessible report or configuration file.
+
+Without knowing the reference population, it is impossible to assess whether the STV weights are calibrated for the expression scale of the iAtlas-harmonised melanoma trial cohorts, or whether they were derived from a reference population with systematically different baseline expression levels that would systematically skew the `Macrophage_STV_Score` distributions.
+
+---
+
+## 5. Prioritised Roadmap for Future Iterations
+
+| Priority | Limitation | Proposed Fix | Analytical Benefit |
+| :---: | :--- | :--- | :--- |
+| **1 — High** | `src.config` module import fallback | Resolve Python path configuration so `src.config` is always importable; add validation checkpoint comparing Q1 vs. Q5 signature values | Ensures cross-question numerical reproducibility |
+| **2 — High** | No batch effect correction | Apply ComBat-seq or limma `removeBatchEffect` across 4 cohorts prior to feature extraction | Removes cohort-of-origin as a confound in Phase 3 clustering |
+| **3 — High** | No missing data audit for genomic features | Log per-feature missingness rates at Phase 1 exit; document and justify imputation strategy | Prevents silent zero-inflation from suppressing genomic feature variance |
+| **4 — Medium** | Unbounded marker-averaging deconvolution | Transition to CIBERSORTx or EPIC constrained SVR unmixing with single-cell melanoma reference matrices | Yields bounded $0–100\%$ cell fractions; eliminates cross-cell marker spillover |
+| **5 — Medium** | 1D macrophage polarisation axis | Expand to a 4-dimensional TAM subtype vector (M1, M2a, M2c, lipid-laden) using single-cell reference signatures | Resolves functional subtype heterogeneity in the M2-High phenotype (44.1% of full cohort) |
+| **6 — Medium** | Spatial proxies are algebraic heuristics | Integrate multiplex immunofluorescence (mIF) or spatial transcriptomics (10x Visium) to measure physical T-cell to tumour distances | Correctly separates stroma-excluded from tumour-infiltrated microenvironments |
+| **7 — Lower** | Static pre-treatment biopsy only | Integrate paired Day-0 / Day-14–28 transcriptomics where trial data permit | Enables $\Delta\text{TIS}$ dynamic signatures capturing early on-treatment immune reactivation |
+| **8 — Lower** | Absent CNA maps for trial cohorts | Process alignment files via CNVkit or ASCAT for arm-level CNA and whole-genome duplication indicators | Directly quantifies chromosomal instability independent of TMB |
+| **9 — Lower** | STV reference provenance undocumented | Add `source`, `population`, and `normalisation` metadata fields to `m1_m2_stv.csv` configuration | Enables calibration audit and cross-study STV score comparability |
+
+---
+
+> [!INSIGHT] Key Takeaways
+> - **Silent Import Fallback**: A `src.config` module import failure during Phase 1 execution triggers silent local recomputation of `TIS`, `CYT`, `IFN_gamma`, and `IMPRES` signatures. Cross-question numerical consistency between Q1 and Q5 is currently unverified.
+> - **Batch Effects Are Uncontrolled**: Merging four studies with distinct sequencing platforms and biopsy protocols without explicit batch correction means cohort-of-origin remains a confounding variable that may partially drive the Phase 3 phenotype clusters.
+> - **Spatial Features Are Heuristics**: The two engineered spatial proxy ratios are algebraic approximations of physical tumour architecture — they cannot distinguish stroma-excluded from tumour-infiltrated microenvironments, and the logarithmic form is undefined when `CAFs` → 0.
+> - **M2-High vs. Immune Hot Clinical Overlap**: The two largest phenotypes — *Immunosuppressive M2-High* ($N = 308$, response rate 38.0%) and *Immune Hot* ($N = 304$, response rate 41.1%) — are separated by only 3.2 percentage points. The 1D macrophage STV axis driving their separation encodes a biologically oversimplified model that may not reliably distinguish these phenotypes at the level of individual patients.
+> - **`IMPRES` Gene Coverage Gap**: The Immune Predictive Score is retained in the panel but computed over a reduced co-stimulatory pair set for samples where `CD28`, `CD86`, or `CD80` are absent — producing systematically underestimated scores for those samples with no missingness flag in the output CSV.
