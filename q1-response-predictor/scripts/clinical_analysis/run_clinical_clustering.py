@@ -40,7 +40,7 @@ if str(_SUBPROJECT_ROOT) not in sys.path:
 
 from src.config.datasets import DatasetConfig, load_dataset_config
 from src.signatures import extract_all_signatures
-from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+from src.styles import COHORT_PALETTE, PHENOTYPE_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.formatting import (
     format_count_percentage,
     generate_obsidian_frontmatter,
@@ -618,7 +618,9 @@ def _generate_clustering_report(
     total_n = sum(counts)
     frontmatter = generate_obsidian_frontmatter(
         title="Patient Phenotyping via Full-Dataset Immunological & Genomic Clustering",
+        aliases=["Patient Subtyping", "Clinical Clustering", "Immune Phenotyping"],
         tags=["melanoma", "clinical-subtyping", "clustering", "full-dataset", "immune-hot-cold"],
+        extra_css_classes=["table-center", "row-alt"],
     )
 
     ifn_vals = [f"{profile_df.loc[profile_df['CLINICAL_CLUSTER'] == c, 'IFN_gamma'].values[0]:.2f}" for c in range(3)]
@@ -629,94 +631,139 @@ def _generate_clustering_report(
 
     # Format p-values as proper LaTeX scientific notation (e.g. 2.29 \times 10^{-5})
     def _fmt_pval_latex(p: float) -> str:
-        s = f"{p:.2e}"  # e.g. '2.29e-05'
-        mantissa, exp = s.split("e")
-        exp_int = int(exp)  # e.g. -5
-        return rf"{mantissa} \times 10^{{{exp_int}}}"
+        if pd.isna(p):
+            return "N/A"
+        if p < 1e-3:
+            s = f"{p:.2e}"
+            mantissa, exp = s.split("e")
+            exp_int = int(exp)
+            return rf"{mantissa} \times 10^{{{exp_int}}}"
+        return f"{p:.3f}"
 
     km_p_str = _fmt_pval_latex(km_p_val)
+    chi2_p_str = _fmt_pval_latex(chi2_p_val)
 
-    with open(report_path, "w", encoding="utf-8") as f:
-        f.write(frontmatter + "\n\n")
-        f.write("# Patient Phenotyping via Full-Dataset Immunological & Genomic Clustering\n\n")
+    lines: List[str] = [frontmatter, ""]
+    w = lines.append
 
-        f.write("> [!summary] What, Why & Key Questions\n")
-        f.write(f"> - **What We Are Doing**: Applying unsupervised Agglomerative Hierarchical Clustering (Ward linkage) to the **entire combined dataset** ($N = {total_n}$ patients across TCGA-SKCM, Liu 2019, Hugo 2016, and Riaz 2017) using six immune expression signatures, TMB, and patient age — all Z-score standardised *within each cohort* before pooling to remove study-platform offsets.\n")
-        f.write("> - **Why We Are Doing It**: Before building a supervised response predictor, we need to know whether biologically meaningful patient subgroups exist in the data at all. If patients naturally cluster into distinct immune phenotypes — \"hot\" vs. \"cold\" tumours — then those phenotypes should predict both survival and immunotherapy response. Discovering these groups unsupervised (without using any response labels) provides unbiased biological validation.\n")
-        f.write("> - **Questions**:\n")
-        f.write(">   1. *Do distinct immunological subtypes emerge from the data without supervision?*\n")
-        f.write(">   2. *Do those subtypes differ significantly in overall survival — confirming they capture genuine biology?*\n")
-        f.write(">   3. *Do immunotherapy responders concentrate in the \"hot\" immune subtype, validating the clusters as clinically meaningful?*\n\n")
+    w("# Patient Phenotyping via Full-Dataset Immunological & Genomic Clustering")
+    w("")
+    w("> [!INFO] What, Why & Key Questions — Overview")
+    w(f"> - **What We Are Doing**: Applying unsupervised Agglomerative Hierarchical Clustering (Ward linkage) to the **entire combined dataset** ($N = {total_n}$ patients across TCGA-SKCM, Liu 2019, Hugo 2016, and Riaz 2017) using six immune expression signatures, TMB, and patient age — all Z-score standardised *within each cohort* before pooling to remove study-platform offsets.")
+    w("> - **Why We Are Doing It**: Before building a supervised response predictor, we need to know whether biologically meaningful patient subgroups exist in the data at all. If patients naturally cluster into distinct immune phenotypes — \"hot\" vs. \"cold\" tumours — then those phenotypes should predict both survival and immunotherapy response. Discovering these groups unsupervised (without using any response labels) provides unbiased biological validation.")
+    w("> - **Questions**:")
+    w(">   1. *Do distinct immunological subtypes emerge from the data without supervision?*")
+    w(">   2. *Do those subtypes differ significantly in overall survival — confirming they capture genuine biology?*")
+    w(">   3. *Do immunotherapy responders concentrate in the \"hot\" immune subtype, validating the clusters as clinically meaningful?*")
+    w("")
 
-        f.write("## 1. Subtype Profiles\n\n")
-        f.write("> [!summary] What, Why & Key Questions\n")
-        f.write("> - **What We Are Doing**: Characterising the three discovered patient subtypes using two visualisations — a polar radar chart showing the multi-dimensional signature fingerprint of each subtype, and an annotated heatmap showing per-patient Z-scores with response rate and survival overlaid.\n")
-        f.write("> - **Why We Are Doing It**: A radar chart reveals the *shape* of each subtype's immune profile at a glance (which signatures are high or low). The heatmap reveals the *within-cluster heterogeneity* — how tightly patients cluster together — and overlays clinical outcome tracks to verify biological coherence.\n")
-        f.write("> - **Questions**:\n")
-        f.write(">   1. *Are the subtypes cleanly separated across all signatures simultaneously, or does separation rely on only one or two markers?*\n")
-        f.write(">   2. *Does the response rate track visibly with the immune intensity track in the heatmap?*\n\n")
+    w("## 1. Subtype Profiles")
+    w("")
+    w("> [!INFO] What, Why & Key Questions — Subtype Fingerprints")
+    w("> - **What We Are Doing**: Characterising the three discovered patient subtypes using two visualisations — a polar radar chart showing the multi-dimensional signature fingerprint of each subtype, and an annotated heatmap showing per-patient Z-scores with response rate and survival overlaid.")
+    w("> - **Why We Are Doing It**: A radar chart reveals the *shape* of each subtype's immune profile at a glance (which signatures are high or low). The heatmap reveals the *within-cluster heterogeneity* — how tightly patients cluster together — and overlays clinical outcome tracks to verify biological coherence.")
+    w("> - **Questions**:")
+    w(">   1. *Are the subtypes cleanly separated across all signatures simultaneously, or does separation rely on only one or two markers?*")
+    w(">   2. *Does the response rate track visibly with the immune intensity track in the heatmap?*")
+    w("")
 
-        f.write("### 1.1. Multi-Dimensional Phenotype Fingerprint (Radar Profile)\n\n")
-        f.write("The polar radar chart displays the standardised Z-score profiles across transcriptomic immune signatures, mutational burden, and patient age for each subtype:\n\n")
-        f.write("![Subtype Profile Radar Chart](../../plots/clinical/radar_clinical_clusters.png)\n\n")
+    w("### 1.1. Multi-Dimensional Phenotype Fingerprint (Radar Profile)")
+    w("")
+    w("The polar radar chart displays the standardised Z-score profiles across transcriptomic immune signatures, mutational burden, and patient age for each subtype:")
+    w("")
+    w("![Subtype Profile Radar Chart](../../plots/clinical/radar_clinical_clusters.png)")
+    w("")
 
-        f.write("### 1.2. Annotated Subtype Feature Heatmap & Clinical Tracks\n\n")
-        f.write("The heatmap details the Z-score signature matrix for each patient cluster, annotated with immunotherapy response rates (CR/PR %) and median overall survival (OS):\n\n")
-        f.write("![Annotated Subtype Feature Heatmap](../../plots/clinical/heatmap_clinical_clusters.png)\n\n")
+    w("### 1.2. Annotated Subtype Feature Heatmap & Clinical Tracks")
+    w("")
+    w("The heatmap details the Z-score signature matrix for each patient cluster, annotated with immunotherapy response rates (CR/PR %) and median overall survival (OS):")
+    w("")
+    w("![Annotated Subtype Feature Heatmap](../../plots/clinical/heatmap_clinical_clusters.png)")
+    w("")
 
-        f.write("## 2. Biological Interpretation of Patient Subtypes\n\n")
-        f.write("The unsupervised clustering isolates three distinct patient phenotypes:\n\n")
+    w("## 2. Biological Interpretation of Patient Subtypes")
+    w("")
+    w("The unsupervised clustering isolates three distinct patient phenotypes:")
+    w("")
+    w(f"1. **{CLUSTER_NAMES[0]}** ($N = {counts[0]}$)")
+    w(f"    - *Immune Signatures*: Highest T-cell inflammation across all markers (IFN-$\\gamma$ = {ifn_vals[0]}, TIS = {tis_vals[0]}, CYT = {cyt_vals[0]}, CD8 = {cd8_vals[0]}).")
+    w(f"    - *Therapeutic Benefit*: Highest immunotherapy response rate (**{resp_fractions[0]}** in trial patients).")
+    w(f"    - *Prognosis*: Best overall survival (Median OS = 🟢 **{median_survivals[0]}**).")
+    w("")
 
-        f.write(f"1. **{CLUSTER_NAMES[0]}** ($N = {counts[0]}$)\n")
-        f.write(f"    - *Immune Signatures*: Highest T-cell inflammation across all markers (IFN-\u03b3 = {ifn_vals[0]}, TIS = {tis_vals[0]}, CYT = {cyt_vals[0]}, CD8 = {cd8_vals[0]}).\n")
-        f.write(f"    - *Therapeutic Benefit*: Highest immunotherapy response rate (**{resp_fractions[0]}** in trial patients).\n")
-        f.write(f"    - *Prognosis*: Best overall survival (Median OS = \U0001f7e2 **{median_survivals[0]}**).\n\n")
+    w(f"2. **{CLUSTER_NAMES[1]}** ($N = {counts[1]}$)")
+    w(f"    - *Immune Signatures*: Attenuated T-cell inflammation across all markers (IFN-$\\gamma$ = {ifn_vals[1]}, TIS = {tis_vals[1]}, CYT = {cyt_vals[1]}, CD8 = {cd8_vals[1]}).")
+    w(f"    - *Therapeutic Benefit*: Lowest response rate to anti-PD-1 therapy (**{resp_fractions[1]}** in trial patients).")
+    w(f"    - *Prognosis*: Worst overall survival (Median OS = 🔴 **{median_survivals[1]}**).")
+    w("")
 
-        f.write(f"2. **{CLUSTER_NAMES[1]}** ($N = {counts[1]}$)\n")
-        f.write(f"    - *Immune Signatures*: Attenuated T-cell inflammation across all markers (IFN-\u03b3 = {ifn_vals[1]}, TIS = {tis_vals[1]}, CYT = {cyt_vals[1]}, CD8 = {cd8_vals[1]}).\n")
-        f.write(f"    - *Therapeutic Benefit*: Lowest response rate to anti-PD-1 therapy (**{resp_fractions[1]}** in trial patients).\n")
-        f.write(f"    - *Prognosis*: Worst overall survival (Median OS = \U0001f534 **{median_survivals[1]}**).\n\n")
+    w(f"3. **{CLUSTER_NAMES[2]}** ($N = {counts[2]}$)")
+    w(f"    - *Genomics*: Highest tumour mutational burden (**TMB = {tmb_vals[2]} mut/Mb**) with only moderate immune infiltration.")
+    w(f"    - *Immune Signatures*: Intermediate T-cell inflammation (IFN-$\\gamma$ = {ifn_vals[2]}, TIS = {tis_vals[2]}).")
+    w(f"    - *Prognosis*: Intermediate survival (Median OS = 🟠 **{median_survivals[2]}**) — demonstrating that high TMB alone, without a hot immune microenvironment, does not confer the same survival benefit.")
+    w("")
 
-        f.write(f"3. **{CLUSTER_NAMES[2]}** ($N = {counts[2]}$)\n")
-        f.write(f"    - *Genomics*: Highest tumour mutational burden (**TMB = {tmb_vals[2]} mut/Mb**) with only moderate immune infiltration.\n")
-        f.write(f"    - *Immune Signatures*: Intermediate T-cell inflammation (IFN-\u03b3 = {ifn_vals[2]}, TIS = {tis_vals[2]}).\n")
-        f.write(f"    - *Prognosis*: Intermediate survival (Median OS = \U0001f7e0 **{median_survivals[2]}**) \u2014 demonstrating that high TMB alone, without a hot immune microenvironment, does not confer the same survival benefit.\n\n")
+    w("## 3. Subtype Visualisation (2D PCA Projection)")
+    w("")
+    w("> [!INFO] What, Why & Key Questions — PCA Projection")
+    w(f"> - **What We Are Doing**: Projecting all $N = {total_n}$ patients onto the first two principal components (PCA) of the feature space to visualise how well the three clusters separate in a lower-dimensional view.")
+    w("> - **Why We Are Doing It**: A clean 2D separation confirms that the clustering reflects a genuine multi-dimensional structure in the data, not an artefact of the Ward linkage algorithm.")
+    w("> - **Questions**: *Are clusters geometrically separated in PCA space, or do they overlap substantially?*")
+    w("")
+    w("![2D PCA Visualisation of Clusters](../../plots/clinical/pca_clinical_clusters.png)")
+    w("")
 
-        f.write("## 3. Subtype Visualisation (2D PCA Projection)\n\n")
-        f.write("> [!summary] What, Why & Key Questions\n")
-        f.write(f"> - **What We Are Doing**: Projecting all $N = {total_n}$ patients onto the first two principal components (PCA) of the feature space to visualise how well the three clusters separate in a lower-dimensional view.\n")
-        f.write("> - **Why We Are Doing It**: A clean 2D separation confirms that the clustering reflects a genuine multi-dimensional structure in the data, not an artefact of the Ward linkage algorithm.\n")
-        f.write("> - **Questions**: *Are clusters geometrically separated in PCA space, or do they overlap substantially?*\n\n")
-        f.write("![2D PCA Visualisation of Clusters](../../plots/clinical/pca_clinical_clusters.png)\n\n")
+    w("## 4. Immunotherapy Response & Overall Survival Validation")
+    w("")
+    w("> [!INFO] What, Why & Key Questions — Clinical Outcome Validation")
+    w(f"> - **What We Are Doing**: Testing whether the unsupervised cluster labels — derived without using any response information — nevertheless stratify immunotherapy response rates (in the $N = {n_trial}$ trial patients with binary labels) and overall survival (in the full $N = {total_n}$ dataset).")
+    w("> - **Why We Are Doing It**: This is the critical validation step. If clusters discovered purely from expression patterns correlate with clinical outcomes, it confirms the biology is real and the subtypes are clinically actionable.")
+    w("> - **Questions**:")
+    w(">   1. *Do immunotherapy responders concentrate significantly in the Hot cluster (Chi-Square test)?*")
+    w(">   2. *Is the survival separation across subtypes statistically significant (Log-Rank test)?*")
+    w("")
 
-        f.write("## 4. Immunotherapy Response & Overall Survival Validation\n\n")
-        f.write("> [!summary] What, Why & Key Questions\n")
-        f.write(f"> - **What We Are Doing**: Testing whether the unsupervised cluster labels \u2014 derived without using any response information \u2014 nevertheless stratify immunotherapy response rates (in the $N = {n_trial}$ trial patients with binary labels) and overall survival (in the full $N = {total_n}$ dataset).\n")
-        f.write("> - **Why We Are Doing It**: This is the critical validation step. If clusters discovered purely from expression patterns correlate with clinical outcomes, it confirms the biology is real and the subtypes are clinically actionable.\n")
-        f.write("> - **Questions**:\n")
-        f.write(">   1. *Do immunotherapy responders concentrate significantly in the Hot cluster (Chi-Square test)?*\n")
-        f.write(">   2. *Is the survival separation across subtypes statistically significant (Log-Rank test)?*\n\n")
+    w(f"**Therapeutic Response Rate (Trial Cohorts, $N = {n_trial}$ with binary labels)**:")
+    w("")
+    chi2_sig = "not statistically significant" if chi2_p_val >= 0.05 else "statistically significant"
+    w("> [!INSIGHT] Chi-Square Response Rate Evaluation")
+    w(f"> The Chi-Square test across cluster response rates yields $p = {chi2_p_str}$ — **{chi2_sig}**. ")
+    if chi2_p_val >= 0.05:
+        w(f"> The Hot cluster shows a numerically higher response rate ({resp_fractions[0]}) vs. Cold ({resp_fractions[1]}), but this difference does not reach significance at this sample size. This reflects the limited statistical power of the three-way comparison across the trial cohort subset ($N = {n_trial}$), not an absence of a real biological trend.")
+    else:
+        w(f"> Immunotherapy responders are significantly enriched in the Hot cluster ({resp_fractions[0]}) compared to the Cold cluster ({resp_fractions[1]}).")
+    w("")
+    w("![Response Rate by Cluster](../../plots/clinical/response_by_clinical_cluster.png)")
+    w("")
 
-        f.write(f"**Therapeutic Response Rate (Trial Cohorts, $N = {n_trial}$ with binary labels)**:\n\n")
-        chi2_sig = "not statistically significant" if chi2_p_val >= 0.05 else "statistically significant"
-        f.write(f"> [!NOTE]\n")
-        f.write(f"> The Chi-Square test across cluster response rates yields $p = {chi2_p_val:.3f}$ \u2014 **{chi2_sig}**. ")
-        if chi2_p_val >= 0.05:
-            f.write(f"The Hot cluster shows a numerically higher response rate ({resp_fractions[0]}) vs. Cold ({resp_fractions[1]}), but this difference does not reach significance at this sample size. This reflects the limited statistical power of the three-way comparison across the trial cohort subset ($N = {n_trial}$), not an absence of a real biological trend.\n\n")
-        else:
-            f.write(f"Immunotherapy responders are significantly enriched in the Hot cluster ({resp_fractions[0]}) compared to the Cold cluster ({resp_fractions[1]}).\n\n")
-        f.write("![Response Rate by Cluster](../../plots/clinical/response_by_clinical_cluster.png)\n\n")
+    w(f"**Overall Survival (Full Dataset, $N = {total_n}$)**:")
+    w("")
+    w(f"The survival separation across patient subtypes is highly statistically significant (Log-Rank $p = {km_p_str}$), confirming that the immune phenotypes capture genuine prognostic biology:")
+    w("")
+    w("![KM Survival of Clinical Clusters](../../plots/clinical/km_clinical_clusters.png)")
+    w("")
 
-        f.write(f"**Overall Survival (Full Dataset, $N = {total_n}$)**:\n\n")
-        f.write(f"The survival separation across patient subtypes is highly statistically significant (Log-Rank $p = {km_p_str}$), confirming that the immune phenotypes capture genuine prognostic biology:\n\n")
-        f.write("![KM Survival of Clinical Clusters](../../plots/clinical/km_clinical_clusters.png)\n\n")
+    w("> [!INSIGHT] Key Insights: Unsupervised Subtyping Summary")
+    w(f"> - **Unsupervised biology is real**: Three distinct immune phenotypes emerge from the data without using any response labels, and they separate significantly by overall survival ($p = {km_p_str}$).")
+    w(f"> - **Immune inflammation, not TMB alone, drives prognosis**: The High-TMB cluster (Cluster 2) shows only intermediate survival despite its high mutational burden — confirming that TMB and immune infiltration act as orthogonal axes.")
+    if chi2_p_val < 0.05:
+        w(f"> - **Response rate stratifies significantly**: Immunotherapy responders are significantly enriched in the Hot cluster ({resp_fractions[0]}) vs. Cold cluster ({resp_fractions[1]}) ($p = {chi2_p_str}$), validating the clinical utility of unsupervised microenvironmental phenotyping.")
+    else:
+        w(f"> - **Response trend is consistent but underpowered**: The numerical response rate advantage of the Hot cluster ({resp_fractions[0]}) vs. Cold ({resp_fractions[1]}) is clinically meaningful in direction, but the $N = {n_trial}$ trial subset is underpowered for a three-way Chi-Square test ($p = {chi2_p_str}$). This motivates supervised multivariate predictive modelling in downstream pillars.")
+    w("")
 
-        f.write("### Key Takeaways\n\n")
-        f.write(f"- **Unsupervised biology is real**: Three distinct immune phenotypes emerge from the data without using any response labels, and they separate significantly by overall survival ($p = {km_p_str}$).\n")
-        f.write(f"- **Immune inflammation, not TMB alone, drives prognosis**: The High-TMB cluster (Cluster 2) shows only intermediate survival despite its high mutational burden \u2014 confirming the finding from the genomic characterisation that TMB and immune infiltration are orthogonal axes.\n")
-        f.write(f"- **Response trend is consistent but underpowered**: The numerical response rate advantage of the Hot cluster ({resp_fractions[0]}) vs. Cold ({resp_fractions[1]}) is clinically meaningful in direction, but the $N = {n_trial}$ trial subset is too small to achieve significance in a three-way Chi-Square test. This motivates the supervised multivariate modelling in the next pillar.\n")
+    w("## 5. Methodological Limitations & Future Directions")
+    w("")
+    w("> [!WARNING] Analytical Scope & Limitations")
+    w(f"> - **Cohort Composition Heterogeneity**: The $N = {total_n}$ pooled dataset merges non-small cell TCGA reference samples ($N = 443$) with anti-PD-1 trial cohorts ($N = 256$). Cohort-wise Z-score standardization mitigates platform offsets, but baseline clinical heterogeneity remains.")
+    if chi2_p_val < 0.05:
+        w(f"> - **Trial Cohort Sample Size**: Only $N = {n_trial}$ trial patients have documented binary anti-PD-1 response labels. While the response stratification achieves significance ($p = {chi2_p_str}$), expanding trial sample sizes will improve per-cluster subgroup precision.")
+    else:
+        w(f"> - **Trial Cohort Sample Size**: Only $N = {n_trial}$ trial patients have documented binary anti-PD-1 response labels. Three-way chi-square power is limited, contributing to the non-significant response rate p-value ($p = {chi2_p_str}$).")
+    w("> - **Arbitrary Cluster K Choice**: K=3 was selected based on biological interpretability (Hot, Cold, High-TMB). Alternative clustering algorithms (e.g. GMM, HDBSCAN) or higher K values may resolve finer microenvironmental sub-states.")
+    w("> - **Z-Score Normalization Dependence**: Cluster boundaries depend on within-cohort standardization; applying this subtyping scheme to a single new patient requires reference cohort normalization params.")
 
-
+    report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"Clustering report successfully written to {report_path.relative_to(SUBPROJECT_ROOT).as_posix()}")
 
 
