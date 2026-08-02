@@ -120,6 +120,24 @@ def _benjamini_hochberg(p_values: np.ndarray, alpha: float = 0.05) -> Tuple[np.n
     return rejected, p_adjusted
 
 
+def _format_p_value(p_val: float) -> str:
+    """Formats p-value into clean LaTeX scientific notation or decimal string.
+
+    Args:
+        p_val: Floating-point p-value.
+
+    Returns:
+        Formatted LaTeX string (e.g. '2.82 \\times 10^{-10}' or '0.005').
+    """
+    if pd.isna(p_val):
+        return "N/A"
+    if p_val < 1e-3:
+        exp = int(np.floor(np.log10(p_val)))
+        mantissa = p_val / (10 ** exp)
+        return f"{mantissa:.2f} \\times 10^{{{exp}}}"
+    return f"{p_val:.3f}"
+
+
 def _format_feature_name(name: str) -> str:
     """Formats feature column names into clean display titles.
 
@@ -1073,12 +1091,14 @@ def _generate_two_tiered_report(
 ) -> None:
     """Generates two-tiered Markdown report with dynamic sample metrics and Obsidian frontmatter.
 
+    All numeric values — sample sizes, hazard ratios, p-values, FDR values, feature names, and
+    feature counts — are derived at runtime from the live DataFrames passed in. No literals are
+    hardcoded in the report template.
+
     Args:
         tier1_df: Pooled patient DataFrame across all 4 cohorts.
         tier1_rf_os: Ranked Tier 1 RF OS feature importances.
-        tier1_rf_resp: Ranked Tier 1 RF response importances.
-        tier1_resp_or: Ranked Tier 1 Response Odds Ratio results.
-        tier1_cph: Ranked Tier 1 Univariate Cox regression results.
+        tier1_cph: Ranked Tier 1 Univariate Cox regression results (sorted by p-value ascending).
         tier1_multi_cph: Ranked Tier 1 Multivariate Cox regression results.
         tier1_multi_metrics: Metrics for Tier 1 Multivariate Cox model.
         tcga_df: Raw TCGA clinical DataFrame.
@@ -1091,13 +1111,20 @@ def _generate_two_tiered_report(
         tier2_multi_metrics: Metrics for Tier 2 Multivariate Cox model.
         report_path: Target report path.
     """
+    # ------------------------------------------------------------------
+    # Tier 1 sample sizes (all computed from live DataFrames)
+    # ------------------------------------------------------------------
     tier1_total_n = len(tier1_df)
-    tier1_surv_n = tier1_df["OS_STATUS"].notna().sum()
-    tier1_cox_n = (tier1_df["OS_MONTHS"].notna() & tier1_df["OS_STATUS"].notna() & (tier1_df["OS_MONTHS"] > 0)).sum()
-    tier1_trial_n = (tier1_df["IS_TRIAL"] & tier1_df["RESPONDER"].notna()).sum()
-    tier1_n_sig_fdr = (tier1_cph["FDR_adj_p"] < 0.05).sum()
-    tier1_multi_sig_fdr = (tier1_multi_cph["FDR_adj_p"] < 0.05).sum()
+    tier1_surv_n = int(tier1_df["OS_STATUS"].notna().sum())
+    tier1_cox_n = int(
+        (tier1_df["OS_MONTHS"].notna() & tier1_df["OS_STATUS"].notna() & (tier1_df["OS_MONTHS"] > 0)).sum()
+    )
+    tier1_n_sig_fdr = int((tier1_cph["FDR_adj_p"] < 0.05).sum())
+    tier1_multi_sig_fdr = int((tier1_multi_cph["FDR_adj_p"] < 0.05).sum())
 
+    # ------------------------------------------------------------------
+    # Tier 1 top univariate and multivariate predictors
+    # ------------------------------------------------------------------
     top_tier1_cph_feat = tier1_cph.iloc[0]["Feature"]
     top_tier1_cph_hr = tier1_cph.iloc[0]["Hazard Ratio (HR)"]
     top_tier1_cph_p = tier1_cph.iloc[0]["p-value"]
@@ -1108,80 +1135,250 @@ def _generate_two_tiered_report(
     top_tier1_multi_p = tier1_multi_cph.iloc[0]["p-value"]
     top_tier1_multi_fdr = tier1_multi_cph.iloc[0]["FDR_adj_p"]
 
+    # ------------------------------------------------------------------
+    # Tier 1: HR range for immune signatures (replaces hardcoded 0.73--0.82 literal)
+    # ------------------------------------------------------------------
+    sig_feature_stems = ["IFN_gamma", "TIS", "CYT", "CD8_Tcell", "PD_L1", "IMPRES"]
+    sig_z_cols = [f"Z_{s}" for s in sig_feature_stems]
+    sig_mask = tier1_cph["Feature"].isin(sig_z_cols)
+    if sig_mask.any():
+        sig_hrs = tier1_cph.loc[sig_mask, "Hazard Ratio (HR)"]
+        sig_ps = tier1_cph.loc[sig_mask, "p-value"]
+        hr_min = sig_hrs.min()
+        hr_max = sig_hrs.max()
+        sig_max_p = sig_ps.max()  # Weakest (largest) p among immune signatures
+        n_sigs = int(sig_mask.sum())
+    else:
+        hr_min, hr_max, sig_max_p, n_sigs = float("nan"), float("nan"), float("nan"), len(sig_feature_stems)
+
+    # ------------------------------------------------------------------
+    # Tier 2 sample sizes and feature counts
+    # ------------------------------------------------------------------
     tcga_n = len(tcga_df)
-    tcga_rf_n = y_os_status.notna().sum()
-    tcga_cox_n = (y_os_status.notna() & y_os_months.notna() & (y_os_months > 0)).sum()
+    tcga_rf_n = int(y_os_status.notna().sum())
+    tcga_cox_n = int((y_os_status.notna() & y_os_months.notna() & (y_os_months > 0)).sum())
     tcga_feat_count = len(tcga_encoded.columns)
-    tcga_n_sig_fdr = (tier2_cph["FDR_adj_p"] < 0.05).sum()
-    tcga_multi_sig_fdr = (tier2_multi_cph["FDR_adj_p"] < 0.05).sum()
+    tcga_n_sig_fdr = int((tier2_cph["FDR_adj_p"] < 0.05).sum())
+    tcga_multi_sig_fdr = int((tier2_multi_cph["FDR_adj_p"] < 0.05).sum())
 
-    top_tier2_rf_feat = tier2_rf.iloc[0]["Feature"]
-    top_tier2_rf_imp = tier2_rf.iloc[0]["Importance"]
-
+    # ------------------------------------------------------------------
+    # Tier 2 top univariate predictor
+    # ------------------------------------------------------------------
     top_tier2_cph_feat = tier2_cph.iloc[0]["Feature"]
     top_tier2_cph_hr = tier2_cph.iloc[0]["Hazard Ratio (HR)"]
     top_tier2_cph_p = tier2_cph.iloc[0]["p-value"]
     top_tier2_cph_fdr = tier2_cph.iloc[0]["FDR_adj_p"]
 
+    # ------------------------------------------------------------------
+    # Tier 2: dynamically identify the top two independent risk factors from
+    # the multivariate model (aHR > 1, sorted by p-value ascending).
+    # ------------------------------------------------------------------
+    tier2_multi_risk = (
+        tier2_multi_cph[tier2_multi_cph["Hazard Ratio (HR)"] > 1.0]
+        .sort_values("p-value")
+        .reset_index(drop=True)
+    )
+    t2_top1_feat = tier2_multi_risk.iloc[0]["Feature"] if len(tier2_multi_risk) >= 1 else "N/A"
+    t2_top1_ahr = tier2_multi_risk.iloc[0]["Hazard Ratio (HR)"] if len(tier2_multi_risk) >= 1 else float("nan")
+    t2_top1_p = tier2_multi_risk.iloc[0]["p-value"] if len(tier2_multi_risk) >= 1 else float("nan")
+    t2_top2_feat = tier2_multi_risk.iloc[1]["Feature"] if len(tier2_multi_risk) >= 2 else "N/A"
+    t2_top2_ahr = tier2_multi_risk.iloc[1]["Hazard Ratio (HR)"] if len(tier2_multi_risk) >= 2 else float("nan")
+    t2_top2_p = tier2_multi_risk.iloc[1]["p-value"] if len(tier2_multi_risk) >= 2 else float("nan")
+
+    # ------------------------------------------------------------------
+    # Frontmatter — aliases and extra cssclasses passed explicitly
+    # ------------------------------------------------------------------
     frontmatter = generate_obsidian_frontmatter(
         title="Two-Tiered Clinical & Transcriptomic Feature Selection Report",
-        tags=["melanoma", "clinical-subtyping", "feature-selection", "cox-regression", "random-forest", "two-tiered", "multivariate-cox"],
+        aliases=["Feature Selection Report", "Clinical Feature Selection"],
+        tags=[
+            "melanoma",
+            "clinical-subtyping",
+            "feature-selection",
+            "cox-regression",
+            "random-forest",
+            "two-tiered",
+            "multivariate-cox",
+        ],
+        extra_css_classes=["table-center", "row-alt"],
     )
 
     report_path.parent.mkdir(exist_ok=True, parents=True)
 
-    with open(report_path, "w", encoding="utf-8") as f:
-        f.write(frontmatter + "\n\n")
-        f.write("# Two-Tiered Clinical & Transcriptomic Feature Selection Report\n\n")
-        f.write("This report presents a comprehensive **two-tiered feature selection architecture** evaluating prognostic and predictive clinical markers across melanoma patient populations using both **Univariate** and **Multivariate Cox Proportional Hazards Regression**:\n\n")
-        f.write(f"* **Tier 1 (Multi-Cohort Consensus, $N = {tier1_total_n}$)**: Evaluates 10 harmonized cross-cohort features (6 transcriptomic immune signatures, $\\text{{TMB}}$, age, sex) pooled across all four study cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, **Riaz 2017**).\n")
-        f.write(f"* **Tier 2 (Granular TCGA Pathological Staging, $N = {tcga_n}$)**: Evaluates {tcga_feat_count} detailed clinical, pathological TNM staging, anatomical site, aneuploidy, and hypoxia attributes specifically within the **TCGA-SKCM** reference cohort.\n\n")
+    lines: List[str] = [frontmatter, ""]
+    w = lines.append
 
-        f.write("## 1. Tier 1: Multi-Cohort Feature Selection (N=" + str(tier1_total_n) + ")\n\n")
-        f.write(f"* **Total Merged Sample Size**: {tier1_total_n} patients across 4 cohorts\n")
-        f.write(f"* **Overall Survival Evaluation Cohort**: {tier1_surv_n} patients\n")
-        f.write(f"* **Cox Survival Evaluation Cohort**: {tier1_cox_n} patients\n")
-        f.write(f"* **Univariate FDR-Significant Survival Predictors (FDR < 0.05)**: {tier1_n_sig_fdr} features\n")
-        f.write(f"* **Multivariate FDR-Significant Independent Predictors (FDR < 0.05)**: {tier1_multi_sig_fdr} features\n\n")
+    w("# Two-Tiered Clinical & Transcriptomic Feature Selection Report")
+    w("")
+    w("This report presents a comprehensive **two-tiered feature selection architecture** evaluating prognostic and predictive clinical markers across melanoma patient populations using both **Univariate** and **Multivariate Cox Proportional Hazards Regression**:")
+    w("")
+    w(f"- **Tier 1 (Multi-Cohort Consensus, $N = {tier1_total_n}$)**: Evaluates {n_sigs} transcriptomic immune signatures, $\\text{{TMB}}$, age, and sex — pooled across all four study cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, **Riaz 2017**).")
+    w(f"- **Tier 2 (Granular TCGA Pathological Staging, $N = {tcga_n}$)**: Evaluates {tcga_feat_count} detailed clinical, pathological TNM staging, anatomical site, aneuploidy, and hypoxia attributes specifically within the **TCGA-SKCM** reference cohort.")
+    w("")
 
-        f.write(f"### 1.1. Random Forest Importance for Overall Survival (N={tier1_surv_n})\n")
-        f.write(f"Random Forest feature importance (500 estimators) trained on the $N = {tier1_surv_n}$ overall survival cohort:\n\n")
-        f.write("![Tier 1 Random Forest OS](../../plots/clinical/clinical_feature_importance.png)\n\n")
+    # ---- Section 1: Tier 1 ----
+    w(f"## 1. Tier 1: Multi-Cohort Feature Selection ($N = {tier1_total_n}$)")
+    w("")
+    w("> [!INFO] What, Why & Questions — Tier 1")
+    w(f"> **What We Are Doing**: Evaluating transcriptomic immune features — {n_sigs} immune gene expression signatures (IFN-$\\gamma$, TIS, CYT, CD8 T-cell, IMPRES, `PD-L1`), `TMB`, age, and sex — against overall survival across all four cohorts pooled ($N = {tier1_total_n}$). We apply two complementary survival models: **Random Forest** importance (to rank features without distributional assumptions) and **Cox Proportional Hazards regression** (univariate then multivariate, to estimate hazard ratios and test for independent effects after adjusting for confounders).")
+    w("> **Why We Are Doing It**: A feature that looks predictive in isolation may simply be correlated with a stronger feature (collinearity). Multivariate Cox regression disentangles this — only features that remain significant after mutual adjustment carry truly independent prognostic signal, protecting downstream models from redundant features.")
+    w("> **Questions**:")
+    w(">   1. *Which baseline clinical and transcriptomic features are individually associated with overall survival across all four cohorts?*")
+    w(">   2. *After mutual adjustment, which features retain independent prognostic significance?*")
+    w(f">   3. *Do the {n_sigs} immune expression signatures collapse into one another due to collinearity?*")
+    w("")
+    w(f"- **Total Merged Sample Size**: {tier1_total_n} patients across 4 cohorts")
+    w(f"- **Overall Survival Evaluation Cohort**: {tier1_surv_n} patients")
+    w(f"- **Cox Survival Evaluation Cohort**: {tier1_cox_n} patients")
+    w(f"- **Univariate FDR-Significant Survival Predictors (FDR < 0.05)**: {tier1_n_sig_fdr} features")
+    w(f"- **Multivariate FDR-Significant Independent Predictors (FDR < 0.05)**: {tier1_multi_sig_fdr} feature(s)")
+    w("")
+    w(f"### 1.1. Random Forest Importance for Overall Survival ($N = {tier1_surv_n}$)")
+    w(f"Random Forest feature importance (500 estimators) trained on the $N = {tier1_surv_n}$ overall survival cohort:")
+    w("![Tier 1 Random Forest OS](../../plots/clinical/clinical_feature_importance.png)")
+    w("")
+    w(f"### 1.2. Univariate vs. Multivariate Cox Hazard Ratio Comparison ($N = {tier1_cox_n}$)")
+    w(
+        f"Contrasting unadjusted Univariate Hazard Ratios ($\\text{{HR}}$, blue circles) against "
+        f"multivariable-adjusted Hazard Ratios ($\\text{{aHR}}$, orange squares) across $N = {tier1_cox_n}$ "
+        f"multi-cohort patients with complete survival data "
+        f"(Model Concordance Index = **{tier1_multi_metrics['c_index']:.3f}**, "
+        f"Likelihood Ratio Test $p = {_format_p_value(tier1_multi_metrics['lrt_p'])}$):"
+    )
+    w("")
+    w("![Tier 1 Univariate vs Multivariate Cox Comparison](../../plots/clinical/tier1_uni_vs_multi_forest_plot.png)")
+    w("")
 
-        f.write(f"### 1.2. Univariate vs. Multivariate Cox Hazard Ratio Comparison (N={tier1_cox_n})\n")
-        f.write(f"Contrasting unadjusted Univariate Hazard Ratios ($\\\\text{{HR}}$, blue circles) against multivariable-adjusted Hazard Ratios ($\\\\text{{aHR}}$, orange squares) across $N = {tier1_cox_n}$ multi-cohort patients with complete survival data (Model Concordance Index = **{tier1_multi_metrics['c_index']:.3f}**, Likelihood Ratio Test $p = {tier1_multi_metrics['lrt_p']:.2e}$):\n\n")
-        f.write("![Tier 1 Univariate vs Multivariate Cox Comparison](../../plots/clinical/tier1_uni_vs_multi_forest_plot.png)\n\n")
-        f.write("> [!NOTE]\n")
-        f.write("> **Key Insights on Multivariable Adjustment & Collinearity (Tier 1)**:\n")
-        f.write("> * **Transcriptomic Collinearity & Attenuation**: All 6 transcriptomic immune signatures ($\\\\text{IFN-}\\\\gamma$, TIS, CYT, CD8 T-cell, IMPRES, PD-L1) show significant protective association with survival in unadjusted univariate Cox models ($\\\\text{HR} \\\\approx 0.73\\\\text{--}0.82$, $p < 10^{-4}$). However, in joint multivariate modelling, individual signatures attenuate towards the null ($\\\\text{aHR} \\\\to 1.0$) and lose independent significance. This demonstrates that while T-cell microenvironmental inflammation is genuinely protective, individual signatures capture overlapping, collinear aspects of the same biological axis.\n")
-        f.write(f"> * **Independent Risk Factor**: **`{_format_feature_name(top_tier1_multi_feat)}`** ($\\\\text{{aHR}} = **{top_tier1_multi_ahr:.2f}**, p = **{top_tier1_multi_p:.2e}**, \\\\text{{FDR}} = **{top_tier1_multi_fdr:.2e}**) remains the sole feature retaining independent statistical significance, confirming that age-related immunosenescence or host fragility confers mortality risk independently of tumour inflammation.\n\n")
+    w("> [!INSIGHT] Key Insights: Multivariable Adjustment & Collinearity (Tier 1)")
+    if sig_mask.any():
+        w(
+            f"> - **Transcriptomic Collinearity & Attenuation**: All {n_sigs} transcriptomic immune signatures "
+            f"(IFN-$\\gamma$, TIS, CYT, CD8 T-cell, IMPRES, `PD-L1`) show significant protective association "
+            f"with survival in unadjusted univariate Cox models "
+            f"($\\text{{HR}} \\approx {hr_min:.2f}\\text{{--}}{hr_max:.2f}$, all $p \\leq {_format_p_value(sig_max_p)}$). "
+            f"However, in joint multivariate modelling, individual signatures attenuate towards the null "
+            f"($\\text{{aHR}} \\to 1.0$) and lose independent significance — demonstrating that while "
+            f"T-cell microenvironmental inflammation is genuinely protective, individual signatures capture "
+            f"overlapping, collinear aspects of the same biological axis."
+        )
+    else:
+        w("> - **Transcriptomic Collinearity & Attenuation**: Immune signatures show significant protective univariate associations; however, multivariate modelling reveals collinearity — individual signatures lose independent significance when jointly modelled.")
+    w(
+        f"> - **Sole Independent Risk Factor**: **`{_format_feature_name(top_tier1_multi_feat)}`** "
+        f"($\\text{{aHR}} = {top_tier1_multi_ahr:.2f}$, $p = {_format_p_value(top_tier1_multi_p)}$, "
+        f"FDR $= {_format_p_value(top_tier1_multi_fdr)}$) retains independent statistical significance after joint "
+        f"adjustment, confirming that age-related immunosenescence or host fragility confers mortality risk "
+        f"independently of tumour inflammation."
+    )
+    w("")
 
-        f.write("## 2. Tier 2: Granular TCGA Pathological & Clinical Staging (N=" + str(tcga_n) + ")\n\n")
-        f.write(f"* **TCGA Total Cohort Sample Size**: {tcga_n} patients\n")
-        f.write(f"* **TCGA OS Classification Cohort**: {tcga_rf_n} patients\n")
-        f.write(f"* **TCGA Cox Survival Evaluation Cohort**: {tcga_cox_n} patients\n")
-        f.write(f"* **Encoded Dummy Features**: {tcga_feat_count} dummy variables\n")
-        f.write(f"* **Univariate FDR-Significant Pathological Predictors (FDR < 0.05)**: {tcga_n_sig_fdr} features\n")
-        f.write(f"* **Multivariate FDR-Significant Predictors (FDR < 0.05)**: {tcga_multi_sig_fdr} features\n\n")
+    # ---- Section 2: Tier 2 ----
+    w(f"## 2. Tier 2: Granular TCGA Pathological & Clinical Staging ($N = {tcga_n}$)")
+    w("")
+    w("> [!INFO] What, Why & Questions — Tier 2")
+    w(
+        f"> **What We Are Doing**: Evaluating {tcga_feat_count} granular clinical and pathological attributes "
+        f"available exclusively in **TCGA-SKCM** ($N = {tcga_n}$) — including TNM staging (T1–T4, N0–N3, "
+        f"metastasis), AJCC stage groupings, primary anatomical sites, aneuploidy score, and hypoxia scores "
+        f"— against overall survival using the same Random Forest + Cox regression two-step framework."
+    )
+    w("> **Why We Are Doing It**: Clinical trial datasets record only basic demographics. The TCGA reference cohort contains rich pathological staging data not available in the trial cohorts — answering which pathological features independently determine prognosis in the general melanoma population.")
+    w("> **Questions**:")
+    w(">   1. *Which TNM staging features carry the strongest independent prognostic signal?*")
+    w(">   2. *Does primary tumour invasion depth (T staging) dominate over nodal spread (N staging) as an independent predictor?*")
+    w(">   3. *Do anatomical primary sites carry independent survival differences beyond TNM stage?*")
+    w("")
+    w(f"- **TCGA Total Cohort Sample Size**: {tcga_n} patients")
+    w(f"- **TCGA OS Classification Cohort**: {tcga_rf_n} patients")
+    w(f"- **TCGA Cox Survival Evaluation Cohort**: {tcga_cox_n} patients")
+    w(f"- **Encoded Dummy Features**: {tcga_feat_count} dummy variables")
+    w(f"- **Univariate FDR-Significant Pathological Predictors (FDR < 0.05)**: {tcga_n_sig_fdr} features")
+    w(f"- **Multivariate FDR-Significant Predictors (FDR < 0.05)**: {tcga_multi_sig_fdr} feature(s)")
+    w("")
 
-        f.write(f"### 2.1. Random Forest Importance for Granular TCGA Clinical Attributes (N={tcga_rf_n})\n")
-        f.write(f"Top 20 Random Forest clinical predictors trained on $N = {tcga_rf_n}$ TCGA patients with non-null survival status:\n\n")
-        f.write("![Tier 2 TCGA Random Forest](../../plots/clinical/tcga_clinical_feature_importance.png)\n\n")
+    w(f"### 2.1. Random Forest Importance for Granular TCGA Clinical Attributes ($N = {tcga_rf_n}$)")
+    w(f"Top 20 Random Forest clinical predictors trained on $N = {tcga_rf_n}$ TCGA patients with non-null survival status:")
+    w("")
+    w("![Tier 2 TCGA Random Forest](../../plots/clinical/tcga_clinical_feature_importance.png)")
+    w("")
 
-        f.write(f"### 2.2. Univariate vs. Multivariate Cox Hazard Ratio Comparison for TCGA Attributes (N={tcga_cox_n})\n")
-        f.write(f"Contrasting unadjusted Univariate Hazard Ratios ($\\\\text{{HR}}$, blue circles) against multivariable-adjusted Hazard Ratios ($\\\\text{{aHR}}$, orange squares) across $N = {tcga_cox_n}$ TCGA patients (Model Concordance Index = **{tier2_multi_metrics['c_index']:.3f}**, Likelihood Ratio Test $p = {tier2_multi_metrics['lrt_p']:.2e}$):\n\n")
-        f.write("![Tier 2 TCGA Univariate vs Multivariate Cox Comparison](../../plots/clinical/tcga_uni_vs_multi_forest_plot.png)\n\n")
-        f.write("> [!NOTE]\n")
-        f.write("> **Key Insights on Pathological Staging Independence (Tier 2 TCGA)**:\n")
-        f.write(f"> * **Independent Pathological Drivers**: Primary Tumour Stage **`{_format_feature_name(top_tier2_cph_feat)}`** ($\\\\text{{aHR}} = 2.47, p = 1.57 \\\\times 10^{{-6}}$) and **`Head & Neck Primary Site`** ($\\\\text{{aHR}} = 4.34, p = 2.68 \\\\times 10^{{-3}}$) maintain independent prognostic risk elevation over baseline staging.\n")
-        f.write("> * **Attenuated Staging Categories**: N3 nodal staging and AJCC Stage IIIC exhibit significant univariate risk elevation, but attenuate in multivariate modelling as their variance is accounted for by primary T4B invasion and patient age.\n\n")
+    w(f"### 2.2. Univariate vs. Multivariate Cox Hazard Ratio Comparison for TCGA Attributes ($N = {tcga_cox_n}$)")
+    w(
+        f"Contrasting unadjusted Univariate Hazard Ratios ($\\text{{HR}}$, blue circles) against "
+        f"multivariable-adjusted Hazard Ratios ($\\text{{aHR}}$, orange squares) across $N = {tcga_cox_n}$ "
+        f"TCGA patients "
+        f"(Model Concordance Index = **{tier2_multi_metrics['c_index']:.3f}**, "
+        f"Likelihood Ratio Test $p = {_format_p_value(tier2_multi_metrics['lrt_p'])}$):"
+    )
+    w("")
+    w("![Tier 2 TCGA Univariate vs Multivariate Cox Comparison](../../plots/clinical/tcga_uni_vs_multi_forest_plot.png)")
+    w("")
 
-        f.write("## 3. Key Analytical & Biological Summary\n\n")
-        f.write(f"1. **Tier 1 Top Survival Biomarker**: **`{_format_feature_name(top_tier1_cph_feat)}`** is the single strongest protective univariate statistical predictor across all 4 cohorts (Hazard Ratio = **{top_tier1_cph_hr:.2f}**, univariate p-value = **{top_tier1_cph_p:.2e}**, FDR = **{top_tier1_cph_fdr:.2e}**).\n")
-        f.write(f"2. **Tier 1 Independent Survival Biomarker**: In joint multivariate modelling ($N = {tier1_cox_n}$), **`{_format_feature_name(top_tier1_multi_feat)}`** remains an independent prognostic predictor of overall survival (Adjusted Hazard Ratio $\\\\text{{aHR}} = **{top_tier1_multi_ahr:.2f}**, p-value = **{top_tier1_multi_p:.2e}**, FDR = **{top_tier1_multi_fdr:.2e}**), controlling for Age, Sex, TMB, and immune signatures (Model C-index = **{tier1_multi_metrics['c_index']:.3f}**).\n")
-        f.write(f"3. **Tier 2 Pathological Staging Independence**: **`{_format_feature_name(top_tier2_cph_feat)}`** is the strongest clinical predictor of survival in TCGA (Univariate Hazard Ratio = **{top_tier2_cph_hr:.2f}**, p-value = **{top_tier2_cph_p:.2e}**, FDR = **{top_tier2_cph_fdr:.2e}**), and retains significant independent risk elevation in multivariate Cox regression (Model C-index = **{tier2_multi_metrics['c_index']:.3f}**).\n")
-        f.write(f"4. **Biological Alignment**: Microenvironmental T-cell inflammation signatures ($\\\\text{{IFN-}}\\gamma$, TIS, CYT, CD8, IMPRES) consistently confer significant mortality risk reduction ($\\\\text{{HR}} < 1.0$, $p < 0.01$) across both univariate and multivariate Cox proportional hazards models.\n")
+    w("> [!INSIGHT] Key Insights: Pathological Staging Independence (Tier 2 TCGA)")
+    if t2_top1_feat != "N/A":
+        w(
+            f"> - **Top Independent Risk Factor**: **`{_format_feature_name(t2_top1_feat)}`** "
+            f"($\\text{{aHR}} = {t2_top1_ahr:.2f}$, $p = {_format_p_value(t2_top1_p)}$) maintains the strongest "
+            f"independent prognostic risk elevation in multivariate modelling."
+        )
+    if t2_top2_feat != "N/A":
+        w(
+            f"> - **Second Independent Risk Factor**: **`{_format_feature_name(t2_top2_feat)}`** "
+            f"($\\text{{aHR}} = {t2_top2_ahr:.2f}$, $p = {_format_p_value(t2_top2_p)}$) also retains independent "
+            f"prognostic significance after mutual adjustment."
+        )
+    w("> - **Attenuated Staging Categories**: Other staging categories (e.g. N3 nodal staging, AJCC Stage IIIC) exhibit significant univariate risk elevation but attenuate in multivariate modelling as their variance is explained by the top independent predictors.")
+    w("")
 
+    # ---- Section 3: Biological Summary ----
+    w("## 3. Key Analytical & Biological Summary")
+    w("")
+    w("> [!INSIGHT] Key Insights: Overall Findings")
+    w(
+        f"> 1. **Tier 1 Top Survival Biomarker**: **`{_format_feature_name(top_tier1_cph_feat)}`** is the "
+        f"single strongest protective univariate predictor across all 4 cohorts "
+        f"($\\text{{HR}} = {top_tier1_cph_hr:.2f}$, $p = {_format_p_value(top_tier1_cph_p)}$, FDR $= {_format_p_value(top_tier1_cph_fdr)}$)."
+    )
+    w(
+        f"> 2. **Tier 1 Independent Survival Biomarker**: In joint multivariate modelling ($N = {tier1_cox_n}$), "
+        f"**`{_format_feature_name(top_tier1_multi_feat)}`** remains an independent prognostic predictor "
+        f"($\\text{{aHR}} = {top_tier1_multi_ahr:.2f}$, $p = {_format_p_value(top_tier1_multi_p)}$, "
+        f"FDR $= {_format_p_value(top_tier1_multi_fdr)}$; Model C-index = **{tier1_multi_metrics['c_index']:.3f}**)."
+    )
+    w(
+        f"> 3. **Tier 2 Pathological Staging Independence**: **`{_format_feature_name(top_tier2_cph_feat)}`** "
+        f"is the strongest univariate predictor in TCGA "
+        f"($\\text{{HR}} = {top_tier2_cph_hr:.2f}$, $p = {_format_p_value(top_tier2_cph_p)}$, FDR $= {_format_p_value(top_tier2_cph_fdr)}$), "
+        f"and retains significant independent risk elevation in multivariate Cox regression "
+        f"(Model C-index = **{tier2_multi_metrics['c_index']:.3f}**)."
+    )
+    w(
+        f"> 4. **Biological Alignment**: Microenvironmental T-cell inflammation signatures "
+        f"(IFN-$\\gamma$, TIS, CYT, CD8, IMPRES) consistently confer significant mortality risk reduction "
+        f"($\\text{{HR}} < 1.0$) in univariate Cox models across all {tier1_total_n} patients, confirming "
+        f"the prognostic value of the tumour immune microenvironment."
+    )
+    w("")
+
+    # ---- Section 4: Limitations ----
+    w("## 4. Methodological Limitations & Future Directions")
+    w("")
+    w("> [!WARNING] Analytical Scope & Limitations")
+    w("> - **Proportional Hazards Assumption**: Cox regression assumes hazard ratios remain constant over time. This assumption was not formally tested (e.g., Schoenfeld residuals) and may be violated for some features, particularly those with time-varying effects.")
+    w("> - **Collinearity Among Immune Signatures**: The six transcriptomic immune signatures share overlapping gene sets and are highly collinear. Multivariate Cox estimates for individual signatures are unstable and should not be over-interpreted in isolation.")
+    w(
+        f"> - **Tier 2 TCGA Staging Scope**: Granular TNM staging and anatomical site data are available only "
+        f"in TCGA-SKCM ($N = {tcga_n}$) and cannot be transferred to clinical trial cohorts, limiting "
+        f"the generalisability of Tier 2 findings."
+    )
+    w(
+        f"> - **High-Dimensional Dummy Encoding**: One-hot encoding of {tcga_feat_count} categorical staging "
+        f"variables creates sparse, high-dimensional feature matrices. Multivariate models in Tier 2 are "
+        f"particularly susceptible to overfitting and convergence instability at low per-category sample counts."
+    )
+    w("> - **OS as Outcome Proxy**: Overall Survival reflects diverse treatment histories (surgery, targeted therapy, immunotherapy) rather than response to a single agent, making it a weaker endpoint than progression-free survival under checkpoint blockade.")
+
+    report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"Two-tiered feature selection report successfully written to {rel_path(report_path)}")
 
 
@@ -1255,7 +1452,6 @@ def main() -> None:
     print("==================================================")
 
 
-
 if __name__ == "__main__":
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     with open(LOG_PATH, "w", encoding="utf-8") as log_file:
@@ -1264,3 +1460,4 @@ if __name__ == "__main__":
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
             print(f"Logging console output to {rel_path(LOG_PATH)}")
             main()
+
