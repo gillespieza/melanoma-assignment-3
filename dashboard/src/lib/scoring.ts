@@ -171,6 +171,10 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
         ? "Acquired resistance typically within 9-12 months; plan the next line early."
         : "Contraindicated without a BRAF V600 mutation.",
       tier: brafMut ? "alternative" : "not-recommended",
+      hardBlocked: !brafMut,
+      contraindication: !brafMut
+        ? "Contraindicated: Patient is BRAF Wild-Type (lacks BRAF V600 hotspot). BRAF inhibitors cause paradoxical MAPK activation."
+        : undefined,
     },
     {
       arm: ARMS.combo,

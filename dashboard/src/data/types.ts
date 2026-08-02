@@ -54,6 +54,10 @@ export interface RankedOption {
   /** Practical caution the consultant should weigh. */
   caution: string;
   tier: "primary" | "alternative" | "not-recommended";
+  /** True if this therapy arm is hard-blocked due to biological contraindication (e.g. BRAF-WT). */
+  hardBlocked?: boolean;
+  /** Explicit clinical contraindication message when hard-blocked. */
+  contraindication?: string;
 }
 
 export interface DecisionNode {
