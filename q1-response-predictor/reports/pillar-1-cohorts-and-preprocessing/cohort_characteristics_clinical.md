@@ -28,6 +28,18 @@ This report compares patient demographics, treatments, survival, and sample attr
 - **Hugo 2016**: Anti-PD-1 clinical trial cohort ($N = 27$).
 - **Riaz 2017**: Anti-PD-1 clinical trial cohort ($N = 107$) where 100% of patients had previously received anti-CTLA-4 (Ipilimumab).
 
+### 1.1 Clinical Demographics & Treatment Distributions (2×2 Grid)
+
+![Clinical Demographics & Treatment Distributions](../../plots/clinical/clinical_demographics_2x2_grid.png)
+
+_**Figure 1: 2×2 Grid of Clinical Demographics and Treatment Histories across Cohorts.**_
+
+#### Key Demographics & Treatment Insights
+- **Panel A: Sex Distribution (% Male vs. Female)**: The overall cohort ($N = 699$) exhibits a male predominance (**60.8% Male** [$N = 425$] vs. **39.2% Female** [$N = 274$]), reflecting real-world cutaneous melanoma incidence patterns where male patients account for nearly 60% of advanced presentations.
+- **Panel B: Age Distribution across Studies**: Patient ages span from 15 to 90 years with a **median age of 58.0 years** ($\text{IQR} = 48.0\text{--}69.0\text{ years}$). Trial cohorts (`Hugo 2016`: median 61.0; `Riaz 2017`: median 56.0; `TCGA-SKCM`: median 57.0) display consistent age distributions centered around late middle age.
+- **Panel C: TCGA-SKCM Recorded Treatment Types ($N = 443$)**: Among TCGA-SKCM patients with recorded therapy histories, **Radiation Therapy** represents the largest modality (**25.3%** [$N = 112$]), followed by **Immunotherapy** (**15.8%** [$N = 70$]), **Chemotherapy** (**15.1%** [$N = 67$]), **Vaccine Therapy** (**5.0%** [$N = 22$]), and **Targeted Therapy** (**2.7%** [$N = 12$]). $54.4\%$ [$N = 241$] have unrecorded systemic therapy histories in cBioPortal.
+- **Panel D: Immunotherapy Agents Administered ($N = 326$)**: Across all immunotherapy-treated trial and TCGA patients, **Nivolumab (Anti-PD-1)** is the predominant single agent (**48.5%** [$N = 158$]), followed by **Pembrolizumab (Anti-PD-1)** (**30.1%** [$N = 98$]), **Ipilimumab Combination / Prior Exposure** (**13.2%** [$N = 43$]), and **Unspecified Anti-PD-1** (**8.3%** [$N = 27$]).
+
 _**Table 1: Baseline Patient and Disease Characteristics**_
 
 | Characteristic                | Liu 2019   | Hugo 2016        | Riaz 2017        | TCGA-SKCM        |

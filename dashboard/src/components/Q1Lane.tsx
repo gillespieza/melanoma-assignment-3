@@ -25,6 +25,12 @@ const SIGNATURE_LABELS: Record<string, string> = {
   CD8_Tcell: "CD8 T-cell",
   IMPRES: "IMPRES",
   PD_L1: "PD-L1 expression",
+  Macrophage_STV_Score: "Macrophage STV Barrier",
+  M1_M2_Ratio: "M1/M2 Polarization Ratio",
+  mut_BRAF: "BRAF V600 Mutation",
+  mut_NRAS: "NRAS Driver Mutation",
+  mut_NF1: "NF1 Loss-of-Function",
+  TMB_NONSYNONYMOUS: "Tumour Mutation Burden (TMB)",
 };
 
 function ordinal(n: number): string {
@@ -163,7 +169,7 @@ export default function Q1Lane({
   return (
     <Panel
       title="Q1 · Gene-Expression Response Predictor"
-      subtitle="Five-model ensemble over six immune signatures → P(response to checkpoint blockade)"
+      subtitle="Five-model ensemble over 12 multimodal features (immune signatures, macrophage barrier, driver mutations & TMB) → P(response to checkpoint blockade)"
       icon={<BrainCircuit size={16} />}
       right={
         q1 ? (

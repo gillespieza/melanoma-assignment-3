@@ -8,7 +8,7 @@ export type BrafCall = "V600E" | "WT";
 export type NrasCall = "Mutant" | "WT";
 export type ResistanceRisk = "low" | "moderate" | "high" | "unknown";
 
-/** The six gene-expression signatures the Q1 models consume. */
+/** The gene-expression and macrophage signatures the Q1 models consume. */
 export interface Q1Features {
   IFN_gamma: number | null;
   TIS: number | null;
@@ -16,6 +16,12 @@ export interface Q1Features {
   CD8_Tcell: number | null;
   IMPRES: number | null;
   PD_L1: number | null;
+  Macrophage_STV_Score?: number | null;
+  M1_M2_Ratio?: number | null;
+  mut_BRAF?: number | null;
+  mut_NRAS?: number | null;
+  mut_NF1?: number | null;
+  TMB_NONSYNONYMOUS?: number | null;
 }
 
 export interface Q1Prediction {

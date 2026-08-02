@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-02 (Added `Q5 Enhanced ML Predictor` tab to patient workbench navigation; relabeled Treatability Index score in recommendation cards to TI score /100; centralized `M1_MACROPHAGE_GENES` and `M2_MACROPHAGE_GENES` in `src/biology_constants.py`; updated `q1-response-predictor` feature extraction to 8 signatures including `Macrophage_STV_Score` and `M1_M2_Ratio`).
+> **Last updated**: 2026-08-02 (Added 2×2 clinical demographics grid figure `clinical_demographics_2x2_grid.png` and updated Section 1 in `cohort_characteristics_clinical.md`; added `Q5 Enhanced ML Predictor` tab to patient workbench navigation; relabeled TI score to /100; centralized macrophage gene panels in `src/biology_constants.py`; updated Q1 signature extraction to 8 signatures; created `tcga_immune` processed cohort).
 
 ## Repository Overview
 

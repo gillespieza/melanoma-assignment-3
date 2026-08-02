@@ -148,7 +148,7 @@ Click between six method tabs to inspect individual method outputs:
 - **Phase 4 ODE Dynamic Trajectories:** endpoint residual tumour burden across therapy arms for this phenotype.
 
 ### 6.2 Q1 · ML predictor
-P(response) probability gauge, 5-model ensemble breakdown (LR, RF, XGB, SVM, ENet), and 6 gene-expression signature values.
+P(response) probability gauge, 5-model ensemble breakdown (LR, RF, XGB, SVM, ENet), and 11 multimodal feature values (immune signatures, macrophage barrier & driver mutations).
 
 ### 6.3 Q2 · Validation
 Proteomic RPPA pERK validation (r = 0.175, p = 0.002), rank order significance (p = 3.2×10⁻⁹), and GDSC2 cell-line viability calibration.

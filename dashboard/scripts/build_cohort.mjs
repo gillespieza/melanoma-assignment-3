@@ -56,7 +56,7 @@ const DOSE_AXIS    = [0.01, 0.12, 0.23, 0.34, 0.45, 0.56, 0.67, 0.78, 0.89, 1.0]
 const BRAFI_COLS   = DOSE_AXIS.map((d) => `BRAFi_${d.toFixed(3)}`);
 const ANTIPD1_COLS = DOSE_AXIS.map((d) => `antiPD1_${d.toFixed(3)}`);
 const Q1_MODELS    = ["lr", "rf", "xgb", "svm", "enet"];
-const Q1_FEATURES  = ["IFN_gamma", "TIS", "CYT", "CD8_Tcell", "IMPRES", "PD_L1"];
+const Q1_FEATURES  = ["IFN_gamma", "TIS", "CYT", "CD8_Tcell", "IMPRES", "PD_L1", "Macrophage_STV_Score", "M1_M2_Ratio", "mut_BRAF", "mut_NRAS", "mut_NF1", "TMB_NONSYNONYMOUS"];
 
 // ---------------------------------------------------------------------------
 // CSV / TSV parsing

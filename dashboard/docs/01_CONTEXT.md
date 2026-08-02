@@ -11,7 +11,7 @@ The project is split into five questions, each a *different method*:
 
 | Q | Owner | Method type | What it produces |
 |---|-------|-------------|------------------|
-| **Q1** | Amanda | Statistical / ML | Immunotherapy-response predictor. 5 trained models (LogReg, RandomForest, XGBoost, SVM, ElasticNet) over a curated 6-signature feature set. Predicts CR/PR vs PD to anti-PD-1. AUC ≈ 0.67. |
+| **Q1** | Amanda | Statistical / ML | Immunotherapy-response predictor. 5 trained models (LogReg, RandomForest, XGBoost, SVM, ElasticNet) over an 11-feature multimodal panel (immune signatures, macrophage STV/polarization, and BRAF/NRAS/NF1 driver mutations). Predicts CR/PR vs PD to anti-PD-1. AUC ≈ 0.63. |
 | **Q2** | Gift | Experimental | Applies the Q1 signature to melanoma **cell lines** to validate against real drug response. |
 | **Q3** | Jinish (BRAF part) & Anthony | Mechanistic | An **ODE digital twin**: 4 coupled modules (RAF-dimer, MAPK cascade, tumour–immune, PD-1/PD-L1 checkpoint). Simulates tumour burden + survival under BRAF/MEK vs anti-PD-1. |
 | **Q4** | Hena | Target/resistance | Drug targets & resistance mechanisms (e.g. SOX10 knockout). Second-line / salvage logic. |
