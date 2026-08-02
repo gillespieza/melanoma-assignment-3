@@ -68,10 +68,12 @@ function hasRapidControlPressure(p: CohortPatient): boolean {
 /** The statistical (data-driven) position on immunotherapy. */
 function statisticalPosition(p: CohortPatient): MethodPosition {
   if (p.q1) {
+    const pct = p.q1.pResponsePct;
+    const val = pct !== null && pct !== undefined ? pct / 100 : p.q1.pResponse;
     return {
-      value: p.q1.pResponse,
-      label: `Q1 ML predictor · P(response) ${(p.q1.pResponse * 100).toFixed(0)}%`,
-      detail: "Ensemble of five models over 11 multimodal features (immune signatures, macrophage barrier & driver mutations).",
+      value: val,
+      label: `Q1 ML predictor · P(response) ${(p.q1.pResponse * 100).toFixed(0)}% (${pct ?? Math.round(val * 100)}th pctile)`,
+      detail: "Ensemble of five models over 12 multimodal features (immune signatures, macrophage barrier, driver mutations & TMB).",
       source: "q1",
     };
   }
@@ -161,6 +163,58 @@ function assessAgreement(
   };
 }
 
+function buildReasoningChain(p: CohortPatient, armKey: TherapyKey): string[] {
+  const parts: string[] = [];
+
+  // 1. Driver mutation
+  if (p.nras === "Mutant") {
+    parts.push("NRAS-mutant");
+  } else if (p.braf !== "WT") {
+    parts.push("BRAF-mutant");
+  } else {
+    parts.push("Triple-WT / Non-BRAF");
+  }
+
+  // 2. Phenotype microenvironment
+  if (p.q5?.shortLabel) {
+    parts.push(`${p.q5.shortLabel} microenvironment`);
+  }
+
+  // 3. TMB
+  if (p.tmbPct != null) {
+    if (p.tmbPct < 25) parts.push(`Low TMB (${p.tmbPct}th pctile)`);
+    else if (p.tmbPct >= 75) parts.push(`High TMB (${p.tmbPct}th pctile)`);
+  }
+
+  // 4. PD-L1
+  if (p.pdl1Pct != null) {
+    if (p.pdl1Pct < 25) parts.push(`Low PD-L1 (${p.pdl1Pct}th pctile)`);
+    else if (p.pdl1Pct >= 75) parts.push(`High PD-L1 (${p.pdl1Pct}th pctile)`);
+  }
+
+  // 5. Q1 ML response percentile
+  if (p.q1?.pResponsePct != null) {
+    if (p.q1.pResponsePct < 25) parts.push(`Low Q1 ML (${p.q1.pResponsePct}th pctile)`);
+    else if (p.q1.pResponsePct >= 75) parts.push(`High Q1 ML (${p.q1.pResponsePct}th pctile)`);
+  }
+
+  const summaryLine = parts.join(" + ");
+  const chain: string[] = [summaryLine];
+
+  if (armKey === "targeted") {
+    chain.push("→ Immunotherapy unfavoured (low responsiveness & immune desert)");
+    chain.push("→ MAPK pathway is the primary actionable oncogenic driver");
+  } else if (armKey === "combo") {
+    chain.push("→ Immunotherapy monotherapy insufficient due to macrophage barrier / immune exclusion");
+    chain.push("→ Microenvironmental combination / reversal therapy indicated");
+  } else {
+    chain.push("→ High tumor immunogenicity & inflamed microenvironment");
+    chain.push("→ Immunotherapy checkpoint blockade is the primary lane");
+  }
+
+  return chain;
+}
+
 export function integrate(p: CohortPatient): IntegratedResult {
   const statistical = statisticalPosition(p);
   const mechanistic = mechanisticPosition(p);
@@ -186,35 +240,76 @@ export function integrate(p: CohortPatient): IntegratedResult {
       B: "targeted",
       C: "combo",
     };
-    primaryKey = q5ArmMap[p.q5.treatmentArm] ?? "immuno";
-
+    let candidateKey = q5ArmMap[p.q5.treatmentArm] ?? "immuno";
     const baseOptions = buildRankedOptions(ctx, scoreArms(ctx));
-    
-    // Override the primary option with Q5's explicit recommendation details
+
+    // Only hard-block Arm B if the specific Q5 therapy requires a BRAF V600 hotspot.
+    // MEK + CDK4/6 inhibitor regimens (e.g. Binimetinib + Ribociclib for NRAS-mutant)
+    // do NOT require BRAF V600 and must not be gated on brafMut.
+    const BRAF_SPECIFIC_KEYWORDS = ["dabrafenib", "vemurafenib", "encorafenib", "braf inhibitor"];
+    const q5Therapy = (p.q5.recommendedTherapy ?? "").toLowerCase();
+    const therapyRequiresBraf = BRAF_SPECIFIC_KEYWORDS.some((kw) => q5Therapy.includes(kw));
+
+    const candidateOpt = baseOptions.find((o) => o.arm.key === candidateKey);
+    if (candidateOpt?.hardBlocked && therapyRequiresBraf) {
+      // Fallback to the top eligible, non-contraindicated option
+      const eligibleOpt = baseOptions.find((o) => !o.hardBlocked) ?? baseOptions[0];
+      candidateKey = eligibleOpt.arm.key;
+    }
+    primaryKey = candidateKey;
+
+    // Override the primary option with Q5's explicit recommendation details for eligible arms.
+    // IMPORTANT: do NOT override `confidence` with treatabilityIndex. TI measures checkpoint-
+    // blockade susceptibility specifically and is not a general confidence score — store it
+    // separately in `tiScore` so the UI can demote it to a secondary footnote.
     options = baseOptions.map((opt) => {
-      if (opt.arm.key === primaryKey) {
-        const confidence = p.q5!.treatabilityIndex !== null 
-          ? Math.round(p.q5!.treatabilityIndex) 
-          : opt.confidence;
+      const isBlocked = opt.hardBlocked && (opt.arm.key !== "targeted" || therapyRequiresBraf);
+      if (opt.arm.key === primaryKey && !isBlocked) {
+        // When the generic scoring engine returns 0 for a BRAF-WT targeted arm
+        // (because it only scores BRAFi), derive confidence from Q5's MAPK
+        // pathway sensitivity score instead so the card shows a meaningful value.
+        const engineConfidence = opt.confidence;
+        const q5Confidence = p.q5!.dabrafenibSensitivity != null
+          ? Math.round(p.q5!.dabrafenibSensitivity)
+          : p.q5!.treatabilityIndex != null
+            ? Math.round(p.q5!.treatabilityIndex)
+            : null;
+        const confidence = (engineConfidence === 0 && q5Confidence != null)
+          ? q5Confidence
+          : engineConfidence;
+        const reasoningChain = buildReasoningChain(p, primaryKey);
         return {
           ...opt,
           confidence,
+          // Store TI separately; it is checkpoint-blockade-specific, not arm confidence
+          tiScore: p.q5!.treatabilityIndex,
           tier: "primary" as const,
+          hardBlocked: false,
+          contraindication: undefined,
           rationale: p.q5!.recommendedTherapy || opt.rationale,
           evidence: `Q5 Stratification: ${p.q5!.shortLabel} (${p.q5!.confidenceBand} Confidence)`,
           caution: p.q5!.q4NominatedTarget 
             ? `Q4 Target nominated: ${p.q5!.q4NominatedTarget}` 
             : opt.caution,
+          reasoningChain,
         };
       } else {
         return {
           ...opt,
-          tier: opt.tier === "primary" ? ("alternative" as const) : opt.tier,
+          hardBlocked: isBlocked,
+          contraindication: isBlocked ? opt.contraindication : undefined,
+          tier: isBlocked ? ("not-recommended" as const) : (opt.tier === "primary" ? ("alternative" as const) : opt.tier),
         };
       }
     });
-    // Ensure primary option is first
-    options.sort((a, b) => (a.tier === "primary" ? -1 : b.tier === "primary" ? 1 : 0));
+    // Ensure primary option is first and hard-blocked options are at the bottom
+    options.sort((a, b) => {
+      if (a.hardBlocked && !b.hardBlocked) return 1;
+      if (!a.hardBlocked && b.hardBlocked) return -1;
+      if (a.tier === "primary") return -1;
+      if (b.tier === "primary") return 1;
+      return b.confidence - a.confidence;
+    });
   } else {
     const scores = scoreArms(ctx);
     options = buildRankedOptions(ctx, scores);
@@ -229,7 +324,8 @@ export function integrate(p: CohortPatient): IntegratedResult {
   return {
     options,
     path: buildPath(p, ctx, agreement, primary.arm.label),
-    headline: `${primary.arm.label} · TI score ${primary.confidence}/100 · predicted median OS ${primary.medianOsMonths} mo`,
+    headline: `${primary.arm.label} · confidence ${primary.confidence}/100 · predicted median OS ${primary.medianOsMonths} mo`,
+
     primaryKey,
     agreement,
     evidence,

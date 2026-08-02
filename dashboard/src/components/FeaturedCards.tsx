@@ -1,7 +1,9 @@
-import { Sparkles, ArrowRight, HelpCircle } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
 import type { CohortRow } from "./CohortTable";
 import { getPhenotypeColor } from "../data/palette";
 import { Panel, Pill } from "./ui";
+import { TreatabilityHelpPopover } from "./TreatabilityHelpPopover";
+import { ConfidenceHelpPopover } from "./ConfidenceHelpPopover";
 
 interface PhenotypeCardDef {
   key: string;
@@ -114,8 +116,9 @@ export default function FeaturedCards({
               <div className="mt-3.5">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="rounded-lg border border-clinical-border bg-clinical-bg px-2.5 py-1.5">
-                    <div className="text-[9px] font-bold uppercase tracking-wide text-clinical-muted">
-                      Treatability
+                    <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wide text-clinical-muted">
+                      <span>Treatability</span>
+                      <TreatabilityHelpPopover />
                     </div>
                     <div className="tabular text-[13.5px] font-extrabold text-clinical-ink">
                       {q5?.treatabilityIndex !== null && q5?.treatabilityIndex !== undefined
@@ -126,13 +129,7 @@ export default function FeaturedCards({
                   <div className="rounded-lg border border-clinical-border bg-clinical-bg px-2.5 py-1.5">
                     <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wide text-clinical-muted">
                       <span>Confidence</span>
-                      <span className="group relative cursor-help">
-                        <HelpCircle size={10} className="text-clinical-muted group-hover:text-okabe-purple transition" />
-                        <div className="pointer-events-none absolute right-0 top-full z-30 mt-1 hidden w-56 rounded-xl border border-clinical-border bg-white p-2.5 text-left text-[10.5px] font-normal normal-case leading-snug text-clinical-muted shadow-lift group-hover:block">
-                          <div className="font-bold text-clinical-ink">Confidence Band</div>
-                          Derived from method concordance (ML + ODE), Treatability Index, and drug sensitivity evidence.
-                        </div>
-                      </span>
+                      <ConfidenceHelpPopover size={10} />
                     </div>
                     <div
                       className={

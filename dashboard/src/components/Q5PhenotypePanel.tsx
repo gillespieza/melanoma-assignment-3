@@ -3,6 +3,7 @@ import type { CohortMeta, CohortPatient } from "../data/cohort";
 import { getPhenotypeColor, getArmColor } from "../data/palette";
 import { getPhenotypeDescription } from "./PatientPassport";
 import { Panel, Pill } from "./ui";
+import { TreatabilityHelpPopover } from "./TreatabilityHelpPopover";
 
 interface Props {
   patient: CohortPatient;
@@ -87,8 +88,9 @@ export default function Q5PhenotypePanel({ patient, meta }: Props) {
           {/* Treatability Index Tile */}
           <div className="rounded-xl border border-clinical-border bg-clinical-bg p-4 flex flex-col justify-between">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-clinical-muted flex items-center gap-1">
-                <Activity size={12} /> Treatability Index
+              <div className="text-[10px] font-bold uppercase tracking-wide text-clinical-muted flex items-center justify-between">
+                <span className="flex items-center gap-1"><Activity size={12} /> Treatability Index</span>
+                <TreatabilityHelpPopover />
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-[28px] font-extrabold leading-none text-clinical-ink">

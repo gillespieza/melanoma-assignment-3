@@ -41,6 +41,12 @@ export interface RankedOption {
   arm: TherapyArm;
   /** 0-100 model confidence for THIS patient. */
   confidence: number;
+  /**
+   * Raw Q5 Treatability Index (0-100). Reflects checkpoint-blockade
+   * susceptibility specifically — kept separate from `confidence` so the UI
+   * can display it as a secondary footnote rather than the headline metric.
+   */
+  tiScore?: number | null;
   /** Predicted median overall survival, months. */
   medianOsMonths: number;
   /** Predicted 12-month tumour-burden reduction, fraction 0-1. */
@@ -52,6 +58,16 @@ export interface RankedOption {
   /** Practical caution the consultant should weigh. */
   caution: string;
   tier: "primary" | "alternative" | "not-recommended";
+  /** True if this therapy arm is hard-blocked due to biological contraindication (e.g. BRAF-WT). */
+  hardBlocked?: boolean;
+  /** Explicit explanation of hard-block biological contraindication. */
+  contraindication?: string;
+  /**
+   * Short clinical signal bullets explaining why this arm was chosen.
+   * Rendered as a compact reasoning chain on the primary recommendation card.
+   * Each string is a single signal (e.g. "NRAS-mutant · MAPK driver active").
+   */
+  reasoningChain?: string[];
 }
 
 export interface DecisionNode {

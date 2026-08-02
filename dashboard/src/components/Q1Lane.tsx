@@ -168,7 +168,7 @@ export default function Q1Lane({
 
   return (
     <Panel
-      title="Q1 · Gene-Expression Response Predictor"
+      title="Q1 · Multimodal Response Predictor"
       subtitle="Five-model ensemble over 12 multimodal features (immune signatures, macrophage barrier, driver mutations & TMB) → P(response to checkpoint blockade)"
       icon={<BrainCircuit size={16} />}
       right={
@@ -217,7 +217,7 @@ export default function Q1Lane({
           {hasFeatures && (
             <div>
               <div className="mb-2 flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wide text-clinical-muted">
-                <FlaskConical size={12} /> Input signature scores
+                <FlaskConical size={12} /> Input feature breakdown
               </div>
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 {Object.entries(q1.features).map(([key, value]) => (

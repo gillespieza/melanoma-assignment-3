@@ -6,7 +6,7 @@ import { BrainCircuit, FlaskConical, Waves, ShieldAlert, Layers, ChevronRight } 
 const METHODS = [
   {
     name: "ML predictor",
-    detail: "Gene-expression signatures → P(response)",
+    detail: "12-feature multimodal panel (signatures, driver mutations, TMB) → P(response)",
     icon: BrainCircuit,
   },
   {

@@ -3,6 +3,8 @@ import type { CohortPatient } from "../data/cohort";
 import { pdl1Band } from "../data/cohort";
 import { getPhenotypeColor } from "../data/palette";
 import { Panel, Pill } from "./ui";
+import { TreatabilityHelpPopover } from "./TreatabilityHelpPopover";
+import { ConfidenceHelpPopover } from "./ConfidenceHelpPopover";
 
 export function getPhenotypeDescription(label: string): string {
   const l = label.toLowerCase();
@@ -89,12 +91,18 @@ export default function PatientPassport({
                   <div className="mt-1 text-[11px] text-clinical-muted">{getPhenotypeDescription(patient.q5.shortLabel)}</div>
                 </div>
               </div>
-              <Pill tone={patient.q5.confidenceBand === "High" ? "green" : patient.q5.confidenceBand === "Moderate" ? "amber" : "neutral"}>
-                {patient.q5.confidenceBand} Conf
-              </Pill>
-              <Pill tone="neutral">
-                TI {patient.q5.treatabilityIndex !== null ? patient.q5.treatabilityIndex.toFixed(0) : "–"}/100
-              </Pill>
+              <span className="inline-flex items-center gap-1">
+                <Pill tone={patient.q5.confidenceBand === "High" ? "green" : patient.q5.confidenceBand === "Moderate" ? "amber" : "neutral"}>
+                  {patient.q5.confidenceBand} Conf
+                </Pill>
+                <ConfidenceHelpPopover size={11} />
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Pill tone="neutral">
+                  TI {patient.q5.treatabilityIndex !== null ? patient.q5.treatabilityIndex.toFixed(0) : "–"}/100
+                </Pill>
+                <TreatabilityHelpPopover />
+              </span>
             </>
           ) : (
             <>

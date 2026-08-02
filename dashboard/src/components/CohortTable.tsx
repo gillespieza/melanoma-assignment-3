@@ -4,6 +4,8 @@ import type { CohortPatient } from "../data/cohort";
 import { getPhenotypeColor } from "../data/palette";
 import { integrate, type AgreementStatus } from "../lib/integrationEngine";
 import { Panel, Pill } from "./ui";
+import { TreatabilityHelpPopover } from "./TreatabilityHelpPopover";
+import { ConfidenceHelpPopover } from "./ConfidenceHelpPopover";
 
 // The cohort browser – all 421 real TCGA-SKCM patients, searchable, filterable
 // and sortable, with the Q5 recommendation and methods-agreement resolved for
@@ -270,15 +272,9 @@ export default function CohortTable({
                   </div>
                 </th>
                 <th className="py-2 pr-3 text-right">
-                  <div className="group relative inline-flex items-center justify-end gap-1 cursor-help">
+                  <div className="inline-flex items-center justify-end gap-1">
                     <span>TI (%)</span>
-                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition" />
-                    <div className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden w-64 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-lift group-hover:block">
-                      <div className="text-[11px] font-bold text-clinical-ink">Treatability Index (0–100)</div>
-                      <div className="mt-1 text-[11px] font-normal normal-case leading-snug text-clinical-muted">
-                        Quantifies overall therapeutic tractability by combining antigen presentation, IFN-γ signaling, and microenvironmental barriers.
-                      </div>
-                    </div>
+                    <TreatabilityHelpPopover />
                   </div>
                 </th>
 
@@ -308,15 +304,9 @@ export default function CohortTable({
                 </th>
                 <th className="py-2 pr-3">Q5 recommendation</th>
                 <th className="py-2 pr-3 text-right">
-                  <div className="group relative inline-flex items-center justify-end gap-1 cursor-help">
+                  <div className="inline-flex items-center justify-end gap-1">
                     <span>Rec. confidence</span>
-                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition" />
-                    <div className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden w-72 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-lift group-hover:block">
-                      <div className="text-[11px] font-bold text-clinical-ink">Recommendation Confidence</div>
-                      <div className="mt-1 text-[11px] font-normal normal-case leading-snug text-clinical-muted">
-                        A 0–100 heuristic score ranking how strongly the integration engine favours the recommended arm over the alternatives. Inputs: PD-L1 percentile, IFN-γ signature, BRAF status, LDH, ECOG, and Q3 ODE tumour reduction. Not a probability of clinical response — use Phenotype confidence for the model-grounded certainty estimate.
-                      </div>
-                    </div>
+                    <ConfidenceHelpPopover size={11} />
                   </div>
                 </th>
                 <th className="py-2 pr-3">Agreement</th>

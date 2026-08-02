@@ -558,11 +558,7 @@ function main() {
 
   const q1Csv = existsSync(PATHS.q1) ? readCsv(PATHS.q1) : [];
   if (!q1Csv.length) console.warn("  note: public/q1_predictions.csv absent – q1 will be null");
-  const { byPatient: q1FromInfer, validation: q1Validation } = buildQ1(q1Csv);
-
-  const tcgaScores  = existsSync(PATHS.q1Tcga) ? buildTcgaScores(readCsv(PATHS.q1Tcga)) : new Map();
-  if (!tcgaScores.size) console.warn("  note: public/q1_tcga_scores.csv absent – per-patient Q1 unavailable");
-  const q1ByPatient = new Map([...tcgaScores, ...q1FromInfer]);
+  const { byPatient: q1ByPatient, validation: q1Validation } = buildQ1(q1Csv);
   const nTcga       = q1ByPatient.size;
 
   // Q5 inputs (non-fatal if missing – dashboard degrades gracefully)

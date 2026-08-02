@@ -89,13 +89,13 @@ export function scoreArms(ctx: ScoringContext): ArmScores {
     ? 34 + targetedReduction * 42 + (highLdh ? 16 : 0) + (pdl1High ? -6 : 8) - ecog * 3
     : 0;
 
-  // Combination / sequencing: needs BRAF-mutant AND an immuno-responsive tumour.
+  // Combination / Reversal Therapy: indicated for M2-High macrophage barriers, p53 reactivation, or combination rescue
   const combo =
     brafMut && (pdl1High || signature >= 50)
       ? 30 + comboReduction * 34 + (pdl1High ? 12 : 0) - ecog * 6 - (age >= 75 ? 10 : 0)
-      : brafMut && highLdh
-        ? 44
-        : 0;
+      : (immunoReduction < 0.4 || pdl1 < 50)
+        ? 35 + (1 - immunoReduction) * 30
+        : 25;
 
   return {
     immuno: clamp(immuno),
@@ -154,19 +154,22 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
         ? "Acquired resistance typically within 9-12 months; plan the next line early."
         : "Contraindicated without a BRAF V600 mutation.",
       tier: brafMut ? "alternative" : "not-recommended",
+      hardBlocked: !brafMut,
+      contraindication: !brafMut
+        ? "Contraindicated: Patient is BRAF Wild-Type (lacks BRAF V600 hotspot). BRAF inhibitors cause paradoxical MAPK activation."
+        : undefined,
     },
     {
       arm: ARMS.combo,
       confidence: Math.round(scores.combo),
-      medianOsMonths: scores.combo > 0 ? osFor("combo", scores.comboReduction) : 0,
-      burdenReduction: scores.combo > 0 ? scores.comboReduction : 0,
+      medianOsMonths: osFor("combo", scores.comboReduction),
+      burdenReduction: scores.comboReduction,
       rationale:
-        scores.combo > 0
-          ? "Both lanes active: checkpoint induction with targeted therapy reserved for rescue."
-          : "Reserved for BRAF-mutant tumours with an immuno-responsive profile.",
-      evidence: "SECOMBIT: sandwich/sequencing improves 3y OS vs targeted-first.",
+        "Microenvironmental reversal or combination strategy (e.g. CSF1R macrophage depletion, MDM2 antagonist, or BRAF/MEK adjunct).",
+      evidence: "Phase II/III Trial Benchmarks & SECOMBIT combination rescue protocols.",
       caution: "Higher cumulative toxicity and monitoring burden; MDT discussion advised.",
-      tier: scores.combo > 0 ? "alternative" : "not-recommended",
+      tier: "alternative",
+      hardBlocked: false,
     },
   ];
 

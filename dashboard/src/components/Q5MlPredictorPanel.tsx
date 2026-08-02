@@ -3,6 +3,8 @@ import type { CohortMeta, CohortPatient } from "../data/cohort";
 import { getPhenotypeColor } from "../data/palette";
 import { getPhenotypeDescription } from "./PatientPassport";
 import { Panel, Pill } from "./ui";
+import { TreatabilityHelpPopover } from "./TreatabilityHelpPopover";
+import { ConfidenceHelpPopover } from "./ConfidenceHelpPopover";
 
 interface Props {
   patient: CohortPatient;
@@ -112,8 +114,9 @@ export default function Q5MlPredictorPanel({ patient, meta }: Props) {
           {/* Card 2: Subgroup Prediction & Treatability */}
           <div className="rounded-xl border border-clinical-border bg-clinical-bg p-4 flex flex-col justify-between">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-clinical-muted flex items-center gap-1">
-                <Target size={12} /> Treatability Index Score
+              <div className="text-[10px] font-bold uppercase tracking-wide text-clinical-muted flex items-center justify-between">
+                <span className="flex items-center gap-1"><Target size={12} /> Treatability Index Score</span>
+                <TreatabilityHelpPopover />
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-[28px] font-extrabold leading-none text-clinical-ink">
@@ -125,8 +128,9 @@ export default function Q5MlPredictorPanel({ patient, meta }: Props) {
                 Quantile-scaled composite integrating antigen presentation, IFN-γ signaling, and microenvironmental barriers.
               </p>
             </div>
-            <div className="mt-3 text-[11px] font-bold text-clinical-muted">
-              Confidence Band: <span className="text-clinical-ink">{q5.confidenceBand}</span>
+            <div className="mt-3 flex items-center justify-between text-[11px] font-bold text-clinical-muted">
+              <span>Confidence Band: <span className="text-clinical-ink">{q5.confidenceBand}</span></span>
+              <ConfidenceHelpPopover size={11} />
             </div>
           </div>
 

@@ -1,10 +1,12 @@
 import type { RankedOption } from "../data/types";
 import { Panel, Pill } from "./ui";
-import { Stethoscope, TrendingUp, ShieldAlert, BookOpen, Check, Ban } from "lucide-react";
+import { Stethoscope, TrendingUp, ShieldAlert, BookOpen, Check, Ban, Sparkles } from "lucide-react";
+import { TreatabilityHelpPopover } from "./TreatabilityHelpPopover";
 
-function tierPill(tier: RankedOption["tier"]) {
-  if (tier === "primary") return <Pill tone="okabe-purple">Primary recommendation</Pill>;
-  if (tier === "alternative") return <Pill tone="blue">Alternative</Pill>;
+function tierPill(opt: RankedOption) {
+  if (opt.hardBlocked) return <Pill tone="rose"><Ban size={11} className="inline mr-1" />Contraindicated</Pill>;
+  if (opt.tier === "primary") return <Pill tone="okabe-purple">Primary recommendation</Pill>;
+  if (opt.tier === "alternative") return <Pill tone="blue">Alternative</Pill>;
   return <Pill tone="rose">Not recommended</Pill>;
 }
 
@@ -28,7 +30,7 @@ function OptionCard({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const isNo = opt.tier === "not-recommended";
+  const isNo = opt.tier === "not-recommended" || opt.hardBlocked;
   return (
     <div
       className={
@@ -36,14 +38,14 @@ function OptionCard({
         (opt.tier === "primary"
           ? "border-okabe-purple-dark bg-okabe-purple/[0.04] shadow-card"
           : isNo
-            ? "border-clinical-border bg-clinical-bg opacity-75"
+            ? "border-red-200/80 bg-red-50/30 opacity-85"
             : "border-clinical-border bg-white")
       }
     >
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
-            {tierPill(opt.tier)}
+            {tierPill(opt)}
             {selected && (
               <Pill tone="green">
                 <Check size={11} /> Confirmed plan
@@ -55,9 +57,9 @@ function OptionCard({
           </h3>
           <div className="text-[12px] font-semibold text-clinical-muted">{opt.arm.regimen}</div>
         </div>
-        <div className="text-right">
-          <div className="text-[10.5px] font-semibold uppercase tracking-wide text-clinical-muted">
-            TI Score
+        <div className="text-right shrink-0">
+          <div className="flex items-center justify-end gap-1 text-[10.5px] font-semibold uppercase tracking-wide text-clinical-muted">
+            <span>Confidence</span>
           </div>
           <div
             className={
@@ -68,6 +70,12 @@ function OptionCard({
             {opt.confidence}
             <span className="text-[13px]">/100</span>
           </div>
+          {opt.tiScore != null && (
+            <div className="mt-1 text-[10px] text-clinical-muted text-right leading-tight">
+              TI&nbsp;{opt.tiScore.toFixed(0)}/100
+              <TreatabilityHelpPopover />
+            </div>
+          )}
         </div>
       </div>
 
@@ -97,6 +105,33 @@ function OptionCard({
       )}
 
       <p className="mt-3 text-[12.5px] leading-snug text-clinical-ink">{opt.rationale}</p>
+
+      {opt.reasoningChain && opt.reasoningChain.length > 0 && (
+        <div className="mt-2.5 rounded-lg border border-okabe-purple/30 bg-okabe-purple/[0.06] p-2.5 space-y-1 text-[11.5px] leading-snug">
+          <div className="font-bold text-[10px] uppercase tracking-wide text-okabe-purple-dark flex items-center gap-1">
+            <Sparkles size={11} /> Clinical Reasoning Summary:
+          </div>
+          {opt.reasoningChain.map((step, idx) => (
+            <div
+              key={idx}
+              className={
+                step.startsWith("→")
+                  ? "font-semibold text-okabe-purple-dark pl-1.5"
+                  : "text-clinical-ink font-medium"
+              }
+            >
+              {step}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {opt.contraindication && (
+        <div className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-red-200 bg-red-50 p-2.5 text-[11.5px] font-medium leading-snug text-red-800">
+          <Ban size={14} className="mt-0.5 shrink-0 text-red-600" />
+          <span>{opt.contraindication}</span>
+        </div>
+      )}
 
       <div className="mt-2.5 space-y-1.5">
         <div className="flex items-start gap-1.5 text-[11.5px] text-clinical-muted">
