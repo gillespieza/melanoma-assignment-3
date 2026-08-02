@@ -21,6 +21,13 @@ export interface Q1Features {
 export interface Q1Prediction {
   /** Ensemble P(response to checkpoint blockade), 0-1. */
   pResponse: number;
+  /**
+   * Cohort-relative percentile rank of pResponse (0-100).
+   * Computed by build_cohort.mjs across all TCGA patients with Q1 scores,
+   * putting the statistical signal on the same footing as PD-L1 / ODE percentiles.
+   * Null when the patient is the only scored individual (rank undefined).
+   */
+  pResponsePct?: number | null;
   perModel: Record<"lr" | "rf" | "xgb" | "svm" | "enet", number | null>;
   features: Q1Features;
   cohort: string;

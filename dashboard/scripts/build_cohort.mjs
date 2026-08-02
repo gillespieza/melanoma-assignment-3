@@ -569,6 +569,18 @@ function main() {
   const brafiRedPct = rankWithin((p) => p.brafiInformative, (p) => p.brafiReduction);
   const antipd1RedPct = rankWithin((p) => p.antipd1Informative, (p) => p.antipd1Reduction);
 
+  // Compute cohort-relative percentile rank for Q1 pResponse scores.
+  // Using the true within-cohort rank (rather than pResponse × 100) puts the
+  // Q1 signal on the same 0-100 footing as PD-L1 / ODE reduction percentiles,
+  // making the reasoning chain percentile labels directly comparable.
+  const q1PrespPool = draft.map((p) => q1ByPatient.get(p.id)?.pResponse ?? null);
+  const validQ1Indices = q1PrespPool
+    .map((v, i) => (v !== null ? i : null))
+    .filter((i) => i !== null);
+  const q1Values = validQ1Indices.map((i) => q1PrespPool[i]);
+  const q1Percentiles = percentileRanks(q1Values);
+  const q1RankLkp = new Map(validQ1Indices.map((idx, i) => [draft[idx].id, q1Percentiles[i]]));
+
   const patients = draft.map((p, i) => {
     const withPct = {
       ...p,
@@ -578,9 +590,11 @@ function main() {
       brafiReductionPct: brafiRedPct(p),
       antipd1ReductionPct: antipd1RedPct(p),
     };
+    const rawQ1 = q1ByPatient.get(p.id) ?? null;
+    const q1 = rawQ1 ? { ...rawQ1, pResponsePct: q1RankLkp.get(p.id) ?? null } : null;
     return {
       ...withPct,
-      q1: q1ByPatient.get(p.id) ?? null,
+      q1,
       q4: deriveQ4(withPct),
     };
   });

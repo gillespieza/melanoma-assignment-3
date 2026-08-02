@@ -203,7 +203,9 @@ function buildReasoningChain(p: CohortPatient, ctx: ScoringContext, armKey: Ther
 
   // Step 3: Q1 ML response signature
   if (p.q1) {
-    const pct = Math.round(p.q1.pResponse * 100);
+    // Use the true cohort-relative percentile rank when available (computed by
+    // build_cohort.mjs); fall back to pResponse × 100 for legacy cohort.json files.
+    const pct = p.q1.pResponsePct ?? Math.round(p.q1.pResponse * 100);
     if (pct >= 75) steps.push(`Q1 ML predictor: high response percentile (${pct}th) — strong statistical evidence for checkpoint benefit`);
     else if (pct >= 40) steps.push(`Q1 ML predictor: intermediate response percentile (${pct}th) — moderate checkpoint benefit signal`);
     else steps.push(`Q1 ML predictor: low response percentile (${pct}th) — statistical model does not favour checkpoint monotherapy`);
