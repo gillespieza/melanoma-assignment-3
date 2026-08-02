@@ -45,6 +45,10 @@ export interface RankedOption {
   medianOsMonths: number;
   /** Predicted 12-month tumour-burden reduction, fraction 0-1. */
   burdenReduction: number;
+  /** False when the underlying ODE simulation could not produce a usable
+   *  trajectory for this arm — burdenReduction is not meaningful and should
+   *  be displayed as "Could not compute", not as a real 0%. */
+  burdenInformative?: boolean;
   /** One-line clinical rationale. */
   rationale: string;
   /** Guideline / evidence citation shown on the card. */

@@ -55,6 +55,12 @@ export interface ScoringContext {
   immunoReduction: number;
   /** Q3 ODE BRAFi burden reduction, 0-1. */
   targetedReduction: number;
+  /** Whether the anti-PD-1 ODE simulation produced a usable trajectory.
+   *  Undefined/omitted is treated as informative, so existing callers are
+   *  unaffected. Display-only — does not feed the confidence maths below. */
+  immunoInformative?: boolean;
+  /** Whether the BRAFi ODE simulation produced a usable trajectory. */
+  targetedInformative?: boolean;
 }
 
 export interface ArmScores {
@@ -119,8 +125,11 @@ const pct = (frac: number) => `${Math.round(frac * 100)}%`;
  * The top eligible arm becomes `primary`; ineligible arms stay `not-recommended`.
  */
 export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): RankedOption[] {
-  const { brafMut, pdl1, highLdh, immunoReduction, targetedReduction } = ctx;
+  const { brafMut, pdl1, highLdh, immunoReduction, targetedReduction, immunoInformative, targetedInformative } = ctx;
   const pdl1High = pdl1 >= PDL1_HIGH;
+
+  const isImmunoInformative = immunoInformative ?? true;
+  const isTargetedInformative = targetedInformative ?? true;
 
   const draft: RankedOption[] = [
     {
@@ -128,6 +137,7 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
       confidence: Math.round(scores.immuno),
       medianOsMonths: osFor("immuno", immunoReduction),
       burdenReduction: immunoReduction,
+      burdenInformative: isImmunoInformative,
       rationale: pdl1High
         ? "High PD-L1 and a strong response signature predict durable checkpoint benefit."
         : brafMut
@@ -144,6 +154,7 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
       confidence: Math.round(scores.targeted),
       medianOsMonths: brafMut ? osFor("targeted", targetedReduction) : 0,
       burdenReduction: brafMut ? targetedReduction : 0,
+      burdenInformative: brafMut ? isTargetedInformative : true,
       rationale: !brafMut
         ? "No BRAF V600 mutation — BRAF/MEK inhibitors have no target (RAF paradox risk)."
         : highLdh
@@ -164,6 +175,7 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
       confidence: Math.round(scores.combo),
       medianOsMonths: scores.combo > 0 ? osFor("combo", scores.comboReduction) : 0,
       burdenReduction: scores.combo > 0 ? scores.comboReduction : 0,
+      burdenInformative: isImmunoInformative || isTargetedInformative,
       rationale:
         scores.combo > 0
           ? "Both lanes active: checkpoint induction with targeted therapy reserved for rescue."

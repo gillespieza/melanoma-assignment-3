@@ -180,6 +180,8 @@ export function integrate(p: CohortPatient): IntegratedResult {
     age: p.age ?? 60,
     immunoReduction: p.antipd1Informative ? p.antipd1Reduction : 0,
     targetedReduction: p.brafiInformative ? p.brafiReduction : 0,
+    immunoInformative: p.antipd1Informative,
+    targetedInformative: p.brafiInformative,
   };
 
   const scores = scoreArms(ctx);
