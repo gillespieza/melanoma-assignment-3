@@ -6,7 +6,6 @@
 
 export type BrafCall = "V600E" | "WT";
 export type NrasCall = "Mutant" | "WT";
-export type ResistanceRisk = "low" | "moderate" | "high" | "unknown";
 
 /** The six gene-expression signatures the Q1 models consume. */
 export interface Q1Features {
@@ -27,18 +26,6 @@ export interface Q1Prediction {
   /** "ensemble-only" when the source supplied a single score with no per-model
    *  or signature breakdown — the lane then shows the gauge alone. */
   detail?: "ensemble-only" | "full";
-}
-
-export interface Q4Flag {
-  label: string;
-  detail: string;
-}
-
-export interface Q4Block {
-  resistanceRisk: ResistanceRisk;
-  flags: Q4Flag[];
-  /** Salvage / reserve targets to hold for progression. */
-  reserve: string[];
 }
 
 /** One line of therapy: a TCGA treatment type paired with the agent(s) given
@@ -115,9 +102,8 @@ export interface CohortPatient {
   brafiOptimalDose: number | null;
   antipd1OptimalDose: number | null;
 
-  // --- Q1 / Q4 ---
+  // --- Q1 ---
   q1: Q1Prediction | null;
-  q4: Q4Block;
 
   // --- treatment actually received (real, from TCGA clin_cleaned.csv) ---
   treatment: TreatmentHistory;

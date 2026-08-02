@@ -1,0 +1,32 @@
+SOX10 validation summary
+========================
+Candidate under primary thresholds: True
+Candidate rank: 1
+Common essential: False
+
+Primary DepMap statistics
+  Mean melanoma Chronos effect: -1.3690
+  Mean other-cancer effect:     -0.1845
+  Selectivity:                  -1.1845
+  Welch-test FDR:               1.156e-20
+  Hedges g:                     -4.4850
+  Melanoma dependent fraction:  0.840
+  Other-cancer dependent frac.: 0.028
+  Mean melanoma dep. prob.:     0.851
+  Mean melanoma expression:     6.689
+  Melanoma expression fraction: 0.889
+
+Bootstrap (1000 iterations)
+  Mean melanoma effect 95% CI: [-1.5250, -1.2217]
+  Selectivity 95% CI:         [-1.3388, -1.0364]
+
+Leave-one-out stability
+  Melanoma mean-effect range: [-1.3870, -1.3516]
+  Selectivity range:          [-1.2025, -1.1671]
+
+Cell-line-level expression/dependency association
+  Spearman rho: -0.3383
+  Spearman p:   0.003196
+
+Interpretation note
+  These analyses support or weaken a melanoma-selective genetic dependency claim. They do not alone demonstrate direct pharmacological tractability or clinical efficacy.

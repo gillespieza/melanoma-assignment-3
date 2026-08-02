@@ -20,8 +20,8 @@ const METHODS = [
     icon: Waves,
   },
   {
-    name: "Resistance",
-    detail: "Escape routes and salvage targets",
+    name: "DepMap targets",
+    detail: "CRISPR co-dependency → druggable candidates",
     icon: ShieldAlert,
   },
   {

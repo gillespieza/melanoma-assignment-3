@@ -6,6 +6,7 @@ import FeaturedCards from "./components/FeaturedCards";
 import MethodsStrip from "./components/MethodsStrip";
 import PatientView from "./components/PatientView";
 import Q1ValidationPanel from "./components/Q1ValidationPanel";
+import Q4DepMapPanel from "./components/Q4DepMapPanel";
 import UserGuide from "./components/UserGuide";
 import { Panel } from "./components/ui";
 import { loadCohort, type Cohort } from "./data/cohort";
@@ -136,6 +137,7 @@ export default function App() {
             {cohort.meta.q1Validation && (
               <Q1ValidationPanel validation={cohort.meta.q1Validation} />
             )}
+            <Q4DepMapPanel />
           </div>
         )}
 

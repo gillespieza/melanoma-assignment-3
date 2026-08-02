@@ -282,71 +282,6 @@ function buildTreatmentByPatient(rows) {
   return byPatient;
 }
 
-// ---- Q4 heuristics ----------------------------------------------------------
-// Explicitly heuristic — derived from Q3 residual burden + driver status, NOT a
-// fitted resistance model. The UI must label them as such.
-
-function deriveQ4(p) {
-  const flags = [];
-  const odeUsable = p.brafiInformative || p.antipd1Informative;
-  const bestReduction = Math.max(
-    p.brafiInformative ? p.brafiReduction : 0,
-    p.antipd1Informative ? p.antipd1Reduction : 0
-  );
-
-  if (p.nras === "Mutant") {
-    flags.push({
-      label: "NRAS-driven MAPK reactivation",
-      detail: "NRAS mutation sustains MEK/ERK signalling downstream of BRAF blockade.",
-    });
-  }
-  if (p.braf !== "WT" && p.mapkDriven) {
-    flags.push({
-      label: "BRAFi escape via MAPK rebound",
-      detail: "MAPK-driven tumour: expect ERK reactivation and loss of BRAFi control.",
-    });
-  }
-  if (p.pdl1Pct < 25) {
-    flags.push({
-      label: "Immune-cold (low PD-L1)",
-      detail: "Bottom-quartile CD274 expression; primary checkpoint resistance is likely.",
-    });
-  }
-  if (p.braf === "WT" && p.nras === "WT") {
-    flags.push({
-      label: "Triple-WT lineage dependency",
-      detail: "No MAPK driver — SOX10/MITF lineage survival is the tractable axis.",
-    });
-  }
-  if (!odeUsable) {
-    flags.push({
-      label: "Twin below model resolution",
-      detail:
-        "The ODE settles at a numerically-zero tumour compartment for this patient, so the " +
-        "simulated arms carry no information — resistance risk is not assessable from Q3.",
-    });
-  } else if (bestReduction < 0.1) {
-    flags.push({
-      label: "Refractory in silico",
-      detail: "Neither simulated arm clears meaningful burden across the full dose sweep.",
-    });
-  }
-
-  const resistanceRisk = !odeUsable
-    ? "unknown"
-    : bestReduction < 0.15 ? "high" : bestReduction < 0.4 ? "moderate" : "low";
-
-  // Reserve (salvage) targets, ordered by how well they fit this biology.
-  const reserve = [];
-  if (p.braf !== "WT") reserve.push("MEK inhibitor re-challenge after drug holiday");
-  if (p.nras === "Mutant") reserve.push("MEK + CDK4/6 inhibition (NRAS-mutant salvage)");
-  reserve.push("SOX10 / MITF lineage-switch targeting");
-  if (p.pdl1Pct >= 50) reserve.push("LAG-3 blockade (relatlimab + nivolumab)");
-  if (p.tmb !== null && p.tmb >= 20) reserve.push("High TMB — retry checkpoint blockade");
-
-  return { resistanceRisk, flags, reserve };
-}
-
 // ---- Q1 ---------------------------------------------------------------------
 
 /**
@@ -581,7 +516,6 @@ function main() {
     return {
       ...withPct,
       q1: q1ByPatient.get(p.id) ?? null,
-      q4: deriveQ4(withPct),
     };
   });
 

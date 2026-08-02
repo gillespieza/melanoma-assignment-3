@@ -1,0 +1,30 @@
+SOX10 druggable-proxy discovery summary
+=========================================
+
+Question:
+Which genes show SOX10 co-dependency together with melanoma dependency, melanoma selectivity, and melanoma expression?
+
+Candidates retained: 18
+
+Top candidates:
+   1. BRAF         co-dep=0.590, mel-effect=-0.843, selectivity=-0.765, mel-prev=0.67
+   2. MAPK1        co-dep=0.466, mel-effect=-0.733, selectivity=-0.520, mel-prev=0.63
+   3. DUSP4        co-dep=0.506, mel-effect=-0.665, selectivity=-0.612, mel-prev=0.57
+   4. ZEB2         co-dep=0.320, mel-effect=-0.702, selectivity=-0.434, mel-prev=0.68
+   5. MITF         co-dep=0.511, mel-effect=-0.477, selectivity=-0.403, mel-prev=0.41
+   6. TFAP2A       co-dep=0.434, mel-effect=-0.450, selectivity=-0.460, mel-prev=0.35
+   7. PPP2R2A      co-dep=0.316, mel-effect=-0.600, selectivity=-0.426, mel-prev=0.59
+   8. ELOA         co-dep=0.329, mel-effect=-0.475, selectivity=-0.306, mel-prev=0.45
+   9. CCND1        co-dep=0.208, mel-effect=-1.619, selectivity=-0.608, mel-prev=0.93
+  10. FERMT2       co-dep=0.222, mel-effect=-1.134, selectivity=-0.560, mel-prev=0.89
+  11. CRTC3        co-dep=0.361, mel-effect=-0.439, selectivity=-0.330, mel-prev=0.27
+  12. LCMT1        co-dep=0.261, mel-effect=-0.666, selectivity=-0.343, mel-prev=0.69
+  13. PPM1G        co-dep=0.317, mel-effect=-0.631, selectivity=-0.358, mel-prev=0.55
+  14. MAFF         co-dep=0.344, mel-effect=-0.394, selectivity=-0.197, mel-prev=0.28
+  15. AMD1         co-dep=0.219, mel-effect=-0.698, selectivity=-0.246, mel-prev=0.73
+
+Interpretation:
+These genes are candidate therapeutic entry points into the SOX10-dependent melanoma state. Co-dependency does not prove direct regulation, physical interaction, or druggability.
+
+Next action:
+Complete top10_druggability_audit_template.csv using Open Targets, ChEMBL, and a focused melanoma literature search.

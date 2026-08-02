@@ -1,0 +1,126 @@
+ModelID,PatientID,OncotreeLineage,OncotreePrimaryDisease,OncotreeSubtype
+ACH-000008,PT-fp8PeY,Skin,Melanoma,Melanoma
+ACH-000014,PT-fp8PeY,Skin,Melanoma,Melanoma
+ACH-000219,PT-3FxmoJ,Skin,Melanoma,Melanoma
+ACH-000274,PT-QbMSjm,Skin,Melanoma,Melanoma
+ACH-000304,PT-JAyPtz,Skin,Melanoma,Melanoma
+ACH-000322,PT-czDcsE,Skin,Melanoma,Melanoma
+ACH-000348,PT-xMEDHc,Skin,Melanoma,Melanoma
+ACH-000401,PT-hf4hbl,Skin,Melanoma,Cutaneous Melanoma
+ACH-000404,PT-xgu7do,Skin,Melanoma,Cutaneous Melanoma
+ACH-000423,PT-TEoeSm,Skin,Melanoma,Cutaneous Melanoma
+ACH-000425,PT-Zu8A8i,Skin,Melanoma,Melanoma
+ACH-000441,PT-wx4HmM,Skin,Melanoma,Melanoma
+ACH-000450,PT-tIdwwm,Skin,Melanoma,Melanoma
+ACH-000458,PT-CfuEas,Skin,Melanoma,Melanoma
+ACH-000465,PT-spChit,Skin,Melanoma,Melanoma
+ACH-000477,PT-A0Pe6P,Skin,Melanoma,Melanoma
+ACH-000550,PT-Wg8rkx,Skin,Melanoma,Melanoma
+ACH-000572,PT-GdtXdl,Skin,Melanoma,Melanoma
+ACH-000579,PT-KoNkGk,Skin,Melanoma,Melanoma
+ACH-000580,PT-Dlqu1U,Skin,Melanoma,Melanoma
+ACH-000582,PT-l2xN1V,Skin,Melanoma,Melanoma
+ACH-000614,PT-Zy2EsL,Skin,Melanoma,Melanoma
+ACH-000615,PT-xtiBPE,Skin,Melanoma,Cutaneous Melanoma
+ACH-000632,PT-CeiJLF,Skin,Melanoma,Cutaneous Melanoma
+ACH-000640,PT-Zpoh5W,Skin,Melanoma,Cutaneous Melanoma
+ACH-000644,PT-w6ABKA,Skin,Melanoma,Cutaneous Melanoma
+ACH-000650,PT-Wg8rkx,Skin,Melanoma,Melanoma
+ACH-000661,PT-VxRt2m,Skin,Melanoma,Melanoma
+ACH-000730,PT-2vBUWf,Skin,Melanoma,Cutaneous Melanoma
+ACH-000750,PT-jI6Xhs,Skin,Melanoma,Melanoma
+ACH-000765,PT-mH5ckQ,Skin,Melanoma,Melanoma
+ACH-000788,PT-ZSJTWI,Skin,Melanoma,Melanoma
+ACH-000799,PT-mZ69Vl,Skin,Melanoma,Melanoma
+ACH-000801,PT-1I8hCi,Skin,Melanoma,Melanoma
+ACH-000805,PT-SscYEx,Skin,Melanoma,Cutaneous Melanoma
+ACH-000810,PT-1TshCj,Skin,Melanoma,Cutaneous Melanoma
+ACH-000812,PT-WHZxXI,Skin,Melanoma,Melanoma
+ACH-000814,PT-2OcAGh,Skin,Melanoma,Melanoma
+ACH-000822,PT-n2hnAf,Skin,Melanoma,Melanoma
+ACH-000827,PT-L3eOYW,Skin,Melanoma,Melanoma
+ACH-000881,PT-9PTPLm,Skin,Melanoma,Cutaneous Melanoma
+ACH-000882,PT-MRf5jM,Skin,Melanoma,Melanoma
+ACH-000884,PT-3NwoWt,Skin,Melanoma,Melanoma
+ACH-000899,PT-j60QIc,Skin,Melanoma,Melanoma
+ACH-000915,PT-Jc7cdo,Skin,Melanoma,Cutaneous Melanoma
+ACH-000931,PT-rXLMnY,Skin,Melanoma,Melanoma
+ACH-000968,PT-z7yLU0,Skin,Melanoma,Melanoma
+ACH-000987,PT-1PBPXD,Skin,Melanoma,Cutaneous Melanoma
+ACH-001002,PT-5WoxMn,Skin,Melanoma,Cutaneous Melanoma
+ACH-001024,PT-rXLMnY,Skin,Melanoma,Melanoma
+ACH-001041,PT-rXLMnY,Skin,Melanoma,Melanoma
+ACH-001044,PT-hf4hbl,Skin,Melanoma,Cutaneous Melanoma
+ACH-001045,PT-w6ABKA,Skin,Melanoma,Cutaneous Melanoma
+ACH-001190,PT-IHNbDy,Skin,Melanoma,Melanoma
+ACH-001239,PT-JAyPtz,Skin,Melanoma,Melanoma
+ACH-001339,PT-hf4hbl,Skin,Melanoma,Cutaneous Melanoma
+ACH-001441,PT-jIJ6sz,Eye,Ocular Melanoma,Uveal Melanoma
+ACH-001522,PT-wEoiUI,Skin,Melanoma,Melanoma
+ACH-001554,PT-2AwIuw,Eye,Ocular Melanoma,Uveal Melanoma
+ACH-001563,PT-uwdvUG,Skin,Melanoma,Melanoma
+ACH-001566,PT-4UAKiS,Skin,Melanoma,Melanoma
+ACH-001567,PT-fN0pV5,Skin,Melanoma,Melanoma
+ACH-001568,PT-QuhZbF,Skin,Melanoma,Melanoma
+ACH-001569,PT-XeUtGz,Skin,Melanoma,Melanoma
+ACH-001570,PT-bKFeuG,Skin,Melanoma,Melanoma
+ACH-001645,PT-pmeBkH,Skin,Melanoma,Melanoma
+ACH-001704,PT-KL4Kmo,Skin,Melanoma,Melanoma
+ACH-001970,PT-75oSJn,Skin,Melanoma,Melanoma
+ACH-001971,PT-fVqkJe,Skin,Melanoma,Melanoma
+ACH-001972,PT-Czk2qo,Skin,Melanoma,Melanoma
+ACH-001973,PT-oJTeSY,Skin,Melanoma,Melanoma
+ACH-001975,PT-IBpd8U,Skin,Melanoma,Melanoma
+ACH-001982,PT-6BEu4D,Skin,Melanoma,Melanoma
+ACH-001986,PT-EpCvHQ,Skin,Melanoma,Melanoma
+ACH-001990,PT-PCXcZ8,Skin,Melanoma,Melanoma
+ACH-002001,PT-3FxmoJ,Skin,Melanoma,Melanoma
+ACH-002002,PT-3FxmoJ,Skin,Melanoma,Melanoma
+ACH-002003,PT-3FxmoJ,Skin,Melanoma,Melanoma
+ACH-002004,PT-Zu8A8i,Skin,Melanoma,Melanoma
+ACH-002005,PT-4QtR2m,Skin,Melanoma,Cutaneous Melanoma
+ACH-002010,PT-GhwOWG,Eye,Ocular Melanoma,Uveal Melanoma
+ACH-002011,PT-OP8ALo,Eye,Ocular Melanoma,Uveal Melanoma
+ACH-002014,PT-5vJu3k,Eye,Ocular Melanoma,Uveal Melanoma
+ACH-002015,PT-N7xRpa,Eye,Ocular Melanoma,Uveal Melanoma
+ACH-002016,PT-MucJf6,Eye,Ocular Melanoma,Uveal Melanoma
+ACH-002017,PT-aDprgI,Eye,Ocular Melanoma,Uveal Melanoma
+ACH-002018,PT-5vJu3k,Eye,Ocular Melanoma,Uveal Melanoma
+ACH-002040,PT-YbtlK5,Vulva/Vagina,Mucosal Melanoma of the Vulva/Vagina,Mucosal Melanoma of the Vulva/Vagina
+ACH-002084,PT-Qsi22o,Skin,Melanoma,Melanoma
+ACH-002096,PT-eNOXVI,Skin,Melanoma,Melanoma
+ACH-002097,PT-4V4zXY,Skin,Melanoma,Melanoma
+ACH-002098,PT-3Vy9bq,Skin,Melanoma,Melanoma
+ACH-002120,PT-dBVaTX,Vulva/Vagina,Mucosal Melanoma of the Vulva/Vagina,Mucosal Melanoma of the Vulva/Vagina
+ACH-002121,PT-qSfHSE,Skin,Melanoma,Cutaneous Melanoma
+ACH-002143,PT-tN5qtW,Skin,Melanoma,Melanoma
+ACH-002147,PT-FGLpfl,Skin,Melanoma,Melanoma
+ACH-002152,PT-g7qDcx,Skin,Melanoma,Melanoma
+ACH-002153,PT-rIlRDz,Skin,Melanoma,Melanoma
+ACH-002159,PT-3NwoWt,Skin,Melanoma,Melanoma
+ACH-002162,PT-Qsi22o,Skin,Melanoma,Melanoma
+ACH-002165,PT-nROhtu,Skin,Melanoma,Melanoma
+ACH-002166,PT-XDM0rA,Skin,Melanoma,Melanoma
+ACH-002200,PT-c9lrOB,Vulva/Vagina,Mucosal Melanoma of the Vulva/Vagina,Mucosal Melanoma of the Vulva/Vagina
+ACH-002205,PT-rEtHCm,Skin,Melanoma,Cutaneous Melanoma
+ACH-002206,PT-7Zvs5p,Skin,Melanoma,Melanoma
+ACH-002207,PT-W5DHQ6,Skin,Melanoma,Melanoma
+ACH-002338,PT-6g2PcW,Skin,Melanoma,Melanoma
+ACH-002386,PT-mDCwIk,Skin,Melanoma,Melanoma
+ACH-002387,PT-eN0Nme,Skin,Melanoma,Melanoma
+ACH-002388,PT-FieisY,Skin,Melanoma,Melanoma
+ACH-002458,PT-czDcsE,Skin,Melanoma,Melanoma
+ACH-002459,PT-czDcsE,Skin,Melanoma,Melanoma
+ACH-002460,PT-czDcsE,Skin,Melanoma,Melanoma
+ACH-002461,PT-Zy2EsL,Skin,Melanoma,Melanoma
+ACH-002508,PT-SogXKU,Skin,Melanoma,Acral Melanoma
+ACH-002509,PT-mVaoEC,Skin,Melanoma,Acral Melanoma
+ACH-002510,PT-6g2PcW,Skin,Melanoma,Acral Melanoma
+ACH-002511,PT-iI63vt,Skin,Melanoma,Melanoma
+ACH-002512,PT-YwNqCa,Skin,Melanoma,Acral Melanoma
+ACH-002687,PT-VBCF1O,Eye,Ocular Melanoma,Uveal Melanoma
+ACH-002847,PT-AFnHpd,Skin,Melanoma,Melanoma
+ACH-002925,PT-abxYPP,Eye,Ocular Melanoma,Uveal Melanoma
+ACH-002926,PT-vu5jnE,Eye,Ocular Melanoma,Uveal Melanoma
+ACH-002928,PT-M9rUlw,Skin,Melanoma,Acral Melanoma
+ACH-003105,PT-zqsQMh,Skin,Melanoma,Melanoma
