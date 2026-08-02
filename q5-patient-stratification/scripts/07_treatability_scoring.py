@@ -358,8 +358,8 @@ def _evaluate_patient_arm(
     row: pd.Series, pheno_name: str, tis_q60: float
 ) -> Tuple[str, str, str]:
     """Evaluate decision tree rules for a single patient to assign treatment arm and target."""
-    mut_braf = row.get("mut_BRAF", 0) == 1
-    mut_nras = row.get("mut_NRAS", 0) == 1
+    mut_braf_v600 = (row.get("BRAF_MUT", 0) == 1) or (row.get("braf") == "V600E") or (row.get("mut_BRAF_V600", 0) == 1)
+    mut_nras = (row.get("mut_NRAS", 0) == 1) or (row.get("NRAS_MUT", 0) == 1)
     response = row.get("RESPONSE_BINARY", np.nan)
     tis_val = row.get("TIS", 0.0)
 
@@ -369,9 +369,9 @@ def _evaluate_patient_arm(
             "Anti-PD-1 Monotherapy (Pembrolizumab / Nivolumab)",
             "N/A (Arm A Candidate)",
         )
-    if mut_braf or mut_nras:
-        if mut_braf:
-            dab_sens = row["Dabrafenib_Sensitivity_Index"]
+    if mut_braf_v600 or mut_nras:
+        if mut_braf_v600:
+            dab_sens = row.get("Dabrafenib_Sensitivity_Index", 50.0)
             rx = f"BRAF + MEK Inhibitor (Dabrafenib + Trametinib; Q2 Sens: {dab_sens:.1f}/100)"
             target = "BRAF V600E / MAPK Pathway"
         else:
@@ -624,6 +624,12 @@ def _load_phase7_patient_data() -> pd.DataFrame:
         print(f"Joined IMMUNOTHERAPY flag from {rel_path(INPUT_CLIN_FULL)}")
 
     df_patients["ICI_Treated"] = df_patients["IMMUNOTHERAPY"].fillna(0).astype(int) if "IMMUNOTHERAPY" in df_patients.columns else 0
+
+    q3_sims_path = Path("q3-ode-model/outputs/results/tumour_burden_simulations.csv")
+    if q3_sims_path.exists():
+        df_q3 = pd.read_csv(q3_sims_path, usecols=["SAMPLE_ID", "BRAF_MUT", "NRAS_MUT"])
+        df_patients = df_patients.merge(df_q3, on="SAMPLE_ID", how="left")
+        print("Joined BRAF_MUT / NRAS_MUT from Q3 simulation results")
     n_ici = int(df_patients["ICI_Treated"].sum())
     print(f"  ICI-treated (known response): {n_ici}")
     print(f"  Prospective (no ICI label):   {len(df_patients) - n_ici}")
