@@ -223,17 +223,16 @@ than inventing fake per-model numbers.
 
 **The separate, cohort-level accuracy panel** (only on the Cohort landing
 page, §3.5) is a completely different thing: it's not about any one patient,
-it's proof that the Q1 models actually work, tested against 195 patients from
-three real immunotherapy clinical trials (Liu 2019, Riaz 2017, Hugo 2016)
-where the *true* outcome (did they actually respond, confirmed by a clinician)
-is known. Headline: **AUC 0.593** overall (0.766 in the Riaz trial
-specifically, 0.451 — essentially chance — in the small Hugo trial). AUC
-("Area Under the [ROC] Curve") is a standard 0–1 accuracy score for a
-yes/no prediction: 0.5 = no better than a coin flip, 1.0 = perfect. 0.593 is
-a real but modest signal, and the panel says so plainly, including that the
-model's raw probabilities are poorly calibrated (it pushes most patients
-above 50% even though the true response rate is much lower) — so the
-*ranking* the model produces is more trustworthy than any single number.
+it's proof of how the Q1 models perform across 195 patients from three real
+immunotherapy clinical trials (Liu 2019, Riaz 2017, Hugo 2016) where the *true*
+clinical response outcome is known. Headline: **AUC 0.624** overall (0.811 in
+the Riaz trial in-sample / 0.648 LOCO CV, 0.581 in Liu 2019, and 0.528 — around
+chance — in the small Hugo 2016 set of N=27). AUC ("Area Under the [ROC] Curve")
+is a standard 0–1 accuracy score for a binary prediction: 0.5 = no better than a
+coin flip, 1.0 = perfect. 0.624 is a real signal, and the panel notes that raw
+probabilities cluster tightly around ~0.45 — so applying the tuned decision threshold
+(0.453) is essential for effective classification, while the relative ranking carries
+the primary predictive signal.
 
 ### 6.2 Q2 · Validation
 **What Q2 is:** proof, from data the models never saw during training, that
