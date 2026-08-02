@@ -204,16 +204,17 @@ default**, so if you're looking for something else, you need to click over.
 **What Q1 is:** a machine-learning model (specifically, an ensemble — a
 "committee vote" — of five different statistical models: logistic
 regression, random forest, XGBoost, a support vector machine, and an elastic
-net) trained to read six gene-expression signatures from a tumour biopsy and
-output a single number: the probability this patient responds to checkpoint
+net) trained to evaluate 12 multimodal features (immune signatures, macrophage
+barrier metrics, driver mutation flags, and tumour mutational burden) from a patient profile
+and output a single number: the probability this patient responds to checkpoint
 immunotherapy.
 
 **On a patient's page**, if the model has scored this specific patient,
 you'll see a circular gauge with their **P(response)** percentage, bars
-breaking that down by individual model (where available), and the six input
-signature scores (things like cytolytic activity, tumour inflammation
-signature, and CD8 T-cell infiltration — all different ways of measuring how
-"visible" the tumour is to the immune system).
+breaking that down by individual model (where available), and the input
+feature breakdown (immune signatures, macrophage spatial metrics, driver mutation
+status, and TMB — all measuring different dimensions of tumour immunogenicity and
+microenvironmental barrier strength).
 
 **Important honesty note:** many patients only carry a single combined score
 rather than the five-model breakdown, because the underlying data file only
@@ -362,7 +363,7 @@ Here's the full picture in one place:
   simulation has nothing to say, not "the drug doesn't work."
 - **Q1 has not been run per-patient on the TCGA cohort** for most of its
   detail — the gauge and percentile are real, but the five-model breakdown
-  and six input signatures usually aren't available (they exist for a
+  and full 12 input features usually aren't available (they exist for a
   different, labelled set of clinical-trial patients used purely for
   accuracy testing).
 - **Only ~47% of patients have a recorded treatment history** — TCGA simply
