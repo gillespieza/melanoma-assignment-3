@@ -790,10 +790,13 @@ def main():
     mut_liu = extract_driver_mutations(clin_liu.loc[sig_liu.index])
     mut_riaz = extract_driver_mutations(clin_riaz.loc[sig_riaz.index])
     
-    # Combine sig + mutations
+    # Combine sig + mutations (deduplicate columns if extract_all_signatures attached them)
     comb_liu = pd.concat([sig_corrected_liu, mut_liu], axis=1)
+    comb_liu = comb_liu.loc[:, ~comb_liu.columns.duplicated()]
     comb_hugo = pd.concat([sig_corrected_hugo, mut_hugo], axis=1)
+    comb_hugo = comb_hugo.loc[:, ~comb_hugo.columns.duplicated()]
     comb_riaz = pd.concat([sig_corrected_riaz, mut_riaz], axis=1)
+    comb_riaz = comb_riaz.loc[:, ~comb_riaz.columns.duplicated()]
     
     cohort_dfs_comb = {
         'Liu 2019': (comb_liu, y_liu),
@@ -801,7 +804,7 @@ def main():
         'Riaz 2017': (comb_riaz, y_riaz),
     }
     
-    comb_features = signature_cols + ['mut_BRAF', 'mut_NRAS', 'mut_NF1']
+    comb_features = list(dict.fromkeys(signature_cols + ['mut_BRAF', 'mut_NRAS', 'mut_NF1']))
     
     print("\nTraining combined Expression + Mutation model (3-cohort LOCO):")
     all_combined_results = {}

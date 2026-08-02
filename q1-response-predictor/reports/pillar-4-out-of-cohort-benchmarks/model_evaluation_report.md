@@ -9,12 +9,12 @@ tags:
   - loco-cv
   - immunotherapy-response
   - calibration
-created: 2026-08-02 00:15
 cssclasses:
   - table-small
+created: 2026-08-02 14:59
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-02 00:15
+updated: 2026-08-02 14:59
 ---
 
 # Model Evaluation Report: Leave-One-Cohort-Out (LOCO) Cross-Validation
@@ -69,14 +69,14 @@ updated: 2026-08-02 00:15
 
 | Model | Hugo 2016 | Liu 2019 | Riaz 2017 | **Mean AUC** |
 |:---|---::---::---:---:|
-| LR | 0.415 | 0.387 | 0.500 | **0.434** |
-| RF | 0.352 | 0.565 | 0.585 | **0.501** |
-| XGB | 0.236 | 0.603 | 0.510 | **0.450** |
-| SVM | 0.368 | 0.598 | 0.541 | **0.502** |
-| **ElasticNet** | 0.415 | 0.594 | 0.500 | **0.503** |
+| LR | 0.415 | 0.570 | 0.500 | **0.495** |
+| RF | 0.407 | 0.569 | 0.618 | **0.531** |
+| XGB | 0.269 | 0.595 | 0.606 | **0.490** |
+| **SVM** | 0.434 | 0.558 | 0.648 | **0.547** |
+| ElasticNet | 0.415 | 0.558 | 0.500 | **0.491** |
 
-> [!insight] Best Generalising Model: ElasticNet
-> **ElasticNet Logistic Regression** achieves the highest mean cross-cohort AUC of **0.503** across all three held-out LOCO test cohorts, making it the strongest generaliser in this evaluation. See the individual model sections below for full confusion matrices, ROC curves, and calibration diagnostics.
+> [!insight] Best Generalising Model: SVM
+> **Support Vector Machine (SVM)** achieves the highest mean cross-cohort AUC of **0.547** across all three held-out LOCO test cohorts, making it the strongest generaliser in this evaluation. See the individual model sections below for full confusion matrices, ROC curves, and calibration diagnostics.
 
 ## Logistic Regression (L1-Penalised)
 
@@ -90,7 +90,7 @@ updated: 2026-08-02 00:15
 | Test Cohort | N | AUC | ECE | Brier Score | Accuracy | Sensitivity | Specificity | Precision | F1-Score | C-Index |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | Hugo 2016 | 27 | 0.415 | 0.125 | 0.268 | 0.481 | 0.000 | 1.000 | 0.000 | 0.000 | 0.612 |
-| Liu 2019 | 104 | 0.387 | 0.146 | 0.261 | 0.548 | 0.021 | 1.000 | 1.000 | 0.041 | 0.617 |
+| Liu 2019 | 104 | 0.570 | 0.089 | 0.255 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 | 0.411 |
 | Riaz 2017 | 64 | 0.500 | 0.161 | 0.241 | 0.688 | 0.000 | 1.000 | 0.000 | 0.000 | 0.500 |
 
 ### Performance Metrics (Youden's J Optimal Threshold)
@@ -98,7 +98,7 @@ updated: 2026-08-02 00:15
 | Test Cohort | N | AUC | Threshold | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | Hugo 2016 | 27 | 0.415 | 0.442 | 0.519 | 0.071 | 1.000 | 1.000 | 0.133 |
-| Liu 2019 | 104 | 0.387 | 0.566 | 0.548 | 0.021 | 1.000 | 1.000 | 0.041 |
+| Liu 2019 | 104 | 0.570 | 0.369 | 0.577 | 0.688 | 0.482 | 0.532 | 0.600 |
 | Riaz 2017 | 64 | 0.500 | inf | 0.688 | 0.000 | 1.000 | 0.000 | 0.000 |
 
 ### Visualisations & Diagnostics
@@ -147,9 +147,9 @@ The diagnostic plots above provide a complete evaluation of classifier discrimin
 > - **Cross-Cohort Heterogeneity**: Held-out trial dataset performance demonstrates robust signal transfer in Riaz 2017 and Liu 2019, whereas Hugo 2016 exhibits higher variance due to its smaller cohort sample size.
 
 > [!summary] Key Takeaways: Logistic Regression (L1-Penalised)
-> - **Mean Cross-Cohort AUC**: 0.434 (averaged across 3 held-out test cohorts).
-> - **Best Generalisation**: Riaz 2017 (AUC = 0.500) — strongest signal transfer for this architecture.
-> - **Most Challenging Cohort**: Liu 2019 (AUC = 0.387) — likely reflects cohort-specific biological or technical heterogeneity.
+> - **Mean Cross-Cohort AUC**: 0.495 (averaged across 3 held-out test cohorts).
+> - **Best Generalisation**: Liu 2019 (AUC = 0.570) — strongest signal transfer for this architecture.
+> - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.415) — likely reflects cohort-specific biological or technical heterogeneity.
 > - **Threshold Optimisation**: Youden's J threshold tuning typically recovers 5–15% sensitivity relative to the default 0.5 cut-off, at the cost of reduced specificity.
 > - **Clinical Implication**: Models should be interpreted in conjunction with clinical context; AUC > 0.65 across unseen cohorts represents a meaningful biological signal given the small sample sizes and cross-institution batch effects.
 
@@ -164,17 +164,17 @@ The diagnostic plots above provide a complete evaluation of classifier discrimin
 
 | Test Cohort | N | AUC | ECE | Brier Score | Accuracy | Sensitivity | Specificity | Precision | F1-Score | C-Index |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.352 | 0.285 | 0.301 | 0.370 | 0.071 | 0.692 | 0.200 | 0.105 | 0.582 |
-| Liu 2019 | 104 | 0.565 | 0.090 | 0.256 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 | 0.425 |
-| Riaz 2017 | 64 | 0.585 | 0.190 | 0.243 | 0.625 | 0.550 | 0.659 | 0.423 | 0.478 | 0.509 |
+| Hugo 2016 | 27 | 0.407 | 0.253 | 0.314 | 0.407 | 0.143 | 0.692 | 0.333 | 0.200 | 0.531 |
+| Liu 2019 | 104 | 0.569 | 0.102 | 0.256 | 0.548 | 0.062 | 0.964 | 0.600 | 0.113 | 0.451 |
+| Riaz 2017 | 64 | 0.618 | 0.194 | 0.248 | 0.547 | 0.650 | 0.500 | 0.371 | 0.473 | 0.481 |
 
 ### Performance Metrics (Youden's J Optimal Threshold)
 
 | Test Cohort | N | AUC | Threshold | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.352 | inf | 0.481 | 0.000 | 1.000 | 0.000 | 0.000 |
-| Liu 2019 | 104 | 0.565 | 0.377 | 0.625 | 0.417 | 0.804 | 0.645 | 0.506 |
-| Riaz 2017 | 64 | 0.585 | 0.497 | 0.656 | 0.700 | 0.636 | 0.467 | 0.560 |
+| Hugo 2016 | 27 | 0.407 | 0.365 | 0.556 | 0.571 | 0.538 | 0.571 | 0.571 |
+| Liu 2019 | 104 | 0.569 | 0.359 | 0.596 | 0.542 | 0.643 | 0.565 | 0.553 |
+| Riaz 2017 | 64 | 0.618 | 0.524 | 0.688 | 0.550 | 0.750 | 0.500 | 0.524 |
 
 ### Visualisations & Diagnostics
 
@@ -222,9 +222,9 @@ The diagnostic plots above provide a complete evaluation of classifier discrimin
 > - **Cross-Cohort Heterogeneity**: Held-out trial dataset performance demonstrates robust signal transfer in Riaz 2017 and Liu 2019, whereas Hugo 2016 exhibits higher variance due to its smaller cohort sample size.
 
 > [!summary] Key Takeaways: Random Forest Classifier
-> - **Mean Cross-Cohort AUC**: 0.501 (averaged across 3 held-out test cohorts).
-> - **Best Generalisation**: Riaz 2017 (AUC = 0.585) — strongest signal transfer for this architecture.
-> - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.352) — likely reflects cohort-specific biological or technical heterogeneity.
+> - **Mean Cross-Cohort AUC**: 0.531 (averaged across 3 held-out test cohorts).
+> - **Best Generalisation**: Riaz 2017 (AUC = 0.618) — strongest signal transfer for this architecture.
+> - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.407) — likely reflects cohort-specific biological or technical heterogeneity.
 > - **Threshold Optimisation**: Youden's J threshold tuning typically recovers 5–15% sensitivity relative to the default 0.5 cut-off, at the cost of reduced specificity.
 > - **Clinical Implication**: Models should be interpreted in conjunction with clinical context; AUC > 0.65 across unseen cohorts represents a meaningful biological signal given the small sample sizes and cross-institution batch effects.
 
@@ -239,17 +239,17 @@ The diagnostic plots above provide a complete evaluation of classifier discrimin
 
 | Test Cohort | N | AUC | ECE | Brier Score | Accuracy | Sensitivity | Specificity | Precision | F1-Score | C-Index |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.236 | 0.310 | 0.310 | 0.407 | 0.071 | 0.769 | 0.250 | 0.111 | 0.679 |
-| Liu 2019 | 104 | 0.603 | 0.087 | 0.255 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 | 0.431 |
-| Riaz 2017 | 64 | 0.510 | 0.176 | 0.247 | 0.516 | 0.500 | 0.523 | 0.323 | 0.392 | 0.572 |
+| Hugo 2016 | 27 | 0.269 | 0.332 | 0.321 | 0.333 | 0.071 | 0.615 | 0.167 | 0.100 | 0.607 |
+| Liu 2019 | 104 | 0.595 | 0.098 | 0.256 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 | 0.457 |
+| Riaz 2017 | 64 | 0.606 | 0.202 | 0.250 | 0.531 | 0.700 | 0.455 | 0.368 | 0.483 | 0.524 |
 
 ### Performance Metrics (Youden's J Optimal Threshold)
 
 | Test Cohort | N | AUC | Threshold | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.236 | 0.301 | 0.519 | 0.929 | 0.077 | 0.520 | 0.667 |
-| Liu 2019 | 104 | 0.603 | 0.375 | 0.625 | 0.604 | 0.643 | 0.592 | 0.598 |
-| Riaz 2017 | 64 | 0.510 | 0.476 | 0.531 | 0.650 | 0.477 | 0.361 | 0.464 |
+| Hugo 2016 | 27 | 0.269 | 0.289 | 0.519 | 0.929 | 0.077 | 0.520 | 0.667 |
+| Liu 2019 | 104 | 0.595 | 0.337 | 0.587 | 0.812 | 0.393 | 0.534 | 0.645 |
+| Riaz 2017 | 64 | 0.606 | 0.458 | 0.500 | 0.950 | 0.295 | 0.380 | 0.543 |
 
 ### Visualisations & Diagnostics
 
@@ -297,9 +297,9 @@ The diagnostic plots above provide a complete evaluation of classifier discrimin
 > - **Cross-Cohort Heterogeneity**: Held-out trial dataset performance demonstrates robust signal transfer in Riaz 2017 and Liu 2019, whereas Hugo 2016 exhibits higher variance due to its smaller cohort sample size.
 
 > [!summary] Key Takeaways: XGBoost Gradient Boosting
-> - **Mean Cross-Cohort AUC**: 0.450 (averaged across 3 held-out test cohorts).
-> - **Best Generalisation**: Liu 2019 (AUC = 0.603) — strongest signal transfer for this architecture.
-> - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.236) — likely reflects cohort-specific biological or technical heterogeneity.
+> - **Mean Cross-Cohort AUC**: 0.490 (averaged across 3 held-out test cohorts).
+> - **Best Generalisation**: Riaz 2017 (AUC = 0.606) — strongest signal transfer for this architecture.
+> - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.269) — likely reflects cohort-specific biological or technical heterogeneity.
 > - **Threshold Optimisation**: Youden's J threshold tuning typically recovers 5–15% sensitivity relative to the default 0.5 cut-off, at the cost of reduced specificity.
 > - **Clinical Implication**: Models should be interpreted in conjunction with clinical context; AUC > 0.65 across unseen cohorts represents a meaningful biological signal given the small sample sizes and cross-institution batch effects.
 
@@ -314,17 +314,17 @@ The diagnostic plots above provide a complete evaluation of classifier discrimin
 
 | Test Cohort | N | AUC | ECE | Brier Score | Accuracy | Sensitivity | Specificity | Precision | F1-Score | C-Index |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.368 | 0.284 | 0.329 | 0.370 | 0.143 | 0.615 | 0.286 | 0.190 | 0.724 |
-| Liu 2019 | 104 | 0.598 | 0.089 | 0.255 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 | 0.475 |
-| Riaz 2017 | 64 | 0.541 | 0.161 | 0.241 | 0.688 | 0.000 | 1.000 | 0.000 | 0.000 | 0.498 |
+| Hugo 2016 | 27 | 0.434 | 0.253 | 0.294 | 0.444 | 0.214 | 0.692 | 0.429 | 0.286 | 0.633 |
+| Liu 2019 | 104 | 0.558 | 0.087 | 0.252 | 0.558 | 0.062 | 0.982 | 0.750 | 0.115 | 0.488 |
+| Riaz 2017 | 64 | 0.648 | 0.162 | 0.239 | 0.688 | 0.000 | 1.000 | 0.000 | 0.000 | 0.440 |
 
 ### Performance Metrics (Youden's J Optimal Threshold)
 
 | Test Cohort | N | AUC | Threshold | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.368 | 0.379 | 0.519 | 0.571 | 0.462 | 0.533 | 0.552 |
-| Liu 2019 | 104 | 0.598 | 0.371 | 0.654 | 0.625 | 0.679 | 0.625 | 0.625 |
-| Riaz 2017 | 64 | 0.541 | 0.474 | 0.688 | 0.550 | 0.750 | 0.500 | 0.524 |
+| Hugo 2016 | 27 | 0.434 | 0.401 | 0.556 | 0.500 | 0.615 | 0.583 | 0.538 |
+| Liu 2019 | 104 | 0.558 | 0.377 | 0.606 | 0.458 | 0.732 | 0.595 | 0.518 |
+| Riaz 2017 | 64 | 0.648 | 0.474 | 0.656 | 0.700 | 0.636 | 0.467 | 0.560 |
 
 ### Visualisations & Diagnostics
 
@@ -372,9 +372,9 @@ The diagnostic plots above provide a complete evaluation of classifier discrimin
 > - **Cross-Cohort Heterogeneity**: Held-out trial dataset performance demonstrates robust signal transfer in Riaz 2017 and Liu 2019, whereas Hugo 2016 exhibits higher variance due to its smaller cohort sample size.
 
 > [!summary] Key Takeaways: Support Vector Machine (SVM)
-> - **Mean Cross-Cohort AUC**: 0.502 (averaged across 3 held-out test cohorts).
-> - **Best Generalisation**: Liu 2019 (AUC = 0.598) — strongest signal transfer for this architecture.
-> - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.368) — likely reflects cohort-specific biological or technical heterogeneity.
+> - **Mean Cross-Cohort AUC**: 0.547 (averaged across 3 held-out test cohorts).
+> - **Best Generalisation**: Riaz 2017 (AUC = 0.648) — strongest signal transfer for this architecture.
+> - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.434) — likely reflects cohort-specific biological or technical heterogeneity.
 > - **Threshold Optimisation**: Youden's J threshold tuning typically recovers 5–15% sensitivity relative to the default 0.5 cut-off, at the cost of reduced specificity.
 > - **Clinical Implication**: Models should be interpreted in conjunction with clinical context; AUC > 0.65 across unseen cohorts represents a meaningful biological signal given the small sample sizes and cross-institution batch effects.
 
@@ -389,16 +389,16 @@ The diagnostic plots above provide a complete evaluation of classifier discrimin
 
 | Test Cohort | N | AUC | ECE | Brier Score | Accuracy | Sensitivity | Specificity | Precision | F1-Score | C-Index |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.415 | 0.122 | 0.267 | 0.481 | 0.000 | 1.000 | 0.000 | 0.000 | 0.612 |
-| Liu 2019 | 104 | 0.594 | 0.090 | 0.255 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 | 0.417 |
+| Hugo 2016 | 27 | 0.415 | 0.119 | 0.268 | 0.481 | 0.000 | 1.000 | 0.000 | 0.000 | 0.612 |
+| Liu 2019 | 104 | 0.558 | 0.090 | 0.255 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 | 0.416 |
 | Riaz 2017 | 64 | 0.500 | 0.153 | 0.238 | 0.688 | 0.000 | 1.000 | 0.000 | 0.000 | 0.500 |
 
 ### Performance Metrics (Youden's J Optimal Threshold)
 
 | Test Cohort | N | AUC | Threshold | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.415 | 0.440 | 0.519 | 0.071 | 1.000 | 1.000 | 0.133 |
-| Liu 2019 | 104 | 0.594 | 0.402 | 0.654 | 0.417 | 0.857 | 0.714 | 0.526 |
+| Hugo 2016 | 27 | 0.415 | 0.457 | 0.519 | 0.071 | 1.000 | 1.000 | 0.133 |
+| Liu 2019 | 104 | 0.558 | 0.367 | 0.577 | 0.646 | 0.518 | 0.534 | 0.585 |
 | Riaz 2017 | 64 | 0.500 | inf | 0.688 | 0.000 | 1.000 | 0.000 | 0.000 |
 
 ### Visualisations & Diagnostics
@@ -447,8 +447,8 @@ The diagnostic plots above provide a complete evaluation of classifier discrimin
 > - **Cross-Cohort Heterogeneity**: Held-out trial dataset performance demonstrates robust signal transfer in Riaz 2017 and Liu 2019, whereas Hugo 2016 exhibits higher variance due to its smaller cohort sample size.
 
 > [!summary] Key Takeaways: ElasticNet Logistic Regression
-> - **Mean Cross-Cohort AUC**: 0.503 (averaged across 3 held-out test cohorts).
-> - **Best Generalisation**: Liu 2019 (AUC = 0.594) — strongest signal transfer for this architecture.
+> - **Mean Cross-Cohort AUC**: 0.491 (averaged across 3 held-out test cohorts).
+> - **Best Generalisation**: Liu 2019 (AUC = 0.558) — strongest signal transfer for this architecture.
 > - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.415) — likely reflects cohort-specific biological or technical heterogeneity.
 > - **Threshold Optimisation**: Youden's J threshold tuning typically recovers 5–15% sensitivity relative to the default 0.5 cut-off, at the cost of reduced specificity.
 > - **Clinical Implication**: Models should be interpreted in conjunction with clinical context; AUC > 0.65 across unseen cohorts represents a meaningful biological signal given the small sample sizes and cross-institution batch effects.
@@ -466,7 +466,7 @@ The diagnostic plots above provide a complete evaluation of classifier discrimin
 | Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | Hugo 2016 | 27 | 0.415 | 0.481 | 0.000 | 1.000 | 0.000 | 0.000 |
-| Liu 2019 | 104 | 0.387 | 0.548 | 0.021 | 1.000 | 1.000 | 0.041 |
+| Liu 2019 | 104 | 0.570 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 |
 | Riaz 2017 | 64 | 0.500 | 0.688 | 0.000 | 1.000 | 0.000 | 0.000 |
 
 ![Multimodal ROC Curves](../../plots/models/roc_curves_combined_lr.png)
@@ -477,9 +477,9 @@ _Figure: Multimodal ROC curves for Logistic Regression (L1-Penalised) integratin
 
 | Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.341 | 0.407 | 0.071 | 0.769 | 0.250 | 0.111 |
-| Liu 2019 | 104 | 0.562 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 |
-| Riaz 2017 | 64 | 0.587 | 0.578 | 0.650 | 0.545 | 0.394 | 0.491 |
+| Hugo 2016 | 27 | 0.407 | 0.407 | 0.143 | 0.692 | 0.333 | 0.200 |
+| Liu 2019 | 104 | 0.569 | 0.548 | 0.062 | 0.964 | 0.600 | 0.113 |
+| Riaz 2017 | 64 | 0.618 | 0.547 | 0.650 | 0.500 | 0.371 | 0.473 |
 
 ![Multimodal ROC Curves](../../plots/models/roc_curves_combined_rf.png)
 
@@ -489,9 +489,9 @@ _Figure: Multimodal ROC curves for Random Forest Classifier integrating immune s
 
 | Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.236 | 0.407 | 0.071 | 0.769 | 0.250 | 0.111 |
-| Liu 2019 | 104 | 0.603 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 |
-| Riaz 2017 | 64 | 0.510 | 0.516 | 0.500 | 0.523 | 0.323 | 0.392 |
+| Hugo 2016 | 27 | 0.269 | 0.333 | 0.071 | 0.615 | 0.167 | 0.100 |
+| Liu 2019 | 104 | 0.595 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 |
+| Riaz 2017 | 64 | 0.606 | 0.531 | 0.700 | 0.455 | 0.368 | 0.483 |
 
 ![Multimodal ROC Curves](../../plots/models/roc_curves_combined_xgb.png)
 
@@ -501,9 +501,9 @@ _Figure: Multimodal ROC curves for XGBoost Gradient Boosting integrating immune 
 
 | Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Hugo 2016 | 27 | 0.368 | 0.370 | 0.143 | 0.615 | 0.286 | 0.190 |
-| Liu 2019 | 104 | 0.598 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 |
-| Riaz 2017 | 64 | 0.541 | 0.688 | 0.000 | 1.000 | 0.000 | 0.000 |
+| Hugo 2016 | 27 | 0.434 | 0.444 | 0.214 | 0.692 | 0.429 | 0.286 |
+| Liu 2019 | 104 | 0.558 | 0.558 | 0.062 | 0.982 | 0.750 | 0.115 |
+| Riaz 2017 | 64 | 0.648 | 0.688 | 0.000 | 1.000 | 0.000 | 0.000 |
 
 ![Multimodal ROC Curves](../../plots/models/roc_curves_combined_svm.png)
 
@@ -514,7 +514,7 @@ _Figure: Multimodal ROC curves for Support Vector Machine (SVM) integrating immu
 | Test Cohort | N | AUC | Accuracy | Sensitivity | Specificity | Precision | F1-Score |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | Hugo 2016 | 27 | 0.415 | 0.481 | 0.000 | 1.000 | 0.000 | 0.000 |
-| Liu 2019 | 104 | 0.594 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 |
+| Liu 2019 | 104 | 0.558 | 0.538 | 0.000 | 1.000 | 0.000 | 0.000 |
 | Riaz 2017 | 64 | 0.500 | 0.688 | 0.000 | 1.000 | 0.000 | 0.000 |
 
 ![Multimodal ROC Curves](../../plots/models/roc_curves_combined_elasticnet.png)
@@ -533,10 +533,10 @@ _Figure: Multimodal ROC curves for ElasticNet Logistic Regression integrating im
 
 | Cohort | Model Selected | Best LOCO AUC | Log-Rank p-value | Significant (p < 0.05)? |
 |:---|:---:|:---:|:---:|:---:|
-| Hugo 2016 | LR | 0.415 | 2.801e-01 | No |
-| Liu 2019 | XGB | 0.603 | 1.375e-01 | No |
-| Riaz 2017 | RF | 0.585 | 8.003e-01 | No |
-| TCGA-SKCM | LR | N/A (external) | 6.108e-01 | No |
+| Hugo 2016 | SVM | 0.434 | 1.265e-01 | No |
+| Liu 2019 | XGB | 0.595 | 7.720e-01 | No |
+| Riaz 2017 | SVM | 0.648 | 1.298e-01 | No |
+| TCGA-SKCM | LR | N/A (external) | 9.803e-01 | No |
 
 ### Kaplan-Meier Survival Curves
 
