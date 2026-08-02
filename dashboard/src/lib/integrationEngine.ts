@@ -161,6 +161,81 @@ function assessAgreement(
   };
 }
 
+// ---------------------------------------------------------------------------
+// Multi-step clinical reasoning chain
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds an inspectable, step-by-step clinical decision path explaining the
+ * exact signals driving the recommendation for a given arm.
+ *
+ * Each string in the returned array is a concise reasoning step rendered as a
+ * bullet on the primary recommendation card. The chain is generated from live
+ * patient data at call time — no values are hardcoded.
+ *
+ * Steps tracked:
+ *   1. MAPK driver mutation status (BRAF V600 / NRAS / Triple-WT)
+ *   2. PD-L1 expression band (high / intermediate / low)
+ *   3. Q1 ML response percentile (high / intermediate / low)
+ *   4. Rapid-control pressure (LDH elevation or stage IV)
+ *   5. Arm-specific clinical rationale conclusion
+ */
+function buildReasoningChain(p: CohortPatient, ctx: ScoringContext, armKey: TherapyKey): string[] {
+  const steps: string[] = [];
+
+  // Step 1: MAPK driver mutation status
+  if (p.nras === "Mutant") {
+    steps.push("NRAS-mutant — MAPK driver active via RAS; BRAF/MEK inhibitors not indicated");
+  } else if (p.braf !== "WT") {
+    steps.push(`BRAF ${p.braf} mutant — MAPK pathway constitutively active; targeted therapy on the table`);
+  } else {
+    steps.push("BRAF wild-type, NRAS wild-type — no targetable MAPK hotspot; checkpoint blockade is the standard first-line lane");
+  }
+
+  // Step 2: PD-L1 expression band
+  if (p.pdl1Pct >= 75) {
+    steps.push(`High PD-L1 (${p.pdl1Pct}th percentile) — strongly immuno-favourable biology`);
+  } else if (p.pdl1Pct >= PDL1_HIGH) {
+    steps.push(`Intermediate PD-L1 (${p.pdl1Pct}th percentile) — checkpoint benefit likely`);
+  } else {
+    steps.push(`Low PD-L1 (${p.pdl1Pct}th percentile) — immune-cold profile; checkpoint response attenuated`);
+  }
+
+  // Step 3: Q1 ML response signature
+  if (p.q1) {
+    const pct = Math.round(p.q1.pResponse * 100);
+    if (pct >= 75) steps.push(`Q1 ML predictor: high response percentile (${pct}th) — strong statistical evidence for checkpoint benefit`);
+    else if (pct >= 40) steps.push(`Q1 ML predictor: intermediate response percentile (${pct}th) — moderate checkpoint benefit signal`);
+    else steps.push(`Q1 ML predictor: low response percentile (${pct}th) — statistical model does not favour checkpoint monotherapy`);
+  } else {
+    // Biomarker composite fallback
+    const sig = ctx.signature;
+    if (sig >= 75) steps.push(`Checkpoint biomarker composite: ${sig}th percentile — strong immuno-favourable signal`);
+    else if (sig >= 40) steps.push(`Checkpoint biomarker composite: ${sig}th percentile — moderate immuno signal`);
+    else steps.push(`Checkpoint biomarker composite: ${sig}th percentile — weak immuno signal`);
+  }
+
+  // Step 4: Rapid-control pressure
+  if (ctx.highLdh) {
+    steps.push(
+      p.ldhOverride
+        ? `LDH ${p.ldhOverride.toLowerCase()} — rapid tumour-control pressure; faster-acting regimens preferred`
+        : "Stage IV disease (LDH not recorded in TCGA) — rapid-control pressure inferred from stage"
+    );
+  }
+
+  // Step 5: Arm-specific conclusion
+  if (armKey === "targeted") {
+    steps.push("→ MAPK pathway is the primary actionable oncogenic driver; BRAF/MEK inhibition is the recommended lane");
+  } else if (armKey === "combo") {
+    steps.push("→ Combination / microenvironmental reversal strategy indicated — checkpoint monotherapy alone insufficient");
+  } else {
+    steps.push("→ High tumour immunogenicity and inflamed microenvironment — checkpoint blockade is the primary recommendation");
+  }
+
+  return steps;
+}
+
 export function integrate(p: CohortPatient): IntegratedResult {
   const statistical = statisticalPosition(p);
   const mechanistic = mechanisticPosition(p);
@@ -183,13 +258,35 @@ export function integrate(p: CohortPatient): IntegratedResult {
 
   const scores = scoreArms(ctx);
   const options = buildRankedOptions(ctx, scores);
-  const primary = options.find((o) => o.tier === "primary") ?? options[0];
+
+  // Hard-block safeguard: Arm B (targeted) is hard-blocked for BRAF Wild-Type
+  // patients by `buildRankedOptions` (score → 0, hardBlocked: true). If the
+  // top-ranked arm is still somehow flagged as blocked, fall back automatically
+  // to the next eligible, non-contraindicated arm so no blocked arm is ever
+  // surfaced as the primary recommendation.
+  const candidateOptions = [...options];
+  let primary = candidateOptions.find((o) => o.tier === "primary") ?? candidateOptions[0];
+  if (primary.hardBlocked) {
+    const fallback = candidateOptions.find((o) => !o.hardBlocked && o.confidence > 0);
+    if (fallback) {
+      // Demote blocked arm and promote fallback
+      primary.tier = "not-recommended";
+      fallback.tier = "primary";
+      primary = fallback;
+    }
+  }
+
+  // Attach an inspectable reasoning chain to whichever arm becomes primary
+  const reasoningChain = buildReasoningChain(p, ctx, primary.arm.key);
+  const finalOptions = candidateOptions.map((o) =>
+    o.arm.key === primary.arm.key ? { ...o, reasoningChain } : o
+  );
 
   const evidence: MethodPosition[] = [statistical];
   if (mechanistic) evidence.push(mechanistic);
 
   return {
-    options,
+    options: finalOptions,
     path: buildPath(p, ctx, agreement, primary.arm.label),
     headline: `${primary.arm.label} · ${primary.confidence}% model confidence · predicted median OS ${primary.medianOsMonths} mo`,
     primaryKey: primary.arm.key,
