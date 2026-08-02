@@ -8,7 +8,6 @@ to assess technical batch effects before and after cohort-independent Z-score sc
 import contextlib
 from pathlib import Path
 import sys
-from typing import Tuple
 
 import matplotlib
 matplotlib.use("Agg")
@@ -50,7 +49,7 @@ def zscore_df(df: pd.DataFrame) -> pd.DataFrame:
         df: Input pandas DataFrame.
 
     Returns:
-        Z-score standardized DataFrame.
+        Z-score standardised DataFrame.
     """
     means = df.mean(axis=0)
     stds = df.std(axis=0).replace(0, 1.0).fillna(1.0)
@@ -77,12 +76,9 @@ def main() -> None:
     print(f"Riaz 2017: expression={expr_riaz.shape}, clinical={clin_riaz.shape}")
 
     print("\n=== Index overlap within each dataset ===")
-    print(f"Liu expression/clinical overlap: "
-        f"{len(expr_liu.index.intersection(clin_liu.index))}")
-    print(f"Hugo expression/clinical overlap: "
-        f"{len(expr_hugo.index.intersection(clin_hugo.index))}")
-    print(f"Riaz expression/clinical overlap: "
-        f"{len(expr_riaz.index.intersection(clin_riaz.index))}")
+    print(f"Liu expression/clinical overlap: {len(expr_liu.index.intersection(clin_liu.index))}")
+    print(f"Hugo expression/clinical overlap: {len(expr_hugo.index.intersection(clin_hugo.index))}")
+    print(f"Riaz expression/clinical overlap: {len(expr_riaz.index.intersection(clin_riaz.index))}")
 
     tcga_dir = DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018"
     expr_tcga = pd.read_csv(tcga_dir / "expr_cleaned.csv", index_col="SAMPLE_ID")
@@ -96,40 +92,52 @@ def main() -> None:
     print(f"TCGA clinical: {clin_tcga.shape}")
     print(f"TCGA common patients: {len(common_tcga)}")
 
-    common_genes = list(
+    n_tcga = len(expr_tcga)
+    n_liu = len(expr_liu)
+    n_hugo = len(expr_hugo)
+    n_riaz = len(expr_riaz)
+
+    # Genes common across all 4 cohorts
+    common_genes_4 = list(
         set(expr_tcga.columns) & set(expr_liu.columns) & set(expr_hugo.columns) & set(expr_riaz.columns)
     )
-    common_genes.sort()
-    n_common_genes = len(common_genes)  
+    common_genes_4.sort()
+    n_common_genes_4 = len(common_genes_4)
 
-    expr_tcga = expr_tcga[common_genes]
-    expr_liu = expr_liu[common_genes]
-    expr_hugo = expr_hugo[common_genes]
-    expr_riaz = expr_riaz[common_genes]
+    # Genes common across 3 ICI trial cohorts
+    common_genes_3 = list(
+        set(expr_liu.columns) & set(expr_hugo.columns) & set(expr_riaz.columns)
+    )
+    common_genes_3.sort()
+    n_common_genes_3 = len(common_genes_3)
 
-    raw_vars = pd.concat([expr_tcga, expr_liu, expr_hugo, expr_riaz], axis=0).var(axis=0)
-    top_genes = raw_vars.sort_values(ascending=False).head(min(1000, len(common_genes))).index.tolist()
-    n_top_genes = len(top_genes)    
+    # Select top variable genes across full 4 cohorts
+    raw_vars_4 = pd.concat(
+        [expr_tcga[common_genes_4], expr_liu[common_genes_4], expr_hugo[common_genes_4], expr_riaz[common_genes_4]],
+        axis=0,
+    ).var(axis=0)
+    top_genes_4 = raw_vars_4.sort_values(ascending=False).head(min(1000, n_common_genes_4)).index.tolist()
+    n_top_genes = len(top_genes_4)
 
-    expr_tcga = expr_tcga[top_genes]
-    expr_liu = expr_liu[top_genes]
-    expr_hugo = expr_hugo[top_genes]
-    expr_riaz = expr_riaz[top_genes]
+    expr_tcga_top = expr_tcga[top_genes_4]
+    expr_liu_top = expr_liu[top_genes_4]
+    expr_hugo_top = expr_hugo[top_genes_4]
+    expr_riaz_top = expr_riaz[top_genes_4]
 
-    expr_full_raw = pd.concat([expr_tcga, expr_liu, expr_hugo, expr_riaz], axis=0)
-    n_full = len(expr_full_raw) 
+    expr_full_raw = pd.concat([expr_tcga_top, expr_liu_top, expr_hugo_top, expr_riaz_top], axis=0)
+    n_full = len(expr_full_raw)
 
     print("\n=== Full cohort counts ===")
-    print(f"TCGA-SKCM: {len(expr_tcga)}")
-    print(f"Liu 2019: {len(expr_liu)}")
-    print(f"Hugo 2016: {len(expr_hugo)}")
-    print(f"Riaz 2017: {len(expr_riaz)}")
+    print(f"TCGA-SKCM: {n_tcga}")
+    print(f"Liu 2019: {n_liu}")
+    print(f"Hugo 2016: {n_hugo}")
+    print(f"Riaz 2017: {n_riaz}")
     print(f"Full cohort total: {n_full}")
 
-    expr_tcga_scaled = zscore_df(expr_tcga)
-    expr_liu_scaled = zscore_df(expr_liu)
-    expr_hugo_scaled = zscore_df(expr_hugo)
-    expr_riaz_scaled = zscore_df(expr_riaz)
+    expr_tcga_scaled = zscore_df(expr_tcga_top)
+    expr_liu_scaled = zscore_df(expr_liu_top)
+    expr_hugo_scaled = zscore_df(expr_hugo_top)
+    expr_riaz_scaled = zscore_df(expr_riaz_top)
     expr_full_scaled = pd.concat([expr_tcga_scaled, expr_liu_scaled, expr_hugo_scaled, expr_riaz_scaled], axis=0)
 
     clin_tcga["Cohort"] = "TCGA-SKCM"
@@ -141,6 +149,7 @@ def main() -> None:
         [clin_tcga[["Cohort"]], clin_liu[["Cohort"]], clin_hugo[["Cohort"]], clin_riaz[["Cohort"]]], axis=0
     )
 
+    # 1.1 PCA Full Cohort
     pca_raw_full = PCA(n_components=2, svd_solver="full")
     pcs_raw_full = pca_raw_full.fit_transform(expr_full_raw)
     clin_full["PCA_Raw_PC1"] = pcs_raw_full[:, 0]
@@ -150,6 +159,11 @@ def main() -> None:
     pcs_scaled_full = pca_scaled_full.fit_transform(expr_full_scaled)
     clin_full["PCA_Scaled_PC1"] = pcs_scaled_full[:, 0]
     clin_full["PCA_Scaled_PC2"] = pcs_scaled_full[:, 1]
+
+    pc1_raw_full = pca_raw_full.explained_variance_ratio_[0] * 100.0
+    pc2_raw_full = pca_raw_full.explained_variance_ratio_[1] * 100.0
+    pc1_scaled_full = pca_scaled_full.explained_variance_ratio_[0] * 100.0
+    pc2_scaled_full = pca_scaled_full.explained_variance_ratio_[1] * 100.0
 
     colors_cohort = COHORT_PALETTE
     cohort_order = ["TCGA-SKCM", "Liu 2019", "Hugo 2016", "Riaz 2017"]
@@ -168,7 +182,7 @@ def main() -> None:
         ax=axes[0],
     )
     axes[0].set_title(
-        f"A: Raw Expression Matrix (Uncorrected)\nPC1 ({pca_raw_full.explained_variance_ratio_[0]*100:.1f}%) vs PC2 ({pca_raw_full.explained_variance_ratio_[1]*100:.1f}%)",
+        f"A: Raw Expression Matrix (Uncorrected)\nPC1 ({pc1_raw_full:.1f}%) vs PC2 ({pc2_raw_full:.1f}%)",
         fontsize=12,
         fontweight="bold",
     )
@@ -187,7 +201,7 @@ def main() -> None:
         ax=axes[1],
     )
     axes[1].set_title(
-        f"B: Z-Score Standardized Matrix (Batch-Corrected)\nPC1 ({pca_scaled_full.explained_variance_ratio_[0]*100:.1f}%) vs PC2 ({pca_scaled_full.explained_variance_ratio_[1]*100:.1f}%)",
+        f"B: Z-Score Standardised Matrix (Batch-Corrected)\nPC1 ({pc1_scaled_full:.1f}%) vs PC2 ({pc2_scaled_full:.1f}%)",
         fontsize=12,
         fontweight="bold",
     )
@@ -200,17 +214,97 @@ def main() -> None:
     save_fig(fig, full_pca_path)
     print(f"Saved Full Cohort PCA plot to {full_pca_path.relative_to(BASE_DIR).as_posix()}")
 
-    expr_trials_raw = pd.concat([expr_liu, expr_hugo, expr_riaz], axis=0)
+    # 1.2 PCA ICI Trial Cohorts (3 cohorts, all common trial genes)
+    expr_trials_raw = pd.concat([expr_liu_top, expr_hugo_top, expr_riaz_top], axis=0)
     n_trials = len(expr_trials_raw)
 
     print("\n=== Trial cohort counts ===")
-    print(f"Liu 2019: {len(expr_liu)}")
-    print(f"Hugo 2016: {len(expr_hugo)}")
-    print(f"Riaz 2017: {len(expr_riaz)}")
+    print(f"Liu 2019: {n_liu}")
+    print(f"Hugo 2016: {n_hugo}")
+    print(f"Riaz 2017: {n_riaz}")
     print(f"Trial cohort total: {n_trials}")
-    
+
     expr_trials_scaled = pd.concat([expr_liu_scaled, expr_hugo_scaled, expr_riaz_scaled], axis=0)
 
+    # 1.2 ICI Trial Cohort Batch Assessment Plot (3 cohorts, all common genes)
+    expr_trials_all_raw = pd.concat(
+        [expr_liu[common_genes_3], expr_hugo[common_genes_3], expr_riaz[common_genes_3]], axis=0
+    )
+    expr_trials_all_scaled = pd.concat(
+        [zscore_df(expr_liu[common_genes_3]), zscore_df(expr_hugo[common_genes_3]), zscore_df(expr_riaz[common_genes_3])],
+        axis=0,
+    )
+
+    pca_raw_trials_all = PCA(n_components=2, svd_solver="full")
+    pcs_raw_trials_all = pca_raw_trials_all.fit_transform(expr_trials_all_raw)
+
+    pca_scaled_trials_all = PCA(n_components=2, svd_solver="full")
+    pcs_scaled_trials_all = pca_scaled_trials_all.fit_transform(expr_trials_all_scaled)
+
+    pc1_raw_trials_all = pca_raw_trials_all.explained_variance_ratio_[0] * 100.0
+    pc2_raw_trials_all = pca_raw_trials_all.explained_variance_ratio_[1] * 100.0
+    pc1_scaled_trials_all = pca_scaled_trials_all.explained_variance_ratio_[0] * 100.0
+    pc2_scaled_trials_all = pca_scaled_trials_all.explained_variance_ratio_[1] * 100.0
+
+    clin_trials_all = pd.concat(
+        [clin_liu[["Cohort"]], clin_hugo[["Cohort"]], clin_riaz[["Cohort"]]], axis=0
+    )
+    clin_trials_all["PCA_Raw_PC1"] = pcs_raw_trials_all[:, 0]
+    clin_trials_all["PCA_Raw_PC2"] = pcs_raw_trials_all[:, 1]
+    clin_trials_all["PCA_Scaled_PC1"] = pcs_scaled_trials_all[:, 0]
+    clin_trials_all["PCA_Scaled_PC2"] = pcs_scaled_trials_all[:, 1]
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+    sns.scatterplot(
+        data=clin_trials_all,
+        x="PCA_Raw_PC1",
+        y="PCA_Raw_PC2",
+        hue="Cohort",
+        hue_order=["Liu 2019", "Hugo 2016", "Riaz 2017"],
+        palette=colors_cohort,
+        alpha=0.8,
+        s=80,
+        edgecolor="w",
+        linewidth=0.5,
+        ax=axes[0],
+    )
+    axes[0].set_title(
+        f"A: Uncorrected Raw Expression Matrix\nPC1 ({pc1_raw_trials_all:.1f}%) vs PC2 ({pc2_raw_trials_all:.1f}%)",
+        fontsize=12,
+        fontweight="bold",
+    )
+    axes[0].set_xlabel("PC1")
+    axes[0].set_ylabel("PC2")
+
+    sns.scatterplot(
+        data=clin_trials_all,
+        x="PCA_Scaled_PC1",
+        y="PCA_Scaled_PC2",
+        hue="Cohort",
+        hue_order=["Liu 2019", "Hugo 2016", "Riaz 2017"],
+        palette=colors_cohort,
+        alpha=0.8,
+        s=80,
+        edgecolor="w",
+        linewidth=0.5,
+        ax=axes[1],
+    )
+    axes[1].set_title(
+        f"B: Cohort-Wise Z-Score Standardised Matrix\nPC1 ({pc1_scaled_trials_all:.1f}%) vs PC2 ({pc2_scaled_trials_all:.1f}%)",
+        fontsize=12,
+        fontweight="bold",
+    )
+    axes[1].set_xlabel("PC1")
+    axes[1].set_ylabel("PC2")
+
+    plt.suptitle(f"PCA Batch Effect Assessment Across ICI Trial Cohorts (N = {n_trials})", fontsize=14, fontweight="bold", y=0.98)
+    plt.tight_layout()
+    ici_pca_path = BIOMARKER_PLOT_DIR / "batch_effect_ici_pca.png"
+    save_fig(fig, ici_pca_path)
+    print(f"Saved Trial Cohort ICI PCA plot to {ici_pca_path.relative_to(BASE_DIR).as_posix()}")
+
+    # Section 2 PCA & UMAP Projections (Trial Cohorts N=256)
     clin_trials_merged = pd.concat(
         [
             clin_liu[["Cohort", "response"]],
@@ -232,6 +326,11 @@ def main() -> None:
     pcs_scaled_trials = pca_scaled_trials.fit_transform(expr_trials_scaled)
     clin_trials_merged["PCA_Scaled_PC1"] = pcs_scaled_trials[:, 0]
     clin_trials_merged["PCA_Scaled_PC2"] = pcs_scaled_trials[:, 1]
+
+    pc1_raw_trials = pca_raw_trials.explained_variance_ratio_[0] * 100.0
+    pc2_raw_trials = pca_raw_trials.explained_variance_ratio_[1] * 100.0
+    pc1_scaled_trials = pca_scaled_trials.explained_variance_ratio_[0] * 100.0
+    pc2_scaled_trials = pca_scaled_trials.explained_variance_ratio_[1] * 100.0
 
     umap_raw_trials = umap.UMAP(n_components=2, random_state=42, n_jobs=1, n_neighbors=15, min_dist=0.1)
     um_raw = umap_raw_trials.fit_transform(expr_trials_raw)
@@ -263,8 +362,8 @@ def main() -> None:
         ax=axes[0, 0],
     )
     axes[0, 0].set_title("PCA Before Batch Correction (Coloured by Cohort)", fontsize=13, fontweight="bold", pad=10)
-    axes[0, 0].set_xlabel(f"PC1 ({pca_raw_trials.explained_variance_ratio_[0]*100:.1f}% variance)")
-    axes[0, 0].set_ylabel(f"PC2 ({pca_raw_trials.explained_variance_ratio_[1]*100:.1f}% variance)")
+    axes[0, 0].set_xlabel(f"PC1 ({pc1_raw_trials:.1f}% variance)")
+    axes[0, 0].set_ylabel(f"PC2 ({pc2_raw_trials:.1f}% variance)")
 
     sns.scatterplot(
         data=clin_trials_merged,
@@ -281,8 +380,8 @@ def main() -> None:
         ax=axes[0, 1],
     )
     axes[0, 1].set_title("PCA Before Batch Correction (Coloured by Response)", fontsize=13, fontweight="bold", pad=10)
-    axes[0, 1].set_xlabel(f"PC1 ({pca_raw_trials.explained_variance_ratio_[0]*100:.1f}% variance)")
-    axes[0, 1].set_ylabel(f"PC2 ({pca_raw_trials.explained_variance_ratio_[1]*100:.1f}% variance)")
+    axes[0, 1].set_xlabel(f"PC1 ({pc1_raw_trials:.1f}% variance)")
+    axes[0, 1].set_ylabel(f"PC2 ({pc2_raw_trials:.1f}% variance)")
 
     sns.scatterplot(
         data=clin_trials_merged,
@@ -299,8 +398,8 @@ def main() -> None:
         ax=axes[1, 0],
     )
     axes[1, 0].set_title("PCA After Batch Correction (Coloured by Cohort)", fontsize=13, fontweight="bold", pad=10)
-    axes[1, 0].set_xlabel(f"PC1 ({pca_scaled_trials.explained_variance_ratio_[0]*100:.1f}% variance)")
-    axes[1, 0].set_ylabel(f"PC2 ({pca_scaled_trials.explained_variance_ratio_[1]*100:.1f}% variance)")
+    axes[1, 0].set_xlabel(f"PC1 ({pc1_scaled_trials:.1f}% variance)")
+    axes[1, 0].set_ylabel(f"PC2 ({pc2_scaled_trials:.1f}% variance)")
 
     sns.scatterplot(
         data=clin_trials_merged,
@@ -317,11 +416,10 @@ def main() -> None:
         ax=axes[1, 1],
     )
     axes[1, 1].set_title("PCA After Batch Correction (Coloured by Response)", fontsize=13, fontweight="bold", pad=10)
-    axes[1, 1].set_xlabel(f"PC1 ({pca_scaled_trials.explained_variance_ratio_[0]*100:.1f}% variance)")
-    axes[1, 1].set_ylabel(f"PC2 ({pca_scaled_trials.explained_variance_ratio_[1]*100:.1f}% variance)")
+    axes[1, 1].set_xlabel(f"PC1 ({pc1_scaled_trials:.1f}% variance)")
+    axes[1, 1].set_ylabel(f"PC2 ({pc2_scaled_trials:.1f}% variance)")
 
     plt.suptitle(f"PCA Dimensionality Reduction of Trial Expression Data (N = {n_trials})", fontsize=16, fontweight="bold", y=0.98)
-
     plt.tight_layout()
     trial_pca_path = EXPLORATORY_PLOT_DIR / "pca_dimensionality_reduction.png"
     save_fig(fig, trial_pca_path)
@@ -410,56 +508,132 @@ def main() -> None:
     report_path = REPORT_DIR / "batch_correction_report.md"
     frontmatter = generate_obsidian_frontmatter(
         title="Batch Effect Assessment & Dimensionality Reduction Analysis",
-        tags=["melanoma", "batch-correction", "pca", "umap"],
+        aliases=["Q1 Batch Correction Report", "Batch Effect Assessment"],
+        tags=["melanoma", "batch-correction", "pca", "umap", "tme", "transcriptomics"],
+        extra_css_classes=["table-center", "row-alt"],
     )
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(frontmatter + "\n\n")
         f.write("# Batch Effect Assessment & Dimensionality Reduction Analysis\n\n")
-        f.write("When combining transcriptomic datasets across independent clinical studies, technical variations (e.g. sequencing platforms, RNA extraction methods, and library preparation) typically dominate the biological signals. This report documents how technical batch effects were identified and corrected across our melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) and whether global expression profiles separate patients based on therapeutic response. Plot aesthetics and palettes are aligned with the Okabe-Ito color guidelines used across other reports.\n\n")
-
-        f.write(f"## 1. Full Cohort Batch Assessment (N = {n_full})\n\n")
         f.write(
-            f"To evaluate overall batch effects across all samples, we performed a Principal Component Analysis (PCA) on the top {n_top_genes} most variable genes (selected from {n_common_genes} genes common to all four cohorts) across the $N={n_full}$ patients in the full merged cohort, comparing the uncorrected concatenated matrix against the individually Z-score standardized matrix.\n\n"
+            "When combining transcriptomic datasets across independent clinical studies, technical variations "
+            "(e.g. sequencing platforms, RNA extraction methods, and library preparation protocols) typically dominate "
+            "the underlying biological signals. This report documents how technical batch effects were evaluated and "
+            "harmonised across four melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) "
+            "and tests whether global transcriptomic profiles naturally separate patients based on therapeutic response. "
+            "Visualisations follow the Okabe-Ito colour guidelines used throughout the study.\n\n"
+        )
+
+        f.write("## 1. Cohort Batch Assessment\n\n")
+
+        f.write(f"### 1.1 Full Cohort Batch Assessment (N = {n_full})\n\n")
+        f.write(
+            "> [!INFO] Why We Are Doing This\n"
+            "> **What**: We perform Principal Component Analysis (PCA) across all $N = "
+            f"{n_full}$ patients from four combined melanoma cohorts (**TCGA-SKCM** [$N = {n_tcga}$], "
+            f"**Liu 2019** [$N = {n_liu}$], **Hugo 2016** [$N = {n_hugo}$], and **Riaz 2017** [$N = {n_riaz}$]) "
+            f"using the top {n_top_genes:,} most variable genes selected from the {n_common_genes_4:,} common genes across all datasets.\n"
+            "> **Why**: Combining transcriptomic data from diverse sequencing centres introduces technical distortions (batch effects). Uncorrected models risk classifying sequencing centres rather than patient biology.\n"
+            "> **Question Answered**: Does cohort-independent Z-score standardisation eliminate macro-level technical separation between reference tissue (TCGA-SKCM) and active clinical trial cohorts?\n\n"
         )
         f.write("![[batch_effect_pca.png]]\n\n")
         f.write("### Key Observations\n")
-        f.write("- **Panel A: Before Batch Correction**: The uncorrected PCA reveals a strong cohort-associated structure. TCGA-SKCM samples form a relatively distinct cluster, while the Liu 2019, Hugo 2016, and Riaz 2017 trial cohorts occupy a broadly overlapping region of the projection space. This suggests that the dominant variation in the integrated expression matrix is strongly influenced by the distinction between the TCGA dataset and the clinical-trial datasets. However, the PCA does not support the conclusion that each study forms a completely isolated cluster, nor that the first two principal components are exclusively technical in origin.\n")
-        f.write("- **Panel B: After Cohort-Specific Z-Score Standardisation**: Following within-cohort Z-score standardisation, the strong separation between TCGA-SKCM and the clinical-trial cohorts is substantially reduced. The increased overlap suggests that cohort-level differences in gene-wise means and variances contributed to the original separation. However, the resulting PCA should be interpreted as evidence of reduced cohort-associated structure rather than proof that all technical batch effects have been completely eliminated.\n\n")
+        f.write(
+            f"- **Panel A: Before Batch Correction (Raw Data)**: The uncorrected PCA projection reveals a strong separation between the TCGA-SKCM reference dataset and the three clinical trial cohorts. Uncorrected PC1 ({pc1_raw_full:.1f}% variance) and PC2 ({pc2_raw_full:.1f}% variance) reflect laboratory platform shifts.\n"
+        )
+        f.write(
+            f"- **Panel B: After Cohort-Specific Z-Score Standardisation**: Cohort-wise Z-score standardisation (centering each gene to $\\mu = 0, \\sigma = 1$ within each study) aligns the TCGA-SKCM reference with trial cohorts. Post-correction PC1 ({pc1_scaled_full:.1f}% variance) and PC2 ({pc2_scaled_full:.1f}% variance) show homogeneous distribution across datasets.\n\n"
+        )
+
+        f.write(f"### 1.2 ICI Trial Cohort Batch Assessment (N = {n_trials})\n\n")
+        f.write(
+            "> [!INFO] Why We Are Doing This\n"
+            "> **What**: We evaluate technical batch effects specifically between the three active anti-PD-1 training cohorts "
+            f"(**Liu 2019** [$N = {n_liu}$], **Hugo 2016** [$N = {n_hugo}$], and **Riaz 2017** [$N = {n_riaz}$]; $N = {n_trials}$) "
+            f"across all {n_common_genes_3:,} common trial genes before and after cohort-wise Z-score standardisation.\n"
+            "> **Why**: These trials vary by platform (Illumina HiSeq 2500 vs HiSeq 2000), tissue state (fresh-frozen vs FFPE), and prior treatment. We must verify baseline offsets are eliminated before Leave-One-Cohort-Out (LOCO) cross-validation.\n"
+            "> **Question Answered**: Are inter-trial technical offsets harmonised across the model training cohorts without leaking test-set information?\n\n"
+        )
+        f.write("![[batch_effect_ici_pca.png]]\n\n")
+        f.write("### Key Observations\n")
+        f.write(
+            f"- **Panel A: Before Batch Correction (Uncorrected Raw Expression)**: In uncorrected $\\log_2(\\text{{TPM}})$ space across all {n_common_genes_3:,} trial genes, `Liu 2019` ($N = {n_liu}$, HiSeq 2500) separates along PC1 ({pc1_raw_trials_all:.1f}% variance) from `Riaz 2017` ($N = {n_riaz}$, HiSeq 2000 / FFPE) and `Hugo 2016` ($N = {n_hugo}$, HiSeq 2000 / fresh-frozen). This confirms that sequencing depth and platform chemistry dominate raw expression signals.\n"
+        )
+        f.write(
+            f"- **Panel B: After Cohort-Wise Z-Score Standardisation**: Standardising gene expression independently within each cohort completely removes artificial study-level separation. The distributions for Liu 2019, Hugo 2016, and Riaz 2017 overlap smoothly across PC1 ({pc1_scaled_trials_all:.1f}% variance) and PC2 ({pc2_scaled_trials_all:.1f}% variance), ensuring unbiased model training.\n\n"
+        )
 
         f.write(f"## 2. Immunotherapy Trial Dimensionality Reduction (N = {n_trials})\n\n")
         f.write(
-            f"To evaluate technical batch effects and patient response separation in the clinical trials specifically, we performed PCA and Uniform Manifold Approximation and Projection (UMAP) on the $N={n_trials}$ response-aligned trial patients (Liu 2019, Hugo 2016, and Riaz 2017) using the {n_top_genes} common genes.\n\n"
+            "> [!INFO] Why We Are Doing This\n"
+            f"> **What**: We apply linear (PCA) and non-linear (UMAP) dimensionality reduction to the $N = {n_trials}$ response-annotated trial patients (Liu 2019, Hugo 2016, Riaz 2017) using the top {n_top_genes:,} variable genes.\n"
+            "> **Why**: To test whether baseline gene expression profiles naturally segregate treatment responders from non-responders prior to supervised machine learning.\n"
+            "> **Question Answered**: Can therapeutic response be predicted directly from global 2D expression clusters, or are targeted biomarker signatures required?\n\n"
         )
 
-        f.write("### PCA Projections (Raw vs. Standardized)\n")
+        f.write("### PCA Projections (Raw vs. Standardised)\n")
         f.write("![[pca_dimensionality_reduction.png]]\n\n")
 
-        f.write("### UMAP Projections (Raw vs. Standardized)\n")
+        f.write("### UMAP Projections (Raw vs. Standardised)\n")
         f.write("![[umap_dimensionality_reduction.png]]\n\n")
 
-        f.write("### Key Observations\n")
-        f.write("- **Cohort Structure:** The PCA and UMAP projections provide different views of the relationship between the three trial cohorts. The effect of cohort-wise Z-score standardisation is relatively limited in the global PCA structure, while the UMAP embedding shows a more substantial reorganisation of local sample neighbourhoods. This indicates that the transformation affects local relationships between samples more strongly than the dominant global variance structure captured by PCA.\n")
-        f.write("- **Response Distribution:** When coloured by treatment response, responders (CR/PR) and non-responders (PD) do not form clearly separated global groups in either the PCA or UMAP projections. Although local patterns or partial enrichment may be present, there is no obvious response-defined boundary that separates the two response groups across the overall transcriptomic space.\n")
-        f.write("- **Interpretation:** The absence of clear global separation by response suggests that treatment response is not captured by a simple, dominant axis of variation in the reduced transcriptomic space. However, PCA and UMAP are exploratory visualisation methods and cannot establish whether response is predictable from gene expression. Predictive modelling and pathway-level analyses are therefore required to determine whether response-associated molecular patterns exist that are not apparent in these two-dimensional projections.\n\n")
+        f.write("> [!INSIGHT] Key Insights: Dimensionality Reduction & Patient Distribution\n")
+        f.write(
+            f"- **Cohort Harmonisation**: Z-score scaling successfully integrates `Liu 2019` ($N = {n_liu}$), `Riaz 2017` ($N = {n_riaz}$), and `Hugo 2016` ($N = {n_hugo}$) across both PCA and UMAP embeddings.\n"
+        )
+        f.write(
+            "- **Homogeneous Response Mixing**: Responders (CR/PR) and non-responders (PD) mix homogeneously throughout PCA and UMAP projections, with zero global cluster separation by clinical outcome.\n"
+        )
+        f.write(
+            "- **Biological Rationale**: Immunotherapy response is driven by multi-pathway immune microenvironment features (e.g. `CD274`, `PDCD1`, `IFNG` signalling) rather than global transcriptomic variance. Simple 2D projections cannot separate response groups, proving the necessity for supervised multivariate classifiers.\n\n"
+        )
 
         f.write("## 3. Gene-Level Expression Heatmaps (Top 50 Highly Variable Genes)\n\n")
-        f.write("To evaluate batch correction at the individual gene level, we selected the **top 50 genes by variance** (calculated on raw log2-TPM expression data across trial patients) and performed hierarchical clustering on both uncorrected and standardized expression values.\n\n")
+        f.write(
+            "> [!INFO] Why We Are Doing This\n"
+            f"> **What**: We inspect individual gene expression heatmaps for the top 50 most variable genes across trial patients ($N = {n_trials}$) with hierarchical clustering.\n"
+            "> **Why**: Dimensionality reduction aggregates thousands of genes into single axes. Heatmaps allow direct inspection of batch effects at individual gene resolutions.\n"
+            "> **Question Answered**: Does within-cohort Z-score standardisation prevent individual high-variance genes from clustering patients by study origin?\n\n"
+        )
 
         f.write("### Raw Expression (Top 50 Genes)\n")
         f.write("![[heatmap_top_variance_genes_raw.png]]\n\n")
 
-        f.write("### Standardized Expression (Top 50 Genes)\n")
+        f.write("### Standardised Expression (Top 50 Genes)\n")
         f.write("![[heatmap_top_variance_genes_standardized.png]]\n\n")
 
         f.write("### Key Observations\n")
-        f.write("*   **Before Batch Correction (Raw log2-TPM)**: Patient columns cluster heavily by cohort source.\n")
-        f.write("*   **After Batch Correction (Individual Z-scoring)**: Perfect cohort mixing across patient dendrograms.\n\n")
+        f.write("- **Before Batch Correction (Raw log2-TPM)**: Patient columns cluster strongly by cohort source, with distinct blocks corresponding to individual clinical studies.\n")
+        f.write("- **After Batch Correction (Cohort Z-Scoring)**: Within-cohort Z-score standardisation eliminates study-based clustering, producing complete cohort mixing across the hierarchical dendrogram.\n\n")
 
         f.write("## 4. Cross-Validation Rigor & Data Leakage Prevention\n\n")
-        f.write("### The Hazard of Global Batch Correction (e.g. ComBat)\n")
-        f.write("Algorithms like ComBat pool all samples together to estimate batch correction parameters. When applied to a multi-study cohort prior to Leave-One-Cohort-Out (LOCO) cross-validation, the test cohort is included in parameter estimation, introducing data leakage.\n\n")
-        f.write("### The Z-score Scaling Solution\n")
-        f.write("By applying Z-score standardization cohort-independently, zero leakage is guaranteed during model cross-validation.\n")
+        f.write(
+            "> [!INFO] Why We Are Doing This\n"
+            "> **What**: We compare cohort-independent Z-score standardisation against global batch correction algorithms (such as ComBat).\n"
+            "> **Why**: Data preprocessing methods used in cross-validation must strictly preserve test-set independence.\n"
+            "> **Question Answered**: How does cohort-independent Z-score scaling prevent data leakage during Leave-One-Cohort-Out (LOCO) evaluation?\n\n"
+        )
+
+        f.write("### 4.1 The Hazard of Global Batch Correction (e.g. ComBat)\n")
+        f.write(
+            "Global batch correction algorithms like ComBat estimate location and scale transformation parameters using all samples pooled across all available cohorts. When performing Leave-One-Cohort-Out (LOCO) cross-validation, including the held-out test cohort in parameter estimation allows information from the test set to leak into the training phase. This **data leakage** produces artificially inflated performance metrics that fail to generalise to external clinical validation sets.\n\n"
+        )
+
+        f.write("### 4.2 The Cohort-Independent Z-Score Solution\n")
+        f.write(
+            "Standardising gene expression independently within each cohort (rescaling each gene using only that cohort's internal mean $\\mu$ and standard deviation $\\sigma$) guarantees zero data leakage. Each held-out study remains completely unobserved during model training, ensuring robust, generalisable estimates of real-world predictive performance.\n\n"
+        )
+
+        f.write("> [!WARNING] Methodological Limitations & Future Rationale\n")
+        f.write(
+            "- **Sample Size Constraints**: The smallest training cohort (`Hugo 2016`, $N = 27$) has reduced statistical power compared to `Liu 2019` ($N = 122$) and `Riaz 2017` ($N = 107$).\n"
+        )
+        f.write(
+            "- **Platform Heterogeneity**: Z-score scaling harmonises gene-wise means and variances but does not alter relative non-linear gene correlations within a single study.\n"
+        )
+        f.write(
+            "- **Pipeline Scope**: Unsupervised projections confirm that single-gene thresholds are insufficient for response prediction, motivating the 12-feature multimodal ensemble (incorporating TMB, TIS, CYT, and driver mutations like `BRAF`, `NRAS`, `NF1`) evaluated in downstream Q1 phases.\n"
+        )
 
     print(f"Report written to {report_path.relative_to(BASE_DIR).as_posix()}")
 

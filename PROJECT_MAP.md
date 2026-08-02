@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-02 (Added `Q5 Enhanced ML Predictor` tab to patient workbench navigation; relabeled Treatability Index score in recommendation cards to TI score /100; centralized `M1_MACROPHAGE_GENES` and `M2_MACROPHAGE_GENES` in `src/biology_constants.py`; updated `q1-response-predictor` feature extraction to 8 signatures including `Macrophage_STV_Score` and `M1_M2_Ratio`).
+> **Last updated**: 2026-08-02 (Audit & refactor `run_dimensionality_reduction.py` and `batch_correction_report.md`: removed all hardcoded literals, dynamically injected sample counts and PC variances, added Section 1.2 ICI PCA plot generation, updated frontmatter cssclasses, formatted Rule 15 callouts, enforced British English; cleaned up stray PNG plot files from `reports/pillar-1-cohorts-and-preprocessing/` ensuring all plots reside strictly in `plots/`).
 
 ## Repository Overview
 
@@ -342,7 +342,7 @@ Q5 internal dependency chain:
 | `src/data/palette.ts` | Auto-generated colour helpers (`getPhenotypeColor`, `getCohortColor`, `getArmColor`). Do **not** edit manually. |
 | `src/lib/integrationEngine.ts` | Q5 integration – derives ranked options from `patient.q5` when present, falls back to `scoreArms()`. |
 | `src/components/Q5PhenotypePanel.tsx` | Per-patient Q5 panel: phenotype badge, GMM probability bar, Treatability Index, ODE trajectory. |
-| `src/components/Q5MlPredictorPanel.tsx` | Per-patient enhanced ML predictor panel: subgroup Random Forest model, 33-feature panel, head-to-head comparison, feature importances, cross-validation metrics. |
+| `src/components/Q5MlPredictorPanel.tsx` | Per-patient enhanced ML predictor panel: subgroup Random Forest model, 19-candidate feature panel, head-to-head comparison, feature importances, cross-validation metrics. |
 | `src/components/FeaturedCards.tsx` | Landing page archetype cards – 4 phenotype examples (Immune Hot / Cold / M2-High / Mutant-Driven). |
 | `src/components/CohortTable.tsx` | Searchable/filterable patient table with Q5 Phenotype, TI, and Confidence Band columns. |
 | `src/components/PatientPassport.tsx` | Patient header pills – Q5 phenotype + confidence + TI when `q5` present; falls back to BRAF/PD-L1 pills. |

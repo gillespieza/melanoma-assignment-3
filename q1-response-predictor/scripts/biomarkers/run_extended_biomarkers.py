@@ -637,7 +637,7 @@ def _train_multimodal_predictor(df_clin_merged: pd.DataFrame, df_sigs_merged: pd
         stds = [pd_row['base_std'], pd_row['drivers_std'], pd_row['full_std']]
         offset = (i - (n_models - 1) / 2) * bar_width
         bars = ax.bar(x + offset, means, bar_width, yerr=stds,
-                      label=pd_row['model'], color=colours[i % len(colours)],
+                      label=pd_row['model'], color=colors[i % len(colors)],
                       edgecolor='white', linewidth=0.7,
                       capsize=4, error_kw={'elinewidth': 1.2, 'capthick': 1})
         for bar, mean, std in zip(bars, means, stds):
