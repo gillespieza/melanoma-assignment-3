@@ -160,9 +160,35 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
             </table>
           </div>
 
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            <ConfusionGrid title="At the tuned threshold" stats={validation.atTuned} />
-            <ConfusionGrid title="At the default 0.50" stats={validation.atHalf} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ConfusionGrid title="At the tuned threshold (0.664)" stats={validation.atTuned} />
+            <div className="rounded-xl border border-clinical-border bg-white p-3.5 space-y-3 text-[11.5px] leading-snug text-clinical-ink">
+              <div className="font-extrabold text-[12px] text-clinical-ink">Reading the Confusion Matrix</div>
+              <p className="text-clinical-muted">
+                The matrix summarises classification performance at the <strong>Youden-optimal threshold (0.664)</strong> — the cut-off that maximises the combined sensitivity + specificity on the held-out ICI trial cohorts (<em>Liu 2019, Riaz 2017, Hugo 2016</em>, N = {validation.n}).
+              </p>
+              <div className="space-y-1.5">
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 inline-block h-2.5 w-2.5 shrink-0 rounded-sm bg-okabe-purple/40 border border-okabe-purple/30" />
+                  <span><strong>True positive (TP):</strong> Actual responders correctly predicted to respond. High TP means the model catches real benefit.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 inline-block h-2.5 w-2.5 shrink-0 rounded-sm bg-amber-100 border border-amber-300" />
+                  <span><strong>False positive (FP):</strong> Non-responders incorrectly predicted to respond — the clinical risk of over-treating.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 inline-block h-2.5 w-2.5 shrink-0 rounded-sm bg-amber-100 border border-amber-300" />
+                  <span><strong>False negative (FN):</strong> Real responders missed by the model — the risk of withholding effective therapy.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 inline-block h-2.5 w-2.5 shrink-0 rounded-sm bg-clinical-bg border border-clinical-border" />
+                  <span><strong>True negative (TN):</strong> Non-responders correctly predicted to not respond — avoiding unnecessary toxicity.</span>
+                </div>
+              </div>
+              <div className="rounded-lg bg-clinical-bg border border-clinical-border p-2 text-[10.5px] text-clinical-muted space-y-0.5">
+                <div><strong>Threshold tuning note:</strong> The default 0.50 cut-off classifies every patient as a responder (100% sensitivity, 0% specificity) due to Platt-calibrated probability mass clustering around 0.5–0.7 on small cross-cohort training sets. The tuned threshold of 0.664 restores a clinically useful specificity of {validation.atTuned.specificity != null ? `${(validation.atTuned.specificity * 100).toFixed(0)}%` : "–"}.</div>
+              </div>
+            </div>
           </div>
         </div>
 

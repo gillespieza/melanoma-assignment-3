@@ -158,6 +158,7 @@ function CohortHeadline({
   cohort: Cohort;
   rows: ReturnType<typeof buildRows>;
 }) {
+  const concordant = rows.filter((r) => r.agreement === "concordant").length;
   const discordant = rows.filter((r) => r.agreement === "discordant").length;
   const q5Scored = cohort.meta.nQ5Scored ?? cohort.patients.filter((p) => p.q5).length;
   const highConf = cohort.meta.nHighConf ?? cohort.patients.filter((p) => p.q5?.confidenceBand === "High").length;
@@ -166,6 +167,7 @@ function CohortHeadline({
     { label: "Patients", value: cohort.patients.length, tone: "text-clinical-ink" },
     { label: "Q5-scored", value: q5Scored, tone: "text-okabe-purple-dark" },
     { label: "High confidence", value: highConf, tone: "text-green-700" },
+    { label: "Methods concordant", value: concordant, tone: "text-emerald-700" },
     { label: "Methods split", value: discordant, tone: "text-amber-700" },
   ];
 
@@ -180,7 +182,7 @@ function CohortHeadline({
             Every patient below is a real TCGA-SKCM case with a full ODE digital twin and Q5 Two-Stage GMM phenotype assignment. Each is scored independently by statistical and mechanistic methods, then integrated into a ranked recommendation.
           </p>
         </div>
-        <div className="grid shrink-0 grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <div className="grid shrink-0 grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
           {tiles.map((t) => (
             <div
               key={t.label}

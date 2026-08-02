@@ -200,8 +200,8 @@ export default function Q5MlPredictorPanel({ patient, meta }: Props) {
               </tr>
               <tr>
                 <td className="px-3.5 py-2.5 font-bold text-clinical-ink">Probability Calibration</td>
-                <td className="px-3.5 py-2.5 text-clinical-muted">Uncalibrated (Ensemble shrinkage, 0.475–0.506 range)</td>
-                <td className="px-3.5 py-2.5 font-bold text-okabe-purple-dark">Platt-Calibrated Sigmoid Scaling</td>
+                <td className="px-3.5 py-2.5 text-clinical-muted">Platt-Calibrated (CalibratedClassifierCV, sigmoid) — probabilities cluster 0.5–0.7 due to small cross-cohort training sets</td>
+                <td className="px-3.5 py-2.5 font-bold text-okabe-purple-dark">Platt-Calibrated Sigmoid Scaling (per-subgroup)</td>
               </tr>
               <tr>
                 <td className="px-3.5 py-2.5 font-bold text-clinical-ink">Patient Prediction ({patient.id})</td>
