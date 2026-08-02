@@ -68,10 +68,10 @@ function ConfusionGrid({
         </div>
       </div>
       <div className="mt-2.5 grid grid-cols-2 gap-2">
-        {cell("True responder", stats.tp, "border-clinical-teal/30 bg-clinical-teal/10 text-clinical-tealdark")}
+        {cell("True positive", stats.tp, "border-clinical-teal/30 bg-clinical-teal/10 text-clinical-tealdark")}
         {cell("False positive", stats.fp, "border-amber-200 bg-amber-50 text-amber-700")}
         {cell("False negative", stats.fn, "border-amber-200 bg-amber-50 text-amber-700")}
-        {cell("True non-responder", stats.tn, "border-clinical-border bg-clinical-bg text-clinical-ink")}
+        {cell("True negative", stats.tn, "border-clinical-border bg-clinical-bg text-clinical-ink")}
       </div>
       <div className="mt-2.5 grid grid-cols-3 gap-2 text-center">
         {[
