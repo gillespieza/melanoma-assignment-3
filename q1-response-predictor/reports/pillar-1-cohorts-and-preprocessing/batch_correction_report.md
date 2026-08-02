@@ -14,7 +14,9 @@ updated: 2026-07-24 14:59
 
 When combining transcriptomic datasets across independent clinical studies, technical variations (e.g. sequencing platforms, RNA extraction methods, and library preparation) typically dominate the biological signals. This report documents how technical batch effects were identified and corrected across our melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) and whether global expression profiles separate patients based on therapeutic response. Plot aesthetics and palettes are aligned with the Okabe-Ito colour guidelines used across other reports.
 
-## 1. Full Cohort Batch Assessment (N = 699)
+## 1. Cohort Batch Assessment
+
+### 1.1 Full Cohort Batch Assessment (N = 699)
 
 > [!summary] Why We Are Doing This  
 > When combining transcriptomic data collected by different research centres, technical variations—such as differences in sequencing machinery, RNA extraction kits, and laboratory protocols—create unwanted noise known as **batch effects**. If left uncorrected, a machine learning algorithm will learn to identify which laboratory processed a tissue sample rather than detecting true underlying biological signals related to patient treatment response. To evaluate and correct these technical distortions, we performed Principal Component Analysis (PCA) across all $N = 699$ patients from four combined melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) using $559$ genes common to all datasets.
@@ -24,6 +26,17 @@ When combining transcriptomic datasets across independent clinical studies, tech
 ### Key Observations
 - **Panel A: Before Batch Correction (Raw Data)**: The uncorrected PCA projection reveals a strong artificial separation between the TCGA-SKCM reference study and the three clinical trial cohorts (Liu 2019, Hugo 2016, and Riaz 2017). This separation demonstrates that raw measurement differences between laboratories dominate the uncorrected expression matrix.
 - **Panel B: After Cohort-Specific Z-Score Standardisation**: Applying Z-score standardisation independently within each cohort (rescaling each gene's expression to a mean of $0$ and standard deviation of $1$ per study) removes baseline laboratory shifts. The TCGA-SKCM samples now overlap smoothly with the immunotherapy trial cohorts, confirming that study-level batch effects have been effectively harmonised.
+
+### 1.2 ICI Trial Cohort Batch Assessment (N = 256)
+
+> [!summary] Why We Are Doing This  
+> While Section 1.1 evaluated overall batch effects across all samples including non-trial reference tissue, Section 1.2 evaluates technical batch effects specifically between the three active training cohorts (**Liu 2019**, **Hugo 2016**, and **Riaz 2017**; $N = 256$). These three cohorts differ in sequencing hardware (Illumina HiSeq 2500 vs HiSeq 2000), tissue preparation (fresh-frozen vs FFPE archival), and clinical pre-treatment status (prior anti-CTLA-4 exposure in Riaz). We perform PCA on the $19,757$ merged genes across these three trial cohorts before and after cohort-wise Z-score standardisation to verify that study-specific baseline offsets are completely removed prior to model training and Leave-One-Cohort-Out (LOCO) cross-validation.
+
+![[batch_effect_ici_pca.png]]
+
+### Key Observations
+- **Panel A: Before Batch Correction (Uncorrected Raw Expression)**: In uncorrected $\log_2(\text{TPM})$ space, the three trial cohorts form distinct, non-overlapping clusters. `Liu 2019` ($N = 122$, HiSeq 2500) separates along PC1 ($18.4\%$ variance) from `Riaz 2017` ($N = 107$, HiSeq 2000 / FFPE) and `Hugo 2016` ($N = 27$, HiSeq 2000 / fresh-frozen). This confirms that raw sequencing depth, platform chemistry, and tissue preservation differences dominate the uncorrected transcriptomic signal between the training sets.
+- **Panel B: After Cohort-Wise Z-Score Standardisation**: Cohort-wise Z-score standardisation (centering each gene to $\mu = 0, \sigma = 1$ within each trial cohort) completely eliminates the artificial study-level separation. The sample distributions for Liu 2019, Hugo 2016, and Riaz 2017 now overlap smoothly across both principal components, confirming that technical baseline offsets between training sets are harmonised without leaking information across cohort boundaries during cross-validation.
 
 ## 2. Immunotherapy Trial Dimensionality Reduction (N = 256)
 

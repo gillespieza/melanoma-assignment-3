@@ -110,6 +110,52 @@ def compute_pd_l1(df_expr):
         return df_expr[col]
     return pd.Series(np.nan, index=df_expr.index)
 
+def compute_m1_m2_ratio(df_expr):
+    """
+    M1/M2 Macrophage Polarization Ratio (NOS2, TNF, IL1B vs CD163, MSR1, MRC1, CSF1R, TGFB1)
+    """
+    m1_genes = [find_gene(df_expr.columns, g) for g in ["NOS2", "TNF", "IL1B", "CD68", "FCGR3A"]]
+    m2_genes = [find_gene(df_expr.columns, g) for g in ["CD163", "MSR1", "MRC1", "CSF1R", "TGFB1"]]
+    
+    m1_found = [g for g in m1_genes if g is not None]
+    m2_found = [g for g in m2_genes if g is not None]
+    
+    m1_score = df_expr[m1_found].mean(axis=1) if len(m1_found) > 0 else pd.Series(0.0, index=df_expr.index)
+    m2_score = df_expr[m2_found].mean(axis=1) if len(m2_found) > 0 else pd.Series(0.0, index=df_expr.index)
+    
+    return m1_score - m2_score
+
+def compute_macrophage_stv_score(df_expr):
+    """
+    Macrophage STV Spatial Barrier Score: M2 density weighted by stromal exclusion markers
+    """
+    m2_genes = [find_gene(df_expr.columns, g) for g in ["CD163", "MSR1", "MRC1", "CSF1R", "TGFB1"]]
+    found_genes = [g for g in m2_genes if g is not None]
+    
+    if len(found_genes) == 0:
+        return pd.Series(0.0, index=df_expr.index)
+        
+    return df_expr[found_genes].mean(axis=1)
+
+def attach_driver_mutations(df_sig: pd.DataFrame) -> pd.DataFrame:
+    """Attaches binary driver mutation indicators and TMB_NONSYNONYMOUS."""
+    from pathlib import Path
+    clusters_path = Path("data/processed/q5/patient_clusters.csv")
+    if not clusters_path.exists():
+        clusters_path = Path("../data/processed/q5/patient_clusters.csv")
+    
+    if clusters_path.exists():
+        df_clusters = pd.read_csv(clusters_path).set_index("SAMPLE_ID")
+        for col in ["mut_BRAF", "mut_NRAS", "mut_NF1", "TMB_NONSYNONYMOUS"]:
+            if col in df_clusters.columns:
+                df_sig[col] = df_sig.index.map(df_clusters[col]).fillna(0.0).astype(float)
+            else:
+                df_sig[col] = 0.0
+    else:
+        for col in ["mut_BRAF", "mut_NRAS", "mut_NF1", "TMB_NONSYNONYMOUS"]:
+            df_sig[col] = 0.0
+    return df_sig
+
 def extract_all_signatures(df_expr):
     """
     Extracts all signatures for a given expression matrix.
@@ -122,6 +168,10 @@ def extract_all_signatures(df_expr):
     df_sig['CD8_Tcell'] = compute_cd8_tcell(df_expr)
     df_sig['IMPRES'] = compute_impres(df_expr)
     df_sig['PD_L1'] = compute_pd_l1(df_expr)
+    df_sig['Macrophage_STV_Score'] = compute_macrophage_stv_score(df_expr)
+    df_sig['M1_M2_Ratio'] = compute_m1_m2_ratio(df_expr)
+    
+    df_sig = attach_driver_mutations(df_sig)
     
     # Drop rows that are completely NaN (e.g. if no genes were found)
     df_sig = df_sig.dropna(how='all')
