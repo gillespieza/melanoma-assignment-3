@@ -94,8 +94,6 @@ function ConfusionGrid({
 }
 
 export default function Q1ValidationPanel({ validation }: { validation: Q1Validation }) {
-  const responseRate = validation.responders / validation.n;
-
   return (
     <Panel
       title="Q1 · Model Accuracy on Held-Out Trials"
@@ -287,14 +285,15 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
 
       <p className="mt-4 border-t border-clinical-border pt-3 text-[11.5px] leading-relaxed text-clinical-muted">
         <span className="font-bold text-clinical-ink">Reading this honestly:</span> discrimination
-        varies sharply by cohort — strong in Riaz 2017 (AUC{" "}
+        varies by cohort — strong in Riaz 2017 (AUC{" "}
         {validation.byCohort.find((c) => c.cohort.startsWith("Riaz"))?.auc?.toFixed(3) ?? "—"}),
+        moderate in Liu 2019 (AUC{" "}
+        {validation.byCohort.find((c) => c.cohort.startsWith("Liu"))?.auc?.toFixed(3) ?? "—"}), and
         around chance in the small Hugo 2016 set (n=
-        {validation.byCohort.find((c) => c.cohort.startsWith("Hugo"))?.n ?? "—"}). The models are also
-        poorly calibrated — they push most patients above 0.5 against a true response rate of{" "}
-        {(responseRate * 100).toFixed(0)}% — so the tuned threshold matters more than the raw
-        probability. The ranking carries the signal; the absolute number should not be read as a
-        clinical probability.
+        {validation.byCohort.find((c) => c.cohort.startsWith("Hugo"))?.n ?? "—"}). The raw probabilities
+        cluster tightly around ~0.45 — so the tuned threshold ({validation.atTuned.threshold.toFixed(3)})
+        matters more than the default 0.50 cut-off. The relative ranking carries the signal; the absolute
+        number should be interpreted in cohort-relative terms.
       </p>
     </Panel>
   );
