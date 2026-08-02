@@ -45,6 +45,8 @@ export interface RankedOption {
   medianOsMonths: number;
   /** Predicted 12-month tumour-burden reduction, fraction 0-1. */
   burdenReduction: number;
+  /** Whether the underlying ODE simulation is informative. */
+  burdenInformative?: boolean;
   /** One-line clinical rationale. */
   rationale: string;
   /** Guideline / evidence citation shown on the card. */

@@ -11,6 +11,14 @@ import { KM_FACTS } from "../data/model";
 
 export const PDL1_HIGH = 25; // TPS % / percentile threshold, kept consistent app-wide
 
+/**
+ * Hard ceiling applied to all arm confidence scores.
+ * No recommendation should ever claim 100 % certainty — that would imply
+ * a level of clinical precision the model cannot support. 97 leaves visible
+ * headroom while still communicating near-maximal evidence alignment.
+ */
+export const MAX_CONFIDENCE = 97;
+
 export const ARMS: Record<TherapyKey, TherapyArm> = {
   immuno: {
     key: "immuno",
@@ -55,6 +63,10 @@ export interface ScoringContext {
   immunoReduction: number;
   /** Q3 ODE BRAFi burden reduction, 0-1. */
   targetedReduction: number;
+  /** Whether Anti-PD-1 ODE simulation is informative. */
+  immunoInformative?: boolean;
+  /** Whether BRAFi ODE simulation is informative. */
+  targetedInformative?: boolean;
 }
 
 export interface ArmScores {
@@ -68,8 +80,8 @@ export interface ArmScores {
 export function scoreArms(ctx: ScoringContext): ArmScores {
   const { brafMut, pdl1, signature, highLdh, ecog, age } = ctx;
   const pdl1High = pdl1 >= PDL1_HIGH;
-  const immunoReduction = ctx.immunoReduction;
-  const targetedReduction = ctx.targetedReduction;
+  const immunoReduction = isNaN(ctx.immunoReduction) ? 0 : Math.max(0, ctx.immunoReduction);
+  const targetedReduction = isNaN(ctx.targetedReduction) ? 0 : Math.max(0, ctx.targetedReduction);
 
   const comboReduction =
     clamp((1 - (1 - immunoReduction) * (1 - targetedReduction * 0.7)) * 100) / 100;
@@ -84,9 +96,9 @@ export function scoreArms(ctx: ScoringContext): ArmScores {
     ecog * 6 +
     immunoReduction * 20;
 
-  // Targeted: only if BRAF-mutant. Favoured for rapid control (high LDH/bulky).
+  // Targeted: indicated ONLY for BRAF V600 mutant.
   const targeted = brafMut
-    ? 34 + targetedReduction * 42 + (highLdh ? 16 : 0) + (pdl1High ? -6 : 8) - ecog * 3
+    ? 25 + (targetedReduction > 0 ? targetedReduction : 0.5) * 45 + (highLdh ? 20 : 0) - ecog * 6
     : 0;
 
   // Combination / sequencing: needs BRAF-mutant AND an immuno-responsive tumour.
@@ -98,9 +110,9 @@ export function scoreArms(ctx: ScoringContext): ArmScores {
         : 0;
 
   return {
-    immuno: clamp(immuno),
-    targeted: clamp(targeted),
-    combo: clamp(combo),
+    immuno: clamp(immuno, 0, MAX_CONFIDENCE),
+    targeted: clamp(targeted, 0, MAX_CONFIDENCE),
+    combo: clamp(combo, 0, MAX_CONFIDENCE),
     comboReduction,
   };
 }
@@ -119,8 +131,11 @@ const pct = (frac: number) => `${Math.round(frac * 100)}%`;
  * The top eligible arm becomes `primary`; ineligible arms stay `not-recommended`.
  */
 export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): RankedOption[] {
-  const { brafMut, pdl1, highLdh, immunoReduction, targetedReduction } = ctx;
+  const { brafMut, pdl1, highLdh, immunoReduction, targetedReduction, immunoInformative, targetedInformative } = ctx;
   const pdl1High = pdl1 >= PDL1_HIGH;
+
+  const isImmunoInformative = immunoInformative ?? true;
+  const isTargetedInformative = brafMut ? (targetedInformative ?? true) : false;
 
   const draft: RankedOption[] = [
     {
@@ -128,6 +143,7 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
       confidence: Math.round(scores.immuno),
       medianOsMonths: osFor("immuno", immunoReduction),
       burdenReduction: immunoReduction,
+      burdenInformative: isImmunoInformative,
       rationale: pdl1High
         ? "High PD-L1 and a strong response signature predict durable checkpoint benefit."
         : brafMut
@@ -144,6 +160,7 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
       confidence: Math.round(scores.targeted),
       medianOsMonths: brafMut ? osFor("targeted", targetedReduction) : 0,
       burdenReduction: brafMut ? targetedReduction : 0,
+      burdenInformative: isTargetedInformative,
       rationale: !brafMut
         ? "No BRAF V600 mutation — BRAF/MEK inhibitors have no target (RAF paradox risk)."
         : highLdh
@@ -158,15 +175,14 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
     {
       arm: ARMS.combo,
       confidence: Math.round(scores.combo),
-      medianOsMonths: scores.combo > 0 ? osFor("combo", scores.comboReduction) : 0,
-      burdenReduction: scores.combo > 0 ? scores.comboReduction : 0,
+      medianOsMonths: osFor("combo", scores.comboReduction),
+      burdenReduction: scores.comboReduction,
+      burdenInformative: isImmunoInformative || isTargetedInformative,
       rationale:
-        scores.combo > 0
-          ? "Both lanes active: checkpoint induction with targeted therapy reserved for rescue."
-          : "Reserved for BRAF-mutant tumours with an immuno-responsive profile.",
-      evidence: "SECOMBIT: sandwich/sequencing improves 3y OS vs targeted-first.",
-      caution: "Higher cumulative toxicity and monitoring burden; MDT discussion advised.",
-      tier: scores.combo > 0 ? "alternative" : "not-recommended",
+        "Microenvironmental reversal or combination strategy (e.g. CSF1R macrophage depletion, MDM2 antagonist, or BRAF/MEK adjunct).",
+      evidence: "Phase II/III Trial Benchmarks & SECOMBIT combination rescue protocols.",
+      caution: "Increased cumulative toxicity; reserved for dual-resistant or high-burden cases.",
+      tier: brafMut ? "alternative" : "not-recommended",
     },
   ];
 
