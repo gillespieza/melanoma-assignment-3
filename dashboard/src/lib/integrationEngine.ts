@@ -71,7 +71,7 @@ function statisticalPosition(p: CohortPatient): MethodPosition {
     return {
       value: p.q1.pResponse,
       label: `Q1 ML predictor · P(response) ${(p.q1.pResponse * 100).toFixed(0)}%`,
-      detail: "Ensemble of five models over six gene-expression signatures.",
+      detail: "Ensemble of five models over 12 multimodal features (immune signatures, macrophage barrier, driver mutations & TMB).",
       source: "q1",
     };
   }

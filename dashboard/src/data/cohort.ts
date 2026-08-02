@@ -8,7 +8,7 @@ export type BrafCall = "V600E" | "WT";
 export type NrasCall = "Mutant" | "WT";
 export type ResistanceRisk = "low" | "moderate" | "high" | "unknown";
 
-/** The six gene-expression signatures the Q1 models consume. */
+/** The multimodal features (immune signatures, macrophage barrier, driver mutations & TMB) the Q1 models consume. */
 export interface Q1Features {
   IFN_gamma: number | null;
   TIS: number | null;

@@ -153,7 +153,7 @@ export default function Q1Lane({
   return (
     <Panel
       title="Q1 · Gene-Expression Response Predictor"
-      subtitle="Five-model ensemble over six immune signatures → P(response to checkpoint blockade)"
+      subtitle="Five-model ensemble over 12 multimodal features → P(response to checkpoint blockade)"
       icon={<BrainCircuit size={16} />}
       right={
         q1 ? (
