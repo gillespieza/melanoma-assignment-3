@@ -90,7 +90,11 @@ function OptionCard({
               <Stethoscope size={11} /> 12-mo burden ↓
             </div>
             <div className="tabular text-[16px] font-extrabold text-clinical-ink">
-              {Math.round(opt.burdenReduction * 100)}%
+              {opt.burdenInformative === false ? (
+                <span className="text-[12px] font-semibold text-clinical-muted">Could not compute</span>
+              ) : (
+                `${Math.round(opt.burdenReduction * 100)}%`
+              )}
             </div>
           </div>
         </div>
