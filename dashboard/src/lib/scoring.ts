@@ -36,6 +36,14 @@ export function clamp(n: number, lo = 0, hi = 100) {
   return Math.max(lo, Math.min(hi, n));
 }
 
+/**
+ * Hard ceiling applied to all arm confidence scores.
+ * No recommendation should ever claim 100 % certainty — that would imply
+ * a level of clinical precision the model cannot support. 97 leaves visible
+ * headroom while still communicating near-maximal evidence alignment.
+ */
+export const MAX_CONFIDENCE = 97;
+
 /** Everything the scoring math needs, however the caller obtained it. */
 export interface ScoringContext {
   brafMut: boolean;
@@ -55,6 +63,10 @@ export interface ScoringContext {
   immunoReduction: number;
   /** Q3 ODE BRAFi burden reduction, 0-1. */
   targetedReduction: number;
+  /** Whether Anti-PD-1 ODE simulation is informative. */
+  immunoInformative?: boolean;
+  /** Whether BRAFi ODE simulation is informative. */
+  targetedInformative?: boolean;
 }
 
 export interface ArmScores {
@@ -80,13 +92,11 @@ export function scoreArms(ctx: ScoringContext): ArmScores {
     (pdl1 / 100) * 34 +
     (signature / 100) * 22 +
     (brafMut ? 0 : 8) -
-    (highLdh ? 12 : 0) -
-    ecog * 6 +
-    immunoReduction * 20;
+    ecog * 6;
 
-  // Targeted: only if BRAF-mutant. Favoured for rapid control (high LDH/bulky).
+  // Targeted: indicated ONLY for BRAF V600 mutant.
   const targeted = brafMut
-    ? 34 + targetedReduction * 42 + (highLdh ? 16 : 0) + (pdl1High ? -6 : 8) - ecog * 3
+    ? 25 + (targetedReduction > 0 ? targetedReduction : 0.5) * 45 + (highLdh ? 20 : 0) - ecog * 6
     : 0;
 
   // Combination / Reversal Therapy: indicated for M2-High macrophage barriers, p53 reactivation, or combination rescue
@@ -98,9 +108,9 @@ export function scoreArms(ctx: ScoringContext): ArmScores {
         : 25;
 
   return {
-    immuno: clamp(immuno),
-    targeted: clamp(targeted),
-    combo: clamp(combo),
+    immuno: clamp(immuno, 0, MAX_CONFIDENCE),
+    targeted: clamp(targeted, 0, MAX_CONFIDENCE),
+    combo: clamp(combo, 0, MAX_CONFIDENCE),
     comboReduction,
   };
 }
@@ -119,8 +129,11 @@ const pct = (frac: number) => `${Math.round(frac * 100)}%`;
  * The top eligible arm becomes `primary`; ineligible arms stay `not-recommended`.
  */
 export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): RankedOption[] {
-  const { brafMut, pdl1, highLdh, immunoReduction, targetedReduction } = ctx;
+  const { brafMut, pdl1, highLdh, immunoReduction, targetedReduction, immunoInformative, targetedInformative } = ctx;
   const pdl1High = pdl1 >= PDL1_HIGH;
+
+  const isImmunoInformative = immunoInformative ?? true;
+  const isTargetedInformative = brafMut ? (targetedInformative ?? true) : false;
 
   const draft: RankedOption[] = [
     {
@@ -128,6 +141,7 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
       confidence: Math.round(scores.immuno),
       medianOsMonths: osFor("immuno", immunoReduction),
       burdenReduction: immunoReduction,
+      burdenInformative: isImmunoInformative,
       rationale: pdl1High
         ? "High PD-L1 and a strong response signature predict durable checkpoint benefit."
         : brafMut
@@ -144,6 +158,7 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
       confidence: Math.round(scores.targeted),
       medianOsMonths: brafMut ? osFor("targeted", targetedReduction) : 0,
       burdenReduction: brafMut ? targetedReduction : 0,
+      burdenInformative: isTargetedInformative,
       rationale: !brafMut
         ? "No BRAF V600 mutation – BRAF/MEK inhibitors have no target (RAF paradox risk)."
         : highLdh
@@ -164,6 +179,7 @@ export function buildRankedOptions(ctx: ScoringContext, scores: ArmScores): Rank
       confidence: Math.round(scores.combo),
       medianOsMonths: osFor("combo", scores.comboReduction),
       burdenReduction: scores.comboReduction,
+      burdenInformative: isImmunoInformative || isTargetedInformative,
       rationale:
         "Microenvironmental reversal or combination strategy (e.g. CSF1R macrophage depletion, MDM2 antagonist, or BRAF/MEK adjunct).",
       evidence: "Phase II/III Trial Benchmarks & SECOMBIT combination rescue protocols.",

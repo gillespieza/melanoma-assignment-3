@@ -1,4 +1,4 @@
-import { BrainCircuit, Waves, ArrowRight, CircleAlert, CircleCheck, CircleMinus } from "lucide-react";
+import { BarChart2, Variable, ArrowRight, CircleAlert, CircleCheck, CircleMinus } from "lucide-react";
 import type { AgreementResult, MethodPosition } from "../lib/integrationEngine";
 
 // The methods-agreement signal: two independent methods scored this patient;
@@ -42,7 +42,7 @@ function MethodCard({
 }: {
   position: MethodPosition | null;
   icon: React.ReactNode;
-  kind: "Statistical" | "Mechanistic";
+  kind: "Statistical" | "Mechanistic" | "ICI Response Prediction";
 }) {
   if (!position) {
     return (
@@ -60,7 +60,7 @@ function MethodCard({
 
   const favours = position.value >= 0.5;
   return (
-    <div className="flex-1 rounded-xl border border-clinical-border bg-white p-3.5 shadow-card">
+    <div className="flex-1 h-full rounded-xl border border-clinical-border bg-white p-3.5 shadow-card">
       <div className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wide text-clinical-muted">
         {icon} {kind}
       </div>
@@ -130,11 +130,11 @@ export default function AgreementBadge({ agreement }: { agreement: AgreementResu
       </p>
 
       {/* The converging-methods visual */}
-      <div className="mt-3.5 flex flex-col items-stretch gap-2.5 sm:flex-row sm:items-center">
+      <div className="mt-3.5 flex flex-col items-stretch gap-2.5 sm:flex-row">
         <MethodCard
           position={agreement.statistical}
-          kind="Statistical"
-          icon={<BrainCircuit size={13} className="text-clinical-bluedark" />}
+          kind="ICI Response Prediction"
+          icon={<BarChart2 size={13} className="text-clinical-bluedark" />}
         />
         <div className="flex shrink-0 items-center justify-center sm:flex-col">
           <ArrowRight size={18} className={tone.accent + " rotate-90 sm:rotate-0"} />
@@ -142,7 +142,7 @@ export default function AgreementBadge({ agreement }: { agreement: AgreementResu
         <MethodCard
           position={agreement.mechanistic}
           kind="Mechanistic"
-          icon={<Waves size={13} className="text-okabe-purple-dark" />}
+          icon={<Variable size={13} className="text-okabe-purple-dark" />}
         />
       </div>
 

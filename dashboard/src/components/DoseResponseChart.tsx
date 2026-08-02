@@ -9,7 +9,7 @@ import {
   Legend,
   ReferenceLine,
 } from "recharts";
-import { Waves, CircleAlert } from "lucide-react";
+import { Variable, CircleAlert } from "lucide-react";
 import type { CohortPatient } from "../data/cohort";
 import { Panel, Pill, Stat } from "./ui";
 
@@ -41,7 +41,7 @@ export default function DoseResponseChart({
     <Panel
       title="Q3 · ODE Digital Twin – Dose Response"
       subtitle="Simulated tumour burden across the drug-dose sweep, for this patient specifically"
-      icon={<Waves size={16} />}
+      icon={<Variable size={16} />}
       right={<Pill tone="okabe-purple">Raw model output</Pill>}
     >
       {!anyInformative ? (

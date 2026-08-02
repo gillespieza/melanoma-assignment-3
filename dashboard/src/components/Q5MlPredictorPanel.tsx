@@ -68,11 +68,11 @@ export default function Q5MlPredictorPanel({ patient, meta }: Props) {
       {/* Top Banner: Q5 Enhanced ML Summary */}
       <Panel
         title="Q5 · Subgroup-Specific Enhanced ML Predictor"
-        subtitle="Enriched 33-feature Random Forest & Platt-calibrated models trained within patient phenotypes"
+        subtitle="Subgroup-tailored Random Forest & Platt-calibrated models trained on GMM phenotype clusters using cell deconvolution & spatial proxies"
         icon={<Sparkles size={16} />}
         right={
           <Pill tone="okabe-purple">
-            <Zap size={11} /> 33-Feature Enriched Panel
+            <Zap size={11} /> Phenotype-Subgroup Enriched Panel
           </Pill>
         }
       >
@@ -102,7 +102,7 @@ export default function Q5MlPredictorPanel({ patient, meta }: Props) {
                 </span>
               </div>
               <p className="mt-1.5 text-[11.5px] leading-snug text-clinical-muted">
-                Trained specifically on patients within cluster #{q5.clusterId >= 0 ? q5.clusterId : "N/A"} using the 33-feature enriched panel.
+                Trained specifically on patients within cluster #{q5.clusterId >= 0 ? q5.clusterId : "N/A"} using two-stage GMM phenotyping and an enriched feature set.
               </p>
             </div>
             <div className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-clinical-ink">
@@ -141,10 +141,10 @@ export default function Q5MlPredictorPanel({ patient, meta }: Props) {
                 <BarChart3 size={12} /> Model Architecture Advantage
               </div>
               <div className="mt-2 text-[14px] font-extrabold text-clinical-ink">
-                33-Feature Phenotype-Tailored
+                GMM Subgroup & Spatial Enriched
               </div>
               <p className="mt-1.5 text-[11.5px] leading-snug text-clinical-muted">
-                Incorporates Macrophage STV Score, CAF Exclusion, Antigen Presentation (APM), and NF1 loss-of-function drivers omitted by the 6-feature global Q1 model.
+                Incorporates cell deconvolution (CD4, NK, B, M1/M2, CAF), spatial proxies (CD8/CAF ratio, infiltration index), and phenotype subgroup training beyond the global Q1 model.
               </p>
             </div>
             <div className="mt-3 text-[11px] font-bold text-okabe-purple-dark">
@@ -180,8 +180,8 @@ export default function Q5MlPredictorPanel({ patient, meta }: Props) {
             <tbody className="divide-y divide-clinical-border text-[12px]">
               <tr>
                 <td className="px-3.5 py-2.5 font-bold text-clinical-ink">Feature Panel Size</td>
-                <td className="px-3.5 py-2.5 text-clinical-muted">6 Features (PD-L1, PD-1, TIS, CYT, CD8, IMPRES)</td>
-                <td className="px-3.5 py-2.5 font-bold text-okabe-purple-dark">33 Features (Enriched Microenvironment + Drivers)</td>
+                <td className="px-3.5 py-2.5 text-clinical-muted">12 Features (Immune Signatures, STV Ratios, Drivers, TMB)</td>
+                <td className="px-3.5 py-2.5 font-bold text-okabe-purple-dark">19 Candidate Features (Deconvolution, Spatial Proxies, Drivers)</td>
               </tr>
               <tr>
                 <td className="px-3.5 py-2.5 font-bold text-clinical-ink">Model Scope</td>
@@ -189,14 +189,14 @@ export default function Q5MlPredictorPanel({ patient, meta }: Props) {
                 <td className="px-3.5 py-2.5 font-bold text-okabe-purple-dark">Phenotype-Specific ({q5.shortLabel} Cluster Model)</td>
               </tr>
               <tr>
-                <td className="px-3.5 py-2.5 font-bold text-clinical-ink">Microenvironment Features</td>
-                <td className="px-3.5 py-2.5 text-clinical-muted">Omitted</td>
-                <td className="px-3.5 py-2.5 font-bold text-okabe-purple-dark">Macrophage STV Score, CAF Exclusion, M1/M2 Ratio</td>
+                <td className="px-3.5 py-2.5 font-bold text-clinical-ink">Microenvironment & Spatial</td>
+                <td className="px-3.5 py-2.5 text-clinical-muted">Macrophage STV, M1/M2 Ratio, CD8 T-cell</td>
+                <td className="px-3.5 py-2.5 font-bold text-okabe-purple-dark">Cell Deconvolution (CD4, NK, B, CAF) + Spatial Proxies</td>
               </tr>
               <tr>
                 <td className="px-3.5 py-2.5 font-bold text-clinical-ink">Genomic Drivers</td>
-                <td className="px-3.5 py-2.5 text-clinical-muted">Omitted</td>
-                <td className="px-3.5 py-2.5 font-bold text-okabe-purple-dark">BRAF V600, NRAS, NF1 Loss-of-Function, TMB</td>
+                <td className="px-3.5 py-2.5 text-clinical-muted">BRAF V600, NRAS, NF1, TMB</td>
+                <td className="px-3.5 py-2.5 font-bold text-okabe-purple-dark">BRAF V600, NRAS, NF1, TMB (Phenotype-weighted)</td>
               </tr>
               <tr>
                 <td className="px-3.5 py-2.5 font-bold text-clinical-ink">Probability Calibration</td>

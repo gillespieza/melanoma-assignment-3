@@ -148,7 +148,7 @@ Click between six method tabs to inspect individual method outputs:
 - **Phase 4 ODE Dynamic Trajectories:** endpoint residual tumour burden across therapy arms for this phenotype.
 
 ### 6.2 Q1 · ML predictor
-P(response) probability gauge, 5-model ensemble breakdown (LR, RF, XGB, SVM, ENet), and 11 multimodal feature values (immune signatures, macrophage barrier & driver mutations).
+P(response) probability gauge, 5-model ensemble breakdown (LR, RF, XGB, SVM, ENet), and 12 multimodal feature values (immune signatures, macrophage barrier & driver mutations).
 
 ### 6.3 Q2 · Validation
 Proteomic RPPA pERK validation (r = 0.175, p = 0.002), rank order significance (p = 3.2×10⁻⁹), and GDSC2 cell-line viability calibration.
@@ -160,9 +160,9 @@ Proteomic RPPA pERK validation (r = 0.175, p = 0.002), rank order significance (
 Rule-based resistance risk assessment, escape mechanisms, and ordered reserve/salvage targets.
 
 ### 6.6 Q5 Enhanced ML Predictor
-- **Assigned Subgroup Model:** phenotype-specific Random Forest model trained within cluster boundaries.
-- **33-Feature Enriched Panel:** incorporates Macrophage STV Score, CAF Exclusion, M1/M2 Ratio, Antigen Presentation (APM), `NF1` loss-of-function, `BRAF/NRAS` status, and TMB.
-- **Head-to-Head Comparison:** side-by-side matrix comparing the global 6-feature Q1 model against the Q5 33-feature subgroup model.
+- **Assigned Subgroup Model:** phenotype-specific Random Forest model trained within boundaries established by two-stage GMM patient phenotyping.
+- **Enriched Feature Panel:** incorporates multi-cell transcriptomic deconvolution (`CD4+ T`, `NK`, `B cells`, `CAF exclusion`), engineered spatial microenvironment proxies (`Spatial_CD8_CAF_Distance_Ratio`, `Spatial_Tumour_Infiltration_Index`), Macrophage STV Score, `NF1` loss-of-function, `BRAF/NRAS` status, and TMB.
+- **Head-to-Head Comparison:** side-by-side matrix comparing the global 12-feature Q1 model against the Q5 subgroup-tailored model.
 - **Feature Importance Profile:** top predictive feature weights for the patient's assigned subgroup model.
 - **Empirical Evaluation Matrix:** cross-validation metrics (`ROC-AUC`, `PR-AUC`, `Precision`, `Recall`, `F1`, `Accuracy`, `Brier Score`) across all 4 phenotypes.
 

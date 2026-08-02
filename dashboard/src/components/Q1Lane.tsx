@@ -1,4 +1,4 @@
-import { BrainCircuit, FlaskConical, Hourglass } from "lucide-react";
+import { BarChart2, FlaskConical, Hourglass } from "lucide-react";
 import type { CohortPatient, Q1Validation } from "../data/cohort";
 import { Panel, Pill } from "./ui";
 
@@ -170,7 +170,7 @@ export default function Q1Lane({
     <Panel
       title="Q1 · Multimodal Response Predictor"
       subtitle="Five-model ensemble over 12 multimodal features (immune signatures, macrophage barrier, driver mutations & TMB) → P(response to checkpoint blockade)"
-      icon={<BrainCircuit size={16} />}
+      icon={<BarChart2 size={16} />}
       right={
         q1 ? (
           <Pill tone="okabe-purple">Scored</Pill>

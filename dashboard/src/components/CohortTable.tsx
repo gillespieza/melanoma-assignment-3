@@ -116,7 +116,7 @@ export default function CohortTable({
   const [treatment, setTreatment] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [descending, setDescending] = useState(false);
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = useState(15);
 
   const filtered = useMemo(() => {
     const q = query.trim().toUpperCase();
@@ -173,8 +173,8 @@ export default function CohortTable({
       }
     >
       {/* --- controls, one row above the table --- */}
-      <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
-        <div className="relative min-w-[190px] flex-1">
+      <div className="relative z-10 mb-3.5 flex flex-wrap items-center gap-2.5">
+        <div className="relative min-w-[210px] shrink-0 flex-1 whitespace-nowrap">
           <Search
             size={14}
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-clinical-muted"
@@ -183,7 +183,7 @@ export default function CohortTable({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search patient ID…"
-            className="w-full rounded-lg border border-clinical-border bg-white py-1.5 pl-8 pr-3 text-[12.5px] font-semibold text-clinical-ink outline-none transition placeholder:font-normal placeholder:text-clinical-muted hover:border-okabe-purple focus:border-okabe-purple-dark focus:ring-2 focus:ring-okabe-purple/20"
+            className="w-full whitespace-nowrap rounded-lg border border-clinical-border bg-white py-1.5 pl-8 pr-3 text-[12.5px] font-semibold text-clinical-ink outline-none transition placeholder:font-normal placeholder:text-clinical-muted hover:border-okabe-purple focus:border-okabe-purple-dark focus:ring-2 focus:ring-okabe-purple/20"
           />
         </div>
 
@@ -253,17 +253,17 @@ export default function CohortTable({
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="relative z-30 overflow-x-auto pb-32 -mb-32 min-h-[360px]">
           <table className="w-full min-w-[860px] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-clinical-border text-[10px] font-bold uppercase tracking-wide text-clinical-muted">
-                <th className="py-2 pr-3">Patient</th>
-                <th className="py-2 pr-3">Q5 Phenotype</th>
-                <th className="py-2 pr-3">
+            <thead className="relative z-40 bg-white">
+              <tr className="relative z-40 border-b border-clinical-border text-[10px] font-bold uppercase tracking-wide text-clinical-muted">
+                <th className="py-2 pr-3 whitespace-nowrap">Patient</th>
+                <th className="py-2 pr-3 whitespace-nowrap">Q5 Phenotype</th>
+                <th className="relative z-40 py-2 pr-3">
                   <div className="group relative inline-flex items-center gap-1 cursor-help">
                     <span>Phenotype confidence</span>
-                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition" />
-                    <div className="pointer-events-none absolute left-0 top-full z-30 mt-1.5 hidden w-72 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-lift group-hover:block">
+                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition shrink-0" />
+                    <div className="pointer-events-none absolute left-0 top-full z-[100] mt-1.5 hidden w-72 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-xl group-hover:block normal-case font-normal">
                       <div className="text-[11px] font-bold text-clinical-ink">Phenotype Assignment Confidence</div>
                       <div className="mt-1 text-[11px] font-normal normal-case leading-snug text-clinical-muted">
                         How confidently the Q5 GMM places this patient in their assigned phenotype cluster. Derived from the GMM posterior probability across all four subgroups — a High patient sits clearly inside one cluster; Low means they fall near a boundary between clusters.
@@ -271,18 +271,18 @@ export default function CohortTable({
                     </div>
                   </div>
                 </th>
-                <th className="py-2 pr-3 text-right">
-                  <div className="inline-flex items-center justify-end gap-1">
+                <th className="relative z-40 py-2 pr-3 text-right whitespace-nowrap">
+                  <div className="inline-flex items-center justify-end gap-1 whitespace-nowrap">
                     <span>TI (%)</span>
                     <TreatabilityHelpPopover />
                   </div>
                 </th>
 
-                <th className="py-2 pr-3 text-right">
-                  <div className="group relative inline-flex items-center justify-end gap-1 cursor-help">
+                <th className="relative z-40 py-2 pr-3 text-right whitespace-nowrap">
+                  <div className="group relative inline-flex items-center justify-end gap-1 cursor-help whitespace-nowrap">
                     <span>ICI tumour ↓</span>
-                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition" />
-                    <div className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden w-64 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-lift group-hover:block">
+                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition shrink-0" />
+                    <div className="pointer-events-none absolute right-0 top-full z-[100] mt-1.5 hidden w-64 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-xl group-hover:block normal-case font-normal">
                       <div className="text-[11px] font-bold text-clinical-ink">ICI Tumour Burden Reduction</div>
                       <div className="mt-1 text-[11px] font-normal normal-case leading-snug text-clinical-muted">
                         Projected percentage tumour burden reduction under Anti-PD-1 immunotherapy (ICI), as simulated by the Q3 ODE digital-twin model. A dash (–) means the simulation was uninformative for this patient.
@@ -290,11 +290,11 @@ export default function CohortTable({
                     </div>
                   </div>
                 </th>
-                <th className="py-2 pr-3 text-right">
-                  <div className="group relative inline-flex items-center justify-end gap-1 cursor-help">
+                <th className="relative z-40 py-2 pr-3 text-right whitespace-nowrap">
+                  <div className="group relative inline-flex items-center justify-end gap-1 cursor-help whitespace-nowrap">
                     <span>BRAFi ↓</span>
-                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition" />
-                    <div className="pointer-events-none absolute right-0 top-full z-30 mt-1.5 hidden w-64 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-lift group-hover:block">
+                    <HelpCircle size={11} className="text-clinical-muted group-hover:text-okabe-purple transition shrink-0" />
+                    <div className="pointer-events-none absolute right-0 top-full z-[100] mt-1.5 hidden w-64 rounded-xl border border-clinical-border bg-white p-3 text-left shadow-xl group-hover:block normal-case font-normal">
                       <div className="text-[11px] font-bold text-clinical-ink">BRAFi Tumour Burden Reduction</div>
                       <div className="mt-1 text-[11px] font-normal normal-case leading-snug text-clinical-muted">
                         Projected percentage tumour burden reduction under BRAF inhibitor therapy (e.g. Dabrafenib + Trametinib), as simulated by the Q3 ODE digital-twin model. A dash (–) means the simulation was uninformative for this patient.
@@ -302,18 +302,18 @@ export default function CohortTable({
                     </div>
                   </div>
                 </th>
-                <th className="py-2 pr-3">Q5 recommendation</th>
-                <th className="py-2 pr-3 text-right">
+                <th className="py-2 pr-3 whitespace-nowrap">Q5 recommendation</th>
+                <th className="relative z-40 py-2 pr-3 text-right">
                   <div className="inline-flex items-center justify-end gap-1">
-                    <span>Rec. confidence</span>
+                    <span>Recommendation confidence</span>
                     <ConfidenceHelpPopover size={11} />
                   </div>
                 </th>
-                <th className="py-2 pr-3">Agreement</th>
+                <th className="py-2 pr-3 whitespace-nowrap">Agreement</th>
                 <th className="py-2" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className="relative z-10">
               {visible.map(({ patient, phenotype, treatabilityIndex, confidenceBand, recommendation, recommendationKey, confidence, agreement: a }) => {
                 const phenoColor = getPhenotypeColor(phenotype);
                 const pill = AGREEMENT_PILL[a];
@@ -323,42 +323,42 @@ export default function CohortTable({
                     onClick={() => onOpen(patient.id)}
                     className="cursor-pointer border-b border-clinical-border transition hover:bg-okabe-purple/[0.05]"
                   >
-                    <td className="py-2.5 pr-3 text-[12.5px] font-bold text-clinical-ink">
+                    <td className="py-2.5 pr-3 text-[12.5px] font-bold text-clinical-ink whitespace-nowrap">
                       {patient.id}
                     </td>
-                    <td className="py-2.5 pr-3">
-                      <div className="flex items-center gap-1.5">
+                    <td className="py-2.5 pr-3 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 whitespace-nowrap">
                         <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: phenoColor }} />
-                        <span className="text-[12px] font-bold text-clinical-ink">
+                        <span className="text-[12px] font-bold text-clinical-ink whitespace-nowrap">
                           {phenotype}
                         </span>
                       </div>
                     </td>
-                    <td className="py-2.5 pr-3">
+                    <td className="py-2.5 pr-3 whitespace-nowrap">
                       <Pill tone={confidenceBand === "High" ? "green" : confidenceBand === "Moderate" ? "amber" : "neutral"}>
                         {confidenceBand}
                       </Pill>
                     </td>
-                    <td className="tabular py-2.5 pr-3 text-right text-[12.5px] font-bold text-clinical-ink">
+                    <td className="tabular py-2.5 pr-3 text-right text-[12.5px] font-bold text-clinical-ink whitespace-nowrap">
                       {treatabilityIndex !== null ? treatabilityIndex.toFixed(0) : "–"}
                     </td>
 
-                    <td className="tabular py-2.5 pr-3 text-right text-[12.5px] text-clinical-ink">
+                    <td className="tabular py-2.5 pr-3 text-right text-[12.5px] text-clinical-ink whitespace-nowrap">
                       {patient.antipd1Informative ? `${Math.round(patient.antipd1Reduction * 100)}%` : "–"}
                     </td>
-                    <td className="tabular py-2.5 pr-3 text-right text-[12.5px] text-clinical-ink">
+                    <td className="tabular py-2.5 pr-3 text-right text-[12.5px] text-clinical-ink whitespace-nowrap">
                       {patient.brafiInformative ? `${Math.round(patient.brafiReduction * 100)}%` : "–"}
                     </td>
-                    <td className="py-2.5 pr-3">
+                    <td className="py-2.5 pr-3 whitespace-nowrap">
                       <Pill tone={REC_TONE[recommendationKey] ?? "neutral"}>{recommendation}</Pill>
                     </td>
-                    <td className="tabular py-2.5 pr-3 text-right text-[12.5px] font-bold text-clinical-ink">
+                    <td className="tabular py-2.5 pr-3 text-right text-[12.5px] font-bold text-clinical-ink whitespace-nowrap">
                       {confidence}%
                     </td>
-                    <td className="py-2.5 pr-3">
+                    <td className="py-2.5 pr-3 whitespace-nowrap">
                       <Pill tone={pill.tone}>{pill.label}</Pill>
                     </td>
-                    <td className="py-2.5 text-right">
+                    <td className="py-2.5 text-right whitespace-nowrap">
                       <ChevronRight size={15} className="text-clinical-muted" />
                     </td>
                   </tr>

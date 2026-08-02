@@ -1,6 +1,6 @@
 import type { RankedOption } from "../data/types";
 import { Panel, Pill } from "./ui";
-import { Stethoscope, TrendingUp, ShieldAlert, BookOpen, Check, Ban, Sparkles } from "lucide-react";
+import { Stethoscope, TrendingUp, ShieldAlert, Layers, Check, Ban, Sparkles } from "lucide-react";
 import { TreatabilityHelpPopover } from "./TreatabilityHelpPopover";
 
 function tierPill(opt: RankedOption) {
@@ -98,7 +98,11 @@ function OptionCard({
               <Stethoscope size={11} /> 12-mo burden ↓
             </div>
             <div className="tabular text-[16px] font-extrabold text-clinical-ink">
-              {Math.round(opt.burdenReduction * 100)}%
+              {opt.burdenInformative === false ? (
+                <span className="text-[12px] font-semibold text-clinical-muted">Could not compute</span>
+              ) : (
+                `${Math.round(opt.burdenReduction * 100)}%`
+              )}
             </div>
           </div>
         </div>
@@ -135,7 +139,7 @@ function OptionCard({
 
       <div className="mt-2.5 space-y-1.5">
         <div className="flex items-start gap-1.5 text-[11.5px] text-clinical-muted">
-          <BookOpen size={13} className="mt-0.5 shrink-0 text-clinical-bluedark" />
+          <Layers size={13} className="mt-0.5 shrink-0 text-okabe-purple-dark" />
           <span>{opt.evidence}</span>
         </div>
         <div className="flex items-start gap-1.5 text-[11.5px] text-clinical-muted">

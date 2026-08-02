@@ -6,9 +6,9 @@ import {
   Play,
   Sparkles,
   Layers,
-  BrainCircuit,
+  BarChart2,
   FlaskConical,
-  Waves,
+  Variable,
   ShieldAlert,
   GitBranch,
   TriangleAlert,
@@ -43,11 +43,11 @@ import { Panel } from "./ui";
 
 type TabKey = "q5" | "q1" | "q2" | "q3" | "q4" | "q5ml" | "path";
 
-const TABS: { key: TabKey; label: string; icon: typeof BrainCircuit }[] = [
+const TABS: { key: TabKey; label: string; icon: typeof BarChart2 }[] = [
   { key: "q5", label: "Q5 · Stratification", icon: Layers },
-  { key: "q1", label: "Q1 · ML predictor", icon: BrainCircuit },
+  { key: "q1", label: "Q1 · ML predictor", icon: BarChart2 },
   { key: "q2", label: "Q2 · Validation", icon: FlaskConical },
-  { key: "q3", label: "Q3 · Digital twin", icon: Waves },
+  { key: "q3", label: "Q3 · Digital twin", icon: Variable },
   { key: "q4", label: "Q4 · Resistance", icon: ShieldAlert },
   { key: "q5ml", label: "Q5 Enhanced ML Predictor", icon: Sparkles },
   { key: "path", label: "Decision path", icon: GitBranch },
@@ -237,7 +237,7 @@ function RunGate({ patient, onRun }: { patient: CohortPatient; onRun: () => void
     <Panel className="text-center">
       <div className="mx-auto max-w-lg py-6">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-okabe-purple/10 text-okabe-purple-dark">
-          <Waves size={26} />
+          <Variable size={26} />
         </div>
         <h2 className="text-[17px] font-extrabold text-clinical-ink">
           Ready to run the digital twin

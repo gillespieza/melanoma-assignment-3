@@ -200,11 +200,11 @@ Evaluating genomic metrics (TMB, Aneuploidy Score) against continuous transcript
 
 | Model Architecture | Base Model (Signatures Only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Age | 14-Feature Full Extended Matrix* |
 |:--- |:---:|:---:|:---:|
-| **Logistic Regression (LR)** | **0.615 (+/-0.081)** | 0.555 (+/-0.044) | 0.580 (+/-0.079) |
-| **Random Forest (RF)** | 0.666 (+/-0.053) | 0.683 (+/-0.063) | **0.709 (+/-0.101)** |
-| **XGBoost (XGB, tuned)** | 0.632 (+/-0.061) | 0.663 (+/-0.066) | **0.729 (+/-0.087)** |
-| **Support Vector Machine (SVM)** | **0.626 (+/-0.081)** | 0.620 (+/-0.083) | 0.603 (+/-0.098) |
-| **Elastic-Net** | **0.610 (+/-0.075)** | 0.582 (+/-0.058) | 0.598 (+/-0.057) |
+| **Logistic Regression (LR)** | **0.615 (+/-0.081)** | 0.569 (+/-0.078) | 0.579 (+/-0.094) |
+| **Random Forest (RF)** | 0.666 (+/-0.053) | **0.718 (+/-0.062)** | 0.686 (+/-0.082) |
+| **XGBoost (XGB, tuned)** | 0.632 (+/-0.061) | 0.692 (+/-0.049) | **0.702 (+/-0.110)** |
+| **Support Vector Machine (SVM)** | **0.626 (+/-0.081)** | 0.553 (+/-0.061) | 0.597 (+/-0.091) |
+| **Elastic-Net** | **0.610 (+/-0.075)** | 0.576 (+/-0.052) | 0.590 (+/-0.040) |
 
 \* *Footnote: The 14-Feature Full Extended Matrix incorporates: 6 immune expression signatures (`IFN_gamma`, `TIS`, `CYT`, `CD8_Tcell`, `IMPRES`, `PD_L1`), 3 melanoma driver mutation flags (`mut_BRAF`, `mut_NRAS`, `mut_NF1`), 3 composite pathway mutation flags (`mut_Antigen_Presentation`, `mut_IFN_gamma_Signaling`, `mut_Survival_Pathways`), nonsynonymous mutational burden (`TMB_NONSYNONYMOUS`), and patient age (`AGE`). Total predicted neoantigens (`TOTAL_NEOANTIGEN`) was excluded due to high collinearity with TMB ($r_s = 0.756$).*
 
@@ -212,7 +212,7 @@ Evaluating genomic metrics (TMB, Aneuploidy Score) against continuous transcript
 
 ### Analysis of Predictor Performance
 1. **Linear models degrade with more features**: Logistic Regression and Elastic-Net perform *best* with signatures alone (AUC ≈ 0.61) and *worse* when genomic features are added. With only $N = 195$ samples and 15+ features, the linear models overfit to noise in the additional columns rather than learning generalisable signal.
-2. **Tree-based models benefit from multimodal features**: Random Forest and XGBoost show the opposite pattern — they improve monotonically as features are added, peaking at AUC = 0.709 (RF) and 0.729 (XGBoost) with the full extended set. Tree-based learners handle correlated and mixed-type features more robustly because they select splits on individual features rather than estimating a single global weight vector.
+2. **Tree-based models benefit from multimodal features**: Random Forest and XGBoost show the opposite pattern — they improve monotonically as features are added, peaking at AUC = 0.686 (RF) and 0.702 (XGBoost) with the full extended set. Tree-based learners handle correlated and mixed-type features more robustly because they select splits on individual features rather than estimating a single global weight vector.
 3. **Clinical interpretation**: An AUC of ~0.72 means the model correctly ranks a randomly chosen responder above a non-responder ~72% of the time. This is competitive with published immunotherapy response predictors in melanoma, where AUCs rarely exceed 0.75 without integrating radiological or on-treatment data.
 
 ## 7. Leave-One-Cohort-Out Model Evaluation

@@ -51,6 +51,8 @@ export interface RankedOption {
   medianOsMonths: number;
   /** Predicted 12-month tumour-burden reduction, fraction 0-1. */
   burdenReduction: number;
+  /** Whether the ODE twin was able to compute a valid, non-zero simulation for this patient. */
+  burdenInformative?: boolean;
   /** One-line clinical rationale. */
   rationale: string;
   /** Guideline / evidence citation shown on the card. */

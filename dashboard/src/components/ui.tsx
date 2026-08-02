@@ -55,7 +55,7 @@ export function Pill({
   return (
     <span
       className={
-        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold " +
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold whitespace-nowrap " +
         map[tone]
       }
     >

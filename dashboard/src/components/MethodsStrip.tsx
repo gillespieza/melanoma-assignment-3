@@ -1,13 +1,13 @@
-import { BrainCircuit, FlaskConical, Waves, ShieldAlert, Layers, ChevronRight } from "lucide-react";
+import { BarChart2, FlaskConical, Variable, ShieldAlert, Layers, GitFork, ChevronRight } from "lucide-react";
 
-// The five methods, in one line. Q5 is marked as the destination – the point
-// where the other four converge into one recommendation.
+// The six methods, in one line. Q5 integration is marked as the destination –
+// the point where all methods converge into one recommendation.
 
 const METHODS = [
   {
     name: "ML predictor",
     detail: "12-feature multimodal panel (signatures, driver mutations, TMB) → P(response)",
-    icon: BrainCircuit,
+    icon: BarChart2,
   },
   {
     name: "Validation",
@@ -17,7 +17,7 @@ const METHODS = [
   {
     name: "ODE digital twin",
     detail: "Mechanistic tumour–immune simulation",
-    icon: Waves,
+    icon: Variable,
   },
   {
     name: "Resistance",
@@ -25,17 +25,22 @@ const METHODS = [
     icon: ShieldAlert,
   },
   {
-    name: "Integration",
-    detail: "All four methods → one recommendation",
+    name: "Phenotypic Stratification",
+    detail: "GMM 4-archetype microenvironment clustering & TI score",
     icon: Layers,
+  },
+  {
+    name: "Integration",
+    detail: "All five methods → one recommendation",
+    icon: GitFork,
     isDestination: true,
   },
 ];
 
 export default function MethodsStrip() {
   return (
-    // One per row on phones, widening to all five in a line on large screens.
-    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    // One per row on phones, widening to all six in a line on extra-large screens.
+    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
       {METHODS.map((m, i) => {
         const { icon: Icon } = m;
         return (

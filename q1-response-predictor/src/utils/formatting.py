@@ -171,6 +171,7 @@ def generate_obsidian_frontmatter(
     tags: list[str] | None = None,
     created: str | None = None,
     updated: str | None = None,
+    extra_css_classes: list[str] | None = None,
 ) -> str:
     """Generates standard Obsidian-compliant YAML frontmatter for reports.
 
@@ -180,6 +181,8 @@ def generate_obsidian_frontmatter(
         tags: Optional list of tags.
         created: Optional creation timestamp (YYYY-MM-DD HH:MM). Defaults to now.
         updated: Optional update timestamp (YYYY-MM-DD HH:MM). Defaults to now.
+        extra_css_classes: Additional cssclass entries appended after ``table-small``
+            (e.g. ``["table-center", "row-alt"]`` for reports requiring centred tables).
 
     Returns:
         Formatted YAML frontmatter block starting and ending with '---'.
@@ -202,10 +205,11 @@ def generate_obsidian_frontmatter(
         for tag in tags:
             lines.append(f"  - {tag}")
 
+    css_classes = ["table-small"] + (extra_css_classes or [])
+    css_lines = ["cssclasses:"] + [f"  - {cls}" for cls in css_classes]
+    lines.extend(css_lines)
     lines.extend([
         f"created: {created_ts}",
-        "cssclasses:",
-        "  - table-small",
         "obsidianEditingMode: preview",
         "obsidianUIMode: source",
         f"updated: {updated_ts}",

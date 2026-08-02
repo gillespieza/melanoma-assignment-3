@@ -1,7 +1,7 @@
 import type { DecisionNode, RankedOption, TherapyKey } from "../data/types";
 import type { CohortPatient } from "../data/cohort";
 import { biomarkerComposite, pdl1Band } from "../data/cohort";
-import { PDL1_HIGH, buildRankedOptions, scoreArms, type ScoringContext } from "./scoring";
+import { PDL1_HIGH, buildRankedOptions, scoreArms, MAX_CONFIDENCE, type ScoringContext } from "./scoring";
 
 // Q5 – the integration engine.
 //
@@ -72,8 +72,8 @@ function statisticalPosition(p: CohortPatient): MethodPosition {
     const val = pct !== null && pct !== undefined ? pct / 100 : p.q1.pResponse;
     return {
       value: val,
-      label: `Q1 ML predictor · P(response) ${(p.q1.pResponse * 100).toFixed(0)}% (${pct ?? Math.round(val * 100)}th pctile)`,
-      detail: "Ensemble of five models over 12 multimodal features (immune signatures, macrophage barrier, driver mutations & TMB).",
+      label: `Q1 ML · ICI response probability ${(p.q1.pResponse * 100).toFixed(0)}% (${pct ?? Math.round(val * 100)}th pctile)`,
+      detail: "Ensemble of five models over 12 multimodal features (immune signatures, macrophage barrier, driver mutations & TMB) — trained to predict anti-PD-1 / PD-L1 immunotherapy response.",
       source: "q1",
     };
   }
@@ -229,6 +229,8 @@ export function integrate(p: CohortPatient): IntegratedResult {
     age: p.age ?? 60,
     immunoReduction: p.antipd1Informative ? p.antipd1Reduction : 0,
     targetedReduction: p.brafiInformative ? p.brafiReduction : 0,
+    immunoInformative: p.antipd1Informative,
+    targetedInformative: p.brafiInformative,
   };
 
   let options: RankedOption[];
@@ -274,9 +276,12 @@ export function integrate(p: CohortPatient): IntegratedResult {
           : p.q5!.treatabilityIndex != null
             ? Math.round(p.q5!.treatabilityIndex)
             : null;
-        const confidence = (engineConfidence === 0 && q5Confidence != null)
-          ? q5Confidence
-          : engineConfidence;
+        const confidence = Math.min(
+          (engineConfidence === 0 && q5Confidence != null)
+            ? q5Confidence
+            : engineConfidence,
+          MAX_CONFIDENCE
+        );
         const reasoningChain = buildReasoningChain(p, primaryKey);
         return {
           ...opt,
