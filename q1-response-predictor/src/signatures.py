@@ -137,25 +137,6 @@ def compute_macrophage_stv_score(df_expr):
         
     return df_expr[found_genes].mean(axis=1)
 
-def attach_driver_mutations(df_sig: pd.DataFrame) -> pd.DataFrame:
-    """Attaches binary driver mutation indicators and TMB_NONSYNONYMOUS."""
-    from pathlib import Path
-    clusters_path = Path("data/processed/q5/patient_clusters.csv")
-    if not clusters_path.exists():
-        clusters_path = Path("../data/processed/q5/patient_clusters.csv")
-    
-    if clusters_path.exists():
-        df_clusters = pd.read_csv(clusters_path).set_index("SAMPLE_ID")
-        for col in ["mut_BRAF", "mut_NRAS", "mut_NF1", "TMB_NONSYNONYMOUS"]:
-            if col in df_clusters.columns:
-                df_sig[col] = df_sig.index.map(df_clusters[col]).fillna(0.0).astype(float)
-            else:
-                df_sig[col] = 0.0
-    else:
-        for col in ["mut_BRAF", "mut_NRAS", "mut_NF1", "TMB_NONSYNONYMOUS"]:
-            df_sig[col] = 0.0
-    return df_sig
-
 def extract_all_signatures(df_expr):
     """
     Extracts all signatures for a given expression matrix.
@@ -170,8 +151,6 @@ def extract_all_signatures(df_expr):
     df_sig['PD_L1'] = compute_pd_l1(df_expr)
     df_sig['Macrophage_STV_Score'] = compute_macrophage_stv_score(df_expr)
     df_sig['M1_M2_Ratio'] = compute_m1_m2_ratio(df_expr)
-    
-    df_sig = attach_driver_mutations(df_sig)
     
     # Drop rows that are completely NaN (e.g. if no genes were found)
     df_sig = df_sig.dropna(how='all')

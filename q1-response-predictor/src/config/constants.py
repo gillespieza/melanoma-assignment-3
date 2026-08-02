@@ -107,10 +107,6 @@ IMMUNE_SIGNATURES = [
     "PD_L1",
     "Macrophage_STV_Score",
     "M1_M2_Ratio",
-    "mut_BRAF",
-    "mut_NRAS",
-    "mut_NF1",
-    "TMB_NONSYNONYMOUS",
 ]
 
 IMMUNE_SIGNATURE_LABELS = {
@@ -122,10 +118,6 @@ IMMUNE_SIGNATURE_LABELS = {
     "PD_L1": "PD-L1 Transcript Proxy",
     "Macrophage_STV_Score": "Macrophage STV Spatial Barrier Score",
     "M1_M2_Ratio": "M1/M2 Macrophage Polarization Ratio",
-    "mut_BRAF": "BRAF V600 Driver Mutation",
-    "mut_NRAS": "NRAS Driver Mutation",
-    "mut_NF1": "NF1 Loss-of-Function Driver",
-    "TMB_NONSYNONYMOUS": "Tumour Mutation Burden (TMB)",
 }
 
 try:

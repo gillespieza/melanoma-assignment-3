@@ -86,10 +86,6 @@ FEATURES = [
     "PD_L1",
     "Macrophage_STV_Score",
     "M1_M2_Ratio",
-    "mut_BRAF",
-    "mut_NRAS",
-    "mut_NF1",
-    "TMB_NONSYNONYMOUS",
 ]
 
 MODEL_FILES = {
@@ -106,7 +102,6 @@ ICI_COHORTS = {
     "liu_2019": "Liu 2019",
     "hugo_2016": "Hugo 2016",
     "riaz_2017": "Riaz 2017",
-    "tcga_immune": "TCGA-Immunotherapy",
 }
 
 
