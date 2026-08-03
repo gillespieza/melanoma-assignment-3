@@ -44,29 +44,98 @@ def profile_clusters(df: pd.DataFrame, cluster_col: str, feature_cols: List[str]
     return profile
 
 
-def assign_phenotype_labels(cluster_profiles: pd.DataFrame) -> Dict[int, str]:
-    """Assign biological phenotype labels to clusters based on profile rules.
+def _claim_cluster_by_rule(
+    remaining: set,
+    cluster_profiles: pd.DataFrame,
+    col: str,
+    method: str = "idxmax",
+) -> Optional[int]:
+    """Return the cluster ID that wins the specified feature ranking rule.
+
+    Selects among the *remaining* (unclaimed) cluster IDs the one with the
+    highest (``idxmax``) or lowest (``idxmin``) value of ``col``. Returns
+    ``None`` if no valid selection can be made (column absent, remaining set
+    empty, or all values <= 0 when using ``idxmax``).
 
     Args:
-        cluster_profiles: DataFrame of cluster feature profiles.
+        remaining: Set of unclaimed integer cluster IDs.
+        cluster_profiles: Summary DataFrame of cluster mean feature values.
+        col: Feature column name to rank clusters on.
+        method: Ranking method (``'idxmax'`` or ``'idxmin'``).
 
     Returns:
-        Dictionary mapping cluster ID to phenotype label string.
+        Integer cluster ID of the winning cluster, or ``None``.
     """
-    labels = {}
-    for cluster_id, row in cluster_profiles.iterrows():
-        tis = row.get("TIS", 0)
-        m1_m2 = row.get("M1_M2_Ratio", 0.5)
-        m2_score = row.get("M2_Macrophages", row.get("M2_score", 0))
+    if not remaining or col not in cluster_profiles.columns:
+        return None
+    rem_list = list(remaining)
+    if method == "idxmax":
+        if cluster_profiles.loc[rem_list, col].max() <= 0:
+            return None
+        return int(cluster_profiles.loc[rem_list, col].idxmax())
+    if method == "idxmin":
+        return int(cluster_profiles.loc[rem_list, col].idxmin())
+    return None
 
-        if tis > cluster_profiles["TIS"].median() and m1_m2 > cluster_profiles["M1_M2_Ratio"].median():
-            labels[cluster_id] = "Immune Hot"
-        elif tis < cluster_profiles["TIS"].median() and m1_m2 < cluster_profiles["M1_M2_Ratio"].median():
-            labels[cluster_id] = "Immune Cold"
-        elif m2_score > cluster_profiles["M2_score"].median() if "M2_score" in cluster_profiles else m1_m2 < 0.4:
-            labels[cluster_id] = "Immunosuppressive M2-High"
-        else:
-            labels[cluster_id] = "Mutant-Driven"
+
+def assign_phenotype_labels(cluster_profiles: pd.DataFrame) -> Dict[int, str]:
+    """Assign biological phenotype labels to clusters based on empirical profiles.
+
+    Labels are assigned using a sequential rank-based claim-and-eliminate approach
+    on actual computed cluster means, so the assignment is robust to K-Means/GMM
+    producing different integer cluster IDs across runs or datasets. Each cluster
+    is claimed at most once, in this priority order:
+
+    1. **Mutant-Driven (NF1 Loss)**: highest ``mut_NF1`` mutation rate. Skipped
+       entirely if ``mut_NF1`` is absent or all-zero.
+    2. **Immune Cold**: among remaining clusters, the lowest TIS (Tumour
+       Inflammation Score) — the immune desert, low activity across all lineages.
+    3. **Immunosuppressive M2-High**: among remaining clusters, the lowest
+       ``CD8_T_cells``, matching the "depleted T-cells" component of this
+       phenotype. This was deliberately chosen over ranking by ``M1_M2_Ratio``:
+       recomputing cluster means directly from real patient data showed TIS and
+       M1_M2_Ratio can disagree about which cluster is more "Hot" vs. "M2-High"
+       (a cluster can have both the highest TIS *and* the most M2-skewed ratio
+       at once), whereas CD8 T-cell depletion cleanly and unambiguously
+       separates the two remaining clusters in that same data. Re-verify this
+       choice if the clustering/feature set changes materially.
+    4. **Immune Hot**: the sole remaining cluster — highest TIS/CYT/CD8 by
+       construction, since Cold and M2-High were already claimed.
+
+    Args:
+        cluster_profiles: DataFrame indexed by cluster ID with columns including
+            at minimum ``TIS`` and ``CD8_T_cells``, and optionally ``mut_NF1``.
+
+    Returns:
+        Dictionary mapping integer cluster ID to phenotype label string.
+    """
+    labels: Dict[int, str] = {}
+    remaining = set(cluster_profiles.index.tolist())
+
+    # 1. Mutant-Driven (NF1 Loss)
+    if "mut_NF1" in cluster_profiles.columns and cluster_profiles["mut_NF1"].max() > 0:
+        cid = _claim_cluster_by_rule(remaining, cluster_profiles, "mut_NF1", "idxmax")
+        if cid is not None:
+            labels[cid] = "Mutant-Driven"
+            remaining.discard(cid)
+
+    # 2. Immune Cold (lowest TIS among remaining)
+    cid = _claim_cluster_by_rule(remaining, cluster_profiles, "TIS", "idxmin")
+    if cid is not None:
+        labels[cid] = "Immune Cold"
+        remaining.discard(cid)
+
+    # 3. Immunosuppressive M2-High (lowest CD8_T_cells among remaining —
+    #    "depleted T-cells"; see docstring for why this beats M1_M2_Ratio here)
+    cid = _claim_cluster_by_rule(remaining, cluster_profiles, "CD8_T_cells", "idxmin")
+    if cid is not None:
+        labels[cid] = "Immunosuppressive M2-High"
+        remaining.discard(cid)
+
+    # 4. Immune Hot (sole remainder)
+    for cid in remaining:
+        labels[cid] = "Immune Hot"
+
     return labels
 
 
