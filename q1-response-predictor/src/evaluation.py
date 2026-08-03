@@ -395,8 +395,10 @@ def plot_survival_2x2_grid(cohort_survival_data, save_path=None):
         else:
             ax.set_title(f"{cohort_name} (Constant Predictions)", fontsize=12, fontweight='bold')
 
-        ax.set_xlabel('Survival Time (Months)')
-        ax.set_ylabel('Overall Survival Probability')
+        ax.set_xlabel('Survival Time (Months)', fontweight='bold')
+        ax.set_ylabel('Overall Survival Probability', fontweight='bold')
+        ax.set_axisbelow(True)
+        ax.grid(True, linestyle="--", color="#E5E7EB", alpha=0.6, linewidth=0.8)
         ax.legend(loc="lower left")
 
     plt.suptitle("Overall Survival Stratification Across Cohorts by Model Predictions", fontsize=15, fontweight='bold', y=0.98)
