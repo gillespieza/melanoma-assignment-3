@@ -121,7 +121,17 @@ def main() -> None:
         sub_path.parent.mkdir(parents=True, exist_ok=True)
         save_fig(fig, sub_path)
 
-    print(f"Saved response-stratified KM plots to {rel_path(out_path)} and {rel_path(sub_path)}")
+    # Export transparent copies
+    fig.patch.set_alpha(0.0)
+    for ax in axes:
+        ax.patch.set_alpha(0.0)
+    
+    out_trans = PLOT_DIR / "km_os_by_response_transparent.png"
+    sub_trans = BASE_DIR / "plots" / "clinical" / "km_os_by_response_transparent.png"
+    fig.savefig(out_trans, transparent=True, bbox_inches="tight", dpi=300)
+    fig.savefig(sub_trans, transparent=True, bbox_inches="tight", dpi=300)
+
+    print(f"Saved response-stratified KM plots to {rel_path(out_path)} and {rel_path(out_trans)}")
 
     print("==================================================")
     print("Done!")
