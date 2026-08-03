@@ -284,16 +284,18 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
       </div>
 
       <p className="mt-4 border-t border-clinical-border pt-3 text-[11.5px] leading-relaxed text-clinical-muted">
-        <span className="font-bold text-clinical-ink">Reading this honestly:</span> discrimination
-        varies by cohort — strong in Riaz 2017 (AUC{" "}
-        {validation.byCohort.find((c) => c.cohort.startsWith("Riaz"))?.auc?.toFixed(3) ?? "—"}),
-        moderate in Liu 2019 (AUC{" "}
-        {validation.byCohort.find((c) => c.cohort.startsWith("Liu"))?.auc?.toFixed(3) ?? "—"}), and
-        around chance in the small Hugo 2016 set (n=
-        {validation.byCohort.find((c) => c.cohort.startsWith("Hugo"))?.n ?? "—"}). The raw probabilities
-        cluster tightly around ~0.45 — so the tuned threshold ({validation.atTuned.threshold.toFixed(3)})
-        matters more than the default 0.50 cut-off. The relative ranking carries the signal; the absolute
-        number should be interpreted in cohort-relative terms.
+        <span className="font-bold text-clinical-ink">Reading this honestly:</span> these are genuine
+        Leave-One-Cohort-Out out-of-fold estimates — each cohort was scored by models that never saw it
+        during training. Discrimination is modest and fairly consistent: AUC{" "}
+        {validation.byCohort.find((c) => c.cohort.startsWith("Riaz"))?.auc?.toFixed(3) ?? "—"} in Riaz
+        2017, {validation.byCohort.find((c) => c.cohort.startsWith("Liu"))?.auc?.toFixed(3) ?? "—"} in
+        Liu 2019, and {validation.byCohort.find((c) => c.cohort.startsWith("Hugo"))?.auc?.toFixed(3) ?? "—"}{" "}
+        in the small Hugo 2016 set (n=
+        {validation.byCohort.find((c) => c.cohort.startsWith("Hugo"))?.n ?? "—"}) — none of these should
+        be read as strong discrimination. The raw probabilities cluster tightly around ~0.45 — so the
+        tuned threshold ({validation.atTuned.threshold.toFixed(3)}) matters more than the default 0.50
+        cut-off. Treat this as a weak, honest signal to combine with the other methods, not a
+        stand-alone predictor.
       </p>
     </Panel>
   );
