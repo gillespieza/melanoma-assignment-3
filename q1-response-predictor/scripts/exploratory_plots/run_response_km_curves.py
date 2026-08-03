@@ -115,7 +115,13 @@ def main() -> None:
 
     out_path = PLOT_DIR / "km_os_by_response.png"
     save_fig(fig, out_path)
-    print(f"Saved response-stratified KM plots to {rel_path(out_path)}")
+    
+    sub_path = BASE_DIR / "plots" / "clinical" / "km_os_by_response.png"
+    if sub_path != out_path:
+        sub_path.parent.mkdir(parents=True, exist_ok=True)
+        save_fig(fig, sub_path)
+
+    print(f"Saved response-stratified KM plots to {rel_path(out_path)} and {rel_path(sub_path)}")
 
     print("==================================================")
     print("Done!")

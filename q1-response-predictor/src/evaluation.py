@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -404,7 +405,17 @@ def plot_survival_2x2_grid(cohort_survival_data, save_path=None):
     plt.suptitle("Overall Survival Stratification Across Cohorts by Model Predictions", fontsize=15, fontweight='bold', y=0.98)
 
     if save_path:
+        save_path = Path(save_path)
         save_fig(fig, save_path)
-    else:
-        plt.show()
+        # Mirror to root or subproject directory if path contains plots/models
+        if "q1-response-predictor" in str(save_path):
+            alt_path = Path(str(save_path).replace("q1-response-predictor/", "").replace("q1-response-predictor\\", ""))
+            if alt_path != save_path:
+                alt_path.parent.mkdir(parents=True, exist_ok=True)
+                save_fig(fig, alt_path)
+        else:
+            alt_path = save_path.parent.parent / "q1-response-predictor" / "plots" / "models" / save_path.name
+            if alt_path != save_path:
+                alt_path.parent.mkdir(parents=True, exist_ok=True)
+                save_fig(fig, alt_path)
 
