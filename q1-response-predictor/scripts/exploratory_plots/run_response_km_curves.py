@@ -104,7 +104,7 @@ def main() -> None:
     _, clin_hugo = load_hugo_2016(DATA_DIR)
     _, clin_riaz = load_riaz_2017(DATA_DIR)
 
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5.5))
+    fig, axes = plt.subplots(1, 3, figsize=(22, 5.5))
 
     plot_cohort_km_by_response(axes[0], clin_liu, "Liu 2019")
     plot_cohort_km_by_response(axes[1], clin_hugo, "Hugo 2016")

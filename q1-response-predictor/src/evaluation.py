@@ -352,7 +352,7 @@ def plot_survival_2x2_grid(cohort_survival_data, save_path=None):
         cohort_survival_data: list of dicts with keys:
             'cohort', 'df_clin', 'y_pred_prob', 'time_col', 'status_col', 'model_name'
     """
-    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10))
     axes = axes.flatten()
 
     for idx, item in enumerate(cohort_survival_data):
