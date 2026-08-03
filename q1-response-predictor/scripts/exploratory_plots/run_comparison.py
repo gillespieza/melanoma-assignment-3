@@ -1,9 +1,10 @@
 """
-Cross-Cohort Validation: Curated Immune Signatures vs. SelectKBest Feature Selection.
+Cross-Cohort Validation: Curated Multimodal Features vs. SelectKBest Feature Selection.
 
 Evaluates 5 predictive model architectures (Logistic Regression, Random Forest, XGBoost, Support Vector Machine,
-and Elastic Net) under Leave-One-Cohort-Out (LOCO) cross-validation, comparing domain-driven curated signatures
-against data-driven SelectKBest feature selection (k=20, k=100, k=200), exporting performance summaries and grouped bar charts.
+and Elastic Net) under Leave-One-Cohort-Out (LOCO) cross-validation, comparing 12 domain-driven curated features
+(8 transcriptomic immune signatures + 3 driver mutation flags + TMB) against data-driven SelectKBest feature
+selection (k=20, k=100, k=200), exporting performance summaries and grouped bar charts.
 """
 
 import warnings
@@ -51,7 +52,11 @@ LOG_PATH = LOG_DIR / "run_comparison.log"
 
 
 def _run_loco_signatures(cohort_dfs: Dict[str, Tuple[pd.DataFrame, pd.Series]], model_type: str = "rf") -> Dict[str, float]:
-    """Runs LOCO cross-validation using the curated 6 immune signatures.
+    """Runs LOCO cross-validation using the 12 curated multimodal features.
+
+    Features include 8 transcriptomic immune signatures (IFN-gamma, TIS, CYT, CD8 T-cell,
+    IMPRES, PD-L1, Macrophage STV Score, M1/M2 Ratio), 3 somatic driver mutation flags
+    (BRAF, NRAS, NF1), and TMB (nonsynonymous mutational burden).
 
     Args:
         cohort_dfs: Dictionary mapping cohort names to (signatures_df, response_series).
@@ -176,7 +181,7 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
         df_results: Results DataFrame containing LOCO AUC scores.
         out_plot_path: Destination path for figure output artifact.
     """
-    fig, axes = plt.subplots(2, 3, figsize=(22, 6.5), sharey=True)
+    fig, axes = plt.subplots(2, 3, figsize=(25, 6.5), sharey=True)
     axes_flat = axes.flatten()
 
     models = ["LR", "RF", "XGB", "SVM", "ElasticNet"]
@@ -282,7 +287,7 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
     fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.99), ncol=5, fontsize=10, frameon=True)
 
     plt.suptitle(
-        "Cross-Cohort Validation: Curated Immune Signatures vs. SelectKBest Feature Selection",
+        "Cross-Cohort Validation: 12 Curated Multimodal Features vs. SelectKBest (Raw Genes)",
         fontsize=13,
         fontweight="bold",
         y=1.025,
