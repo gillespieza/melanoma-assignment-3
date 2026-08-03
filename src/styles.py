@@ -112,9 +112,9 @@ MODEL_TYPE_PALETTE = {
 # Feature Selection Method Encoding (AUC comparison plots)
 FEATURE_SELECTION_PALETTE = {
     "Curated Signatures":  "#37474F",  # Dark Slate Charcoal
-    "SelectKBest (k=20)":  "#F0E442",  # Okabe-Ito Yellow
-    "SelectKBest (k=100)": "#E69F00",  # Okabe-Ito Orange
-    "SelectKBest (k=200)": "#D55E00",  # Okabe-Ito Vermillion
+    "SelectKBest (k=20)":  "#56B4E9",  # Okabe-Ito Sky Blue
+    "SelectKBest (k=100)": "#0072B2",  # Okabe-Ito Blue
+    "SelectKBest (k=200)": "#009E73",  # Okabe-Ito Bluish Green
 }
 
 # Threshold Optimisation Strategy Encoding (default vs Youden's J cutoff comparison)
