@@ -7,7 +7,7 @@ from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test
 from lifelines.utils import concordance_index
 
-from src.styles import set_presentation_style
+from src.styles import RESPONSE_PALETTE, set_presentation_style
 from src.utils.plotting import save_fig
 
 set_presentation_style()
@@ -381,10 +381,10 @@ def plot_survival_2x2_grid(cohort_survival_data, save_path=None):
             kmf_low = KaplanMeierFitter()
 
             kmf_high.fit(high_prob[time_col], event_observed=high_prob[status_col], label=f'High Prob (N={len(high_prob)})')
-            kmf_high.plot_survival_function(ax=ax, ci_show=True, color='#009E73', lw=2)
+            kmf_high.plot_survival_function(ax=ax, ci_show=True, color=RESPONSE_PALETTE['CR/PR'], lw=2)
 
             kmf_low.fit(low_prob[time_col], event_observed=low_prob[status_col], label=f'Low Prob (N={len(low_prob)})')
-            kmf_low.plot_survival_function(ax=ax, ci_show=True, color='#D55E00', lw=2)
+            kmf_low.plot_survival_function(ax=ax, ci_show=True, color=RESPONSE_PALETTE['PD'], lw=2)
 
             results = logrank_test(
                 high_prob[time_col], low_prob[time_col],

@@ -30,7 +30,7 @@ if str(BASE_DIR) not in sys.path:
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.styles import RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
+from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, rel_path
 from src.utils.plotting import save_fig
 
 set_presentation_style()
@@ -113,7 +113,7 @@ def main() -> None:
 
     out_path = PLOT_DIR / "km_os_by_response.png"
     save_fig(fig, out_path)
-    print(f"Saved response-stratified KM plots to {out_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved response-stratified KM plots to {rel_path(out_path)}")
 
     print("==================================================")
     print("Done!")
@@ -126,5 +126,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+            print(f"Logging console output to {rel_path(LOG_PATH)}")
             main()
