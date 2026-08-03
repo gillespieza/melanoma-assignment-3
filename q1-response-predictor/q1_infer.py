@@ -185,7 +185,8 @@ def main() -> int:
             try:
                 mdl = get_model(mkey, X_train_scaled, y_train)
                 p = compat_fix(mdl).predict_proba(X_test_scaled)[:, 1]
-                out[f"prob_{mkey}"] = p
+                col_key = "enet" if mkey == "elasticnet" else mkey
+                out[f"prob_{col_key}"] = p
                 probs.append(p)
             except Exception as e:
                 print(f"  [{test_cohort}] model '{mkey}' failed ({e})")
@@ -227,7 +228,8 @@ def main() -> int:
             try:
                 mdl = get_model(mkey, X_train_full_scaled, y_train_full)
                 p = compat_fix(mdl).predict_proba(X_tcga_scaled)[:, 1]
-                out_tcga[f"prob_{mkey}"] = p
+                col_key = "enet" if mkey == "elasticnet" else mkey
+                out_tcga[f"prob_{col_key}"] = p
                 probs_tcga.append(p)
             except Exception as e:
                 print(f"  [TCGA-SKCM] model '{mkey}' failed ({e})")
