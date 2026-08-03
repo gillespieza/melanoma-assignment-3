@@ -8,6 +8,7 @@ import {
   BrainCircuit,
   FlaskConical,
   Waves,
+  Dna,
   GitBranch,
   TriangleAlert,
 } from "lucide-react";
@@ -27,6 +28,7 @@ import AgreementBadge from "./AgreementBadge";
 import RecommendationPanel from "./RecommendationPanel";
 import DecisionTree from "./DecisionTree";
 import ConsultantSignoff from "./ConsultantSignoff";
+import Q4DepMapPanel from "./Q4DepMapPanel";
 import { InfoPopover } from "./InfoPopover";
 import { Panel } from "./ui";
 
@@ -37,12 +39,13 @@ import { Panel } from "./ui";
 // but only one method is on screen at a time so the page never reads as a wall
 // of panels.
 
-type TabKey = "q1" | "q2" | "q3" | "path";
+type TabKey = "q1" | "q2" | "q3" | "q4" | "path";
 
 const TABS: { key: TabKey; label: string; icon: typeof BrainCircuit }[] = [
   { key: "q1", label: "Q1 · ML predictor", icon: BrainCircuit },
   { key: "q2", label: "Q2 · Validation", icon: FlaskConical },
   { key: "q3", label: "Q3 · Digital twin", icon: Waves },
+  { key: "q4", label: "Q4 · DepMap (cohort)", icon: Dna },
   { key: "path", label: "Decision path", icon: GitBranch },
 ];
 
@@ -236,6 +239,7 @@ export default function PatientView({
                   </div>
                 </>
               )}
+              {tab === "q4" && <Q4DepMapPanel />}
               {tab === "path" && <DecisionTree path={result.path} />}
             </div>
           </div>
