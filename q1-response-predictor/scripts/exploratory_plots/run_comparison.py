@@ -175,7 +175,7 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
         df_results: Results DataFrame containing LOCO AUC scores.
         out_plot_path: Destination path for figure output artifact.
     """
-    fig, axes = plt.subplots(3, 2, figsize=(13, 10.5), sharey=True)
+    fig, axes = plt.subplots(2, 3, figsize=(19, 7.5), sharey=True)
     axes_flat = axes.flatten()
 
     models = ["LR", "RF", "XGB", "SVM", "ElasticNet"]
@@ -222,8 +222,8 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
         ax.set_title(f"{model_titles[m]}", fontsize=11, fontweight="bold", pad=8)
         ax.axhline(0.50, color="gray", linestyle="--", linewidth=1.1, label="Chance Baseline (AUC=0.50)")
         ax.set_ylim(0.25, 0.85)
-        ax.set_xlabel("Held-out Test Cohort" if i >= 4 else "", fontsize=10, fontweight="bold")
-        ax.set_ylabel("Cross-Validated ROC-AUC" if i % 2 == 0 else "", fontsize=10, fontweight="bold")
+        ax.set_xlabel("Held-out Test Cohort" if i >= 3 else "", fontsize=10, fontweight="bold")
+        ax.set_ylabel("Cross-Validated ROC-AUC" if i % 3 == 0 else "", fontsize=10, fontweight="bold")
 
         for p in ax.patches:
             height = p.get_height()
