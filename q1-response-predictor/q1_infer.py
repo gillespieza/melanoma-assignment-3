@@ -186,6 +186,8 @@ def main() -> int:
                 mdl = get_model(mkey, X_train_scaled, y_train)
                 p = compat_fix(mdl).predict_proba(X_test_scaled)[:, 1]
                 out[f"prob_{mkey}"] = p
+                if mkey == "elasticnet":
+                    out["prob_enet"] = p
                 probs.append(p)
             except Exception as e:
                 print(f"  [{test_cohort}] model '{mkey}' failed ({e})")
@@ -228,6 +230,8 @@ def main() -> int:
                 mdl = get_model(mkey, X_train_full_scaled, y_train_full)
                 p = compat_fix(mdl).predict_proba(X_tcga_scaled)[:, 1]
                 out_tcga[f"prob_{mkey}"] = p
+                if mkey == "elasticnet":
+                    out_tcga["prob_enet"] = p
                 probs_tcga.append(p)
             except Exception as e:
                 print(f"  [TCGA-SKCM] model '{mkey}' failed ({e})")
@@ -250,7 +254,18 @@ def main() -> int:
     cols = (
         ["SAMPLE_ID", "PATIENT_ID", "cohort"]
         + FEATURES
-        + ["prob_lr", "prob_rf", "prob_xgb", "prob_svm", "prob_enet", "prob_ensemble", "pred_label", "actual_response", "os_months"]
+        + [
+            "prob_lr",
+            "prob_rf",
+            "prob_xgb",
+            "prob_svm",
+            "prob_elasticnet",
+            "prob_enet",
+            "prob_ensemble",
+            "pred_label",
+            "actual_response",
+            "os_months",
+        ]
     )
     result = result[[c for c in cols if c in result.columns]]
     out_path = Path(args.out)
