@@ -61,11 +61,14 @@ they connect:
 | **ML predictor** | A statistics/machine-learning model that reads a tumour's gene activity and estimates the odds it'll respond to immunotherapy |
 | **Validation** | Checking that ML predictor against real lab measurements it never saw, to make sure it isn't just guessing |
 | **ODE digital twin** | A mathematical simulation of how *this specific patient's* tumour would shrink or grow under different drugs |
-| **Resistance** | Rules-of-thumb flagging why a treatment might eventually stop working, and what to try next |
-| **Integration** ("You are here") | Combining all four of the above into one final ranked recommendation |
+| **DepMap targets** | A CRISPR gene-dependency screen across melanoma cell lines, nominating druggable targets — cohort-level evidence, not scored per patient |
+| **Integration** ("You are here") | Combining the above into one final ranked recommendation |
 
-These five map directly onto the five tabs you'll see later on a patient's
-page (Q1, Q2, Q3, Q4, and the overall "Q5" recommendation).
+The first three map directly onto the three tabs you'll see later on a
+patient's page (Q1, Q2, Q3, plus a Decision path tab). DepMap is different —
+it's cohort-level evidence about melanoma biology in general, not a
+per-patient score, so it lives as its own panel on the Cohort page (§3.6)
+rather than as a per-patient tab. See §6.4 for why.
 
 ### 3.3 Featured Cases
 Three highlighted example patients, picked automatically because each one
@@ -95,9 +98,13 @@ agreement, and whether a real treatment record exists for that patient — see
 §8), a search box, and a sort control. Click any row to open that patient.
 
 ### 3.5 The Q1 model-accuracy panel
-At the very bottom of the Cohort page (only here — not on the patient page)
-sits a technical panel showing how accurate the ML predictor actually is,
-tested against real outcomes. This is explained in detail in §6.1.
+Near the bottom of the Cohort page (only here — not on the patient page) sits
+a technical panel showing how accurate the ML predictor actually is, tested
+against real outcomes. This is explained in detail in §6.1.
+
+### 3.6 The Q4 · DepMap Target Nomination panel
+Directly below the Q1 accuracy panel sits a second cohort-level panel — also
+only here, not per-patient. This is explained in detail in §6.4.
 
 ---
 
@@ -191,14 +198,17 @@ click **"Select & confirm this plan"** on any card — this is a UI-only
 selection for the demo, staging that choice for the sign-off box at the
 bottom of the page.
 
-### 5.4 The five method tabs
-Below the ranked options sits a row of five tab buttons. Only one panel shows
-at a time — click a tab to switch. **The page opens on the Q3 tab by
-default**, so if you're looking for something else, you need to click over.
+### 5.4 The method tabs
+Below the ranked options sits a row of four tab buttons: Q1, Q2, Q3, and
+Decision path. Only one panel shows at a time — click a tab to switch. **The
+page opens on the Q3 tab by default**, so if you're looking for something
+else, you need to click over. (There's no per-patient Q4 tab — the DepMap
+target-nomination evidence is cohort-level, not scored per patient; see
+§3.6 and §6.4.)
 
 ---
 
-## 6 · The five tabs, in full detail
+## 6 · The tabs and panels, in full detail
 
 ### 6.1 Q1 · ML predictor
 **What Q1 is:** a machine-learning model (specifically, an ensemble — a
@@ -215,24 +225,32 @@ signature scores (things like cytolytic activity, tumour inflammation
 signature, and CD8 T-cell infiltration — all different ways of measuring how
 "visible" the tumour is to the immune system).
 
-**Important honesty note:** many patients only carry a single combined score
-rather than the five-model breakdown, because the underlying data file only
-supplied one number per patient for TCGA. The tab says so explicitly rather
-than inventing fake per-model numbers.
+**Important honesty note:** the individual five-model breakdown isn't always
+complete — one model (ElasticNet) is missing its own column in the current
+data file due to a naming mismatch upstream, so its bar may show as
+unavailable even though it did contribute to the combined score below. The
+combined **P(response)** figure itself is unaffected — it's averaged across
+all five models before that column is dropped.
 
 **The separate, cohort-level accuracy panel** (only on the Cohort landing
 page, §3.5) is a completely different thing: it's not about any one patient,
 it's proof that the Q1 models actually work, tested against 195 patients from
 three real immunotherapy clinical trials (Liu 2019, Riaz 2017, Hugo 2016)
 where the *true* outcome (did they actually respond, confirmed by a clinician)
-is known. Headline: **AUC 0.593** overall (0.766 in the Riaz trial
-specifically, 0.451 — essentially chance — in the small Hugo trial). AUC
-("Area Under the [ROC] Curve") is a standard 0–1 accuracy score for a
-yes/no prediction: 0.5 = no better than a coin flip, 1.0 = perfect. 0.593 is
-a real but modest signal, and the panel says so plainly, including that the
-model's raw probabilities are poorly calibrated (it pushes most patients
-above 50% even though the true response rate is much lower) — so the
-*ranking* the model produces is more trustworthy than any single number.
+is known. Crucially, every one of these 195 predictions is genuinely
+**held-out** — for each trial cohort, the models were trained only on the
+*other two* trial cohorts and never saw the one they're scored against. This
+matters: an earlier version of this pipeline evaluated the pooled,
+all-cohorts-trained models on those same cohorts, which produced
+inflated, in-sample numbers. Headline now: **AUC 0.469** pooled overall
+(0.560 in Riaz 2017, 0.511 in Liu 2019, 0.593 in the small Hugo 2016 set).
+AUC ("Area Under the [ROC] Curve") is a standard 0–1 accuracy score for a
+yes/no prediction: 0.5 = no better than a coin flip, 1.0 = perfect. None of
+these numbers should be read as strong discrimination — they're modest,
+honest, and the panel says so plainly, including that the model's raw
+probabilities cluster tightly around ~0.45 regardless of true outcome — so
+the *ranking* the model produces is more trustworthy than any single
+probability number.
 
 ### 6.2 Q2 · Validation
 **What Q2 is:** proof, from data the models never saw during training, that
@@ -308,22 +326,38 @@ explicitly **not** the same as "the drug doesn't work" (that would be a real,
 meaningful finding) — it means the simulation itself has no signal, so the
 tool shows a clear "Twin below model resolution" notice instead of a fake 0%.
 
-### 6.4 Q4 · Resistance
-**What this tab is:** a set of clinical rules-of-thumb (not a trained
-model) flagging why the recommended treatment might eventually stop working,
-and what to try if/when it does. The tab is explicitly badged
-**"Heuristic"** — meaning rule-based, lower confidence than Q1/Q3, and the
-panel says exactly that in a permanent footer note.
+### 6.4 Q4 · DepMap Target Nomination
+**What this panel is:** real evidence from a CRISPR gene-dependency screen
+across melanoma cell lines (the "DepMap" project), nominating candidate drug
+targets — not a per-patient prediction. **It lives on the Cohort page (§3.6),
+not as a per-patient tab**, because the underlying evidence doesn't vary by
+patient — it's a statement about melanoma biology in general, not about the
+specific person you're looking at.
 
-- **Resistance risk** badge (Low/Moderate/High/Not assessable), based on how
-  much tumour shrinkage the twin achieved.
-- **Escape mechanisms flagged** — plain-English warnings like *"NRAS-driven
-  MAPK reactivation"* (the pathway can find another way back on even after
-  BRAF is blocked) or *"Immune-cold (low PD-L1)"* (checkpoint resistance is
-  likely from the start).
-- **Hold in reserve** — an ordered list of salvage options to consider if
-  the primary plan fails, e.g. a different targeted-therapy combination, or
-  retrying checkpoint blockade if TMB is very high.
+- **SOX10 dependency** — 84% of melanoma cell lines are CRISPR-dependent on
+  the gene SOX10, versus only 2.8% of other-cancer lines (a very large,
+  statistically robust, bootstrap-validated effect). SOX10 is a real,
+  confirmed melanoma lineage-dependency gene. But it's a transcription
+  factor — not currently druggable with small-molecule drugs — so the screen
+  went looking for genes that *co-depend* with it instead, on the theory
+  that hitting one of those might mimic the effect of hitting SOX10.
+- **Method validation** — the same co-dependency ranking correctly recovers
+  BRAF and MAPK1 (both established, approved melanoma drug targets) as
+  top-scoring positive controls, which is evidence the ranking approach
+  itself is picking up real signal, not noise.
+- **Candidate druggable proxies** — a ranked shortlist (LCMT1, AMD1, PGM3)
+  of genes that co-depend with SOX10 and belong to druggable target classes.
+  **Important honesty note:** the "druggable" categorisation here is expert
+  judgement about target class, not a completed pharmacology audit — the
+  formal check against ChEMBL/Open Targets databases (to confirm an actual
+  existing drug/ligand for each one) hasn't been finished yet. Treat these as
+  hypothesis-generating candidates worth investigating, not as validated drug
+  targets ready for clinical use.
+
+The panel used to be a different thing entirely — a per-patient "Resistance
+risk" heuristic derived from the Q3 ODE burden reduction, with no connection
+to any real DepMap analysis. That heuristic has been removed and replaced
+with this real analysis.
 
 ### 6.5 Decision path
 A left-to-right flowchart of the exact logic the tool followed for this one
@@ -352,7 +386,8 @@ Here's the full picture in one place:
 | **Real, measured data** | Age, sex, stage, TMB, PD-L1/PD-1 expression, survival months, mutation status, treatment history (where recorded) | Comes straight from the patient's real clinical/genomic record. Not modelled. |
 | **Real model output** | The Q3 dose-response curves, the Q1 accuracy figures, the RPPA correlation, the cell-line drug-sensitivity result | A model was actually run and produced this number; it's not invented, but it is a model's estimate, not a ground truth |
 | **Projection** | The shape of the 12-month forecast between two known endpoints; the survival curves | The *endpoints* are real; the *curve connecting them* follows a standard, labelled statistical shape, not a patient-specific simulation |
-| **Heuristic (rule of thumb)** | Everything in the Q4 tab | Written by hand from clinical knowledge, not learned from data. Useful as a prompt for discussion, not as a scored prediction |
+| **Real model output, cohort-level** | The Q4 DepMap panel's dependency statistics (SOX10 effect size, bootstrap CIs) | A real CRISPR screen was actually run; the numbers are real, but they describe melanoma biology in general, not this one patient |
+| **Expert judgement, not yet audited** | The "druggable" labels on the Q4 candidate list | A person's assessment of target class, not a completed ChEMBL/Open Targets check — treat as a lead, not a conclusion |
 
 ---
 
@@ -360,11 +395,12 @@ Here's the full picture in one place:
 
 - **~21% of patients have an "uninformative" digital twin** (§6.3) — the
   simulation has nothing to say, not "the drug doesn't work."
-- **Q1 has not been run per-patient on the TCGA cohort** for most of its
-  detail — the gauge and percentile are real, but the five-model breakdown
-  and six input signatures usually aren't available (they exist for a
-  different, labelled set of clinical-trial patients used purely for
-  accuracy testing).
+- **Q1's individual signature values (the six input scores) are only shown
+  for the labelled clinical-trial patients**, not for TCGA — the TCGA gauge,
+  percentile, and four of five per-model probabilities are real, but the six
+  underlying signature scores behind them aren't currently surfaced per TCGA
+  patient. One model (ElasticNet) is also missing its own bar cohort-wide
+  due to a column-naming issue upstream — see §6.1.
 - **Only ~47% of patients have a recorded treatment history** — TCGA simply
   didn't collect this for everyone, and it varies enormously by which
   hospital submitted the data (some hospitals recorded it for every patient,
