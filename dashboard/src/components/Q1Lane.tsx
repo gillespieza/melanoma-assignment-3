@@ -1,6 +1,7 @@
 import { BrainCircuit, FlaskConical, Hourglass } from "lucide-react";
 import type { CohortPatient, Q1Validation } from "../data/cohort";
 import { Panel, Pill } from "./ui";
+import { InfoPopover } from "./InfoPopover";
 
 // Q1 · Gene-expression response predictor (ML).
 //
@@ -156,13 +157,27 @@ export default function Q1Lane({
       subtitle="Five-model ensemble over six immune signatures → P(response to checkpoint blockade)"
       icon={<BrainCircuit size={16} />}
       right={
-        q1 ? (
-          <Pill tone="teal">Scored</Pill>
-        ) : (
-          <Pill tone="neutral">
-            <Hourglass size={11} /> Awaiting inference
-          </Pill>
-        )
+        <div className="flex items-center gap-1.5">
+          <InfoPopover title="Where this number comes from">
+            <p>
+              P(response) is the average output of 5 independently-trained models (Logistic
+              Regression, Random Forest, XGBoost, SVM, ElasticNet), each reading this patient&apos;s
+              own gene-expression signatures (IFN-γ, TIS, CYT, CD8 T-cell, IMPRES, PD-L1).
+            </p>
+            <p>
+              This is a real per-patient model output, not a lookup or an average — but see the
+              Cohort page&apos;s Q1 accuracy panel for how well this actually predicts real
+              outcomes (it&apos;s a genuine, modest, held-out signal — not a strong one).
+            </p>
+          </InfoPopover>
+          {q1 ? (
+            <Pill tone="teal">Scored</Pill>
+          ) : (
+            <Pill tone="neutral">
+              <Hourglass size={11} /> Awaiting inference
+            </Pill>
+          )}
+        </div>
       }
     >
       {!q1 ? (

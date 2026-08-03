@@ -1,5 +1,6 @@
 import { Dna, Target, Beaker, CircleSlash } from "lucide-react";
 import { Panel, Pill } from "./ui";
+import { InfoPopover } from "./InfoPopover";
 
 // Q4 · DepMap target nomination.
 //
@@ -43,7 +44,30 @@ export default function Q4DepMapPanel() {
       title="Q4 · DepMap Target Nomination"
       subtitle="CRISPR co-dependency screen across melanoma cell lines — cohort-level, not a per-patient score"
       icon={<Dna size={16} />}
-      right={<Pill tone="neutral">Cohort-level</Pill>}
+      right={
+        <div className="flex items-center gap-1.5">
+          <InfoPopover title="Where this comes from">
+            <p>
+              Data source: a real CRISPR gene-dependency screen (DepMap) across melanoma cell
+              lines, committed at <code className="text-[10.5px]">Q4_dep_map/outputs_v2/</code>{" "}
+              and <code className="text-[10.5px]">Q4_dep_map/outputs_proxy/</code>.
+            </p>
+            <p>
+              This is cohort-level biology, not a per-patient score — it doesn&apos;t change based
+              on which patient you&apos;re viewing, because it describes melanoma cell lines in
+              general, not this individual&apos;s tumour.
+            </p>
+            <p>
+              <span className="font-semibold">Caveat:</span> the dependency statistics (84%
+              vs 2.8%, bootstrap CIs) are real and validated. The &quot;druggable&quot; label
+              on the candidate list is expert judgement about target class — the formal
+              ChEMBL/Open Targets audit to confirm an actual existing drug for each one hasn&apos;t
+              been completed yet.
+            </p>
+          </InfoPopover>
+          <Pill tone="neutral">Cohort-level</Pill>
+        </div>
+      }
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         <div>

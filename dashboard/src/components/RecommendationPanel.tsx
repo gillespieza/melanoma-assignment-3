@@ -1,5 +1,6 @@
 import type { RankedOption } from "../data/types";
 import { Panel, Pill } from "./ui";
+import { InfoPopover } from "./InfoPopover";
 import { Stethoscope, TrendingUp, ShieldAlert, BookOpen, Check, Ban } from "lucide-react";
 
 function tierPill(tier: RankedOption["tier"]) {
@@ -56,7 +57,24 @@ function OptionCard({
           <div className="text-[12px] font-semibold text-clinical-muted">{opt.arm.regimen}</div>
         </div>
         <div className="text-right">
-          <div className="text-[10.5px] font-semibold uppercase tracking-wide text-clinical-muted">
+          <div className="flex items-center justify-end gap-1 text-[10.5px] font-semibold uppercase tracking-wide text-clinical-muted">
+            <InfoPopover title="What these three numbers mean" size={11}>
+              <p>
+                <span className="font-semibold">Confidence:</span> a 0–100 score combining this
+                patient&apos;s real molecular data, the Q1 ML read, and the Q3 ODE simulation for
+                this specific arm, via hand-set (not fitted) weights.
+              </p>
+              <p>
+                <span className="font-semibold">Median OS:</span> anchored to this arm&apos;s real
+                Kaplan-Meier median from the Q3 cohort analysis, scaled by this patient&apos;s own
+                simulated response.
+              </p>
+              <p>
+                <span className="font-semibold">12-mo burden ↓:</span> the ODE&apos;s simulated
+                tumour-burden reduction for this patient on this arm. Shows &quot;Could not
+                compute&quot; rather than a fake 0% when the twin has no usable signal.
+              </p>
+            </InfoPopover>
             Confidence
           </div>
           <div

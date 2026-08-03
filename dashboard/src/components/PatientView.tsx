@@ -27,6 +27,7 @@ import AgreementBadge from "./AgreementBadge";
 import RecommendationPanel from "./RecommendationPanel";
 import DecisionTree from "./DecisionTree";
 import ConsultantSignoff from "./ConsultantSignoff";
+import { InfoPopover } from "./InfoPopover";
 import { Panel } from "./ui";
 
 // The patient workbench.
@@ -154,8 +155,34 @@ export default function PatientView({
               <Sparkles size={17} />
             </div>
             <div>
-              <div className="text-[10.5px] font-bold uppercase tracking-wide text-clinical-tealdark">
+              <div className="flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wide text-clinical-tealdark">
                 Integrated recommendation
+                <InfoPopover title="How the integrated recommendation is built">
+                  <p>
+                    Each treatment arm gets a 0–100 confidence score built by adding real
+                    per-patient inputs together, weighted by relevance:
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>
+                      <span className="font-semibold">Statistical:</span> Q1&apos;s ML P(response),
+                      or a PD-L1/PD-1/TMB composite when Q1 hasn&apos;t scored this patient.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Mechanistic:</span> the Q3 ODE digital twin&apos;s
+                      simulated tumour-burden reduction for that arm.
+                    </li>
+                    <li>
+                      <span className="font-semibold">Molecular:</span> real BRAF/PD-L1 status —
+                      e.g. BRAF-WT hard-blocks targeted therapy entirely.
+                    </li>
+                  </ul>
+                  <p>
+                    <span className="font-semibold">Important:</span> the weights combining these
+                    inputs are hand-set, not fitted to outcome data — a deliberate interpretability
+                    choice, not a trained model. That's why the source numbers are always shown
+                    alongside the combined score, not hidden behind it.
+                  </p>
+                </InfoPopover>
               </div>
               <div className="text-[14.5px] font-extrabold tracking-tight text-clinical-ink">
                 {result.headline}

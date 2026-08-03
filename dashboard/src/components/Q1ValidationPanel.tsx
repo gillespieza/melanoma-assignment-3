@@ -15,6 +15,7 @@ import {
 import { Target, Gauge } from "lucide-react";
 import type { Q1Validation } from "../data/cohort";
 import { Panel, Pill, Stat } from "./ui";
+import { InfoPopover } from "./InfoPopover";
 
 // Q1 model accuracy — measured, not claimed.
 //
@@ -99,7 +100,28 @@ export default function Q1ValidationPanel({ validation }: { validation: Q1Valida
       title="Q1 · Model Accuracy on Held-Out Trials"
       subtitle="Measured against real response outcomes in the ICI trial cohorts — not a claim, a result"
       icon={<Target size={16} />}
-      right={<Pill tone={aucTone(validation.auc)}>AUC {validation.auc?.toFixed(3) ?? "—"}</Pill>}
+      right={
+        <div className="flex items-center gap-1.5">
+          <InfoPopover title="Where this comes from">
+            <p>
+              Data source: 195 real patients from three published immunotherapy trials — Liu
+              2019, Hugo 2016, Riaz 2017 — with clinician-confirmed RECIST response labels.
+            </p>
+            <p>
+              Method: genuine Leave-One-Cohort-Out (LOCO) cross-validation. For each trial
+              cohort, the scaler and all 5 models (LR, RF, XGBoost, SVM, ElasticNet) are fit
+              only on the <span className="font-semibold">other two</span> cohorts, then
+              evaluated on the held-out one. No model is ever scored on data it trained on.
+            </p>
+            <p>
+              An earlier version of this pipeline evaluated pooled, all-cohorts-trained models
+              on those same cohorts — in-sample, not held-out — which produced inflated
+              numbers. This was corrected and independently re-verified before being shown here.
+            </p>
+          </InfoPopover>
+          <Pill tone={aucTone(validation.auc)}>AUC {validation.auc?.toFixed(3) ?? "—"}</Pill>
+        </div>
+      }
     >
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
         {/* ---- left: headline numbers + per-cohort table ---- */}

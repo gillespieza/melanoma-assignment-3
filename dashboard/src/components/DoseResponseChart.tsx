@@ -12,6 +12,7 @@ import {
 import { Waves, CircleAlert } from "lucide-react";
 import type { CohortPatient } from "../data/cohort";
 import { Panel, Pill, Stat } from "./ui";
+import { InfoPopover } from "./InfoPopover";
 
 // Q3 lane · the patient's OWN simulated dose-response sweep.
 //
@@ -42,7 +43,28 @@ export default function DoseResponseChart({
       title="Q3 · ODE Digital Twin — Dose Response"
       subtitle="Simulated tumour burden across the drug-dose sweep, for this patient specifically"
       icon={<Waves size={16} />}
-      right={<Pill tone="teal">Raw model output</Pill>}
+      right={
+        <div className="flex items-center gap-1.5">
+          <InfoPopover title="What the digital twin actually is">
+            <p>
+              A mechanistic ODE (Ordinary Differential Equation) model — four coupled modules
+              (RAF-dimer drug binding → MAPK cascade → tumour-immune dynamics → PD-1/PD-L1
+              checkpoint), solved individually for this one patient using their own real
+              molecular profile as the starting conditions.
+            </p>
+            <p>
+              The kinetic rate constants are fixed, published biochemical values — the same
+              equations for every patient. Only the <span className="font-semibold">inputs</span>{" "}
+              (protein levels from expression, mutation status, drug dose) vary per patient.
+            </p>
+            <p>
+              Validated against independent RPPA protein measurements and real overall-survival
+              stratification — see the Q2 tab for that evidence.
+            </p>
+          </InfoPopover>
+          <Pill tone="teal">Raw model output</Pill>
+        </div>
+      }
     >
       {!anyInformative ? (
         <div className="rounded-xl border border-dashed border-clinical-border bg-clinical-bg/60 p-5">
