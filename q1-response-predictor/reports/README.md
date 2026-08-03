@@ -28,10 +28,12 @@ reports/
 │   └── batch_correction_report.md
 │
 ├── pillar-2-clinical-subtyping/
+│   ├── clinical_feature_selection_report.md
 │   └── clinical_phenotyping_and_feature_selection.md
 │
 ├── pillar-3-transcriptomic-signatures/
-│   └── curated_signatures_report.md
+│   ├── curated_signatures_report.md
+│   └── curated_signatures_supplementary.md
 │
 └── pillar-4-out-of-cohort-benchmarks/
     ├── model_evaluation_report.md
@@ -48,12 +50,14 @@ reports/
 | [Pipeline.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/Pipeline.md) | Technical Workflow | Fetching (`download_data.py`), cleaning (`clean_data.py`), merging (`merge_datasets.py`), sample attrition, and pipeline architecture. |
 | **Pillar 1: Cohort Characterisation & Preprocessing** | | |
 | [cohort_characteristics_clinical.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-1-cohorts-and-preprocessing/cohort_characteristics_clinical.md) | Baseline Clinical | Comparative summary of demographics, disease stages, response distributions, survival curves, and forest plots across Liu, Hugo, Riaz, and TCGA. |
-| [cohort_characteristics_genomic.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-1-cohorts-and-preprocessing/cohort_characteristics_genomic.md) | Baseline Genomic | Genomic landscape analysis: driver mutations (`BRAF`, `NRAS`, `NRAS`), TMB distributions, predicted neoantigens, Aneuploidy survival curves, and CoMut landscape. |
+| [cohort_characteristics_genomic.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-1-cohorts-and-preprocessing/cohort_characteristics_genomic.md) | Baseline Genomic | Genomic landscape analysis: driver mutations (`BRAF`, `NRAS`, `NF1`), TMB distributions, predicted neoantigens, Aneuploidy survival curves, and CoMut landscape. |
 | [batch_correction_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-1-cohorts-and-preprocessing/batch_correction_report.md) | Preprocessing | Technical evaluation of batch effects: uncorrected PCA vs. Z-score scaling vs. pyCombat empirical Bayes, heatmaps of top variance genes, and CV leakage prevention. |
 | **Pillar 2: Clinical Subtyping & Feature Selection** | | |
-| [clinical_phenotyping_and_feature_selection.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-2-clinical-subtyping/clinical_phenotyping_and_feature_selection.md) | Clinical Subtyping | Feature importance ranking (Random Forest Gini importance & Cox PH regression) and unsupervised patient subtyping (Ward's hierarchical clustering into Clusters 0, 1, 2). |
+| [clinical_feature_selection_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-2-clinical-subtyping/clinical_feature_selection_report.md) | Feature Importance | Multimodal Random Forest Gini importance rankings, Cox PH univariate hazard screening, and clinical feature prioritization. |
+| [clinical_phenotyping_and_feature_selection.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-2-clinical-subtyping/clinical_phenotyping_and_feature_selection.md) | Clinical Subtyping | Unsupervised patient subtyping (Ward's hierarchical clustering into Clusters 0, 1, 2) and baseline clinical characterisation. |
 | **Pillar 3: Transcriptomic Signatures & Multimodal ML** | | |
 | [curated_signatures_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-3-transcriptomic-signatures/curated_signatures_report.md) | Feature Engineering & Model Evaluation | Consolidated report covering implemented gene signatures (IFN-$\gamma$, TIS, CYT, IMPRES, CD8, TCGA OS), signature scaling, biomarker orthogonality (TMB vs. Signatures), odds ratios, pooled 5-fold multimodal ML performance, and LOCO model validation. |
+| [curated_signatures_supplementary.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-3-transcriptomic-signatures/curated_signatures_supplementary.md) | Supplementary Analysis | Extended statistical benchmarks, signature correlation matrices, and distribution metrics. |
 | **Pillar 4: Feature Selection & Out-of-Cohort Benchmarks** | | |
 | [model_evaluation_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-4-out-of-cohort-benchmarks/model_evaluation_report.md) | Model Benchmarking | LOCO cross-cohort validation of all classifiers (LR, RF, XGB, SVM, ElasticNet): AUC-ROC, confusion matrices, PR curves, C-index, and per-cohort metric tables. |
 | [transcriptomic_feature_selection_results.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-4-out-of-cohort-benchmarks/transcriptomic_feature_selection_results.md) | Out-of-Cohort Validation | LOCO cross-validation benchmark comparing unconstrained `SelectKBest` ($k=20, 100, 200$) against biological signatures, plus TCGA Cox 20-gene survival signature derivation & InterPro domain annotations. |

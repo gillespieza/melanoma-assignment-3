@@ -33,9 +33,10 @@ SUBPROJECT_ROOT = Path(__file__).resolve().parent
 if str(SUBPROJECT_ROOT) not in sys.path:
     sys.path.append(str(SUBPROJECT_ROOT))
 
-from src.utils.paths import MODELS_DIR, PROCESSED_DIR
+from src.utils.paths import PROCESSED_DIR
 from src.signatures import extract_all_signatures, zscore_df
 from src.config.constants import IMMUNE_SIGNATURES
+MODELS_DIR = SUBPROJECT_ROOT / "models"
 
 
 class SinglePatientPredictor:
