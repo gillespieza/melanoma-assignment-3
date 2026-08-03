@@ -10,9 +10,28 @@ from src.styles import get_cohort_color
 
 
 def save_fig(fig: plt.Figure, path: Path, dpi: int = 300) -> None:
-    """Standard tight-layout + save + close, so this isn't repeated per chart."""
+    """Standard tight-layout + save + close, automatically mirroring across root plots/ and q1-response-predictor/plots/."""
     fig.tight_layout()
-    fig.savefig(path, bbox_inches="tight", dpi=dpi)
+    path = Path(path).resolve()
+    
+    # Resolve project root
+    from src.utils.paths import PROJECT_ROOT
+    q1_root = PROJECT_ROOT / "q1-response-predictor"
+    
+    target_paths = [path]
+    
+    # Compute relative path under 'plots' if present
+    path_str = path.as_posix()
+    if "/plots/" in path_str:
+        rel_plots_part = path_str.split("/plots/")[-1]
+        p_root = PROJECT_ROOT / "plots" / rel_plots_part
+        p_q1 = q1_root / "plots" / rel_plots_part
+        target_paths = [p_root, p_q1]
+    
+    for p in target_paths:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(p, bbox_inches="tight", dpi=dpi)
+        
     plt.close(fig)
 
 
