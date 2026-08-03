@@ -115,6 +115,10 @@ export default function CohortTable({
       if (agreement !== "all" && a !== agreement) return false;
       if (treatment === "recorded" && !patient.treatment.recorded) return false;
       if (treatment === "unrecorded" && patient.treatment.recorded) return false;
+      if (treatment === "targeted" && !(patient.treatment.targetedTherapy && !patient.treatment.checkpointInhibitor)) return false;
+      if (treatment === "immuno" && !(patient.treatment.checkpointInhibitor && !patient.treatment.targetedTherapy)) return false;
+      if (treatment === "both" && !(patient.treatment.targetedTherapy && patient.treatment.checkpointInhibitor)) return false;
+      if (treatment === "other" && (!patient.treatment.recorded || patient.treatment.targetedTherapy || patient.treatment.checkpointInhibitor)) return false;
       return true;
     });
 
@@ -214,7 +218,11 @@ export default function CohortTable({
           onChange={setTreatment}
           options={[
             { value: "all", label: "All" },
-            { value: "recorded", label: "Recorded" },
+            { value: "targeted", label: "Received: targeted only" },
+            { value: "immuno", label: "Received: immuno only" },
+            { value: "both", label: "Received: targeted + immuno" },
+            { value: "other", label: "Received: chemo/radiation/other" },
+            { value: "recorded", label: "Any recorded" },
             { value: "unrecorded", label: "Not recorded" },
           ]}
         />
