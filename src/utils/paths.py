@@ -77,7 +77,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 LOG_DIR = PROJECT_ROOT / "logs"
-PLOTS_DIR = PROJECT_ROOT / "plots"
+PLOTS_DIR = PROJECT_ROOT / "q1-response-predictor" / "plots"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 
 

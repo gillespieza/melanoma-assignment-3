@@ -287,33 +287,21 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
         y=1.025,
     )
     plt.tight_layout()
-    fig.subplots_adjust(top=0.91, hspace=0.35, wspace=0.20)
-
-    # Save to both subproject and root plot directories
-    root_base = BASE_DIR.parent if (BASE_DIR / "q1-response-predictor").exists() else BASE_DIR
-    p_q1 = BASE_DIR / "plots/feature_selection/signature_vs_raw_selection_auc.png"
-    p_root = root_base / "plots/feature_selection/signature_vs_raw_selection_auc.png"
-
+    # Save exclusively to q1-response-predictor plots directory
+    p_q1 = PLOT_DIR / "signature_vs_raw_selection_auc.png"
     p_q1.parent.mkdir(parents=True, exist_ok=True)
-    p_root.parent.mkdir(parents=True, exist_ok=True)
 
     fig.savefig(p_q1, bbox_inches="tight", dpi=300)
-    fig.savefig(p_root, bbox_inches="tight", dpi=300)
     print(f"Saved 2x3 plot: {p_q1.as_posix()}")
-    print(f"Saved 2x3 plot: {p_root.as_posix()}")
 
-    # Save transparent copies
+    # Save transparent copy
     fig.patch.set_alpha(0.0)
     for a in axes_flat:
         a.patch.set_alpha(0.0)
 
-    pt_q1 = BASE_DIR / "plots/feature_selection/signature_vs_raw_selection_auc_transparent.png"
-    pt_root = root_base / "plots/feature_selection/signature_vs_raw_selection_auc_transparent.png"
-
+    pt_q1 = PLOT_DIR / "signature_vs_raw_selection_auc_transparent.png"
     fig.savefig(pt_q1, transparent=True, bbox_inches="tight", dpi=300)
-    fig.savefig(pt_root, transparent=True, bbox_inches="tight", dpi=300)
     print(f"Saved 2x3 transparent plot: {pt_q1.as_posix()}")
-    print(f"Saved 2x3 transparent plot: {pt_root.as_posix()}")
 
     plt.close(fig)
 
