@@ -181,7 +181,7 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
         df_results: Results DataFrame containing LOCO AUC scores.
         out_plot_path: Destination path for figure output artifact.
     """
-    fig, axes = plt.subplots(2, 3, figsize=(29, 6.5), sharey=True)
+    fig, axes = plt.subplots(2, 3, figsize=(27.5, 6.5), sharey=True)
     axes_flat = axes.flatten()
 
     models = ["LR", "RF", "XGB", "SVM", "ElasticNet"]
