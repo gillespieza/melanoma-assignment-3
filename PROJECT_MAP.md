@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-02 (Consolidated duplicate `q1-response-predictor/src/` utilities and `styles.py` to re-export directly from root `src/` single source of truth via explicit file-path loading; refactored `generate_loco_heatmap.py` to eliminate code smells with sub-30 line functions, explicit type annotations, module constants, and `TeeStream` logging to `logs/generate_loco_heatmap.log`).
+> **Last updated**: 2026-08-03 (Updated SVM hyperparameter tuning with balanced class weights, wider C grid, and adaptive fold sizes; fixed 16:9 canvas ratio on LOCO and 5-fold CV heatmaps via explicit margin adjustment; retrained and serialized all final model pickles in `q1-response-predictor/models/`; refreshed dashboard inputs `q1_predictions.csv` and `cohort.json`).
 
 ## Repository Overview
 
@@ -301,6 +301,7 @@ npm run build
 | `q5/src/reporting.py` | Local `generate_obsidian_frontmatter()` duplicated `src/utils/formatting.py` | **Resolved** (2026-08-01) |
 | `q5/src/phenotyping.py` | Uncalled exports (`plot_radar_chart()`, `plot_cluster_heatmap()`) | Unresolved |
 | Subproject log routing (`q1`, `q3`, `q5`) | Standardised `LOG_DIR` and `LOG_PATH` across all subproject scripts (`q1-response-predictor`, `q3-ode-model`, `q5-patient-stratification`) to output logs to each subproject's dedicated `logs/` directory (`<subproject>/logs/`) instead of top-level `PROJECT_ROOT/logs/`. Fixed root bootstrap `BASE_DIR` resolution in Q1 biomarker/exploratory scripts and `src/utils/paths.py` `find_subproject_root()` recognition. | **Resolved** (2026-08-03) |
+| SVM Tuning, 16:9 Heatmaps & Dashboard Sync | Enhanced `tune_svc` with `class_weight='balanced'`, expanded grid (`C=0.01-100`, `gamma=['scale', 'auto']`), and adaptive CV fold counts for small splits. Fixed 16:9 canvas rendering in LOCO and 5-fold CV heatmaps by replacing `tight_layout` with explicit `subplots_adjust` margin preservation. Re-trained pooled model pickles in `q1-response-predictor/models/`, updated `q1_predictions.csv`, and rebuilt `dashboard/public/cohort.json`. | **Resolved** (2026-08-03) |
 
 ## Conventions Quick Reference
 

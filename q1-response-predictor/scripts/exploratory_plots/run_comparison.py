@@ -172,152 +172,213 @@ def _run_loco_feature_selection(
     return results
 
 
-def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> None:
-    """Generates a 3x2 grid of grouped bar charts comparing ROC-AUC of Domain Signatures vs Raw SelectKBest.
+def _plot_summary_curated_wins(df_results: pd.DataFrame, out_plot_path: Path) -> None:
+    """Generates a two-panel summary figure emphasising curated signature superiority.
 
-    Displays 5 model families plus an overall cross-model mean panel.
+    Panel A — Strip plot: each dot represents one (model × cohort) LOCO AUC observation,
+    with a diamond marker showing the cross-model mean per feature representation method.
+    The curated column is lightly shaded to guide the eye to the key comparison.
+
+    Panel B — Δ AUC bar chart: mean Δ ROC-AUC (Curated Signatures minus mean SelectKBest
+    AUC across k=20/100/200) per held-out cohort, averaged across all 5 model families.
+    Individual model deltas are shown as white dot overlays. Positive bars confirm that
+    curated domain-driven feature engineering outperforms data-driven raw gene selection.
 
     Args:
-        df_results: Results DataFrame containing LOCO AUC scores.
+        df_results: Results DataFrame with LOCO AUC scores per model and test cohort.
         out_plot_path: Destination path for figure output artifact.
     """
-    fig, axes = plt.subplots(2, 3, figsize=(27.5, 6.5), sharey=True)
-    axes_flat = axes.flatten()
+    from matplotlib.lines import Line2D
 
-    models = ["LR", "RF", "XGB", "SVM", "ElasticNet"]
-    model_titles = {
-        "LR": "Logistic Regression",
-        "RF": "Random Forest",
-        "XGB": "XGBoost",
-        "SVM": "Support Vector Machine",
-        "ElasticNet": "Elastic Net",
-    }
-    palette = FEATURE_SELECTION_PALETTE
+    value_cols = [
+        "Curated Signatures AUC",
+        "SelectKBest (k=20) AUC",
+        "SelectKBest (k=100) AUC",
+        "SelectKBest (k=200) AUC",
+    ]
+    method_labels = [c.replace(" AUC", "") for c in value_cols]
+    cohort_order = ["Liu 2019", "Hugo 2016", "Riaz 2017"]
+    skb_cols = ["SelectKBest (k=20) AUC", "SelectKBest (k=100) AUC", "SelectKBest (k=200) AUC"]
 
-    # Prepare long-format melted dataframe
-    df_melted_all = pd.melt(
+    fig, (ax_strip, ax_delta) = plt.subplots(
+        1, 2, figsize=(14, 6),
+        gridspec_kw={"width_ratios": [2, 1]},
+    )
+
+    # -----------------------------------------------------------------------
+    # Panel A: Strip plot — AUC distribution per feature representation method
+    # -----------------------------------------------------------------------
+    df_melted = pd.melt(
         df_results,
         id_vars=["Model", "Test Cohort"],
-        value_vars=[
-            "Curated Signatures AUC",
-            "SelectKBest (k=20) AUC",
-            "SelectKBest (k=100) AUC",
-            "SelectKBest (k=200) AUC",
-        ],
-        var_name="Feature Representation",
+        value_vars=value_cols,
+        var_name="Method",
         value_name="ROC-AUC",
     )
-    df_melted_all["Feature Representation"] = df_melted_all["Feature Representation"].str.replace(" AUC", "")
+    df_melted["Method"] = df_melted["Method"].str.replace(" AUC", "")
 
-    # Plot 5 model subplots
-    for i, m in enumerate(models):
-        ax = axes_flat[i]
-        df_sub = df_melted_all[df_melted_all["Model"] == m]
+    sns.stripplot(
+        data=df_melted,
+        x="Method",
+        y="ROC-AUC",
+        order=method_labels,
+        palette=FEATURE_SELECTION_PALETTE,
+        ax=ax_strip,
+        jitter=0.18,
+        size=7,
+        alpha=0.5,
+        zorder=2,
+    )
 
-        sns.barplot(
-            data=df_sub,
-            x="Test Cohort",
-            y="ROC-AUC",
-            hue="Feature Representation",
-            palette=palette,
-            ax=ax,
-            edgecolor="black",
-            linewidth=0.8,
+    # Diamond markers showing cross-model mean per method
+    df_means = df_melted.groupby("Method")["ROC-AUC"].mean()
+    for i, method in enumerate(method_labels):
+        mean_val = df_means[method]
+        color = FEATURE_SELECTION_PALETTE[method]
+        ax_strip.scatter(
+            i, mean_val,
+            marker="D", s=120, color=color,
+            edgecolors="black", linewidths=1.3, zorder=5,
+        )
+        ax_strip.annotate(
+            f"{mean_val:.3f}",
+            (i, mean_val),
+            xytext=(0, 11),
+            textcoords="offset points",
+            ha="center", va="bottom",
+            fontsize=10, fontweight="bold",
+            color=color,
         )
 
-        ax.set_title(f"{model_titles[m]}", fontsize=11, fontweight="bold", pad=8)
-        ax.axhline(0.50, color="gray", linestyle="--", linewidth=1.1, label="Chance Baseline (AUC=0.50)")
-        ax.set_ylim(0.25, 0.85)
-        ax.set_xlabel("Held-out Test Cohort" if i >= 3 else "", fontsize=10, fontweight="bold")
-        ax.set_ylabel("Cross-Validated ROC-AUC" if i % 3 == 0 else "", fontsize=10, fontweight="bold")
+    # Chance baseline and curated-column shading
+    ax_strip.axhline(0.50, color="gray", linestyle="--", linewidth=1.3, zorder=1)
+    ax_strip.axvspan(-0.48, 0.48, color="#37474F", alpha=0.06, zorder=0)
 
-        for p in ax.patches:
-            height = p.get_height()
-            if not np.isnan(height) and height > 0:
-                ax.annotate(
-                    f"{height:.2f}",
-                    (p.get_x() + p.get_width() / 2.0, height),
-                    ha="center",
-                    va="bottom",
-                    fontsize=7.5,
-                    color="black",
-                    xytext=(0, 2),
-                    textcoords="offset points",
-                )
-        ax.legend().remove()
+    ax_strip.set_ylim(0.25, 0.82)
+    ax_strip.set_xlabel("Feature Representation", fontsize=11, fontweight="bold", labelpad=8)
+    ax_strip.set_ylabel("LOCO Cross-Validated ROC-AUC", fontsize=11, fontweight="bold")
+    ax_strip.set_title(
+        "A   AUC Distribution Across All Model × Cohort Conditions",
+        fontsize=11, fontweight="bold", loc="left", pad=10,
+    )
+    ax_strip.set_xticks(range(len(method_labels)))
+    ax_strip.set_xticklabels(method_labels, rotation=15, ha="right", fontsize=10)
 
-    # Panel 6: Cross-Model Mean Summary
-    ax_mean = axes_flat[5]
-    df_mean = df_melted_all.groupby(["Test Cohort", "Feature Representation"], as_index=False)["ROC-AUC"].mean()
+    legend_elements = [
+        Line2D([0], [0], color="gray", linestyle="--", linewidth=1.3, label="Chance (AUC = 0.50)"),
+        Line2D(
+            [0], [0], marker="D", color="w",
+            markerfacecolor="gray", markeredgecolor="black",
+            markersize=9, label="Cross-model mean",
+        ),
+    ]
+    ax_strip.legend(handles=legend_elements, fontsize=9, frameon=True, loc="upper right")
 
-    sns.barplot(
-        data=df_mean,
-        x="Test Cohort",
-        y="ROC-AUC",
-        hue="Feature Representation",
-        palette=palette,
-        ax=ax_mean,
-        edgecolor="black",
-        linewidth=0.8,
+    # -----------------------------------------------------------------------
+    # Panel B: Δ AUC bar chart — Curated Signatures minus SelectKBest mean
+    # -----------------------------------------------------------------------
+    df_delta = df_results.copy()
+    df_delta["SelectKBest Mean AUC"] = df_delta[skb_cols].mean(axis=1)
+    df_delta["Delta AUC"] = df_delta["Curated Signatures AUC"] - df_delta["SelectKBest Mean AUC"]
+
+    df_delta_cohort = (
+        df_delta.groupby("Test Cohort")["Delta AUC"]
+        .agg(["mean", "std"])
+        .loc[cohort_order]
+        .reset_index()
     )
 
-    ax_mean.set_title("Overall Cross-Model Mean", fontsize=11, fontweight="bold", pad=8)
-    ax_mean.axhline(0.50, color="gray", linestyle="--", linewidth=1.1, label="Chance Baseline (AUC=0.50)")
-    ax_mean.set_ylim(0.25, 0.85)
-    ax_mean.set_xlabel("Held-out Test Cohort", fontsize=10, fontweight="bold")
-    ax_mean.set_ylabel("", fontsize=10, fontweight="bold")
+    bar_colors = [COHORT_PALETTE.get(c, "#37474F") for c in df_delta_cohort["Test Cohort"]]
+    bars = ax_delta.bar(
+        range(len(cohort_order)),
+        df_delta_cohort["mean"],
+        yerr=df_delta_cohort["std"],
+        color=bar_colors,
+        edgecolor="black",
+        linewidth=0.9,
+        capsize=5,
+        width=0.5,
+        error_kw={"linewidth": 1.2, "ecolor": "black"},
+        zorder=3,
+    )
 
-    for p in ax_mean.patches:
-        height = p.get_height()
-        if not np.isnan(height) and height > 0:
-            ax_mean.annotate(
-                f"{height:.2f}",
-                (p.get_x() + p.get_width() / 2.0, height),
-                ha="center",
-                va="bottom",
-                fontsize=7.5,
-                color="black",
-                xytext=(0, 2),
-                textcoords="offset points",
-            )
-    ax_mean.legend().remove()
+    # Annotate mean delta values above/below each bar
+    for bar, val in zip(bars, df_delta_cohort["mean"]):
+        offset = 0.013 if val >= 0 else -0.013
+        v_align = "bottom" if val >= 0 else "top"
+        sign_str = "+" if val >= 0 else ""
+        ax_delta.annotate(
+            f"{sign_str}{val:.3f}",
+            (bar.get_x() + bar.get_width() / 2, val + offset),
+            ha="center", va=v_align,
+            fontsize=10.5, fontweight="bold",
+        )
 
-    # Single top legend
-    handles, labels = axes_flat[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.99), ncol=5, fontsize=10, frameon=True)
+    # Individual model Δ values overlaid as white dots
+    for cohort in cohort_order:
+        cohort_x = cohort_order.index(cohort)
+        model_deltas = df_delta[df_delta["Test Cohort"] == cohort]["Delta AUC"].values
+        ax_delta.scatter(
+            [cohort_x] * len(model_deltas),
+            model_deltas,
+            color="white", edgecolors="black", linewidths=0.8,
+            s=28, zorder=4, alpha=0.85,
+        )
+
+    # Positive/negative half-plane shading and zero baseline
+    ax_delta.axhspan(0, 0.35, alpha=0.05, color="#009E73", zorder=0)
+    ax_delta.axhspan(-0.35, 0, alpha=0.05, color="#D55E00", zorder=0)
+    ax_delta.axhline(0.0, color="black", linestyle="-", linewidth=1.0, zorder=2)
+
+    # Zone labels: curated wins vs raw genes win
+    ax_delta.text(
+        2.47, 0.20, "Curated\nwins ↑", ha="right", va="center",
+        fontsize=8.5, color="#009E73", fontweight="bold",
+    )
+    ax_delta.text(
+        2.47, -0.20, "Raw genes\nwin ↓", ha="right", va="center",
+        fontsize=8.5, color="#D55E00", fontweight="bold",
+    )
+
+    y_abs_max = max(
+        (df_delta_cohort["mean"].abs() + df_delta_cohort["std"]).max() + 0.06,
+        0.20,
+    )
+    ax_delta.set_ylim(-y_abs_max, y_abs_max)
+    ax_delta.set_xticks(range(len(cohort_order)))
+    ax_delta.set_xticklabels(cohort_order, rotation=15, ha="right", fontsize=10)
+    ax_delta.set_xlabel("Held-out Test Cohort", fontsize=11, fontweight="bold", labelpad=8)
+    ax_delta.set_ylabel("Δ ROC-AUC (Curated − Mean SelectKBest)", fontsize=11, fontweight="bold")
+    ax_delta.set_title(
+        "B   Domain Signatures vs. Data-Driven Selection",
+        fontsize=11, fontweight="bold", loc="left", pad=10,
+    )
 
     plt.suptitle(
-        "Cross-Cohort Validation: 12 Curated Multimodal Features vs. SelectKBest (Raw Genes)",
-        fontsize=13,
-        fontweight="bold",
-        y=1.025,
+        "Feature Engineering vs. Data-Driven Selection: Out-of-Cohort LOCO Validation",
+        fontsize=13, fontweight="bold", y=1.01,
     )
     plt.tight_layout()
-    # Save exclusively to q1-response-predictor plots directory
-    p_q1 = PLOT_DIR / "signature_vs_raw_selection_auc.png"
-    p_q1.parent.mkdir(parents=True, exist_ok=True)
 
-    fig.savefig(p_q1, bbox_inches="tight", dpi=300)
-    print(f"Saved 2x3 plot: {p_q1.as_posix()}")
+    # Save transparent copy before save_fig closes the figure
+    pt_path = out_plot_path.parent / (out_plot_path.stem + "_transparent.png")
+    out_plot_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(pt_path, transparent=True, bbox_inches="tight", dpi=300)
+    print(f"Saved transparent copy to {pt_path.name}")
 
-    # Save transparent copy
-    fig.patch.set_alpha(0.0)
-    for a in axes_flat:
-        a.patch.set_alpha(0.0)
-
-    pt_q1 = PLOT_DIR / "signature_vs_raw_selection_auc_transparent.png"
-    fig.savefig(pt_q1, transparent=True, bbox_inches="tight", dpi=300)
-    print(f"Saved 2x3 transparent plot: {pt_q1.as_posix()}")
-
-    plt.close(fig)
+    save_fig(fig, out_plot_path)
+    print(f"Saved two-panel summary plot to {out_plot_path.name}")
 
 
 def _plot_comparison_heatmap(df_results: pd.DataFrame, out_plot_path: Path) -> None:
-    """Generates a divergent annotated heatmap of LOCO ROC-AUC values.
+    """Generates a divergent annotated heatmap of LOCO ROC-AUC values with model-family
+    group dividers and a cross-model mean summary row.
 
-    Rows represent Model x Test Cohort combinations. Columns represent
-    the four feature representations. Colour diverges around the chance
-    baseline of 0.50 so below-chance cells are visually distinct.
+    Rows are grouped into five model families (LR, RF, XGB, SVM, ElasticNet), each
+    containing three held-out cohort rows. Thick horizontal lines visually separate
+    model families. A summary row at the bottom shows the cross-model mean AUC per
+    feature representation. The divergent colourmap centres on the chance baseline of 0.50
+    so below-chance cells are visually distinct from above-chance cells.
 
     Args:
         df_results: Results DataFrame containing LOCO AUC scores.
@@ -331,20 +392,26 @@ def _plot_comparison_heatmap(df_results: pd.DataFrame, out_plot_path: Path) -> N
     ]
     display_cols = [c.replace(" AUC", "") for c in value_cols]
 
-    # Build row labels as "Model · Cohort"
+    # Build row index as "Model · Cohort"
     df_hm = df_results.copy()
     df_hm["Row"] = df_hm["Model"] + "  ·  " + df_hm["Test Cohort"]
     df_hm = df_hm.set_index("Row")[value_cols]
     df_hm.columns = display_cols
 
-    # Highlight best feature representation per row
+    # Best-performing feature method per data row (used for bold outlines)
     best_col_per_row = df_hm.idxmax(axis=1)
+    n_data_rows = len(df_hm)
 
-    fig, ax = plt.subplots(figsize=(10, 7))
+    # Append cross-model mean summary row below all data rows
+    mean_row = df_hm.mean(axis=0)
+    mean_row.name = "━━  Cross-Model Mean  ━━"
+    df_hm_with_mean = pd.concat([df_hm, mean_row.to_frame().T])
+
+    fig, ax = plt.subplots(figsize=(10, 8))
 
     # Divergent colourmap centred on 0.50 (chance baseline)
     sns.heatmap(
-        df_hm,
+        df_hm_with_mean,
         annot=True,
         fmt=".3f",
         cmap="RdYlGn",
@@ -353,18 +420,25 @@ def _plot_comparison_heatmap(df_results: pd.DataFrame, out_plot_path: Path) -> N
         vmax=0.75,
         linewidths=0.8,
         linecolor="white",
-        cbar_kws={"label": "ROC-AUC", "shrink": 0.85},
+        cbar_kws={"label": "ROC-AUC", "shrink": 0.80},
         ax=ax,
         annot_kws={"fontsize": 10},
     )
 
-    # Bold-outline the best cell in each row
+    # Bold-outline the best cell in each data row
     for row_idx, (row_label, col_label) in enumerate(best_col_per_row.items()):
         col_idx = display_cols.index(col_label)
         ax.add_patch(plt.Rectangle(
             (col_idx, row_idx), 1, 1,
             fill=False, edgecolor="black", linewidth=2.5,
         ))
+
+    # Thick horizontal dividers separating model families (every 3 rows)
+    for divider_y in [3, 6, 9, 12]:
+        ax.axhline(divider_y, color="#37474F", linewidth=2.5, zorder=6)
+
+    # Dashed divider before the cross-model mean summary row
+    ax.axhline(n_data_rows, color="#37474F", linewidth=3.0, linestyle="--", zorder=6)
 
     ax.set_xlabel("Feature Representation", fontsize=12, fontweight="bold", labelpad=10)
     ax.set_ylabel("Model  ·  Held-out Test Cohort", fontsize=12, fontweight="bold", labelpad=10)
@@ -373,7 +447,6 @@ def _plot_comparison_heatmap(df_results: pd.DataFrame, out_plot_path: Path) -> N
         fontsize=13, fontweight="bold", pad=14,
     )
 
-    # Rotate x-axis labels for readability
     ax.set_xticklabels(ax.get_xticklabels(), rotation=25, ha="right", fontsize=10)
     ax.set_yticklabels(ax.get_yticklabels(), rotation=0, fontsize=10)
 
@@ -457,7 +530,7 @@ def main() -> None:
     print(df_results.to_string(index=False))
 
     out_plot_path = PLOT_DIR / "signature_vs_raw_selection_auc.png"
-    _plot_comparison_results(df_results, out_plot_path)
+    _plot_summary_curated_wins(df_results, out_plot_path)
 
     out_heatmap_path = PLOT_DIR / "signature_vs_raw_selection_heatmap.png"
     _plot_comparison_heatmap(df_results, out_heatmap_path)

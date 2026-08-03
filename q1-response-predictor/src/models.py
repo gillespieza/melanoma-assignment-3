@@ -82,19 +82,28 @@ def tune_xgboost(X_train, y_train, calibrate=True):
 def tune_svc(X_train, y_train, calibrate=True):
     """
     Tuning Support Vector Classifier (SVC) using Grid Search.
+
+    Uses class_weight='balanced' to handle responder/non-responder imbalance.
+    Adapts CV fold count to training set size to avoid degenerate folds on
+    small LOCO splits (e.g. N~18 when Hugo 2016 is held out).
+    Searches over a wider C grid and RBF gamma values for better calibration.
     """
     param_grid = {
-        'estimator__C': [0.01, 0.1, 1.0, 10.0],
-        'estimator__kernel': ['linear', 'rbf']
+        'estimator__C': [0.01, 0.1, 1.0, 10.0, 100.0],
+        'estimator__kernel': ['linear', 'rbf'],
+        'estimator__gamma': ['scale', 'auto'],
+        'estimator__class_weight': ['balanced'],
     }
     svc = CalibratedClassifierCV(
-        estimator=SVC(random_state=42),
+        estimator=SVC(random_state=42, probability=False),
         method='sigmoid',
         cv=3,
         ensemble=False,
-        n_jobs=-1
+        n_jobs=-1,
     )
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    # Use fewer CV folds when training set is small (avoids folds with <2 samples per class)
+    n_cv = max(2, min(3, len(y_train) // 10))
+    cv = StratifiedKFold(n_splits=n_cv, shuffle=True, random_state=42)
     grid = GridSearchCV(svc, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
     return grid.best_estimator_
