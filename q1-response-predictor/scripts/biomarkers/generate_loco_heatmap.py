@@ -37,7 +37,7 @@ from src.models import run_loco_cv
 from src.signatures import extract_all_signatures, zscore_df
 from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, rel_path
+from src.utils.paths import DATA_DIR, PLOTS_DIR, SUBPROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
 
 set_presentation_style()
@@ -65,6 +65,7 @@ HEATMAP_LABEL_SIZE: int = 11
 
 OUTPUT_PLOT_DIR: Path = PLOTS_DIR / "models"
 DEFAULT_OUTPUT_PATH: Path = OUTPUT_PLOT_DIR / "loco_performance_heatmap.png"
+LOG_DIR: Path = SUBPROJECT_ROOT / "logs"
 LOG_PATH: Path = LOG_DIR / "generate_loco_heatmap.log"
 
 

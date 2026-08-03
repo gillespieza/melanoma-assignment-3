@@ -25,11 +25,11 @@ from xgboost import XGBClassifier
 # subproject, as data/ lives one level up at the project root.
 _THIS_FILE = Path(__file__).resolve()
 for _candidate in [_THIS_FILE.parent] + list(_THIS_FILE.parent.parents):
-    if (_candidate / "src" / "config").exists():
+    if _candidate.name == "q1-response-predictor":
         BASE_DIR = _candidate
         break
 else:
-    raise FileNotFoundError(f"Could not locate project root above {_THIS_FILE}")
+    raise FileNotFoundError(f"Could not locate q1-response-predictor subproject root above {_THIS_FILE}")
 
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))

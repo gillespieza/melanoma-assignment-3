@@ -62,9 +62,20 @@ def find_subproject_root(start: Path) -> Path:
     if start.is_file():
         start = start.parent
 
+    known_subprojects = {
+        "q1-response-predictor",
+        "q2-viability-predictor",
+        "q3-ode-model",
+        "q5-patient-stratification",
+        "dashboard",
+    }
+
     for candidate in (start, *start.parents):
-        if (candidate / "scripts").is_dir() or (candidate / "models").is_dir():
+        if candidate.name in known_subprojects:
             return candidate
+        if (candidate / "scripts").is_dir() or (candidate / "models").is_dir():
+            if candidate != find_project_root(start):
+                return candidate
 
     return find_project_root(start)
 
@@ -79,6 +90,15 @@ PROCESSED_DIR = DATA_DIR / "processed"
 LOG_DIR = PROJECT_ROOT / "logs"
 PLOTS_DIR = PROJECT_ROOT / "q1-response-predictor" / "plots"
 REPORTS_DIR = PROJECT_ROOT / "reports"
+
+
+def get_subproject_log_dir(start: Path) -> Path:
+    """Returns the logs/ directory for the subproject containing start, or top-level logs/ if not in a subproject."""
+    sub_root = find_subproject_root(start)
+    if sub_root != PROJECT_ROOT:
+        return sub_root / "logs"
+    return PROJECT_ROOT / "logs"
+
 
 
 def format_relative_path(path: Path) -> str:

@@ -54,14 +54,15 @@ from src.styles import (
 )
 from src.utils.io import safe_save_csv
 from src.utils.logging import TeeStream
-from src.utils.paths import LOG_DIR as ROOT_LOG_DIR, PROCESSED_DIR, PROJECT_ROOT, rel_path
+from src.utils.paths import PROCESSED_DIR, PROJECT_ROOT, rel_path
 from src.utils.plotting import save_fig
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
 # ---------------------------------------------------------------------------
 
-LOG_PATH = ROOT_LOG_DIR / "02_feature_analysis.log"
+LOG_DIR = SUBPROJECT_ROOT / "logs"
+LOG_PATH = LOG_DIR / "02_feature_analysis.log"
 FEATURE_MATRIX_FILE = PROCESSED_DIR / "q5" / "feature_matrix.csv"
 OUTPUT_DIR = PROCESSED_DIR / "q5"
 PLOTS_DIR = SUBPROJECT_ROOT / "plots" / "feature_analysis"
@@ -544,7 +545,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    ROOT_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
     with open(LOG_PATH, "w", encoding="utf-8") as log_file:
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)

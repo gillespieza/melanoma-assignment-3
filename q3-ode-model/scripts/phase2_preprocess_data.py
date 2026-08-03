@@ -32,7 +32,7 @@ for parent in [SCRIPT_DIR] + list(SCRIPT_DIR.parents):
             sys.path.insert(0, str(parent))
         break
 
-from src.utils.paths import DATA_DIR, LOG_DIR as ROOT_LOG_DIR, PROJECT_ROOT, RAW_DIR, rel_path
+from src.utils.paths import DATA_DIR, PROJECT_ROOT, RAW_DIR, SUBPROJECT_ROOT, rel_path
 
 Q1_SRC = PROJECT_ROOT / "q1-response-predictor" / "src"
 if str(Q1_SRC) not in sys.path:
@@ -71,7 +71,8 @@ except (ImportError, ModuleNotFoundError) as err:
 # Module-level Constants & Definitions
 # ---------------------------------------------------------------------------
 
-LOG_PATH = ROOT_LOG_DIR / "q3_phase2_preprocess.log"
+LOG_DIR = SUBPROJECT_ROOT / "logs"
+LOG_PATH = LOG_DIR / "q3_phase2_preprocess.log"
 TCGA_DIR = RAW_DIR / "skcm_tcga_pan_can_atlas_2018"
 OUT_DIR = SUBPROJECT_ROOT / "data"
 
@@ -280,7 +281,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    ROOT_LOG_DIR.mkdir(parents=True, exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
     with open(LOG_PATH, "w", encoding="utf-8") as log_file:
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)

@@ -39,13 +39,14 @@ from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.signatures import extract_all_signatures
 from src.styles import COHORT_PALETTE, FEATURE_SELECTION_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, REPORTS_DIR
+from src.utils.paths import DATA_DIR, PLOTS_DIR, REPORTS_DIR, SUBPROJECT_ROOT
 from src.utils.plotting import save_fig
 
 set_presentation_style()
 
 # Module-level Constants
 PLOT_DIR = PLOTS_DIR / "feature_selection"
+LOG_DIR = SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "run_comparison.log"
 
 
@@ -175,7 +176,7 @@ def _plot_comparison_results(df_results: pd.DataFrame, out_plot_path: Path) -> N
         df_results: Results DataFrame containing LOCO AUC scores.
         out_plot_path: Destination path for figure output artifact.
     """
-    fig, axes = plt.subplots(2, 3, figsize=(18, 6.5), sharey=True)
+    fig, axes = plt.subplots(2, 3, figsize=(22, 6.5), sharey=True)
     axes_flat = axes.flatten()
 
     models = ["LR", "RF", "XGB", "SVM", "ElasticNet"]

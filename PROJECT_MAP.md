@@ -300,7 +300,7 @@ npm run build
 | `src/styles.py` L53 & L178 | Duplicate `get_phenotype_color()` definitions | **Resolved** (2026-08-01) |
 | `q5/src/reporting.py` | Local `generate_obsidian_frontmatter()` duplicated `src/utils/formatting.py` | **Resolved** (2026-08-01) |
 | `q5/src/phenotyping.py` | Uncalled exports (`plot_radar_chart()`, `plot_cluster_heatmap()`) | Unresolved |
-| `run_pipeline.py` (Q1) | Still writes log to project root instead of `logs/` directory | Unresolved |
+| Subproject log routing (`q1`, `q3`, `q5`) | Standardised `LOG_DIR` and `LOG_PATH` across all subproject scripts (`q1-response-predictor`, `q3-ode-model`, `q5-patient-stratification`) to output logs to each subproject's dedicated `logs/` directory (`<subproject>/logs/`) instead of top-level `PROJECT_ROOT/logs/`. Fixed root bootstrap `BASE_DIR` resolution in Q1 biomarker/exploratory scripts and `src/utils/paths.py` `find_subproject_root()` recognition. | **Resolved** (2026-08-03) |
 
 ## Conventions Quick Reference
 
