@@ -19,6 +19,7 @@ from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 from src.signatures import extract_all_signatures
 from src.models import run_loco_cv, get_model
 from src.evaluation import plot_roc_curves, plot_pr_curves, plot_confusion_matrices, plot_calibration_curves, calculate_extended_metrics, calculate_cindex, run_survival_analysis, find_optimal_threshold, plot_survival_2x2_grid
+from scripts.biomarkers.generate_loco_heatmap import plot_loco_heatmap_from_results
 from src.utils.logging import TeeStream
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
@@ -64,7 +65,8 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
     frontmatter = generate_obsidian_frontmatter(
         title="Model Evaluation Report: Leave-One-Cohort-Out (LOCO) Cross-Validation",
         aliases=["LOCO Model Evaluation Report", "Q1 Response Predictor Evaluation"],
-        tags=["q1", "model-evaluation", "loco-cv", "immunotherapy-response", "calibration"]
+        tags=["q1", "model-evaluation", "loco-cv", "immunotherapy-response", "calibration"],
+        extra_css_classes=["table-center", "row-alt"]
     )
 
     report_lines = [
@@ -76,8 +78,8 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
         "> **Key Questions Answered**: Which machine learning model generalises best across independent trial cohorts? Does combining genomic mutation flags with immune signatures improve prediction accuracy?\n\n",
         "## Overview & Methodology\n\n",
         "1. **Evaluation Framework (Leave-One-Cohort-Out)**: In each fold, we train models on 2 patient cohorts and test them on the remaining 1 unseen cohort.\n",
-        "2. **Test Cohorts**: Liu 2019 ($N=104$), Hugo 2016 ($N=27$), and Riaz 2017 ($N=64$).\n",
-        "3. **Features Evaluated**: Pre-defined immune response signatures (IFN-γ, TIS, CD8 T-cell, CYT, IMPRES, PD-L1).\n",
+        "2. **Test Cohorts**: Evaluated on held-out clinical cohorts (Liu 2019, Hugo 2016, Riaz 2017) with cohort-independent Z-score standardisation.\n",
+        "3. **Features Evaluated**: 8 curated transcriptomic signatures (`IFN_gamma`, `TIS`, `CYT`, `CD8_Tcell`, `IMPRES`, `PD_L1`, `Macrophage_STV_Score`, `M1_M2_Ratio`) plus somatic driver mutation indicators (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) and nonsynonymous `TMB`.\n",
         "4. **Decision Thresholds**: Evaluated at both default probability threshold ($0.5$) and Youden's J optimal threshold.\n\n",
         "> [!note] Understanding Evaluation Metrics\n",
         "> The following metrics are used throughout this report to assess each model's performance:\n",
@@ -165,7 +167,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
     best_model_label = model_names.get(best_model_key, best_model_key.upper())
     report_lines.append("\n")
     report_lines.append(
-        f"> [!insight] Best Generalising Model: {model_short[best_model_key]}\n"
+        f"> [!INSIGHT] Best Generalising Model: {model_short[best_model_key]}\n"
         f"> **{best_model_label}** achieves the highest mean cross-cohort AUC of **{best_mean:.3f}** across all three held-out LOCO test cohorts, "
         f"making it the strongest generaliser in this evaluation. "
         f"See the individual model sections below for full confusion matrices, ROC curves, and calibration diagnostics.\n\n"
@@ -173,13 +175,13 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
 
     model_explanations = {
         'lr': ("> [!note] Model Rationale\n"
-               "> **What We Did**: Trained a linear model with L1 (Lasso) regularization to select key predictive features.\n"
+               "> **What We Did**: Trained a linear model with L1 (Lasso) regularisation to select key predictive features.\n"
                "> **Why**: Linear models serve as transparent baselines that prevent overfitting by shrinking uninformative feature weights to zero.\n"
                "> **Question Answered**: Can a simple, interpretable linear combination of immune signatures predict patient response across cohorts?"),
         'rf': ("> [!note] Model Rationale\n"
                "> **What We Did**: Trained an ensemble of decision trees using random feature subsets.\n"
                "> **Why**: Decision trees capture non-linear relationships and feature interactions without assuming linear boundaries.\n"
-               "> **Question Answered**: Do complex non-linear combinations of immune features improve out-of-cohort generalization?"),
+               "> **Question Answered**: Do complex non-linear combinations of immune features improve out-of-cohort generalisability?"),
         'xgb': ("> [!note] Model Rationale\n"
                 "> **What We Did**: Trained a sequential gradient-boosted decision tree model with hyperparameter tuning.\n"
                 "> **Why**: Gradient boosting iteratively corrects errors from previous trees, often achieving state-of-the-art tabular performance.\n"
@@ -268,7 +270,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
             "Precision-Recall (PR) curves evaluate positive predictive value across recall levels, which is particularly vital for immunotherapy trial datasets where response rates vary between 31% and 52% across clinical cohorts.\n\n"
         )
         report_lines.append(
-            "> [!insight] Key Insights & Diagnostic Takeaways\n"
+            "> [!INSIGHT] Key Insights & Diagnostic Takeaways\n"
             "> - **Standard vs. Multimodal Discrimination**: Integrating somatic driver mutations (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) alongside transcriptomic signatures provides subtle calibration stabilization but does not significantly alter cross-cohort AUC-ROC or Average Precision (AP). This confirms that transcriptomic immune microenvironment activation remains the predominant driver of anti-PD-1 treatment response.\n"
             "> - **Precision-Recall Dynamics & Clinical Utility**: Precision-Recall curves demonstrate that high precision can be achieved at lower recall thresholds (e.g. prioritising high-confidence responders), but precision drops when attempting to capture all potential responders in low-inflamed cohorts.\n"
             "> - **Cross-Cohort Heterogeneity**: Held-out trial dataset performance demonstrates robust signal transfer in Riaz 2017 and Liu 2019, whereas Hugo 2016 exhibits higher variance due to its smaller cohort sample size.\n\n"
@@ -291,7 +293,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
                     worst_cohort = cohort
         mean_auc = float(np.nanmean(aucs)) if aucs else float('nan')
         report_lines.append(
-            f"> [!summary] Key Takeaways: {model_label}\n"
+            f"> [!INSIGHT] Key Takeaways: {model_label}\n"
             f"> - **Mean Cross-Cohort AUC**: {mean_auc:.3f} (averaged across {len(aucs)} held-out test cohorts).\n"
             f"> - **Best Generalisation**: {best_cohort} (AUC = {best_auc_val:.3f}) — strongest signal transfer for this architecture.\n"
             f"> - **Most Challenging Cohort**: {worst_cohort} (AUC = {worst_auc_val:.3f}) — likely reflects cohort-specific biological or technical heterogeneity.\n"
@@ -301,7 +303,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
 
     # --- Combined Features Section ---
     if combined_loco_results:
-        report_lines.append("---\n\n")
+        # Removed body horizontal rule per Rule 3
         report_lines.append("## Multimodal Integration: Immune Signatures + Driver Mutations\n\n")
         report_lines.append(
             "**What We Did**: Benchmark-tested models trained on both immune expression signatures and key melanoma driver mutations (`mut_BRAF`, `mut_NRAS`, `mut_NF1`).\n"
@@ -327,7 +329,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
     
     # --- Survival Analysis Section ---
     if survival_results:
-        report_lines.append("---\n\n")
+        # Removed body horizontal rule per Rule 3
         report_lines.append("## Downstream Overall Survival Stratification\n\n")
         report_lines.append(
             "**What We Did**: Stratified patients into predicted high-risk (low response probability) and low-risk (high response probability) groups using the best-performing LOCO model per cohort, then performed log-rank tests on overall survival.\n"
@@ -358,7 +360,7 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
             "orange/red curves indicate low-predicted-probability patients (predicted non-responders)._\n\n"
         )
         report_lines.append(
-            "> [!insight] Key Takeaways: Overall Survival Stratification\n"
+            "> [!INSIGHT] Key Takeaways: Overall Survival Stratification\n"
             "> - Patients predicted as likely responders (high probability) consistently trend toward longer overall survival across cohorts, even when the log-rank test does not reach statistical significance.\n"
             "> - The TCGA-SKCM validation cohort ($N > 400$) provides the most statistically powered test of survival stratification, reflecting the correlation between transcriptomic immune activation and long-term melanoma prognosis.\n"
             "> - Despite non-significant p-values in smaller clinical trial cohorts (Hugo 2016, Liu 2019, Riaz 2017), the directional trend is consistent with the known biology of IFN-γ immune activation and anti-PD-1 treatment benefit.\n\n"
@@ -375,10 +377,10 @@ def generate_model_evaluation_report(all_loco_results, output_dir, survival_resu
 
 
     # --- Final Architecture Comparison Summary ---
-    report_lines.append("---\n\n")
+    # Removed body horizontal rule per Rule 3
     report_lines.append("## Final Summary: Key Findings by Model Architecture\n\n")
     report_lines.append(
-        "> [!summary] Cross-Architecture Comparative Insights\n"
+        "> [!INSIGHT] Cross-Architecture Comparative Insights\n"
         "> This section synthesises the key findings from all five model architectures evaluated under the LOCO cross-validation framework. "
         "Rather than declaring a single 'winner', the goal is to characterise the relative strengths and weaknesses of each algorithmic family for immunotherapy response prediction.\n\n"
     )
@@ -593,6 +595,9 @@ def main():
         plot_calibration_curves(loco_results, model_type.upper(), PLOT_DIR / f"calibration_curves_{model_type}.png")
         plot_confusion_matrices(loco_results, model_type.upper(), PLOT_DIR / f"confusion_matrices_{model_type}.png", use_optimal_threshold=False)
         plot_confusion_matrices(loco_results, model_type.upper(), PLOT_DIR / f"confusion_matrices_{model_type}_optimal.png", use_optimal_threshold=True)
+
+    # Generate overall LOCO ROC-AUC performance heatmap across all 5 models dynamically
+    plot_loco_heatmap_from_results(all_loco_results, PLOT_DIR / "loco_performance_heatmap.png")
 
     print("\n==================================================")
     print("Phase 5: Survival Analysis (Log-rank test)...")

@@ -1,26 +1,17 @@
-"""Small reusable matplotlib/seaborn helpers for report-figure scripts."""
+"""Plotting utilities re-export for Q1 Subproject.
 
+Re-exports `save_fig` and plotting helpers from the root
+`src.utils.plotting` single source of truth via explicit file path loading.
+"""
+
+import importlib.util
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import seaborn as sns
+_ROOT_PLOTTING_PATH = Path(__file__).resolve().parent.parent.parent.parent / "src" / "utils" / "plotting.py"
+_spec = importlib.util.spec_from_file_location("_root_plotting", _ROOT_PLOTTING_PATH)
+_root_plotting = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_root_plotting)
 
-from src.styles import get_cohort_color
-
-
-def save_fig(fig, path: Path, dpi: int = 300) -> None:
-    """Standard tight-layout + save + close, so this isn't repeated per chart."""
-    fig.tight_layout()
-    fig.savefig(path, bbox_inches="tight", dpi=dpi)
-    plt.close(fig)
-
-
-def resolve_colors(labels: list[str]) -> list[str]:
-    """
-    Resolve a color per label via get_cohort_color's substring match
-    (robust to N's baked into the label, e.g. "Liu 2019 (N=103)"),
-    falling back to a generated palette for any label not defined
-    in styles.py.
-    """
-    fallback = sns.color_palette("Set2", n_colors=len(labels)).as_hex()
-    return [get_cohort_color(label, default=fallback[i]) for i, label in enumerate(labels)]
+for _attr in dir(_root_plotting):
+    if not _attr.startswith("_"):
+        globals()[_attr] = getattr(_root_plotting, _attr)

@@ -9,12 +9,14 @@ tags:
   - loco-cv
   - immunotherapy-response
   - calibration
+created: 2026-08-02 17:35
 cssclasses:
   - table-small
-created: 2026-08-02 14:59
+  - table-center
+  - row-alt
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-02 14:59
+updated: 2026-08-02 17:35
 ---
 
 # Model Evaluation Report: Leave-One-Cohort-Out (LOCO) Cross-Validation
@@ -27,8 +29,8 @@ updated: 2026-08-02 14:59
 ## Overview & Methodology
 
 1. **Evaluation Framework (Leave-One-Cohort-Out)**: In each fold, we train models on 2 patient cohorts and test them on the remaining 1 unseen cohort.
-2. **Test Cohorts**: Liu 2019 ($N=104$), Hugo 2016 ($N=27$), and Riaz 2017 ($N=64$).
-3. **Features Evaluated**: Pre-defined immune response signatures (IFN-γ, TIS, CD8 T-cell, CYT, IMPRES, PD-L1).
+2. **Test Cohorts**: Evaluated on held-out clinical cohorts (Liu 2019, Hugo 2016, Riaz 2017) with cohort-independent Z-score standardisation.
+3. **Features Evaluated**: 8 curated transcriptomic signatures (`IFN_gamma`, `TIS`, `CYT`, `CD8_Tcell`, `IMPRES`, `PD_L1`, `Macrophage_STV_Score`, `M1_M2_Ratio`) plus somatic driver mutation indicators (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) and nonsynonymous `TMB`.
 4. **Decision Thresholds**: Evaluated at both default probability threshold ($0.5$) and Youden's J optimal threshold.
 
 > [!note] Understanding Evaluation Metrics
@@ -75,13 +77,13 @@ updated: 2026-08-02 14:59
 | **SVM** | 0.434 | 0.558 | 0.648 | **0.547** |
 | ElasticNet | 0.415 | 0.558 | 0.500 | **0.491** |
 
-> [!insight] Best Generalising Model: SVM
+> [!INSIGHT] Best Generalising Model: SVM
 > **Support Vector Machine (SVM)** achieves the highest mean cross-cohort AUC of **0.547** across all three held-out LOCO test cohorts, making it the strongest generaliser in this evaluation. See the individual model sections below for full confusion matrices, ROC curves, and calibration diagnostics.
 
 ## Logistic Regression (L1-Penalised)
 
 > [!note] Model Rationale
-> **What We Did**: Trained a linear model with L1 (Lasso) regularization to select key predictive features.
+> **What We Did**: Trained a linear model with L1 (Lasso) regularisation to select key predictive features.
 > **Why**: Linear models serve as transparent baselines that prevent overfitting by shrinking uninformative feature weights to zero.
 > **Question Answered**: Can a simple, interpretable linear combination of immune signatures predict patient response across cohorts?
 
@@ -141,12 +143,12 @@ _Figure: Multimodal Precision-Recall curves for Logistic Regression (L1-Penalise
 **Diagnostic Summary & Explanatory Analysis**:
 The diagnostic plots above provide a complete evaluation of classifier discrimination, calibration, and precision under class imbalance. ROC curves measure classifier ranking ability (True Positive Rate vs. False Positive Rate across all decision thresholds), comparing baseline transcriptomic signature models against multimodal feature integration. Precision-Recall (PR) curves evaluate positive predictive value across recall levels, which is particularly vital for immunotherapy trial datasets where response rates vary between 31% and 52% across clinical cohorts.
 
-> [!insight] Key Insights & Diagnostic Takeaways
+> [!INSIGHT] Key Insights & Diagnostic Takeaways
 > - **Standard vs. Multimodal Discrimination**: Integrating somatic driver mutations (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) alongside transcriptomic signatures provides subtle calibration stabilization but does not significantly alter cross-cohort AUC-ROC or Average Precision (AP). This confirms that transcriptomic immune microenvironment activation remains the predominant driver of anti-PD-1 treatment response.
 > - **Precision-Recall Dynamics & Clinical Utility**: Precision-Recall curves demonstrate that high precision can be achieved at lower recall thresholds (e.g. prioritising high-confidence responders), but precision drops when attempting to capture all potential responders in low-inflamed cohorts.
 > - **Cross-Cohort Heterogeneity**: Held-out trial dataset performance demonstrates robust signal transfer in Riaz 2017 and Liu 2019, whereas Hugo 2016 exhibits higher variance due to its smaller cohort sample size.
 
-> [!summary] Key Takeaways: Logistic Regression (L1-Penalised)
+> [!INSIGHT] Key Takeaways: Logistic Regression (L1-Penalised)
 > - **Mean Cross-Cohort AUC**: 0.495 (averaged across 3 held-out test cohorts).
 > - **Best Generalisation**: Liu 2019 (AUC = 0.570) — strongest signal transfer for this architecture.
 > - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.415) — likely reflects cohort-specific biological or technical heterogeneity.
@@ -158,7 +160,7 @@ The diagnostic plots above provide a complete evaluation of classifier discrimin
 > [!note] Model Rationale
 > **What We Did**: Trained an ensemble of decision trees using random feature subsets.
 > **Why**: Decision trees capture non-linear relationships and feature interactions without assuming linear boundaries.
-> **Question Answered**: Do complex non-linear combinations of immune features improve out-of-cohort generalization?
+> **Question Answered**: Do complex non-linear combinations of immune features improve out-of-cohort generalisability?
 
 ### Performance Metrics (Default Threshold = 0.5)
 
@@ -216,12 +218,12 @@ _Figure: Multimodal Precision-Recall curves for Random Forest Classifier combini
 **Diagnostic Summary & Explanatory Analysis**:
 The diagnostic plots above provide a complete evaluation of classifier discrimination, calibration, and precision under class imbalance. ROC curves measure classifier ranking ability (True Positive Rate vs. False Positive Rate across all decision thresholds), comparing baseline transcriptomic signature models against multimodal feature integration. Precision-Recall (PR) curves evaluate positive predictive value across recall levels, which is particularly vital for immunotherapy trial datasets where response rates vary between 31% and 52% across clinical cohorts.
 
-> [!insight] Key Insights & Diagnostic Takeaways
+> [!INSIGHT] Key Insights & Diagnostic Takeaways
 > - **Standard vs. Multimodal Discrimination**: Integrating somatic driver mutations (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) alongside transcriptomic signatures provides subtle calibration stabilization but does not significantly alter cross-cohort AUC-ROC or Average Precision (AP). This confirms that transcriptomic immune microenvironment activation remains the predominant driver of anti-PD-1 treatment response.
 > - **Precision-Recall Dynamics & Clinical Utility**: Precision-Recall curves demonstrate that high precision can be achieved at lower recall thresholds (e.g. prioritising high-confidence responders), but precision drops when attempting to capture all potential responders in low-inflamed cohorts.
 > - **Cross-Cohort Heterogeneity**: Held-out trial dataset performance demonstrates robust signal transfer in Riaz 2017 and Liu 2019, whereas Hugo 2016 exhibits higher variance due to its smaller cohort sample size.
 
-> [!summary] Key Takeaways: Random Forest Classifier
+> [!INSIGHT] Key Takeaways: Random Forest Classifier
 > - **Mean Cross-Cohort AUC**: 0.531 (averaged across 3 held-out test cohorts).
 > - **Best Generalisation**: Riaz 2017 (AUC = 0.618) — strongest signal transfer for this architecture.
 > - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.407) — likely reflects cohort-specific biological or technical heterogeneity.
@@ -291,12 +293,12 @@ _Figure: Multimodal Precision-Recall curves for XGBoost Gradient Boosting combin
 **Diagnostic Summary & Explanatory Analysis**:
 The diagnostic plots above provide a complete evaluation of classifier discrimination, calibration, and precision under class imbalance. ROC curves measure classifier ranking ability (True Positive Rate vs. False Positive Rate across all decision thresholds), comparing baseline transcriptomic signature models against multimodal feature integration. Precision-Recall (PR) curves evaluate positive predictive value across recall levels, which is particularly vital for immunotherapy trial datasets where response rates vary between 31% and 52% across clinical cohorts.
 
-> [!insight] Key Insights & Diagnostic Takeaways
+> [!INSIGHT] Key Insights & Diagnostic Takeaways
 > - **Standard vs. Multimodal Discrimination**: Integrating somatic driver mutations (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) alongside transcriptomic signatures provides subtle calibration stabilization but does not significantly alter cross-cohort AUC-ROC or Average Precision (AP). This confirms that transcriptomic immune microenvironment activation remains the predominant driver of anti-PD-1 treatment response.
 > - **Precision-Recall Dynamics & Clinical Utility**: Precision-Recall curves demonstrate that high precision can be achieved at lower recall thresholds (e.g. prioritising high-confidence responders), but precision drops when attempting to capture all potential responders in low-inflamed cohorts.
 > - **Cross-Cohort Heterogeneity**: Held-out trial dataset performance demonstrates robust signal transfer in Riaz 2017 and Liu 2019, whereas Hugo 2016 exhibits higher variance due to its smaller cohort sample size.
 
-> [!summary] Key Takeaways: XGBoost Gradient Boosting
+> [!INSIGHT] Key Takeaways: XGBoost Gradient Boosting
 > - **Mean Cross-Cohort AUC**: 0.490 (averaged across 3 held-out test cohorts).
 > - **Best Generalisation**: Riaz 2017 (AUC = 0.606) — strongest signal transfer for this architecture.
 > - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.269) — likely reflects cohort-specific biological or technical heterogeneity.
@@ -366,12 +368,12 @@ _Figure: Multimodal Precision-Recall curves for Support Vector Machine (SVM) com
 **Diagnostic Summary & Explanatory Analysis**:
 The diagnostic plots above provide a complete evaluation of classifier discrimination, calibration, and precision under class imbalance. ROC curves measure classifier ranking ability (True Positive Rate vs. False Positive Rate across all decision thresholds), comparing baseline transcriptomic signature models against multimodal feature integration. Precision-Recall (PR) curves evaluate positive predictive value across recall levels, which is particularly vital for immunotherapy trial datasets where response rates vary between 31% and 52% across clinical cohorts.
 
-> [!insight] Key Insights & Diagnostic Takeaways
+> [!INSIGHT] Key Insights & Diagnostic Takeaways
 > - **Standard vs. Multimodal Discrimination**: Integrating somatic driver mutations (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) alongside transcriptomic signatures provides subtle calibration stabilization but does not significantly alter cross-cohort AUC-ROC or Average Precision (AP). This confirms that transcriptomic immune microenvironment activation remains the predominant driver of anti-PD-1 treatment response.
 > - **Precision-Recall Dynamics & Clinical Utility**: Precision-Recall curves demonstrate that high precision can be achieved at lower recall thresholds (e.g. prioritising high-confidence responders), but precision drops when attempting to capture all potential responders in low-inflamed cohorts.
 > - **Cross-Cohort Heterogeneity**: Held-out trial dataset performance demonstrates robust signal transfer in Riaz 2017 and Liu 2019, whereas Hugo 2016 exhibits higher variance due to its smaller cohort sample size.
 
-> [!summary] Key Takeaways: Support Vector Machine (SVM)
+> [!INSIGHT] Key Takeaways: Support Vector Machine (SVM)
 > - **Mean Cross-Cohort AUC**: 0.547 (averaged across 3 held-out test cohorts).
 > - **Best Generalisation**: Riaz 2017 (AUC = 0.648) — strongest signal transfer for this architecture.
 > - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.434) — likely reflects cohort-specific biological or technical heterogeneity.
@@ -441,19 +443,17 @@ _Figure: Multimodal Precision-Recall curves for ElasticNet Logistic Regression c
 **Diagnostic Summary & Explanatory Analysis**:
 The diagnostic plots above provide a complete evaluation of classifier discrimination, calibration, and precision under class imbalance. ROC curves measure classifier ranking ability (True Positive Rate vs. False Positive Rate across all decision thresholds), comparing baseline transcriptomic signature models against multimodal feature integration. Precision-Recall (PR) curves evaluate positive predictive value across recall levels, which is particularly vital for immunotherapy trial datasets where response rates vary between 31% and 52% across clinical cohorts.
 
-> [!insight] Key Insights & Diagnostic Takeaways
+> [!INSIGHT] Key Insights & Diagnostic Takeaways
 > - **Standard vs. Multimodal Discrimination**: Integrating somatic driver mutations (`mut_BRAF`, `mut_NRAS`, `mut_NF1`) alongside transcriptomic signatures provides subtle calibration stabilization but does not significantly alter cross-cohort AUC-ROC or Average Precision (AP). This confirms that transcriptomic immune microenvironment activation remains the predominant driver of anti-PD-1 treatment response.
 > - **Precision-Recall Dynamics & Clinical Utility**: Precision-Recall curves demonstrate that high precision can be achieved at lower recall thresholds (e.g. prioritising high-confidence responders), but precision drops when attempting to capture all potential responders in low-inflamed cohorts.
 > - **Cross-Cohort Heterogeneity**: Held-out trial dataset performance demonstrates robust signal transfer in Riaz 2017 and Liu 2019, whereas Hugo 2016 exhibits higher variance due to its smaller cohort sample size.
 
-> [!summary] Key Takeaways: ElasticNet Logistic Regression
+> [!INSIGHT] Key Takeaways: ElasticNet Logistic Regression
 > - **Mean Cross-Cohort AUC**: 0.491 (averaged across 3 held-out test cohorts).
 > - **Best Generalisation**: Liu 2019 (AUC = 0.558) — strongest signal transfer for this architecture.
 > - **Most Challenging Cohort**: Hugo 2016 (AUC = 0.415) — likely reflects cohort-specific biological or technical heterogeneity.
 > - **Threshold Optimisation**: Youden's J threshold tuning typically recovers 5–15% sensitivity relative to the default 0.5 cut-off, at the cost of reduced specificity.
 > - **Clinical Implication**: Models should be interpreted in conjunction with clinical context; AUC > 0.65 across unseen cohorts represents a meaningful biological signal given the small sample sizes and cross-institution batch effects.
-
----
 
 ## Multimodal Integration: Immune Signatures + Driver Mutations
 
@@ -521,8 +521,6 @@ _Figure: Multimodal ROC curves for Support Vector Machine (SVM) integrating immu
 
 _Figure: Multimodal ROC curves for ElasticNet Logistic Regression integrating immune signatures and driver mutation flags._
 
----
-
 ## Downstream Overall Survival Stratification
 
 **What We Did**: Stratified patients into predicted high-risk (low response probability) and low-risk (high response probability) groups using the best-performing LOCO model per cohort, then performed log-rank tests on overall survival.
@@ -544,7 +542,7 @@ _Figure: Multimodal ROC curves for ElasticNet Logistic Regression integrating im
 
 _Figure: 2×2 grid of Kaplan-Meier overall survival curves stratified by model-predicted response probability (high vs. low probability groups) for each held-out clinical cohort. Log-rank p-values are annotated per subplot. Green curves indicate high-predicted-probability patients (predicted responders); orange/red curves indicate low-predicted-probability patients (predicted non-responders)._
 
-> [!insight] Key Takeaways: Overall Survival Stratification
+> [!INSIGHT] Key Takeaways: Overall Survival Stratification
 > - Patients predicted as likely responders (high probability) consistently trend toward longer overall survival across cohorts, even when the log-rank test does not reach statistical significance.
 > - The TCGA-SKCM validation cohort ($N > 400$) provides the most statistically powered test of survival stratification, reflecting the correlation between transcriptomic immune activation and long-term melanoma prognosis.
 > - Despite non-significant p-values in smaller clinical trial cohorts (Hugo 2016, Liu 2019, Riaz 2017), the directional trend is consistent with the known biology of IFN-γ immune activation and anti-PD-1 treatment benefit.
@@ -557,11 +555,9 @@ _Figure: 2×2 grid of Kaplan-Meier overall survival curves stratified by model-p
 > 4. **Censoring Density**: Clinical trial datasets often have high censoring rates (patients lost to follow-up or still alive at trial closure), which reduces the effective number of survival events and further decreases statistical power.
 > 5. **Biological Interpretation**: The directional trend (predicted responders living longer) is more important than significance — with adequate sample sizes, this trend would likely reach significance, as demonstrated in larger melanoma genomic studies.
 
----
-
 ## Final Summary: Key Findings by Model Architecture
 
-> [!summary] Cross-Architecture Comparative Insights
+> [!INSIGHT] Cross-Architecture Comparative Insights
 > This section synthesises the key findings from all five model architectures evaluated under the LOCO cross-validation framework. Rather than declaring a single 'winner', the goal is to characterise the relative strengths and weaknesses of each algorithmic family for immunotherapy response prediction.
 
 ### Linear Models: Logistic Regression (L1) & ElasticNet

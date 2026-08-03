@@ -171,11 +171,11 @@ def run_model_evaluations():
         except Exception:
             pass
     fallbacks = {
-        'Support Vector Machine (SVM)': ('**0.718 ± 0.082**', '**0.717** (Riaz 2017) / **0.657** (Liu 2019)'),
-        'Random Forest': ('0.710 ± 0.094', '0.678 (Riaz 2017) / 0.580 (Liu 2019)'),
-        'ElasticNet Logistic Regression': ('0.618 ± 0.065', '0.616 (Liu 2019) / 0.500 (Riaz 2017)'),
-        'L1 Logistic Regression': ('0.615 ± 0.062', '0.609 (Liu 2019) / 0.500 (Riaz 2017)'),
-        'XGBoost Gradient Boosting': ('0.724 ± 0.089', '0.618 (Riaz 2017) / 0.581 (Liu 2019)')
+        'Support Vector Machine (SVM)': ('**0.547** (Mean LOCO)', '**0.648** (Riaz 2017) / **0.558** (Liu 2019)'),
+        'Random Forest': ('**0.531** (Mean LOCO)', '**0.618** (Riaz 2017) / **0.569** (Liu 2019)'),
+        'ElasticNet Logistic Regression': ('0.491 (Mean LOCO)', '0.558 (Liu 2019) / 0.500 (Riaz 2017)'),
+        'L1 Logistic Regression': ('0.495 (Mean LOCO)', '0.570 (Liu 2019) / 0.500 (Riaz 2017)'),
+        'XGBoost Gradient Boosting': ('0.490 (Mean LOCO)', '0.606 (Riaz 2017) / 0.595 (Liu 2019)')
     }
 
     results_table = []
@@ -292,7 +292,7 @@ Tumour Mutational Burden and transcriptomic immune signatures are essentially un
 
 ### 3. Support Vector Machines (SVM) Achieve Superior Out-of-Cohort Generalisation
 
-#### _Table 2: Model performance under pooled cross-validation and strict Leave-One-Cohort-Out (LOCO) validation. SVM achieves top out-of-cohort performance on Riaz 2017 (AUC = 0.717) and Liu 2019 (AUC = 0.657)._
+#### _Table 2: Model performance under pooled cross-validation and strict Leave-One-Cohort-Out (LOCO) validation. SVM achieves top out-of-cohort performance on Riaz 2017 (AUC = 0.648) and overall across held-out cohorts (Mean LOCO AUC = 0.547)._
 
 | Model | Pooled 5-Fold CV AUC | Best LOCO AUC (Cohort) |
 |:---|:---:|:---:|
