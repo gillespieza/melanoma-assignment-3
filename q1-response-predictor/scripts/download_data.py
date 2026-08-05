@@ -48,7 +48,9 @@ cBioPortal DataHub dataset.
 """
 
 import contextlib
+import os
 import shutil
+import stat
 import sys
 import time
 from pathlib import Path
@@ -88,17 +90,21 @@ from src.utils.io import (
 )
 from src.utils.logging import TeeStream
 from src.utils.paths import (
-    CONFIG_DIR,
-    LOG_DIR,
-    PROJECT_ROOT,
     RAW_DIR,
+    get_subproject_log_dir,
+    rel_path,
 )
 
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
 
+# datasets.yaml lives inside this subproject's own config/ directory, not the
+# shared data/config/. CONFIG_DIR is therefore subproject-specific.
+CONFIG_DIR = SUBPROJECT_ROOT / "config"
 CONFIG_PATH = CONFIG_DIR / "datasets.yaml"
+
+LOG_DIR = get_subproject_log_dir(Path(__file__))
 LOG_PATH = LOG_DIR / "download_data.log"
 
 
@@ -113,35 +119,85 @@ CBIOPORTAL_DATAHUB_URL = (
 MAX_REORGANISATION_RETRIES = 5
 REORGANISATION_RETRY_DELAY_SECONDS = 2
 
+# Temporary staging directory created inside data/raw/ during archive extraction.
+# Prefixed with underscore so it cannot be confused with a real dataset directory.
+_EXTRACTION_STAGING_DIR = "_extracted"
 
-def format_relative_path(path: Path) -> str:
-    """Return a project-relative path for readable console output.
-
-    Paths outside the project root are returned as absolute paths.
-    """
-    path = Path(path).resolve()
-
-    try:
-        return path.relative_to(PROJECT_ROOT).as_posix()
-    except ValueError:
-        return path.as_posix()
+# OS metadata and temporary files ignored when checking dataset presence.
+_IGNORED_DATASET_FILES = frozenset({
+    "desktop.ini",
+    "thumbs.db",
+    ".ds_store",
+    ".dropbox",
+    ".dropbox.attr",
+})
 
 
 def is_dataset_present(dataset: DatasetConfig) -> bool:
     """Return whether the configured dataset already contains data.
 
     A dataset is considered present when its target directory exists and
-    contains at least one file or directory.
-
-    This avoids relying on a particular filename because different
-    cBioPortal datasets may contain different file collections.
+    contains at least one valid non-hidden data file (ignoring OS metadata
+    files such as desktop.ini or .DS_Store).
     """
     target_dir = RAW_DIR / dataset.raw_directory
 
-    if not target_dir.exists():
+    if not target_dir.exists() or not target_dir.is_dir():
         return False
 
-    return any(target_dir.iterdir())
+    for item in target_dir.iterdir():
+        if item.name.startswith(".") and item.name != "_extracted":
+            continue
+        if item.name.lower() in _IGNORED_DATASET_FILES:
+            continue
+        return True
+
+    return False
+
+
+def _handle_remove_readonly(func, path, exc_info):
+    """Clear read-only attribute on file and retry removal (Windows fix)."""
+    try:
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+    except OSError:
+        pass
+
+
+def remove_directory_with_retry(
+    target_dir: Path,
+    retries: int = MAX_REORGANISATION_RETRIES,
+    delay_seconds: float = REORGANISATION_RETRY_DELAY_SECONDS,
+) -> None:
+    """Remove a directory with read-only attribute clearing and retry handling.
+
+    Args:
+        target_dir:
+            Directory to remove.
+        retries:
+            Maximum number of attempts.
+        delay_seconds:
+            Base delay between retry attempts.
+    """
+    if not target_dir.exists():
+        return
+
+    last_error = None
+
+    for attempt in range(1, retries + 1):
+        try:
+            shutil.rmtree(target_dir, onerror=_handle_remove_readonly)
+            return
+        except OSError as exc:
+            last_error = exc
+            if attempt == retries:
+                break
+            time.sleep(delay_seconds * attempt)
+
+    raise OSError(
+        f"Failed to remove directory {rel_path(target_dir)} "
+        f"after {retries} attempts."
+    ) from last_error
 
 
 def remove_existing_dataset_directory(target_dir: Path) -> None:
@@ -151,11 +207,11 @@ def remove_existing_dataset_directory(target_dir: Path) -> None:
 
     print(
         f"Removing existing directory "
-        f"{format_relative_path(target_dir)} "
+        f"{rel_path(target_dir)} "
         "to ensure a clean extraction..."
     )
 
-    shutil.rmtree(target_dir)
+    remove_directory_with_retry(target_dir)
 
 
 def move_with_retry(
@@ -192,7 +248,7 @@ def move_with_retry(
 
     for attempt in range(1, retries + 1):
         try:
-            shutil.move(str(source), str(destination))
+            shutil.move(source, destination)
             return
 
         except OSError as exc:
@@ -231,31 +287,43 @@ def reorganise_extracted_dataset(
 
     The source directory is removed only after all contents have been moved
     successfully.
+
+    Args:
+        extracted_dir:
+            Path to the temporary directory containing extracted files.
+        target_dir:
+            Destination directory under ``data/raw/``.
+
+    Raises:
+        FileNotFoundError:
+            If ``extracted_dir`` does not exist or contains no files.
+        NotADirectoryError:
+            If ``extracted_dir`` is not a directory.
     """
     if not extracted_dir.exists():
         raise FileNotFoundError(
             f"Expected extracted dataset directory not found: "
-            f"{extracted_dir}"
+            f"{rel_path(extracted_dir)}"
         )
 
     if not extracted_dir.is_dir():
         raise NotADirectoryError(
             f"Expected extracted dataset path to be a directory: "
-            f"{extracted_dir}"
+            f"{rel_path(extracted_dir)}"
         )
 
     target_dir.mkdir(parents=True, exist_ok=True)
 
     print(
         f"Reorganising files from {extracted_dir.name} to "
-        f"{format_relative_path(target_dir)}..."
+        f"{rel_path(target_dir)}..."
     )
 
     extracted_items = list(extracted_dir.iterdir())
 
     if not extracted_items:
         raise FileNotFoundError(
-            f"Extracted dataset directory is empty: {extracted_dir}"
+            f"Extracted dataset directory is empty: {rel_path(extracted_dir)}"
         )
 
     for item in extracted_items:
@@ -263,7 +331,7 @@ def reorganise_extracted_dataset(
 
         if destination.exists():
             if destination.is_dir():
-                shutil.rmtree(destination)
+                remove_directory_with_retry(destination)
             else:
                 destination.unlink()
 
@@ -286,19 +354,30 @@ def download_and_extract_dataset(
             Dataset configuration loaded from datasets.yaml.
 
     Raises:
+        ValueError:
+            If study_id or raw_directory contain path traversal characters.
         Exception:
             Any download, extraction, or reorganisation failure is
             propagated to the caller after cleanup.
     """
+    for field_name, value in [
+        ("study_id", dataset.study_id),
+        ("raw_directory", dataset.raw_directory),
+    ]:
+        if "/" in value or "\\" in value or ".." in value:
+            raise ValueError(
+                f"Invalid path characters in dataset {field_name}: {value!r}"
+            )
+
     target_dir = RAW_DIR / dataset.raw_directory
     tar_path = RAW_DIR / f"{dataset.study_id}.tar.gz"
-    extraction_root = RAW_DIR / "_extracted"
+    extraction_root = RAW_DIR / _EXTRACTION_STAGING_DIR
     extracted_dir = extraction_root / dataset.study_id
 
     if is_dataset_present(dataset):
         print(
             f"Dataset {dataset.cohort_name} already exists in "
-            f"{format_relative_path(target_dir)}. Skipping."
+            f"{rel_path(target_dir)}. Skipping."
         )
         return
 
@@ -319,9 +398,9 @@ def download_and_extract_dataset(
         if extracted_dir.exists():
             print(
                 f"Removing previous incomplete extraction: "
-                f"{format_relative_path(extracted_dir)}"
+                f"{rel_path(extracted_dir)}"
             )
-            shutil.rmtree(extracted_dir)
+            remove_directory_with_retry(extracted_dir)
 
         download_file(url, tar_path)
 
@@ -351,19 +430,28 @@ def download_and_extract_dataset(
         raise
 
     finally:
-        shutil.rmtree(extraction_root, ignore_errors=True)
+        remove_directory_with_retry(extraction_root)
         if tar_path.exists():
-            tar_path.unlink(missing_ok=True)
+            try:
+                tar_path.unlink(missing_ok=True)
+            except (PermissionError, OSError):
+                pass
 
 
 def setup_directories() -> None:
-    """Create the shared raw-data and log directories."""
+    """Create the shared raw-data directory."""
     RAW_DIR.mkdir(parents=True, exist_ok=True)
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def main() -> None:
-    """Load configuration and download all configured datasets."""
+    """Load configuration and download all configured datasets.
+
+    Raises:
+        ValueError:
+            If no datasets are defined in the configuration file.
+        DatasetConfigError:
+            If the datasets configuration file is missing or invalid.
+    """
     print("=" * 60)
     print("Downloading Raw cBioPortal Datasets")
     print("=" * 60)
@@ -380,7 +468,7 @@ def main() -> None:
 
     print(
         f"Loaded {len(datasets)} dataset configuration(s) "
-        f"from {format_relative_path(CONFIG_PATH)}."
+        f"from {rel_path(CONFIG_PATH)}."
     )
 
     successful = 0
@@ -410,6 +498,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
     with open(LOG_PATH, "w", encoding="utf-8") as log_file:
@@ -422,6 +513,6 @@ if __name__ == "__main__":
         ):
             print(
                 f"Logging console output to "
-                f"{format_relative_path(LOG_PATH)}"
+                f"{rel_path(LOG_PATH)}"
             )
             main()
