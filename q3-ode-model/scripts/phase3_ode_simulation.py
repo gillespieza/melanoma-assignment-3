@@ -98,14 +98,13 @@ BRAFi_dose     = DOSE_UNITS                          # kept for column naming
 DOSE_COL_NAMES = ["BRAFi_" + f"{v:.3f}" for v in DOSE_UNITS]
 
 # Anti-PD-1 dose sweep (Module D). Kept as its own grid/output — a full
-# BRAFi x anti-PD-1 combination grid (and the antagonism it would let us
-# study) is deliberately deferred; see docs/Q3_Refactor_Proposal.md.
+# BRAFi x anti-PD-1 combination grid is deliberately deferred
 ANTIPD1_DOSE_UNITS = np.linspace(0.01, 1.0, num=10)  # normalised dose knob
 ANTIPD1_MAX_NM     = 500.0                           # u = 1.0 -> 500 nM anti-PD-1
 ANTIPD1_COL_NAMES  = ["antiPD1_" + f"{v:.3f}" for v in ANTIPD1_DOSE_UNITS]
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  UNIVERSAL PARAMETERS (identical for every patient) — all from the literature
+#  UNIVERSAL PARAMETERS (identical for every patient) — all based on the literature
 # ══════════════════════════════════════════════════════════════════════════════
 
 # ── Module B: MAPK cascade — published kinetic constants (nM, min) ────────────
@@ -137,7 +136,7 @@ LF = dict(
 # Maps the dimensionless infiltration score (cohort mean ~1) onto the model's
 # effector-density units so that eta8*T8 is commensurate with lambdaC. This is
 # the single calibration constant of Module C (an input scaling, not a kinetic
-# rate); all kinetic constants above are published values.
+# rate); all kinetic constants above are based on published values.
 T8_SCALE = 0.008
 
 # ── Module A: reduced RAF-dimer + drug module ─────────────────────────────────

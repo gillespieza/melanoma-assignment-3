@@ -8,12 +8,40 @@ We built a mechanistic ODE model of the melanoma MAPK pathway coupled to tumour�
 
 Four modules, each using published rate constants; kinetic parameters are universal across patients, and only patient-specific inputs vary (protein levels from expression, RAS-GTP level and BRAF-V600E state from mutation, drug dose):
 
-1. **RAF dimerisation + inhibitor** — computes effective RAF activity as a function of vemurafenib dose.
-2. **MAPK signalling cascade** — an 8-state Raf→MEK→ERK cascade with negative feedback; readout is steady-state phospho-ERK (pERK).
-3. **Melanoma tumour–immune dynamics** — cancer growth, CD8⁺ killing, and drug response, with proliferation driven by pERK. Killing capacity is scaled by each patient's cytolytic (CYT) score (Rooney et al. 2015).
-4. **Checkpoint axis (anti-PD-1)** — a minimal PD-1/PD-L1/complex steady-state sub-module (Lai et al. 2017); a dialable anti-PD-1 dose depletes free PD-1, reducing the inhibitory PD-1·PD-L1 complex and unleashing CD8⁺ killing. Initialised per patient from IMPRES and PD-L1 (CD274) expression — reusing `compute_impres()` and CYT score already implemented in Q1's `q1-response-predictor/src/signatures.py`, requiring no new data engineering.
+1. **RAF dimerisation + inhibitor** — computes effective RAF activity as a function of vemurafenib dose. *(static — closed-form binding equilibrium, not time-integrated)*
+   - *Source:* Poulikakos et al. 2010 — Fig. 4 and accompanying text (p.429) for the paradoxical activation/inhibition behaviour; Rukhlenko et al. 2018 — Fig. 1 and Fig. 2c for the RAF-dimer binding topology.
+   - *Adapted:* abstracted Rukhlenko's multi-state, rule-based ODE model into a single closed-form binding equilibrium, keeping only the two behaviours it needs to reproduce — paradoxical activation in NRAS-mutant/wild-type tumours, monotonic inhibition in BRAF-V600E — without the full rule-based state machine.
+   - *Interpretation:* `active_per_dimer` would fall to 0 with simple competitive binding, but transactivation of the drug-free partner and drug-promoted dimerisation (`1+Γp`) keep dimer output high in RAS-driven tumours as dose rises — the RAF paradox emerges from this algebra rather than a rule. Its only output, `V1_eff`, is the sole link from drug dose into Module B.
+2. **MAPK signalling cascade** — an 8-state Raf→MEK→ERK cascade with negative feedback; readout is steady-state phospho-ERK (pERK). *(dynamic — integrated to steady state, fast/minute timescale)*
+   - *Source:* Kholodenko 2000 — Table 1 (rate equations of the MAPK cascade) and Table 2 (parameter values), implemented as written.
+   - *Adapted:* V1 (maximal Raf-activation rate), a fixed constant in Table 2, is instead set dynamically by Module A's RAF-dimer/drug-binding equilibrium at every dose step — this is how the drug and the RAF paradox actually enter the cascade.
+   - *Interpretation:* the cascade is integrated forward in fast (minute-scale) time to its own steady state for each dose/patient, with di-phospho-ERK (`ERKpp`) inhibiting `v1` as the sole feedback loop, universal to every patient. The time-averaged `ERKpp` at that steady state is the pERK value everything downstream (Module C) consumes.
+3. **Melanoma tumour–immune dynamics** — cancer growth, CD8⁺ killing, and drug response, with proliferation driven by pERK. Killing capacity is scaled by each patient's cytolytic (CYT) score (Rooney et al. 2015). *(dynamic — integrated over slow/day timescale, using pERK and `f_kill` as fixed quasi-steady-state inputs)*
+   - *Source:* Lai et al. 2017 — Equation 7 (tumour-cell equation) and Table 2 (parameter values).
+   - *Adapted:* replaced Lai's phenomenological BRAFi/MEKi drug term with a proliferation term pERK/pERK_ref, so a paradoxical *increase* in Module B's signalling directly makes the tumour grow faster in Module C, instead of the drug's effect on tumour growth being asserted independently of the signalling mechanism.
+   - *Interpretation:* growth speeds up or slows down exactly as much as the mechanistic pERK says it should — carrying the RAF paradox all the way to tumour size — while killing is throttled by both the checkpoint gate (`f_kill`, Module D) and the patient's own cytolytic ceiling (`eta8_i`) rather than one universal rate. The steady-state `C` this settles to is the model's tumour-burden readout.
+4. **Checkpoint axis (anti-PD-1)** — a minimal PD-1/PD-L1/complex steady-state sub-module (Lai et al. 2017); a dialable anti-PD-1 dose depletes free PD-1, reducing the inhibitory PD-1·PD-L1 complex and unleashing CD8⁺ killing. Initialised per patient from IMPRES and PD-L1 (CD274) expression — reusing CYT score already implemented in Q1's `q1-response-predictor/src/signatures.py`, requiring no new data engineering. *(static — closed-form binding equilibrium, not time-integrated)*
+   - *Source:* Lai et al. 2017's equations for PD-1 (P), PD-L1 (L), and the inhibitory PD-1·PD-L1 complex (Q); Rooney et al. 2015 for the CYT cytolytic-activity score.
+   - *Adapted:* added the `f_kill` factor that gates CD8 killing by checkpoint state and feeds it into Module C, instead of a fixed universal killing rate.
+   - *Interpretation:* `f_kill` → 1 as anti-PD-1 dose depletes free PD-1 (checkpoint unleashed) and → 0 as more PD-1·PD-L1 complex forms; even at zero drug it reflects the patient's own PD-L1 burden, so baseline immune suppression is captured before any therapy is simulated.
 
-All rate constants are taken from established published models (full sources in `q3_technical_report.md`). Fast signalling (minutes) and slow tumour dynamics (days) are solved on separate timescales (quasi-steady-state).
+All rate constants are taken from established published models (full sources in `q3_technical_report.md`). Timescales are solved separately (quasi-steady-state): A and D are instantaneous algebra, B is integrated to its own fast steady state, and only then does C integrate over days using B's and D's outputs as fixed inputs.
+
+### Inputs
+
+- **Universal (identical for all 421 patients):** every kinetic rate constant in Modules A–D (e.g. `V1, Ki, K1–K10, Kd, Γ, lambdaC, dC, CM, eta8, Kd_PA, Kd_PL`) — none are fit to TCGA.
+- **Cohort-level (computed once from TCGA-SKCM):** RSEM expression normalised per gene by its cohort mean; BRAF/NRAS activating-mutation calls from the MAF file; reference `pERK_ref` and `CYT_cohort_mean` used only to normalise per-patient outputs.
+- **Per-patient (the only things that vary a simulation from patient to patient):**
+
+  | Input | Source column(s) | Feeds |
+  |---|---|---|
+  | RAF / MEK / ERK protein totals | `BRAF`; mean(`MAP2K1`,`MAP2K2`); mean(`MAPK1`,`MAPK3`) | Module A / B |
+  | RAS-GTP level (categorical, from genotype) | `BRAF_MUT` / `NRAS_MUT` | Module A |
+  | BRAF-V600E monomer flag | `BRAF_MUT` | Module A |
+  | Immune infiltration | mean(`CD8A`,`PRF1`,`GZMA`) | Module C |
+  | Cytolytic activity (CYT) | mean(`GZMA`,`PRF1`) | Module C |
+  | PD-1 / PD-L1 pools | `PDCD1` / `CD274` | Module D |
+  | Drug dose | vemurafenib (nM) / anti-PD-1 (nM) — dose-swept, not measured | Module A / D |
 
 ## Result 1 — The model reproduces BRAF-inhibitor pharmacology
 
