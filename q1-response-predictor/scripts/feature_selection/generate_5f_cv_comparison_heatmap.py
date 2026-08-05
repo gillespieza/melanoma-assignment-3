@@ -10,11 +10,11 @@ Compares four feature representations:
   - SelectKBest k=100 (top-100)
   - SelectKBest k=200 (top-200)
 
-Data loading mirrors run_comparison.py exactly: genes are intersected across all three
+Data loading mirrors run_comparison.py: genes are intersected across all three
 cohorts before pooling to avoid NaN values from missing gene coverage.
 
 Rows = model families. Columns = feature representations. Colour scheme matches
-loco_performance_heatmap.png (YlGnBu, vmin=0.25, vmax=0.75). The best-performing
+loco_performance_heatmap.png (YlGnBu, vmin=0.30, vmax=0.70). The best-performing
 representation per model row is highlighted with a bold black outline. A cross-model
 mean summary row is appended at the bottom.
 """
@@ -48,24 +48,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import SelectKBest, f_classif
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
-from xgboost import XGBClassifier
 
 # ---------------------------------------------------------------------------
 # Project Imports
 # ---------------------------------------------------------------------------
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
+from src.models import get_baseline_model
 from src.signatures import extract_all_signatures
 from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import DATA_DIR, PLOTS_DIR, SUBPROJECT_ROOT, rel_path
-from src.utils.plotting import save_fig
+from src.utils.paths import DATA_DIR, PLOTS_DIR, rel_path
 
 set_presentation_style()
 
@@ -85,19 +81,25 @@ MODEL_LABELS: Dict[str, str] = {
 # SelectKBest k values to evaluate (mirroring run_comparison.py)
 K_VALUES: List[int] = [20, 100, 200]
 
-# Pre-filter to top-N most variable genes before SelectKBest (same as run_comparison.py)
+# Pre-filter to top-N most variable genes before SelectKBest
 TOP_VAR_PREFILTER: int = 1000
 
 N_FOLDS: int = 5
 RANDOM_STATE: int = 42
 
-# Standardised shared colour threshold (0.30 to 0.70) across both 5-Fold CV and LOCO heatmaps for direct visual comparability
+# Standardised shared colour threshold across both 5-Fold CV and LOCO heatmaps
 HEATMAP_VMIN: float = 0.30
 HEATMAP_VMAX: float = 0.70
 HEATMAP_CMAP: str = "YlGnBu"
 HEATMAP_FIGSIZE: Tuple[int, int] = (16, 9)  # 16:9 aspect ratio
 HEATMAP_ANNOT_SIZE: int = 14
 HEATMAP_LABEL_SIZE: int = 12
+
+# Layout & styling geometry constants
+HIGHLIGHT_BOX_LW: float = 2.5
+SEPARATOR_LINE_LW: float = 4.0
+HEATMAP_DPI: int = 300
+SUBPLOT_MARGINS: Dict[str, float] = {"left": 0.18, "right": 0.86, "top": 0.88, "bottom": 0.14}
 
 FEATURE_COL_LABELS: List[str] = (
     ["Curated Signatures"] + [f"SelectKBest (k={k})" for k in K_VALUES]
@@ -110,53 +112,54 @@ LOG_PATH: Path = LOG_DIR / "generate_5f_cv_comparison_heatmap.log"
 
 
 # ---------------------------------------------------------------------------
-# Data Loading — mirrors run_comparison.py exactly
+# Helper Data Ingestion Routines
 # ---------------------------------------------------------------------------
+def _align_signatures_and_labels(
+    sig: pd.DataFrame,
+    clin: pd.DataFrame,
+) -> Tuple[pd.DataFrame, pd.Series]:
+    """Aligns signature DataFrame with non-null binary response labels.
+
+    Args:
+        sig: Extracted signature DataFrame.
+        clin: Cohort clinical metadata DataFrame.
+
+    Returns:
+        Tuple of (aligned_signatures, response_series_int).
+    """
+    resp_col = "response" if "response" in clin.columns else "RESPONDER"
+    y = clin.loc[sig.index, resp_col].dropna()
+    return sig.loc[y.index], y.astype(int)
+
+
 def _load_pooled_data(
     data_dir: Path,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     """Loads and pools all three immunotherapy cohorts, intersecting genes to avoid NaNs.
 
-    Replicates the data loading logic from run_comparison.py:
-      1. Load raw expression and clinical data for each cohort.
-      2. Intersect gene columns across all three cohorts.
-      3. Extract transcriptomic signatures from the common gene set.
-      4. Align samples with non-null response labels.
-      5. Concatenate into pooled expression, signature, and label arrays.
-
     Args:
         data_dir: Root data directory.
 
     Returns:
-        Tuple of (pooled_expr_common_genes, pooled_signatures, pooled_response_labels),
-        all with reset integer indices.
+        Tuple of (pooled_expr_common_genes, pooled_signatures, pooled_response_labels).
     """
     expr_liu, clin_liu = load_liu_2019(data_dir)
     expr_hugo, clin_hugo = load_hugo_2016(data_dir)
     expr_riaz, clin_riaz = load_riaz_2017(data_dir)
 
-    # Intersect genes across all three cohorts to guarantee no NaN columns
     common_genes = list(
         set(expr_liu.columns) & set(expr_hugo.columns) & set(expr_riaz.columns)
     )
     print(f"  Common genes across all cohorts: {len(common_genes)}")
 
-    # Extract signatures from the common gene set (same as run_comparison.py)
     sig_liu = extract_all_signatures(expr_liu[common_genes])
     sig_hugo = extract_all_signatures(expr_hugo[common_genes])
     sig_riaz = extract_all_signatures(expr_riaz[common_genes])
 
-    # Align with non-null response labels — run_comparison.py uses "response" column
-    def _align(sig, clin):
-        resp_col = "response" if "response" in clin.columns else "RESPONDER"
-        y = clin.loc[sig.index, resp_col].dropna()
-        return sig.loc[y.index], y.astype(int)
+    sig_liu, y_liu = _align_signatures_and_labels(sig_liu, clin_liu)
+    sig_hugo, y_hugo = _align_signatures_and_labels(sig_hugo, clin_hugo)
+    sig_riaz, y_riaz = _align_signatures_and_labels(sig_riaz, clin_riaz)
 
-    sig_liu, y_liu = _align(sig_liu, clin_liu)
-    sig_hugo, y_hugo = _align(sig_hugo, clin_hugo)
-    sig_riaz, y_riaz = _align(sig_riaz, clin_riaz)
-
-    # Pool expression (common genes only) aligned to same samples as signatures
     expr_liu_c = expr_liu.loc[y_liu.index, common_genes]
     expr_hugo_c = expr_hugo.loc[y_hugo.index, common_genes]
     expr_riaz_c = expr_riaz.loc[y_riaz.index, common_genes]
@@ -169,43 +172,6 @@ def _load_pooled_data(
 
 
 # ---------------------------------------------------------------------------
-# Model Factory — fixed hyperparameters matching run_comparison.py
-# ---------------------------------------------------------------------------
-def _build_model(model_type: str):
-    """Instantiates a classifier with fixed hyperparameters matching run_comparison.py.
-
-    Args:
-        model_type: One of 'lr', 'rf', 'xgb', 'svm', 'elasticnet'.
-
-    Returns:
-        Unfitted sklearn-compatible classifier.
-
-    Raises:
-        ValueError: If model_type is not recognised.
-    """
-    if model_type == "lr":
-        return LogisticRegression(max_iter=1000, C=1.0, random_state=RANDOM_STATE)
-    elif model_type == "rf":
-        return RandomForestClassifier(
-            n_estimators=100, max_depth=5, random_state=RANDOM_STATE, n_jobs=-1
-        )
-    elif model_type == "xgb":
-        return XGBClassifier(
-            n_estimators=100, max_depth=3, learning_rate=0.05,
-            random_state=RANDOM_STATE, eval_metric="logloss", n_jobs=-1,
-        )
-    elif model_type == "svm":
-        return SVC(probability=True, kernel="rbf", C=1.0, random_state=RANDOM_STATE)
-    elif model_type == "elasticnet":
-        return LogisticRegression(
-            penalty="elasticnet", solver="saga", l1_ratio=0.5,
-            max_iter=2000, random_state=RANDOM_STATE,
-        )
-    else:
-        raise ValueError(f"Unknown model type: {model_type!r}")
-
-
-# ---------------------------------------------------------------------------
 # 5-Fold CV Routines
 # ---------------------------------------------------------------------------
 def _cv_mean_auc_signatures(
@@ -215,11 +181,8 @@ def _cv_mean_auc_signatures(
 ) -> float:
     """Computes 5-fold CV mean AUC using the curated transcriptomic signature panel.
 
-    Features are standardized within-fold to ensure scale-sensitive models (SVM, LR)
-    are properly calibrated across features with different ranges (e.g. TMB vs z-scores).
-
     Args:
-        X_sigs: Pooled signature DataFrame (patients x signature features).
+        X_sigs: Pooled signature DataFrame.
         y: Binary response labels.
         model_type: Classifier key.
 
@@ -236,7 +199,7 @@ def _cv_mean_auc_signatures(
         X_tr = scaler.fit_transform(X_arr[train_idx])
         X_val = scaler.transform(X_arr[val_idx])
 
-        model = _build_model(model_type)
+        model = get_baseline_model(model_type, random_state=RANDOM_STATE)
         model.fit(X_tr, y_arr[train_idx])
         y_prob = model.predict_proba(X_val)[:, 1]
         try:
@@ -247,6 +210,46 @@ def _cv_mean_auc_signatures(
     return float(np.nanmean(fold_aucs))
 
 
+def _eval_selectkbest_fold(
+    X_tr: np.ndarray,
+    y_tr: np.ndarray,
+    X_val: np.ndarray,
+    y_val: np.ndarray,
+    k: int,
+    model_type: str,
+) -> float:
+    """Evaluates SelectKBest feature selection and model prediction for a single fold split.
+
+    Args:
+        X_tr: Training features array.
+        y_tr: Training labels array.
+        X_val: Validation features array.
+        y_val: Validation labels array.
+        k: Target feature count.
+        model_type: Classifier key.
+
+    Returns:
+        Validation fold ROC-AUC score.
+    """
+    train_var = X_tr.var(axis=0)
+    top_idx = np.argsort(train_var)[::-1][:min(TOP_VAR_PREFILTER, X_tr.shape[1])]
+    X_tr_filt = X_tr[:, top_idx]
+    X_val_filt = X_val[:, top_idx]
+
+    k_val = min(k, X_tr_filt.shape[1])
+    selector = SelectKBest(score_func=f_classif, k=k_val)
+    X_tr_sel = selector.fit_transform(X_tr_filt, y_tr)
+    X_val_sel = selector.transform(X_val_filt)
+
+    model = get_baseline_model(model_type, random_state=RANDOM_STATE)
+    model.fit(X_tr_sel, y_tr)
+    y_prob = model.predict_proba(X_val_sel)[:, 1]
+    try:
+        return float(roc_auc_score(y_val, y_prob))
+    except ValueError:
+        return np.nan
+
+
 def _cv_mean_auc_selectkbest(
     X_expr: pd.DataFrame,
     y: pd.Series,
@@ -255,16 +258,10 @@ def _cv_mean_auc_selectkbest(
 ) -> float:
     """Computes 5-fold CV mean AUC using SelectKBest on raw expression data.
 
-    Mirrors the run_comparison.py SelectKBest pipeline within each fold:
-      1. Pre-filter to top-1000 most variable genes (train split only).
-      2. Select k features by F-score (train split only).
-      3. Transform val split with the same selector.
-      4. Fit model and evaluate AUC.
-
     Args:
-        X_expr: Pooled raw expression DataFrame (patients x common genes).
+        X_expr: Pooled raw expression DataFrame.
         y: Binary response labels.
-        k: Number of features to select via SelectKBest.
+        k: Number of features to select.
         model_type: Classifier key.
 
     Returns:
@@ -273,34 +270,18 @@ def _cv_mean_auc_selectkbest(
     skf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=RANDOM_STATE)
     y_arr = y.values
     X_vals = X_expr.values
-    col_names = np.array(X_expr.columns)
     fold_aucs: List[float] = []
 
     for train_idx, val_idx in skf.split(X_vals, y_arr):
-        X_tr = X_vals[train_idx]
-        X_val = X_vals[val_idx]
-        y_tr = y_arr[train_idx]
-        y_val = y_arr[val_idx]
-
-        # Pre-filter to top-variance genes on train split only (avoids leakage)
-        train_var = X_tr.var(axis=0)
-        top_idx = np.argsort(train_var)[::-1][:min(TOP_VAR_PREFILTER, X_tr.shape[1])]
-        X_tr_filt = X_tr[:, top_idx]
-        X_val_filt = X_val[:, top_idx]
-
-        # SelectKBest within-fold
-        k_val = min(k, X_tr_filt.shape[1])
-        selector = SelectKBest(score_func=f_classif, k=k_val)
-        X_tr_sel = selector.fit_transform(X_tr_filt, y_tr)
-        X_val_sel = selector.transform(X_val_filt)
-
-        model = _build_model(model_type)
-        model.fit(X_tr_sel, y_tr)
-        y_prob = model.predict_proba(X_val_sel)[:, 1]
-        try:
-            fold_aucs.append(roc_auc_score(y_val, y_prob))
-        except ValueError:
-            fold_aucs.append(np.nan)
+        auc = _eval_selectkbest_fold(
+            X_vals[train_idx],
+            y_arr[train_idx],
+            X_vals[val_idx],
+            y_arr[val_idx],
+            k,
+            model_type,
+        )
+        fold_aucs.append(auc)
 
     return float(np.nanmean(fold_aucs))
 
@@ -316,7 +297,7 @@ def _build_results_dataframe(
     """Runs all (model x feature representation) combinations and assembles results.
 
     Args:
-        X_expr: Pooled raw expression DataFrame (common genes, no NaNs).
+        X_expr: Pooled raw expression DataFrame.
         X_sigs: Pooled signature DataFrame.
         y: Binary response labels.
 
@@ -346,8 +327,56 @@ def _build_results_dataframe(
 
 
 # ---------------------------------------------------------------------------
-# Heatmap Plotting
+# Heatmap Visualization Subroutines
 # ---------------------------------------------------------------------------
+def _add_heatmap_highlights(
+    ax: plt.Axes,
+    best_col_per_row: pd.Series,
+    n_data_rows: int,
+) -> None:
+    """Overlays visual highlights on the heatmap (best-performing cell outline & separator line).
+
+    Args:
+        ax: Matplotlib axes object.
+        best_col_per_row: Series mapping model row to best feature column label.
+        n_data_rows: Total count of data rows before the summary row.
+    """
+    for row_idx, (_, col_label) in enumerate(best_col_per_row.items()):
+        col_idx = FEATURE_COL_LABELS.index(col_label)
+        ax.add_patch(
+            plt.Rectangle(
+                (col_idx, row_idx),
+                1,
+                1,
+                fill=False,
+                edgecolor="black",
+                linewidth=HIGHLIGHT_BOX_LW,
+            )
+        )
+
+    ax.axhline(n_data_rows, color="white", linewidth=SEPARATOR_LINE_LW, zorder=6)
+
+
+def _export_heatmap_outputs(fig: plt.Figure, output_path: Path) -> None:
+    """Saves both primary and transparent PNG figures while preserving exact 16:9 canvas ratio.
+
+    Args:
+        fig: Matplotlib figure object.
+        output_path: Primary destination file path.
+    """
+    fig.subplots_adjust(**SUBPLOT_MARGINS)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    fig.savefig(output_path, dpi=HEATMAP_DPI)
+    print(f"Saved 5-fold CV comparison heatmap to {rel_path(output_path)}")
+
+    transparent_path = output_path.parent / (output_path.stem + "_transparent.png")
+    fig.savefig(transparent_path, transparent=True, dpi=HEATMAP_DPI)
+    print(f"Saved transparent copy to {rel_path(transparent_path)}")
+
+    plt.close(fig)
+
+
 def _plot_comparison_heatmap(
     df: pd.DataFrame,
     n_pooled: int,
@@ -355,17 +384,11 @@ def _plot_comparison_heatmap(
 ) -> None:
     """Renders and saves the 5-fold CV feature comparison heatmap.
 
-    Uses the same YlGnBu colour scheme, vmin/vmax, font sizes, and line weights as
-    loco_performance_heatmap.png. The best-performing feature representation per
-    model row is highlighted with a bold black outline. A cross-model mean summary
-    row is appended at the bottom, separated by a dashed horizontal line.
-
     Args:
         df: Results DataFrame (rows = model labels, columns = feature representations).
-        n_pooled: Total patient count for the figure title N= annotation.
-        output_path: Destination path for the saved PNG.
+        n_pooled: Total patient count for figure annotation.
+        output_path: Destination path for saved PNG.
     """
-    # Append cross-model mean summary row
     mean_row = df.mean(axis=0)
     mean_row.name = "Cross-Model Mean"
     df_with_mean = pd.concat([df, mean_row.to_frame().T])
@@ -389,16 +412,7 @@ def _plot_comparison_heatmap(
         ax=ax,
     )
 
-    # Bold outline on the best-performing feature column per model row
-    for row_idx, (_, col_label) in enumerate(best_col_per_row.items()):
-        col_idx = FEATURE_COL_LABELS.index(col_label)
-        ax.add_patch(plt.Rectangle(
-            (col_idx, row_idx), 1, 1,
-            fill=False, edgecolor="black", linewidth=2.5,
-        ))
-
-    # Thick white horizontal separator before the Cross-Model Mean row — matches LOCO heatmap style
-    ax.axhline(n_data_rows, color="white", linewidth=4.0, zorder=6)
+    _add_heatmap_highlights(ax, best_col_per_row, n_data_rows)
 
     ax.set_title(
         f"5-Fold Stratified CV ROC-AUC: Curated Signatures vs. SelectKBest\n"
@@ -412,20 +426,7 @@ def _plot_comparison_heatmap(
     ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="center", fontsize=HEATMAP_LABEL_SIZE)
     ax.set_yticklabels(ax.get_yticklabels(), rotation=0, fontsize=HEATMAP_LABEL_SIZE)
 
-    # Explicit margins force the heatmap to fill the 16:9 canvas rather than
-    # shrinking to fit cell aspect ratios (which tight_layout would do).
-    fig.subplots_adjust(left=0.18, right=0.86, top=0.88, bottom=0.14)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Save at exact figsize (16:9) — no bbox_inches="tight" so canvas ratio is preserved
-    fig.savefig(output_path, dpi=300)
-    print(f"Saved 5-fold CV comparison heatmap to {rel_path(output_path)}")
-
-    transparent_path = output_path.parent / (output_path.stem + "_transparent.png")
-    fig.savefig(transparent_path, transparent=True, dpi=300)
-    print(f"Saved transparent copy to {rel_path(transparent_path)}")
-
-    plt.close(fig)
+    _export_heatmap_outputs(fig, output_path)
 
 
 # ---------------------------------------------------------------------------

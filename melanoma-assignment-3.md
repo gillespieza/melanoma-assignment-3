@@ -3,8 +3,6 @@ title:
 aliases: 
 tags: moc
 created: Invalid date
-obsidianEditingMode: source
-obsidianUIMode: preview
 updated: 2026-02-12 11:22
 ---
 

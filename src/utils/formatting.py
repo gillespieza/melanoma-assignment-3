@@ -98,8 +98,6 @@ def generate_obsidian_frontmatter(
     css_lines = ["cssclasses:"] + [f"  - {cls}" for cls in css_classes]
     lines.extend(css_lines)
     lines.extend([
-        "obsidianEditingMode: preview",
-        "obsidianUIMode: source",
         f"updated: {updated_ts}",
         "---",
     ])

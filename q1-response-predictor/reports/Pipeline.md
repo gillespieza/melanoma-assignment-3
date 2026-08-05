@@ -2,8 +2,6 @@
 created: 2026-07-23 17:21
 cssclasses:
   - table-small
-obsidianEditingMode: preview
-obsidianUIMode: source
 updated: 2026-07-23 17:21
 ---
 

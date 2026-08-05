@@ -9,8 +9,6 @@ tags:
 cssclasses:
   - table-small
 created: 2026-08-02 17:00
-obsidianEditingMode: preview
-obsidianUIMode: source
 updated: 2026-08-02 17:00
 ---
 

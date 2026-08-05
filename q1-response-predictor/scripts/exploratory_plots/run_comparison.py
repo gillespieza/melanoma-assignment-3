@@ -37,6 +37,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
+from src.models import get_model
 from src.signatures import extract_all_signatures
 from src.styles import COHORT_PALETTE, FEATURE_SELECTION_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
@@ -77,20 +78,7 @@ def _run_loco_signatures(cohort_dfs: Dict[str, Tuple[pd.DataFrame, pd.Series]], 
         X_test = cohort_dfs[test_cohort][0]
         y_test = cohort_dfs[test_cohort][1]
 
-        if model_type == "lr":
-            model = LogisticRegression(max_iter=1000, C=1.0, random_state=42)
-        elif model_type == "rf":
-            model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42, n_jobs=-1)
-        elif model_type == "xgb":
-            model = XGBClassifier(
-                n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42, eval_metric="logloss", n_jobs=-1
-            )
-        elif model_type == "svm":
-            model = SVC(probability=True, kernel="rbf", C=1.0, random_state=42)
-        elif model_type == "elasticnet":
-            model = LogisticRegression(penalty="elasticnet", solver="saga", l1_ratio=0.5, max_iter=2000, random_state=42)
-
-        model.fit(X_train, y_train)
+        model = get_model(model_type, X_train, y_train)
         y_prob = model.predict_proba(X_test)[:, 1]
 
         try:
@@ -146,20 +134,7 @@ def _run_loco_feature_selection(
         X_train_sel = X_train_filtered[selected_genes]
         X_test_sel = X_test_filtered[selected_genes]
 
-        if model_type == "lr":
-            model = LogisticRegression(max_iter=1000, C=1.0, random_state=42)
-        elif model_type == "rf":
-            model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42, n_jobs=-1)
-        elif model_type == "xgb":
-            model = XGBClassifier(
-                n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42, eval_metric="logloss", n_jobs=-1
-            )
-        elif model_type == "svm":
-            model = SVC(probability=True, kernel="rbf", C=1.0, random_state=42)
-        elif model_type == "elasticnet":
-            model = LogisticRegression(penalty="elasticnet", solver="saga", l1_ratio=0.5, max_iter=2000, random_state=42)
-
-        model.fit(X_train_sel, y_train)
+        model = get_model(model_type, X_train_sel, y_train)
         y_prob = model.predict_proba(X_test_sel)[:, 1]
 
         try:

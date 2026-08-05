@@ -14,8 +14,6 @@ cssclasses:
   - table-small
   - table-center
   - row-alt
-obsidianEditingMode: preview
-obsidianUIMode: source
 updated: 2026-08-01 12:44
 ---
 

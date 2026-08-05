@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-03 (Updated SVM hyperparameter tuning with balanced class weights, wider C grid, and adaptive fold sizes; fixed 16:9 canvas ratio on LOCO and 5-fold CV heatmaps via explicit margin adjustment; retrained and serialized all final model pickles in `q1-response-predictor/models/`; refreshed dashboard inputs `q1_predictions.csv` and `cohort.json`).
+> **Last updated**: 2026-08-05 (Moved all plot-generating scripts out of `scripts/biomarkers/` into `scripts/exploratory_plots/` and `scripts/feature_selection/` as appropriate; added dual LOCO 1×2 panel (`generate_loco_feature_comparison_heatmap.py`) and updated 5-fold CV + LOCO heatmaps with ±SD, one-sample t-test asterisks for CV cells, and 1,000-sample bootstrap SD for LOCO cells; fixed subproject log routing via `get_subproject_log_dir()` in all new scripts).
 
 ## Repository Overview
 
@@ -95,9 +95,23 @@ melanoma-assignment-3/
 | `merge_datasets.py` | Merge processed cohort matrices into harmonised immunotherapy datasets |
 | `biomarkers/run_extended_biomarkers.py` | Univariate biomarker association testing (Mann-Whitney U, ROC AUC) across signatures & genes |
 | `biomarkers/run_genomic_characterisation.py` | TMB calculation, driver mutation prevalence (`BRAF`, `NRAS`, `NF1`), Fisher's exact co-occurrence |
-| `biomarkers/run_merged_comut_plot.py` | Generates co-mutation oncoprint visualisations |
-| `biomarkers/generate_threshold_plot.py` | Youden's J biomarker threshold optimisation plot |
-| `biomarkers/generate_loco_heatmap.py` | Leave-One-Cohort-Out (LOCO) performance heatmap generator |
+| `exploratory_plots/run_merged_comut_plot.py` | Generates co-mutation oncoprint visualisations |
+| `exploratory_plots/generate_threshold_plot.py` | Youden's J biomarker threshold optimisation plot |
+| `exploratory_plots/generate_loco_heatmap.py` | Leave-One-Cohort-Out (LOCO) performance heatmap (Curated Signatures, per-cohort) |
+| `exploratory_plots/generate_5f_cv_heatmap.py` | 5-Fold Stratified CV per-fold AUROC heatmap |
+| `exploratory_plots/generate_combined_cv_loco_heatmap.py` | **Primary evaluation figure**: 1×2 panel — Left: 5-fold CV AUROC (Curated Signatures vs SelectKBest, Mean ± SD + t-test asterisks); Right: LOCO AUROC per held-out cohort (Curated Signatures, Mean ± bootstrap SD + Mann-Whitney asterisks). Output: `plots/models/cv_loco_1x2_heatmap.png` |
+| `exploratory_plots/generate_loco_feature_comparison_heatmap.py` | **LOCO feature comparison figure**: 1×2 panel — Left: LOCO per-cohort (Curated Signatures); Right: LOCO by feature representation (Curated vs SelectKBest k=20/100/200, Mean across 3 cohorts + majority-vote asterisks). Output: `plots/models/loco_dual_1x2_heatmap.png` |
+| `exploratory_plots/run_comparison.py` | LOCO cross-validation benchmark: Curated Multimodal Features vs SelectKBest |
+| `exploratory_plots/run_clustering.py` | Exploratory clustering of pooled cohort expression data |
+| `exploratory_plots/run_dimensionality_reduction.py` | PCA / t-SNE / UMAP projections for pooled cohort |
+| `exploratory_plots/run_expression_heatmap.py` | Signature expression heatmap across cohorts |
+| `exploratory_plots/run_extra_plots.py` | Supplementary exploratory plots |
+| `exploratory_plots/run_forest_plot.py` | Forest plot of univariate biomarker associations |
+| `exploratory_plots/run_km_curves.py` | Kaplan-Meier survival curves |
+| `exploratory_plots/run_response_distribution.py` | Response rate distribution across cohorts |
+| `exploratory_plots/run_response_km_curves.py` | KM curves stratified by predicted response |
+| `exploratory_plots/run_waffle_chart.py` | Cohort composition waffle chart |
+| `feature_selection/generate_5f_cv_comparison_heatmap.py` | 5-Fold Stratified CV benchmark heatmap: Curated Signatures vs SelectKBest (standalone, predecessor to `generate_combined_cv_loco_heatmap.py`) |
 | `feature_selection/run_transcriptomic_feature_selection.py` | 12-feature multimodal Random Forest classifier (8 signature modalities + driver mutation flags) & signature vs raw gene benchmarks |
 | `reports/run_executive_summary.py` | Executive summary report generator |
 | `run_pipeline.py` | Master Q1 pipeline orchestrator |
@@ -302,6 +316,8 @@ npm run build
 | `q5/src/phenotyping.py` | Uncalled exports (`plot_radar_chart()`, `plot_cluster_heatmap()`) | Unresolved |
 | Subproject log routing (`q1`, `q3`, `q5`) | Standardised `LOG_DIR` and `LOG_PATH` across all subproject scripts (`q1-response-predictor`, `q3-ode-model`, `q5-patient-stratification`) to output logs to each subproject's dedicated `logs/` directory (`<subproject>/logs/`) instead of top-level `PROJECT_ROOT/logs/`. Fixed root bootstrap `BASE_DIR` resolution in Q1 biomarker/exploratory scripts and `src/utils/paths.py` `find_subproject_root()` recognition. | **Resolved** (2026-08-03) |
 | SVM Tuning, 16:9 Heatmaps & Dashboard Sync | Enhanced `tune_svc` with `class_weight='balanced'`, expanded grid (`C=0.01-100`, `gamma=['scale', 'auto']`), and adaptive CV fold counts for small splits. Fixed 16:9 canvas rendering in LOCO and 5-fold CV heatmaps by replacing `tight_layout` with explicit `subplots_adjust` margin preservation. Re-trained pooled model pickles in `q1-response-predictor/models/`, updated `q1_predictions.csv`, and rebuilt `dashboard/public/cohort.json`. | **Resolved** (2026-08-03) |
+| Q1 script organisation — plot scripts in `biomarkers/` | Plot-generating scripts were incorrectly placed in `scripts/biomarkers/`. Moved to: `scripts/exploratory_plots/` (`generate_loco_heatmap.py`, `generate_5f_cv_heatmap.py`, `generate_combined_cv_loco_heatmap.py`, `generate_loco_feature_comparison_heatmap.py`, `generate_threshold_plot.py`, `run_merged_comut_plot.py`) and `scripts/feature_selection/` (`generate_5f_cv_comparison_heatmap.py`). `biomarkers/` now contains analysis scripts only. | **Resolved** (2026-08-05) |
+| Q1 log path routing | `generate_combined_cv_loco_heatmap.py` and `generate_loco_feature_comparison_heatmap.py` were writing logs to `PROJECT_ROOT/logs/` instead of `q1-response-predictor/logs/`. Fixed by replacing imported `LOG_DIR` with `get_subproject_log_dir(Path(__file__))` in both scripts. | **Resolved** (2026-08-05) |
 
 ## Conventions Quick Reference
 

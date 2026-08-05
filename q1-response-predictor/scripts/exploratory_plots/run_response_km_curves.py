@@ -82,13 +82,26 @@ def plot_cohort_km_by_response(ax: plt.Axes, df_clin: pd.DataFrame, cohort_name:
     )
     p_val = results.p_value
 
-    title_suffix = f"\nLog-rank p = {p_val:.4f}" if p_val >= 0.0001 else "\nLog-rank p < 0.0001"
-    ax.set_title(f"{cohort_name}{title_suffix}", fontsize=13, fontweight="bold")
+    ax.set_title(cohort_name, fontsize=13, fontweight="bold")
     ax.set_xlabel("Time (months)", fontsize=11, fontweight="bold")
     ax.set_ylabel("Survival Probability", fontsize=11, fontweight="bold")
     ax.set_ylim(0, 1.05)
     ax.set_axisbelow(True)
     ax.grid(True, linestyle="--", color="#E5E7EB", alpha=0.6, linewidth=0.8)
+
+    p_text = f"Log-rank p = {p_val:.4f}" if p_val >= 0.0001 else "Log-rank p < 0.0001"
+    ax.text(
+        0.95,
+        0.12,
+        p_text,
+        transform=ax.transAxes,
+        fontsize=10,
+        fontweight="bold",
+        ha="right",
+        va="bottom",
+        bbox=dict(boxstyle="round,pad=0.4", facecolor="white", edgecolor="#D1D5DB", alpha=0.85),
+    )
+
     ax.legend(loc="lower left", fontsize=10)
 
 

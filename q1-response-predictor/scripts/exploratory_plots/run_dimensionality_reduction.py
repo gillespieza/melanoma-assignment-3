@@ -15,8 +15,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 import seaborn as sns
-import umap
+
+try:
+    import umap
+    HAS_UMAP = True
+except Exception as e:
+    print(f"Warning: umap import failed ({e}). Falling back to t-SNE (TSNE) for non-linear dimensionality reduction.")
+    HAS_UMAP = False
 
 # Add project root to sys.path
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -332,13 +339,19 @@ def main() -> None:
     pc1_scaled_trials = pca_scaled_trials.explained_variance_ratio_[0] * 100.0
     pc2_scaled_trials = pca_scaled_trials.explained_variance_ratio_[1] * 100.0
 
-    umap_raw_trials = umap.UMAP(n_components=2, random_state=42, n_jobs=1, n_neighbors=15, min_dist=0.1)
-    um_raw = umap_raw_trials.fit_transform(expr_trials_raw)
+    if HAS_UMAP:
+        umap_raw_trials = umap.UMAP(n_components=2, random_state=42, n_jobs=1, n_neighbors=15, min_dist=0.1)
+        um_raw = umap_raw_trials.fit_transform(expr_trials_raw)
+        umap_scaled_trials = umap.UMAP(n_components=2, random_state=42, n_jobs=1, n_neighbors=15, min_dist=0.1)
+        um_scaled = umap_scaled_trials.fit_transform(expr_trials_scaled)
+    else:
+        tsne_raw = TSNE(n_components=2, random_state=42, perplexity=15)
+        um_raw = tsne_raw.fit_transform(expr_trials_raw)
+        tsne_scaled = TSNE(n_components=2, random_state=42, perplexity=15)
+        um_scaled = tsne_scaled.fit_transform(expr_trials_scaled)
+
     clin_trials_merged["UMAP_Raw_Dim1"] = um_raw[:, 0]
     clin_trials_merged["UMAP_Raw_Dim2"] = um_raw[:, 1]
-
-    umap_scaled_trials = umap.UMAP(n_components=2, random_state=42, n_jobs=1, n_neighbors=15, min_dist=0.1)
-    um_scaled = umap_scaled_trials.fit_transform(expr_trials_scaled)
     clin_trials_merged["UMAP_Scaled_Dim1"] = um_scaled[:, 0]
     clin_trials_merged["UMAP_Scaled_Dim2"] = um_scaled[:, 1]
 
@@ -633,6 +646,18 @@ def main() -> None:
         )
         f.write(
             "- **Pipeline Scope**: Unsupervised projections confirm that single-gene thresholds are insufficient for response prediction, motivating the 12-feature multimodal ensemble (incorporating TMB, TIS, CYT, and driver mutations like `BRAF`, `NRAS`, `NF1`) evaluated in downstream Q1 phases.\n"
+        )
+        f.write(
+            "\n> [!formula]+ Batch Correction Script Execution & Software Module Architecture\n"
+            "> - **Primary Pipeline Execution Scripts**:\n"
+            ">   - [`run_dimensionality_reduction.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/exploratory_plots/run_dimensionality_reduction.py): Evaluates technical batch effects across four melanoma cohorts (TCGA-SKCM, Liu 2019, Hugo 2016, Riaz 2017), computes uncorrected vs. cohort Z-score standardised PCA/UMAP projections, generates top 50 variable gene heatmaps, and outputs `batch_correction_report.md`.\n"
+            "> - **Data Preprocessing & Loading Modules**:\n"
+            ">   - [`clean_data.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/clean_data.py): Preprocesses raw cohort clinical metadata and RNA-seq expression profiles into cleaned CSV matrices.\n"
+            ">   - [`merge_datasets.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/merge_datasets.py): Merges processed expression matrices across cohorts into harmonised pooled matrices (`expr_merged.csv`, `clin_merged.csv`).\n"
+            ">   - [`data_loaders.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/data_loaders.py): Provides helper loader functions (`load_liu_2019`, `load_hugo_2016`, `load_riaz_2017`) for retrieving expression and clinical data.\n"
+            "> - **Shared Cross-Question & Pipeline Modules**:\n"
+            ">   - [`run_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/run_pipeline.py): Master Q1 pipeline orchestrator executing downstream modeling and evaluation.\n"
+            ">   - [`styles.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/styles.py): Single source of truth for Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`) and visualization presentation style.\n"
         )
 
     print(f"Report written to {report_path.relative_to(BASE_DIR).as_posix()}")

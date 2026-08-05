@@ -13,8 +13,6 @@ cssclasses:
   - table-center
   - row-alt
 created: 2026-08-02 12:49
-obsidianEditingMode: preview
-obsidianUIMode: source
 updated: 2026-08-02 12:49
 ---
 

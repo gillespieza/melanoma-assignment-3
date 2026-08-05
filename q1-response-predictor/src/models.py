@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
@@ -8,6 +10,49 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
 import xgboost as xgb
+
+
+def get_baseline_model(model_type: str, random_state: int = 42) -> Any:
+    """Instantiates an unfitted baseline classifier with fixed hyperparameters matching comparison benchmarks.
+
+    Args:
+        model_type: One of 'lr', 'rf', 'xgb', 'svm', 'elasticnet'.
+        random_state: Seed for pseudo-random number generator.
+
+    Returns:
+        Unfitted sklearn-compatible classifier instance.
+
+    Raises:
+        ValueError: If model_type is unknown.
+    """
+    if model_type == "lr":
+        return LogisticRegression(max_iter=1000, C=1.0, random_state=random_state)
+    elif model_type == "rf":
+        return RandomForestClassifier(
+            n_estimators=100, max_depth=5, random_state=random_state, n_jobs=-1
+        )
+    elif model_type == "xgb":
+        return xgb.XGBClassifier(
+            n_estimators=100,
+            max_depth=3,
+            learning_rate=0.05,
+            random_state=random_state,
+            eval_metric="logloss",
+            n_jobs=-1,
+        )
+    elif model_type == "svm":
+        return SVC(probability=True, kernel="rbf", C=1.0, random_state=random_state)
+    elif model_type == "elasticnet":
+        return LogisticRegression(
+            penalty="elasticnet",
+            solver="saga",
+            l1_ratio=0.5,
+            max_iter=2000,
+            random_state=random_state,
+        )
+    else:
+        raise ValueError(f"Unknown model type: {model_type!r}")
+
 
 def calibrate_estimator(estimator, X_train, y_train, method='sigmoid', cv=3):
     """
@@ -25,19 +70,23 @@ def calibrate_estimator(estimator, X_train, y_train, method='sigmoid', cv=3):
 
 def tune_logistic_regression(X_train, y_train, calibrate=True):
     """
-    Tuning L1-penalized Logistic Regression using Grid Search, optionally calibrated via Platt Scaling.
+    Tuning L1-penalized Logistic Regression using Grid Search.
+
+    Note: Probability calibration (CalibratedClassifierCV) is intentionally NOT
+    applied. Logistic Regression minimises log-loss directly, so its predicted
+    probabilities are already well-calibrated. Applying a secondary
+    CalibratedClassifierCV(cv=3) on small training splits (N ≈ 83, 6 features)
+    can learn a negative-slope sigmoid that INVERTS rank ordering, collapsing
+    AUROC to below chance (observed: 0.595 → 0.383 with calibration enabled).
     """
     param_grid = {
         'C': [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
     }
-    lr = LogisticRegression(solver='liblinear', l1_ratio=1.0, random_state=42, max_iter=1000)
+    lr = LogisticRegression(solver='liblinear', random_state=42, max_iter=1000)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(lr, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
-    best_est = grid.best_estimator_
-    if calibrate:
-        return calibrate_estimator(best_est, X_train, y_train)
-    return best_est
+    return grid.best_estimator_
 
 def tune_random_forest(X_train, y_train, calibrate=True):
     """
@@ -111,19 +160,23 @@ def tune_svc(X_train, y_train, calibrate=True):
 def tune_elasticnet(X_train, y_train, calibrate=True):
     """
     Tuning ElasticNet (Logistic Regression with elasticnet penalty) using Grid Search.
+
+    Note: Probability calibration is intentionally NOT applied — same reasoning
+    as tune_logistic_regression. ElasticNet (SAGA solver) minimises log-loss
+    directly; secondary CalibratedClassifierCV on small splits harms AUROC
+    (observed: 0.601 → 0.428 with calibration enabled).
     """
     param_grid = {
         'C': [0.001, 0.01, 0.1, 1.0, 10.0],
         'l1_ratio': [0.1, 0.3, 0.5, 0.7, 0.9]
     }
-    lr = LogisticRegression(solver='saga', random_state=42, max_iter=20000, tol=1e-3)
+    lr = LogisticRegression(
+        penalty='elasticnet', solver='saga', random_state=42, max_iter=20000, tol=1e-3
+    )
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(lr, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
-    best_est = grid.best_estimator_
-    if calibrate:
-        return calibrate_estimator(best_est, X_train, y_train)
-    return best_est
+    return grid.best_estimator_
 
 def get_model(model_type, X_train, y_train, calibrate=True):
     """

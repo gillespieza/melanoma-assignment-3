@@ -3,8 +3,6 @@ title:
 aliases: 
 tags: 
 created: 2026-08-03 19:42
-obsidianEditingMode: preview
-obsidianUIMode: source
 updated: 2026-08-03 20:14
 ---
 

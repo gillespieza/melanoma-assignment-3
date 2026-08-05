@@ -14,8 +14,6 @@ cssclasses:
   - table-center
   - row-alt
 created: 2026-07-24 14:28
-obsidianEditingMode: preview
-obsidianUIMode: source
 updated: 2026-08-02 16:50
 ---
 # Supplementary Appendix: Curated Immunotherapy Signature Descriptions

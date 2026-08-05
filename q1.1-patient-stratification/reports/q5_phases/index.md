@@ -10,8 +10,6 @@ tags:
 created: 2026-08-01 21:41
 cssclasses:
   - table-small
-obsidianEditingMode: preview
-obsidianUIMode: source
 updated: 2026-08-01 21:41
 ---
 

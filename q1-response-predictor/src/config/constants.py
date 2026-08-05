@@ -3,17 +3,13 @@
 import numpy as np
 
 
-# ---------------------------------------------------------------------------
-# Clinical response
-# ---------------------------------------------------------------------------
-
-RECIST_RESPONSE_MAP = {
-    "Complete Response": 1,
-    "Partial Response": 1,
-    "Progressive Disease": 0,
-    "Stable Disease": np.nan,
-    "Mixed Response": np.nan,
-}
+from src.biology_constants import (
+    DRIVER_GENES,
+    NEOANTIGEN_COLS,
+    NON_SILENT_VARIANT_CLASSIFICATIONS,
+    PATHWAY_GENES,
+    RECIST_RESPONSE_MAP,
+)
 
 # ---------------------------------------------------------------------------
 # Dataset Support
@@ -27,19 +23,6 @@ SUPPORTED_PROCESSING_STRATEGIES = (
 # ---------------------------------------------------------------------------
 # Protected biological genes
 # ---------------------------------------------------------------------------
-
-# Variant classifications considered non-silent/protein-altering
-NON_SILENT_VARIANT_CLASSIFICATIONS = {
-    "Frame_Shift_Del",
-    "Frame_Shift_Ins",
-    "In_Frame_Del",
-    "In_Frame_Ins",
-    "Missense_Mutation",
-    "Nonsense_Mutation",
-    "Splice_Site",
-    "Translation_Start_Site",
-    "Nonstop_Mutation",
-}
 
 GENOMIC_FEATURES = [
     "TMB_NONSYNONYMOUS",
@@ -62,9 +45,6 @@ NEOANTIGEN_FEATURES = [
     "CTA_SELF_NEOANTIGEN",
 ]
 
-# Driver genes to evaluate for mutations
-DRIVER_GENES = ["BRAF", "NRAS", "NF1"]
-
 # Extended driver genes for the single-cohort and merged CoMut plots
 COMUT_DRIVER_GENES = ['BRAF', 'NRAS', 'NF1', 'CDKN2A', 'PTEN', 'JAK1', 'JAK2', 'B2M', 'TAP1', 'TAP2']
 MERGED_COMUT_DRIVER_GENES = ['BRAF', 'NRAS', 'NF1', 'CDKN2A', 'PTEN', 'KIT', 'TP53', 'JAK1', 'JAK2', 'B2M']
@@ -75,24 +55,6 @@ SIGNATURE_GENES = [
     'CXCL11', 'CXCL10', 'PTPN22', 'GBP1', 'CD72', 'STAT4', 'IL15',
     'AKAP5', 'SAMSN1', 'GBP1P1', 'ZNF831', 'KLRK1', 'CD38'
 ]
-
-# Definitions of genes included in specific functional pathways and immune signatures
-PATHWAY_GENES = {
-    "IFN-gamma Signature": ["IFNG", "CXCL9", "CXCL10", "IDO1", "HLA-DRA", "STAT1"],
-    "Tumour Inflammation Signature (TIS)": [
-        "CCL5", "CD2", "CD3D", "CD3E", "CD27", "CD274", "CMKLR1", "CXCL9",
-        "CXCR6", "GZMB", "GZMK", "HLA-DRA", "HLA-DQA1", "HLA-E", "IDO1",
-        "LAG3", "NKG7", "PDCD1LG2", "PSMB10", "STAT1", "TIGIT",
-    ],
-    "Cytolytic Activity (CYT)": ["GZMA", "PRF1"],
-    "CD8 T-Cell Abundance": ["CD8A", "CD8B"],
-    "Immune Predictive Score (IMPRES)": [
-        "CD274", "VSIR", "CD28", "CD276", "CD86", "TNFRSF4", "CD200",
-        "CTLA4", "PDCD1", "CD80", "TNFSF9", "HAVCR2", "CD27", "CD40", "TNFRSF14",
-    ],
-    "Antigen Presentation": ["B2M", "TAP1", "TAP2"],
-    "Survival & Proliferation Drivers": ["PTEN", "CDKN2A", "PIK3CA"],
-}
 
 # ---------------------------------------------------------------------------
 # Immunological Signatures & Descriptive Display Names

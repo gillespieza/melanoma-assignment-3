@@ -10,14 +10,12 @@ tags:
   - umap
   - tme
   - transcriptomics
+created: 2026-08-05 22:58
 cssclasses:
   - table-small
   - table-center
   - row-alt
-created: 2026-08-02 12:03
-obsidianEditingMode: preview
-obsidianUIMode: source
-updated: 2026-08-02 12:03
+updated: 2026-08-05 22:58
 ---
 
 # Batch Effect Assessment & Dimensionality Reduction Analysis
@@ -104,3 +102,14 @@ Standardising gene expression independently within each cohort (rescaling each g
 - **Sample Size Constraints**: The smallest training cohort (`Hugo 2016`, $N = 27$) has reduced statistical power compared to `Liu 2019` ($N = 122$) and `Riaz 2017` ($N = 107$).
 - **Platform Heterogeneity**: Z-score scaling harmonises gene-wise means and variances but does not alter relative non-linear gene correlations within a single study.
 - **Pipeline Scope**: Unsupervised projections confirm that single-gene thresholds are insufficient for response prediction, motivating the 12-feature multimodal ensemble (incorporating TMB, TIS, CYT, and driver mutations like `BRAF`, `NRAS`, `NF1`) evaluated in downstream Q1 phases.
+
+> [!formula]+ Batch Correction Script Execution & Software Module Architecture
+> - **Primary Pipeline Execution Scripts**:
+>   - [`run_dimensionality_reduction.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/exploratory_plots/run_dimensionality_reduction.py): Evaluates technical batch effects across four melanoma cohorts (TCGA-SKCM, Liu 2019, Hugo 2016, Riaz 2017), computes uncorrected vs. cohort Z-score standardised PCA/UMAP projections, generates top 50 variable gene heatmaps, and outputs `batch_correction_report.md`.
+> - **Data Preprocessing & Loading Modules**:
+>   - [`clean_data.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/clean_data.py): Preprocesses raw cohort clinical metadata and RNA-seq expression profiles into cleaned CSV matrices.
+>   - [`merge_datasets.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/merge_datasets.py): Merges processed expression matrices across cohorts into harmonised pooled matrices (`expr_merged.csv`, `clin_merged.csv`).
+>   - [`data_loaders.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/data_loaders.py): Provides helper loader functions (`load_liu_2019`, `load_hugo_2016`, `load_riaz_2017`) for retrieving expression and clinical data.
+> - **Shared Cross-Question & Pipeline Modules**:
+>   - [`run_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/run_pipeline.py): Master Q1 pipeline orchestrator executing downstream modeling and evaluation.
+>   - [`styles.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/styles.py): Single source of truth for Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`) and visualization presentation style.

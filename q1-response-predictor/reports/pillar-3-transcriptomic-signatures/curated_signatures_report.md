@@ -14,8 +14,6 @@ cssclasses:
   - table-center
   - row-alt
 created: 2026-07-23 17:21
-obsidianEditingMode: preview
-obsidianUIMode: source
 updated: 2026-08-02 16:50
 ---
 # Curated Gene Expression Signatures, Extended Biomarkers & Model Evaluation Report
@@ -203,8 +201,8 @@ Evaluating genomic metrics (`TMB_NONSYNONYMOUS`, `ANEUPLOIDY_SCORE`) against con
 
 ## 6. Multimodal Response Prediction Models
 
-> [!NOTE] Section Context
-> - **What We Are Doing**: Training five different classifier architectures (Logistic Regression, Random Forest, XGBoost, SVM, Elastic-Net) on the pooled trial cohort ($N = 195$) using 5-fold stratified cross-validation. We compare three feature sets of increasing complexity: (1) immune signatures only, (2) signatures + driver mutations (`BRAF`, `NRAS`, `NF1`) + age, and (3) a full extended model adding TMB, age, and pathway mutation flags.
+> [!summary] What, Why & Key Questions
+> - **What We Are Doing**: Training five different classifier architectures (Logistic Regression, Random Forest, XGBoost, SVM, Elastic-Net) on the pooled trial cohort ($N = 195$) using 5-fold stratified cross-validation. We compare three feature sets of increasing complexity: (1) immune signatures only, (2) signatures + driver mutations + age, and (3) a full extended model adding TMB, age, and pathway mutation flags.
 > - **Why We Are Doing It**: We need to answer two questions at once. *First*, do the curated immune signatures alone carry enough signal to predict response, or do we need additional genomic features? *Second*, which model architecture best handles the high collinearity among immune signatures and the small sample size? Comparing feature sets within each model isolates the value of adding genomic features; comparing models within each feature set identifies the best architecture.
 > - **Questions**:
 >   1. *Does adding driver mutations, age, and TMB improve prediction beyond signatures alone?*
@@ -213,7 +211,7 @@ Evaluating genomic metrics (`TMB_NONSYNONYMOUS`, `ANEUPLOIDY_SCORE`) against con
 
 ### Table 2. Cross-validated multimodal response prediction performance (mean ROC-AUC ± SD across 5-fold stratified CV)
 
-| Model Architecture | Base Model (Signatures Only) | Sigs + Drivers (`BRAF`/`NRAS`/`NF1`) + Age | 14-Feature Full Extended Matrix* |
+| Model Architecture | Base Model (Signatures Only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Age | 14-Feature Full Extended Matrix* |
 |:--- |:---:|:---:|:---:|
 | **Logistic Regression (LR)** | **0.615 (+/-0.081)** | 0.569 (+/-0.078) | 0.579 (+/-0.094) |
 | **Random Forest (RF)** | 0.666 (+/-0.053) | **0.718 (+/-0.062)** | 0.686 (+/-0.082) |
@@ -221,15 +219,14 @@ Evaluating genomic metrics (`TMB_NONSYNONYMOUS`, `ANEUPLOIDY_SCORE`) against con
 | **Support Vector Machine (SVM)** | **0.626 (+/-0.081)** | 0.553 (+/-0.061) | 0.597 (+/-0.091) |
 | **Elastic-Net** | **0.610 (+/-0.075)** | 0.576 (+/-0.052) | 0.590 (+/-0.040) |
 
-\* *Footnote: The 14-Feature Full Extended Matrix incorporates: 6 immune expression signatures (`IFN_gamma`, `TIS`, `CYT`, `CD8_Tcell`, `IMPRES`, `PD_L1`), 3 melanoma driver mutation flags (`mut_BRAF`, `mut_NRAS`, `mut_NF1`), 3 composite pathway mutation flags (`mut_Antigen_Presentation`, `mut_IFN_gamma_Signaling`, `mut_Survival_Pathways`), nonsynonymous mutational burden (`TMB_NONSYNONYMOUS`), and patient age (`AGE`). Total predicted neoantigens (`TOTAL_NEOANTIGEN`) was excluded due to high collinearity with TMB ($r_s = 0.872$).*
+\* *Footnote: The 14-Feature Full Extended Matrix incorporates: 6 immune expression signatures (`IFN_gamma`, `TIS`, `CYT`, `CD8_Tcell`, `IMPRES`, `PD_L1`), 3 melanoma driver mutation flags (`mut_BRAF`, `mut_NRAS`, `mut_NF1`), 3 composite pathway mutation flags (`mut_Antigen_Presentation`, `mut_IFN_gamma_Signaling`, `mut_Survival_Pathways`), nonsynonymous mutational burden (`TMB_NONSYNONYMOUS`), and patient age (`AGE`). Total predicted neoantigens (`TOTAL_NEOANTIGEN`) was excluded due to high collinearity with TMB ($r_s = 0.756$).*
 
 ![Multimodal AUC Comparison](../../plots/biomarkers/multimodal_auc_comparison.png)
 
 ### Analysis of Predictor Performance
 1. **Linear models degrade with more features**: Logistic Regression and Elastic-Net perform *best* with signatures alone (AUC ≈ 0.61) and *worse* when genomic features are added. With only $N = 195$ samples and 15+ features, the linear models overfit to noise in the additional columns rather than learning generalisable signal.
 2. **Tree-based models benefit from multimodal features**: Random Forest and XGBoost show the opposite pattern — they improve monotonically as features are added, peaking at AUC = 0.686 (RF) and 0.702 (XGBoost) with the full extended set. Tree-based learners handle correlated and mixed-type features more robustly because they select splits on individual features rather than estimating a single global weight vector.
-3. **Clinical interpretation**: An AUC of ~0.72 means the model correctly ranks a randomly chosen responder above a non-responder ~72% of the time. This is competitive with published immunotherapy response predictors in melanoma, where AUCs rarely exceed 0.75 without integrating radiological or on-treatment data.
-
+3. **Clinical interpretation**: An AUC of ~0.70-0.72 means the model correctly ranks a randomly chosen responder above a non-responder ~71% of the time. This is competitive with published immunotherapy response predictors in melanoma, where AUCs rarely exceed 0.75 without integrating radiological or on-treatment data.
 
 ## 7. Leave-One-Cohort-Out Model Evaluation
 
