@@ -164,29 +164,39 @@ def _handle_remove_readonly(func, path, exc_info):
         pass
 
 
-def remove_directory_with_retry(
-    target_dir: Path,
+def remove_path_with_retry(
+    target_path: Path,
     retries: int = MAX_REORGANISATION_RETRIES,
     delay_seconds: float = REORGANISATION_RETRY_DELAY_SECONDS,
 ) -> None:
-    """Remove a directory with read-only attribute clearing and retry handling.
+    """Remove a file or directory with read-only attribute clearing and retry handling.
+
+    Handles Windows file-locking edge cases (e.g. Dropbox or indexer holds)
+    by retrying with backoff.
 
     Args:
-        target_dir:
-            Directory to remove.
+        target_path:
+            File or directory to remove.
         retries:
             Maximum number of attempts.
         delay_seconds:
             Base delay between retry attempts.
     """
-    if not target_dir.exists():
+    if not target_path.exists():
         return
 
     last_error = None
 
     for attempt in range(1, retries + 1):
         try:
-            shutil.rmtree(target_dir, onerror=_handle_remove_readonly)
+            if target_path.is_dir():
+                shutil.rmtree(target_path, onerror=_handle_remove_readonly)
+            else:
+                try:
+                    os.chmod(target_path, stat.S_IWRITE)
+                except OSError:
+                    pass
+                target_path.unlink()
             return
         except OSError as exc:
             last_error = exc
@@ -195,9 +205,18 @@ def remove_directory_with_retry(
             time.sleep(delay_seconds * attempt)
 
     raise OSError(
-        f"Failed to remove directory {rel_path(target_dir)} "
+        f"Failed to remove {rel_path(target_path)} "
         f"after {retries} attempts."
     ) from last_error
+
+
+def remove_directory_with_retry(
+    target_dir: Path,
+    retries: int = MAX_REORGANISATION_RETRIES,
+    delay_seconds: float = REORGANISATION_RETRY_DELAY_SECONDS,
+) -> None:
+    """Remove a directory using remove_path_with_retry."""
+    remove_path_with_retry(target_dir, retries=retries, delay_seconds=delay_seconds)
 
 
 def remove_existing_dataset_directory(target_dir: Path) -> None:
@@ -211,7 +230,7 @@ def remove_existing_dataset_directory(target_dir: Path) -> None:
         "to ensure a clean extraction..."
     )
 
-    remove_directory_with_retry(target_dir)
+    remove_path_with_retry(target_dir)
 
 
 def move_with_retry(
@@ -330,14 +349,11 @@ def reorganise_extracted_dataset(
         destination = target_dir / item.name
 
         if destination.exists():
-            if destination.is_dir():
-                remove_directory_with_retry(destination)
-            else:
-                destination.unlink()
+            remove_path_with_retry(destination)
 
         move_with_retry(item, destination)
 
-    extracted_dir.rmdir()
+    remove_path_with_retry(extracted_dir)
 
     print(
         f"Reorganisation of {extracted_dir.name} complete."
@@ -430,7 +446,7 @@ def download_and_extract_dataset(
         raise
 
     finally:
-        remove_directory_with_retry(extraction_root)
+        remove_path_with_retry(extraction_root)
         if tar_path.exists():
             try:
                 tar_path.unlink(missing_ok=True)
