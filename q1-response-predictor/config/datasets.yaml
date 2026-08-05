@@ -54,3 +54,45 @@ datasets:
     patient_prefix: ""
     sample_prefix: ""
     processing_strategy: "tcga"
+
+  - cohort_name: "TCGA GDC 2025"
+    study_id: "skcm_tcga_gdc"
+    raw_directory: "skcm_tcga_gdc"
+    processed_directory: "skcm_tcga_gdc"
+    expression_file: "data_mrna_seq_tpm.txt"
+    clinical_file: "data_clinical_patient.txt"
+    clinical_sample_file: "data_clinical_sample.txt"
+    mutation_file: "data_mutations.txt"
+    baseline_only: false
+    mutations_by_patient: false
+    patient_prefix: "tcga_gdc_"
+    sample_prefix: "tcga_gdc_"
+    processing_strategy: "tcga"
+
+  - cohort_name: "Gide 2019"
+    study_id: "mel_iatlas_gide_2019"
+    raw_directory: "gide_2019"
+    processed_directory: "gide_2019"
+    expression_file: "data_mrna_seq_expression.txt"
+    clinical_file: "data_clinical_patient.txt"
+    clinical_sample_file: "data_clinical_sample.txt"
+    mutation_file: "data_mutations.txt"
+    baseline_only: false
+    mutations_by_patient: false
+    patient_prefix: "gide_"
+    sample_prefix: "gide_"
+    processing_strategy: "iatlas"
+
+  - cohort_name: "Van Allen 2015"
+    study_id: "skcm_dfci_2015"
+    raw_directory: "van_allen_2015"
+    processed_directory: "van_allen_2015"
+    expression_file: "data_mrna_seq_rpkm.txt"
+    clinical_file: "data_clinical_patient.txt"
+    clinical_sample_file: "data_clinical_sample.txt"
+    mutation_file: "data_mutations.txt"
+    baseline_only: false
+    mutations_by_patient: false
+    patient_prefix: "van_allen_"
+    sample_prefix: "van_allen_"
+    processing_strategy: "iatlas"
