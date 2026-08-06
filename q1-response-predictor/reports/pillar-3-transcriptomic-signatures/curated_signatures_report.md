@@ -80,9 +80,9 @@ Each signature distribution is visualised using a **raincloud plot** — combini
 
 ![Immune Signature Distributions — Raincloud Plot](../../plots/signatures/signature_raincloud_by_response.png)
 
-For a comprehensive view contrasting single-variable effect magnitude against multivariate odds ratios, the **combined forest plot** below directly displays Cohen's d (standardised mean difference, Responder − Non-Responder; 95% bootstrap CI) alongside multivariate Logistic Regression Odds Ratios across the six curated signatures in report-table order.
+For a comprehensive view contrasting pooled single-variable effect magnitude against out-of-cohort generalisation, the **combined forest plot** below directly displays Cohen's d (standardised mean difference, Responder − Non-Responder; 95% bootstrap CI) alongside out-of-cohort discriminative ability (AUROC across held-out clinical trials: Liu 2019, Hugo 2016, Riaz 2017) across the six curated signatures in report-table order.
 
-![Univariate vs Multivariate Forest Comparison (2x1 Grid)](../../plots/signatures/combined_forest_plots.png)
+![Pooled Effect Size vs. Out-of-Cohort Generalisation (2x1 Grid)](../../plots/signatures/combined_forest_plots.png)
 
 #### Key Empirical Findings
 * **Positive Trend Across All Signatures**: Responders consistently show higher baseline scores across all 6 signature modalities (all Cohen's d > 0).
@@ -170,10 +170,10 @@ Evaluating genomic metrics (`TMB_NONSYNONYMOUS`, `ANEUPLOIDY_SCORE`) against con
 
 ![Spearman Correlation Heatmap](../../plots/signatures/signature_correlation_heatmap.png)
 
-#### 2x1 Forest Comparison: Univariate Effect Size (Left) vs. Multivariate Odds Ratios (Right)
-The combined forest plot below directly contrasts single-variable effect magnitudes (Cohen's d with 95% bootstrap CIs) against joint-model Odds Ratios across the six curated signatures:
+#### 2x1 Forest Comparison: Pooled Effect Size (Left) vs. Out-of-Cohort Generalisation (Right)
+The combined forest plot below directly contrasts pooled single-variable effect magnitudes (Cohen's d with 95% bootstrap CIs) against out-of-cohort discriminative performance (AUROC across held-out clinical trials) across the six curated signatures:
 
-![Univariate vs Multivariate Forest Comparison (2x1 Grid)](../../plots/signatures/combined_forest_plots.png)
+![Pooled Effect Size vs. Out-of-Cohort Generalisation (2x1 Grid)](../../plots/signatures/combined_forest_plots.png)
 
 
 

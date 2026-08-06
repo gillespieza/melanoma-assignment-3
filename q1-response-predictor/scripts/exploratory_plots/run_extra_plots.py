@@ -20,6 +20,7 @@ from pycombat import Combat
 from scipy.stats import mannwhitneyu
 from scipy.stats import gaussian_kde
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
 import seaborn as sns
 
@@ -33,7 +34,7 @@ if str(BASE_DIR) not in sys.path:
 
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.signatures import extract_all_signatures
-from src.styles import RESPONSE_PALETTE, set_presentation_style
+from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
@@ -45,14 +46,19 @@ SIG_PLOT_DIR = PLOTS_DIR / "signatures"
 LOG_PATH = LOG_DIR / "run_extra_plots.log"
 
 
-def _prepare_signatures(data_dir: Path) -> Tuple[pd.DataFrame, pd.Series]:
+def _prepare_signatures(
+    data_dir: Path,
+) -> Tuple[pd.DataFrame, pd.Series, list]:
     """Loads cohorts, extracts signatures, batch corrects via PyComBat, and returns clean data.
 
     Args:
         data_dir: Path to project data directory.
 
     Returns:
-        Tuple of (batch-corrected signature matrix, combined response series).
+        Tuple of:
+          - batch-corrected pooled signature matrix
+          - combined response series
+          - list of (cohort_name, sig_df, y_series) per-cohort raw tuples for LOCO
     """
     expr_liu, clin_liu = load_liu_2019(data_dir)
     expr_hugo, clin_hugo = load_hugo_2016(data_dir)
@@ -81,6 +87,13 @@ def _prepare_signatures(data_dir: Path) -> Tuple[pd.DataFrame, pd.Series]:
     sig_riaz = sig_riaz.loc[non_nan_riaz]
     y_riaz = y_riaz.loc[non_nan_riaz]
 
+    # Per-cohort tuples used for LOCO AUC computation (raw, uncorrected)
+    cohort_data = [
+        ("Liu 2019", sig_liu, y_liu),
+        ("Hugo 2016", sig_hugo, y_hugo),
+        ("Riaz 2017", sig_riaz, y_riaz),
+    ]
+
     sig_all = pd.concat([sig_liu, sig_hugo, sig_riaz], axis=0)
     y_all = pd.concat([y_liu, y_hugo, y_riaz], axis=0)
     batches = (["liu"] * len(sig_liu)) + (["hugo"] * len(sig_hugo)) + (["riaz"] * len(sig_riaz))
@@ -88,7 +101,7 @@ def _prepare_signatures(data_dir: Path) -> Tuple[pd.DataFrame, pd.Series]:
     sig_corrected_arr = Combat().fit_transform(sig_all.values, batches)
     sig_corrected = pd.DataFrame(sig_corrected_arr, index=sig_all.index, columns=sig_all.columns)
 
-    return sig_corrected, y_all
+    return sig_corrected, y_all, cohort_data
 
 
 # ---------------------------------------------------------------------------
@@ -524,12 +537,55 @@ def _plot_multivariate_forest(sig_corrected: pd.DataFrame, y_all: pd.Series, plo
     print(f"Saved forest plot to {out_path.relative_to(BASE_DIR).as_posix()}")
 
 
-def _plot_combined_forest(sig_corrected: pd.DataFrame, y_all: pd.Series, plot_dir: Path) -> None:
-    """Generates a 1x2 grid comparing Univariate Effect Sizes (Left) and Multivariate Odds Ratios (Right).
+def _compute_loco_auc(
+    cohort_data: list, signatures: list
+) -> pd.DataFrame:
+    """Computes per-signature LOCO AUC across all three held-out cohorts.
+
+    For each cohort, the signature score is evaluated directly against the response
+    label using roc_auc_score — no model is fitted. AUC is flipped to > 0.5 where
+    necessary (a consistent inverse predictor is still informative).
 
     Args:
-        sig_corrected: Signature DataFrame.
-        y_all: Response label series.
+        cohort_data: List of (cohort_name, sig_df, y_series) tuples.
+        signatures: Ordered list of signature column names to evaluate.
+
+    Returns:
+        DataFrame with columns [Signature, Cohort, AUC].
+    """
+    rows = []
+    for cohort_name, sig_df, y_series in cohort_data:
+        for sig in signatures:
+            if sig not in sig_df.columns:
+                continue
+            valid_idx = y_series.dropna().index.intersection(sig_df.index)
+            if len(valid_idx) < 5:  # noqa: PLR2004
+                continue
+            y_vals = y_series.loc[valid_idx].values
+            scores = sig_df.loc[valid_idx, sig].values
+            auc = roc_auc_score(y_vals, scores)
+            # Ensure AUC reflects the positive-class direction
+            auc = max(auc, 1.0 - auc)
+            rows.append({"Signature": sig, "Cohort": cohort_name, "AUC": auc})
+    return pd.DataFrame(rows)
+
+
+def _plot_combined_forest(
+    sig_corrected: pd.DataFrame,
+    y_all: pd.Series,
+    cohort_data: list,
+    plot_dir: Path,
+) -> None:
+    """Generates a 1x2 grid: Univariate Cohen's d (Left) vs. per-signature LOCO AUC (Right).
+
+    Both panels are single-signature univariate measures, making them directly comparable:
+    - Left: pooled effect size (standardised mean difference, N=195)
+    - Right: out-of-cohort discriminative ability (AUC per held-out cohort)
+
+    Args:
+        sig_corrected: Batch-corrected pooled signature DataFrame.
+        y_all: Pooled response label series.
+        cohort_data: List of (cohort_name, sig_df, y_series) per-cohort tuples.
         plot_dir: Directory path to export plot artifact.
     """
     available_sigs = [s for s in _REPORT_SIGS if s in sig_corrected.columns]
@@ -563,28 +619,12 @@ def _plot_combined_forest(sig_corrected: pd.DataFrame, y_all: pd.Series, plot_di
     order_map = {sig: i for i, sig in enumerate(available_sigs)}
     df_u = df_u.sort_values("Signature", key=lambda col: col.map(order_map)).reset_index(drop=True)
 
-    # 2. Compute Multivariate Stats
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(sig_cont)
-    clf = LogisticRegression(C=1.0, random_state=42)
-    clf.fit(X_scaled, y_all)
-    coefs = clf.coef_[0]
-    ors = np.exp(coefs)
+    # 2. Compute LOCO AUC
+    df_loco = _compute_loco_auc(cohort_data, available_sigs)
 
-    pred_probs = clf.predict_proba(X_scaled)[:, 1]
-    V = pred_probs * (1 - pred_probs)
-    X_design = np.hstack([np.ones((X_scaled.shape[0], 1)), X_scaled])
-    cov_mat = np.linalg.inv(np.dot(X_design.T * V, X_design))
-    se_coefs = np.sqrt(np.diag(cov_mat))[1:]
-    ci_lower = np.exp(coefs - 1.96 * se_coefs)
-    ci_upper = np.exp(coefs + 1.96 * se_coefs)
-
-    df_m = pd.DataFrame({
-        "Signature": sig_cont.columns,
-        "OR": ors,
-        "CI_lower": ci_lower,
-        "CI_upper": ci_upper,
-    }).sort_values("Signature", key=lambda col: col.map(order_map)).reset_index(drop=True)
+    # Cohort display colours
+    cohort_names = [cd[0] for cd in cohort_data]
+    cohort_colors = {name: get_cohort_color(name) for name in cohort_names}
 
     # Plot 1x2 Grid
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6), sharey=True)
@@ -593,7 +633,7 @@ def _plot_combined_forest(sig_corrected: pd.DataFrame, y_all: pd.Series, plot_di
     color_nr = RESPONSE_PALETTE["PD"]
     y_pos = np.arange(len(available_sigs))
 
-    # --- LEFT PANEL: Univariate ---
+    # --- LEFT PANEL: Univariate Cohen's d ---
     for i, row in df_u.iterrows():
         dot_color = color_r if row["d"] > 0 else color_nr
         ax1.errorbar(
@@ -603,7 +643,6 @@ def _plot_combined_forest(sig_corrected: pd.DataFrame, y_all: pd.Series, plot_di
             elinewidth=2.0, capsize=4, capthick=1.8, markersize=8, zorder=3,
         )
         p_str = f"p = {row['p']:.3f}" if row["p"] >= 0.001 else f"p = {row['p']:.2e}"
-        # Position text centered above the point estimate (y = i - 0.23 with invert_yaxis)
         ax1.text(
             row["d"], i - 0.23,
             f"d = {row['d']:+.2f}  {p_str}",
@@ -614,51 +653,74 @@ def _plot_combined_forest(sig_corrected: pd.DataFrame, y_all: pd.Series, plot_di
     ax1.set_yticks(y_pos)
     ax1.set_yticklabels(df_u["Signature"], fontsize=11, fontweight="bold")
     ax1.set_xlabel("Cohen's d  (Responder − Non-Responder)", fontsize=11, fontweight="bold")
-    ax1.set_title("A. Univariate Effect Sizes (Cohen's d & 95% Bootstrap CI)", fontsize=12, fontweight="bold", pad=16)
+    ax1.set_title(
+        "A. Pooled Effect Size\n(Cohen's d & 95% Bootstrap CI, N=195)",
+        fontsize=12, fontweight="bold", pad=14,
+    )
     ax1.set_ylim(bottom=len(available_sigs) - 0.5, top=-0.75)
     ax1.invert_yaxis()
 
-    # --- RIGHT PANEL: Multivariate ---
-    for i, row in df_m.iterrows():
-        color = color_r if row["OR"] > 1 else color_nr
-        ax2.errorbar(
-            row["OR"], i,
-            xerr=[[row["OR"] - row["CI_lower"]], [row["CI_upper"] - row["OR"]]],
-            fmt="o", color="black", ecolor=color,
-            elinewidth=2.5, capsize=5, capthick=2, markersize=8,
-        )
-        # Position text centered above the point estimate / log center
-        ax2.text(
-            row["OR"], i - 0.23,
-            f"OR = {row['OR']:.2f} ({row['CI_lower']:.2f}-{row['CI_upper']:.2f})",
-            va="bottom", ha="center", fontsize=8.5, fontweight="bold", color="#212B32",
-        )
-
-    ax2.axvline(x=1.0, color="gray", linestyle="--", linewidth=1.2)
-    ax2.set_xscale("log")
-    ax2.set_xlim(0.2, 16.0)
-    ax2.set_xlabel("Odds Ratio (95% CI, Log Scale)", fontsize=11, fontweight="bold")
-    ax2.set_title("B. Multivariate Logistic Regression (Odds Ratios)", fontsize=12, fontweight="bold", pad=16)
-    ax2.set_ylim(bottom=len(available_sigs) - 0.5, top=-0.75)
-
-    # Legends
     from matplotlib.patches import Patch
     leg1 = [
         Patch(facecolor=color_r, alpha=0.8, label="Higher in Responders"),
         Patch(facecolor=color_nr, alpha=0.8, label="Higher in Non-Responders"),
     ]
-    # Position in upper left space (x < 0) above IFN_gamma line
     ax1.legend(handles=leg1, loc="upper left", bbox_to_anchor=(0.02, 0.96), framealpha=0.9, fontsize=8.5)
 
-    leg2 = [
-        Patch(facecolor=color_r, alpha=0.8, label="OR > 1 (Response Favoured)"),
-        Patch(facecolor=color_nr, alpha=0.8, label="OR < 1 (Non-Response Favoured)"),
-    ]
-    ax2.legend(handles=leg2, loc="lower right", bbox_to_anchor=(0.98, 0.02), framealpha=0.9, fontsize=8.5)
+    # --- RIGHT PANEL: Per-signature LOCO AUC dots + mean diamond ---
+    # Jitter offsets so 3 cohort dots don't stack on the same row
+    _JITTER_Y = {name: offset for name, offset in zip(cohort_names, [-0.22, 0.0, 0.22])}
 
+    for i, sig in enumerate(available_sigs):
+        sig_loco = df_loco[df_loco["Signature"] == sig]
+        aucs = []
+        for _, lrow in sig_loco.iterrows():
+            cname = lrow["Cohort"]
+            auc_val = lrow["AUC"]
+            aucs.append(auc_val)
+            ax2.scatter(
+                auc_val, i + _JITTER_Y[cname],
+                color=cohort_colors[cname], s=60, zorder=4,
+                edgecolors="white", linewidths=0.6,
+            )
+        if aucs:
+            mean_auc = float(np.mean(aucs))
+            # Mean shown as filled diamond at the row centre
+            ax2.scatter(
+                mean_auc, i,
+                marker="D", color="#212B32", s=55, zorder=5,
+                edgecolors="white", linewidths=0.8,
+            )
+            ax2.text(
+                mean_auc, i - 0.32,
+                f"μ = {mean_auc:.2f}",
+                va="bottom", ha="center", fontsize=8.5, fontweight="bold", color="#212B32",
+            )
+
+    ax2.axvline(x=0.5, color="#9BAAB3", linewidth=1.0, linestyle="--", zorder=1)
+    ax2.set_xlim(0.35, 0.90)
+    ax2.set_xlabel("AUROC per Held-Out Cohort", fontsize=11, fontweight="bold")
+    ax2.set_title(
+        "B. Out-of-Cohort Discriminative Ability\n(AUROC per Held-Out Cohort — 3 independent studies)",
+        fontsize=12, fontweight="bold", pad=14,
+    )
+    ax2.set_ylim(bottom=len(available_sigs) - 0.5, top=-0.75)
+
+    # Cohort legend
+    cohort_handles = [
+        Patch(facecolor=cohort_colors[n], label=n) for n in cohort_names
+    ] + [
+        plt.scatter([], [], marker="D", color="#212B32", s=55, label="Mean AUC (μ)"),
+    ]
+    ax2.legend(
+        handles=cohort_handles, loc="lower right",
+        bbox_to_anchor=(0.98, 0.02), framealpha=0.9, fontsize=8.5,
+    )
+
+    n_pooled = int(y_all.notna().sum())
     fig.suptitle(
-        f"Univariate vs Multivariate Forest Comparison across 6 Curated Immune Signatures (N={len(y_all)})",
-        fontsize=13, fontweight="bold", y=0.98,
+        f"Pooled Effect Size vs. Out-of-Cohort Generalisation — 6 Curated Immune Signatures (N={n_pooled})",
+        fontsize=13, fontweight="bold", y=0.99,
     )
     plt.tight_layout()
     out_path = plot_dir / "combined_forest_plots.png"
@@ -674,7 +736,7 @@ def main() -> None:
 
     SIG_PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
-    sig_corrected, y_all = _prepare_signatures(DATA_DIR)
+    sig_corrected, y_all, cohort_data = _prepare_signatures(DATA_DIR)
 
     print("\n==================================================")
     print("Phase 2: Generating Signature Raincloud Plot...")
@@ -701,10 +763,10 @@ def main() -> None:
     _plot_univariate_forest(sig_corrected, y_all, SIG_PLOT_DIR)
 
     print("\n==================================================")
-    print("Phase 6: Combined Univariate & Multivariate Forest Grid...")
+    print("Phase 6: Combined Effect Size & LOCO AUC Forest Grid...")
     print("==================================================")
 
-    _plot_combined_forest(sig_corrected, y_all, SIG_PLOT_DIR)
+    _plot_combined_forest(sig_corrected, y_all, cohort_data, SIG_PLOT_DIR)
 
     print("==================================================")
     print("Done!")
