@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-05 (Moved all plot-generating scripts out of `scripts/biomarkers/` into `scripts/exploratory_plots/` and `scripts/feature_selection/` as appropriate; added dual LOCO 1×2 panel (`generate_loco_feature_comparison_heatmap.py`) and updated 5-fold CV + LOCO heatmaps with ±SD, one-sample t-test asterisks for CV cells, and 1,000-sample bootstrap SD for LOCO cells; fixed subproject log routing via `get_subproject_log_dir()` in all new scripts).
+> **Last updated**: 2026-08-06 (Completed 4-pass code smell refactoring of `q1-response-predictor/scripts/clean_data.py`: all 44 functions brought under 30 lines, 100% type hints & docstrings, extracted domain constants, introduced `CleanedDataBundle` parameter object, and restored TCGA treatment summary feature engineering).
 
 ## Repository Overview
 
@@ -318,6 +318,7 @@ npm run build
 | SVM Tuning, 16:9 Heatmaps & Dashboard Sync | Enhanced `tune_svc` with `class_weight='balanced'`, expanded grid (`C=0.01-100`, `gamma=['scale', 'auto']`), and adaptive CV fold counts for small splits. Fixed 16:9 canvas rendering in LOCO and 5-fold CV heatmaps by replacing `tight_layout` with explicit `subplots_adjust` margin preservation. Re-trained pooled model pickles in `q1-response-predictor/models/`, updated `q1_predictions.csv`, and rebuilt `dashboard/public/cohort.json`. | **Resolved** (2026-08-03) |
 | Q1 script organisation — plot scripts in `biomarkers/` | Plot-generating scripts were incorrectly placed in `scripts/biomarkers/`. Moved to: `scripts/exploratory_plots/` (`generate_loco_heatmap.py`, `generate_5f_cv_heatmap.py`, `generate_combined_cv_loco_heatmap.py`, `generate_loco_feature_comparison_heatmap.py`, `generate_threshold_plot.py`, `run_merged_comut_plot.py`) and `scripts/feature_selection/` (`generate_5f_cv_comparison_heatmap.py`). `biomarkers/` now contains analysis scripts only. | **Resolved** (2026-08-05) |
 | Q1 log path routing | `generate_combined_cv_loco_heatmap.py` and `generate_loco_feature_comparison_heatmap.py` were writing logs to `PROJECT_ROOT/logs/` instead of `q1-response-predictor/logs/`. Fixed by replacing imported `LOG_DIR` with `get_subproject_log_dir(Path(__file__))` in both scripts. | **Resolved** (2026-08-05) |
+| `q1-response-predictor/scripts/clean_data.py` code smell refactoring | Conducted 4-pass code smell remediation per `AGENTS.md` guidelines: 100% of 44 functions decomposed to $\le 30$ lines, extracted 10 domain constants (`_COL_VARIANT_CLASSIFICATION`, `_COL_TREATMENT_TYPE`, `_STRATEGY_IATLAS`, `_STRATEGY_TCGA`, etc.), introduced `CleanedDataBundle` parameter object to shrink function signatures, restored `_build_treatment_summary_features()`, added full type annotations & docstrings, eliminated long lines & long ternaries, and added traceback logging to broad exception handler. | **Resolved** (2026-08-06) |
 
 ## Conventions Quick Reference
 
