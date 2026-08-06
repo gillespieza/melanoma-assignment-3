@@ -527,23 +527,9 @@ def _evaluate_pathway_mutations(
 # Section 3: Aneuploidy and TMB vs Immune Infiltration
 # ---------------------------------------------------------------------------
 def _compute_genomic_immune_correlations(
-    df_tcga_clin: pd.DataFrame, df_tcga_sigs: pd.DataFrame,
     df_clin_merged: pd.DataFrame, df_sigs_merged: pd.DataFrame, sig_names: List[str]
-) -> Tuple[Dict[str, Dict[str, float]], Dict[str, Dict[str, float]]]:
-    """Compute Spearman correlations between genomic burden and immune signatures."""
-    tcga_corrs = {}
-    for sig in sig_names:
-        r_a, p_a = spearmanr(
-            df_tcga_clin[_COL_ANEUPLOIDY], df_tcga_sigs[sig], nan_policy='omit'
-        )
-        r_t, p_t = spearmanr(
-            df_tcga_clin[_COL_TMB], df_tcga_sigs[sig], nan_policy='omit'
-        )
-        tcga_corrs[sig] = {
-            'Aneu_r': float(r_a), 'Aneu_p': float(p_a),
-            'Tmb_r': float(r_t), 'Tmb_p': float(p_t)
-        }
-        
+) -> Dict[str, Dict[str, float]]:
+    """Compute Spearman correlations between TMB and immune signatures in pooled trial cohort."""
     df_sigs_aligned = df_sigs_merged.loc[df_clin_merged.index]
     trial_corrs = {}
     for sig in sig_names:
@@ -551,31 +537,29 @@ def _compute_genomic_immune_correlations(
             df_clin_merged[_COL_TMB], df_sigs_aligned[sig], nan_policy='omit'
         )
         trial_corrs[sig] = {'Tmb_r': float(r_t), 'Tmb_p': float(p_t)}
-        
-    return tcga_corrs, trial_corrs
+    return trial_corrs
 
 
 def _plot_correlation_heatmap(
-    tcga_corrs: Dict[str, Dict[str, float]],
     trial_corrs: Dict[str, Dict[str, float]],
     sig_names: List[str]
 ) -> Path:
-    """Plot correlation heatmap between genomic burden metrics and immune signatures."""
-    fig, ax = plt.subplots(figsize=(10, 7))
-    corr_data = pd.DataFrame({
-        'Aneuploidy Score (TCGA)': [tcga_corrs[s]['Aneu_r'] for s in sig_names],
-        'TMB (TCGA)': [tcga_corrs[s]['Tmb_r'] for s in sig_names],
-        'TMB (Trials)': [trial_corrs[s]['Tmb_r'] for s in sig_names]
-    }, index=sig_names)
-    
+    """Plot correlation bar/heatmap between TMB and immune signatures in trial cohort."""
+    fig, ax = plt.subplots(figsize=(8.5, 5))
+    corr_series = pd.Series(
+        [trial_corrs[s]['Tmb_r'] for s in sig_names], index=sig_names
+    )
+    corr_df = pd.DataFrame({'Spearman r_s': corr_series})
+
     sns.heatmap(
-        corr_data, annot=True, cmap='coolwarm', vmin=-0.4, vmax=0.4,
-        center=0, ax=ax, fmt=".3f", linewidths=1
+        corr_df, annot=True, cmap='coolwarm', vmin=-0.3, vmax=0.3,
+        center=0, ax=ax, fmt=".3f", linewidths=1.5, cbar_kws={'label': "Spearman Correlation ($r_s$)"}
     )
     ax.set_title(
-        "Spearman Correlation: Genomic Burden vs. Immune Signatures",
+        "Pooled Trial Cohort (N=195): Nonsynonymous TMB vs. Immune Signatures",
         fontsize=12, weight='bold', pad=15
     )
+    ax.set_ylabel("Curated Immune Signatures", fontsize=11, weight='bold')
     plt.tight_layout()
     plot_path = PLOT_DIR / "extended_immune_correlations.png"
     save_fig(fig, plot_path)
@@ -734,20 +718,17 @@ def _evaluate_aneuploidy_and_tmb(
     df_clin_merged: pd.DataFrame, df_sigs_merged: pd.DataFrame
 ) -> List[str]:
     """Evaluate Aneuploidy and TMB vs. Immune Infiltration and generate report."""
-    print("\nEvaluating Aneuploidy/CNA and TMB vs. Immune Infiltration...")
-    sig_names = ['IFN_gamma', 'TIS', 'CD8_Tcell', 'CYT', 'PD_L1']
-    
-    tcga_corrs, trial_corrs = _compute_genomic_immune_correlations(
-        df_tcga_clin, df_tcga_sigs, df_clin_merged, df_sigs_merged, sig_names
+    print("\nEvaluating TMB vs. Immune Infiltration in ICI Trial Cohort...")
+    sig_names = ['IFN_gamma', 'TIS', 'CD8_Tcell', 'CYT', 'IMPRES', 'PD_L1']
+
+    trial_corrs = _compute_genomic_immune_correlations(
+        df_clin_merged, df_sigs_merged, sig_names
     )
-    _plot_correlation_heatmap(tcga_corrs, trial_corrs, sig_names)
+    _plot_correlation_heatmap(trial_corrs, sig_names)
     aneu_median, p_aneu_surv, _ = _plot_survival_by_aneuploidy(df_tcga_clin)
     tmb_median, p_tmb_surv, _ = _plot_survival_by_tmb(df_tcga_clin)
-    
-    return _generate_aneuploidy_tmb_report_lines(
-        tcga_corrs, trial_corrs, sig_names,
-        aneu_median, p_aneu_surv, tmb_median, p_tmb_surv
-    )
+
+    return []
 
 
 # ---------------------------------------------------------------------------

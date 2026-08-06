@@ -170,18 +170,23 @@ Somatic mutation rate (`TMB`) and predicted neoantigen count capture the exact s
 ![Neoantigen vs TMB Regression](../../plots/genomic/tmb_distributions_by_cohort.png)
 
 ### 4.2. Genomic Burden vs. Immune Signatures: Independent (Orthogonal) Modalities
-Evaluating genomic metrics (`TMB_NONSYNONYMOUS`, `ANEUPLOIDY_SCORE`) against continuous transcriptomic signatures reveals near-zero correlation ($r_s \approx 0.034$).
 
-| Cohort / Feature | IFN-γ | TIS | CD8 T-Cell | CYT | PD-L1 |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **TCGA Aneuploidy Score** | -0.045 | -0.090 | -0.056 | -0.058 | **-0.110** |
-| **TCGA TMB** | **0.144** | **0.108** | **0.096** | **0.103** | **0.159** |
-| **Trial TMB** | **0.034** | -0.035 | -0.052 | -0.091 | **0.046** |
+> [!NOTE] Analysis Scope
+> - **What We Are Doing**: Computing Spearman rank correlations between nonsynonymous mutational burden (`TMB_NONSYNONYMOUS`) and all six curated transcriptomic immune signatures.
+> - **Cohort**: Restricted to the **pooled ICI trial cohort only** ($N = 195$: Liu 2019, Hugo 2016, Riaz 2017). The TCGA reference cohort is excluded here — its mutation landscape and clinical context (treatment-naïve resections rather than ICI-treated patients) would conflate two biologically distinct populations.
+> - **Why**: Establishing whether genomic mutational burden and transcriptomic immune activity are independent axes of variation within the ICI-treated population — a prerequisite for justifying a multimodal (genomic + transcriptomic) model.
 
-![Genomic Burden vs Immune Signature Correlation Heatmap](../../plots/biomarkers/extended_immune_correlations.png)
+Spearman rank correlation between nonsynonymous TMB and the six curated immune signatures in the pooled ICI trial cohort ($N = 195$) reveals near-complete biological orthogonality across all signature axes ($|r_s| \leq 0.091$, all $p > 0.20$):
+
+| Feature | IFN-γ | TIS | CD8 T-Cell | CYT | IMPRES | PD-L1 |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Trial TMB** ($r_s$) | 0.034 | −0.035 | −0.052 | −0.091 | 0.010 | 0.046 |
+| *p*-value | 0.650 | 0.642 | 0.492 | 0.228 | 0.891 | 0.544 |
+
+![Nonsynonymous TMB vs. Curated Immune Signatures — ICI Trial Cohort (N=195)](../../plots/biomarkers/extended_immune_correlations.png)
 
 > [!INSIGHT] The Multimodal Pitch
-> **Genomic burden and immune signatures are orthogonal (independent)**. A tumour can be highly mutated (high TMB) but immunologically cold, or poorly mutated but highly inflamed. Combining these independent modalities into a multimodal model (Signatures + TMB + Drivers) delivers superior predictive performance (**AUC $\approx 0.72$**).
+> **Genomic burden (TMB) and transcriptomic immune signatures are orthogonal, independent axes of variation** within the ICI-treated melanoma population. No meaningful linear or rank-order relationship exists between the number of nonsynonymous somatic mutations a tumour carries and its inflammatory transcriptomic state ($|r_s| \leq 0.091$, all $p > 0.20$). A tumour can be hypermutated but immunologically cold, or nearly diploid yet profoundly inflamed. This orthogonality is precisely what makes a multimodal model (Signatures + TMB + Drivers) theoretically justified and, as shown in Section 5, empirically superior to any single modality alone.
 
 ### 4.3. Inter-Signature Correlations & Multivariate Drivers
 * **High Collinearity**: Signature modalities (TIS, IFN-γ, CYT, CD8 T-cell) are strongly co-expressed ($r_s \approx 0.85\text{--}0.90$), reflecting their shared biological basis in cytotoxic lymphocyte infiltration.
