@@ -233,6 +233,7 @@ data/processed/**/expr_merged.csv
 # Exclude scratch folders
 scratch/
 **/scratch/
+.scratch/
 
 .DS_Store
 *.bak

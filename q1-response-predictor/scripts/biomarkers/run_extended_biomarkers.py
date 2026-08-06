@@ -1,7 +1,7 @@
-"""Extended Biomarker Evaluation & Predictive Modelling (Merged Trial Cohorts).
+"""Extended Biomarker Evaluation & Characterisation (Merged Trial Cohorts).
 
 Evaluates univariate associations, neoantigen load vs TMB, somatic pathway mutations,
-aneuploidy & TMB vs immune infiltration, and trains multimodal response prediction models.
+and aneuploidy & TMB vs immune infiltration across clinical trial cohorts and TCGA.
 """
 
 # ---------------------------------------------------------------------------
@@ -9,7 +9,6 @@ aneuploidy & TMB vs immune infiltration, and trains multimodal response predicti
 # ---------------------------------------------------------------------------
 import contextlib
 import sys
-import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -25,9 +24,7 @@ import seaborn as sns
 from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test
 from scipy.stats import mannwhitneyu, spearmanr
-from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 # ---------------------------------------------------------------------------
 # Bootstrap & Path Resolution
@@ -56,9 +53,8 @@ from src.biology_constants import (
     PATHWAY_GENES,
     RECIST_RESPONSE_MAP,
 )
-from src.models import get_model
 from src.signatures import extract_all_signatures
-from src.styles import OKABE_ITO, RESPONSE_PALETTE, get_cohort_color, set_presentation_style
+from src.styles import RESPONSE_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import get_subproject_log_dir, rel_path
 from src.utils.plotting import save_fig
@@ -68,14 +64,9 @@ set_presentation_style()
 # ---------------------------------------------------------------------------
 # Constants & Configuration
 # ---------------------------------------------------------------------------
-DEFAULT_RANDOM_STATE = 42
-
 DATA_DIR = PROJECT_ROOT / "data"
 PLOT_DIR = BASE_DIR / "plots" / "biomarkers"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
-
-REPORTS_DIR = BASE_DIR / "reports" / "pillar-3-transcriptomic-signatures"
-CURATED_SIGNATURES_REPORT_PATH = REPORTS_DIR / "curated_signatures_report.md"
 
 LOG_DIR = get_subproject_log_dir(_THIS_FILE)
 LOG_PATH = LOG_DIR / "run_extended_biomarkers.log"
@@ -84,54 +75,20 @@ _COL_SAMPLE_ID = "SAMPLE_ID"
 _COL_TMB = "TMB_NONSYNONYMOUS"
 _COL_TOTAL_NEOANTIGEN = "TOTAL_NEOANTIGEN"
 _COL_RESPONSE = "response"
+_COL_RESPONSE_RAW = "RESPONSE"
+_COL_TEMP_RESP = "temp_resp"
 _COL_OS_MONTHS = "OS_MONTHS"
 _COL_OS_STATUS = "OS_STATUS"
+_COL_OS_STATUS_CLEAN = "os_status_clean"
 _COL_ANEUPLOIDY = "ANEUPLOIDY_SCORE"
 _COL_AGE = "AGE"
 _COL_COHORT = "Cohort"
 _COL_CNA = "CNA_PROP"
+_PREFIX_MUT = "mut_"
 
-
-# ---------------------------------------------------------------------------
-# Centralized Model Wrapper (Rule 2.1 Compliance)
-# ---------------------------------------------------------------------------
-class TunedCalibratedModel(BaseEstimator, ClassifierMixin):
-    """Scikit-learn model wrapper delegating tuning and calibration to src.models.get_model."""
-
-    _estimator_type = "classifier"
-
-    def __sklearn_tags__(self) -> Any:
-        """Return scikit-learn estimator tags explicitly marking model as classifier."""
-        tags = super().__sklearn_tags__()
-        tags.estimator_type = "classifier"
-        return tags
-
-    def __init__(self, model_type: str = "rf", calibrate: bool = True) -> None:
-        """Initialise model wrapper with target architecture key and calibration flag."""
-        self.model_type = model_type
-        self.calibrate = calibrate
-        self.fitted_model_: Any = None
-        self.classes_: Any = None
-
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "TunedCalibratedModel":
-        """Fit model on training split via src.models.get_model()."""
-        self.classes_ = np.unique(y)
-        self.fitted_model_ = get_model(
-            self.model_type, X, y, calibrate=self.calibrate
-        )
-        return self
-
-    def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """Predict class probabilities using tuned fitted estimator."""
-        if self.fitted_model_ is None:
-            raise RuntimeError("Model has not been fitted yet.")
-        return self.fitted_model_.predict_proba(X)
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        """Predict binary class labels using tuned fitted estimator."""
-        if self.fitted_model_ is None:
-            raise RuntimeError("Model has not been fitted yet.")
-        return self.fitted_model_.predict(X)
+_CURATED_IMMUNE_SIGNATURES = [
+    "IFN_gamma", "TIS", "CD8_Tcell", "CYT", "IMPRES", "PD_L1"
+]
 
 
 # ---------------------------------------------------------------------------
@@ -176,23 +133,6 @@ def load_processed_mutations(
             
     df_mut = (df_mut[target_genes] > 0).astype(int)
     return df_mut.reindex(sample_ids, fill_value=0)
-
-
-def evaluate_auc_cv(
-    model: Any, X: np.ndarray, y: np.ndarray, cv: StratifiedKFold, label: str
-) -> np.ndarray:
-    """Evaluate one feature set with serial outer CV and parallelised inner model search."""
-    start = time.perf_counter()
-    print(f"    - {label}...", flush=True)
-    scores = cross_val_score(model, X, y, cv=cv, scoring='roc_auc', n_jobs=None)
-    elapsed = time.perf_counter() - start
-    print(
-        f"      AUC = {scores.mean():.3f} (+/-{scores.std():.3f}); "
-        f"folds = [{', '.join(f'{score:.3f}' for score in scores)}]; "
-        f"{elapsed:.1f}s",
-        flush=True,
-    )
-    return scores
 
 
 # ---------------------------------------------------------------------------
@@ -251,9 +191,9 @@ def _align_clinical_column_aliases(df_list: List[pd.DataFrame]) -> None:
 
 def _filter_and_calculate_neoantigens(df_clin: pd.DataFrame) -> None:
     """Filter trial cohort to CR/PR/PD responses and compute total neoantigen load."""
-    df_clin['temp_resp'] = df_clin['RESPONSE'].map(RECIST_RESPONSE_MAP)
-    df_clin.dropna(subset=['temp_resp'], inplace=True)
-    df_clin.drop(columns=['temp_resp'], inplace=True)
+    df_clin[_COL_TEMP_RESP] = df_clin[_COL_RESPONSE_RAW].map(RECIST_RESPONSE_MAP)
+    df_clin.dropna(subset=[_COL_TEMP_RESP], inplace=True)
+    df_clin.drop(columns=[_COL_TEMP_RESP], inplace=True)
 
     if _COL_TOTAL_NEOANTIGEN not in df_clin.columns:
         avail_neo = [c for c in NEOANTIGEN_COLS if c in df_clin.columns]
@@ -291,7 +231,7 @@ def _attach_cohort_mutations(
         all_genes, df_clin.index.tolist()
     )
     for col in all_genes:
-        df_clin[f'mut_{col}'] = mut_df[col]
+        df_clin[f"{_PREFIX_MUT}{col}"] = mut_df[col]
 
 
 def _attach_pathway_mutations(
@@ -306,9 +246,9 @@ def _attach_pathway_mutations(
     _attach_cohort_mutations(df_riaz_clin, "riaz_2017", all_genes)
 
     for df in [df_liu_clin, df_hugo_clin, df_riaz_clin]:
-        antigen_cols = [f'mut_{g}' for g in PATHWAY_GENES["Antigen Presentation"]]
-        ifn_cols = [f'mut_{g}' for g in PATHWAY_GENES["IFN-gamma Signature"]]
-        surv_cols = [f'mut_{g}' for g in PATHWAY_GENES["Survival & Proliferation Drivers"]]
+        antigen_cols = [f"{_PREFIX_MUT}{g}" for g in PATHWAY_GENES["Antigen Presentation"]]
+        ifn_cols = [f"{_PREFIX_MUT}{g}" for g in PATHWAY_GENES["IFN-gamma Signature"]]
+        surv_cols = [f"{_PREFIX_MUT}{g}" for g in PATHWAY_GENES["Survival & Proliferation Drivers"]]
         df['mut_Antigen_Presentation'] = (df[antigen_cols].sum(axis=1) > 0).astype(int)
         df['mut_IFN_gamma_Signaling'] = (df[ifn_cols].sum(axis=1) > 0).astype(int)
         df['mut_Survival_Pathways'] = (df[surv_cols].sum(axis=1) > 0).astype(int)
@@ -320,7 +260,7 @@ def _merge_clinical_and_signatures(
     """Concatenate cleaned trial cohort clinical DataFrames."""
     clin_cols = [
         _COL_COHORT, _COL_RESPONSE, _COL_TMB, _COL_AGE, _COL_TOTAL_NEOANTIGEN, _COL_CNA,
-        'mut_BRAF', 'mut_NRAS', 'mut_NF1',
+        f"{_PREFIX_MUT}BRAF", f"{_PREFIX_MUT}NRAS", f"{_PREFIX_MUT}NF1",
         'mut_Antigen_Presentation', 'mut_IFN_gamma_Signaling', 'mut_Survival_Pathways'
     ]
     for df in [df_liu_clin, df_hugo_clin, df_riaz_clin]:
@@ -412,51 +352,34 @@ def _compute_neoantigen_roc_metrics(
         df_clin_merged[resp_mask][_COL_TMB].dropna(),
         df_clin_merged[nonresp_mask][_COL_TMB].dropna()
     )
-    return common_idx, auc_neo, auc_tmb, float(p_neo_mw), float(p_tmb_mw)
+    return common_idx, float(auc_neo), float(auc_tmb), float(p_neo_mw), float(p_tmb_mw)
 
 
-def _generate_neoantigen_report_lines(
-    n_trials: int, r_spearman: float, p_spearman: float,
-    n_common: int, auc_neo: float, auc_tmb: float, p_neo_mw: float, p_tmb_mw: float
-) -> List[str]:
-    """Build markdown report lines for Section 1 (Neoantigen Load vs TMB)."""
-    p_sp_str = f"{p_spearman:.2e}"
-    return [
-        "\n## 1. Neoantigen Load vs. Tumour Mutational Burden (TMB)",
-        (
-            f"We evaluated correlation between predicted neoantigen load (`TOTAL_NEOANTIGEN`) "
-            f"and mutational burden (`TMB_NONSYNONYMOUS`) in pooled trials ($N={n_trials}$):"
-        ),
-        f"\n*   **Spearman Correlation ($r$)**: **{r_spearman:.3f}** (p-value: **{p_sp_str}**)",
-        "\nAs expected, there is an almost perfect linear relationship between mutational burden "
-        "and predicted MHC-binding neoantigens.",
-        "\n### Predictive Utility for Immunotherapy Response",
-        "| Biomarker | N | Response ROC AUC | Mann-Whitney U p-value |",
-        "|---|---|---|---|",
-        f"| **TOTAL_NEOANTIGEN** | {n_common} | **{auc_neo:.3f}** | {p_neo_mw:.3e} |",
-        f"| **TMB_NONSYNONYMOUS** | {n_common} | **{auc_tmb:.3f}** | {p_tmb_mw:.3e} |"
-    ]
-
-
-def _evaluate_neoantigen_load(df_clin_merged: pd.DataFrame) -> List[str]:
-    """Evaluate Neoantigen Load vs. TMB in Pooled Trials and generate report."""
+def _evaluate_neoantigen_load(df_clin_merged: pd.DataFrame) -> None:
+    """Evaluate Neoantigen Load vs. TMB in Pooled Trials and print summary metrics."""
     print("\nEvaluating Neoantigen Load vs. TMB in Pooled Trials...")
     
     df_trials_neo = df_clin_merged.dropna(subset=[_COL_TOTAL_NEOANTIGEN, _COL_TMB]).copy()
     r_spearman, p_spearman = spearmanr(
         df_trials_neo[_COL_TOTAL_NEOANTIGEN], df_trials_neo[_COL_TMB], nan_policy='omit'
     )
-    print(f"  Spearman correlation (pooled): r = {r_spearman:.3f}, p = {p_spearman:.2e}")
+    n_trials = len(df_trials_neo)
+    print(
+        f"  Spearman correlation (pooled N={n_trials}): "
+        f"r = {r_spearman:.3f}, p = {p_spearman:.2e}"
+    )
     
     common_idx, auc_neo, auc_tmb, p_neo_mw, p_tmb_mw = _compute_neoantigen_roc_metrics(
         df_clin_merged
     )
-    print(f"  Neoantigen response prediction ROC AUC: {auc_neo:.3f} (p = {p_neo_mw:.3e})")
-    print(f"  TMB response prediction ROC AUC: {auc_tmb:.3f} (p = {p_tmb_mw:.3e})")
-    
-    return _generate_neoantigen_report_lines(
-        len(df_trials_neo), float(r_spearman), float(p_spearman),
-        len(common_idx), auc_neo, auc_tmb, p_neo_mw, p_tmb_mw
+    n_comm = len(common_idx)
+    print(
+        f"  Neoantigen response prediction ROC AUC (N={n_comm}): "
+        f"{auc_neo:.3f} (p = {p_neo_mw:.3e})"
+    )
+    print(
+        f"  TMB response prediction ROC AUC (N={n_comm}): "
+        f"{auc_tmb:.3f} (p = {p_tmb_mw:.3e})"
     )
 
 
@@ -473,54 +396,31 @@ def _format_pathway_mutation_row(
     p_hugo = df_hugo_clin[col].mean()
     p_riaz = df_riaz_clin[col].mean()
     p_pool = df_clin_merged[col].mean()
-    return f"| **{label}** | {p_liu:.1%} | {p_hugo:.1%} | {p_riaz:.1%} | **{p_pool:.1%}** |"
-
-
-def _get_pathway_mutation_headers(
-    n_l: int, n_h: int, n_r: int, n_m: int
-) -> List[str]:
-    """Build header lines for Section 2 somatic pathway mutations report table."""
-    return [
-        "\n## 2. Somatic Pathway Mutations",
-        "We evaluated somatic mutations in three biological pathways that dictate immunogenicity:",
-        "*   **Antigen Presentation**: `B2M`, `TAP1`, `TAP2` (disrupts MHC Class I presentation).",
-        (
-            "*   **IFN-gamma Signalling**: `JAK1`, `JAK2`, `STAT1` "
-            "(induces cytotoxicity insensitivity)."
-        ),
-        "*   **Survival & Proliferation Drivers**: `PTEN`, `CDKN2A`, `PIK3CA` (oncogenic drivers).",
-        "\n### Mutation Frequencies in Trial Cohorts:",
-        f"| Pathway / Gene | Liu 2019 ($N={n_l}$) | Hugo 2016 ($N={n_h}$) | "
-        f"Riaz 2017 ($N={n_r}$) | Pooled Trials ($N={n_m}$) |",
-        "|---|---|---|---|---|",
-    ]
+    return (
+        f"  {label:<32} | Liu: {p_liu:.1%} | Hugo: {p_hugo:.1%} | "
+        f"Riaz: {p_riaz:.1%} | Pooled: {p_pool:.1%}"
+    )
 
 
 def _evaluate_pathway_mutations(
     df_liu_clin: pd.DataFrame, df_hugo_clin: pd.DataFrame,
     df_riaz_clin: pd.DataFrame, df_clin_merged: pd.DataFrame
-) -> List[str]:
+) -> None:
     """Calculate and tabulate pathway mutation frequencies across trial cohorts."""
     print("\nCalculating pathway mutation frequencies in trial cohorts...")
-    n_l, n_h, n_r, n_m = len(df_liu_clin), len(df_hugo_clin), len(df_riaz_clin), len(df_clin_merged)
-    
-    report_section = _get_pathway_mutation_headers(n_l, n_h, n_r, n_m)
     mutation_labels = [
-        ('BRAF mutation', 'mut_BRAF'),
-        ('NRAS mutation', 'mut_NRAS'),
-        ('NF1 mutation', 'mut_NF1'),
+        ('BRAF mutation', f"{_PREFIX_MUT}BRAF"),
+        ('NRAS mutation', f"{_PREFIX_MUT}NRAS"),
+        ('NF1 mutation', f"{_PREFIX_MUT}NF1"),
         ('Antigen Presentation (MHC)', 'mut_Antigen_Presentation'),
         ('IFN-gamma Signalling', 'mut_IFN_gamma_Signaling'),
         ('Survival & Proliferation Drivers', 'mut_Survival_Pathways'),
     ]
     for label, col in mutation_labels:
-        report_section.append(
-            _format_pathway_mutation_row(
-                label, col, df_liu_clin, df_hugo_clin, df_riaz_clin, df_clin_merged
-            )
+        row_str = _format_pathway_mutation_row(
+            label, col, df_liu_clin, df_hugo_clin, df_riaz_clin, df_clin_merged
         )
-        
-    return report_section
+        print(row_str)
 
 
 # ---------------------------------------------------------------------------
@@ -551,12 +451,14 @@ def _plot_correlation_heatmap(
     )
     corr_df = pd.DataFrame({'Spearman r_s': corr_series})
 
+    cbar_label = "Spearman Correlation ($r_s$)"
     sns.heatmap(
         corr_df, annot=True, cmap='coolwarm', vmin=-0.3, vmax=0.3,
-        center=0, ax=ax, fmt=".3f", linewidths=1.5, cbar_kws={'label': "Spearman Correlation ($r_s$)"}
+        center=0, ax=ax, fmt=".3f", linewidths=1.5,
+        cbar_kws={'label': cbar_label}
     )
     ax.set_title(
-        "Pooled Trial Cohort (N=195): Nonsynonymous TMB vs. Immune Signatures",
+        f"Pooled Trial Cohort (N={len(corr_series)}): Nonsynonymous TMB vs. Immune Signatures",
         fontsize=12, weight='bold', pad=15
     )
     ax.set_ylabel("Curated Immune Signatures", fontsize=11, weight='bold')
@@ -572,8 +474,8 @@ def _prepare_survival_df(
     """Clean survival status, filter missing values, and calculate column median."""
     df_surv = df_tcga_clin.dropna(subset=[_COL_OS_MONTHS, _COL_OS_STATUS, column]).copy()
     df_surv[_COL_OS_MONTHS] = pd.to_numeric(df_surv[_COL_OS_MONTHS], errors='coerce')
-    df_surv['os_status_clean'] = df_surv[_COL_OS_STATUS].apply(clean_os_status)
-    df_surv = df_surv.dropna(subset=[_COL_OS_MONTHS, 'os_status_clean'])
+    df_surv[_COL_OS_STATUS_CLEAN] = df_surv[_COL_OS_STATUS].apply(clean_os_status)
+    df_surv = df_surv.dropna(subset=[_COL_OS_MONTHS, _COL_OS_STATUS_CLEAN])
     median_val = float(df_surv[column].median())
     return df_surv, median_val
 
@@ -588,20 +490,20 @@ def _render_km_curves(
     high_mask = df_surv[column] >= median_val
     
     kmf.fit(
-        df_surv.loc[low_mask, _COL_OS_MONTHS], df_surv.loc[low_mask, 'os_status_clean'],
+        df_surv.loc[low_mask, _COL_OS_MONTHS], df_surv.loc[low_mask, _COL_OS_STATUS_CLEAN],
         label=f"Low (N={low_mask.sum()})"
     )
     kmf.plot_survival_function(ax=ax, color=color_low, ci_show=False, linewidth=2.5)
     
     kmf.fit(
-        df_surv.loc[high_mask, _COL_OS_MONTHS], df_surv.loc[high_mask, 'os_status_clean'],
+        df_surv.loc[high_mask, _COL_OS_MONTHS], df_surv.loc[high_mask, _COL_OS_STATUS_CLEAN],
         label=f"High (N={high_mask.sum()})"
     )
     kmf.plot_survival_function(ax=ax, color=color_high, ci_show=False, linewidth=2.5)
     
     lr_res = logrank_test(
         df_surv.loc[high_mask, _COL_OS_MONTHS], df_surv.loc[low_mask, _COL_OS_MONTHS],
-        df_surv.loc[high_mask, 'os_status_clean'], df_surv.loc[low_mask, 'os_status_clean']
+        df_surv.loc[high_mask, _COL_OS_STATUS_CLEAN], df_surv.loc[low_mask, _COL_OS_STATUS_CLEAN]
     )
     return float(lr_res.p_value)
 
@@ -655,80 +557,18 @@ def _plot_survival_by_tmb(df_tcga_clin: pd.DataFrame) -> Tuple[float, float, Pat
     )
 
 
-def _build_spearman_table_rows(
-    tcga_corrs: Dict[str, Dict[str, float]],
-    trial_corrs: Dict[str, Dict[str, float]],
-    sig_names: List[str]
-) -> List[str]:
-    """Format Spearman correlation table rows across immune signatures."""
-    table_rows = []
-    for sig in sig_names:
-        r_a = tcga_corrs[sig]['Aneu_r']
-        r_tt = tcga_corrs[sig]['Tmb_r']
-        r_tr = trial_corrs[sig]['Tmb_r']
-        table_rows.append(f"| `{sig}` | **{r_a:.3f}** | **{r_tt:.3f}** | **{r_tr:.3f}** |")
-    return table_rows
-
-
-def _get_aneuploidy_tmb_headers() -> List[str]:
-    """Build section title and table header lines for Section 3."""
-    return [
-        "\n## 3. Aneuploidy, Copy-Number Alterations, & TMB vs. Immune Infiltration",
-        "We evaluated genomic burden vs immune signatures in TCGA and trial cohorts.",
-        "\n### Spearman Correlations table:",
-        "| Immune Signature | TCGA Aneuploidy Score ($r$) | TCGA TMB ($r$) | Trial TMB ($r$) |",
-        "|---|---|---|---|",
-    ]
-
-
-def _generate_aneuploidy_tmb_report_lines(
-    tcga_corrs: Dict[str, Dict[str, float]], trial_corrs: Dict[str, Dict[str, float]],
-    sig_names: List[str], aneu_median: float, p_aneu_surv: float,
-    tmb_median: float, p_tmb_surv: float
-) -> List[str]:
-    """Build report section lines for Aneuploidy and TMB vs Immune Infiltration."""
-    min_a = min(tcga_corrs[s]['Aneu_r'] for s in sig_names)
-    max_a = max(tcga_corrs[s]['Aneu_r'] for s in sig_names)
-    min_t = min(tcga_corrs[s]['Tmb_r'] for s in sig_names)
-    max_t = max(tcga_corrs[s]['Tmb_r'] for s in sig_names)
-
-    report_section = _get_aneuploidy_tmb_headers()
-    report_section.extend(_build_spearman_table_rows(tcga_corrs, trial_corrs, sig_names))
-    report_section.extend([
-        "\n**Biological Conclusion**: In both cohorts:",
-        f"1. **Chromosomal Instability (Aneuploidy)** shows a **weak negative correlation** "
-        f"($r \\approx {min_a:.2f}$ to ${max_a:.2f}$) with immune signatures.",
-        f"2. **Mutational Burden (TMB)** shows **very weak or near-zero correlation** "
-        f"($r \\approx {min_t:.2f}$ to ${max_t:.2f}$) with immune signatures.",
-        "\n![Correlation Heatmap](../plots/extended_immune_correlations.png)",
-        "\n### TCGA Overall Survival by Aneuploidy",
-        f"Partitioned at median Aneuploidy Score (**{aneu_median:.1f}**):",
-        f"\n*   **Log-Rank p-value**: **{p_aneu_surv:.3e}** (Statistically Significant)",
-        "\n![TCGA Aneuploidy Survival](../plots/extended_aneuploidy_survival.png)",
-        "\n### TCGA Overall Survival by Tumour Mutational Burden (TMB)",
-        f"Partitioned at median TMB (**{tmb_median:.2f} mutations/Mb**):",
-        f"\n*   **Log-Rank p-value**: **{p_tmb_surv:.3f}** (Prognostically Neutral)",
-        "\n![TCGA TMB Survival](../plots/survival_tcga_tmb.png)"
-    ])
-    return report_section
-
-
 def _evaluate_aneuploidy_and_tmb(
     df_tcga_clin: pd.DataFrame, df_tcga_sigs: pd.DataFrame,
     df_clin_merged: pd.DataFrame, df_sigs_merged: pd.DataFrame
-) -> List[str]:
-    """Evaluate Aneuploidy and TMB vs. Immune Infiltration and generate report."""
+) -> None:
+    """Evaluate Aneuploidy and TMB vs. Immune Infiltration and save figure plots."""
     print("\nEvaluating TMB vs. Immune Infiltration in ICI Trial Cohort...")
-    sig_names = ['IFN_gamma', 'TIS', 'CD8_Tcell', 'CYT', 'IMPRES', 'PD_L1']
-
     trial_corrs = _compute_genomic_immune_correlations(
-        df_clin_merged, df_sigs_merged, sig_names
+        df_clin_merged, df_sigs_merged, _CURATED_IMMUNE_SIGNATURES
     )
-    _plot_correlation_heatmap(trial_corrs, sig_names)
-    aneu_median, p_aneu_surv, _ = _plot_survival_by_aneuploidy(df_tcga_clin)
-    tmb_median, p_tmb_surv, _ = _plot_survival_by_tmb(df_tcga_clin)
-
-    return []
+    _plot_correlation_heatmap(trial_corrs, _CURATED_IMMUNE_SIGNATURES)
+    _plot_survival_by_aneuploidy(df_tcga_clin)
+    _plot_survival_by_tmb(df_tcga_clin)
 
 
 # ---------------------------------------------------------------------------
@@ -752,7 +592,7 @@ def main() -> None:
     _evaluate_pathway_mutations(df_liu_clin, df_hugo_clin, df_riaz_clin, df_clin_merged)
     _evaluate_aneuploidy_and_tmb(df_tcga_clin, df_tcga_sigs, df_clin_merged, df_sigs_merged)
 
-    print("==================================================")
+    print("\n==================================================")
     print("Biomarker evaluation completed successfully!")
     print("==================================================")
 
