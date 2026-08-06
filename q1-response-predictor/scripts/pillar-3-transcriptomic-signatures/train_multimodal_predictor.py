@@ -47,7 +47,7 @@ if str(PROJECT_ROOT) not in sys.path:
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-from scripts.biomarkers.run_extended_biomarkers import (
+from scripts.pillar_3_transcriptomic_signatures.run_extended_biomarkers import (
     DEFAULT_RANDOM_STATE,
     PLOT_DIR,
     REPORTS_DIR,
@@ -503,8 +503,8 @@ def _append_script_reference_callout(report_path: Path) -> None:
     def _uri(rel: str) -> str:
         return "file:///" + (BASE_DIR / rel).as_posix()
 
-    u_pred = _uri("scripts/biomarkers/train_multimodal_predictor.py")
-    u_bio = _uri("scripts/biomarkers/run_extended_biomarkers.py")
+    u_pred = _uri("scripts/pillar-3-transcriptomic-signatures/train_multimodal_predictor.py")
+    u_bio = _uri("scripts/pillar-3-transcriptomic-signatures/run_extended_biomarkers.py")
     u_sig = _uri("src/signatures.py")
     u_mod = _uri("src/models.py")
     u_eval = _uri("src/evaluation.py")

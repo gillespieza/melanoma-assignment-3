@@ -93,15 +93,22 @@ melanoma-assignment-3/
 | `clean_data.py` | Clean raw cohort clinical, expression, and mutation data |
 | `download_data.py` | Retrieve and structure raw cohort files |
 | `merge_datasets.py` | Merge processed cohort matrices into harmonised immunotherapy datasets |
-| `biomarkers/run_extended_biomarkers.py` | Fast exploratory biomarker analysis (TMB vs Neoantigen, Pathway Mutations, Aneuploidy/CNA, TCGA OS curves) |
-| `biomarkers/train_multimodal_predictor.py` | Multimodal ML model training, 5-fold CV hyperparameter search across 5 feature permutation tiers, Section 5 report update |
-| `biomarkers/run_genomic_characterisation.py` | TMB calculation, driver mutation prevalence (`BRAF`, `NRAS`, `NF1`), Fisher's exact co-occurrence |
+| `pillar-1-cohort-preprocessing/run_genomic_characterisation.py` | TMB calculation, driver mutation prevalence (`BRAF`, `NRAS`, `NF1`), Fisher's exact co-occurrence |
+| `pillar-2-clinical-subtyping/run_clinical_analysis.py` | Clinical feature distributions, Kaplan-Meier OS curves, and univariate log-rank tests |
+| `pillar-2-clinical-subtyping/run_clinical_clustering.py` | Exploratory clinical phenotyping and cluster-based patient stratification |
+| `pillar-2-clinical-subtyping/run_clinical_feature_selection.py` | Clinical feature selection and univariate association benchmarking |
+| `pillar-2-clinical-subtyping/run_univariate_associations.py` | Statistical testing of baseline clinical covariates against ICI response |
+| `pillar-2-clinical-subtyping/plot_cluster_profile_visualizations.py` | Radar and violin plot visualisations for clinical patient clusters |
+| `pillar-3-transcriptomic-signatures/run_extended_biomarkers.py` | Fast exploratory biomarker analysis (TMB vs Neoantigen, Pathway Mutations, Aneuploidy/CNA, TCGA OS curves) |
+| `pillar-3-transcriptomic-signatures/train_multimodal_predictor.py` | Multimodal ML model training, 5-fold CV hyperparameter search across 5 feature permutation tiers, Section 5 report update |
+| `pillar-4-out-of-cohort-benchmarks/run_transcriptomic_feature_selection.py` | 12-feature multimodal Random Forest classifier (8 signature modalities + driver mutation flags) & signature vs raw gene benchmarks |
+| `pillar-4-out-of-cohort-benchmarks/generate_5f_cv_comparison_heatmap.py` | 5-Fold Stratified CV benchmark heatmap: Curated Signatures vs SelectKBest |
 | `exploratory_plots/run_merged_comut_plot.py` | Generates co-mutation oncoprint visualisations |
 | `exploratory_plots/generate_threshold_plot.py` | Youden's J biomarker threshold optimisation plot |
 | `exploratory_plots/generate_loco_heatmap.py` | Leave-One-Cohort-Out (LOCO) performance heatmap (Curated Signatures, per-cohort) |
 | `exploratory_plots/generate_5f_cv_heatmap.py` | 5-Fold Stratified CV per-fold AUROC heatmap |
-| `exploratory_plots/generate_combined_cv_loco_heatmap.py` | **Primary evaluation figure**: 1×2 panel — Left: 5-fold CV AUROC (Curated Signatures vs SelectKBest, Mean ± SD + t-test asterisks); Right: LOCO AUROC per held-out cohort (Curated Signatures, Mean ± bootstrap SD + Mann-Whitney asterisks). Output: `plots/models/cv_loco_1x2_heatmap.png` |
-| `exploratory_plots/generate_loco_feature_comparison_heatmap.py` | **LOCO feature comparison figure**: 1×2 panel — Left: LOCO per-cohort (Curated Signatures); Right: LOCO by feature representation (Curated vs SelectKBest k=20/100/200, Mean across 3 cohorts + majority-vote asterisks). Output: `plots/models/loco_dual_1x2_heatmap.png` |
+| `exploratory_plots/generate_combined_cv_loco_heatmap.py` | **Primary evaluation figure**: 1×2 panel — Left: 5-fold CV AUROC (Curated Signatures vs SelectKBest); Right: LOCO AUROC per held-out cohort. Output: `plots/models/cv_loco_1x2_heatmap.png` |
+| `exploratory_plots/generate_loco_feature_comparison_heatmap.py` | **LOCO feature comparison figure**: 1×2 panel — Left: LOCO per-cohort (Curated Signatures); Right: LOCO by feature representation. Output: `plots/models/loco_dual_1x2_heatmap.png` |
 | `exploratory_plots/run_comparison.py` | LOCO cross-validation benchmark: Curated Multimodal Features vs SelectKBest |
 | `exploratory_plots/run_clustering.py` | Exploratory clustering of pooled cohort expression data |
 | `exploratory_plots/run_dimensionality_reduction.py` | PCA / t-SNE / UMAP projections for pooled cohort |
@@ -112,8 +119,7 @@ melanoma-assignment-3/
 | `exploratory_plots/run_response_distribution.py` | Response rate distribution across cohorts |
 | `exploratory_plots/run_response_km_curves.py` | KM curves stratified by predicted response |
 | `exploratory_plots/run_waffle_chart.py` | Cohort composition waffle chart |
-| `feature_selection/generate_5f_cv_comparison_heatmap.py` | 5-Fold Stratified CV benchmark heatmap: Curated Signatures vs SelectKBest (standalone, predecessor to `generate_combined_cv_loco_heatmap.py`) |
-| `feature_selection/run_transcriptomic_feature_selection.py` | 12-feature multimodal Random Forest classifier (8 signature modalities + driver mutation flags) & signature vs raw gene benchmarks |
+| `models/predictors.py` | Classifier evaluation wrappers (LR, RF, XGB, SVM, ElasticNet) |
 | `reports/run_executive_summary.py` | Executive summary report generator |
 | `run_pipeline.py` | Master Q1 pipeline orchestrator |
 
@@ -322,6 +328,7 @@ npm run build
 | `q1-response-predictor/scripts/clean_data.py` code smell refactoring | Conducted 4-pass code smell remediation per `AGENTS.md` guidelines: 100% of 44 functions decomposed to $\le 30$ lines, extracted 10 domain constants (`_COL_VARIANT_CLASSIFICATION`, `_COL_TREATMENT_TYPE`, `_STRATEGY_IATLAS`, `_STRATEGY_TCGA`, etc.), introduced `CleanedDataBundle` parameter object to shrink function signatures, restored `_build_treatment_summary_features()`, added full type annotations & docstrings, eliminated long lines & long ternaries, and added traceback logging to broad exception handler. | **Resolved** (2026-08-06) |
 | Data ingestion & pipeline scripts refactoring (`download_data.py`, `clean_data.py`, `merge_datasets.py`) | Audited and refactored all 3 pipeline data scripts: 100% of 91 functions decomposed to $\le 30$ lines (16 in `download_data.py`, 45 in `clean_data.py`, 30 in `merge_datasets.py`), eliminated cross-script DRY path ambiguities by deriving `CONFIG_PATH` via `SCRIPT_DIR.parent`, integrated project-root `src/` utilities (`paths.py`, `io.py`, `logging.py`) and biological constants (`src/biology_constants.py`), zero lines > 100 chars, 100% docstring & type hint coverage. Verified full sequential pipeline run (`download` → `clean` → `merge`) with 0 errors. | **Resolved** (2026-08-06) |
 | `q1-response-predictor/scripts/biomarkers/run_extended_biomarkers.py` code smell & dead code cleanup | Audited and refactored `run_extended_biomarkers.py` per `AGENTS.md` guidelines & user instructions: 100% of 26 active functions decomposed to $\le 30$ lines, zero lines $>100$ chars, extracted private `_COL_*` and `_CURATED_IMMUNE_SIGNATURES` constants, removed orphaned report generator stubs (`_generate_aneuploidy_tmb_report_lines`, `_build_spearman_table_rows`, `_get_aneuploidy_tmb_headers`) and unused model helpers (`TunedCalibratedModel`, `evaluate_auc_cv`), removed unused imports, added 100% type hint & docstring coverage, and verified execution with 0 errors. | **Resolved** (2026-08-06) |
+| Q1 script folder organisation — Pillar alignment | Restructured `q1-response-predictor/scripts/` to mirror `reports/` pillar structure: moved `run_genomic_characterisation.py` → `pillar-1-cohort-preprocessing/`, `clinical_analysis/` → `pillar-2-clinical-subtyping/`, `run_extended_biomarkers.py` & `train_multimodal_predictor.py` → `pillar-3-transcriptomic-signatures/`, `feature_selection/` → `pillar-4-out-of-cohort-benchmarks/`. Added `__init__.py` to `pillar-3-transcriptomic-signatures/` package, updated cross-script imports (`scripts.pillar_3_transcriptomic_signatures`), updated report callout deep links in `curated_signatures_report.md`, and verified full script execution with exit code 0. | **Resolved** (2026-08-06) |
 
 ## Conventions Quick Reference
 
