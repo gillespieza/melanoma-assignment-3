@@ -430,7 +430,7 @@ def _compute_genomic_immune_correlations(
     df_clin_merged: pd.DataFrame, df_sigs_merged: pd.DataFrame, sig_names: List[str]
 ) -> Dict[str, Dict[str, float]]:
     """Compute Spearman correlations between TMB and immune signatures in pooled trial cohort."""
-    df_sigs_aligned = df_sigs_merged.loc[df_clin_merged.index]
+    df_sigs_aligned = df_sigs_merged.reindex(df_clin_merged.index)
     trial_corrs = {}
     for sig in sig_names:
         r_t, p_t = spearmanr(
@@ -442,7 +442,8 @@ def _compute_genomic_immune_correlations(
 
 def _plot_correlation_heatmap(
     trial_corrs: Dict[str, Dict[str, float]],
-    sig_names: List[str]
+    sig_names: List[str],
+    n_samples: int
 ) -> Path:
     """Plot correlation bar/heatmap between TMB and immune signatures in trial cohort."""
     fig, ax = plt.subplots(figsize=(8.5, 5))
@@ -458,7 +459,7 @@ def _plot_correlation_heatmap(
         cbar_kws={'label': cbar_label}
     )
     ax.set_title(
-        f"Pooled Trial Cohort (N={len(corr_series)}): Nonsynonymous TMB vs. Immune Signatures",
+        f"Pooled Trial Cohort (N={n_samples}): Nonsynonymous TMB vs. Immune Signatures",
         fontsize=12, weight='bold', pad=15
     )
     ax.set_ylabel("Curated Immune Signatures", fontsize=11, weight='bold')
@@ -568,7 +569,9 @@ def _evaluate_aneuploidy_and_tmb(
     trial_corrs = _compute_genomic_immune_correlations(
         df_clin_merged, df_sigs_merged, _CURATED_IMMUNE_SIGNATURES
     )
-    _plot_correlation_heatmap(trial_corrs, _CURATED_IMMUNE_SIGNATURES)
+    _plot_correlation_heatmap(
+        trial_corrs, _CURATED_IMMUNE_SIGNATURES, n_samples=len(df_clin_merged)
+    )
     _plot_survival_by_aneuploidy(df_tcga_clin)
     _plot_survival_by_tmb(df_tcga_clin)
 
@@ -586,7 +589,7 @@ def main() -> None:
     if data is None:
         return
     (
-        df_clin_merged, df_sigs_merged, df_tcga_clin, df_tcga_sigs,
+        df_clin_merged, df_sigs_merged, df_tcga_clin, _,
         df_liu_clin, df_hugo_clin, df_riaz_clin
     ) = data
 
