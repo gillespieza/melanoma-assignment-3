@@ -66,9 +66,9 @@ from src.utils.logging import (
     display_path,
 )
 from src.utils.paths import (
-    LOG_DIR,
-    RAW_DIR,
     PROCESSED_DIR,
+    RAW_DIR,
+    get_subproject_log_dir,
 )
 from src.utils.preprocessing import (
     align_expression_and_clinical,
@@ -85,8 +85,9 @@ from src.utils.preprocessing import (
 # Configuration
 # ============================================================================
 
-CONFIG_DIR = SUBPROJECT_ROOT / "config"
-CONFIG_PATH = CONFIG_DIR / "datasets.yaml"
+# Resolve config relative to script location.
+CONFIG_PATH = SCRIPT_DIR.parent / "config" / "datasets.yaml"
+LOG_DIR = get_subproject_log_dir(SCRIPT_DIR)
 LOG_PATH = LOG_DIR / "clean_data.log"
 
 
@@ -1091,25 +1092,13 @@ def _check_tcga_gene_count_plausibility(
         print(f"\n  [PASS] TCGA expression gene count appears plausible: {n_genes:,}.")
 
 
-def _run_sanity_checks(
+def _evaluate_dataset_integrities(
     raw_dir: Path,
     processed_dir: Path,
     dataset: DatasetConfig,
+    required_files: dict[str, Path],
 ) -> None:
-    """
-    Run post-processing sanity checks on cleaned dataset outputs.
-    """
-    print("\n  Running post-processing sanity checks...")
-
-    required_files = {
-        "clinical": processed_dir / _CLINICAL_OUTPUT_FILENAME,
-        "expression": processed_dir / _EXPRESSION_OUTPUT_FILENAME,
-        "mutation": processed_dir / _MUTATIONS_OUTPUT_FILENAME,
-    }
-
-    if not _check_output_files_exist(required_files):
-        return
-
+    """Read cleaned output dataframes and execute integrity assertion checks."""
     clinical_df = pd.read_csv(required_files["clinical"])
     expression_df = pd.read_csv(required_files["expression"], index_col=0)
     mutation_df = pd.read_csv(required_files["mutation"], index_col=0)
@@ -1125,7 +1114,24 @@ def _run_sanity_checks(
     if dataset.processing_strategy == _STRATEGY_TCGA:
         _check_tcga_gene_count_plausibility(expression_df)
 
-    print("\n  Sanity checks complete.")
+
+def _run_sanity_checks(
+    raw_dir: Path,
+    processed_dir: Path,
+    dataset: DatasetConfig,
+) -> None:
+    """Run post-processing sanity checks on cleaned dataset outputs."""
+    print("\n  Running post-processing sanity checks...")
+
+    required_files = {
+        "clinical": processed_dir / _CLINICAL_OUTPUT_FILENAME,
+        "expression": processed_dir / _EXPRESSION_OUTPUT_FILENAME,
+        "mutation": processed_dir / _MUTATIONS_OUTPUT_FILENAME,
+    }
+
+    if _check_output_files_exist(required_files):
+        _evaluate_dataset_integrities(raw_dir, processed_dir, dataset, required_files)
+        print("\n  Sanity checks complete.")
 
 # ============================================================================
 # Main workflow

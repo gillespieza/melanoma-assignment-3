@@ -3,11 +3,11 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-06 (Completed 4-pass code smell refactoring of `q1-response-predictor/scripts/clean_data.py`: all 44 functions brought under 30 lines, 100% type hints & docstrings, extracted domain constants, introduced `CleanedDataBundle` parameter object, and restored TCGA treatment summary feature engineering).
+> **Last updated**: 2026-08-06 (Completed comprehensive code smell, DRY, AST, and logic refactoring across all core `q1-response-predictor/scripts/` pipeline scripts — `download_data.py`, `clean_data.py`, `merge_datasets.py`, and `run_pipeline.py`: 100% of 126 total functions $\le 30$ lines, 100% type hints & docstrings, zero lines > 100 chars, `CohortBundle` NamedTuple architecture, standardized `__file__`-relative configuration path resolution, zero bare string magic literals, and integrated project-root `src/` utilities and biological constants).
 
 ## Repository Overview
 
-**Domain**: Melanoma immunotherapy – predicting anti-PD-1/CTLA-4 response, drug sensitivity, tumour dynamics, and patient stratification across multi-cohort clinical trial data (Liu 2019, Hugo 2016, Riaz 2017, TCGA-SKCM).
+**Domain**: Melanoma immunotherapy – predicting anti-PD-1/CTLA-4 response, targeted therapy drug sensitivity, tumour dynamics, and patient stratification across multi-cohort clinical trial data (Liu 2019, Hugo 2016, Riaz 2017, TCGA-SKCM).
 
 **Structure**: 5 research questions (Q1–Q5), each in its own subproject directory, plus shared infrastructure in the root `src/` and `data/` directories. Q5 is the master synthesis engine that integrates Q1–Q4 outputs.
 
@@ -21,10 +21,10 @@ melanoma-assignment-3/
 ├── plots/                  <- Top-level cross-cohort visualisations
 ├── logs/                   <- Top-level pipeline logs
 ├── q1-response-predictor/  <- Q1: Immunotherapy response prediction
+├── q1.1-patient-stratification/ <- Q5: Patient clustering, clinical utility, treatability
 ├── q2-viability-predictor/ <- Q2: Cell-line drug sensitivity modelling
 ├── q3-ode-model/           <- Q3: ODE tumour-immune dynamics
 ├── Q4_dep_map/             <- Q4: DepMap CRISPR + LINCS L1000 target discovery
-├── q5-patient-stratification/ <- Q5: Patient clustering, clinical utility, treatability
 └── dashboard/                 <- React clinical decision-support dashboard (OncoTwin)
 ```
 
@@ -319,6 +319,7 @@ npm run build
 | Q1 script organisation — plot scripts in `biomarkers/` | Plot-generating scripts were incorrectly placed in `scripts/biomarkers/`. Moved to: `scripts/exploratory_plots/` (`generate_loco_heatmap.py`, `generate_5f_cv_heatmap.py`, `generate_combined_cv_loco_heatmap.py`, `generate_loco_feature_comparison_heatmap.py`, `generate_threshold_plot.py`, `run_merged_comut_plot.py`) and `scripts/feature_selection/` (`generate_5f_cv_comparison_heatmap.py`). `biomarkers/` now contains analysis scripts only. | **Resolved** (2026-08-05) |
 | Q1 log path routing | `generate_combined_cv_loco_heatmap.py` and `generate_loco_feature_comparison_heatmap.py` were writing logs to `PROJECT_ROOT/logs/` instead of `q1-response-predictor/logs/`. Fixed by replacing imported `LOG_DIR` with `get_subproject_log_dir(Path(__file__))` in both scripts. | **Resolved** (2026-08-05) |
 | `q1-response-predictor/scripts/clean_data.py` code smell refactoring | Conducted 4-pass code smell remediation per `AGENTS.md` guidelines: 100% of 44 functions decomposed to $\le 30$ lines, extracted 10 domain constants (`_COL_VARIANT_CLASSIFICATION`, `_COL_TREATMENT_TYPE`, `_STRATEGY_IATLAS`, `_STRATEGY_TCGA`, etc.), introduced `CleanedDataBundle` parameter object to shrink function signatures, restored `_build_treatment_summary_features()`, added full type annotations & docstrings, eliminated long lines & long ternaries, and added traceback logging to broad exception handler. | **Resolved** (2026-08-06) |
+| Data ingestion & pipeline scripts refactoring (`download_data.py`, `clean_data.py`, `merge_datasets.py`) | Audited and refactored all 3 pipeline data scripts: 100% of 91 functions decomposed to $\le 30$ lines (16 in `download_data.py`, 45 in `clean_data.py`, 30 in `merge_datasets.py`), eliminated cross-script DRY path ambiguities by deriving `CONFIG_PATH` via `SCRIPT_DIR.parent`, integrated project-root `src/` utilities (`paths.py`, `io.py`, `logging.py`) and biological constants (`src/biology_constants.py`), zero lines > 100 chars, 100% docstring & type hint coverage. Verified full sequential pipeline run (`download` → `clean` → `merge`) with 0 errors. | **Resolved** (2026-08-06) |
 
 ## Conventions Quick Reference
 

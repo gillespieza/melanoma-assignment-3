@@ -99,10 +99,8 @@ from src.utils.paths import (
 # Paths
 # ---------------------------------------------------------------------------
 
-# datasets.yaml lives inside this subproject's own config/ directory, not the
-# shared data/config/. CONFIG_DIR is therefore subproject-specific.
-CONFIG_DIR = SUBPROJECT_ROOT / "config"
-CONFIG_PATH = CONFIG_DIR / "datasets.yaml"
+# Resolve config relative to script location.
+CONFIG_PATH = SCRIPT_DIR.parent / "config" / "datasets.yaml"
 
 LOG_DIR = get_subproject_log_dir(Path(__file__))
 LOG_PATH = LOG_DIR / "download_data.log"
@@ -155,13 +153,26 @@ def is_dataset_present(dataset: DatasetConfig) -> bool:
     return False
 
 
-def _handle_remove_readonly(func, path, exc_info):
+def _handle_remove_readonly(func: object, path: object, exc_info: object) -> None:
     """Clear read-only attribute on file and retry removal (Windows fix)."""
     try:
-        os.chmod(path, stat.S_IWRITE)
+        os.chmod(str(path), stat.S_IWRITE)
         func(path)
+        _ = exc_info
     except OSError:
         pass
+
+
+def _attempt_remove_path(target_path: Path) -> None:
+    """Attempt single removal of file or directory."""
+    if target_path.is_dir():
+        shutil.rmtree(target_path, onerror=_handle_remove_readonly)
+    else:
+        try:
+            os.chmod(target_path, stat.S_IWRITE)
+        except OSError:
+            pass
+        target_path.unlink()
 
 
 def remove_path_with_retry(
@@ -169,44 +180,22 @@ def remove_path_with_retry(
     retries: int = MAX_REORGANISATION_RETRIES,
     delay_seconds: float = REORGANISATION_RETRY_DELAY_SECONDS,
 ) -> None:
-    """Remove a file or directory with read-only attribute clearing and retry handling.
-
-    Handles Windows file-locking edge cases (e.g. Dropbox or indexer holds)
-    by retrying with backoff.
-
-    Args:
-        target_path:
-            File or directory to remove.
-        retries:
-            Maximum number of attempts.
-        delay_seconds:
-            Base delay between retry attempts.
-    """
+    """Remove a file or directory with read-only attribute clearing and retry handling."""
     if not target_path.exists():
         return
 
-    last_error = None
-
+    last_error: OSError | None = None
     for attempt in range(1, retries + 1):
         try:
-            if target_path.is_dir():
-                shutil.rmtree(target_path, onerror=_handle_remove_readonly)
-            else:
-                try:
-                    os.chmod(target_path, stat.S_IWRITE)
-                except OSError:
-                    pass
-                target_path.unlink()
+            _attempt_remove_path(target_path)
             return
         except OSError as exc:
             last_error = exc
-            if attempt == retries:
-                break
-            time.sleep(delay_seconds * attempt)
+            if attempt < retries:
+                time.sleep(delay_seconds * attempt)
 
     raise OSError(
-        f"Failed to remove {rel_path(target_path)} "
-        f"after {retries} attempts."
+        f"Failed to remove {rel_path(target_path)} after {retries} attempts."
     ) from last_error
 
 
@@ -233,225 +222,131 @@ def remove_existing_dataset_directory(target_dir: Path) -> None:
     remove_path_with_retry(target_dir)
 
 
+def _attempt_single_move(
+    source: Path,
+    destination: Path,
+    attempt: int,
+    retries: int,
+    delay_seconds: float,
+) -> None:
+    """Perform single move attempt with backoff logging."""
+    wait_seconds = delay_seconds * attempt
+    print(f"  Move attempt {attempt}/{retries} failed for {source.name}")
+    print(f"  Retrying in {wait_seconds:.1f} seconds...")
+    time.sleep(wait_seconds)
+
+
 def move_with_retry(
     source: Path,
     destination: Path,
     retries: int = MAX_REORGANISATION_RETRIES,
     delay_seconds: float = REORGANISATION_RETRY_DELAY_SECONDS,
 ) -> None:
-    """Move a file or directory with retry handling.
-
-    Retry behaviour is useful when a synchronisation service or another
-    process briefly holds a file handle. The implementation is platform
-    independent and works on Windows, macOS, and Linux.
-
-    Args:
-        source:
-            Source file or directory.
-
-        destination:
-            Destination file or directory.
-
-        retries:
-            Maximum number of attempts.
-
-        delay_seconds:
-            Delay between attempts. The delay increases slightly after
-            each failed attempt.
-
-    Raises:
-        OSError:
-            If the move fails after all retry attempts.
-    """
-    last_error = None
-
+    """Move a file or directory with retry handling."""
+    last_error: OSError | None = None
     for attempt in range(1, retries + 1):
         try:
             shutil.move(source, destination)
             return
-
         except OSError as exc:
             last_error = exc
-
-            if attempt == retries:
-                break
-
-            wait_seconds = delay_seconds * attempt
-
-            print(
-                f"  Move attempt {attempt}/{retries} failed for "
-                f"{source.name}: {exc}"
-            )
-            print(
-                f"  Retrying in {wait_seconds:.1f} seconds..."
-            )
-
-            time.sleep(wait_seconds)
+            if attempt < retries:
+                _attempt_single_move(source, destination, attempt, retries, delay_seconds)
 
     raise OSError(
-        f"Failed to move {source} to {destination} "
-        f"after {retries} attempts."
+        f"Failed to move {source} to {destination} after {retries} attempts."
     ) from last_error
+
+
+def _move_extracted_items(extracted_items: list[Path], target_dir: Path) -> None:
+    """Move all extracted items to destination directory."""
+    for item in extracted_items:
+        destination = target_dir / item.name
+        if destination.exists():
+            remove_path_with_retry(destination)
+        move_with_retry(item, destination)
 
 
 def reorganise_extracted_dataset(
     extracted_dir: Path,
     target_dir: Path,
 ) -> None:
-    """Move extracted dataset contents into the configured target directory.
-
-    cBioPortal archives typically extract into a directory named after the
-    study ID. This function moves the contents of that directory into the
-    configured standard directory under data/raw/.
-
-    The source directory is removed only after all contents have been moved
-    successfully.
-
-    Args:
-        extracted_dir:
-            Path to the temporary directory containing extracted files.
-        target_dir:
-            Destination directory under ``data/raw/``.
-
-    Raises:
-        FileNotFoundError:
-            If ``extracted_dir`` does not exist or contains no files.
-        NotADirectoryError:
-            If ``extracted_dir`` is not a directory.
-    """
+    """Move extracted dataset contents into the configured target directory."""
     if not extracted_dir.exists():
-        raise FileNotFoundError(
-            f"Expected extracted dataset directory not found: "
-            f"{rel_path(extracted_dir)}"
-        )
+        raise FileNotFoundError(f"Extracted dataset dir missing: {rel_path(extracted_dir)}")
 
     if not extracted_dir.is_dir():
-        raise NotADirectoryError(
-            f"Expected extracted dataset path to be a directory: "
-            f"{rel_path(extracted_dir)}"
-        )
+        raise NotADirectoryError(f"Extracted path not a dir: {rel_path(extracted_dir)}")
 
     target_dir.mkdir(parents=True, exist_ok=True)
-
-    print(
-        f"Reorganising files from {extracted_dir.name} to "
-        f"{rel_path(target_dir)}..."
-    )
+    print(f"Reorganising files from {extracted_dir.name} to {rel_path(target_dir)}...")
 
     extracted_items = list(extracted_dir.iterdir())
-
     if not extracted_items:
-        raise FileNotFoundError(
-            f"Extracted dataset directory is empty: {rel_path(extracted_dir)}"
-        )
+        raise FileNotFoundError(f"Extracted dataset dir is empty: {rel_path(extracted_dir)}")
 
-    for item in extracted_items:
-        destination = target_dir / item.name
-
-        if destination.exists():
-            remove_path_with_retry(destination)
-
-        move_with_retry(item, destination)
-
+    _move_extracted_items(extracted_items, target_dir)
     remove_path_with_retry(extracted_dir)
-
-    print(
-        f"Reorganisation of {extracted_dir.name} complete."
-    )
+    print(f"Reorganisation of {extracted_dir.name} complete.")
 
 
-def download_and_extract_dataset(
-    dataset: DatasetConfig,
-) -> None:
-    """Download, extract, and reorganise one configured dataset.
-
-    Args:
-        dataset:
-            Dataset configuration loaded from datasets.yaml.
-
-    Raises:
-        ValueError:
-            If study_id or raw_directory contain path traversal characters.
-        Exception:
-            Any download, extraction, or reorganisation failure is
-            propagated to the caller after cleanup.
-    """
+def _validate_dataset_paths(dataset: DatasetConfig) -> None:
+    """Validate dataset fields for path traversal characters."""
     for field_name, value in [
         ("study_id", dataset.study_id),
         ("raw_directory", dataset.raw_directory),
     ]:
         if "/" in value or "\\" in value or ".." in value:
-            raise ValueError(
-                f"Invalid path characters in dataset {field_name}: {value!r}"
-            )
+            raise ValueError(f"Invalid path characters in dataset {field_name}: {value!r}")
 
+
+def _download_and_extract_flow(
+    dataset: DatasetConfig,
+    target_dir: Path,
+    tar_path: Path,
+    extraction_root: Path,
+    extracted_dir: Path,
+) -> None:
+    """Execute sequence of download, extract, and reorganisation."""
+    remove_existing_dataset_directory(target_dir)
+    if extracted_dir.exists():
+        print(f"Removing previous incomplete extraction: {rel_path(extracted_dir)}")
+        remove_directory_with_retry(extracted_dir)
+
+    url = f"{CBIOPORTAL_DATAHUB_URL}/{dataset.study_id}.tar.gz"
+    download_file(url, tar_path)
+    extraction_root.mkdir(parents=True, exist_ok=True)
+    extract_tar_gz(tar_path=tar_path, extract_to=extraction_root)
+    reorganise_extracted_dataset(extracted_dir=extracted_dir, target_dir=target_dir)
+    print(f"Successfully downloaded and prepared {dataset.cohort_name}.")
+
+
+def download_and_extract_dataset(dataset: DatasetConfig) -> None:
+    """Download, extract, and reorganise one configured dataset."""
+    _validate_dataset_paths(dataset)
     target_dir = RAW_DIR / dataset.raw_directory
     tar_path = RAW_DIR / f"{dataset.study_id}.tar.gz"
     extraction_root = RAW_DIR / _EXTRACTION_STAGING_DIR
     extracted_dir = extraction_root / dataset.study_id
 
     if is_dataset_present(dataset):
-        print(
-            f"Dataset {dataset.cohort_name} already exists in "
-            f"{rel_path(target_dir)}. Skipping."
-        )
+        print(f"Dataset {dataset.cohort_name} already exists in {rel_path(target_dir)}. Skipping.")
         return
 
-    print()
-    print("=" * 60)
-    print(f"Processing dataset: {dataset.cohort_name}")
-    print(f"Study ID: {dataset.study_id}")
-    print("=" * 60)
-
-    url = (
-        f"{CBIOPORTAL_DATAHUB_URL}/"
-        f"{dataset.study_id}.tar.gz"
+    print(
+        f"\n{'=' * 60}\nProcessing dataset: {dataset.cohort_name}\n"
+        f"Study ID: {dataset.study_id}\n{'=' * 60}"
     )
-
     try:
-        remove_existing_dataset_directory(target_dir)
-
-        if extracted_dir.exists():
-            print(
-                f"Removing previous incomplete extraction: "
-                f"{rel_path(extracted_dir)}"
-            )
-            remove_directory_with_retry(extracted_dir)
-
-        download_file(url, tar_path)
-
-        extraction_root.mkdir(parents=True, exist_ok=True)
-
-        extract_tar_gz(
-            tar_path=tar_path,
-            extract_to=extraction_root,
-        )
-
-        reorganise_extracted_dataset(
-            extracted_dir=extracted_dir,
-            target_dir=target_dir,
-        )
-
-        print(
-            f"Successfully downloaded and prepared "
-            f"{dataset.cohort_name}."
-        )
-
+        _download_and_extract_flow(dataset, target_dir, tar_path, extraction_root, extracted_dir)
     except Exception as exc:
-        print(
-            f"Error downloading/extracting "
-            f"{dataset.cohort_name}: {exc}"
-        )
-
+        print(f"Error downloading/extracting {dataset.cohort_name}: {exc}")
         raise
-
     finally:
         remove_path_with_retry(extraction_root)
         if tar_path.exists():
-            try:
+            with contextlib.suppress(OSError):
                 tar_path.unlink(missing_ok=True)
-            except (PermissionError, OSError):
-                pass
 
 
 def setup_directories() -> None:
@@ -459,58 +354,35 @@ def setup_directories() -> None:
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def main() -> None:
-    """Load configuration and download all configured datasets.
-
-    Raises:
-        ValueError:
-            If no datasets are defined in the configuration file.
-        DatasetConfigError:
-            If the datasets configuration file is missing or invalid.
-    """
-    print("=" * 60)
-    print("Downloading Raw cBioPortal Datasets")
-    print("=" * 60)
-
-    setup_directories()
-
-    datasets = load_dataset_config(CONFIG_PATH)
-
-    if not datasets:
-        raise ValueError(
-            f"No datasets found in configuration file: "
-            f"{CONFIG_PATH}"
-        )
-
-    print(
-        f"Loaded {len(datasets)} dataset configuration(s) "
-        f"from {rel_path(CONFIG_PATH)}."
-    )
-
+def _process_dataset_loop(datasets: list[DatasetConfig]) -> int:
+    """Iterate through dataset list and download each."""
     successful = 0
-
     for dataset in datasets:
         try:
             download_and_extract_dataset(dataset)
             successful += 1
-
         except Exception as exc:
-            print(
-                f"\n[ERROR] Dataset '{dataset.cohort_name}' failed: "
-                f"{exc}"
-            )
-
-            # Fail fast. A partially downloaded dataset should not be
-            # treated as a successful pipeline run.
+            print(f"\n[ERROR] Dataset '{dataset.cohort_name}' failed: {exc}")
             raise
+    return successful
 
-    print()
-    print("=" * 60)
+
+def main() -> None:
+    """Load configuration and download all configured datasets."""
+    print(f"{'=' * 60}\nDownloading Raw cBioPortal Datasets\n{'=' * 60}")
+    setup_directories()
+
+    datasets = load_dataset_config(CONFIG_PATH)
+    if not datasets:
+        raise ValueError(f"No datasets found in configuration file: {CONFIG_PATH}")
+
+    print(f"Loaded {len(datasets)} dataset configuration(s) from {rel_path(CONFIG_PATH)}.")
+    successful = _process_dataset_loop(datasets)
+
     print(
-        f"All datasets processed successfully: "
-        f"{successful}/{len(datasets)}."
+        f"\n{'=' * 60}\nAll datasets processed successfully: "
+        f"{successful}/{len(datasets)}.\n{'=' * 60}"
     )
-    print("=" * 60)
 
 
 if __name__ == "__main__":

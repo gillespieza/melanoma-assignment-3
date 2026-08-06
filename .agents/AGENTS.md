@@ -67,7 +67,9 @@ When fixing code smells or refactoring code in this repository, follow these gui
 1.  **Unused Imports & Variables**: Remove all unused imports and variables. Ensure your imports are organized according to standard PEP 8 conventions.
 2.  **Long Functions**: Break down functions longer than 30 lines into smaller, well-named helper functions that do one thing well (Single Responsibility Principle).
 3.  **Complex Conditionals**: Extract complex nested `if/else` logic into well-named boolean variables or separate evaluation functions to improve readability.
-4.  **Magic Numbers/Strings**: Replace hard-coded values and magic numbers with descriptive, uppercase module-level constants (e.g., `MAX_ITERATIONS = 100`).
+3b. **Dead Code (No-Ops)**: Remove any block that has no effect — e.g., `if condition: pass`, `result = result`, `x = x`. These are frequently left behind after iterative edits and silently mislead readers into thinking the branch has a purpose.
+4.  **Magic Numbers/Strings**: Replace hard-coded values and magic numbers with descriptive, uppercase module-level constants (e.g., `MAX_ITERATIONS = 100`). For schema column name strings local to a single script, use private `_COL_*` module-level constants (e.g., `_COL_SAMPLE_ID = "SAMPLE_ID"`) rather than repeating bare string literals throughout the file.
+4b. **Line Length**: Keep all lines to a maximum of **100 characters**. Break long Pandas chains across multiple lines using implicit line continuation inside brackets. This is stricter than PEP 8 (79) but more readable than no limit; it is a firm project-wide standard.
 5.  **Type Hinting**: Add Python type hints (`->`, `:`, `List`, `Dict`, etc.) to all function signatures to make inputs and outputs explicit.
 6.  **Commenting and Docblocks**:
     - **Docstrings**: Ensure every module, class, and function has a clear docstring summarizing its purpose, arguments, and return values (using standard conventions like Google or NumPy style).
@@ -84,7 +86,12 @@ When fixing code smells or refactoring code in this repository, follow these gui
 8.  **Reusable Logic Extraction & Utility Helper Enforcement**:
     - Reusable logic belongs in `src/utils/` or `src/config/`, never re-implemented inline in analysis scripts.
     - Always use established helper functions and modules:
-      - `src/utils/paths.py` -- Import directory constants (`CONFIG_DIR`, `LOG_DIR`, `RAW_DIR`, `PROCESSED_DIR`, `PLOTS_DIR`, `REPORTS_DIR`, `SUBPROJECT_ROOT`, `PROJECT_ROOT`, `DATA_DIR`) rather than manually constructing or resolving relative file paths.
+      - `src/utils/paths.py` -- Import directory constants (`LOG_DIR`, `RAW_DIR`, `PROCESSED_DIR`, `PLOTS_DIR`, `REPORTS_DIR`, `PROJECT_ROOT`, `DATA_DIR`) rather than manually constructing or resolving relative file paths. **⚠ Do NOT import `CONFIG_DIR`** — it does not exist in `paths.py` and will raise an `ImportError` at runtime. **⚠ Avoid `SUBPROJECT_ROOT`** for subproject-local config paths — because `paths.py` lives in root-level `src/`, `SUBPROJECT_ROOT` evaluates relative to that file and resolves to the project root, not the calling subproject. For configs local to a subproject, derive the path from `__file__` instead:
+        ```python
+        # Resolves correctly regardless of CWD
+        _SCRIPT_DIR = Path(__file__).resolve().parent
+        CONFIG_PATH = _SCRIPT_DIR.parent / "config" / "datasets.yaml"
+        ```
       - `src/utils/formatting.py` -- Use `generate_obsidian_frontmatter()`, `format_count_percentage()`, `format_median()`, `format_median_iqr()` for report and string formatting.
       - `src/utils/plotting.py` -- Use `save_fig()`, `resolve_colors()`.
       - `src/utils/logging.py` -- Use `TeeStream`.
@@ -185,6 +192,5 @@ When fixing code smells or refactoring code in this repository, follow these gui
     - **PowerShell Compatibility**: Ensure all shell commands use flags and syntax compatible with PowerShell on Windows (e.g. forward slashes or escaped backslashes for paths, standard pwsh cmdlets or cross-platform binaries).
     - **Explicit UTF-8 File Encoding**: Always explicitly specify `encoding="utf-8"` when reading or writing text files in Python scripts (`open(..., encoding="utf-8")`, `Path.read_text(encoding="utf-8")`, `Path.write_text(..., encoding="utf-8")`) to prevent Windows default `cp1252` `UnicodeDecodeError` failures.
     - **Console Output UTF-8 Encoding**: Reconfigure standard output encoding in scripts printing non-ASCII/Unicode characters (e.g., `sys.stdout.reconfigure(encoding="utf-8")` or `encoding="utf-8"` in log streams) to avoid `UnicodeEncodeError: 'charmap' codec can't encode character` when running on Windows.
-
-
-
+18. **Verify Imports Against Module Exports Before Writing Them**: Before writing `from module import Name`, verify that `Name` is actually exported by the target module. Do not assume a name exists because it *should* logically exist or was mentioned in documentation. For shared utility modules (`src/utils/paths.py`, `src/utils/formatting.py`, etc.), read the file and confirm exported names before importing. This prevents `ImportError` crashes that only surface at runtime.
+    - **In practice**: Read `paths.py` before importing any path constant — its export list is short and changes over time. If a constant you need is missing, either add it to the utility module (with a note in the session log) or derive it locally using `Path(__file__)`. Never invent an import name based on what *seems* like it should exist.
