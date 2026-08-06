@@ -199,74 +199,111 @@ def _evaluate_multimodal_models(
 # ---------------------------------------------------------------------------
 # Plotting & Reporting Subroutines
 # ---------------------------------------------------------------------------
-def _format_auc_bar_plot(
-    ax: plt.Axes, x: np.ndarray, plot_data: List[Dict[str, Any]], n_models: int
-) -> None:
-    """Format and draw grouped bars with error indicators for AUROC comparison plot."""
-    bar_labels = [
-        'Signatures Only\n(6 Sigs)',
-        'Sigs + TMB\n(7 Features)',
-        'Sigs + Drivers\n(9 Features)',
-        'Sigs + Drivers + TMB\n(10 Features)',
-        '12-Feature Final Model\n(Full Multimodal Matrix)'
-    ]
-    bar_width = 0.8 / n_models
-    colors = OKABE_ITO[:n_models]
+# Tier labels used by both the heatmap and the report table columns
+_TIER_LABELS: List[str] = [
+    'Sigs Only\n(6)',
+    'Sigs + Drivers\n(9)',
+    'Sigs + TMB\n(7)',
+    'Sigs + TMB\n+ Drivers (10)',
+    '12-Feature\nFinal Model',
+]
+_TIER_KEYS_MEAN: List[str] = [
+    'base_mean', 'drivers_mean', 'tmb_mean', 'drivers_tmb_mean', 'model12_mean'
+]
+_TIER_KEYS_STD: List[str] = [
+    'base_std', 'drivers_std', 'tmb_std', 'drivers_tmb_std', 'model12_std'
+]
 
-    for i, pd_row in enumerate(plot_data):
-        means = [
-            pd_row['base_mean'], pd_row['tmb_mean'],
-            pd_row['drivers_mean'], pd_row['drivers_tmb_mean'], pd_row['model12_mean']
-        ]
-        stds = [
-            pd_row['base_std'], pd_row['tmb_std'],
-            pd_row['drivers_std'], pd_row['drivers_tmb_std'], pd_row['model12_std']
-        ]
-        offset = (i - (n_models - 1) / 2) * bar_width
-        bars = ax.bar(
-            x + offset, means, bar_width, yerr=stds,
-            label=pd_row['model'], color=colors[i % len(colors)],
-            edgecolor='white', linewidth=0.7, capsize=4,
-            error_kw={'elinewidth': 1.2, 'capthick': 1}
-        )
-        for bar, mean, std in zip(bars, means, stds):
-            ax.text(
-                bar.get_x() + bar.get_width() / 2, bar.get_height() + std + 0.01,
-                f'{mean:.3f}', ha='center', va='bottom', fontsize=8.5, color='#333333'
-            )
 
-    ax.set_ylabel('AUROC (5-Fold Stratified CV)', fontsize=12, fontweight='bold')
-    ax.set_xticks(x)
-    ax.set_xticklabels(bar_labels, fontsize=10)
+def _build_auroc_matrices(
+    plot_data: List[Dict[str, Any]]
+) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+    """Assemble (n_models x n_tiers) mean and SD matrices and model name list from plot_data."""
+    model_names = [p['model'] for p in plot_data]
+    n_models = len(plot_data)
+    n_tiers = len(_TIER_KEYS_MEAN)
+    means = np.array(
+        [[p[k] for k in _TIER_KEYS_MEAN] for p in plot_data], dtype=float
+    ).reshape(n_models, n_tiers)
+    stds = np.array(
+        [[p[k] for k in _TIER_KEYS_STD] for p in plot_data], dtype=float
+    ).reshape(n_models, n_tiers)
+    return means, stds, model_names
 
 
 def _plot_multimodal_auc_comparison(plot_data: List[Dict[str, Any]], n_models: int) -> Path:
-    """Render and save grouped bar chart comparing multimodal predictor performance."""
-    fig, ax = plt.subplots(figsize=(14, 7))
-    x = np.arange(5)
-    _format_auc_bar_plot(ax, x, plot_data, n_models)
+    """Render and save AUROC heatmap (models x feature tiers) using tuned calibrated models.
 
-    all_m = [v for p in plot_data for v in (p['base_mean'], p['tmb_mean'], p['drivers_mean'], p['drivers_tmb_mean'], p['model12_mean'])]
-    all_s = [v for p in plot_data for v in (p['base_std'], p['tmb_std'], p['drivers_std'], p['drivers_tmb_std'], p['model12_std'])]
-    data_min = min([m - s for m, s in zip(all_m, all_s)] + [0.5])
-    data_max = max([m + s for m, s in zip(all_m, all_s)] + [0.5])
-    y_range = data_max - data_min
-    padding = max(y_range * 0.12, 0.03)
+    Rows = classifier architectures (TunedCalibratedModel instances).
+    Columns = feature permutation tiers.
+    Cell colour = mean 5-fold stratified CV AUROC.
+    Cell annotation = mean ± SD.
+    """
+    means, stds, model_names = _build_auroc_matrices(plot_data)
 
-    ax.set_ylim(max(0.0, data_min - padding), min(1.0, data_max + padding * 1.5))
-    ax.axhline(y=0.5, color='#999999', linestyle='--', linewidth=1.2, label='Random Baseline')
-    ax.legend(fontsize=9.5, loc='upper left', framealpha=0.9, title="Models")
-    title_str = (
-        'Multimodal Response Prediction: Feature Permutation Comparison\n'
-        '(Pooled IO Trial Cohort, 5-Fold Stratified CV AUROC)'
+    # Shorten model names for y-axis readability
+    short_names = [
+        n.replace(' (LR)', '').replace(' (RF)', '').replace(', tuned)', '')
+         .replace(' (XGB', '').replace('(XGB, tuned)', '')
+         .replace('Support Vector Machine (SVM)', 'SVM')
+         .replace('Logistic Regression (LR)', 'Logistic Regression')
+         .replace('Random Forest (RF)', 'Random Forest')
+         .replace('XGBoost (XGB, tuned)', 'XGBoost')
+        for n in model_names
+    ]
+
+    # Annotation strings: "mean\n±sd"
+    annots = np.array(
+        [[f"{means[r, c]:.3f}\n\u00b1{stds[r, c]:.3f}" for c in range(means.shape[1])]
+         for r in range(means.shape[0])]
     )
-    ax.set_title(title_str, fontsize=14, fontweight='bold', pad=15)
-    sns.despine(ax=ax, top=True, right=True)
-    plt.tight_layout()
 
-    multimodal_plot_path = PLOT_DIR / "multimodal_auc_comparison.png"
+    fig, ax = plt.subplots(figsize=(13, 5))
+    vmin = max(0.45, means.min() - 0.04)
+    vmax = min(0.85, means.max() + 0.04)
+
+    im = ax.imshow(means, aspect='auto', cmap='RdYlGn', vmin=vmin, vmax=vmax)
+
+    # Cell annotations
+    for r in range(means.shape[0]):
+        for c in range(means.shape[1]):
+            cell_val = means[r, c]
+            text_color = 'black' if 0.35 < (cell_val - vmin) / (vmax - vmin) < 0.85 else 'white'
+            ax.text(
+                c, r, annots[r, c],
+                ha='center', va='center', fontsize=10, color=text_color, fontweight='bold'
+            )
+
+    # Axes
+    ax.set_xticks(range(len(_TIER_LABELS)))
+    ax.set_xticklabels(_TIER_LABELS, fontsize=10)
+    ax.set_yticks(range(len(short_names)))
+    ax.set_yticklabels(short_names, fontsize=11)
+    ax.set_xlabel('Feature Permutation Tier', fontsize=12, fontweight='bold', labelpad=10)
+    ax.set_ylabel('Classifier (Tuned + Calibrated)', fontsize=12, fontweight='bold')
+
+    cbar = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
+    cbar.set_label('Mean AUROC (5-Fold Stratified CV)', fontsize=10)
+
+    ax.set_title(
+        'Multimodal Response Prediction — Feature Permutation AUROC Heatmap\n'
+        '(Pooled ICI Trial Cohort, TunedCalibratedModel, 5-Fold Stratified CV)',
+        fontsize=13, fontweight='bold', pad=14
+    )
+
+    # Highlight best cell per model (column with max mean)
+    for r in range(means.shape[0]):
+        best_c = int(np.argmax(means[r]))
+        rect = plt.Rectangle(
+            (best_c - 0.5, r - 0.5), 1, 1,
+            fill=False, edgecolor='#0C2950', linewidth=2.5
+        )
+        ax.add_patch(rect)
+
+    plt.tight_layout()
+    multimodal_plot_path = PLOT_DIR / "multimodal_auc_heatmap.png"
     save_fig(fig, multimodal_plot_path)
-    print(f"Saved multimodal AUROC comparison plot to {rel_path(multimodal_plot_path)}")
+    print(f"Saved multimodal AUROC heatmap to {rel_path(multimodal_plot_path)}")
     return multimodal_plot_path
 
 
@@ -274,23 +311,28 @@ def _build_table2_rows(
     model_results: List[Dict[str, str]], plot_data: List[Dict[str, Any]]
 ) -> List[str]:
     """Format markdown table rows for cross-validated model evaluation results across feature permutations."""
+    # Column ordering matches _TIER_LABELS / _TIER_KEYS_MEAN: base, drivers, tmb, drivers_tmb, model12
+    ordered_keys = [
+        'Base AUROC', 'Sigs+Drivers AUROC', 'Sigs+TMB AUROC',
+        'Sigs+Drivers+TMB AUROC', '12-Feature Model AUROC'
+    ]
     table_rows = []
     for res, pdr in zip(model_results, plot_data):
         col_means = {
             'Base AUROC': pdr['base_mean'],
-            'Sigs+TMB AUROC': pdr['tmb_mean'],
             'Sigs+Drivers AUROC': pdr['drivers_mean'],
+            'Sigs+TMB AUROC': pdr['tmb_mean'],
             'Sigs+Drivers+TMB AUROC': pdr['drivers_tmb_mean'],
             '12-Feature Model AUROC': pdr['model12_mean'],
         }
         best_col = max(col_means, key=col_means.get)
         cells = {
             k: (f"**{res[k]}**" if k == best_col else res[k])
-            for k in ['Base AUROC', 'Sigs+TMB AUROC', 'Sigs+Drivers AUROC', 'Sigs+Drivers+TMB AUROC', '12-Feature Model AUROC']
+            for k in ordered_keys
         }
         table_rows.append(
-            f"| **{res['Model']}** | {cells['Base AUROC']} | {cells['Sigs+TMB AUROC']} | "
-            f"{cells['Sigs+Drivers AUROC']} | {cells['Sigs+Drivers+TMB AUROC']} | {cells['12-Feature Model AUROC']} |"
+            f"| **{res['Model']}** | {cells['Base AUROC']} | {cells['Sigs+Drivers AUROC']} | "
+            f"{cells['Sigs+TMB AUROC']} | {cells['Sigs+Drivers+TMB AUROC']} | {cells['12-Feature Model AUROC']} |"
         )
     return table_rows
 
@@ -332,8 +374,8 @@ def _build_section_header_callout(n_pooled: int) -> List[str]:
         "(AUROC mean \u00b1 SD)"
     )
     hdr_cols = (
-        "| Model Architecture | 6 Signatures Only | Sigs + TMB (7) | "
-        "Sigs + Drivers (9) | Sigs + Drivers + TMB (10) | 12-Feature Final Model* |"
+        "| Model Architecture | Sigs Only (6) | Sigs + Drivers (9) | "
+        "Sigs + TMB (7) | Sigs + TMB + Drivers (10) | 12-Feature Final Model* |"
     )
     return [
         "## 5. Multimodal Response Prediction Models",
@@ -369,7 +411,7 @@ def _generate_multimodal_report_section(
         "",
         footnote,
         "",
-        "![Multimodal AUROC Comparison](../../plots/biomarkers/multimodal_auc_comparison.png)",
+        "![Multimodal AUROC Heatmap](../../plots/biomarkers/multimodal_auc_heatmap.png)",
         "",
         "### Analysis of Predictor Performance"
     ])

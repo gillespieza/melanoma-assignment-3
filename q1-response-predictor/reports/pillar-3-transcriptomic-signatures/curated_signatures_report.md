@@ -209,17 +209,17 @@ Spearman rank correlation between nonsynonymous TMB and the six curated immune s
 
 ### Table 2. Cross-validated multimodal response prediction performance (AUROC mean ± SD)
 
-| Model Architecture | 6 Signatures Only | Sigs + TMB (7) | Sigs + Drivers (9) | Sigs + Drivers + TMB (10) | 12-Feature Final Model* |
+| Model Architecture | Sigs Only (6) | Sigs + Drivers (9) | Sigs + TMB (7) | Sigs + TMB + Drivers (10) | 12-Feature Final Model* |
 |:--- |:---:|:---:|:---:|:---:|:---:|
-| **Logistic Regression (LR)** | **0.600 (+/-0.071)** | 0.597 (+/-0.069) | 0.568 (+/-0.057) | 0.584 (+/-0.081) | 0.566 (+/-0.069) |
-| **Random Forest (RF)** | 0.678 (+/-0.070) | 0.683 (+/-0.086) | 0.670 (+/-0.078) | 0.688 (+/-0.110) | **0.695 (+/-0.080)** |
-| **XGBoost (XGB, tuned)** | 0.618 (+/-0.076) | 0.692 (+/-0.062) | 0.589 (+/-0.136) | 0.681 (+/-0.087) | **0.699 (+/-0.058)** |
-| **Support Vector Machine (SVM)** | **0.649 (+/-0.080)** | 0.627 (+/-0.096) | 0.620 (+/-0.078) | 0.593 (+/-0.063) | 0.573 (+/-0.091) |
-| **Elastic-Net** | 0.625 (+/-0.067) | **0.637 (+/-0.079)** | 0.590 (+/-0.065) | 0.603 (+/-0.066) | 0.578 (+/-0.051) |
+| **Logistic Regression (LR)** | **0.600 (+/-0.071)** | 0.568 (+/-0.057) | 0.597 (+/-0.069) | 0.584 (+/-0.081) | 0.566 (+/-0.069) |
+| **Random Forest (RF)** | 0.678 (+/-0.070) | 0.670 (+/-0.078) | 0.683 (+/-0.086) | 0.688 (+/-0.110) | **0.695 (+/-0.080)** |
+| **XGBoost (XGB, tuned)** | 0.618 (+/-0.076) | 0.589 (+/-0.136) | 0.692 (+/-0.062) | 0.681 (+/-0.087) | **0.699 (+/-0.058)** |
+| **Support Vector Machine (SVM)** | **0.649 (+/-0.080)** | 0.620 (+/-0.078) | 0.627 (+/-0.096) | 0.593 (+/-0.063) | 0.573 (+/-0.091) |
+| **Elastic-Net** | 0.625 (+/-0.067) | 0.590 (+/-0.065) | **0.637 (+/-0.079)** | 0.603 (+/-0.066) | 0.578 (+/-0.051) |
 
 \* *Footnote: 12-Feature Final Model: 6 signatures (IFN-γ, TIS, CYT, CD8 T-cell, IMPRES, PD-L1), 3 driver flags (BRAF, NRAS, NF1), TMB, Age, and Antigen Presentation pathway. Total neoantigens excluded due to collinearity ($r_s = 0.756$).*
 
-![Multimodal AUROC Comparison](../../plots/biomarkers/multimodal_auc_comparison.png)
+![Multimodal AUROC Heatmap](../../plots/biomarkers/multimodal_auc_heatmap.png)
 
 ### Analysis of Predictor Performance
 1. **Linear models degrade with features**: LR and Elastic-Net perform best with signatures alone (AUROC ≈ 0.60) and show lower performance as features increase ($N = 195$).
