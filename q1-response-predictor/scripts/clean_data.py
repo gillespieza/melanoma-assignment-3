@@ -136,6 +136,9 @@ _EXPR_GENE_COUNT_INFO: int = 5_000
 _EXPR_VALUE_CEILING: float = 50.0
 _MAX_EXAMPLE_GENES: int = 20
 
+# CLI banner line.
+_BANNER_LINE: str = "=" * 50
+
 # Reason strings for common attrition recording steps.
 _REASON_CLINICAL_HARMONISED: str = (
     "Applied identifier standardisation, clinical cleaning, "
@@ -186,6 +189,16 @@ class AttritionRecord:
             "n_removed": self.n_removed,
             "reason": self.reason,
         }
+
+
+@dataclass(frozen=True)
+class CleanedDataBundle:
+    """Grouped outputs from a dataset cleaning pipeline stage."""
+
+    clinical_df: pd.DataFrame
+    expression_df: pd.DataFrame
+    mutation_df: pd.DataFrame
+    attrition_records: list[AttritionRecord]
 
 
 def _record_attrition(
@@ -485,9 +498,24 @@ def _sample_to_patient_id(
     return sample_id
 
 
-# ============================================================================
-# TCGA clinical feature engineering
-# ============================================================================
+def _build_treatment_summary_features(
+    df_treatment: pd.DataFrame,
+) -> pd.DataFrame:
+    """Aggregate treatment timeline to patient-level summary features."""
+    return df_treatment.groupby(_COL_PATIENT_ID).agg(
+        TREATMENT_TYPES=(
+            _COL_TREATMENT_TYPE,
+            lambda values: ", ".join(
+                sorted(set(values.dropna().astype(str)))
+            ),
+        ),
+        TREATMENT_AGENTS=(
+            _COL_AGENT,
+            lambda values: ", ".join(
+                sorted(set(values.dropna().astype(str)))
+            ),
+        ),
+    )
 
 
 def _build_treatment_type_indicators(
@@ -665,9 +693,8 @@ def process_iatlas_dataset(
         expression_df, clinical_df, dataset, attrition
     )
     mutation_df = _process_mutations(raw_dir, clinical_df, dataset)
-    return _finalise_dataset(
-        dataset, clinical_df, expression_df, mutation_df, attrition, raw_dir, processed_dir
-    )
+    bundle = CleanedDataBundle(clinical_df, expression_df, mutation_df, attrition)
+    return _finalise_dataset(dataset, bundle, raw_dir, processed_dir)
 
 
 def process_tcga_dataset(
@@ -686,9 +713,8 @@ def process_tcga_dataset(
         expression_df, clinical_df, dataset, attrition
     )
     mutation_df = _process_mutations(raw_dir, clinical_df, dataset)
-    return _finalise_dataset(
-        dataset, clinical_df, expression_df, mutation_df, attrition, raw_dir, processed_dir
-    )
+    bundle = CleanedDataBundle(clinical_df, expression_df, mutation_df, attrition)
+    return _finalise_dataset(dataset, bundle, raw_dir, processed_dir)
 
 
 def process_dataset(
@@ -717,18 +743,17 @@ def process_dataset(
 
 def _finalise_dataset(
     dataset: DatasetConfig,
-    clinical_df: pd.DataFrame,
-    expression_df: pd.DataFrame,
-    mutation_df: pd.DataFrame,
-    attrition_records: list[AttritionRecord],
+    bundle: CleanedDataBundle,
     raw_dir: Path,
     processed_dir: Path,
 ) -> list[AttritionRecord]:
     """Write outputs, print a summary, run sanity checks, and return records."""
-    _write_processed_outputs(processed_dir, clinical_df, expression_df, mutation_df)
-    print(f"  {dataset.cohort_name}: Cleaned {len(clinical_df):,} samples.")
+    _write_processed_outputs(
+        processed_dir, bundle.clinical_df, bundle.expression_df, bundle.mutation_df,
+    )
+    print(f"  {dataset.cohort_name}: Cleaned {len(bundle.clinical_df):,} samples.")
     _run_sanity_checks(raw_dir=raw_dir, processed_dir=processed_dir, dataset=dataset)
-    return attrition_records
+    return bundle.attrition_records
 
 
 def _write_processed_outputs(
@@ -1136,9 +1161,9 @@ def main() -> None:
     """
     Run the configured data-cleaning workflow.
     """
-    print("==================================================")
+    print(_BANNER_LINE)
     print("Data Cleaning Pipeline: Transforming Raw Data")
-    print("==================================================\n")
+    print(f"{_BANNER_LINE}\n")
 
     datasets = load_dataset_config(CONFIG_PATH)
 
@@ -1149,12 +1174,12 @@ def main() -> None:
 
     success_count = _run_cleaning_pipeline(datasets)
 
-    print("\n==================================================")
+    print(f"\n{_BANNER_LINE}")
     print(
         f"Workflow completed: "
         f"{success_count}/{len(datasets)} datasets succeeded."
     )
-    print("==================================================")
+    print(_BANNER_LINE)
 
 
 if __name__ == "__main__":
