@@ -52,13 +52,11 @@ from scripts.biomarkers.run_extended_biomarkers import (
     PLOT_DIR,
     REPORTS_DIR,
     CURATED_SIGNATURES_REPORT_PATH,
-    TunedCalibratedModel,
     _COL_AGE,
     _COL_RESPONSE,
     _COL_TMB,
     _COL_TOTAL_NEOANTIGEN,
     _load_and_prepare_data,
-    evaluate_auc_cv,
 )
 from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
@@ -455,6 +453,11 @@ def _train_multimodal_predictor(
 # ---------------------------------------------------------------------------
 # Report Markdown Section Update Routine
 # ---------------------------------------------------------------------------
+_SCRIPT_CALLOUT_SENTINEL: str = (
+    "> [!formula]+ Pillar 3 Script Execution & Software Module Architecture"
+)
+
+
 def _update_curated_signatures_report(report_path: Path, section_5_lines: List[str]) -> None:
     """Updates Section 5 of curated_signatures_report.md with live cross-validation results."""
     if not report_path.exists():
@@ -485,6 +488,72 @@ def _update_curated_signatures_report(report_path: Path, section_5_lines: List[s
     print(f"\nUpdated Section 5 in {rel_path(report_path)}")
 
 
+def _append_script_reference_callout(report_path: Path) -> None:
+    """Idempotently append a script reference callout box to the end of the report.
+
+    Safe to call on every pipeline run: skips silently if the sentinel line is
+    already present, preventing duplicate callout blocks.
+    """
+    if not report_path.exists():
+        return
+    text = report_path.read_text(encoding="utf-8")
+    if _SCRIPT_CALLOUT_SENTINEL in text:
+        return
+
+    def _uri(rel: str) -> str:
+        return "file:///" + (BASE_DIR / rel).as_posix()
+
+    u_pred = _uri("scripts/biomarkers/train_multimodal_predictor.py")
+    u_bio = _uri("scripts/biomarkers/run_extended_biomarkers.py")
+    u_sig = _uri("src/signatures.py")
+    u_mod = _uri("src/models.py")
+    u_eval = _uri("src/evaluation.py")
+    u_pipe = _uri("scripts/run_pipeline.py")
+
+    lines = [
+        "",
+        _SCRIPT_CALLOUT_SENTINEL,
+        "> - **Primary Pipeline Execution Scripts**:",
+        (
+            f">   - [`train_multimodal_predictor.py`]({u_pred}): Trains cross-validated "
+            "classifiers (LR, RF, XGB, SVM, Elastic-Net) across 5 feature-set tiers, "
+            "generates AUROC comparison heatmaps, and updates Section 5 of this report "
+            "with live cross-validation results."
+        ),
+        (
+            f">   - [`run_extended_biomarkers.py`]({u_bio}): Evaluates neoantigen load, "
+            "TMB\u2013immune signature Spearman correlations, TCGA aneuploidy and TMB "
+            "survival stratification, and pathway mutation frequencies across trial cohorts."
+        ),
+        "> - **Core Supporting Python Modules**:",
+        (
+            f">   - [`signatures.py`]({u_sig}): Computes the six curated immune signatures "
+            "(IFN-\u03b3, TIS, CYT, IMPRES, CD8 T-cell, TCGA 20-gene OS) from "
+            "normalised gene expression matrices."
+        ),
+        (
+            f">   - [`models.py`]({u_mod}): Provides `get_model()` \u2014 the single entry "
+            "point for tuned, calibrated classifier instances \u2014 and `run_loco_cv()` "
+            "for Leave-One-Cohort-Out cross-validation."
+        ),
+        (
+            f">   - [`evaluation.py`]({u_eval}): Implements AUROC, AUC-PR, concordance "
+            "index, and Youden-optimal threshold metrics for model benchmarking."
+        ),
+        "> - **Shared Cross-Question & Pipeline Modules**:",
+        (
+            f">   - [`run_pipeline.py`]({u_pipe}): Master pipeline orchestrator executing "
+            "data preprocessing, biomarker evaluation, and multimodal predictor training "
+            "in sequence."
+        ),
+    ]
+    report_path.write_text(
+        text.rstrip() + "\n" + "\n".join(lines) + "\n",
+        encoding="utf-8",
+    )
+    print(f"  Appended script reference callout to {rel_path(report_path)}")
+
+
 # ---------------------------------------------------------------------------
 # Main Orchestrator
 # ---------------------------------------------------------------------------
@@ -498,12 +567,13 @@ def main() -> None:
     if data is None:
         return
     (
-        df_clin_merged, df_sigs_merged, df_tcga_clin, df_tcga_sigs,
+        df_clin_merged, df_sigs_merged, df_tcga_clin, _,
         df_liu_clin, df_hugo_clin, df_riaz_clin
     ) = data
 
     section_5_lines = _train_multimodal_predictor(df_clin_merged, df_sigs_merged)
     _update_curated_signatures_report(CURATED_SIGNATURES_REPORT_PATH, section_5_lines)
+    _append_script_reference_callout(CURATED_SIGNATURES_REPORT_PATH)
 
     print("==================================================")
     print("Multimodal model training completed successfully!")
