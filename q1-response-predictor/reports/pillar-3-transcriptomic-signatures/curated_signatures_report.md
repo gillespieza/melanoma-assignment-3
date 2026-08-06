@@ -106,11 +106,7 @@ For a comprehensive view contrasting pooled single-variable effect magnitude aga
 >   2. *Does cohort Z-score standardisation dissolve the study-level separation?*
 >   3. *How does this approach prevent data leakage during Leave-One-Cohort-Out validation?*
 
-When combining patient data across 4 independent clinical studies (**Liu 2019**, $N = 122$; **Hugo 2016**, $N = 27$; **Riaz 2017**, $N = 107$; and **TCGA-SKCM**, $N = 443$), technical variations across sequencing platforms and lab protocols introduce strong **batch effects**.
-
-As detailed in [batch_correction_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-1-cohorts-and-preprocessing/batch_correction_report.md), uncorrected expression profiles cluster heavily by study cohort rather than biological outcome.
-
-![Batch Preprocessing & Alignment Workflow](../../plots/signatures/batch_workflow_diagram.png)
+When combining patient data across 4 independent clinical studies (**Liu 2019**, $N = 122$; **Hugo 2016**, $N = 27$; **Riaz 2017**, $N = 107$; and **TCGA-SKCM**, $N = 443$), technical variations across sequencing platforms and lab protocols introduce strong **batch effects**. Uncorrected expression profiles cluster heavily by study cohort rather than biological outcome.
 
 ### 3.1. Zero-Leakage Cohort Z-Score Standardisation
 To eliminate study-level batch offsets while guaranteeing **zero data leakage** during **Leave-One-Cohort-Out (LOCO)** cross-validation, we apply **Cohort-Independent Z-Score Standardisation** in [run_extended_biomarkers.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/biomarkers/run_extended_biomarkers.py#L250-L255):
@@ -126,10 +122,33 @@ df_sigs_merged = pd.concat([df_liu_sigs_scaled, df_hugo_sigs_scaled, df_riaz_sig
 * **Zero Leakage**: Standardising each study using only its internal mean and variance ensures test-set data is never used to adjust training features.
 * **Effective Scale Alignment**: Successfully removes baseline study offsets, allowing true biological signals to align across clinical cohorts.
 
-### 3.2. Visualising Batch Correction Impact
-Following cohort Z-score standardisation, study-level separation dissolves in principal component space, aligning patients across studies:
+### 3.2. Cohort Batch Assessment & Visualising Batch Correction Impact
+
+#### 3.2.1 Full Cohort Batch Assessment ($N = 699$)
+
+> [!INFO] Full Cohort Assessment Purpose
+> - **What**: We perform Principal Component Analysis (PCA) across all $N = 699$ patients from four combined melanoma cohorts (**TCGA-SKCM** [$N = 443$], **Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], and **Riaz 2017** [$N = 107$]) using the top 1,000 most variable genes selected from the 19,757 common genes across all datasets.
+> - **Why**: Combining transcriptomic data from diverse sequencing centres introduces technical distortions (batch effects). Uncorrected models risk classifying sequencing centres rather than patient biology.
+> - **Question Answered**: Does cohort-independent Z-score standardisation eliminate macro-level technical separation between reference tissue (TCGA-SKCM) and active clinical trial cohorts?
 
 ![PCA Batch Effect Assessment Across Full Cohort](../../plots/biomarkers/batch_effect_pca.png)
+
+##### Key Observations
+- **Panel A: Before Batch Correction (Raw Data)**: The uncorrected PCA projection reveals a strong separation between the TCGA-SKCM reference dataset and the three clinical trial cohorts. Uncorrected PC1 (95.3% variance) and PC2 (0.7% variance) reflect laboratory platform shifts.
+- **Panel B: After Cohort-Specific Z-Score Standardisation**: Cohort-wise Z-score standardisation (centering each gene to $\mu = 0, \sigma = 1$ within each study) aligns the TCGA-SKCM reference with trial cohorts. Post-correction PC1 (13.2% variance) and PC2 (9.6% variance) show homogeneous distribution across datasets.
+
+#### 3.2.2 ICI Trial Cohort Batch Assessment ($N = 256$)
+
+> [!INFO] Trial Cohort Assessment Purpose
+> - **What**: We evaluate technical batch effects specifically between the three active anti-PD-1 training cohorts (**Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], and **Riaz 2017** [$N = 107$]; $N = 256$) across all 58,954 common trial genes before and after cohort-wise Z-score standardisation.
+> - **Why**: These trials vary by platform (Illumina HiSeq 2500 vs HiSeq 2000), tissue state (fresh-frozen vs FFPE), and prior treatment. We must verify baseline offsets are eliminated before Leave-One-Cohort-Out (LOCO) cross-validation.
+> - **Question Answered**: Are inter-trial technical offsets harmonised across the model training cohorts without leaking test-set information?
+
+![ICI Trial Batch Effect Assessment](../../plots/biomarkers/batch_effect_ici_pca.png)
+
+##### Key Observations
+- **Panel A: Before Batch Correction (Uncorrected Raw Expression)**: In uncorrected $\log_2(\text{TPM})$ space across all 58,954 trial genes, `Liu 2019` ($N = 122$, HiSeq 2500) separates along PC1 (28.9% variance) from `Riaz 2017` ($N = 107$, HiSeq 2000 / FFPE) and `Hugo 2016` ($N = 27$, HiSeq 2000 / fresh-frozen). This confirms that sequencing depth and platform chemistry dominate raw expression signals.
+- **Panel B: After Cohort-Wise Z-Score Standardisation**: Standardising gene expression independently within each cohort completely removes artificial study-level separation. The distributions for Liu 2019, Hugo 2016, and Riaz 2017 overlap smoothly across PC1 (7.0% variance) and PC2 (4.2% variance), ensuring unbiased model training.
 
 
 ## 4. Statistical Relationships & Biomarker Orthogonality
