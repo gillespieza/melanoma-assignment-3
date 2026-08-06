@@ -194,28 +194,28 @@ Evaluating genomic metrics (`TMB_NONSYNONYMOUS`, `ANEUPLOIDY_SCORE`) against con
 ## 5. Multimodal Response Prediction Models
 
 > [!summary] What, Why & Key Questions
-> - **What We Are Doing**: Training five classifiers on pooled trials ($N = 195$) using 5-fold stratified CV across three feature complexity tiers.
-> - **Why We Are Doing It**: Evaluating whether genomic features improve upon signatures alone and identifying the best model architecture.
-> - **Questions**: Does adding drivers/TMB improve AUC? Which model family performs best?
+> - **What We Are Doing**: Training five classifiers on pooled trials ($N = 195$) using 5-fold stratified CV across five feature permutation tiers of the 12 final features.
+> - **Why We Are Doing It**: Evaluating whether adding TMB, driver mutations, or age/pathways improves upon signatures alone and identifying the best model architecture.
+> - **Questions**: Does adding drivers/TMB improve AUROC? Which model family performs best?
 
-### Table 2. Cross-validated multimodal response prediction performance (ROC-AUC mean ± SD)
+### Table 2. Cross-validated multimodal response prediction performance (AUROC mean ± SD)
 
-| Model Architecture | Base Model (Signatures Only) | Sigs + Drivers (`BRAF/NRAS/NF1`) + Age | 14-Feature Full Extended Matrix* |
-|:--- |:---:|:---:|:---:|
-| **Logistic Regression (LR)** | **0.600 (+/-0.071)** | 0.535 (+/-0.106) | 0.571 (+/-0.063) |
-| **Random Forest (RF)** | 0.678 (+/-0.070) | 0.677 (+/-0.079) | **0.692 (+/-0.089)** |
-| **XGBoost (XGB, tuned)** | 0.618 (+/-0.076) | **0.702 (+/-0.032)** | 0.676 (+/-0.120) |
-| **Support Vector Machine (SVM)** | **0.649 (+/-0.080)** | 0.560 (+/-0.119) | 0.596 (+/-0.114) |
-| **Elastic-Net** | **0.625 (+/-0.067)** | 0.513 (+/-0.100) | 0.586 (+/-0.057) |
+| Model Architecture | 6 Signatures Only | Sigs + TMB (7) | Sigs + Drivers (9) | Sigs + Drivers + TMB (10) | 12-Feature Final Model* |
+|:--- |:---:|:---:|:---:|:---:|:---:|
+| **Logistic Regression (LR)** | **0.600 (+/-0.071)** | 0.597 (+/-0.069) | 0.568 (+/-0.057) | 0.584 (+/-0.081) | 0.566 (+/-0.069) |
+| **Random Forest (RF)** | 0.678 (+/-0.070) | 0.683 (+/-0.086) | 0.670 (+/-0.078) | 0.688 (+/-0.110) | **0.695 (+/-0.080)** |
+| **XGBoost (XGB, tuned)** | 0.618 (+/-0.076) | 0.692 (+/-0.062) | 0.589 (+/-0.136) | 0.681 (+/-0.087) | **0.699 (+/-0.058)** |
+| **Support Vector Machine (SVM)** | **0.649 (+/-0.080)** | 0.627 (+/-0.096) | 0.620 (+/-0.078) | 0.593 (+/-0.063) | 0.573 (+/-0.091) |
+| **Elastic-Net** | 0.625 (+/-0.067) | **0.637 (+/-0.079)** | 0.590 (+/-0.065) | 0.603 (+/-0.066) | 0.578 (+/-0.051) |
 
-\* *Footnote: 14-Feature Matrix: 6 signatures, 3 driver flags, 3 pathway flags, TMB, Age. Total neoantigens excluded due to collinearity ($r_s = 0.756$).*
+\* *Footnote: 12-Feature Final Model: 6 signatures (IFN-γ, TIS, CYT, CD8 T-cell, IMPRES, PD-L1), 3 driver flags (BRAF, NRAS, NF1), TMB, Age, and Antigen Presentation pathway. Total neoantigens excluded due to collinearity ($r_s = 0.756$).*
 
-![Multimodal AUC Comparison](../../plots/biomarkers/multimodal_auc_comparison.png)
+![Multimodal AUROC Comparison](../../plots/biomarkers/multimodal_auc_comparison.png)
 
 ### Analysis of Predictor Performance
-1. **Linear models degrade with features**: LR and Elastic-Net perform best with signatures alone (AUC ≈ 0.60) and worse with features ($N = 195$).
-2. **Tree-based models benefit from features**: RF and XGBoost peak at AUC = 0.692 (RF) and 0.676 (XGB) with full extended matrix.
-3. **Clinical interpretation**: AUC of ~0.70-0.72 correctly ranks responder above non-responder ~71% of time, competitive with published IO response predictors.
+1. **Linear models degrade with features**: LR and Elastic-Net perform best with signatures alone (AUROC ≈ 0.60) and show lower performance as features increase ($N = 195$).
+2. **Tree-based models benefit from feature permutations**: RF peaks at AUROC = 0.695 on the 12-Feature Final Model, while XGBoost reaches AUROC = 0.699 on the 12-Feature Final Model (and 0.692 on Sigs + TMB).
+3. **Clinical interpretation**: AUROC of ~0.70–0.72 correctly ranks responder above non-responder ~71% of time, competitive with published IO response predictors.
 
 ## 6. Leave-One-Cohort-Out Model Evaluation
 

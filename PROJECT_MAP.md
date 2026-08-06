@@ -93,7 +93,8 @@ melanoma-assignment-3/
 | `clean_data.py` | Clean raw cohort clinical, expression, and mutation data |
 | `download_data.py` | Retrieve and structure raw cohort files |
 | `merge_datasets.py` | Merge processed cohort matrices into harmonised immunotherapy datasets |
-| `biomarkers/run_extended_biomarkers.py` | Univariate biomarker association testing (Mann-Whitney U, ROC AUC) across signatures & genes |
+| `biomarkers/run_extended_biomarkers.py` | Fast exploratory biomarker analysis (TMB vs Neoantigen, Pathway Mutations, Aneuploidy/CNA, TCGA OS curves) |
+| `biomarkers/train_multimodal_predictor.py` | Multimodal ML model training, 5-fold CV hyperparameter search across 5 feature permutation tiers, Section 5 report update |
 | `biomarkers/run_genomic_characterisation.py` | TMB calculation, driver mutation prevalence (`BRAF`, `NRAS`, `NF1`), Fisher's exact co-occurrence |
 | `exploratory_plots/run_merged_comut_plot.py` | Generates co-mutation oncoprint visualisations |
 | `exploratory_plots/generate_threshold_plot.py` | Youden's J biomarker threshold optimisation plot |
@@ -320,6 +321,7 @@ npm run build
 | Q1 log path routing | `generate_combined_cv_loco_heatmap.py` and `generate_loco_feature_comparison_heatmap.py` were writing logs to `PROJECT_ROOT/logs/` instead of `q1-response-predictor/logs/`. Fixed by replacing imported `LOG_DIR` with `get_subproject_log_dir(Path(__file__))` in both scripts. | **Resolved** (2026-08-05) |
 | `q1-response-predictor/scripts/clean_data.py` code smell refactoring | Conducted 4-pass code smell remediation per `AGENTS.md` guidelines: 100% of 44 functions decomposed to $\le 30$ lines, extracted 10 domain constants (`_COL_VARIANT_CLASSIFICATION`, `_COL_TREATMENT_TYPE`, `_STRATEGY_IATLAS`, `_STRATEGY_TCGA`, etc.), introduced `CleanedDataBundle` parameter object to shrink function signatures, restored `_build_treatment_summary_features()`, added full type annotations & docstrings, eliminated long lines & long ternaries, and added traceback logging to broad exception handler. | **Resolved** (2026-08-06) |
 | Data ingestion & pipeline scripts refactoring (`download_data.py`, `clean_data.py`, `merge_datasets.py`) | Audited and refactored all 3 pipeline data scripts: 100% of 91 functions decomposed to $\le 30$ lines (16 in `download_data.py`, 45 in `clean_data.py`, 30 in `merge_datasets.py`), eliminated cross-script DRY path ambiguities by deriving `CONFIG_PATH` via `SCRIPT_DIR.parent`, integrated project-root `src/` utilities (`paths.py`, `io.py`, `logging.py`) and biological constants (`src/biology_constants.py`), zero lines > 100 chars, 100% docstring & type hint coverage. Verified full sequential pipeline run (`download` → `clean` → `merge`) with 0 errors. | **Resolved** (2026-08-06) |
+| `q1-response-predictor/scripts/biomarkers/run_extended_biomarkers.py` code smell & model refactoring | Audited and refactored `run_extended_biomarkers.py` per `AGENTS.md` guidelines & Rule 2.1: 100% of 49 functions decomposed to $\le 30$ lines, zero lines $>100$ chars, extracted `_COL_*` module constants, consolidated Kaplan-Meier plotters into `_plot_stratified_km_survival()`, removed unused standalone sklearn model imports, and wrapped model invocations via `TunedCalibratedModel` delegating to `src.models.get_model()`. | **Resolved** (2026-08-06) |
 
 ## Conventions Quick Reference
 
