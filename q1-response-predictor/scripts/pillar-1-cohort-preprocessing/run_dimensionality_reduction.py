@@ -77,15 +77,27 @@ def main() -> None:
     expr_hugo, clin_hugo = load_hugo_2016(DATA_DIR)
     expr_riaz, clin_riaz = load_riaz_2017(DATA_DIR)
 
+    common_liu = expr_liu.index.intersection(clin_liu.index)
+    expr_liu = expr_liu.loc[common_liu]
+    clin_liu = clin_liu.loc[common_liu]
+
+    common_hugo = expr_hugo.index.intersection(clin_hugo.index)
+    expr_hugo = expr_hugo.loc[common_hugo]
+    clin_hugo = clin_hugo.loc[common_hugo]
+
+    common_riaz = expr_riaz.index.intersection(clin_riaz.index)
+    expr_riaz = expr_riaz.loc[common_riaz]
+    clin_riaz = clin_riaz.loc[common_riaz]
+
     print("\n=== Dataset dimensions immediately after loading ===")
     print(f"Liu 2019:  expression={expr_liu.shape}, clinical={clin_liu.shape}")
     print(f"Hugo 2016: expression={expr_hugo.shape}, clinical={clin_hugo.shape}")
     print(f"Riaz 2017: expression={expr_riaz.shape}, clinical={clin_riaz.shape}")
 
     print("\n=== Index overlap within each dataset ===")
-    print(f"Liu expression/clinical overlap: {len(expr_liu.index.intersection(clin_liu.index))}")
-    print(f"Hugo expression/clinical overlap: {len(expr_hugo.index.intersection(clin_hugo.index))}")
-    print(f"Riaz expression/clinical overlap: {len(expr_riaz.index.intersection(clin_riaz.index))}")
+    print(f"Liu expression/clinical overlap: {len(common_liu)}")
+    print(f"Hugo expression/clinical overlap: {len(common_hugo)}")
+    print(f"Riaz expression/clinical overlap: {len(common_riaz)}")
 
     tcga_dir = DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018"
     expr_tcga = pd.read_csv(tcga_dir / "expr_cleaned.csv", index_col="SAMPLE_ID")
@@ -650,10 +662,10 @@ def main() -> None:
         f.write(
             "\n> [!formula]+ Batch Correction Script Execution & Software Module Architecture\n"
             "> - **Primary Pipeline Execution Scripts**:\n"
-            ">   - [`run_dimensionality_reduction.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/exploratory_plots/run_dimensionality_reduction.py): Evaluates technical batch effects across four melanoma cohorts (TCGA-SKCM, Liu 2019, Hugo 2016, Riaz 2017), computes uncorrected vs. cohort Z-score standardised PCA/UMAP projections, generates top 50 variable gene heatmaps, and outputs `batch_correction_report.md`.\n"
+            ">   - [`run_dimensionality_reduction.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_dimensionality_reduction.py): Evaluates technical batch effects across four melanoma cohorts (TCGA-SKCM, Liu 2019, Hugo 2016, Riaz 2017), computes uncorrected vs. cohort Z-score standardised PCA/UMAP projections, generates top 50 variable gene heatmaps, and outputs `batch_correction_report.md`.\n"
             "> - **Data Preprocessing & Loading Modules**:\n"
-            ">   - [`clean_data.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/clean_data.py): Preprocesses raw cohort clinical metadata and RNA-seq expression profiles into cleaned CSV matrices.\n"
-            ">   - [`merge_datasets.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/merge_datasets.py): Merges processed expression matrices across cohorts into harmonised pooled matrices (`expr_merged.csv`, `clin_merged.csv`).\n"
+            ">   - [`clean_data.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/clean_data.py): Preprocesses raw cohort clinical metadata and RNA-seq expression profiles into cleaned CSV matrices.\n"
+            ">   - [`merge_datasets.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/merge_datasets.py): Merges processed expression matrices across cohorts into harmonised pooled matrices (`expr_merged.csv`, `clin_merged.csv`).\n"
             ">   - [`data_loaders.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/data_loaders.py): Provides helper loader functions (`load_liu_2019`, `load_hugo_2016`, `load_riaz_2017`) for retrieving expression and clinical data.\n"
             "> - **Shared Cross-Question & Pipeline Modules**:\n"
             ">   - [`run_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/run_pipeline.py): Master Q1 pipeline orchestrator executing downstream modeling and evaluation.\n"

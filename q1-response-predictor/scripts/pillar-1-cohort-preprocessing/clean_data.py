@@ -42,7 +42,7 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-SUBPROJECT_ROOT = SCRIPT_DIR.parent
+SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 if str(SUBPROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(SUBPROJECT_ROOT))
@@ -86,7 +86,7 @@ from src.utils.preprocessing import (
 # ============================================================================
 
 # Resolve config relative to script location.
-CONFIG_PATH = SCRIPT_DIR.parent / "config" / "datasets.yaml"
+CONFIG_PATH = SUBPROJECT_ROOT / "config" / "datasets.yaml"
 LOG_DIR = get_subproject_log_dir(SCRIPT_DIR)
 LOG_PATH = LOG_DIR / "clean_data.log"
 

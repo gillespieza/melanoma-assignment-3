@@ -90,9 +90,10 @@ melanoma-assignment-3/
 
 | Directory / Script | Purpose |
 |-------------------|---------|
-| `clean_data.py` | Clean raw cohort clinical, expression, and mutation data |
-| `download_data.py` | Retrieve and structure raw cohort files |
-| `merge_datasets.py` | Merge processed cohort matrices into harmonised immunotherapy datasets |
+| `pillar-1-cohort-preprocessing/download_data.py` | Retrieve and structure raw cohort files |
+| `pillar-1-cohort-preprocessing/clean_data.py` | Clean raw cohort clinical, expression, and mutation data |
+| `pillar-1-cohort-preprocessing/merge_datasets.py` | Merge processed cohort matrices into harmonised immunotherapy datasets |
+| `pillar-1-cohort-preprocessing/run_dimensionality_reduction.py` | PCA / UMAP projections, top 50 variable gene heatmaps, and batch correction evaluation |
 | `pillar-1-cohort-preprocessing/run_genomic_characterisation.py` | TMB calculation, driver mutation prevalence (`BRAF`, `NRAS`, `NF1`), Fisher's exact co-occurrence |
 | `pillar-2-clinical-subtyping/run_clinical_analysis.py` | Clinical feature distributions, Kaplan-Meier OS curves, and univariate log-rank tests |
 | `pillar-2-clinical-subtyping/run_clinical_clustering.py` | Exploratory clinical phenotyping and cluster-based patient stratification |
@@ -111,7 +112,6 @@ melanoma-assignment-3/
 | `exploratory_plots/generate_loco_feature_comparison_heatmap.py` | **LOCO feature comparison figure**: 1×2 panel — Left: LOCO per-cohort (Curated Signatures); Right: LOCO by feature representation. Output: `plots/models/loco_dual_1x2_heatmap.png` |
 | `exploratory_plots/run_comparison.py` | LOCO cross-validation benchmark: Curated Multimodal Features vs SelectKBest |
 | `exploratory_plots/run_clustering.py` | Exploratory clustering of pooled cohort expression data |
-| `exploratory_plots/run_dimensionality_reduction.py` | PCA / t-SNE / UMAP projections for pooled cohort |
 | `exploratory_plots/run_expression_heatmap.py` | Signature expression heatmap across cohorts |
 | `exploratory_plots/run_extra_plots.py` | Supplementary exploratory plots |
 | `exploratory_plots/run_forest_plot.py` | Forest plot of univariate biomarker associations |
@@ -329,6 +329,7 @@ npm run build
 | Data ingestion & pipeline scripts refactoring (`download_data.py`, `clean_data.py`, `merge_datasets.py`) | Audited and refactored all 3 pipeline data scripts: 100% of 91 functions decomposed to $\le 30$ lines (16 in `download_data.py`, 45 in `clean_data.py`, 30 in `merge_datasets.py`), eliminated cross-script DRY path ambiguities by deriving `CONFIG_PATH` via `SCRIPT_DIR.parent`, integrated project-root `src/` utilities (`paths.py`, `io.py`, `logging.py`) and biological constants (`src/biology_constants.py`), zero lines > 100 chars, 100% docstring & type hint coverage. Verified full sequential pipeline run (`download` → `clean` → `merge`) with 0 errors. | **Resolved** (2026-08-06) |
 | `q1-response-predictor/scripts/biomarkers/run_extended_biomarkers.py` code smell & dead code cleanup | Audited and refactored `run_extended_biomarkers.py` per `AGENTS.md` guidelines & user instructions: 100% of 26 active functions decomposed to $\le 30$ lines, zero lines $>100$ chars, extracted private `_COL_*` and `_CURATED_IMMUNE_SIGNATURES` constants, removed orphaned report generator stubs (`_generate_aneuploidy_tmb_report_lines`, `_build_spearman_table_rows`, `_get_aneuploidy_tmb_headers`) and unused model helpers (`TunedCalibratedModel`, `evaluate_auc_cv`), removed unused imports, added 100% type hint & docstring coverage, and verified execution with 0 errors. | **Resolved** (2026-08-06) |
 | Q1 script folder organisation — Pillar alignment | Restructured `q1-response-predictor/scripts/` to mirror `reports/` pillar structure: moved `run_genomic_characterisation.py` → `pillar-1-cohort-preprocessing/`, `clinical_analysis/` → `pillar-2-clinical-subtyping/`, `run_extended_biomarkers.py` & `train_multimodal_predictor.py` → `pillar-3-transcriptomic-signatures/`, `feature_selection/` → `pillar-4-out-of-cohort-benchmarks/`. Added `__init__.py` to `pillar-3-transcriptomic-signatures/` package, updated cross-script imports (`scripts.pillar_3_transcriptomic_signatures`), updated report callout deep links in `curated_signatures_report.md`, and verified full script execution with exit code 0. | **Resolved** (2026-08-06) |
+| Relocating batch correction & data scripts to Pillar 1 | Moved `download_data.py`, `clean_data.py`, `merge_datasets.py`, and `run_dimensionality_reduction.py` to `q1-response-predictor/scripts/pillar-1-cohort-preprocessing/`. Updated `SUBPROJECT_ROOT` and `CONFIG_PATH` resolution, updated file links in `batch_correction_report.md`, `Pipeline.md`, `README.md`, `data/README.md`, and verified execution of all relocated scripts with exit code 0. | **Resolved** (2026-08-06) |
 
 ## Conventions Quick Reference
 
