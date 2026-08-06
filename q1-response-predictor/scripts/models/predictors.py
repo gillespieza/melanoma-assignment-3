@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold
 from pathlib import Path
 
-from scripts.biomarkers.models.__init__ import evaluate_model_tiers
+from scripts.models import evaluate_model_tiers
 
 
 def evaluate_logistic_regression(

@@ -104,8 +104,8 @@ _MODEL_KEY_TO_DISPLAY: Dict[str, str] = {
 # ---------------------------------------------------------------------------
 # Feature Preparation & Model Setup
 # ---------------------------------------------------------------------------
-from scripts.biomarkers.models import prepare_predictor_features
-from scripts.biomarkers.models.predictors import (
+from scripts.models import prepare_predictor_features
+from scripts.models.predictors import (
     evaluate_logistic_regression,
     evaluate_random_forest,
     evaluate_xgboost,
