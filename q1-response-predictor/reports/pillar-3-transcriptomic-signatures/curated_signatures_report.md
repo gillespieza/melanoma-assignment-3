@@ -194,7 +194,11 @@ Spearman rank correlation between nonsynonymous TMB and the six curated immune s
 
 ![Spearman Correlation Heatmap](../../plots/signatures/signature_correlation_heatmap.png)
 
-
+> [!INSIGHT] Key Insights — Signature Structure & Multivariate Drivers
+> 1. **High collinearity within the cytotoxic axis**: IFN-γ, TIS, CYT, and CD8 T-cell co-vary so tightly ($r_s \approx 0.85$–$0.90$) that they effectively measure a single latent dimension — cytotoxic lymphocyte infiltration. Including all four in a linear model inflates variance and produces unreliable individual coefficients; the relevant quantity is the axis itself, not any one signature.
+> 2. **TIS and IMPRES are the non-redundant predictors**: In multivariate regression, **TIS** and **IMPRES** are the only two signatures that retain independent predictive signal. This is biologically coherent: TIS captures the cytotoxic infiltration axis, while IMPRES encodes a mechanistically distinct immune checkpoint resistance score derived from ligand–receptor interaction ratios — it is genuinely orthogonal to the infiltration axis.
+> 3. **Practical consequence for feature selection**: Rather than entering all six signatures as raw features (which would introduce severe multicollinearity), the 12-feature multimodal model uses them as a structured block. Tree-based models (RF, XGBoost) handle this gracefully through implicit feature selection; linear models (LR, Elastic-Net) benefit from the L1/L2 penalty forcing coefficient shrinkage on redundant predictors.
+> 4. **Interaction with genomic features**: Because TMB is orthogonal to all six signatures (Section 4.2), adding it to the model introduces genuinely new information on the genomic axis — explaining why XGBoost AUROC jumps from 0.618 (signatures only) to 0.692 when TMB is included, without requiring any adjustment for correlated input features.
 
 ## 5. Multimodal Response Prediction Models
 
