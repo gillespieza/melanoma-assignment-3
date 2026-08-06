@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-06 (Completed comprehensive code smell, DRY, AST, and logic refactoring across all core `q1-response-predictor/scripts/` pipeline scripts — `download_data.py`, `clean_data.py`, `merge_datasets.py`, and `run_pipeline.py`: 100% of 126 total functions $\le 30$ lines, 100% type hints & docstrings, zero lines > 100 chars, `CohortBundle` NamedTuple architecture, standardized `__file__`-relative configuration path resolution, zero bare string magic literals, and integrated project-root `src/` utilities and biological constants).
+> **Last updated**: 2026-08-06 (Completed comprehensive code smell, DRY, AST, and modular refactoring across `q1-response-predictor/scripts/` pipeline scripts including `run_dimensionality_reduction.py`, `download_data.py`, `clean_data.py`, `merge_datasets.py`, and `run_pipeline.py`: 100% of functions $\le 30$ lines, 100% type hints & docstrings, zero lines > 100 chars, standardized project-root `src/` utility path resolution, subproject logging routing, and central styles).
 
 ## Repository Overview
 

@@ -10,12 +10,12 @@ tags:
   - umap
   - tme
   - transcriptomics
-created: 2026-08-06 21:49
+created: 2026-08-06 22:31
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-06 21:49
+updated: 2026-08-06 22:31
 ---
 
 # Batch Effect Assessment & Dimensionality Reduction Analysis
@@ -27,6 +27,7 @@ When combining transcriptomic datasets across independent clinical studies, tech
 ### 1.1 Full Cohort Batch Assessment (N = 699)
 
 > [!INFO] Why We Are Doing This
+>
 > **What**: We perform Principal Component Analysis (PCA) across all $N = 699$ patients from four combined melanoma cohorts (**TCGA-SKCM** [$N = 443$], **Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], and **Riaz 2017** [$N = 107$]) using the top 1,000 most variable genes selected from the 19,757 common genes across all datasets.
 > **Why**: Combining transcriptomic data from diverse sequencing centres introduces technical distortions (batch effects). Uncorrected models risk classifying sequencing centres rather than patient biology.
 > **Question Answered**: Does cohort-independent Z-score standardisation eliminate macro-level technical separation between reference tissue (TCGA-SKCM) and active clinical trial cohorts?
@@ -40,6 +41,7 @@ When combining transcriptomic datasets across independent clinical studies, tech
 ### 1.2 ICI Trial Cohort Batch Assessment (N = 256)
 
 > [!INFO] Why We Are Doing This
+>
 > **What**: We evaluate technical batch effects specifically between the three active anti-PD-1 training cohorts (**Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], and **Riaz 2017** [$N = 107$]; $N = 256$) across all 58,954 common trial genes before and after cohort-wise Z-score standardisation.
 > **Why**: These trials vary by platform (Illumina HiSeq 2500 vs HiSeq 2000), tissue state (fresh-frozen vs FFPE), and prior treatment. We must verify baseline offsets are eliminated before Leave-One-Cohort-Out (LOCO) cross-validation.
 > **Question Answered**: Are inter-trial technical offsets harmonised across the model training cohorts without leaking test-set information?
@@ -53,6 +55,7 @@ When combining transcriptomic datasets across independent clinical studies, tech
 ## 2. Immunotherapy Trial Dimensionality Reduction (N = 256)
 
 > [!INFO] Why We Are Doing This
+>
 > **What**: We apply linear (PCA) and non-linear (UMAP) dimensionality reduction to the $N = 256$ response-annotated trial patients (Liu 2019, Hugo 2016, Riaz 2017) using the top 1,000 variable genes.
 > **Why**: To test whether baseline gene expression profiles naturally segregate treatment responders from non-responders prior to supervised machine learning.
 > **Question Answered**: Can therapeutic response be predicted directly from global 2D expression clusters, or are targeted biomarker signatures required?
@@ -64,13 +67,15 @@ When combining transcriptomic datasets across independent clinical studies, tech
 ![[umap_dimensionality_reduction.png]]
 
 > [!INSIGHT] Key Insights: Dimensionality Reduction & Patient Distribution
-- **Cohort Harmonisation**: Z-score scaling successfully integrates `Liu 2019` ($N = 122$), `Riaz 2017` ($N = 107$), and `Hugo 2016` ($N = 27$) across both PCA and UMAP embeddings.
-- **Homogeneous Response Mixing**: Responders (CR/PR) and non-responders (PD) mix homogeneously throughout PCA and UMAP projections, with zero global cluster separation by clinical outcome.
-- **Biological Rationale**: Immunotherapy response is driven by multi-pathway immune microenvironment features (e.g. `CD274`, `PDCD1`, `IFNG` signalling) rather than global transcriptomic variance. Simple 2D projections cannot separate response groups, proving the necessity for supervised multivariate classifiers.
+>
+> - **Cohort Harmonisation**: Z-score scaling successfully integrates `Liu 2019` ($N = 122$), `Riaz 2017` ($N = 107$), and `Hugo 2016` ($N = 27$) across both PCA and UMAP embeddings.
+> - **Homogeneous Response Mixing**: Responders (CR/PR) and non-responders (PD) mix homogeneously throughout PCA and UMAP projections, with zero global cluster separation by clinical outcome.
+> - **Biological Rationale**: Immunotherapy response is driven by multi-pathway immune microenvironment features (e.g. `CD274`, `PDCD1`, `IFNG` signalling) rather than global transcriptomic variance. Simple 2D projections cannot separate response groups, proving the necessity for supervised multivariate classifiers.
 
 ## 3. Gene-Level Expression Heatmaps (Top 50 Highly Variable Genes)
 
 > [!INFO] Why We Are Doing This
+>
 > **What**: We inspect individual gene expression heatmaps for the top 50 most variable genes across trial patients ($N = 256$) with hierarchical clustering.
 > **Why**: Dimensionality reduction aggregates thousands of genes into single axes. Heatmaps allow direct inspection of batch effects at individual gene resolutions.
 > **Question Answered**: Does within-cohort Z-score standardisation prevent individual high-variance genes from clustering patients by study origin?
@@ -88,6 +93,7 @@ When combining transcriptomic datasets across independent clinical studies, tech
 ## 4. Cross-Validation Rigor & Data Leakage Prevention
 
 > [!INFO] Why We Are Doing This
+>
 > **What**: We compare cohort-independent Z-score standardisation against global batch correction algorithms (such as ComBat).
 > **Why**: Data preprocessing methods used in cross-validation must strictly preserve test-set independence.
 > **Question Answered**: How does cohort-independent Z-score scaling prevent data leakage during Leave-One-Cohort-Out (LOCO) evaluation?
@@ -99,17 +105,7 @@ Global batch correction algorithms like ComBat estimate location and scale trans
 Standardising gene expression independently within each cohort (rescaling each gene using only that cohort's internal mean $\mu$ and standard deviation $\sigma$) guarantees zero data leakage. Each held-out study remains completely unobserved during model training, ensuring robust, generalisable estimates of real-world predictive performance.
 
 > [!WARNING] Methodological Limitations & Future Rationale
-- **Sample Size Constraints**: The smallest training cohort (`Hugo 2016`, $N = 27$) has reduced statistical power compared to `Liu 2019` ($N = 122$) and `Riaz 2017` ($N = 107$).
-- **Platform Heterogeneity**: Z-score scaling harmonises gene-wise means and variances but does not alter relative non-linear gene correlations within a single study.
-- **Pipeline Scope**: Unsupervised projections confirm that single-gene thresholds are insufficient for response prediction, motivating the 12-feature multimodal ensemble (incorporating TMB, TIS, CYT, and driver mutations like `BRAF`, `NRAS`, `NF1`) evaluated in downstream Q1 phases.
-
-> [!formula]+ Batch Correction Script Execution & Software Module Architecture
-> - **Primary Pipeline Execution Scripts**:
->   - [`run_dimensionality_reduction.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_dimensionality_reduction.py): Evaluates technical batch effects across four melanoma cohorts (TCGA-SKCM, Liu 2019, Hugo 2016, Riaz 2017), computes uncorrected vs. cohort Z-score standardised PCA/UMAP projections, generates top 50 variable gene heatmaps, and outputs `batch_correction_report.md`.
-> - **Data Preprocessing & Loading Modules**:
->   - [`clean_data.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/clean_data.py): Preprocesses raw cohort clinical metadata and RNA-seq expression profiles into cleaned CSV matrices.
->   - [`merge_datasets.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/merge_datasets.py): Merges processed expression matrices across cohorts into harmonised pooled matrices (`expr_merged.csv`, `clin_merged.csv`).
->   - [`data_loaders.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/data_loaders.py): Provides helper loader functions (`load_liu_2019`, `load_hugo_2016`, `load_riaz_2017`) for retrieving expression and clinical data.
-> - **Shared Cross-Question & Pipeline Modules**:
->   - [`run_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/run_pipeline.py): Master Q1 pipeline orchestrator executing downstream modeling and evaluation.
->   - [`styles.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/styles.py): Single source of truth for Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`) and visualization presentation style.
+>
+> - **Sample Size Constraints**: The smallest training cohort (`Hugo 2016`, $N = 27$) has reduced statistical power compared to `Liu 2019` ($N = 122$) and `Riaz 2017` ($N = 107$).
+> - **Platform Heterogeneity**: Z-score scaling harmonises gene-wise means and variances but does not alter relative non-linear gene correlations within a single study.
+> - **Pipeline Scope**: Unsupervised projections confirm that single-gene thresholds are insufficient for response prediction, motivating the 12-feature multimodal ensemble (incorporating TMB, TIS, CYT, and driver mutations like `BRAF`, `NRAS`, `NF1`) evaluated in downstream Q1 phases.
