@@ -9,12 +9,12 @@ tags:
   - tmb
   - neoantigens
   - comut
+created: 2026-08-06 22:44
 cssclasses:
   - table-small
   - table-center
   - row-alt
-created: 2026-08-02 13:41
-updated: 2026-08-02 13:41
+updated: 2026-08-06 22:44
 ---
 
 # Genomic Characteristics of Data Cohorts
@@ -78,7 +78,7 @@ _**Figure 3: Pre-treatment TMB Distributions by Response Status and Neoantigen C
 ## 3. Continuous Biomarker Correlation
 
 > [!INFO] Why We Are Doing This
-> **What**: We compute Spearman rank correlations between continuous genomic features (TMB, neoantigen subtypes, aneuploidy score) and transcriptomic immune signatures across trial ($N = 256$) and reference ($N = 428$) cohorts.
+> **What**: We compute Spearman rank correlations between continuous genomic features (TMB, neoantigen subtypes) and transcriptomic immune signatures across trial ($N = 256$) and reference ($N = 428$) cohorts.
 > **Why**: To identify feature redundancy before model training and evaluate whether genomic mutational burden and transcriptomic immune infiltration capture independent biological axes.
 > **Question Answered**: Are TMB and neoantigen subtypes redundant, and do mutational burden and transcriptomic immune infiltration represent orthogonal biological biomarkers?
 
@@ -92,7 +92,7 @@ _**Figure 4: Genomic & Neoantigen Biomarker Spearman Correlation Matrix (Pooled 
 
 ### 3.2 Genomic Burden vs. Immune Infiltration
 
-To evaluate how tumour genomic features affect the microenvironment, we evaluated how copy-number burden (**Aneuploidy Score**, available in TCGA-SKCM, $N = 428$) and mutational burden (**TMB**, evaluated in TCGA-SKCM and pooled trials, $N = 256$) correlate with continuous transcriptomic immune signatures.
+To evaluate how tumour genomic features affect the microenvironment, we evaluated how mutational burden (**TMB**, evaluated in TCGA-SKCM and pooled trials, $N = 256$) correlates with continuous transcriptomic immune signatures.
 
 ![Genomic Burden vs Immune Heatmap](../../plots/biomarkers/extended_immune_correlations.png)
 
@@ -102,29 +102,23 @@ _**Figure 5: Correlation between Genomic Burden Metrics and Transcriptomic Immun
 > 1. **High Collinearity between TMB & SNV Neoantigens ($r_s = 0.87$)**: Total TMB and single-nucleotide variant (SNV) neoantigens display an extremely strong correlation ($r_s = 0.87$). Including both in unregularized predictive models introduces severe multicollinearity.
 > 2. **Distinct Neoantigen Subtypes**: Indel neoantigens ($r_s = 0.44$ with TMB) and cancer-testis self-antigens ($r_s = 0.33$ with TMB) show weaker correlations, capturing distinct immunogenic signals beyond total SNV count.
 > 3. **TMB & Immune Infiltration Are Orthogonal Biomarkers**: TMB shows near-zero correlation ($r pprox -0.09	ext{--}0.16$) with transcriptomic immune signatures (such as IFN-$\gamma$ or TIS). A tumour can be highly mutated (high TMB) yet immunologically "cold" (uninflamed), or low-TMB yet "hot" (highly inflamed). This proves that TMB and immune inflammation capture **two independent biological axes**, confirming that predictive models should combine both modalities.
-> 4. **Aneuploidy Score Is a Weak Indicator**: Chromosomal instability (Aneuploidy Score, TCGA-SKCM) shows weak negative correlations ($r pprox -0.05	ext{--}-0.11$) with immune signatures, demonstrating that it is a poor standalone predictor of immune exclusion in melanoma.
 
 ## 4. TCGA Survival Stratification by Genomic Features
 
 > [!INFO] Why We Are Doing This
-> **What**: We stratify Kaplan-Meier overall survival in the reference **TCGA-SKCM** cohort ($N = 423$) by driver mutation subtype (`BRAF`, `NRAS`, `NF1`), TMB median split, and chromosomal Aneuploidy Score ($N = 417$).
-> **Why**: To determine whether baseline genomic mutations and copy-number alterations act as general prognostic survival markers in untreated/standard-of-care melanoma.
-> **Question Answered**: Do driver mutations, TMB, or aneuploidy score predict baseline overall survival in general melanoma populations?
+> **What**: We stratify Kaplan-Meier overall survival in the reference **TCGA-SKCM** cohort ($N = 423$) by driver mutation subtype (`BRAF`, `NRAS`, `NF1`) and TMB median split.
+> **Why**: To determine whether baseline genomic mutations act as general prognostic survival markers in untreated/standard-of-care melanoma.
+> **Question Answered**: Do driver mutations or TMB predict baseline overall survival in general melanoma populations?
 
-Overall Survival (OS) in the reference **TCGA-SKCM** survival cohort ($N = 423$) is stratified below. Figure 6 shows stratification by driver mutation subtype and TMB status ($N = 423$). Figure 7 shows overall survival stratified by chromosomal instability (Aneuploidy Score median split, $N = 417$).
+Overall Survival (OS) in the reference **TCGA-SKCM** survival cohort ($N = 423$) is stratified below. Figure 6 shows stratification by driver mutation subtype and TMB status ($N = 423$).
 
 ![TCGA Driver and TMB Survival](../../plots/genomic/tcga_survival_by_mutation.png)
 
 _**Figure 6: TCGA-SKCM Overall Survival Stratified by Driver Mutation Subtype (Left) and TMB Median Split (Right).**_
 
-![TCGA Aneuploidy Survival](../../plots/genomic/extended_aneuploidy_survival.png)
-
-_**Figure 7: TCGA-SKCM Overall Survival Stratified by Aneuploidy Score Median Split ($N = 417$).**_
-
 > [!INSIGHT] Key Insights: Prognostic Value of Genomic Features
 > 1. **Driver Mutations Do Not Predict Baseline Survival (Log-rank $p = 0.0899$)**: Overall survival in standard melanoma patients does not differ significantly between `BRAF`, `NRAS`, `NF1` mutant, and Triple-WT genotypes. Driver mutations guide targeted therapy selection but do not dictate baseline patient survival under standard care.
 > 2. **TMB Is Predictive, Not Prognostic (Log-rank $p = 0.4120$)**: Stratifying TCGA overall survival by TMB using a median split reveals no prognostic survival separation. While TMB predicts response specifically under immune checkpoint blockade, it has no general prognostic survival benefit in unselected populations.
-> 3. **Aneuploidy Score Trend (Log-rank $p = 0.0837$)**: Partitioning TCGA patients by median Aneuploidy Score shows a weak prognostic trend where high aneuploidy trends towards reduced overall survival.
 
 ## 5. Co-Mutation Landscape (Oncoplot)
 
@@ -137,7 +131,7 @@ The complete co-mutation (oncoplot) landscape for patients with binary response 
 
 ![Co-Mutation Landscape (Merged Trials)](../../plots/genomic/comut_landscape_merged.png)
 
-_**Figure 8: Co-Mutation Landscape across Clinical Trial Cohorts ($N = 195$).** Rows represent driver and resistance genes; columns represent individual patient samples with clinical annotation tracks._
+_**Figure 7: Co-Mutation Landscape across Clinical Trial Cohorts ($N = 195$).** Rows represent driver and resistance genes; columns represent individual patient samples with clinical annotation tracks._
 
 > [!INSIGHT] Key Insights: Co-Mutation Landscape
 > 1. **MAPK Driver Mutual Exclusivity**: `BRAF` and `NRAS` mutations exhibit near-complete mutual exclusivity across individual patients, validating that `BRAF` and `NRAS` mutations represent alternative, non-overlapping mechanisms for activating the RAS-RAF-MEK-ERK pathway.
@@ -150,5 +144,14 @@ _**Figure 8: Co-Mutation Landscape across Clinical Trial Cohorts ($N = 195$).** 
 > [!WARNING] Methodological Limitations & Analytical Scope
 > - **Unstratified Survival Analysis**: All Kaplan-Meier survival curves in TCGA-SKCM are unstratified and descriptive. They do not adjust for demographic, clinical, stage, or treatment confounding factors.
 > - **Pre-Treatment Sampling Scope**: Somatic mutation profiles reflect pre-treatment tumor biopsies. Genetic alterations acquired during therapy or under drug selection pressure are not captured in baseline sequencing.
-> - **Aneuploidy Score Availability**: Chromosomal Aneuploidy Score was measured via SNP arrays/WGS in TCGA-SKCM ($N = 417$), but is unavailable in the three clinical trial cohorts due to targeted/exome sequencing protocols.
 > - **Binary Response Filtering**: Oncoplot co-mutation visualization and response-stratified TMB analyses focus on patients with definitive RECIST response classifications (CR/PR vs. PD; $N = 195$), excluding Stable Disease ($N = 61$).
+
+> [!formula]+ Genomic Characterisation Script Execution & Software Module Architecture
+> - **Primary Pipeline Execution Scripts**:
+>   - [`run_genomic_characterisation.py`](file:///C:/Users/Amanda/Dropbox/OBSIDIAN/42/090 STUDY/091 UCD/091.03 ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_genomic_characterisation.py): Performs cross-cohort genomic analyses including driver mutation frequency comparison (`BRAF`, `NRAS`, `NF1`, Triple-WT), extended pathway mutation frequencies, TMB distribution benchmarking, neoantigen correlation analysis, TCGA overall survival (OS) stratification by genomic features, and outputs `cohort_characteristics_genomic.md`.
+> - **Data Preprocessing & Loading Modules**:
+>   - [`clean_data.py`](file:///C:/Users/Amanda/Dropbox/OBSIDIAN/42/090 STUDY/091 UCD/091.03 ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/clean_data.py): Preprocesses raw cohort clinical metadata, mutation calls, and RNA-seq expression profiles into cleaned CSV matrices.
+>   - [`merge_datasets.py`](file:///C:/Users/Amanda/Dropbox/OBSIDIAN/42/090 STUDY/091 UCD/091.03 ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/merge_datasets.py): Merges processed expression and mutation matrices across cohorts into harmonised pooled datasets (`merged_genomic.csv`, `clin_merged.csv`).
+> - **Shared Cross-Question & Pipeline Modules**:
+>   - [`run_pipeline.py`](file:///C:/Users/Amanda/Dropbox/OBSIDIAN/42/090 STUDY/091 UCD/091.03 ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/run_pipeline.py): Master Q1 pipeline orchestrator executing downstream modeling and evaluation.
+>   - [`styles.py`](file:///C:/Users/Amanda/Dropbox/OBSIDIAN/42/090 STUDY/091 UCD/091.03 ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/styles.py): Single source of truth for Okabe-Ito colour palettes (`COHORT_PALETTE`, `DRIVER_PALETTE`, `RESPONSE_PALETTE`) and visualization presentation style.

@@ -379,19 +379,10 @@ def plot_cohort_batch_pca(
     print(f"Saved PCA batch assessment plot to {rel_path(output_path)}")
 
 
-def _axis_label(dim_prefix: str, axis: str, is_uncorrected: bool, val_r: float, val_s: float) -> str:
-    """Returns the axis label string for a PCA or UMAP panel.
-
-    Args:
-        dim_prefix: 'PCA' or 'UMAP'.
-        axis: 'x' or 'y'.
-        is_uncorrected: True for raw/before-correction panels.
-        val_r: Raw PC explained variance percentage.
-        val_s: Scaled PC explained variance percentage.
-
-    Returns:
-        Formatted axis label string.
-    """
+def _axis_label(
+    dim_prefix: str, axis: str, is_uncorrected: bool, val_r: float, val_s: float
+) -> str:
+    """Returns the axis label string for a PCA or UMAP panel."""
     component = "PC1" if axis == "x" else "PC2"
     dim_num = "1" if axis == "x" else "2"
     if dim_prefix != "PCA":
@@ -407,34 +398,21 @@ def plot_trial_reduction_grid(
     method_name: str,
     output_path: Path,
 ) -> None:
-    """Renders 2x2 grid of scatter plots coloured by Cohort and Response.
-
-    Args:
-        df: Merged clinical DataFrame with projection coordinates.
-        dim_prefix: Axis column prefix ("PCA" or "UMAP").
-        pc_vars: Explained variance percentages for PCA (or zeroes for UMAP).
-        method_name: Method label ("PCA" or "UMAP").
-        output_path: Output file path.
-    """
+    """Renders 2x2 grid of scatter plots coloured by Cohort and Response."""
     fig, axes = plt.subplots(2, 2, figsize=FIG_SIZE_2X2)
     resp_colors = {
         "Responder (CR/PR)": RESPONSE_PALETTE["CR/PR"],
         "Non-responder (PD)": RESPONSE_PALETTE["PD"],
     }
     pc1_r, pc2_r, pc1_s, pc2_s = pc_vars
-
     configs = [
-        (*_grid_col_names(dim_prefix, "Raw"),
-         _COL_COHORT, COHORT_ORDER[1:], COHORT_PALETTE,
+        (*_grid_col_names(dim_prefix, "Raw"), _COL_COHORT, COHORT_ORDER[1:], COHORT_PALETTE,
          f"{method_name} Before Batch Correction (Coloured by Cohort)"),
-        (*_grid_col_names(dim_prefix, "Raw"),
-         _COL_RESPONSE, RESPONSE_ORDER, resp_colors,
+        (*_grid_col_names(dim_prefix, "Raw"), _COL_RESPONSE, RESPONSE_ORDER, resp_colors,
          f"{method_name} Before Batch Correction (Coloured by Response)"),
-        (*_grid_col_names(dim_prefix, "Scaled"),
-         _COL_COHORT, COHORT_ORDER[1:], COHORT_PALETTE,
+        (*_grid_col_names(dim_prefix, "Scaled"), _COL_COHORT, COHORT_ORDER[1:], COHORT_PALETTE,
          f"{method_name} After Batch Correction (Coloured by Cohort)"),
-        (*_grid_col_names(dim_prefix, "Scaled"),
-         _COL_RESPONSE, RESPONSE_ORDER, resp_colors,
+        (*_grid_col_names(dim_prefix, "Scaled"), _COL_RESPONSE, RESPONSE_ORDER, resp_colors,
          f"{method_name} After Batch Correction (Coloured by Response)"),
     ]
 
@@ -449,7 +427,7 @@ def plot_trial_reduction_grid(
         ax.set_ylabel(_axis_label(dim_prefix, "y", "Before" in title, pc2_r, pc2_s))
 
     plt.suptitle(
-        f"{method_name} Dimensionality Reduction of Trial Expression Data (N = {len(df)})",
+        f"{method_name} Reduction of Trial Expression (N = {len(df)})",
         fontsize=16, fontweight="bold", y=0.98,
     )
     plt.tight_layout()
@@ -467,24 +445,7 @@ def _report_section_1(
     var_full: Tuple[float, float, float, float],
     var_trials: Tuple[float, float, float, float],
 ) -> str:
-    """Returns Markdown text for Section 1: Cohort Batch Assessment.
-
-    Args:
-        n_full: Full cohort patient count.
-        n_tcga: TCGA patient count.
-        n_liu: Liu 2019 patient count.
-        n_hugo: Hugo 2016 patient count.
-        n_riaz: Riaz 2017 patient count.
-        n_trials: Trial cohort patient count.
-        n_top: Top variable gene count.
-        n_g4: 4-cohort common gene count.
-        n_g3: 3-trial common gene count.
-        var_full: Full-cohort PCA variance tuple (p1_r, p2_r, p1_s, p2_s).
-        var_trials: Trial-cohort PCA variance tuple (p1_r, p2_r, p1_s, p2_s).
-
-    Returns:
-        Formatted Markdown section string.
-    """
+    """Returns Markdown text for Section 1: Cohort Batch Assessment."""
     p1_rf, p2_rf, p1_sf, p2_sf = var_full
     p1_rt, p2_rt, p1_st, p2_st = var_trials
     return (
@@ -492,121 +453,105 @@ def _report_section_1(
         f"### 1.1 Full Cohort Batch Assessment (N = {n_full})\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        f"> **What**: We perform Principal Component Analysis (PCA) across all $N = {n_full}$ patients from four combined melanoma cohorts "
-        f"(**TCGA-SKCM** [$N = {n_tcga}$], **Liu 2019** [$N = {n_liu}$], **Hugo 2016** [$N = {n_hugo}$], and **Riaz 2017** [$N = {n_riaz}$]) "
-        f"using the top {n_top:,} most variable genes selected from the {n_g4:,} common genes across all datasets.\n"
-        "> **Why**: Combining transcriptomic data from diverse sequencing centres introduces technical distortions (batch effects). Uncorrected models risk classifying sequencing centres rather than patient biology.\n"
-        "> **Question Answered**: Does cohort-independent Z-score standardisation eliminate macro-level technical separation between reference tissue (TCGA-SKCM) and active clinical trial cohorts?\n\n"
+        f"> **What**: PCA across $N = {n_full}$ patients from four cohorts (**TCGA-SKCM** "
+        f"[$N = {n_tcga}$], **Liu 2019** [$N = {n_liu}$], **Hugo 2016** [$N = {n_hugo}$], "
+        f"**Riaz 2017** [$N = {n_riaz}$]) using {n_top:,} genes from {n_g4:,} common genes.\n"
+        "> **Why**: Combining transcriptomic data introduces batch effects. Uncorrected "
+        "models risk classifying sequencing centres rather than patient biology.\n"
+        "> **Question Answered**: Does cohort-independent Z-score standardisation eliminate "
+        "technical separation between reference (TCGA) and trial cohorts?\n\n"
         "![[batch_effect_pca.png]]\n\n"
         "### Key Observations\n"
-        f"- **Panel A: Before Batch Correction (Raw Data)**: The uncorrected PCA projection reveals a strong separation between the TCGA-SKCM reference dataset and the three clinical trial cohorts. Uncorrected PC1 ({p1_rf:.1f}% variance) and PC2 ({p2_rf:.1f}% variance) reflect laboratory platform shifts.\n"
-        f"- **Panel B: After Cohort-Specific Z-Score Standardisation**: Cohort-wise Z-score standardisation (centering each gene to $\\mu = 0, \\sigma = 1$ within each study) aligns the TCGA-SKCM reference with trial cohorts. Post-correction PC1 ({p1_sf:.1f}% variance) and PC2 ({p2_sf:.1f}% variance) show homogeneous distribution across datasets.\n\n"
+        f"- **Raw**: Separation between TCGA and trial cohorts. Uncorrected PC1 "
+        f"({p1_rf:.1f}%) and PC2 ({p2_rf:.1f}%) reflect platform shifts.\n"
+        f"- **Corrected**: Standardisation ($\\mu=0, \\sigma=1$ per study) aligns datasets. "
+        f"Post-correction PC1 ({p1_sf:.1f}%) and PC2 ({p2_sf:.1f}%) show homogeneous spread.\n\n"
         f"### 1.2 ICI Trial Cohort Batch Assessment (N = {n_trials})\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        "> **What**: We evaluate technical batch effects specifically between the three active anti-PD-1 training cohorts "
-        f"(**Liu 2019** [$N = {n_liu}$], **Hugo 2016** [$N = {n_hugo}$], and **Riaz 2017** [$N = {n_riaz}$]; $N = {n_trials}$) "
-        f"across all {n_g3:,} common trial genes before and after cohort-wise Z-score standardisation.\n"
-        "> **Why**: These trials vary by platform (Illumina HiSeq 2500 vs HiSeq 2000), tissue state (fresh-frozen vs FFPE), and prior treatment. We must verify baseline offsets are eliminated before Leave-One-Cohort-Out (LOCO) cross-validation.\n"
-        "> **Question Answered**: Are inter-trial technical offsets harmonised across the model training cohorts without leaking test-set information?\n\n"
+        f"> **What**: Technical effects between 3 training cohorts (**Liu 2019** [$N = {n_liu}$], "
+        f"**Hugo 2016** [$N = {n_hugo}$], **Riaz 2017** [$N = {n_riaz}$]; $N = {n_trials}$) "
+        f"across {n_g3:,} trial genes.\n"
+        "> **Why**: Trials vary by platform, tissue state, and treatment. Verify baseline "
+        "offsets are eliminated before LOCO cross-validation.\n"
+        "> **Question Answered**: Are inter-trial offsets harmonised without leaking test data?\n\n"
         "![[batch_effect_ici_pca.png]]\n\n"
         "### Key Observations\n"
-        f"- **Panel A: Before Batch Correction (Uncorrected Raw Expression)**: In uncorrected $\\log_2(\\text{{TPM}})$ space across all {n_g3:,} trial genes, `Liu 2019` ($N = {n_liu}$, HiSeq 2500) separates along PC1 ({p1_rt:.1f}% variance) from `Riaz 2017` ($N = {n_riaz}$, HiSeq 2000 / FFPE) and `Hugo 2016` ($N = {n_hugo}$, HiSeq 2000 / fresh-frozen). This confirms that sequencing depth and platform chemistry dominate raw expression signals.\n"
-        f"- **Panel B: After Cohort-Wise Z-Score Standardisation**: Standardising gene expression independently within each cohort completely removes artificial study-level separation. The distributions for Liu 2019, Hugo 2016, and Riaz 2017 overlap smoothly across PC1 ({p1_st:.1f}% variance) and PC2 ({p2_st:.1f}% variance), ensuring unbiased model training.\n\n"
+        f"- **Raw**: In $\\log_2(\\text{{TPM}})$, `Liu 2019` ($N = {n_liu}$) separates from "
+        f"`Riaz 2017` ($N = {n_riaz}$) and `Hugo 2016` ($N = {n_hugo}$) along PC1 "
+        f"({p1_rt:.1f}%), confirming sequencing depth/platform dominate signals.\n"
+        f"- **Corrected**: Standardisation removes study-level separation. distributions "
+        f"overlap smoothly across PC1 ({p1_st:.1f}%) and PC2 ({p2_st:.1f}%).\n\n"
     )
 
 
 def _report_section_2(
     n_trials: int, n_top: int, n_liu: int, n_hugo: int, n_riaz: int,
 ) -> str:
-    """Returns Markdown text for Section 2: Immunotherapy Trial Dimensionality Reduction.
-
-    Args:
-        n_trials: Trial cohort patient count.
-        n_top: Top variable gene count.
-        n_liu: Liu 2019 patient count.
-        n_hugo: Hugo 2016 patient count.
-        n_riaz: Riaz 2017 patient count.
-
-    Returns:
-        Formatted Markdown section string.
-    """
+    """Returns Markdown text for Section 2: Immunotherapy Trial Reduction."""
     return (
         f"## 2. Immunotherapy Trial Dimensionality Reduction (N = {n_trials})\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        f"> **What**: We apply linear (PCA) and non-linear (UMAP) dimensionality reduction to the $N = {n_trials}$ response-annotated trial patients (Liu 2019, Hugo 2016, Riaz 2017) using the top {n_top:,} variable genes.\n"
-        "> **Why**: To test whether baseline gene expression profiles naturally segregate treatment responders from non-responders prior to supervised machine learning.\n"
-        "> **Question Answered**: Can therapeutic response be predicted directly from global 2D expression clusters, or are targeted biomarker signatures required?\n\n"
-        "### PCA Projections (Raw vs. Standardised)\n"
-        "![[pca_dimensionality_reduction.png]]\n\n"
-        "### UMAP Projections (Raw vs. Standardised)\n"
+        f"> **What**: Linear (PCA) and non-linear (UMAP) reduction to $N = {n_trials}$ "
+        f"response-annotated patients (Liu 2019, Hugo 2016, Riaz 2017) using {n_top:,} genes.\n"
+        "> **Why**: Test if baseline expression profiles naturally segregate responders.\n"
+        "> **Question Answered**: Can therapeutic response be predicted directly from global "
+        "2D expression clusters?\n\n"
+        "### Projections\n"
+        "![[pca_dimensionality_reduction.png]]\n"
         "![[umap_dimensionality_reduction.png]]\n\n"
-        "> [!INSIGHT] Key Insights: Dimensionality Reduction & Patient Distribution\n"
+        "> [!INSIGHT] Key Insights\n"
         ">\n"
-        f"> - **Cohort Harmonisation**: Z-score scaling successfully integrates `Liu 2019` ($N = {n_liu}$), `Riaz 2017` ($N = {n_riaz}$), and `Hugo 2016` ($N = {n_hugo}$) across both PCA and UMAP embeddings.\n"
-        "> - **Homogeneous Response Mixing**: Responders (CR/PR) and non-responders (PD) mix homogeneously throughout PCA and UMAP projections, with zero global cluster separation by clinical outcome.\n"
-        "> - **Biological Rationale**: Immunotherapy response is driven by multi-pathway immune microenvironment features (e.g. `CD274`, `PDCD1`, `IFNG` signalling) rather than global transcriptomic variance. Simple 2D projections cannot separate response groups, proving the necessity for supervised multivariate classifiers.\n\n"
+        f"> - **Harmonisation**: Z-score scaling integrates `Liu 2019` ($N = {n_liu}$), "
+        f"`Riaz 2017` ($N = {n_riaz}$), `Hugo 2016` ($N = {n_hugo}$) in embeddings.\n"
+        "> - **Mixing**: Responders (CR/PR) and non-responders (PD) mix homogeneously.\n"
+        "> - **Biological Rationale**: Response is driven by multi-pathway immune features, "
+        "not global variance. Simple 2D projections cannot separate response groups.\n\n"
     )
 
 
-def _report_section_3(
-    n_trials: int,
-) -> str:
-    """Returns Markdown text for Section 3: Gene-Level Expression Heatmaps.
-
-    Args:
-        n_trials: Trial cohort patient count.
-
-    Returns:
-        Formatted Markdown section string.
-    """
+def _report_section_3(n_trials: int) -> str:
+    """Returns Markdown text for Section 3: Gene-Level Expression Heatmaps."""
     return (
-        f"## 3. Gene-Level Expression Heatmaps (Top {N_TOP_HEATMAP_GENES} Highly Variable Genes)\n\n"
+        f"## 3. Gene-Level Expression Heatmaps (Top {N_TOP_HEATMAP_GENES} Genes)\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        f"> **What**: We inspect individual gene expression heatmaps for the top {N_TOP_HEATMAP_GENES} most variable genes across trial patients ($N = {n_trials}$) with hierarchical clustering.\n"
-        "> **Why**: Dimensionality reduction aggregates thousands of genes into single axes. Heatmaps allow direct inspection of batch effects at individual gene resolutions.\n"
-        "> **Question Answered**: Does within-cohort Z-score standardisation prevent individual high-variance genes from clustering patients by study origin?\n\n"
-        f"### Raw Expression (Top {N_TOP_HEATMAP_GENES} Genes)\n"
-        "![[heatmap_top_variance_genes_raw.png]]\n\n"
-        f"### Standardised Expression (Top {N_TOP_HEATMAP_GENES} Genes)\n"
+        f"> **What**: Inspect individual gene heatmaps for top {N_TOP_HEATMAP_GENES} genes "
+        f"across trial patients ($N = {n_trials}$) with hierarchical clustering.\n"
+        "> **Why**: Validate batch effects at individual gene resolutions.\n"
+        "> **Question Answered**: Does Z-score prevent gene-based cohort clustering?\n\n"
+        "### Raw & Standardised\n"
+        "![[heatmap_top_variance_genes_raw.png]]\n"
         "![[heatmap_top_variance_genes_standardized.png]]\n\n"
         "### Key Observations\n"
-        "- **Before Batch Correction (Raw log2-TPM)**: Patient columns cluster strongly by cohort source, with distinct blocks corresponding to individual clinical studies.\n"
-        "- **After Batch Correction (Cohort Z-Scoring)**: Within-cohort Z-score standardisation eliminates study-based clustering, producing complete cohort mixing across the hierarchical dendrogram.\n\n"
+        "- **Raw**: Columns cluster by cohort source, showing distinct blocks.\n"
+        "- **Corrected**: Within-cohort Z-score standardisation eliminates study-based "
+        "clustering, producing complete cohort mixing.\n\n"
     )
 
 
-def _report_section_4(
-    n_liu: int, n_hugo: int, n_riaz: int,
-) -> str:
-    """Returns Markdown text for Section 4: Cross-Validation Rigour & Data Leakage Prevention.
-
-    Args:
-        n_liu: Liu 2019 patient count.
-        n_hugo: Hugo 2016 patient count.
-        n_riaz: Riaz 2017 patient count.
-
-    Returns:
-        Formatted Markdown section string.
-    """
+def _report_section_4(n_liu: int, n_hugo: int, n_riaz: int) -> str:
+    """Returns Markdown text for Section 4: Cross-Validation Rigour."""
     return (
         "## 4. Cross-Validation Rigor & Data Leakage Prevention\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        "> **What**: We compare cohort-independent Z-score standardisation against global batch correction algorithms (such as ComBat).\n"
-        "> **Why**: Data preprocessing methods used in cross-validation must strictly preserve test-set independence.\n"
-        "> **Question Answered**: How does cohort-independent Z-score scaling prevent data leakage during Leave-One-Cohort-Out (LOCO) evaluation?\n\n"
-        "### 4.1 The Hazard of Global Batch Correction (e.g. ComBat)\n"
-        "Global batch correction algorithms like ComBat estimate location and scale transformation parameters using all samples pooled across all available cohorts. When performing Leave-One-Cohort-Out (LOCO) cross-validation, including the held-out test cohort in parameter estimation allows information from the test set to leak into the training phase. This **data leakage** produces artificially inflated performance metrics that fail to generalise to external clinical validation sets.\n\n"
-        "### 4.2 The Cohort-Independent Z-Score Solution\n"
-        "Standardising gene expression independently within each cohort (rescaling each gene using only that cohort's internal mean $\\mu$ and standard deviation $\\sigma$) guarantees zero data leakage. Each held-out study remains completely unobserved during model training, ensuring robust, generalisable estimates of real-world predictive performance.\n\n"
-        "> [!WARNING] Methodological Limitations & Future Rationale\n"
+        "> **What**: Compare cohort-independent Z-score against global batch correction.\n"
+        "> **Question Answered**: How does independent Z-score prevent leakage in LOCO?\n\n"
+        "### 4.1 The Hazard of Global Correction (e.g. ComBat)\n"
+        "Global algorithms pool all samples to estimate parameters. In LOCO CV, including "
+        "the test set in parameter estimation leaks information into the training phase, "
+        "inflating metrics artificially.\n\n"
+        "### 4.2 The Z-Score Solution\n"
+        "Standardising independently per cohort (using internal $\\mu, \\sigma$) guarantees "
+        "zero leakage. Each held-out study remains unobserved during training.\n\n"
+        "> [!WARNING] Limitations\n"
         ">\n"
-        f"> - **Sample Size Constraints**: The smallest training cohort (`Hugo 2016`, $N = {n_hugo}$) has reduced statistical power compared to `Liu 2019` ($N = {n_liu}$) and `Riaz 2017` ($N = {n_riaz}$).\n"
-        "> - **Platform Heterogeneity**: Z-score scaling harmonises gene-wise means and variances but does not alter relative non-linear gene correlations within a single study.\n"
-        "> - **Pipeline Scope**: Unsupervised projections confirm that single-gene thresholds are insufficient for response prediction, motivating the 12-feature multimodal ensemble (incorporating TMB, TIS, CYT, and driver mutations like `BRAF`, `NRAS`, `NF1`) evaluated in downstream Q1 phases.\n"
+        f"> - **Constraints**: `Hugo 2016` ($N = {n_hugo}$) has lower power than "
+        f"`Liu 2019` ($N = {n_liu}$) and `Riaz 2017` ($N = {n_riaz}$).\n"
+        "> - **Scope**: Projections confirm single-gene thresholds are insufficient, "
+        "motivating a 12-feature multimodal ensemble approach.\n\n"
     )
 
 
@@ -616,67 +561,34 @@ def generate_report_content(
     var_full: Tuple[float, float, float, float],
     var_trials_all: Tuple[float, float, float, float],
 ) -> str:
-    """Assembles full Markdown content for batch_correction_report.md.
-
-    Args:
-        n_full: Full cohort patient count.
-        n_tcga: TCGA patient count.
-        n_liu: Liu 2019 patient count.
-        n_hugo: Hugo 2016 patient count.
-        n_riaz: Riaz 2017 patient count.
-        n_trials: ICI trial cohort patient count.
-        n_top: Number of top variable genes.
-        n_g4: Number of common 4-cohort genes.
-        n_g3: Number of common 3-trial genes.
-        var_full: Explained variance percentages for full cohort PCA.
-        var_trials_all: Explained variance percentages for trial cohort PCA.
-
-    Returns:
-        Formatted Markdown report text string.
-    """
+    """Assembles full Markdown content for batch_correction_report.md."""
     fm = generate_obsidian_frontmatter(
         title="Batch Effect Assessment & Dimensionality Reduction Analysis",
         aliases=["Q1 Batch Correction Report", "Batch Effect Assessment"],
         tags=["melanoma", "batch-correction", "pca", "umap", "tme", "transcriptomics"],
         extra_css_classes=["table-center", "row-alt"],
     )
-    p1_rf, p2_rf, p1_sf, p2_sf = var_full
-    p1_rt, p2_rt, p1_st, p2_st = var_trials_all
-
     intro = (
         "# Batch Effect Assessment & Dimensionality Reduction Analysis\n\n"
-        "When combining transcriptomic datasets across independent clinical studies, technical variations "
-        "(e.g. sequencing platforms, RNA extraction methods, and library preparation protocols) typically dominate "
-        "the underlying biological signals. This report documents how technical batch effects were evaluated and "
-        "harmonised across four melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) "
-        "and tests whether global transcriptomic profiles naturally separate patients based on therapeutic response. "
-        "Visualisations follow the Okabe-Ito colour guidelines used throughout the study.\n\n"
+        "This report documents how technical batch effects were evaluated and harmonised "
+        "across four melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and "
+        "**Riaz 2017**) and tests if global profiles separate therapeutic responses.\n\n"
     )
     return (
-        f"{fm}\n\n"
-        + intro
-        + _report_section_1(
+        f"{fm}\n\n" + intro + _report_section_1(
             n_full, n_tcga, n_liu, n_hugo, n_riaz, n_trials, n_top, n_g4, n_g3,
             var_full, var_trials_all,
-        )
-        + _report_section_2(n_trials, n_top, n_liu, n_hugo, n_riaz)
-        + _report_section_3(n_trials)
-        + _report_section_4(n_liu, n_hugo, n_riaz)
+        ) + _report_section_2(n_trials, n_top, n_liu, n_hugo, n_riaz)
+        + _report_section_3(n_trials) + _report_section_4(n_liu, n_hugo, n_riaz)
     )
 
 
 def write_batch_correction_report(report_path: Path, content: str) -> None:
-    """Writes the batch correction report Markdown file.
-
-    Args:
-        report_path: Destination path for the report file.
-        content: Formatted Markdown text content.
-    """
+    """Writes the batch correction report Markdown file."""
     report_path.parent.mkdir(parents=True, exist_ok=True)
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(content)
     print(f"Report written to {rel_path(report_path)}")
-
     redundant_report = report_path.parent / "dimensionality_reduction_report.md"
     if redundant_report.exists():
         print(f"Removing redundant report: {rel_path(redundant_report)}")
@@ -687,20 +599,14 @@ def write_batch_correction_report(report_path: Path, content: str) -> None:
 # Main Pipeline Orchestration
 # ---------------------------------------------------------------------------
 
-def main() -> None:
-    """Executes dimensionality reduction workflow across full and trial cohorts."""
-    print("==================================================")
-    print("Dimensionality Reduction: Full & Trial Cohorts")
-    print("==================================================\n")
-
-    for directory in [EXPLORATORY_PLOT_DIR, REPORT_DIR]:
-        directory.mkdir(exist_ok=True, parents=True)
-
-    expr_dict, clin_dict = load_all_cohorts(DATA_DIR)
-    g4, g3, top_genes = select_top_variable_genes(expr_dict)
-    trial_names = COHORT_ORDER[1:]
-
-    # 1a. Full cohort PCA batch assessment
+def _run_pca_batch_projections(
+    expr_dict: Dict[str, pd.DataFrame],
+    clin_dict: Dict[str, pd.DataFrame],
+    top_genes: List[str],
+    g3: List[str],
+    trial_names: List[str],
+) -> Tuple[Tuple[float, float, float, float], Tuple[float, float, float, float], int]:
+    """Runs full and trial cohort PCA projections."""
     expr_full_raw, expr_full_scaled, clin_full = _build_concat(
         expr_dict, clin_dict, COHORT_ORDER, top_genes, with_response=False
     )
@@ -710,8 +616,6 @@ def main() -> None:
         clin_full, (p1_rf, p2_rf, p1_sf, p2_sf), COHORT_ORDER,
         "Full Cohort", EXPLORATORY_PLOT_DIR / "batch_effect_pca.png",
     )
-
-    # 1b. ICI trial cohort PCA batch assessment (all common trial genes)
     expr_tr_all_raw, expr_tr_all_scaled, clin_tr_all = _build_concat(
         expr_dict, clin_dict, trial_names, g3, with_response=False
     )
@@ -723,13 +627,20 @@ def main() -> None:
         clin_tr_all, (p1_rt, p2_rt, p1_st, p2_st), trial_names,
         "ICI Trial Cohorts", EXPLORATORY_PLOT_DIR / "batch_effect_ici_pca.png",
     )
+    return (p1_rf, p2_rf, p1_sf, p2_sf), (p1_rt, p2_rt, p1_st, p2_st), len(expr_full_raw)
 
-    # 2. Trial cohort PCA & UMAP projections coloured by response
+
+def _run_trial_reduction_grids(
+    expr_dict: Dict[str, pd.DataFrame],
+    clin_dict: Dict[str, pd.DataFrame],
+    top_genes: List[str],
+    trial_names: List[str],
+) -> None:
+    """Runs 2x2 PCA and UMAP grid plots for trial cohorts."""
     expr_tr_top_raw, expr_tr_top_scaled, clin_tr_resp = _build_concat(
         expr_dict, clin_dict, trial_names, top_genes, with_response=True
     )
     clin_tr_resp[_COL_RESPONSE] = clin_tr_resp[_COL_RAW_RESPONSE].map(RESPONSE_LABEL_MAP)
-
     pcs_top_r, pcs_top_s, p1_tr, p2_tr, p1_ts, p2_ts = fit_pca_projection(
         expr_tr_top_raw, expr_tr_top_scaled
     )
@@ -738,7 +649,6 @@ def main() -> None:
         clin_tr_resp, "PCA", (p1_tr, p2_tr, p1_ts, p2_ts),
         "PCA", EXPLORATORY_PLOT_DIR / "pca_dimensionality_reduction.png",
     )
-
     um_raw, um_scaled = fit_umap_or_tsne(expr_tr_top_raw, expr_tr_top_scaled)
     _assign_umap_coords(clin_tr_resp, um_raw, um_scaled)
     plot_trial_reduction_grid(
@@ -746,16 +656,29 @@ def main() -> None:
         "UMAP", EXPLORATORY_PLOT_DIR / "umap_dimensionality_reduction.png",
     )
 
-    # 3. Generate & write report
+
+def main() -> None:
+    """Executes dimensionality reduction workflow."""
+    print("==================================================")
+    print("Dimensionality Reduction: Full & Trial Cohorts")
+    print("==================================================\n")
+    for directory in [EXPLORATORY_PLOT_DIR, REPORT_DIR]:
+        directory.mkdir(exist_ok=True, parents=True)
+    expr_dict, clin_dict = load_all_cohorts(DATA_DIR)
+    g4, g3, top_genes = select_top_variable_genes(expr_dict)
+    trial_names = COHORT_ORDER[1:]
+    var_full, var_trials, n_full = _run_pca_batch_projections(
+        expr_dict, clin_dict, top_genes, g3, trial_names
+    )
+    _run_trial_reduction_grids(expr_dict, clin_dict, top_genes, trial_names)
     n_tcga, n_liu = len(expr_dict["TCGA-SKCM"]), len(expr_dict["Liu 2019"])
     n_hugo, n_riaz = len(expr_dict["Hugo 2016"]), len(expr_dict["Riaz 2017"])
+    n_tr_all = sum(len(expr_dict[c]) for c in trial_names)
     report_md = generate_report_content(
-        len(expr_full_raw), n_tcga, n_liu, n_hugo, n_riaz,
-        len(expr_tr_all_raw), len(top_genes), len(g4), len(g3),
-        (p1_rf, p2_rf, p1_sf, p2_sf), (p1_rt, p2_rt, p1_st, p2_st),
+        n_full, n_tcga, n_liu, n_hugo, n_riaz, n_tr_all,
+        len(top_genes), len(g4), len(g3), var_full, var_trials,
     )
     write_batch_correction_report(REPORT_DIR / "batch_correction_report.md", report_md)
-
     print("==================================================")
     print("Done!")
     print("==================================================")
