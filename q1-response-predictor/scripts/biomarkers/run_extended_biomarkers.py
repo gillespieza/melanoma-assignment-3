@@ -465,6 +465,7 @@ def _plot_correlation_heatmap(
     plt.tight_layout()
     plot_path = PLOT_DIR / "extended_immune_correlations.png"
     save_fig(fig, plot_path)
+    plt.close(fig)
     return plot_path
 
 
@@ -530,6 +531,7 @@ def _plot_stratified_km_survival(
     
     plot_path = PLOT_DIR / output_filename
     save_fig(fig, plot_path)
+    plt.close(fig)
     return median_val, p_val, plot_path
 
 
@@ -558,7 +560,7 @@ def _plot_survival_by_tmb(df_tcga_clin: pd.DataFrame) -> Tuple[float, float, Pat
 
 
 def _evaluate_aneuploidy_and_tmb(
-    df_tcga_clin: pd.DataFrame, df_tcga_sigs: pd.DataFrame,
+    df_tcga_clin: pd.DataFrame,
     df_clin_merged: pd.DataFrame, df_sigs_merged: pd.DataFrame
 ) -> None:
     """Evaluate Aneuploidy and TMB vs. Immune Infiltration and save figure plots."""
@@ -590,7 +592,7 @@ def main() -> None:
 
     _evaluate_neoantigen_load(df_clin_merged)
     _evaluate_pathway_mutations(df_liu_clin, df_hugo_clin, df_riaz_clin, df_clin_merged)
-    _evaluate_aneuploidy_and_tmb(df_tcga_clin, df_tcga_sigs, df_clin_merged, df_sigs_merged)
+    _evaluate_aneuploidy_and_tmb(df_tcga_clin, df_clin_merged, df_sigs_merged)
 
     print("\n==================================================")
     print("Biomarker evaluation completed successfully!")
