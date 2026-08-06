@@ -189,12 +189,6 @@ Evaluating genomic metrics (`TMB_NONSYNONYMOUS`, `ANEUPLOIDY_SCORE`) against con
 
 ![Spearman Correlation Heatmap](../../plots/signatures/signature_correlation_heatmap.png)
 
-#### 2x1 Forest Comparison: Pooled Effect Size (Left) vs. Out-of-Cohort Generalisation (Right)
-The combined forest plot below directly contrasts pooled single-variable effect magnitudes (Cohen's d with 95% bootstrap CIs) against out-of-cohort discriminative performance (AUROC across held-out clinical trials) across the six curated signatures:
-
-![Pooled Effect Size vs. Out-of-Cohort Generalisation (2x1 Grid)](../../plots/signatures/combined_forest_plots.png)
-
-
 
 
 ## 5. Multimodal Response Prediction Models
