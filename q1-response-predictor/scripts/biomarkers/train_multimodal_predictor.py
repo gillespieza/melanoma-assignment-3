@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, ttest_1samp
 from sklearn.model_selection import StratifiedKFold
 
 # ---------------------------------------------------------------------------
@@ -60,7 +60,7 @@ from scripts.biomarkers.run_extended_biomarkers import (
     _load_and_prepare_data,
     evaluate_auc_cv,
 )
-from src.styles import OKABE_ITO, set_presentation_style
+from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import get_subproject_log_dir, rel_path
 from src.utils.plotting import save_fig
@@ -73,122 +73,71 @@ set_presentation_style()
 LOG_DIR = get_subproject_log_dir(_THIS_FILE)
 LOG_PATH = LOG_DIR / "train_multimodal_predictor.log"
 
+# ---------------------------------------------------------------------------
+# Heatmap Style Constants  (mirrors generate_5f_cv_comparison_heatmap.py)
+# ---------------------------------------------------------------------------
+_HEATMAP_VMIN: float = 0.30
+_HEATMAP_VMAX: float = 0.70
+_HEATMAP_CMAP: str = "YlGnBu"
+_HEATMAP_FIGSIZE: Tuple[int, int] = (16, 9)
+_HEATMAP_ANNOT_SIZE: int = 14
+_HEATMAP_LABEL_SIZE: int = 12
+_HIGHLIGHT_BOX_LW: float = 2.5
+_SEPARATOR_LINE_LW: float = 4.0
+_HEATMAP_DPI: int = 300
+_SUBPLOT_MARGINS: Dict[str, float] = {"left": 0.20, "right": 0.88, "top": 0.88, "bottom": 0.14}
+
+# Display order for model rows — matches cv_loco_1x2_heatmap.png
+_MODEL_DISPLAY_ORDER: List[str] = [
+    "XGBoost", "Random Forest", "SVM", "ElasticNet", "Logistic Regression"
+]
+# Map the verbose model keys from _get_model_wrappers to short display names
+_MODEL_KEY_TO_DISPLAY: Dict[str, str] = {
+    "Logistic Regression (LR)": "Logistic Regression",
+    "Random Forest (RF)": "Random Forest",
+    "XGBoost (XGB, tuned)": "XGBoost",
+    "Support Vector Machine (SVM)": "SVM",
+    "Elastic-Net": "ElasticNet",
+}
+
 
 # ---------------------------------------------------------------------------
 # Feature Preparation & Model Setup
 # ---------------------------------------------------------------------------
+from scripts.biomarkers.models import prepare_predictor_features
+from scripts.biomarkers.models.predictors import (
+    evaluate_logistic_regression,
+    evaluate_random_forest,
+    evaluate_xgboost,
+    evaluate_svm,
+    evaluate_elasticnet,
+)
+
+
 def _prepare_predictor_features(
     df_clin_merged: pd.DataFrame, df_sigs_merged: pd.DataFrame
 ) -> Tuple[pd.DataFrame, np.ndarray, List[str]]:
-    """Construct clean feature matrix and outcome target array for predictor training."""
-    df_sigs_aligned = df_sigs_merged.loc[df_clin_merged.index]
-    sig_features = ['IFN_gamma', 'TIS', 'CYT', 'CD8_Tcell', 'IMPRES', 'PD_L1']
-
-    df_features = pd.concat([df_sigs_aligned, df_clin_merged[[
-        'mut_BRAF', 'mut_NRAS', 'mut_NF1',
-        'mut_Antigen_Presentation', 'mut_IFN_gamma_Signaling', 'mut_Survival_Pathways',
-        _COL_TMB, _COL_AGE
-    ]]], axis=1)
-
-    df_features[_COL_TMB] = df_features[_COL_TMB].fillna(df_features[_COL_TMB].median())
-    df_features[_COL_AGE] = df_features[_COL_AGE].fillna(df_features[_COL_AGE].median())
-
-    clean_idx = df_clin_merged[_COL_RESPONSE].dropna().index
-    df_features_clean = df_features.loc[clean_idx]
-    y = df_clin_merged.loc[clean_idx, _COL_RESPONSE].values
-
-    return df_features_clean, y, sig_features
-
-
-def _get_model_wrappers() -> Dict[str, TunedCalibratedModel]:
-    """Define classifier candidates backed by src.models.get_model()."""
-    return {
-        'Logistic Regression (LR)': TunedCalibratedModel('lr'),
-        'Random Forest (RF)': TunedCalibratedModel('rf'),
-        'XGBoost (XGB, tuned)': TunedCalibratedModel('xgb'),
-        'Support Vector Machine (SVM)': TunedCalibratedModel('svm'),
-        'Elastic-Net': TunedCalibratedModel('elasticnet'),
-    }
-
-
-# ---------------------------------------------------------------------------
-# Cross-Validation Evaluation Subroutines
-# ---------------------------------------------------------------------------
-def _score_model_feature_subsets(
-    model: TunedCalibratedModel, df_features_clean: pd.DataFrame,
-    y: np.ndarray, sig_features: List[str], cv: StratifiedKFold
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Cross-validate single model across 5 feature permutation tiers of the 12 final features."""
-    driver_cols = ['mut_BRAF', 'mut_NRAS', 'mut_NF1']
-
-    # Tier 1: 6 Signatures
-    cols_base = sig_features
-    scores_base = evaluate_auc_cv(model, df_features_clean[cols_base].values, y, cv, "6 Signatures Only")
-
-    # Tier 2: Signatures + TMB (7)
-    cols_tmb = sig_features + [_COL_TMB]
-    scores_tmb = evaluate_auc_cv(model, df_features_clean[cols_tmb].values, y, cv, "Signatures + TMB")
-
-    # Tier 3: Signatures + Drivers (9)
-    cols_drivers = sig_features + driver_cols
-    scores_drivers = evaluate_auc_cv(model, df_features_clean[cols_drivers].values, y, cv, "Signatures + Drivers")
-
-    # Tier 4: Signatures + Drivers + TMB (10)
-    cols_drivers_tmb = sig_features + driver_cols + [_COL_TMB]
-    scores_drivers_tmb = evaluate_auc_cv(model, df_features_clean[cols_drivers_tmb].values, y, cv, "Signatures + Drivers + TMB")
-
-    # Tier 5: 12-Feature Final Model (12)
-    cols_12 = sig_features + driver_cols + [_COL_TMB, _COL_AGE, 'mut_Antigen_Presentation']
-    scores_12 = evaluate_auc_cv(model, df_features_clean[cols_12].values, y, cv, "12-Feature Final Model")
-
-    return scores_base, scores_tmb, scores_drivers, scores_drivers_tmb, scores_12
-
-
-def _evaluate_single_model_auc(
-    model_name: str, model: TunedCalibratedModel,
-    df_features_clean: pd.DataFrame, y: np.ndarray,
-    sig_features: List[str], cv: StratifiedKFold
-) -> Tuple[Dict[str, str], Dict[str, Any]]:
-    """Evaluate 5 feature set permutation tiers for a single classifier architecture."""
-    model_start = time.perf_counter()
-    print(f"  > Evaluating {model_name}...", flush=True)
-
-    scores_base, scores_tmb, scores_drivers, scores_drivers_tmb, scores_12 = _score_model_feature_subsets(
-        model, df_features_clean, y, sig_features, cv
-    )
-
-    res = {
-        'Model': model_name,
-        'Base AUROC': f"{scores_base.mean():.3f} (+/-{scores_base.std():.3f})",
-        'Sigs+TMB AUROC': f"{scores_tmb.mean():.3f} (+/-{scores_tmb.std():.3f})",
-        'Sigs+Drivers AUROC': f"{scores_drivers.mean():.3f} (+/-{scores_drivers.std():.3f})",
-        'Sigs+Drivers+TMB AUROC': f"{scores_drivers_tmb.mean():.3f} (+/-{scores_drivers_tmb.std():.3f})",
-        '12-Feature Model AUROC': f"{scores_12.mean():.3f} (+/-{scores_12.std():.3f})"
-    }
-    plot_row = {
-        'model': model_name,
-        'base_mean': scores_base.mean(), 'base_std': scores_base.std(),
-        'tmb_mean': scores_tmb.mean(), 'tmb_std': scores_tmb.std(),
-        'drivers_mean': scores_drivers.mean(), 'drivers_std': scores_drivers.std(),
-        'drivers_tmb_mean': scores_drivers_tmb.mean(), 'drivers_tmb_std': scores_drivers_tmb.std(),
-        'model12_mean': scores_12.mean(), 'model12_std': scores_12.std()
-    }
-    print(f"  > Finished {model_name} in {time.perf_counter() - model_start:.1f}s", flush=True)
-    return res, plot_row
+    return prepare_predictor_features(df_clin_merged, df_sigs_merged, PROJECT_ROOT)
 
 
 def _evaluate_multimodal_models(
-    models: Dict[str, TunedCalibratedModel],
     df_features_clean: pd.DataFrame, y: np.ndarray,
     sig_features: List[str], cv: StratifiedKFold
 ) -> Tuple[List[Dict[str, str]], List[Dict[str, Any]]]:
     """Train and cross-validate multimodal prediction models across feature subsets."""
+    model_evaluators = [
+        evaluate_logistic_regression,
+        evaluate_random_forest,
+        evaluate_xgboost,
+        evaluate_svm,
+        evaluate_elasticnet,
+    ]
     model_results = []
     plot_data = []
 
-    for model_name, model in models.items():
-        res, plot_row = _evaluate_single_model_auc(
-            model_name, model, df_features_clean, y, sig_features, cv
+    for evaluator in model_evaluators:
+        res, plot_row = evaluator(
+            df_features_clean, y, sig_features, cv, evaluate_auc_cv
         )
         model_results.append(res)
         plot_data.append(plot_row)
@@ -199,111 +148,164 @@ def _evaluate_multimodal_models(
 # ---------------------------------------------------------------------------
 # Plotting & Reporting Subroutines
 # ---------------------------------------------------------------------------
-# Tier labels used by both the heatmap and the report table columns
+# Tier labels (x-axis) — ordering matches _TIER_KEYS_MEAN
 _TIER_LABELS: List[str] = [
-    'Sigs Only\n(6)',
-    'Sigs + Drivers\n(9)',
-    'Sigs + TMB\n(7)',
-    'Sigs + TMB\n+ Drivers (10)',
+    'Signatures\n(6)',
+    'Signatures\n+ Drivers (9)',
+    'Signatures\n+ TMB (7)',
+    'Signatures\n+ M1/M2 Ratio (7)',
+    'Signatures\n+ Macrophage STV (7)',
     '12-Feature\nFinal Model',
 ]
 _TIER_KEYS_MEAN: List[str] = [
-    'base_mean', 'drivers_mean', 'tmb_mean', 'drivers_tmb_mean', 'model12_mean'
+    'base_mean', 'drivers_mean', 'tmb_mean', 'm1m2_mean', 'mac_stv_mean', 'model12_mean'
 ]
 _TIER_KEYS_STD: List[str] = [
-    'base_std', 'drivers_std', 'tmb_std', 'drivers_tmb_std', 'model12_std'
+    'base_std', 'drivers_std', 'tmb_std', 'm1m2_std', 'mac_stv_std', 'model12_std'
 ]
+_TIER_KEYS_FOLDS: List[str] = [
+    'base_folds', 'drivers_folds', 'tmb_folds', 'm1m2_folds', 'mac_stv_folds', 'model12_folds'
+]
+
+
+def _stars(p_value: float) -> str:
+    """Convert a one-sided p-value to a significance star string."""
+    if p_value < 0.01:
+        return "**"
+    if p_value < 0.05:
+        return "*"
+    return ""
 
 
 def _build_auroc_matrices(
     plot_data: List[Dict[str, Any]]
-) -> Tuple[np.ndarray, np.ndarray, List[str]]:
-    """Assemble (n_models x n_tiers) mean and SD matrices and model name list from plot_data."""
-    model_names = [p['model'] for p in plot_data]
-    n_models = len(plot_data)
-    n_tiers = len(_TIER_KEYS_MEAN)
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, List[str]]:
+    """Assemble (n_models x n_tiers) mean, SD, and fold arrays from plot_data.
+
+    Returns means, stds, folds (shape n_models x n_tiers x n_folds), and display names.
+    Rows are reordered to match _MODEL_DISPLAY_ORDER.
+    """
+    # Map verbose model key -> display name, then sort by _MODEL_DISPLAY_ORDER
+    display_names = [_MODEL_KEY_TO_DISPLAY.get(p['model'], p['model']) for p in plot_data]
+    order_index = {name: i for i, name in enumerate(_MODEL_DISPLAY_ORDER)}
+    sorted_pairs = sorted(
+        zip(display_names, plot_data),
+        key=lambda pair: order_index.get(pair[0], 999)
+    )
+    sorted_names = [pair[0] for pair in sorted_pairs]
+    sorted_data = [pair[1] for pair in sorted_pairs]
+
     means = np.array(
-        [[p[k] for k in _TIER_KEYS_MEAN] for p in plot_data], dtype=float
-    ).reshape(n_models, n_tiers)
+        [[p[k] for k in _TIER_KEYS_MEAN] for p in sorted_data], dtype=float
+    )
     stds = np.array(
-        [[p[k] for k in _TIER_KEYS_STD] for p in plot_data], dtype=float
-    ).reshape(n_models, n_tiers)
-    return means, stds, model_names
+        [[p[k] for k in _TIER_KEYS_STD] for p in sorted_data], dtype=float
+    )
+    folds = np.array(
+        [[p[k] for k in _TIER_KEYS_FOLDS] for p in sorted_data], dtype=float
+    )  # shape: (n_models, n_tiers, n_folds)
+    return means, stds, folds, sorted_names
+
+
+def _build_annotation_matrix(
+    means: np.ndarray, stds: np.ndarray, folds: np.ndarray
+) -> np.ndarray:
+    """Build annotation strings 'mean\n±SD[*/**]' with one-sided t-test stars vs. chance (0.5)."""
+    n_models, n_tiers = means.shape
+    annots = np.empty((n_models, n_tiers), dtype=object)
+    for r in range(n_models):
+        for c in range(n_tiers):
+            fold_vals = folds[r, c]
+            _, p_two_sided = ttest_1samp(fold_vals, popmean=0.5)
+            # One-sided p-value: test that mean > 0.5
+            p_one_sided = p_two_sided / 2.0 if means[r, c] > 0.5 else 1.0
+            star = _stars(p_one_sided)
+            annots[r, c] = f"{means[r, c]:.3f}\n\u00b1{stds[r, c]:.3f}{star}"
+    return annots
 
 
 def _plot_multimodal_auc_comparison(plot_data: List[Dict[str, Any]], n_models: int) -> Path:
-    """Render and save AUROC heatmap (models x feature tiers) using tuned calibrated models.
+    """Render and save AUROC heatmap matching the generate_5f_cv_comparison_heatmap.py style.
 
-    Rows = classifier architectures (TunedCalibratedModel instances).
-    Columns = feature permutation tiers.
-    Cell colour = mean 5-fold stratified CV AUROC.
-    Cell annotation = mean ± SD.
+    - YlGnBu colormap, vmin=0.30, vmax=0.70, 16:9 canvas, sns.heatmap.
+    - Rows ordered: XGBoost → RF → SVM → ElasticNet → Logistic Regression + Cross-Model Mean.
+    - Cell annotations: mean±SD with one-sided t-test significance stars vs. chance.
+    - Bold black outline on best-performing tier per model row.
+    - Thick white separator above Cross-Model Mean summary row.
+    - Saves both primary and transparent PNG.
     """
-    means, stds, model_names = _build_auroc_matrices(plot_data)
+    means, stds, folds, sorted_names = _build_auroc_matrices(plot_data)
+    n_data_rows = len(sorted_names)
 
-    # Shorten model names for y-axis readability
-    short_names = [
-        n.replace(' (LR)', '').replace(' (RF)', '').replace(', tuned)', '')
-         .replace(' (XGB', '').replace('(XGB, tuned)', '')
-         .replace('Support Vector Machine (SVM)', 'SVM')
-         .replace('Logistic Regression (LR)', 'Logistic Regression')
-         .replace('Random Forest (RF)', 'Random Forest')
-         .replace('XGBoost (XGB, tuned)', 'XGBoost')
-        for n in model_names
-    ]
+    # Append Cross-Model Mean summary row
+    mean_row_means = means.mean(axis=0)
+    mean_row_stds = stds.mean(axis=0)
+    mean_row_folds = folds.mean(axis=0)  # shape: (n_tiers, n_folds)
 
-    # Annotation strings: "mean\n±sd"
-    annots = np.array(
-        [[f"{means[r, c]:.3f}\n\u00b1{stds[r, c]:.3f}" for c in range(means.shape[1])]
-         for r in range(means.shape[0])]
+    means_full = np.vstack([means, mean_row_means])
+    stds_full = np.vstack([stds, mean_row_stds])
+    folds_full = np.concatenate([folds, mean_row_folds[np.newaxis, :, :]], axis=0)
+    all_names = sorted_names + ["Cross-Model\nMean"]
+
+    annots = _build_annotation_matrix(means_full, stds_full, folds_full)
+
+    df_heat = pd.DataFrame(means_full, index=all_names, columns=_TIER_LABELS)
+
+    fig, ax = plt.subplots(figsize=_HEATMAP_FIGSIZE)
+    sns.heatmap(
+        df_heat,
+        annot=annots,
+        fmt="",
+        cmap=_HEATMAP_CMAP,
+        cbar_kws={"label": "Mean AUROC (5-Fold Stratified CV)"},
+        linewidths=0.4,
+        linecolor="white",
+        annot_kws={"size": _HEATMAP_ANNOT_SIZE, "weight": "bold"},
+        vmin=_HEATMAP_VMIN,
+        vmax=_HEATMAP_VMAX,
+        ax=ax,
     )
 
-    fig, ax = plt.subplots(figsize=(13, 5))
-    vmin = max(0.45, means.min() - 0.04)
-    vmax = min(0.85, means.max() + 0.04)
+    # Bold black outline on best-performing tier per model row (data rows only)
+    best_col_per_row = np.argmax(means, axis=1)
+    for row_idx, best_c in enumerate(best_col_per_row):
+        ax.add_patch(plt.Rectangle(
+            (best_c, row_idx), 1, 1,
+            fill=False, edgecolor="black", linewidth=_HIGHLIGHT_BOX_LW,
+        ))
 
-    im = ax.imshow(means, aspect='auto', cmap='RdYlGn', vmin=vmin, vmax=vmax)
+    # Thick white horizontal separator above Cross-Model Mean row
+    ax.axhline(n_data_rows, color="white", linewidth=_SEPARATOR_LINE_LW, zorder=6)
 
-    # Cell annotations
-    for r in range(means.shape[0]):
-        for c in range(means.shape[1]):
-            cell_val = means[r, c]
-            text_color = 'black' if 0.35 < (cell_val - vmin) / (vmax - vmin) < 0.85 else 'white'
-            ax.text(
-                c, r, annots[r, c],
-                ha='center', va='center', fontsize=10, color=text_color, fontweight='bold'
-            )
-
-    # Axes
-    ax.set_xticks(range(len(_TIER_LABELS)))
-    ax.set_xticklabels(_TIER_LABELS, fontsize=10)
-    ax.set_yticks(range(len(short_names)))
-    ax.set_yticklabels(short_names, fontsize=11)
-    ax.set_xlabel('Feature Permutation Tier', fontsize=12, fontweight='bold', labelpad=10)
-    ax.set_ylabel('Classifier (Tuned + Calibrated)', fontsize=12, fontweight='bold')
-
-    cbar = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
-    cbar.set_label('Mean AUROC (5-Fold Stratified CV)', fontsize=10)
-
+    n_pooled = folds.shape[2] if folds.ndim == 3 else 5  # fold dimension as proxy
     ax.set_title(
-        'Multimodal Response Prediction — Feature Permutation AUROC Heatmap\n'
-        '(Pooled ICI Trial Cohort, TunedCalibratedModel, 5-Fold Stratified CV)',
-        fontsize=13, fontweight='bold', pad=14
+        "5-Fold Stratified CV AUROC: Multimodal Feature Permutation Tiers\n"
+        "(Pooled ICI Trial Cohort, TunedCalibratedModel"
+        "  |  * p<0.05, ** p<0.01 vs. chance)",
+        fontsize=_HEATMAP_ANNOT_SIZE,
+        fontweight="bold",
+        pad=15,
     )
+    ax.set_xlabel("Feature Permutation Tier", fontsize=_HEATMAP_LABEL_SIZE,
+                  fontweight="bold", labelpad=10)
+    ax.set_ylabel("Model Architecture", fontsize=_HEATMAP_LABEL_SIZE,
+                  fontweight="bold", labelpad=10)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="center",
+                       fontsize=_HEATMAP_LABEL_SIZE)
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=0, fontsize=_HEATMAP_LABEL_SIZE)
 
-    # Highlight best cell per model (column with max mean)
-    for r in range(means.shape[0]):
-        best_c = int(np.argmax(means[r]))
-        rect = plt.Rectangle(
-            (best_c - 0.5, r - 0.5), 1, 1,
-            fill=False, edgecolor='#0C2950', linewidth=2.5
-        )
-        ax.add_patch(rect)
+    fig.subplots_adjust(**_SUBPLOT_MARGINS)
 
-    plt.tight_layout()
     multimodal_plot_path = PLOT_DIR / "multimodal_auc_heatmap.png"
-    save_fig(fig, multimodal_plot_path)
+    multimodal_plot_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(multimodal_plot_path, dpi=_HEATMAP_DPI)
     print(f"Saved multimodal AUROC heatmap to {rel_path(multimodal_plot_path)}")
+
+    transparent_path = multimodal_plot_path.parent / (multimodal_plot_path.stem + "_transparent.png")
+    fig.savefig(transparent_path, transparent=True, dpi=_HEATMAP_DPI)
+    print(f"Saved transparent copy to {rel_path(transparent_path)}")
+
+    plt.close(fig)
     return multimodal_plot_path
 
 
@@ -311,10 +313,10 @@ def _build_table2_rows(
     model_results: List[Dict[str, str]], plot_data: List[Dict[str, Any]]
 ) -> List[str]:
     """Format markdown table rows for cross-validated model evaluation results across feature permutations."""
-    # Column ordering matches _TIER_LABELS / _TIER_KEYS_MEAN: base, drivers, tmb, drivers_tmb, model12
+    # Column ordering matches _TIER_LABELS / _TIER_KEYS_MEAN
     ordered_keys = [
         'Base AUROC', 'Sigs+Drivers AUROC', 'Sigs+TMB AUROC',
-        'Sigs+Drivers+TMB AUROC', '12-Feature Model AUROC'
+        'Sigs+M1/M2 Ratio AUROC', 'Sigs+Macrophage STV AUROC', '12-Feature Model AUROC'
     ]
     table_rows = []
     for res, pdr in zip(model_results, plot_data):
@@ -322,7 +324,8 @@ def _build_table2_rows(
             'Base AUROC': pdr['base_mean'],
             'Sigs+Drivers AUROC': pdr['drivers_mean'],
             'Sigs+TMB AUROC': pdr['tmb_mean'],
-            'Sigs+Drivers+TMB AUROC': pdr['drivers_tmb_mean'],
+            'Sigs+M1/M2 Ratio AUROC': pdr['m1m2_mean'],
+            'Sigs+Macrophage STV AUROC': pdr['mac_stv_mean'],
             '12-Feature Model AUROC': pdr['model12_mean'],
         }
         best_col = max(col_means, key=col_means.get)
@@ -332,7 +335,8 @@ def _build_table2_rows(
         }
         table_rows.append(
             f"| **{res['Model']}** | {cells['Base AUROC']} | {cells['Sigs+Drivers AUROC']} | "
-            f"{cells['Sigs+TMB AUROC']} | {cells['Sigs+Drivers+TMB AUROC']} | {cells['12-Feature Model AUROC']} |"
+            f"{cells['Sigs+TMB AUROC']} | {cells['Sigs+M1/M2 Ratio AUROC']} | "
+            f"{cells['Sigs+Macrophage STV AUROC']} | {cells['12-Feature Model AUROC']} |"
         )
     return table_rows
 
@@ -375,22 +379,22 @@ def _build_section_header_callout(n_pooled: int) -> List[str]:
     )
     hdr_cols = (
         "| Model Architecture | Sigs Only (6) | Sigs + Drivers (9) | "
-        "Sigs + TMB (7) | Sigs + TMB + Drivers (10) | 12-Feature Final Model* |"
+        "Sigs + TMB (7) | Sigs + M1/M2 Ratio (7) | Sigs + Macrophage STV (7) | 12-Feature Final Model* |"
     )
     return [
         "## 5. Multimodal Response Prediction Models",
         "",
         "> [!summary] What, Why & Key Questions",
         f"> - **What We Are Doing**: Training five classifiers on pooled trials ($N = {n_pooled}$) "
-        "using 5-fold stratified CV across five feature permutation tiers of the 12 final features.",
-        "> - **Why We Are Doing It**: Evaluating whether adding TMB, driver mutations, or age/pathways "
+        "using 5-fold stratified CV across six feature permutation tiers of the 12 final features.",
+        "> - **Why We Are Doing It**: Evaluating whether adding TMB, driver mutations, M1/M2 ratio, Macrophage STV, or age/pathways "
         "improves upon signatures alone and identifying the best model architecture.",
-        "> - **Questions**: Does adding drivers/TMB improve AUROC? Which model family performs best?",
+        "> - **Questions**: Does adding drivers/TMB/macrophage features improve AUROC? Which model family performs best?",
         "",
         hdr_table,
         "",
         hdr_cols,
-        "|:--- |:---:|:---:|:---:|:---:|:---:|",
+        "|:--- |:---:|:---:|:---:|:---:|:---:|:---:|",
     ]
 
 
@@ -429,16 +433,14 @@ def _train_multimodal_predictor(
         df_clin_merged, df_sigs_merged
     )
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=DEFAULT_RANDOM_STATE)
-    models = _get_model_wrappers()
-
     model_results, plot_data = _evaluate_multimodal_models(
-        models, df_features_clean, y, sig_features, cv
+        df_features_clean, y, sig_features, cv
     )
 
     print("\nModel Cross-Validation AUROC Comparison (Pooled Trials):")
     print(pd.DataFrame(model_results).to_string(index=False))
 
-    _plot_multimodal_auc_comparison(plot_data, len(models))
+    _plot_multimodal_auc_comparison(plot_data, 5)
 
     df_trials_neo = df_clin_merged.dropna(subset=[_COL_TOTAL_NEOANTIGEN, _COL_TMB])
     r_s_neo_tmb, _ = spearmanr(
