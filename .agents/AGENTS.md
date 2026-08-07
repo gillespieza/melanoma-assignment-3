@@ -113,12 +113,26 @@ When fixing code smells or refactoring code in this repository, follow these gui
       - Raise a clear `FileNotFoundError` explaining what's missing and how to generate it.
       - If it must be a manually-sourced value, put it in an external, clearly-labeled `data/config` file with a `source` field citing where it came from—never bury it inline in plotting code.
     - **Distinction**: This is distinct from layout/geometry constants (axis padding factors, bar widths, figure sizes). Those are legitimate to hardcode if they're derived from the data's shape where possible (e.g., category boundary lines computed from `groupby("Category").size()`, not typed as `axhline(2.5)`), and commented with why the number is what it is.
-10. **Log File Location & Relative Path Logging**: Every runnable script logs its console output via `TeeStream`. Follow the pattern established in `run_pipeline.py`, with logs written to a dedicated `logs/` folder at the project root (not scattered loose files in `BASE_DIR`). When logging or printing output file and directory paths in console messages, always format them as relative paths (e.g. `path.relative_to(BASE_DIR).as_posix()`) rather than raw absolute paths:
+10. **Log File Location & Relative Path Logging**: Every runnable script logs its console output via `TeeStream`.
+
+    **Subproject scripts** (anything under `q1-response-predictor/`, `q5-patient-stratification/`, etc.) MUST write logs to their own subproject `logs/` folder — never to the top-level project `logs/`. Derive the log directory from the script's own `__file__` path, not from the imported `LOG_DIR` in `src/utils/paths.py` (which resolves to `PROJECT_ROOT / "logs"` and is therefore wrong for subproject scripts):
+
+    ```python
+    _SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]  # e.g. q1-response-predictor/
+    LOG_DIR  = _SUBPROJECT_ROOT / "logs"
+    LOG_PATH = LOG_DIR / "<script_name>.log"
+    ```
+
+    Do NOT import `LOG_DIR` from `src.utils.paths` in subproject scripts — that constant points to the top-level `melanoma-assignment-3/logs/` and will silently write logs to the wrong location.
+
+    When logging or printing output file and directory paths in console messages, always format them as relative paths rather than raw absolute paths. Use `_SUBPROJECT_ROOT` as the base for all relative path display within subproject scripts:
+
     ```python
     from src.utils.logging import TeeStream
     import contextlib, sys
 
-    LOG_DIR = BASE_DIR / "logs"
+    _SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
+    LOG_DIR  = _SUBPROJECT_ROOT / "logs"
     LOG_PATH = LOG_DIR / "<script_name>.log"
 
     if __name__ == "__main__":
@@ -127,10 +141,11 @@ When fixing code smells or refactoring code in this repository, follow these gui
             stdout_tee = TeeStream(sys.stdout, log_file)
             stderr_tee = TeeStream(sys.stderr, log_file)
             with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-                print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+                print(f"Logging console output to {LOG_PATH.relative_to(_SUBPROJECT_ROOT).as_posix()}")
                 main()
     ```
-    Name the log file after the script (e.g. `extended_pathway_mutation_frequencies.log`). Note: `run_pipeline.py` currently still writes `q1_pipeline.log` to the project root as a pre-existing exception -- migrate it to `logs/` next time that file is touched, for consistency.
+
+    Name the log file after the script (e.g. `run_clinical_analysis.log`). Note: `run_pipeline.py` currently still writes `q1_pipeline.log` to the project root as a pre-existing exception — migrate it to `q1-response-predictor/logs/` next time that file is touched, for consistency.
 11. **Domain Constants (`src/biology_constants.py`)**: Two kinds of "constants" get scattered through scripts, and only one kind should be centralized:
     - **Centralize** (project-wide facts that must have one source of truth):
       - Mutation classification lists (e.g., `NON_SILENT` variant classes) — these appear near-verbatim in multiple scripts; if one copy gets updated and others don't, results silently diverge between analyses.
