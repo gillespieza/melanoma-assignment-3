@@ -792,6 +792,7 @@ def _write_attrition_output(
 
     print("  Wrote attrition output:")
     print(f"    {display_path(attrition_output)}")
+    print("-------------------------------------\n")
 
 
 # ============================================================================

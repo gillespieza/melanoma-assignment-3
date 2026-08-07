@@ -95,4 +95,4 @@ datasets:
     mutations_by_patient: false
     patient_prefix: "van_allen_"
     sample_prefix: "van_allen_"
-    processing_strategy: "iatlas"
+    processing_strategy: "tcga"
