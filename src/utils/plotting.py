@@ -36,3 +36,20 @@ def resolve_colors(labels: List[str]) -> List[str]:
     """
     fallback = sns.color_palette("Set2", n_colors=len(labels)).as_hex()
     return [get_cohort_color(label, default=fallback[i]) for i, label in enumerate(labels)]
+
+
+def build_radar_angles(n_vars: int) -> List[float]:
+    """Computes closed-loop angle values (in radians) for polar radar charts.
+
+    Args:
+        n_vars: Number of variables/axes on the radar chart.
+
+    Returns:
+        List of angle values with the starting angle repeated at the end to close the loop.
+    """
+    import numpy as np
+
+    angles = [n / float(n_vars) * 2 * np.pi for n in range(n_vars)]
+    angles += angles[:1]
+    return angles
+

@@ -106,15 +106,15 @@ To re-run the full data ingestion, preprocessing, training, and report generatio
 
 1. **Download Raw Data**:
    ```bash
-   python q1-response-predictor/scripts/download_data.py
+   python q1-response-predictor/scripts/pillar-1-cohort-preprocessing/download_data.py
    ```
 2. **Clean & Harmonise Datasets**:
    ```bash
-   python q1-response-predictor/scripts/clean_data.py
+   python q1-response-predictor/scripts/pillar-1-cohort-preprocessing/clean_data.py
    ```
 3. **Merge Multi-Cohort Datasets**:
    ```bash
-   python q1-response-predictor/scripts/merge_datasets.py
+   python q1-response-predictor/scripts/pillar-1-cohort-preprocessing/merge_datasets.py
    ```
 4. **Execute Pipeline & Train Models**:
    ```bash
@@ -146,15 +146,13 @@ q1-response-predictor/
 │   ├── pillar-3-transcriptomic-signatures/
 │   └── pillar-4-out-of-cohort-benchmarks/
 └── scripts/                   # Modular pipeline execution scripts
-    ├── biomarkers/            # Biomarker association & CoMut scripts
-    ├── clinical_analysis/     # Subtyping & clustering scripts
-    ├── exploratory_plots/     # Exploratory visualization generators
-    ├── feature_selection/     # Transcriptomic feature selection
-    ├── reports/               # Executive summary generator
-    ├── clean_data.py          # Cohort cleaning script
-    ├── download_data.py       # Data download script
-    ├── merge_datasets.py      # Multi-cohort merging script
-    └── run_pipeline.py        # Master pipeline orchestrator
+    ├── pillar-1-cohort-preprocessing/    # Preprocessing, data ingestion & batch correction
+    ├── pillar-2-clinical-subtyping/       # Clinical subtyping & survival curves
+    ├── pillar-3-transcriptomic-signatures/# Signature computation & ML training
+    ├── pillar-4-out-of-cohort-benchmarks/ # LOCO CV & benchmark heatmaps
+    ├── exploratory_plots/                # Exploratory visualization generators
+    ├── reports/                          # Executive summary generator
+    └── run_pipeline.py                   # Master pipeline orchestrator
 ```
 
 For full analytical reports and methodology details, see [`reports/README.md`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/README.md) or [`reports/executive_summary.md`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/executive_summary.md).

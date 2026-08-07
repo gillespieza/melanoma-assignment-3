@@ -73,6 +73,10 @@ def find_subproject_root(start: Path) -> Path:
     for candidate in (start, *start.parents):
         if candidate.name in known_subprojects:
             return candidate
+
+    for candidate in (start, *start.parents):
+        if candidate.name in {"scripts", "src", "data", "plots", "reports", "logs", "models"}:
+            continue
         if (candidate / "scripts").is_dir() or (candidate / "models").is_dir():
             if candidate != find_project_root(start):
                 return candidate

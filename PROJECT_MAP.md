@@ -3,11 +3,11 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-05 (Moved all plot-generating scripts out of `scripts/biomarkers/` into `scripts/exploratory_plots/` and `scripts/feature_selection/` as appropriate; added dual LOCO 1×2 panel (`generate_loco_feature_comparison_heatmap.py`) and updated 5-fold CV + LOCO heatmaps with ±SD, one-sample t-test asterisks for CV cells, and 1,000-sample bootstrap SD for LOCO cells; fixed subproject log routing via `get_subproject_log_dir()` in all new scripts).
+> **Last updated**: 2026-08-07 (Refactored `run_univariate_associations.py` per AGENTS.md guidelines: fixed subproject log routing, eliminated 5 unused imports, extracted 6 domain constants, decomposed 100% of functions to $\le 30$ lines in AST, zero lines $>100$ characters, eliminated in-place DataFrame mutations in loops, 100% type hint coverage, and verified execution with exit code 0).
 
 ## Repository Overview
 
-**Domain**: Melanoma immunotherapy – predicting anti-PD-1/CTLA-4 response, drug sensitivity, tumour dynamics, and patient stratification across multi-cohort clinical trial data (Liu 2019, Hugo 2016, Riaz 2017, TCGA-SKCM).
+**Domain**: Melanoma immunotherapy – predicting anti-PD-1/CTLA-4 response, targeted therapy drug sensitivity, tumour dynamics, and patient stratification across multi-cohort clinical trial data (Liu 2019, Hugo 2016, Riaz 2017, TCGA-SKCM).
 
 **Structure**: 5 research questions (Q1–Q5), each in its own subproject directory, plus shared infrastructure in the root `src/` and `data/` directories. Q5 is the master synthesis engine that integrates Q1–Q4 outputs.
 
@@ -21,10 +21,10 @@ melanoma-assignment-3/
 ├── plots/                  <- Top-level cross-cohort visualisations
 ├── logs/                   <- Top-level pipeline logs
 ├── q1-response-predictor/  <- Q1: Immunotherapy response prediction
+├── q1.1-patient-stratification/ <- Q5: Patient clustering, clinical utility, treatability
 ├── q2-viability-predictor/ <- Q2: Cell-line drug sensitivity modelling
 ├── q3-ode-model/           <- Q3: ODE tumour-immune dynamics
 ├── Q4_dep_map/             <- Q4: DepMap CRISPR + LINCS L1000 target discovery
-├── q5-patient-stratification/ <- Q5: Patient clustering, clinical utility, treatability
 └── dashboard/                 <- React clinical decision-support dashboard (OncoTwin)
 ```
 
@@ -90,20 +90,28 @@ melanoma-assignment-3/
 
 | Directory / Script | Purpose |
 |-------------------|---------|
-| `clean_data.py` | Clean raw cohort clinical, expression, and mutation data |
-| `download_data.py` | Retrieve and structure raw cohort files |
-| `merge_datasets.py` | Merge processed cohort matrices into harmonised immunotherapy datasets |
-| `biomarkers/run_extended_biomarkers.py` | Univariate biomarker association testing (Mann-Whitney U, ROC AUC) across signatures & genes |
-| `biomarkers/run_genomic_characterisation.py` | TMB calculation, driver mutation prevalence (`BRAF`, `NRAS`, `NF1`), Fisher's exact co-occurrence |
+| `pillar-1-cohort-preprocessing/download_data.py` | Retrieve and structure raw cohort files |
+| `pillar-1-cohort-preprocessing/clean_data.py` | Clean raw cohort clinical, expression, and mutation data |
+| `pillar-1-cohort-preprocessing/merge_datasets.py` | Merge processed cohort matrices into harmonised immunotherapy datasets |
+| `pillar-1-cohort-preprocessing/run_dimensionality_reduction.py` | PCA / UMAP projections, top 50 variable gene heatmaps, and batch correction evaluation |
+| `pillar-1-cohort-preprocessing/run_genomic_characterisation.py` | TMB calculation, driver mutation prevalence (`BRAF`, `NRAS`, `NF1`), Fisher's exact co-occurrence |
+| `pillar-1-cohort-preprocessing/run_clinical_analysis.py` | Clinical feature distributions, Kaplan-Meier OS curves, and univariate log-rank tests |
+| `pillar-2-clinical-subtyping/run_clinical_clustering.py` | Exploratory clinical phenotyping, cluster-based patient stratification, and PCA / t-SNE / UMAP 2D projection comparisons |
+| `pillar-2-clinical-subtyping/run_clinical_feature_selection.py` | Clinical feature selection and univariate association benchmarking |
+| `pillar-2-clinical-subtyping/run_univariate_associations.py` | Statistical testing of baseline clinical covariates against ICI response |
+| `pillar-2-clinical-subtyping/plot_cluster_profile_visualizations.py` | Radar and violin plot visualisations for clinical patient clusters |
+| `pillar-3-transcriptomic-signatures/run_extended_biomarkers.py` | Fast exploratory biomarker analysis (TMB vs Neoantigen, Pathway Mutations, Aneuploidy/CNA, TCGA OS curves) |
+| `pillar-3-transcriptomic-signatures/train_multimodal_predictor.py` | Multimodal ML model training, 5-fold CV hyperparameter search across 5 feature permutation tiers, Section 5 report update |
+| `pillar-4-out-of-cohort-benchmarks/run_transcriptomic_feature_selection.py` | 12-feature multimodal Random Forest classifier (8 signature modalities + driver mutation flags) & signature vs raw gene benchmarks |
+| `pillar-4-out-of-cohort-benchmarks/generate_5f_cv_comparison_heatmap.py` | 5-Fold Stratified CV benchmark heatmap: Curated Signatures vs SelectKBest |
 | `exploratory_plots/run_merged_comut_plot.py` | Generates co-mutation oncoprint visualisations |
 | `exploratory_plots/generate_threshold_plot.py` | Youden's J biomarker threshold optimisation plot |
 | `exploratory_plots/generate_loco_heatmap.py` | Leave-One-Cohort-Out (LOCO) performance heatmap (Curated Signatures, per-cohort) |
 | `exploratory_plots/generate_5f_cv_heatmap.py` | 5-Fold Stratified CV per-fold AUROC heatmap |
-| `exploratory_plots/generate_combined_cv_loco_heatmap.py` | **Primary evaluation figure**: 1×2 panel — Left: 5-fold CV AUROC (Curated Signatures vs SelectKBest, Mean ± SD + t-test asterisks); Right: LOCO AUROC per held-out cohort (Curated Signatures, Mean ± bootstrap SD + Mann-Whitney asterisks). Output: `plots/models/cv_loco_1x2_heatmap.png` |
-| `exploratory_plots/generate_loco_feature_comparison_heatmap.py` | **LOCO feature comparison figure**: 1×2 panel — Left: LOCO per-cohort (Curated Signatures); Right: LOCO by feature representation (Curated vs SelectKBest k=20/100/200, Mean across 3 cohorts + majority-vote asterisks). Output: `plots/models/loco_dual_1x2_heatmap.png` |
+| `exploratory_plots/generate_combined_cv_loco_heatmap.py` | **Primary evaluation figure**: 1×2 panel — Left: 5-fold CV AUROC (Curated Signatures vs SelectKBest); Right: LOCO AUROC per held-out cohort. Output: `plots/models/cv_loco_1x2_heatmap.png` |
+| `exploratory_plots/generate_loco_feature_comparison_heatmap.py` | **LOCO feature comparison figure**: 1×2 panel — Left: LOCO per-cohort (Curated Signatures); Right: LOCO by feature representation. Output: `plots/models/loco_dual_1x2_heatmap.png` |
 | `exploratory_plots/run_comparison.py` | LOCO cross-validation benchmark: Curated Multimodal Features vs SelectKBest |
 | `exploratory_plots/run_clustering.py` | Exploratory clustering of pooled cohort expression data |
-| `exploratory_plots/run_dimensionality_reduction.py` | PCA / t-SNE / UMAP projections for pooled cohort |
 | `exploratory_plots/run_expression_heatmap.py` | Signature expression heatmap across cohorts |
 | `exploratory_plots/run_extra_plots.py` | Supplementary exploratory plots |
 | `exploratory_plots/run_forest_plot.py` | Forest plot of univariate biomarker associations |
@@ -111,8 +119,7 @@ melanoma-assignment-3/
 | `exploratory_plots/run_response_distribution.py` | Response rate distribution across cohorts |
 | `exploratory_plots/run_response_km_curves.py` | KM curves stratified by predicted response |
 | `exploratory_plots/run_waffle_chart.py` | Cohort composition waffle chart |
-| `feature_selection/generate_5f_cv_comparison_heatmap.py` | 5-Fold Stratified CV benchmark heatmap: Curated Signatures vs SelectKBest (standalone, predecessor to `generate_combined_cv_loco_heatmap.py`) |
-| `feature_selection/run_transcriptomic_feature_selection.py` | 12-feature multimodal Random Forest classifier (8 signature modalities + driver mutation flags) & signature vs raw gene benchmarks |
+| `models/predictors.py` | Classifier evaluation wrappers (LR, RF, XGB, SVM, ElasticNet) |
 | `reports/run_executive_summary.py` | Executive summary report generator |
 | `run_pipeline.py` | Master Q1 pipeline orchestrator |
 
@@ -318,6 +325,16 @@ npm run build
 | SVM Tuning, 16:9 Heatmaps & Dashboard Sync | Enhanced `tune_svc` with `class_weight='balanced'`, expanded grid (`C=0.01-100`, `gamma=['scale', 'auto']`), and adaptive CV fold counts for small splits. Fixed 16:9 canvas rendering in LOCO and 5-fold CV heatmaps by replacing `tight_layout` with explicit `subplots_adjust` margin preservation. Re-trained pooled model pickles in `q1-response-predictor/models/`, updated `q1_predictions.csv`, and rebuilt `dashboard/public/cohort.json`. | **Resolved** (2026-08-03) |
 | Q1 script organisation — plot scripts in `biomarkers/` | Plot-generating scripts were incorrectly placed in `scripts/biomarkers/`. Moved to: `scripts/exploratory_plots/` (`generate_loco_heatmap.py`, `generate_5f_cv_heatmap.py`, `generate_combined_cv_loco_heatmap.py`, `generate_loco_feature_comparison_heatmap.py`, `generate_threshold_plot.py`, `run_merged_comut_plot.py`) and `scripts/feature_selection/` (`generate_5f_cv_comparison_heatmap.py`). `biomarkers/` now contains analysis scripts only. | **Resolved** (2026-08-05) |
 | Q1 log path routing | `generate_combined_cv_loco_heatmap.py` and `generate_loco_feature_comparison_heatmap.py` were writing logs to `PROJECT_ROOT/logs/` instead of `q1-response-predictor/logs/`. Fixed by replacing imported `LOG_DIR` with `get_subproject_log_dir(Path(__file__))` in both scripts. | **Resolved** (2026-08-05) |
+| `q1-response-predictor/scripts/clean_data.py` code smell refactoring | Conducted 4-pass code smell remediation per `AGENTS.md` guidelines: 100% of 44 functions decomposed to $\le 30$ lines, extracted 10 domain constants (`_COL_VARIANT_CLASSIFICATION`, `_COL_TREATMENT_TYPE`, `_STRATEGY_IATLAS`, `_STRATEGY_TCGA`, etc.), introduced `CleanedDataBundle` parameter object to shrink function signatures, restored `_build_treatment_summary_features()`, added full type annotations & docstrings, eliminated long lines & long ternaries, and added traceback logging to broad exception handler. | **Resolved** (2026-08-06) |
+| Data ingestion & pipeline scripts refactoring (`download_data.py`, `clean_data.py`, `merge_datasets.py`) | Audited and refactored all 3 pipeline data scripts: 100% of 91 functions decomposed to $\le 30$ lines (16 in `download_data.py`, 45 in `clean_data.py`, 30 in `merge_datasets.py`), eliminated cross-script DRY path ambiguities by deriving `CONFIG_PATH` via `SCRIPT_DIR.parent`, integrated project-root `src/` utilities (`paths.py`, `io.py`, `logging.py`) and biological constants (`src/biology_constants.py`), zero lines > 100 chars, 100% docstring & type hint coverage. Verified full sequential pipeline run (`download` → `clean` → `merge`) with 0 errors. | **Resolved** (2026-08-06) |
+| `q1-response-predictor/scripts/biomarkers/run_extended_biomarkers.py` code smell & dead code cleanup | Audited and refactored `run_extended_biomarkers.py` per `AGENTS.md` guidelines & user instructions: 100% of 26 active functions decomposed to $\le 30$ lines, zero lines $>100$ chars, extracted private `_COL_*` and `_CURATED_IMMUNE_SIGNATURES` constants, removed orphaned report generator stubs (`_generate_aneuploidy_tmb_report_lines`, `_build_spearman_table_rows`, `_get_aneuploidy_tmb_headers`) and unused model helpers (`TunedCalibratedModel`, `evaluate_auc_cv`), removed unused imports, added 100% type hint & docstring coverage, and verified execution with 0 errors. | **Resolved** (2026-08-06) |
+| Q1 script folder organisation — Pillar alignment | Restructured `q1-response-predictor/scripts/` to mirror `reports/` pillar structure: moved `run_genomic_characterisation.py` → `pillar-1-cohort-preprocessing/`, `clinical_analysis/` → `pillar-2-clinical-subtyping/`, `run_extended_biomarkers.py` & `train_multimodal_predictor.py` → `pillar-3-transcriptomic-signatures/`, `feature_selection/` → `pillar-4-out-of-cohort-benchmarks/`. Added `__init__.py` to `pillar-3-transcriptomic-signatures/` package, updated cross-script imports (`scripts.pillar_3_transcriptomic_signatures`), updated report callout deep links in `curated_signatures_report.md`, and verified full script execution with exit code 0. | **Resolved** (2026-08-06) |
+| Relocating batch correction & data scripts to Pillar 1 | Moved `download_data.py`, `clean_data.py`, `merge_datasets.py`, and `run_dimensionality_reduction.py` to `q1-response-predictor/scripts/pillar-1-cohort-preprocessing/`. Updated `SUBPROJECT_ROOT` and `CONFIG_PATH` resolution, updated file links in `batch_correction_report.md`, `Pipeline.md`, `README.md`, `data/README.md`, and verified execution of all relocated scripts with exit code 0. | **Resolved** (2026-08-06) |
+| `run_genomic_characterisation.py` refactoring & report enhancements | Refactored `q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_genomic_characterisation.py` per `AGENTS.md` guidelines: 100% of functions decomposed to $\le 30$ lines, zero lines $>100$ chars, removed unused/invalid `CONFIG_DIR` and data loader imports, added KM confidence shading (`ci_show=True`, `ci_alpha=0.15`) for `tcga_survival_by_mutation.png`, removed Figure 7 from report generator, appended script reference callout box to `cohort_characteristics_genomic.md`, added private `_COL_*` constants, type hints, docstrings, and verified 100% clean pipeline execution. | **Resolved** (2026-08-06) |
+| `run_dimensionality_reduction.py` code smell & report callout refactoring | Conducted multi-pass audit and refactoring of `run_dimensionality_reduction.py` per `AGENTS.md` guidelines: 100% of 22 active functions decomposed to $\le 30$ lines (including `main()` decomposed into `_run_pca_batch_projections` and `_run_trial_reduction_grids`), zero lines $> 100$ characters, extracted `N_TOP_HEATMAP_GENES` constant, extracted `_assign_pca_coords`, `_assign_umap_coords`, and `_grid_col_names` helpers, removed dead `PLOT_DIR` constant, added `>\n` lines after callout headers to fix Obsidian callout container rendering in `batch_correction_report.md`, added 100% type hint & docstring coverage, and verified clean execution with exit code 0. | **Resolved** (2026-08-06) |
+| `plot_cluster_profile_visualizations.py` code smell & DRY refactoring | Remediation of `plot_cluster_profile_visualizations.py` per `AGENTS.md` guidelines: eliminated hardcoded magic radar values & N-counts by exporting `data/processed/merged/clinical_clusters.csv` from `run_clinical_clustering.py` and calculating values dynamically from live DataFrame; extracted reusable `build_radar_angles()` to `src/utils/plotting.py`; aligned cluster palette to `PHENOTYPE_PALETTE`; corrected log routing to `get_subproject_log_dir`; decomposed functions to $\le 30$ lines; cleaned unused imports; fixed pre-existing `CONFIG_DIR` path error in `run_clinical_clustering.py`; verified 100% clean execution with exit code 0. | **Resolved** (2026-08-07) |
+| `run_clinical_feature_selection.py` two-tiered redesign & code smell remediation | Redesigned feature selection to evaluate anti-PD-1 binary response exclusively on ICI cohorts ($N=256$, excluding TCGA-SKCM); cleaned Tier 2 features to baseline pre-treatment clinical covariates; removed non-baseline variables (`CLINICAL_BENEFIT`, `PROGRESSION`, `RACE`, etc.); integrated `get_model("rf", X, y)` factory; added standard error bounds ($\text{SE} > 10.0$) and rank deficiency safeguards (`np.linalg.matrix_rank`) for logistic regression; decomposed 100% of 49 functions to $\le 30$ lines in AST; zero lines $>100$ characters; 100% type hint and docstring coverage; verified clean execution with exit code 0. | **Resolved** (2026-08-07) |
+| `run_univariate_associations.py` code smell remediation & exact CI calculation | Refactored `q1-response-predictor/scripts/pillar-2-clinical-subtyping/run_univariate_associations.py` per `AGENTS.md` guidelines: fixed subproject log routing (`get_subproject_log_dir`), removed 5 unused imports, extracted domain constants, decomposed 100% of functions to $\le 30$ lines in AST, zero lines $>100$ characters, 100% docstring & type hint coverage. In Second Pass: enriched clinical DataFrames with `mutations_cleaned.csv` driver mutation flags (`mut_BRAF`, `mut_NRAS`, `mut_NF1`), enabling complete univariate association testing across all trial cohorts and pooled benchmark (identifying significant pooled `NF1` response association $\text{OR}=2.41, p=0.0386^*$). Resolved 2x2 contingency table zero-cell Wald CI anomaly for Liu 2019 Stage (IV vs III) by switching `_calc_categorical_or()` to `scipy.stats.contingency.odds_ratio` exact hypergeometric CIs ($95\% \text{ CI} = [1.0587, \infty]$), eliminating artificial Haldane-Anscombe Wald variance inflation below 1.0 and ensuring 100% consistency between plotted CIs and Fisher exact p-values ($p=0.0295^*$), verifying clean execution with exit code 0. | **Resolved** (2026-08-07) |
 
 ## Conventions Quick Reference
 

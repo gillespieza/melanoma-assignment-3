@@ -55,6 +55,23 @@ Whenever generating plots, figures, web artifacts, or presentation reports for t
   - ✅ **In scope** — apply British spelling to: markdown report body text and headings; code **comments** (`# ...`); **docstrings** (`"""..."""`); **plot title and axis label strings** (e.g. `set_title(...)`, `set_xlabel(...)`, `ax.text(...)`); **print/log output strings** and `f.write(...)` report content.
   - ❌ **Out of scope** — do **not** apply British spelling to: Python **function argument names or kwarg values** (e.g. `ha="center"`, `va="center"`, `loc="lower center"`, `color=...`, `edgecolor=...` — these are library API tokens and must match exactly what the library expects); **YAML key strings** in frontmatter or cssclass lists (e.g. `table-center` is the Obsidian CSS class name and must not be changed); **Python dictionary key strings** used as internal code identifiers (e.g. `{"color": "#aabbcc"}`); **import lines and module/class names** (e.g. `from matplotlib.colors import ...`); **variable names, loop variables, and function parameter names** (e.g. `for color in palette`, `return color`).
 - **Gene Names**: Always wrap all gene names and gene symbols in backticks (e.g., `CD274`, `PDCD1`, `BRAF`, `BRAF V600`, `BRAF V600E`, `NRAS`, `NF1`, `B2M`, `TAP1`, `JAK1`, `STAT1`) across all generated markdown files, documentation, reports, and text artifacts.
+- **Canonical Immune Signature Order**: Whenever immune signatures are listed — in code (`List[str]` constants, function arguments, column selectors), report body text, table column headers, plot axis tick labels, radar spokes, legend entries, or feature importance tables — they MUST always appear in this fixed order:
+  1. `IFN_gamma` (IFN-γ Signature)
+  2. `TIS` (Tumour Inflammation Score)
+  3. `CYT` (Cytolytic Activity Score)
+  4. `CD8_Tcell` (CD8+ T-cell Abundance)
+  5. `IMPRES` (Immune Predictive Score)
+  6. `PD_L1` (PD-L1 Expression Proxy)
+
+  This order is biologically motivated: it groups T-cell activation signatures together before moving to the checkpoint/exhaustion axis. Any re-ordering (e.g. alphabetical or arbitrary) is a style error. This applies project-wide across all scripts, notebooks, and generated artefacts.
+- **Canonical ML Model Presentation Order**: Whenever the five ML classifiers are listed — in report tables, heatmap row/column labels, legend entries, code loops, or any other enumeration — they MUST always appear in this fixed order:
+  1. XGBoost (XGB)
+  2. Random Forest (RF)
+  3. Support Vector Machine (SVM)
+  4. Elastic-Net
+  5. Logistic Regression (LR)
+
+  This order is performance-motivated: it leads with the strongest tree-based models, then the kernel method, then regularised linear models, finishing with the baseline linear classifier. Any re-ordering is a style error. This applies project-wide across all scripts, notebooks, and generated artefacts.
 - **Horizontal Rules**: Never use horizontal rules (`---` or `***`) in markdown files or responses unless explicitly instructed to do so (the project's custom CSS automatically renders horizontal rules beneath `<h1>` and `<h2>` headings).
 
 
@@ -67,7 +84,9 @@ When fixing code smells or refactoring code in this repository, follow these gui
 1.  **Unused Imports & Variables**: Remove all unused imports and variables. Ensure your imports are organized according to standard PEP 8 conventions.
 2.  **Long Functions**: Break down functions longer than 30 lines into smaller, well-named helper functions that do one thing well (Single Responsibility Principle).
 3.  **Complex Conditionals**: Extract complex nested `if/else` logic into well-named boolean variables or separate evaluation functions to improve readability.
-4.  **Magic Numbers/Strings**: Replace hard-coded values and magic numbers with descriptive, uppercase module-level constants (e.g., `MAX_ITERATIONS = 100`).
+3b. **Dead Code (No-Ops)**: Remove any block that has no effect — e.g., `if condition: pass`, `result = result`, `x = x`. These are frequently left behind after iterative edits and silently mislead readers into thinking the branch has a purpose.
+4.  **Magic Numbers/Strings**: Replace hard-coded values and magic numbers with descriptive, uppercase module-level constants (e.g., `MAX_ITERATIONS = 100`). For schema column name strings local to a single script, use private `_COL_*` module-level constants (e.g., `_COL_SAMPLE_ID = "SAMPLE_ID"`) rather than repeating bare string literals throughout the file.
+4b. **Line Length**: Keep all lines to a maximum of **100 characters**. Break long Pandas chains across multiple lines using implicit line continuation inside brackets. This is stricter than PEP 8 (79) but more readable than no limit; it is a firm project-wide standard.
 5.  **Type Hinting**: Add Python type hints (`->`, `:`, `List`, `Dict`, etc.) to all function signatures to make inputs and outputs explicit.
 6.  **Commenting and Docblocks**:
     - **Docstrings**: Ensure every module, class, and function has a clear docstring summarizing its purpose, arguments, and return values (using standard conventions like Google or NumPy style).
@@ -84,7 +103,12 @@ When fixing code smells or refactoring code in this repository, follow these gui
 8.  **Reusable Logic Extraction & Utility Helper Enforcement**:
     - Reusable logic belongs in `src/utils/` or `src/config/`, never re-implemented inline in analysis scripts.
     - Always use established helper functions and modules:
-      - `src/utils/paths.py` -- Import directory constants (`CONFIG_DIR`, `LOG_DIR`, `RAW_DIR`, `PROCESSED_DIR`, `PLOTS_DIR`, `REPORTS_DIR`, `SUBPROJECT_ROOT`, `PROJECT_ROOT`, `DATA_DIR`) rather than manually constructing or resolving relative file paths.
+      - `src/utils/paths.py` -- Import directory constants (`LOG_DIR`, `RAW_DIR`, `PROCESSED_DIR`, `PLOTS_DIR`, `REPORTS_DIR`, `PROJECT_ROOT`, `DATA_DIR`) rather than manually constructing or resolving relative file paths. **⚠ Do NOT import `CONFIG_DIR`** — it does not exist in `paths.py` and will raise an `ImportError` at runtime. **⚠ Avoid `SUBPROJECT_ROOT`** for subproject-local config paths — because `paths.py` lives in root-level `src/`, `SUBPROJECT_ROOT` evaluates relative to that file and resolves to the project root, not the calling subproject. For configs local to a subproject, derive the path from `__file__` instead:
+        ```python
+        # Resolves correctly regardless of CWD
+        _SCRIPT_DIR = Path(__file__).resolve().parent
+        CONFIG_PATH = _SCRIPT_DIR.parent / "config" / "datasets.yaml"
+        ```
       - `src/utils/formatting.py` -- Use `generate_obsidian_frontmatter()`, `format_count_percentage()`, `format_median()`, `format_median_iqr()` for report and string formatting.
       - `src/utils/plotting.py` -- Use `save_fig()`, `resolve_colors()`.
       - `src/utils/logging.py` -- Use `TeeStream`.
@@ -106,12 +130,26 @@ When fixing code smells or refactoring code in this repository, follow these gui
       - Raise a clear `FileNotFoundError` explaining what's missing and how to generate it.
       - If it must be a manually-sourced value, put it in an external, clearly-labeled `data/config` file with a `source` field citing where it came from—never bury it inline in plotting code.
     - **Distinction**: This is distinct from layout/geometry constants (axis padding factors, bar widths, figure sizes). Those are legitimate to hardcode if they're derived from the data's shape where possible (e.g., category boundary lines computed from `groupby("Category").size()`, not typed as `axhline(2.5)`), and commented with why the number is what it is.
-10. **Log File Location & Relative Path Logging**: Every runnable script logs its console output via `TeeStream`. Follow the pattern established in `run_pipeline.py`, with logs written to a dedicated `logs/` folder at the project root (not scattered loose files in `BASE_DIR`). When logging or printing output file and directory paths in console messages, always format them as relative paths (e.g. `path.relative_to(BASE_DIR).as_posix()`) rather than raw absolute paths:
+10. **Log File Location & Relative Path Logging**: Every runnable script logs its console output via `TeeStream`.
+
+    **Subproject scripts** (anything under `q1-response-predictor/`, `q5-patient-stratification/`, etc.) MUST write logs to their own subproject `logs/` folder — never to the top-level project `logs/`. Derive the log directory from the script's own `__file__` path, not from the imported `LOG_DIR` in `src/utils/paths.py` (which resolves to `PROJECT_ROOT / "logs"` and is therefore wrong for subproject scripts):
+
+    ```python
+    _SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]  # e.g. q1-response-predictor/
+    LOG_DIR  = _SUBPROJECT_ROOT / "logs"
+    LOG_PATH = LOG_DIR / "<script_name>.log"
+    ```
+
+    Do NOT import `LOG_DIR` from `src.utils.paths` in subproject scripts — that constant points to the top-level `melanoma-assignment-3/logs/` and will silently write logs to the wrong location.
+
+    When logging or printing output file and directory paths in console messages, always format them as relative paths rather than raw absolute paths. Use `_SUBPROJECT_ROOT` as the base for all relative path display within subproject scripts:
+
     ```python
     from src.utils.logging import TeeStream
     import contextlib, sys
 
-    LOG_DIR = BASE_DIR / "logs"
+    _SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
+    LOG_DIR  = _SUBPROJECT_ROOT / "logs"
     LOG_PATH = LOG_DIR / "<script_name>.log"
 
     if __name__ == "__main__":
@@ -120,10 +158,11 @@ When fixing code smells or refactoring code in this repository, follow these gui
             stdout_tee = TeeStream(sys.stdout, log_file)
             stderr_tee = TeeStream(sys.stderr, log_file)
             with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-                print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+                print(f"Logging console output to {LOG_PATH.relative_to(_SUBPROJECT_ROOT).as_posix()}")
                 main()
     ```
-    Name the log file after the script (e.g. `extended_pathway_mutation_frequencies.log`). Note: `run_pipeline.py` currently still writes `q1_pipeline.log` to the project root as a pre-existing exception -- migrate it to `logs/` next time that file is touched, for consistency.
+
+    Name the log file after the script (e.g. `run_clinical_analysis.log`). Note: `run_pipeline.py` currently still writes `q1_pipeline.log` to the project root as a pre-existing exception — migrate it to `q1-response-predictor/logs/` next time that file is touched, for consistency.
 11. **Domain Constants (`src/biology_constants.py`)**: Two kinds of "constants" get scattered through scripts, and only one kind should be centralized:
     - **Centralize** (project-wide facts that must have one source of truth):
       - Mutation classification lists (e.g., `NON_SILENT` variant classes) — these appear near-verbatim in multiple scripts; if one copy gets updated and others don't, results silently diverge between analyses.
@@ -180,11 +219,16 @@ When fixing code smells or refactoring code in this repository, follow these gui
     > ✗ *"IMPRES was excluded from the panel"* — written after reading code intent, without checking whether `IMPRES` is a column in `feature_matrix.csv`.
     > ✓ *"`IMPRES` appears in column 16 of `feature_matrix.csv`; it is retained in the multi-modal feature matrix. Its scope is limited to Phase 5/6 predictive models rather than the TME deconvolution core."*
 17. **Windows & PowerShell Command Execution Safety**: When executing terminal commands on Windows (`pwsh`):
-    - **Avoid Complex `python -c` Inline Strings**: Never pass complex, multi-line, or nested-quote Python strings via `python -c "..."`. PowerShell strips and mangles quotes inside command arguments, leading to `SyntaxError: unterminated string literal`.
-    - **Use Scratch Files for Snippets**: Write non-trivial Python verification snippets to a scratch script file (e.g. using `write_to_file` into `scratch/check_snippet.py` or `.scratch/`) and execute `python scratch/check_snippet.py`.
+    - **Always Prefer Scratch Files Over `python -c`** *(unconditional default)*: For **any** Python snippet beyond a single expression, write the code to a scratch file first (e.g. `write_to_file` → `scratch/check_snippet.py`) and execute `python scratch/check_snippet.py`. Do **not** attempt to inline it with `python -c "..."` first and fall back to a scratch file only on failure — go straight to the scratch file every time.
+    - **`python -c` Is Permitted Only for True One-Liners**: A single, quote-free expression (e.g. `python -c "import sys; print(sys.version)"`) is the only acceptable use of `python -c`. If the snippet contains any of the following, it **must** be a scratch file instead: multiple statements, f-strings, nested quotes, backslashes, `import` + logic, or more than ~60 characters.
+    - **Scratch File Location**: Store ephemeral check scripts in the artifact scratch directory (`C:\Users\Amanda\.gemini\antigravity\brain\<conversation-id>\scratch\`) or in `scratch/` at the project root. Name them descriptively (e.g. `check_columns.py`, `smell_check.py`). They are auto-persisted and do not need cleanup.
     - **PowerShell Compatibility**: Ensure all shell commands use flags and syntax compatible with PowerShell on Windows (e.g. forward slashes or escaped backslashes for paths, standard pwsh cmdlets or cross-platform binaries).
     - **Explicit UTF-8 File Encoding**: Always explicitly specify `encoding="utf-8"` when reading or writing text files in Python scripts (`open(..., encoding="utf-8")`, `Path.read_text(encoding="utf-8")`, `Path.write_text(..., encoding="utf-8")`) to prevent Windows default `cp1252` `UnicodeDecodeError` failures.
     - **Console Output UTF-8 Encoding**: Reconfigure standard output encoding in scripts printing non-ASCII/Unicode characters (e.g., `sys.stdout.reconfigure(encoding="utf-8")` or `encoding="utf-8"` in log streams) to avoid `UnicodeEncodeError: 'charmap' codec can't encode character` when running on Windows.
-
-
-
+18. **Verify Imports Against Module Exports Before Writing Them**: Before writing `from module import Name`, verify that `Name` is actually exported by the target module. Do not assume a name exists because it *should* logically exist or was mentioned in documentation. For shared utility modules (`src/utils/paths.py`, `src/utils/formatting.py`, etc.), read the file and confirm exported names before importing. This prevents `ImportError` crashes that only surface at runtime.
+    - **In practice**: Read `paths.py` before importing any path constant — its export list is short and changes over time. If a constant you need is missing, either add it to the utility module (with a note in the session log) or derive it locally using `Path(__file__)`. Never invent an import name based on what *seems* like it should exist.
+19. **Large Script Refactoring & Timeout Prevention Protocol**:
+    - **Incremental Refactoring**: When refactoring large scripts (>500 lines) for AST function lengths or line limits, edit only 2–3 related functions per tool call. Never attempt to replace hundreds of lines across multiple non-contiguous sections in a single macro edit.
+    - **AST Symbol & Dependency Verification**: Before deleting, splitting, or renaming helper functions, run a scratch AST check script (`ast.parse`) to verify all downstream references and callers are updated simultaneously so no `NameError` or dropped symbol exceptions occur.
+    - **Compilation & Execution Verification**: Run `python -m py_compile <script>` after every refactoring pass to verify syntax before launching long-running pipeline tasks.
+    - **Active Progress Stream Heartbeat**: Always output a brief status summary in chat before launching long background tasks or complex multi-tool sequences to prevent empty response timeouts and maintain stream heartbeats.

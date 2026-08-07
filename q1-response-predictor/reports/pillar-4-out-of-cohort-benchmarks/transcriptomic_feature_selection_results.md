@@ -6,16 +6,13 @@ We performed transcriptomic feature selection on the **TCGA-SKCM** cohort ($N = 
 The 20 genes most significantly associated with overall survival in univariate Cox regression are visualised below. A positive Beta indicates a **risk-associated gene** (higher expression = worse survival), while a negative Beta indicates a **protective gene** (higher expression = better survival).
 
 ### Hazard Ratio Forest Plot (Top 20 Genes)
-The forest plot below visualises the Hazard Ratios (HR) and their 95% confidence intervals for the top 20 most significant prognostic transcripts. Protective genes (HR < 1.0) are shown in blue, and risk-associated genes (HR > 1.0) are shown in red:
-
-![Prognostic Gene Forest Plot](../../plots/feature_selection/transcriptomic_forest_plot.png)
+The forest plot visualises the Hazard Ratios (HR) and their 95% confidence intervals for the top 20 most significant prognostic transcripts. Protective genes (HR < 1.0) are shown in blue, and risk-associated genes (HR > 1.0) are shown in red.
 
 ## 2. Kaplan-Meier Survival Curve on TCGA
 We partitioned TCGA-SKCM patients into High-Risk and Low-Risk groups using the median value of the signature score. The log-rank test indicates an extremely significant separation in survival curves:
 
 *   **Log-Rank p-value**: **1.57e-08**
 
-![KM Curve of TCGA Survival](../../plots/feature_selection/km_pancancer_signature.png)
 
 ## 3. Validation on Immunotherapy Clinical Trial Cohorts
 We evaluated the custom 20-gene prognostic signature on three cohorts receiving anti-PD-1 or combination immunotherapies to see if the overall survival signature translates into predicting immunotherapy response.
@@ -26,12 +23,7 @@ We evaluated the custom 20-gene prognostic signature on three cohorts receiving 
 | Hugo 2016 | 26 | 20/20 | **0.417** | 4.87e-01 | -18.842 | -19.102 |
 | Riaz 2017 | 33 | 20/20 | **0.674** | 1.22e-01 | -19.225 | -18.652 |
 
-### Validation Visualisations
-#### ROC Curves Predicting Response
-![ROC Curves for Response](../../plots/feature_selection/pancancer_signature_trial_validation.png)
 
-#### Signature Risk Score Stratified by Responders vs. Non-Responders
-![Signature Violin Plots](../../plots/feature_selection/pancancer_signature_violins.png)
 
 ## 4. Part 3: Synthesis & Pipeline Recommendation
 
