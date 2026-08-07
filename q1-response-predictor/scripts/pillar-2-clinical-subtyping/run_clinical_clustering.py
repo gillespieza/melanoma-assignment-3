@@ -900,7 +900,7 @@ def _plot_cluster_survival(
             continue
         km_label = f"{name} (N={mask.sum()})"
         kmf.fit(sub_df["OS_MONTHS"], sub_df["OS_STATUS"], label=km_label)
-        kmf.plot_survival_function(ax=ax, color=color, ci_show=False, linewidth=2.5)
+        kmf.plot_survival_function(ax=ax, color=color, ci_show=True, ci_alpha=0.12, linewidth=2.5)
 
         med = kmf.median_survival_time_
         median_survivals[cid] = "Not Reached" if (np.isinf(med) or pd.isna(med)) else f"{med:.1f} months"

@@ -126,6 +126,8 @@ Contrasting unadjusted Univariate $\text{OR}$ (blue circles) against multivariab
 > - **High-Dimensional Tier 2 Feature Space**: One-hot encoding of 23 clinical variables against $N = 195$ patients creates a sparse matrix.
 > - **No TCGA Pathological Staging**: Granular TNM staging and AJCC categories are not available in the ICI cohorts.
 
+---
+
 > [!formula]+ Clinical Feature Selection Script Execution & Software Module Architecture
 >   - **Primary Pipeline Execution Scripts**:
 >     - [`run_clinical_feature_selection.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-2-clinical-subtyping/run_clinical_feature_selection.py): Two-tiered ICI feature selection (N=256 across 3 cohorts) using RF Gini importance and Logistic Regression against anti-PD-1 binary response.
