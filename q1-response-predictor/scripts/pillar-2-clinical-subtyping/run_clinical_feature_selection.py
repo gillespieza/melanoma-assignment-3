@@ -50,7 +50,6 @@ from src.styles import COHORT_PALETTE, MODEL_TYPE_PALETTE, RESPONSE_PALETTE, set
 from src.utils.formatting import generate_obsidian_frontmatter
 from src.utils.logging import TeeStream
 from src.utils.paths import (
-    CONFIG_DIR,
     DATA_DIR,
     LOG_DIR,
     PLOTS_DIR,
@@ -67,9 +66,9 @@ set_presentation_style()
 # Module-level Constants & Directory Paths
 # ---------------------------------------------------------------------------
 
-CONFIG_PATH = CONFIG_DIR / "datasets.yaml"
+CONFIG_PATH = _SUBPROJECT_ROOT / "config" / "datasets.yaml"
 PLOT_DIR = PLOTS_DIR / "clinical"
-REPORT_DIR = REPORTS_DIR / "pillar-2-clinical-subtyping"
+REPORT_DIR = _SUBPROJECT_ROOT / "reports" / "pillar-2-clinical-subtyping"
 REPORT_PATH = REPORT_DIR / "clinical_feature_selection_report.md"
 LOG_PATH = LOG_DIR / "run_clinical_feature_selection.log"
 
@@ -1377,6 +1376,54 @@ def _generate_two_tiered_report(
         f"particularly susceptible to overfitting and convergence instability at low per-category sample counts."
     )
     w("> - **OS as Outcome Proxy**: Overall Survival reflects diverse treatment histories (surgery, targeted therapy, immunotherapy) rather than response to a single agent, making it a weaker endpoint than progression-free survival under checkpoint blockade.")
+    w("")
+    w("> [!formula]+ Clinical Feature Selection Script Execution & Software Module Architecture")
+    w("> - **Primary Pipeline Execution Scripts**:")
+    w(
+        f">   - [`run_clinical_feature_selection.py`]"
+        f"(file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/"
+        f"AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-2-clinical-subtyping/"
+        f"run_clinical_feature_selection.py): Evaluates two-tiered clinical and transcriptomic feature "
+        f"selection across multi-cohort ($N = {tier1_total_n}$) and TCGA ($N = {tcga_n}$) datasets "
+        f"using Random Forest Gini importance and Univariate/Multivariate Cox Proportional Hazards "
+        f"regression, and outputs `clinical_feature_selection_report.md`."
+    )
+    w("> - **Data Preprocessing & Loading Modules**:")
+    w(
+        ">   - [`clean_data.py`]"
+        "(file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/"
+        "AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/"
+        "clean_data.py): Preprocesses raw cohort clinical metadata and RNA-seq expression profiles "
+        "into cleaned CSV matrices."
+    )
+    w(
+        ">   - [`merge_datasets.py`]"
+        "(file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/"
+        "AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/"
+        "merge_datasets.py): Merges processed expression matrices across cohorts into harmonised "
+        "pooled matrices (`expr_merged.csv`, `clin_merged.csv`)."
+    )
+    w(
+        ">   - [`signatures.py`]"
+        "(file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/"
+        "AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py): "
+        "Computes transcriptomic immune signatures (IFN-$\\gamma$, TIS, CYT, CD8 T-cell, "
+        "IMPRES, `PD-L1`) across cohort expression matrices."
+    )
+    w("> - **Shared Cross-Question & Pipeline Modules**:")
+    w(
+        ">   - [`run_pipeline.py`]"
+        "(file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/"
+        "AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/run_pipeline.py): "
+        "Master Q1 pipeline orchestrator executing downstream modeling and evaluation."
+    )
+    w(
+        ">   - [`styles.py`]"
+        "(file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/"
+        "AI-ML-3/melanoma-assignment-3/src/styles.py): Single source of truth for Okabe-Ito "
+        "colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`, `MODEL_TYPE_PALETTE`) and "
+        "visualisation presentation style."
+    )
 
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"Two-tiered feature selection report successfully written to {rel_path(report_path)}")

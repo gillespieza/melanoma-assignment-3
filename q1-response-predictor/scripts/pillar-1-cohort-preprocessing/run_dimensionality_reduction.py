@@ -13,7 +13,7 @@ and updates batch_correction_report.md.
 import contextlib
 from pathlib import Path
 import sys
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import matplotlib
 matplotlib.use("Agg")
@@ -335,31 +335,10 @@ def _grid_col_names(dim_prefix: str, phase: str) -> Tuple[str, str]:
     return f"UMAP_{phase}_Dim1", f"UMAP_{phase}_Dim2"
 
 
-def plot_cohort_batch_pca(
-    df: pd.DataFrame,
-    var_tuple: Tuple[float, float, float, float],
-    cohort_list: List[str],
-    title_suffix: str,
-    output_path: Path,
+def _render_pca_panel_axes(
+    axes: Any, df: pd.DataFrame, panels: List[Tuple[str, str, str]], cohort_list: List[str]
 ) -> None:
-    """Renders 1x2 panel PCA scatter plot for batch effect evaluation across cohorts.
-
-    Args:
-        df: DataFrame containing PCA coordinate columns and Cohort.
-        var_tuple: Explained variance percentages (pc1_r, pc2_r, pc1_s, pc2_s).
-        cohort_list: List of cohort display names.
-        title_suffix: Additional text suffix for plot main title.
-        output_path: Target save path.
-    """
-    pc1_r, pc2_r, pc1_s, pc2_s = var_tuple
-    fig, axes = plt.subplots(1, 2, figsize=FIG_SIZE_1X2)
-    panels = [
-        ("PCA_Raw_PC1", "PCA_Raw_PC2",
-         f"A: Raw Matrix (Uncorrected)\nPC1 ({pc1_r:.1f}%) vs PC2 ({pc2_r:.1f}%)"),
-        ("PCA_Scaled_PC1", "PCA_Scaled_PC2",
-         f"B: Z-Score Standardised (Corrected)\nPC1 ({pc1_s:.1f}%) vs PC2 ({pc2_s:.1f}%)"),
-    ]
-
+    """Helper to render scatter plots onto 1x2 PCA axes."""
     for ax, (xcol, ycol, title) in zip(axes, panels):
         sns.scatterplot(
             data=df, x=xcol, y=ycol, hue=_COL_COHORT, hue_order=cohort_list,
@@ -370,6 +349,25 @@ def plot_cohort_batch_pca(
         ax.set_xlabel("PC1")
         ax.set_ylabel("PC2")
 
+
+def plot_cohort_batch_pca(
+    df: pd.DataFrame,
+    var_tuple: Tuple[float, float, float, float],
+    cohort_list: List[str],
+    title_suffix: str,
+    output_path: Path,
+) -> None:
+    """Renders 1x2 panel PCA scatter plot for batch effect evaluation across cohorts."""
+    pc1_r, pc2_r, pc1_s, pc2_s = var_tuple
+    fig, axes = plt.subplots(1, 2, figsize=FIG_SIZE_1X2)
+    panels = [
+        ("PCA_Raw_PC1", "PCA_Raw_PC2",
+         f"A: Raw Matrix (Uncorrected)\nPC1 ({pc1_r:.1f}%) vs PC2 ({pc2_r:.1f}%)"),
+        ("PCA_Scaled_PC1", "PCA_Scaled_PC2",
+         f"B: Z-Score Standardised (Corrected)\nPC1 ({pc1_s:.1f}%) vs PC2 ({pc2_s:.1f}%)"),
+    ]
+
+    _render_pca_panel_axes(axes, df, panels, cohort_list)
     plt.suptitle(
         f"PCA Batch Effect Assessment Across {title_suffix} (N = {len(df)})",
         fontsize=14, fontweight="bold", y=0.98,
@@ -391,6 +389,38 @@ def _axis_label(
     return f"{component} ({pct:.1f}% variance)"
 
 
+def _render_2x2_scatter_grid(
+    axes: Any, df: pd.DataFrame, configs: List[Any], dim_prefix: str,
+    pc1_r: float, pc1_s: float, pc2_r: float, pc2_s: float
+) -> None:
+    """Helper to render 2x2 scatter grid panels."""
+    for ax, (xcol, ycol, hue_col, order, palette, title) in zip(axes.flat, configs):
+        sns.scatterplot(
+            data=df, x=xcol, y=ycol, hue=hue_col, hue_order=order, palette=palette,
+            style=hue_col, alpha=SCATTER_ALPHA, s=SCATTER_SIZE_LARGE,
+            edgecolor="w", linewidth=0.8, ax=ax,
+        )
+        ax.set_title(title, fontsize=13, fontweight="bold", pad=10)
+        ax.set_xlabel(_axis_label(dim_prefix, "x", "Before" in title, pc1_r, pc1_s))
+        ax.set_ylabel(_axis_label(dim_prefix, "y", "Before" in title, pc2_r, pc2_s))
+
+
+def _get_grid_configs(
+    dim_prefix: str, method_name: str, resp_colors: Dict[str, str]
+) -> List[Any]:
+    """Builds tuple configurations for 2x2 scatter plot grid panels."""
+    return [
+        (*_grid_col_names(dim_prefix, "Raw"), _COL_COHORT, COHORT_ORDER[1:], COHORT_PALETTE,
+         f"{method_name} Before Batch Correction (Coloured by Cohort)"),
+        (*_grid_col_names(dim_prefix, "Raw"), _COL_RESPONSE, RESPONSE_ORDER, resp_colors,
+         f"{method_name} Before Batch Correction (Coloured by Response)"),
+        (*_grid_col_names(dim_prefix, "Scaled"), _COL_COHORT, COHORT_ORDER[1:], COHORT_PALETTE,
+         f"{method_name} After Batch Correction (Coloured by Cohort)"),
+        (*_grid_col_names(dim_prefix, "Scaled"), _COL_RESPONSE, RESPONSE_ORDER, resp_colors,
+         f"{method_name} After Batch Correction (Coloured by Response)"),
+    ]
+
+
 def plot_trial_reduction_grid(
     df: pd.DataFrame,
     dim_prefix: str,
@@ -405,27 +435,9 @@ def plot_trial_reduction_grid(
         "Non-responder (PD)": RESPONSE_PALETTE["PD"],
     }
     pc1_r, pc2_r, pc1_s, pc2_s = pc_vars
-    configs = [
-        (*_grid_col_names(dim_prefix, "Raw"), _COL_COHORT, COHORT_ORDER[1:], COHORT_PALETTE,
-         f"{method_name} Before Batch Correction (Coloured by Cohort)"),
-        (*_grid_col_names(dim_prefix, "Raw"), _COL_RESPONSE, RESPONSE_ORDER, resp_colors,
-         f"{method_name} Before Batch Correction (Coloured by Response)"),
-        (*_grid_col_names(dim_prefix, "Scaled"), _COL_COHORT, COHORT_ORDER[1:], COHORT_PALETTE,
-         f"{method_name} After Batch Correction (Coloured by Cohort)"),
-        (*_grid_col_names(dim_prefix, "Scaled"), _COL_RESPONSE, RESPONSE_ORDER, resp_colors,
-         f"{method_name} After Batch Correction (Coloured by Response)"),
-    ]
+    configs = _get_grid_configs(dim_prefix, method_name, resp_colors)
 
-    for ax, (xcol, ycol, hue_col, order, palette, title) in zip(axes.flat, configs):
-        sns.scatterplot(
-            data=df, x=xcol, y=ycol, hue=hue_col, hue_order=order, palette=palette,
-            style=hue_col, alpha=SCATTER_ALPHA, s=SCATTER_SIZE_LARGE,
-            edgecolor="w", linewidth=0.8, ax=ax,
-        )
-        ax.set_title(title, fontsize=13, fontweight="bold", pad=10)
-        ax.set_xlabel(_axis_label(dim_prefix, "x", "Before" in title, pc1_r, pc1_s))
-        ax.set_ylabel(_axis_label(dim_prefix, "y", "Before" in title, pc2_r, pc2_s))
-
+    _render_2x2_scatter_grid(axes, df, configs, dim_prefix, pc1_r, pc1_s, pc2_r, pc2_s)
     plt.suptitle(
         f"{method_name} Reduction of Trial Expression (N = {len(df)})",
         fontsize=16, fontweight="bold", y=0.98,
@@ -439,17 +451,13 @@ def plot_trial_reduction_grid(
 # Markdown Report Generation Functions
 # ---------------------------------------------------------------------------
 
-def _report_section_1(
+def _report_section_1a(
     n_full: int, n_tcga: int, n_liu: int, n_hugo: int, n_riaz: int,
-    n_trials: int, n_top: int, n_g4: int, n_g3: int,
-    var_full: Tuple[float, float, float, float],
-    var_trials: Tuple[float, float, float, float],
+    n_top: int, n_g4: int, var_full: Tuple[float, float, float, float],
 ) -> str:
-    """Returns Markdown text for Section 1: Cohort Batch Assessment."""
+    """Returns Markdown text for Section 1.1: Full Cohort Batch Assessment."""
     p1_rf, p2_rf, p1_sf, p2_sf = var_full
-    p1_rt, p2_rt, p1_st, p2_st = var_trials
     return (
-        "## 1. Cohort Batch Assessment\n\n"
         f"### 1.1 Full Cohort Batch Assessment (N = {n_full})\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
@@ -466,6 +474,16 @@ def _report_section_1(
         f"({p1_rf:.1f}%) and PC2 ({p2_rf:.1f}%) reflect platform shifts.\n"
         f"- **Corrected**: Standardisation ($\\mu=0, \\sigma=1$ per study) aligns datasets. "
         f"Post-correction PC1 ({p1_sf:.1f}%) and PC2 ({p2_sf:.1f}%) show homogeneous spread.\n\n"
+    )
+
+
+def _report_section_1b(
+    n_trials: int, n_liu: int, n_hugo: int, n_riaz: int, n_g3: int,
+    var_trials: Tuple[float, float, float, float],
+) -> str:
+    """Returns Markdown text for Section 1.2: ICI Trial Cohort Batch Assessment."""
+    p1_rt, p2_rt, p1_st, p2_st = var_trials
+    return (
         f"### 1.2 ICI Trial Cohort Batch Assessment (N = {n_trials})\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
@@ -483,6 +501,18 @@ def _report_section_1(
         f"- **Corrected**: Standardisation removes study-level separation. distributions "
         f"overlap smoothly across PC1 ({p1_st:.1f}%) and PC2 ({p2_st:.1f}%).\n\n"
     )
+
+
+def _report_section_1(
+    n_full: int, n_tcga: int, n_liu: int, n_hugo: int, n_riaz: int,
+    n_trials: int, n_top: int, n_g4: int, n_g3: int,
+    var_full: Tuple[float, float, float, float],
+    var_trials: Tuple[float, float, float, float],
+) -> str:
+    """Returns Markdown text for Section 1: Cohort Batch Assessment."""
+    sec1a = _report_section_1a(n_full, n_tcga, n_liu, n_hugo, n_riaz, n_top, n_g4, var_full)
+    sec1b = _report_section_1b(n_trials, n_liu, n_hugo, n_riaz, n_g3, var_trials)
+    return f"## 1. Cohort Batch Assessment\n\n{sec1a}{sec1b}" 
 
 
 def _report_section_2(

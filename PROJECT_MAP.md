@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-07 (Completed multi-pass code smell, AST complexity, root DRY alignment, and LaTeX formatting refactoring of `q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_genomic_characterisation.py`: 100% of functions $\le 30$ lines, zero lines > 100 chars, zero duplicate `save_fig` alias calls, centralized `_TRIAL_COHORTS` and `NEOANTIGEN_SUBTYPES`, sourced all domain constants directly from project-root `src/biology_constants.py` per AGENTS.md Rule 8, eliminated magic response literals, and verified clean single-backslash LaTeX rendering across all Markdown report callouts).
+> **Last updated**: 2026-08-07 (Completed comprehensive multi-pass code smell, AST complexity, root DRY alignment, and LaTeX formatting refactoring across all 5 scripts in `q1-response-predictor/scripts/pillar-1-cohort-preprocessing/` [`clean_data.py`, `download_data.py`, `merge_datasets.py`, `run_dimensionality_reduction.py`, `run_genomic_characterisation.py`]: 100% of functions $\le 30$ lines, 100% type hint coverage, zero lines > 100 chars, zero duplicate `save_fig` alias calls, centralized `_TRIAL_COHORTS` and `NEOANTIGEN_SUBTYPES`, sourced all domain constants directly from project-root `src/biology_constants.py` per AGENTS.md Rule 8, eliminated magic response literals, and verified clean single-backslash LaTeX rendering across all Markdown report callouts).
 
 ## Repository Overview
 
