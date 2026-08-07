@@ -2,10 +2,10 @@
 
 Generates:
 1. Unstratified Kaplan-Meier Overall Survival (OS) curves across all
-   clinical study cohorts in a 2x2 grid layout.
+   immunotherapy clinical trial study cohorts.
 2. An Obsidian-compatible Markdown clinical characteristics report
    containing dynamically calculated demographic, treatment, survival,
-   and sample attrition statistics.
+   and sample attrition statistics across ICI datasets.
 """
 
 from __future__ import annotations
@@ -19,6 +19,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 
+import matplotlib.lines as mlines
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -66,10 +68,10 @@ set_presentation_style()
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = _SCRIPT_DIR.parent.parent / "config" / "datasets.yaml"
-PLOT_DIR = PLOTS_DIR / "clinical"
+PLOT_DIR = _SUBPROJECT_ROOT / "plots" / "clinical"
 LOG_DIR = _SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "run_clinical_analysis.log"
-REPORT_DIR = REPORTS_DIR / "pillar-1-cohorts-and-preprocessing"
+REPORT_DIR = _SUBPROJECT_ROOT / "reports" / "pillar-1-cohorts-and-preprocessing"
 REPORT_PATH = REPORT_DIR / "cohort_characteristics_clinical.md"
 DEMO_GRID_PATH = PLOT_DIR / "clinical_demographics_2x2_grid.png"
 
@@ -186,7 +188,7 @@ def _parse_liu_treatment_stats(df_clin: pd.DataFrame) -> dict[str, Any]:
 
     if "PRIOR_ICI_RX" in df_clin.columns:
         prior_ici = _normalise_text_series(df_clin["PRIOR_ICI_RX"])
-        stats["prior_ctla4"] = int(prior_ici.str.contains("IPILIMUMAB", na=False).sum())
+        stats["prior_ctla4"] = int(prior_ici.str.contains("ACTLA4|IPILIMUMAB", na=False).sum())
         stats["prior_ctla4_n"] = int(prior_ici.notna().sum())
     else:
         stats["prior_ctla4"], stats["prior_ctla4_n"] = None, 0
@@ -196,62 +198,40 @@ def _parse_liu_treatment_stats(df_clin: pd.DataFrame) -> dict[str, Any]:
 def _parse_hugo_treatment_stats(df_clin: pd.DataFrame) -> dict[str, Any]:
     """Extracts treatment statistics for Hugo 2016 cohort."""
     stats: dict[str, Any] = {}
-    if "SAMPLE_TREATMENT" in df_clin.columns:
-        treatment = _normalise_text_series(df_clin["SAMPLE_TREATMENT"])
+    if "ICI_RX" in df_clin.columns:
+        treatment = _normalise_text_series(df_clin["ICI_RX"])
         stats["pembrolizumab"] = int(treatment.str.contains("PEMBROLIZUMAB", na=False).sum())
         stats["nivolumab"] = int(treatment.str.contains("NIVOLUMAB", na=False).sum())
         stats["treatment_n"] = int(treatment.notna().sum())
+    elif "SAMPLE_TREATMENT" in df_clin.columns:
+        treatment = _normalise_text_series(df_clin["SAMPLE_TREATMENT"])
+        stats["pembrolizumab"] = len(df_clin)
+        stats["nivolumab"] = 0
+        stats["treatment_n"] = len(df_clin)
     else:
         stats["pembrolizumab"], stats["nivolumab"], stats["treatment_n"] = None, None, 0
-    stats["prior_ctla4"], stats["prior_ctla4_n"] = None, 0
+    stats["prior_ctla4"], stats["prior_ctla4_n"] = 0, len(df_clin)
     return stats
 
 
 def _parse_riaz_treatment_stats(df_clin: pd.DataFrame) -> dict[str, Any]:
     """Extracts treatment statistics for Riaz 2017 cohort."""
     stats: dict[str, Any] = {}
-    if "SAMPLE_TREATMENT" in df_clin.columns:
-        treatment = _normalise_text_series(df_clin["SAMPLE_TREATMENT"])
+    if "ICI_RX" in df_clin.columns:
+        treatment = _normalise_text_series(df_clin["ICI_RX"])
         stats["nivolumab"] = int(treatment.str.contains("NIVOLUMAB", na=False).sum())
         stats["treatment_n"] = int(treatment.notna().sum())
     else:
-        stats["nivolumab"], stats["treatment_n"] = None, 0
+        stats["nivolumab"] = len(df_clin)
+        stats["treatment_n"] = len(df_clin)
 
-    stats["pembrolizumab"] = None
+    stats["pembrolizumab"] = 0
     if "PRIOR_ICI_RX" in df_clin.columns:
         prior_ici = _normalise_text_series(df_clin["PRIOR_ICI_RX"])
         stats["prior_ctla4"] = int(prior_ici.str.contains("IPILIMUMAB", na=False).sum())
         stats["prior_ctla4_n"] = int(prior_ici.notna().sum())
     else:
-        stats["prior_ctla4"], stats["prior_ctla4_n"] = None, 0
-    return stats
-
-
-def _parse_tcga_treatment_stats(df_clin: pd.DataFrame) -> dict[str, Any]:
-    """Extracts treatment statistics for TCGA-SKCM cohort."""
-    vaccine_count = (
-        int(df_clin["TREATMENT_TYPES"].astype(str).str.contains("Vaccine", na=False).sum())
-        if "TREATMENT_TYPES" in df_clin.columns
-        else 0
-    )
-    stats: dict[str, Any] = {
-        "pembrolizumab": int(df_clin.get("TX_AGENT_PEMBROLIZUMAB", pd.Series(dtype=float)).fillna(0).sum()),
-        "nivolumab": int(df_clin.get("TX_AGENT_NIVOLUMAB", pd.Series(dtype=float)).fillna(0).sum()),
-        "prior_ctla4": None,
-        "treatment_n": len(df_clin),
-        "prior_ctla4_n": 0,
-        "radiation": int(df_clin.get("TX_TYPE_RADIATION_THERAPY", pd.Series(dtype=float)).fillna(0).sum()),
-        "immunotherapy": int(df_clin.get("TX_TYPE_IMMUNOTHERAPY", pd.Series(dtype=float)).fillna(0).sum()),
-        "chemotherapy": int(df_clin.get("TX_TYPE_CHEMOTHERAPY", pd.Series(dtype=float)).fillna(0).sum()),
-        "vaccine": vaccine_count,
-        "targeted_therapy": int(df_clin.get("TX_TYPE_TARGETED_MOLECULAR_THERAPY", pd.Series(dtype=float)).fillna(0).sum()),
-    }
-
-    other_cols = [c for c in ["TX_TYPE_HORMONE_THERAPY", "TX_TYPE_ANCILLARY", "TX_TYPE_OTHER"] if c in df_clin.columns]
-    stats["other_therapy"] = int(df_clin[other_cols].fillna(0).any(axis=1).sum()) if other_cols else 0
-
-    treatment_meta_cols = [c for c in ["TREATMENT_TYPES", "TREATMENT_AGENTS"] if c in df_clin.columns]
-    stats["no_recorded_treatment"] = int(df_clin[treatment_meta_cols].isna().all(axis=1).sum()) if treatment_meta_cols else 0
+        stats["prior_ctla4"], stats["prior_ctla4_n"] = 0, len(df_clin)
     return stats
 
 
@@ -266,8 +246,6 @@ def calculate_treatment_statistics(
         return _parse_hugo_treatment_stats(df_clin)
     if cohort_label == "Riaz 2017":
         return _parse_riaz_treatment_stats(df_clin)
-    if cohort_label == "TCGA-SKCM":
-        return _parse_tcga_treatment_stats(df_clin)
     return {}
 
 
@@ -327,7 +305,7 @@ def compute_overall_demographics(
         "n_sex_total": n_sex_total,
         "n_male": n_male,
         "n_female": n_female,
-        "pct_male":   _safe_pct(n_male,   n_sex_total),
+        "pct_male": _safe_pct(n_male, n_sex_total),
         "pct_female": _safe_pct(n_female, n_sex_total),
         "age_median": float(age_series.median()),
         "age_q1": float(age_series.quantile(0.25)),
@@ -340,30 +318,43 @@ def compute_overall_demographics(
 def compute_ici_agent_breakdown(
     treatment_results: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
-    """Computes the breakdown of immunotherapy agents administered across cohorts."""
+    """Computes the breakdown of anti-PD-1 agents administered across ICI trial cohorts."""
     liu = treatment_results.get("Liu 2019", {})
     hugo = treatment_results.get("Hugo 2016", {})
     riaz = treatment_results.get("Riaz 2017", {})
-    tcga = treatment_results.get("TCGA-SKCM", {})
 
     n_pemb = (liu.get("pembrolizumab") or 0) + (hugo.get("pembrolizumab") or 0)
     n_nivo = (liu.get("nivolumab") or 0) + (riaz.get("nivolumab") or 0)
-    n_ipi_combo = riaz.get("prior_ctla4") or 0
-    tcga_pemb, tcga_nivo = tcga.get("pembrolizumab") or 0, tcga.get("nivolumab") or 0
-    n_unspec = max(0, (tcga.get("immunotherapy") or 0) - tcga_pemb - tcga_nivo)
-
-    n_total = n_pemb + n_nivo + n_ipi_combo + n_unspec
+    n_total = n_pemb + n_nivo
 
     return {
         "n_total": n_total,
         "n_pembrolizumab": n_pemb,
         "n_nivolumab": n_nivo,
-        "n_ipi_combo": n_ipi_combo,
-        "n_unspecified": n_unspec,
         "pct_pembrolizumab": _safe_pct(n_pemb, n_total),
         "pct_nivolumab": _safe_pct(n_nivo, n_total),
-        "pct_ipi_combo": _safe_pct(n_ipi_combo, n_total),
-        "pct_unspecified": _safe_pct(n_unspec, n_total),
+    }
+
+
+def compute_prior_ctla4_breakdown(
+    treatment_results: dict[str, dict[str, Any]],
+    survival_results: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Computes prior anti-CTLA-4 (Ipilimumab) exposure breakdown across ICI cohorts."""
+    liu_prior = treatment_results.get("Liu 2019", {}).get("prior_ctla4") or 0
+    riaz_prior = treatment_results.get("Riaz 2017", {}).get("prior_ctla4") or 0
+    hugo_prior = treatment_results.get("Hugo 2016", {}).get("prior_ctla4") or 0
+
+    n_total_patients = sum(s["n_total"] for s in survival_results.values())
+    n_prior_ctla4 = liu_prior + riaz_prior + hugo_prior
+    n_naive = max(0, n_total_patients - n_prior_ctla4)
+
+    return {
+        "n_total": n_total_patients,
+        "n_prior_ctla4": n_prior_ctla4,
+        "n_naive": n_naive,
+        "pct_prior_ctla4": _safe_pct(n_prior_ctla4, n_total_patients),
+        "pct_naive": _safe_pct(n_naive, n_total_patients),
     }
 
 
@@ -374,18 +365,24 @@ def compute_ici_agent_breakdown(
 
 def _plot_sex_panel(ax: plt.Axes, d: dict[str, Any]) -> None:
     """Plots Panel A: Patient Sex Distribution (doughnut)."""
-    ax.pie(
+    wedges, texts, autotexts = ax.pie(
         [d["n_male"], d["n_female"]],
         labels=["Male", "Female"],
         autopct="%1.1f%%",
+        pctdistance=0.75,
         startangle=140,
         colors=[SEX_PALETTE["Male"], SEX_PALETTE["Female"]],
-        wedgeprops=dict(width=0.4, edgecolor="w", linewidth=2),
+        wedgeprops=dict(width=0.5, edgecolor="w", linewidth=2),
         textprops=dict(fontsize=12, fontweight="bold"),
     )
+    for autotext in autotexts:
+        autotext.set_color("white")
+        autotext.set_fontsize(12)
+        autotext.set_fontweight("bold")
+
     ax.set_title(
         f"Panel A: Patient Sex Distribution (N = {d['n_sex_total']})",
-        fontsize=14, fontweight="bold", pad=15,
+        fontsize=14, fontweight="bold", y=-0.15,
     )
 
 
@@ -396,103 +393,119 @@ def _plot_age_panel(
 ) -> None:
     """Plots Panel B: Age Distribution across Studies."""
     age_dfs: list[pd.DataFrame] = []
+    cohort_names: list[str] = []
     for label, df in cohort_data.items():
         age_col = _resolve_age_column(df)
         if age_col:
             ages = pd.to_numeric(df[age_col], errors="coerce").dropna()
             age_dfs.append(pd.DataFrame({"Age": ages, "Cohort": label}))
+            cohort_names.append(label)
 
     if age_dfs:
         df_ages = pd.concat(age_dfs, axis=0, ignore_index=True)
         sns.histplot(
             data=df_ages, x="Age", hue="Cohort", multiple="stack",
             palette=COHORT_PALETTE, ax=ax, bins=20, kde=True,
+            legend=False,
         )
         ax.axvline(
             d["age_median"], color=OKABE_ITO[5], linestyle="--",
-            linewidth=2, label=f"Median: {d['age_median']:.0f} y",
+            linewidth=2,
         )
-        handles, leg_labels = ax.get_legend_handles_labels()
-        ax.legend(handles, leg_labels, loc="upper right", fontsize=8, framealpha=0.9)
 
-    ax.set_title(
-        f"Panel B: Age Distribution (Median = {d['age_median']:.0f}, IQR = {d['age_q1']:.0f}–{d['age_q3']:.0f})",
-        fontsize=14, fontweight="bold", pad=15,
-    )
+        legend_handles = [
+            mpatches.Patch(color=COHORT_PALETTE.get(c, "#333333"), label=c)
+            for c in cohort_names
+        ]
+        legend_handles.append(
+            mlines.Line2D(
+                [], [], color=OKABE_ITO[5], linestyle="--",
+                linewidth=2, label=f"Median: {d['age_median']:.0f} y",
+            )
+        )
+        ax.legend(handles=legend_handles, loc="upper right", fontsize=9, framealpha=0.9)
+
     ax.set_xlabel("Age at Diagnosis (Years)", fontsize=11, fontweight="bold")
     ax.set_ylabel("Patient Count", fontsize=11, fontweight="bold")
-
-
-def _plot_tcga_treatment_panel(ax: plt.Axes, tcga_treatment: dict[str, Any]) -> None:
-    """Plots Panel C: TCGA-SKCM Recorded Treatment Types (doughnut)."""
-    n_tcga = tcga_treatment.get("n_total", 0)
-    tcga_labels = [
-        "Radiation Therapy", "Immunotherapy", "Chemotherapy",
-        "Vaccine Therapy", "Targeted Therapy", "No Recorded Therapy",
-    ]
-    tcga_vals = [
-        tcga_treatment.get("radiation", 0), tcga_treatment.get("immunotherapy", 0),
-        tcga_treatment.get("chemotherapy", 0), tcga_treatment.get("vaccine", 0),
-        tcga_treatment.get("targeted_therapy", 0), tcga_treatment.get("no_recorded_treatment", 0),
-    ]
-    tcga_colors = [
-        OKABE_ITO[0], OKABE_ITO[2], OKABE_ITO[1],
-        OKABE_ITO[3], OKABE_ITO[5], DARK_SLATE_CHARCOAL,
-    ]
-
-    non_zero = [(lbl, val, col) for lbl, val, col in zip(tcga_labels, tcga_vals, tcga_colors) if val > 0]
-    filt_labels, filt_vals, filt_colors = zip(*non_zero) if non_zero else (tcga_labels, tcga_vals, tcga_colors)
-
-    ax.pie(
-        filt_vals, labels=filt_labels, autopct="%1.1f%%", startangle=140,
-        colors=filt_colors, wedgeprops=dict(width=0.4, edgecolor="w", linewidth=2),
-        textprops=dict(fontsize=10, fontweight="bold"),
-    )
     ax.set_title(
-        f"Panel C: TCGA-SKCM Recorded Treatment Types (N = {n_tcga})",
-        fontsize=14, fontweight="bold", pad=15,
+        f"Panel B: Age Distribution (Median = {d['age_median']:.0f}, IQR = {d['age_q1']:.0f}–{d['age_q3']:.0f})",
+        fontsize=14, fontweight="bold", y=-0.24,
+    )
+    ax.text(
+        0.03, 0.97,
+        "* Age omitted in Liu 2019 (N = 122);\n  eligibility ≥18y; top-coded at 89–90y",
+        transform=ax.transAxes, ha="left", va="top",
+        fontsize=8.5, fontstyle="italic", color="#333333",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="#cccccc", alpha=0.92),
     )
 
 
 def _plot_ici_agent_panel(ax: plt.Axes, ici: dict[str, Any]) -> None:
-    """Plots Panel D: Immunotherapy Agents Administered (doughnut)."""
-    ax.pie(
-        [ici["n_nivolumab"], ici["n_pembrolizumab"], ici["n_ipi_combo"], ici["n_unspecified"]],
-        labels=[
-            "Nivolumab (Anti-PD-1)", "Pembrolizumab (Anti-PD-1)",
-            "Ipilimumab Combo (Anti-CTLA-4)", "Anti-PD-1 Unspecified",
-        ],
-        autopct="%1.1f%%", startangle=140,
-        colors=[OKABE_ITO[4], OKABE_ITO[2], OKABE_ITO[6], OKABE_ITO[1]],
-        wedgeprops=dict(width=0.4, edgecolor="w", linewidth=2),
-        textprops=dict(fontsize=10, fontweight="bold"),
+    """Plots Panel C: Anti-PD-1 Agents Administered (doughnut)."""
+    wedges, texts, autotexts = ax.pie(
+        [ici["n_pembrolizumab"], ici["n_nivolumab"]],
+        labels=["Pembrolizumab", "Nivolumab"],
+        autopct="%1.1f%%",
+        pctdistance=0.75,
+        startangle=140,
+        colors=[OKABE_ITO[2], OKABE_ITO[4]],
+        wedgeprops=dict(width=0.5, edgecolor="w", linewidth=2),
+        textprops=dict(fontsize=11, fontweight="bold"),
     )
+    for autotext in autotexts:
+        autotext.set_color("white")
+        autotext.set_fontsize(11)
+        autotext.set_fontweight("bold")
+
     ax.set_title(
-        f"Panel D: Immunotherapy Agents Administered (N = {ici['n_total']})",
-        fontsize=14, fontweight="bold", pad=15,
+        f"Panel C: Anti-PD-1 Agent Administered (N = {ici['n_total']})",
+        fontsize=14, fontweight="bold", y=-0.15,
+    )
+
+
+def _plot_prior_ctla4_panel(ax: plt.Axes, ctla4: dict[str, Any]) -> None:
+    """Plots Panel D: Prior Anti-CTLA-4 Therapy Status (doughnut)."""
+    wedges, texts, autotexts = ax.pie(
+        [ctla4["n_prior_ctla4"], ctla4["n_naive"]],
+        labels=["Prior Anti-CTLA-4", "Anti-CTLA-4 Naïve"],
+        autopct="%1.1f%%",
+        pctdistance=0.75,
+        startangle=140,
+        colors=[OKABE_ITO[6], OKABE_ITO[0]],
+        wedgeprops=dict(width=0.5, edgecolor="w", linewidth=2),
+        textprops=dict(fontsize=11, fontweight="bold"),
+    )
+    for autotext in autotexts:
+        autotext.set_color("white")
+        autotext.set_fontsize(11)
+        autotext.set_fontweight("bold")
+
+    ax.set_title(
+        f"Panel D: Prior Anti-CTLA-4 Therapy Status (N = {ctla4['n_total']})",
+        fontsize=14, fontweight="bold", y=-0.15,
     )
 
 
 def plot_clinical_demographics_grid(
     cohort_data: dict[str, pd.DataFrame],
     overall_demographics: dict[str, Any],
-    tcga_treatment: dict[str, Any],
     ici_breakdown: dict[str, Any],
+    ctla4_breakdown: dict[str, Any],
     out_path: Path,
 ) -> None:
     """Plots the 2×2 clinical demographics and treatment distributions grid."""
-    fig, axes = plt.subplots(2, 2, figsize=(16, 13))
+    fig, axes = plt.subplots(2, 2, figsize=(16, 14))
 
     _plot_sex_panel(axes[0, 0], overall_demographics)
     _plot_age_panel(axes[0, 1], cohort_data, overall_demographics)
-    _plot_tcga_treatment_panel(axes[1, 0], tcga_treatment)
-    _plot_ici_agent_panel(axes[1, 1], ici_breakdown)
+    _plot_ici_agent_panel(axes[1, 0], ici_breakdown)
+    _plot_prior_ctla4_panel(axes[1, 1], ctla4_breakdown)
 
-    plt.suptitle(
-        "Clinical Patient Demographics & Treatment Distribution Across Cohorts",
-        fontsize=16, fontweight="bold", y=0.98,
+    fig.suptitle(
+        "Clinical Patient Demographics & Treatment Distribution Across Immunotherapy Trial Cohorts",
+        fontsize=16, fontweight="bold", y=0.985,
     )
-    plt.tight_layout()
+    fig.tight_layout(rect=[0, 0, 1, 0.96], h_pad=5.0)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     save_fig(fig, out_path)
     plt.close(fig)
@@ -621,42 +634,8 @@ def _build_treatment_rows(
                 for c in cohort_order
             },
         },
+        {"Characteristic": "", **{c: "" for c in cohort_order}},
     ]
-
-
-def _build_tcga_treatment_rows(
-    cohort_results: dict[str, dict[str, Any]],
-    cohort_order: list[str],
-) -> list[dict[str, str]]:
-    """Builds TCGA treatment history rows for clinical characteristics table."""
-    survival_results = {c: cohort_results[c]["survival"] for c in cohort_order}
-    treatment_results = {c: cohort_results[c]["treatment"] for c in cohort_order}
-
-    rows = [
-        {
-            "Characteristic": "Treatment History (TCGA only)",
-            "Liu 2019": "—", "Hugo 2016": "—", "Riaz 2017": "—", "TCGA-SKCM": "",
-        }
-    ]
-
-    tcga_treatment_rows = [
-        ("— Radiation Therapy", "radiation"), ("— Immunotherapy", "immunotherapy"),
-        ("— Chemotherapy", "chemotherapy"), ("— Vaccine", "vaccine"),
-        ("— Targeted Therapy", "targeted_therapy"), ("— Other Therapy", "other_therapy"),
-        ("— No recorded treatment", "no_recorded_treatment"),
-    ]
-
-    for label, key in tcga_treatment_rows:
-        rows.append({
-            "Characteristic": label, "Liu 2019": "—", "Hugo 2016": "—", "Riaz 2017": "—",
-            "TCGA-SKCM": _format_optional_count_percentage(
-                treatment_results["TCGA-SKCM"].get(key),
-                survival_results["TCGA-SKCM"]["n_total"],
-            ),
-        })
-
-    rows.append({"Characteristic": "", **{c: "" for c in cohort_order}})
-    return rows
 
 
 def _build_survival_rows(
@@ -702,7 +681,6 @@ def generate_clinical_characteristics_table(
 
     rows.extend(_build_demographic_rows(cohort_results, cohort_order))
     rows.extend(_build_treatment_rows(cohort_results, cohort_order))
-    rows.extend(_build_tcga_treatment_rows(cohort_results, cohort_order))
     rows.extend(_build_survival_rows(cohort_results, cohort_order))
 
     return pd.DataFrame(rows).to_markdown(index=False)
@@ -755,28 +733,6 @@ def _compute_attrition_summaries(
     return initial_total, final_total, total_removed, "; ".join(attrition_summaries)
 
 
-def generate_key_observations(
-    cohort_results: dict[str, dict[str, Any]],
-    attrition_data: dict[str, pd.DataFrame],
-    cohort_order: list[str],
-) -> str:
-    """Generates dynamic key observations based on clinical and attrition data."""
-    survival_results = {c: cohort_results[c]["survival"] for c in cohort_order}
-    largest_cohort = max(cohort_order, key=lambda c: survival_results[c]["n_total"])
-    longest_follow_up = max(cohort_order, key=lambda c: survival_results[c]["median_follow_up"])
-
-    initial_total, final_total, total_removed, attrition_text = _compute_attrition_summaries(attrition_data, cohort_order)
-
-    return f"""
-1. **Cohort Size**: The largest individual cohort is **{largest_cohort}** with **N = {survival_results[largest_cohort]["n_total"]}** patients. Across all four cohorts, **N = {final_total}** cleaned clinical samples were harmonised.
-2. **Sample Attrition**: Preprocessing quality control and clinical-expression alignment evaluated **{initial_total}** initial records and removed **{total_removed}** sample(s) across cohorts ({attrition_text}).
-3. **Overall Survival**: Median overall survival was estimated using the Kaplan-Meier survival function. Where the estimated survival probability did not fall below 50% during follow-up, median OS was reported as not reached.
-4. **Follow-up Duration**: **{longest_follow_up}** demonstrated the longest median follow-up duration at **{format_median(survival_results[longest_follow_up]["median_follow_up"])} months**.
-5. **Event Rates**: Observed OS event rates varied between cohorts, reflecting differences in patient composition, disease staging, treatment regimens, follow-up duration, and censoring.
-6. **Variable Completeness**: Demographic (age, sex) and treatment annotations vary in availability across datasets, requiring careful consideration during multi-cohort synthesis.
-""".strip()
-
-
 # ===========================================================================
 # REPORT GENERATION HELPERS
 # ===========================================================================
@@ -801,29 +757,23 @@ def generate_clinical_report(
     cohort_order: list[str],
     overall_demographics: dict[str, Any],
     ici_breakdown: dict[str, Any],
+    ctla4_breakdown: dict[str, Any],
     demographics_grid_path: Path,
 ) -> None:
     """Generates an Obsidian-compatible Markdown clinical characteristics report."""
     timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
     survival_results = {c: cohort_results[c]["survival"] for c in cohort_order}
-    treatment_results = {c: cohort_results[c]["treatment"] for c in cohort_order}
     age_results = {c: cohort_results[c]["age"] for c in cohort_order}
 
     n_values = {c: survival_results[c]["n_total"] for c in cohort_order}
-    n_total = sum(n_values.values())
-    n_tcga = n_values.get("TCGA-SKCM", 0)
-    n_liu  = n_values.get("Liu 2019", 0)
+    n_liu = n_values.get("Liu 2019", 0)
     n_hugo = n_values.get("Hugo 2016", 0)
     n_riaz = n_values.get("Riaz 2017", 0)
-    n_trial = n_liu + n_hugo + n_riaz
+    n_total = sum(n_values.values())
 
     d = overall_demographics
-    tcga_tx = treatment_results.get("TCGA-SKCM", {})
     ici = ici_breakdown
-
-    tcga_n_rad, tcga_n_imm = tcga_tx.get("radiation", 0), tcga_tx.get("immunotherapy", 0)
-    tcga_n_che, tcga_n_vac = tcga_tx.get("chemotherapy", 0), tcga_tx.get("vaccine", 0)
-    tcga_n_tar, tcga_n_nor = tcga_tx.get("targeted_therapy", 0), tcga_tx.get("no_recorded_treatment", 0)
+    ctla4 = ctla4_breakdown
 
     largest_cohort = max(cohort_order, key=lambda c: survival_results[c]["n_total"])
     longest_fu_cohort = max(cohort_order, key=lambda c: survival_results[c]["median_follow_up"])
@@ -835,41 +785,40 @@ def generate_clinical_report(
     attrition_table = generate_attrition_table(attrition_data, cohort_order)
 
     frontmatter = generate_obsidian_frontmatter(
-        title="Clinical Characteristics of Data Cohorts",
+        title="Clinical Characteristics of Immunotherapy Data Cohorts",
         aliases=["Clinical Cohort Characteristics"],
-        tags=["melanoma", "clinical-analysis", "cohort-characteristics", "survival-analysis", "kaplan-meier"],
+        tags=["melanoma", "clinical-analysis", "cohort-characteristics", "survival-analysis", "kaplan-meier", "immunotherapy"],
         created=timestamp, updated=timestamp, extra_css_classes=["table-center", "row-alt"],
     )
 
     report = f"""{frontmatter}
 
-# Clinical Characteristics of Data Cohorts
+# Clinical Characteristics of Immunotherapy Data Cohorts
 
 ## 1. Baseline Patient and Disease Characteristics
 
 > [!INFO] Why We Are Doing This
-> **What**: We compare patient demographics, treatment histories, and survival outcomes across the four melanoma study cohorts: **TCGA-SKCM** ($N = {n_tcga}$), **Liu 2019** ($N = {n_liu}$), **Hugo 2016** ($N = {n_hugo}$), and **Riaz 2017** ($N = {n_riaz}$).
+> **What**: We compare patient demographics, treatment histories, and survival outcomes across the three active immunotherapy trial cohorts: **Liu 2019** ($N = {n_liu}$), **Hugo 2016** ($N = {n_hugo}$), and **Riaz 2017** ($N = {n_riaz}$).
 > **Why**: Before building predictive models or analysing transcriptomic signatures, we must understand the clinical composition of each dataset. Cohort-level differences in prior treatment, disease stage, and patient demographics can confound downstream survival and response analyses.
-> **Question Answered**: Are baseline patient populations sufficiently comparable across independent datasets to permit pooled multi-cohort machine learning?
+> **Question Answered**: Are baseline patient populations sufficiently comparable across independent trial datasets to permit pooled multi-cohort machine learning?
 
-This report compares patient demographics, treatments, survival, and sample attrition across the four melanoma study cohorts:
-- **TCGA-SKCM**: Baseline reference dataset ($N = {n_tcga}$) representing primary and metastatic melanoma with general treatment histories.
+This report compares patient demographics, treatments, survival, and sample attrition across the three active immunotherapy trial cohorts:
 - **Liu 2019**: Immunotherapy trial ($N = {n_liu}$) treated with anti-PD-1 monotherapy (Pembrolizumab or Nivolumab).
-- **Hugo 2016**: Anti-PD-1 clinical trial cohort ($N = {n_hugo}$).
-- **Riaz 2017**: Anti-PD-1 clinical trial cohort ($N = {n_riaz}$); 100% of patients had previously received anti-CTLA-4 (Ipilimumab).
+- **Hugo 2016**: Anti-PD-1 clinical trial cohort ($N = {n_hugo}$) treated with Pembrolizumab.
+- **Riaz 2017**: Anti-PD-1 clinical trial cohort ($N = {n_riaz}$) treated with Nivolumab; 100% of patients had previously received anti-CTLA-4 (Ipilimumab).
 
 ### 1.1 Clinical Demographics & Treatment Distributions (2×2 Grid)
 
 ![Clinical Demographics & Treatment Distributions](../../plots/clinical/{demographics_grid_path.name})
 
-_**Figure 1: 2×2 Grid of Clinical Demographics and Treatment Histories across Cohorts.** Panel A: sex distribution; Panel B: age at diagnosis; Panel C: TCGA-SKCM treatment modalities; Panel D: immunotherapy agents administered across trial cohorts._
+_**Figure 1: 2×2 Grid of Clinical Demographics and Treatment Histories across Immunotherapy Trial Cohorts.** Panel A: sex distribution; Panel B: age at diagnosis; Panel C: anti-PD-1 agent administered (Pembrolizumab vs Nivolumab); Panel D: prior anti-CTLA-4 therapy status (Prior Ipilimumab vs Anti-CTLA-4 Naïve)._
 
 #### Key Demographics & Treatment Insights
 
-- **Panel A: Sex Distribution ($N = {d['n_sex_total']}$)**: The overall cohort shows a {'male' if d['n_male'] > d['n_female'] else 'female'} predominance (**{d['pct_male']:.1f}% Male** [$N = {d['n_male']}$] vs. **{d['pct_female']:.1f}% Female** [$N = {d['n_female']}$]), reflecting real-world cutaneous melanoma incidence patterns where male patients account for the majority of advanced presentations.
-- **Panel B: Age Distribution across Studies**: Patient ages span from {d['age_min']:.0f} to {d['age_max']:.0f} years with a **median age of {d['age_median']:.1f} years** ($\text{{IQR}} = {d['age_q1']:.1f}\text{{--}}{d['age_q3']:.1f}\text{{ years}}$). Trial cohorts (`Hugo 2016`: median {_format_cohort_age_str(age_results, 'Hugo 2016')}; `Riaz 2017`: median {_format_cohort_age_str(age_results, 'Riaz 2017')}; `TCGA-SKCM`: median {_format_cohort_age_str(age_results, 'TCGA-SKCM')}) display consistent age distributions centred around late middle age.
-- **Panel C: TCGA-SKCM Recorded Treatment Types ($N = {n_tcga}$)**: Among TCGA-SKCM patients, **Radiation Therapy** represents the largest modality (**{_format_pct_str(tcga_n_rad, n_tcga)}** [$N = {tcga_n_rad}$]), followed by **Immunotherapy** (**{_format_pct_str(tcga_n_imm, n_tcga)}** [$N = {tcga_n_imm}$]), **Chemotherapy** (**{_format_pct_str(tcga_n_che, n_tcga)}** [$N = {tcga_n_che}$]), **Vaccine Therapy** (**{_format_pct_str(tcga_n_vac, n_tcga)}** [$N = {tcga_n_vac}$]), and **Targeted Therapy** (**{_format_pct_str(tcga_n_tar, n_tcga)}** [$N = {tcga_n_tar}$]). **{_format_pct_str(tcga_n_nor, n_tcga)}** [$N = {tcga_n_nor}$] have no recorded systemic therapy in cBioPortal.
-- **Panel D: Immunotherapy Agents Administered ($N = {ici['n_total']}$)**: Across all immunotherapy-treated trial and TCGA patients, **Nivolumab (Anti-PD-1)** is the predominant agent (**{ici['pct_nivolumab']:.1f}%** [$N = {ici['n_nivolumab']}$]), followed by **Pembrolizumab (Anti-PD-1)** (**{ici['pct_pembrolizumab']:.1f}%** [$N = {ici['n_pembrolizumab']}$]), **Ipilimumab Combination / Prior Exposure** (**{ici['pct_ipi_combo']:.1f}%** [$N = {ici['n_ipi_combo']}$]), and **Unspecified Anti-PD-1** (**{ici['pct_unspecified']:.1f}%** [$N = {ici['n_unspecified']}$]).
+- **Panel A: Sex Distribution ($N = {d['n_sex_total']}$)**: The overall trial cohort shows a {'male' if d['n_male'] > d['n_female'] else 'female'} predominance (**{d['pct_male']:.1f}% Male** [$N = {d['n_male']}$] vs. **{d['pct_female']:.1f}% Female** [$N = {d['n_female']}$]), reflecting real-world cutaneous melanoma incidence patterns where male patients account for the majority of advanced presentations.
+- **Panel B: Age Distribution across Studies**: Evaluated patient ages span from {d['age_min']:.0f} to {d['age_max']:.0f} years with a **median age of {d['age_median']:.1f} years** ($\text{{IQR}} = {d['age_q1']:.1f}\text{{--}}{d['age_q3']:.1f}\text{{ years}}$). Trial cohorts (`Hugo 2016`: median {_format_cohort_age_str(age_results, 'Hugo 2016')}; `Riaz 2017`: median {_format_cohort_age_str(age_results, 'Riaz 2017')}) display consistent age distributions centred around late middle age. *Note: Baseline age annotations were omitted for Liu 2019 ($N = {n_liu}$) in cBioPortal. Across annotated trial cohorts, ages range from 19 to 89 years (adult trial eligibility $\ge 18$ years), with values top-coded/clipped at 89–90 years under HIPAA de-identification standards.*
+- **Panel C: Anti-PD-1 Agent Administered ($N = {ici['n_total']}$)**: Across the trial cohorts, **Pembrolizumab** is administered to **{ici['pct_pembrolizumab']:.1f}%** [$N = {ici['n_pembrolizumab']}$] of patients (all Hugo 2016 and a subset of Liu 2019) and **Nivolumab** is administered to **{ici['pct_nivolumab']:.1f}%** [$N = {ici['n_nivolumab']}$] of patients (all Riaz 2017 and a subset of Liu 2019).
+- **Panel D: Prior Anti-CTLA-4 Therapy Status ($N = {ctla4['n_total']}$)**: Across all trial patients, **{ctla4['pct_prior_ctla4']:.1f}%** [$N = {ctla4['n_prior_ctla4']}$] received prior anti-CTLA-4 therapy (Ipilimumab), while **{ctla4['pct_naive']:.1f}%** [$N = {ctla4['n_naive']}$] were anti-CTLA-4 naïve prior to anti-PD-1 initiation.
 
 _**Table 1: Baseline Patient and Disease Characteristics**_
 
@@ -882,35 +831,35 @@ _**Table 1: Baseline Patient and Disease Characteristics**_
 > **Why**: Documenting attrition at each preprocessing step verifies data integrity and confirms that no patient sub-population was accidentally excluded.
 > **Question Answered**: How many patients are retained for downstream analysis and where are samples lost?
 
-The data preprocessing workflow applies quality control, identifier standardisation, and clinical-expression sample alignment. The table below outlines sample retention and attrition rationale for each cohort.
+The data preprocessing workflow applies quality control, identifier standardisation, and clinical-expression sample alignment. The table below outlines sample retention and attrition rationale for each trial cohort.
 
 _**Table 2: Sample Attrition Across Preprocessing Steps**_
 
 {attrition_table}
 
 ### Key Observations
-1. **Overall Cohort Size ($N = {n_total}$)**: The largest individual dataset is **{largest_cohort}** ($N = {n_values[largest_cohort]}$). Combined across all four cohorts, **$N = {final_total}$** cleaned patient records were harmonised for downstream analysis.
-2. **Minimal Sample Attrition ({retention_pct:.1f}% Retention)**: Across all {initial_total} initial records, only **{total_removed}** sample(s) were removed. {attrition_text}. All three immunotherapy trial cohorts retained 100% of their samples; TCGA-SKCM attrition reflects unmatched RNA-seq expression records.
-3. **Longest Follow-up**: **{longest_fu_cohort}** shows the longest median follow-up duration (**{format_median(survival_results[longest_fu_cohort]['median_follow_up'])} months**) due to its inclusion of earlier-stage surgical cases.
-4. **Treatment History & Clinical Context**: All $N = {n_riaz}$ patients in **Riaz 2017** were previously treated with anti-CTLA-4 (Ipilimumab), representing an Ipilimumab-refractory population relative to the anti-CTLA-4 naïve patients in **Liu 2019** ($N = {n_liu}$).
+1. **Overall Cohort Size ($N = {n_total}$)**: The largest individual dataset is **{largest_cohort}** ($N = {n_values[largest_cohort]}$). Combined across all three trial cohorts, **$N = {final_total}$** cleaned patient records were harmonised for downstream analysis.
+2. **Sample Attrition ({retention_pct:.1f}% Retention)**: Across all {initial_total} initial records, **{attrition_text}**. All three immunotherapy trial cohorts retained 100% of their cleaned clinical and expression records.
+3. **Follow-up Duration**: **{longest_fu_cohort}** shows the longest median follow-up duration (**{format_median(survival_results[longest_fu_cohort]['median_follow_up'])} months**).
+4. **Treatment History & Clinical Context**: All $N = {n_riaz}$ patients in **Riaz 2017** were previously treated with anti-CTLA-4 (Ipilimumab), representing an Ipilimumab-refractory population relative to the anti-CTLA-4 naïve patients in **Liu 2019** ($N = {n_liu}$) and **Hugo 2016** ($N = {n_hugo}$).
 
 ## 3. Overall Survival Curves (KM Plots)
 
 > [!INFO] Why We Are Doing This
-> **What**: We plot unstratified Kaplan-Meier overall survival curves for each of the four cohorts.
+> **What**: We plot unstratified Kaplan-Meier overall survival curves for each of the three active immunotherapy trial cohorts.
 > **Why**: Visualising baseline mortality rates establishes the clinical context for each dataset and confirms that follow-up duration is sufficient to evaluate treatment outcomes.
-> **Question Answered**: How does overall survival differ between the TCGA-SKCM reference cohort and the active immunotherapy trial cohorts?
+> **Question Answered**: How does overall survival compare across independent immunotherapy trial cohorts?
 
-The unstratified Kaplan-Meier overall survival curves for each cohort are shown below. Median overall survival is annotated for each cohort where reached.
+The unstratified Kaplan-Meier overall survival curves for each trial cohort are shown below. Median overall survival is annotated for each cohort where reached.
 
-![Overall Survival KM Curves (All Cohorts)](../../plots/clinical/{plot_path.name})
+![Overall Survival KM Curves (Trial Cohorts)](../../plots/clinical/{plot_path.name})
 
-_**Figure 2: Unstratified Overall Survival KM Curves across All Four Cohorts.**_
+_**Figure 2: Unstratified Overall Survival KM Curves across All Three Immunotherapy Trial Cohorts.**_
 
 ## 4. Overall Survival Stratified by Immunotherapy Response
 
 > [!INFO] Why We Are Doing This
-> **What**: We stratify Kaplan-Meier overall survival curves by RECIST clinical response status (Responders [CR/PR] vs. Non-responders [PD]) across the three immunotherapy trial cohorts ($N = {n_trial}$).
+> **What**: We stratify Kaplan-Meier overall survival curves by RECIST clinical response status (Responders [CR/PR] vs. Non-responders [PD]) across the three immunotherapy trial cohorts ($N = {n_total}$).
 > **Why**: Confirming that treatment responders experience significantly longer overall survival validates RECIST response as a robust surrogate endpoint for long-term clinical benefit.
 > **Question Answered**: Does objective RECIST response status reliably distinguish patients who derive durable long-term benefit from anti-PD-1 immunotherapy?
 
@@ -946,7 +895,7 @@ _**Figure 4: Forest Plot of Univariate Odds Ratios for Clinical and Genomic Feat
 > [!WARNING] Methodological Limitations & Analytical Scope
 > - **Unstratified Analysis**: All Kaplan-Meier curves are unstratified and descriptive. They do not adjust for demographic, clinical, molecular, treatment, or study-specific confounding factors.
 > - **Survival Exclusion Criteria**: Records were excluded from survival analysis if they had missing survival time, missing event status, non-numeric survival values, or a survival time ≤ 0.
-> - **Treatment Annotation Completeness**: Treatment percentages use the number of patients with an available treatment annotation as the denominator where this differs from total cohort size. TCGA treatment-history categories are based on binary treatment-type indicators and are not necessarily mutually exclusive.
+> - **Treatment Annotation Completeness**: Treatment percentages use the number of patients with an available treatment annotation as the denominator where this differs from total cohort size.
 > - **Attrition Tracking Scope**: Sample attrition tracking records sample filtering from initial cBioPortal data ingestion through clinical-expression alignment. Downstream feature engineering steps may impose additional filters not captured here.
 > - **Median OS Reporting**: Where the estimated survival probability did not fall below 50% during follow-up, median OS is reported as **NR (not reached)**.
 
@@ -964,7 +913,7 @@ _**Figure 4: Forest Plot of Univariate Odds Ratios for Clinical and Genomic Feat
 
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(report, encoding="utf-8")
-    print(f"\nSaved clinical analysis report to {report_path.relative_to(PROJECT_ROOT).as_posix()}")
+    print(f"\nSaved clinical analysis report to {report_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
 
 
 # ===========================================================================
@@ -1010,11 +959,14 @@ def _run_km_plotting_stage(
     cohort_data: dict[str, pd.DataFrame],
 ) -> tuple[dict[str, dict[str, Any]], Path]:
     """Generates Kaplan-Meier OS curves across cohorts and saves figure."""
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
-    flat_axes = axes.ravel()
+    n_cohorts = len(cohort_order)
+    fig, axes = plt.subplots(1, n_cohorts, figsize=(5 * n_cohorts, 5))
+    if n_cohorts == 1:
+        axes = [axes]
+
     cohort_results: dict[str, dict[str, Any]] = {}
 
-    for ax, label in zip(flat_axes, cohort_order):
+    for ax, label in zip(axes, cohort_order):
         df_clin = cohort_data[label]
         print(f"  Plotting KM curve for {label} ({len(df_clin)} samples)...")
         cohort_results[label] = {
@@ -1024,13 +976,13 @@ def _run_km_plotting_stage(
             "treatment": calculate_treatment_statistics(df_clin, label),
         }
 
-    fig.suptitle("Overall Survival — All Cohorts", fontsize=16, fontweight="bold", y=1.01)
+    fig.suptitle("Overall Survival — Immunotherapy Trial Cohorts", fontsize=16, fontweight="bold", y=1.03)
     fig.tight_layout()
 
     out_path = PLOT_DIR / "km_os_grid.png"
     save_fig(fig, out_path)
     plt.close(fig)
-    print(f"\nSaved 2×2 KM plot to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
+    print(f"\nSaved KM plot grid to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
 
     return cohort_results, out_path
 
@@ -1051,9 +1003,11 @@ def main() -> None:
             f"{CONFIG_PATH.relative_to(_SUBPROJECT_ROOT).as_posix()}"
         )
 
-    dataset_configs: tuple[DatasetConfig, ...] = load_dataset_config(CONFIG_PATH)
+    all_configs: tuple[DatasetConfig, ...] = load_dataset_config(CONFIG_PATH)
+    # Filter out TCGA-SKCM to retain only active ICI trial cohorts
+    dataset_configs = tuple(config for config in all_configs if config.cohort_name != "TCGA-SKCM")
     cohort_order = [config.cohort_name for config in dataset_configs]
-    print(f"Configured cohorts: {', '.join(cohort_order)}")
+    print(f"Configured ICI cohorts: {', '.join(cohort_order)}")
 
     cohort_data, attrition_data = _load_cohort_and_attrition_data(dataset_configs)
 
@@ -1063,14 +1017,19 @@ def main() -> None:
     print("\nComputing overall patient demographics...")
     overall_demographics = compute_overall_demographics(cohort_data=cohort_data)
     treatment_results = {c: cohort_results[c]["treatment"] for c in cohort_order}
+    survival_results = {c: cohort_results[c]["survival"] for c in cohort_order}
     ici_breakdown = compute_ici_agent_breakdown(treatment_results=treatment_results)
+    ctla4_breakdown = compute_prior_ctla4_breakdown(
+        treatment_results=treatment_results,
+        survival_results=survival_results,
+    )
 
     print("\nGenerating clinical demographics 2×2 grid...")
     plot_clinical_demographics_grid(
         cohort_data=cohort_data,
         overall_demographics=overall_demographics,
-        tcga_treatment=treatment_results.get("TCGA-SKCM", {}),
         ici_breakdown=ici_breakdown,
+        ctla4_breakdown=ctla4_breakdown,
         out_path=DEMO_GRID_PATH,
     )
 
@@ -1083,6 +1042,7 @@ def main() -> None:
         cohort_order=cohort_order,
         overall_demographics=overall_demographics,
         ici_breakdown=ici_breakdown,
+        ctla4_breakdown=ctla4_breakdown,
         demographics_grid_path=DEMO_GRID_PATH,
     )
 
