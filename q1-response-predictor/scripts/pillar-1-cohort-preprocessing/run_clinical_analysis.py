@@ -229,6 +229,11 @@ def _parse_riaz_treatment_stats(df_clin: pd.DataFrame) -> dict[str, Any]:
 
 def _parse_tcga_treatment_stats(df_clin: pd.DataFrame) -> dict[str, Any]:
     """Extracts treatment statistics for TCGA-SKCM cohort."""
+    vaccine_count = (
+        int(df_clin["TREATMENT_TYPES"].astype(str).str.contains("Vaccine", na=False).sum())
+        if "TREATMENT_TYPES" in df_clin.columns
+        else 0
+    )
     stats: dict[str, Any] = {
         "pembrolizumab": int(df_clin.get("TX_AGENT_PEMBROLIZUMAB", pd.Series(dtype=float)).fillna(0).sum()),
         "nivolumab": int(df_clin.get("TX_AGENT_NIVOLUMAB", pd.Series(dtype=float)).fillna(0).sum()),
@@ -238,7 +243,7 @@ def _parse_tcga_treatment_stats(df_clin: pd.DataFrame) -> dict[str, Any]:
         "radiation": int(df_clin.get("TX_TYPE_RADIATION_THERAPY", pd.Series(dtype=float)).fillna(0).sum()),
         "immunotherapy": int(df_clin.get("TX_TYPE_IMMUNOTHERAPY", pd.Series(dtype=float)).fillna(0).sum()),
         "chemotherapy": int(df_clin.get("TX_TYPE_CHEMOTHERAPY", pd.Series(dtype=float)).fillna(0).sum()),
-        "vaccine": int(df_clin["TREATMENT_TYPES"].astype(str).str.contains("Vaccine", na=False).sum()) if "TREATMENT_TYPES" in df_clin.columns else 0,
+        "vaccine": vaccine_count,
         "targeted_therapy": int(df_clin.get("TX_TYPE_TARGETED_MOLECULAR_THERAPY", pd.Series(dtype=float)).fillna(0).sum()),
     }
 
@@ -322,8 +327,8 @@ def compute_overall_demographics(
         "n_sex_total": n_sex_total,
         "n_male": n_male,
         "n_female": n_female,
-        "pct_male": n_male / n_sex_total * 100 if n_sex_total > 0 else 0.0,
-        "pct_female": n_female / n_sex_total * 100 if n_sex_total > 0 else 0.0,
+        "pct_male":   _safe_pct(n_male,   n_sex_total),
+        "pct_female": _safe_pct(n_female, n_sex_total),
         "age_median": float(age_series.median()),
         "age_q1": float(age_series.quantile(0.25)),
         "age_q3": float(age_series.quantile(0.75)),
@@ -503,13 +508,13 @@ def plot_clinical_demographics_grid(
 def _annotate_km_median_os(ax: plt.Axes, median_surv: float) -> None:
     """Adds median survival time dashed indicator lines and text annotation box."""
     if np.isfinite(median_surv):
-        ax.axhline(0.5, color="grey", linestyle="--", linewidth=0.8, alpha=0.6)
-        ax.axvline(median_surv, color="grey", linestyle="--", linewidth=0.8, alpha=0.6)
+        ax.axhline(0.5, color=DARK_SLATE_CHARCOAL, linestyle="--", linewidth=0.8, alpha=0.6)
+        ax.axvline(median_surv, color=DARK_SLATE_CHARCOAL, linestyle="--", linewidth=0.8, alpha=0.6)
         ax.text(
             0.95, 0.05, f"Median OS = {median_surv:.1f} mo",
             transform=ax.transAxes, ha="right", va="bottom",
             fontsize=9, fontstyle="italic",
-            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="grey", alpha=0.8),
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor=DARK_SLATE_CHARCOAL, alpha=0.8),
         )
 
 
@@ -663,15 +668,24 @@ def _build_survival_rows(
 
     return [
         {"Characteristic": "**Survival Outcomes**", **{c: "" for c in cohort_order}},
-        {"Characteristic": "Median OS, months (95% CI)", **{c: format_median(survival_results[c]["median_os"]) for c in cohort_order}},
+        {
+            "Characteristic": "Median OS, months (95% CI)",
+            **{c: format_median(survival_results[c]["median_os"]) for c in cohort_order},
+        },
         {
             "Characteristic": "OS events, n (%)",
             **{
-                c: format_count_percentage(count=survival_results[c]["n_events"], total=survival_results[c]["n_valid_os"])
+                c: format_count_percentage(
+                    count=survival_results[c]["n_events"],
+                    total=survival_results[c]["n_valid_os"],
+                )
                 for c in cohort_order
             },
         },
-        {"Characteristic": "Median follow-up, months", **{c: format_median(survival_results[c]["median_follow_up"]) for c in cohort_order}},
+        {
+            "Characteristic": "Median follow-up, months",
+            **{c: format_median(survival_results[c]["median_follow_up"]) for c in cohort_order},
+        },
     ]
 
 
