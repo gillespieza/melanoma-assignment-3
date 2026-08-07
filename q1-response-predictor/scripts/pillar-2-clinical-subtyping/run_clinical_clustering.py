@@ -652,7 +652,7 @@ def _plot_cluster_umap(df: pd.DataFrame, phenotype_names: Dict[int, str], plot_d
 
     palette_dict = {name: get_phenotype_color(name) for name in ordered_names}
 
-    fig, ax = plt.subplots(figsize=(9.5, 7.5))
+    fig, ax = plt.subplots(figsize=(12, 6.75))
     sns.scatterplot(
         x="UMAP1",
         y="UMAP2",
@@ -724,7 +724,7 @@ def _plot_cluster_pca(
     ordered_names = [phenotype_names[cid] for cid in ordered_ids]
     palette_dict = {name: get_phenotype_color(name) for name in ordered_names}
 
-    fig, ax = plt.subplots(figsize=(9.5, 7.5))
+    fig, ax = plt.subplots(figsize=(12, 6.75))
     sns.scatterplot(
         x="PC1",
         y="PC2",
@@ -788,7 +788,7 @@ def _plot_cluster_tsne(
 
     tsne_model = TSNE(
         n_components=2,
-        perplexity=55.0,
+        perplexity=15.0,
         random_state=_GMM_RANDOM_STATE,
         init="pca",
         learning_rate="auto",
@@ -803,7 +803,7 @@ def _plot_cluster_tsne(
     ordered_names = [phenotype_names[cid] for cid in ordered_ids]
     palette_dict = {name: get_phenotype_color(name) for name in ordered_names}
 
-    fig, ax = plt.subplots(figsize=(9.5, 7.5))
+    fig, ax = plt.subplots(figsize=(12, 6.75))
     sns.scatterplot(
         x="tSNE1",
         y="tSNE2",
@@ -872,7 +872,7 @@ def _plot_projection_comparison(
     var_exp = pca_model.explained_variance_ratio_
 
     tsne_model = TSNE(
-        n_components=2, perplexity=55.0, random_state=_GMM_RANDOM_STATE, init="pca", learning_rate="auto"
+        n_components=2, perplexity=15.0, random_state=_GMM_RANDOM_STATE, init="pca", learning_rate="auto"
     )
     tsne_coords = tsne_model.fit_transform(z_matrix)
 
@@ -905,7 +905,7 @@ def _plot_projection_comparison(
     fig, axes = plt.subplots(1, 3, figsize=(20, 6.5))
     proj_configs = [
         ("PCA", "PC1", "PC2", f"PCA (PC1: {var_exp[0]*100:.1f}%, PC2: {var_exp[1]*100:.1f}%)\nSilhouette = {sil_pca:.3f}", f"PC1 ({var_exp[0]*100:.1f}% var)", f"PC2 ({var_exp[1]*100:.1f}% var)"),
-        ("t-SNE", "tSNE1", "tSNE2", f"t-SNE (Perplexity=30)\nSilhouette = {sil_tsne:.3f}", "t-SNE Dimension 1", "t-SNE Dimension 2"),
+        ("t-SNE", "tSNE1", "tSNE2", f"t-SNE (Perplexity=15)\nSilhouette = {sil_tsne:.3f}", "t-SNE Dimension 1", "t-SNE Dimension 2"),
         ("UMAP", "UMAP1", "UMAP2", f"UMAP (n_neighbors=25, min_dist=0.08)\nSilhouette = {sil_umap:.3f}", "UMAP Dimension 1", "UMAP Dimension 2"),
     ]
 
