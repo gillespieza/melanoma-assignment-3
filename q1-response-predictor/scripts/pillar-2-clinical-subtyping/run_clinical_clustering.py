@@ -154,20 +154,20 @@ _PROB_COL_MAP: Dict[str, str] = {
     "Immunosuppressive M2-High": "P_Immunosuppressive_M2_High",
 }
 
-# Human-readable feature display names for heatmap annotation
+# Human-readable feature display names for heatmap annotation (wrapped across two lines)
 FEATURE_DISPLAY_NAMES: Dict[str, str] = {
-    "IFN_gamma": "IFN-γ Signature",
-    "TIS": "TIS Signature",
-    "CYT": "Cytolytic (CYT) Score",
-    "CD8_Tcell": "CD8+ T-cell Score",
-    "IMPRES": "IMPRES Signature",
-    "PD_L1": "PD-L1 Expression Score",
-    "mut_BRAF": "BRAF Driver Mutation",
-    "mut_NRAS": "NRAS Driver Mutation",
-    "mut_NF1": "NF1 Driver Mutation",
-    "TMB_NONSYNONYMOUS": "Tumour Mutational Burden (TMB)",
-    "M1_M2_Ratio": "M1/M2 Macrophage Ratio",
-    "Macrophage_STV": "Macrophage STV Score",
+    "IFN_gamma": "IFN-γ\nSignature",
+    "TIS": "TIS\nSignature",
+    "CYT": "Cytolytic (CYT)\nScore",
+    "CD8_Tcell": "CD8+ T-cell\nScore",
+    "IMPRES": "IMPRES\nSignature",
+    "PD_L1": "PD-L1 Expression\nScore",
+    "mut_BRAF": "BRAF Driver\nMutation",
+    "mut_NRAS": "NRAS Driver\nMutation",
+    "mut_NF1": "NF1 Driver\nMutation",
+    "TMB_NONSYNONYMOUS": "Tumour Mutational\nBurden (TMB)",
+    "M1_M2_Ratio": "M1/M2 Macrophage\nRatio",
+    "Macrophage_STV": "Macrophage STV\nScore",
 }
 
 
@@ -735,10 +735,10 @@ def _plot_cluster_heatmap(
             raw_matrix[row_idx, col_idx] = sub[col].mean()
 
     cluster_counts = df["CLINICAL_CLUSTER"].value_counts().to_dict()
-    col_labels = [
-        f"{phenotype_names[cid]}\n(N={cluster_counts.get(cid, 0)})"
-        for cid in ordered_ids
-    ]
+    col_labels = []
+    for cid in ordered_ids:
+        cname = phenotype_names[cid].replace("Immunosuppressive M2-High", "Immunosuppressive\nM2-High")
+        col_labels.append(f"{cname}\n(N={cluster_counts.get(cid, 0)})")
 
     # Response rates (trial patients with binary labels)
     trial_df = df[df["IS_TRIAL"] & df["RESPONDER"].notna()]
@@ -747,7 +747,7 @@ def _plot_cluster_heatmap(
         sub = trial_df[trial_df["CLINICAL_CLUSTER"] == cid]
         if len(sub) > 0:
             n_resp = (sub["RESPONDER"] == 1.0).sum()
-            resp_rates.append(f"{(n_resp / len(sub)) * 100:.1f}% ({n_resp}/{len(sub)})")
+            resp_rates.append(f"{(n_resp / len(sub)) * 100:.1f}% (n={n_resp}/{len(sub)})")
         else:
             resp_rates.append("N/A")
 
@@ -758,36 +758,10 @@ def _plot_cluster_heatmap(
     )
 
     fig = plt.figure(figsize=(max(10, 2.5 * n_clusters), 8.5))
-    gs = fig.add_gridspec(3, 1, height_ratios=[0.8, 4.5, 0.4], hspace=0.15)
+    gs = fig.add_gridspec(3, 1, height_ratios=[0.9, 4.5, 0.4], hspace=0.18)
 
     ax_top = fig.add_subplot(gs[0])
     ax_top.axis("off")
-
-    for col_idx, cid in enumerate(ordered_ids):
-        color = get_phenotype_color(phenotype_names[cid])
-        med_os = median_survivals.get(cid, "N/A")
-        track_text = f"Response: {resp_rates[col_idx]}\nMedian OS: {med_os}"
-
-        x_start = col_idx / n_clusters + 0.02
-        rect_width = (1.0 / n_clusters) - 0.04
-        rect = plt.Rectangle(
-            (x_start, 0.05), rect_width, 0.9,
-            facecolor=color, alpha=0.15, edgecolor=color,
-            linewidth=1.5, transform=ax_top.transAxes,
-        )
-        ax_top.add_patch(rect)
-        ax_top.text(
-            x_start + rect_width / 2,
-            0.5,
-            track_text,
-            ha="center", va="center", fontsize=10, weight="bold",
-            transform=ax_top.transAxes,
-        )
-
-    ax_top.set_title(
-        f"Annotated Subtype Feature Heatmap & Clinical Outcomes (ICI Cohorts, N={len(df)})",
-        fontsize=14, weight="bold", pad=10,
-    )
 
     ax_heat = fig.add_subplot(gs[1])
     _BINARY_FEATURES = set(_DRIVER_MUT_FEATURES)
@@ -817,7 +791,77 @@ def _plot_cluster_heatmap(
         ax=ax_heat,
     )
     ax_heat.set_yticklabels(ax_heat.get_yticklabels(), rotation=0, fontsize=10, weight="bold")
-    ax_heat.set_xticklabels(ax_heat.get_xticklabels(), rotation=15, ha="right", fontsize=9, weight="bold")
+    ax_heat.set_xticklabels(ax_heat.get_xticklabels(), rotation=0, ha="center", fontsize=9, weight="bold")
+
+    # Match ax_top's horizontal position and width to ax_heat's heatmap grid
+    fig.canvas.draw()
+    pos_heat = ax_heat.get_position()
+    pos_top = ax_top.get_position()
+    ax_top.set_position([pos_heat.x0, pos_top.y0, pos_heat.width, pos_top.height])
+
+    for col_idx, cid in enumerate(ordered_ids):
+        color = get_phenotype_color(phenotype_names[cid])
+        cluster_name = phenotype_names[cid].replace("Immunosuppressive M2-High", "Immunosuppressive\nM2-High")
+        med_os = median_survivals.get(cid, "N/A")
+        stats_text = f"Response: {resp_rates[col_idx]}\nMedian OS: {med_os}"
+
+        x_start = col_idx / n_clusters
+        rect_width = 1.0 / n_clusters
+        rect = plt.Rectangle(
+            (x_start, 0.05), rect_width, 0.9,
+            facecolor=color, alpha=0.15, edgecolor=color,
+            linewidth=1.5, transform=ax_top.transAxes,
+        )
+        ax_top.add_patch(rect)
+
+        # Cluster Name in bold
+        has_newline = "\n" in cluster_name
+        name_y = 0.70 if has_newline else 0.68
+        stats_y = 0.26 if has_newline else 0.32
+
+        ax_top.text(
+            x_start + rect_width / 2,
+            name_y,
+            cluster_name,
+            ha="center", va="center", fontsize=9.0 if has_newline else 9.5, weight="bold",
+            color="#212B32",
+            transform=ax_top.transAxes,
+        )
+        # Outcome stats reduced font size and not bold
+        ax_top.text(
+            x_start + rect_width / 2,
+            stats_y,
+            stats_text,
+            ha="center", va="center", fontsize=8.2 if has_newline else 8.5, weight="normal",
+            color="#212B32",
+            transform=ax_top.transAxes,
+        )
+
+    # Plot title centered horizontally
+    ax_top.set_title(
+        f"Annotated Subtype Feature Heatmap & Clinical Outcomes (ICI Cohorts, N={len(df)})",
+        fontsize=14, weight="bold", pad=12, ha="center", x=0.5,
+    )
+
+    # Bottom explanatory note detailing cell values
+    ax_bot = fig.add_subplot(gs[2])
+    ax_bot.axis("off")
+
+    # Pin ax_bot's horizontal extent to ax_heat so x=0.5 centers over the heatmap columns
+    pos_bot = ax_bot.get_position()
+    ax_bot.set_position([pos_heat.x0, pos_bot.y0, pos_heat.width, pos_bot.height])
+
+    note_text = (
+        "Note: In each cell, the top line 'Z=...' is the cohort-standardised Z-score.\n"
+        "The bracketed number below '(...)' is the unstandardised raw mean score,\n"
+        "raw mutational burden (mut/Mb), or mutation prevalence (% mut)."
+    )
+    ax_bot.text(
+        0.5, 0.28, note_text,
+        ha="center", va="center", fontsize=8.5, style="italic", color="#37474F",
+        bbox=dict(boxstyle="round,pad=0.5", facecolor="#F8FAFC", edgecolor="#B3D0CB", alpha=0.9, linewidth=0.8),
+        transform=ax_bot.transAxes,
+    )
 
     out_path = plot_dir / "heatmap_clinical_clusters.png"
     save_fig(fig, out_path)
