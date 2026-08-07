@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 from scipy.stats import fisher_exact, norm
+from scipy.stats.contingency import odds_ratio
 import seaborn as sns
 
 # ---------------------------------------------------------------------------
@@ -89,18 +90,18 @@ def _calc_categorical_or(
     c = contingency.loc[0, 1.0] if (0 in contingency.index and 1.0 in contingency.columns) else 0
     d = contingency.loc[0, 0.0] if (0 in contingency.index and 0.0 in contingency.columns) else 0
 
+    table = [[a, b], [c, d]]
+    res_or = odds_ratio(table)
+    ci = res_or.confidence_interval(0.95)
+    _, p_val = fisher_exact(table)
+
     if a == 0 or b == 0 or c == 0 or d == 0:
         a_c, b_c, c_c, d_c = a + 0.5, b + 0.5, c + 0.5, d + 0.5
+        point_or = (a_c * d_c) / (b_c * c_c)
     else:
-        a_c, b_c, c_c, d_c = a, b, c, d
+        point_or = float(res_or.statistic)
 
-    or_val = (a_c * d_c) / (b_c * c_c)
-    se_ln_or = np.sqrt(1.0 / a_c + 1.0 / b_c + 1.0 / c_c + 1.0 / d_c)
-    ci_lower = np.exp(np.log(or_val) - 1.96 * se_ln_or)
-    ci_upper = np.exp(np.log(or_val) + 1.96 * se_ln_or)
-
-    _, p_val = fisher_exact([[a, b], [c, d]])
-    return float(or_val), float(ci_lower), float(ci_upper), float(p_val)
+    return float(point_or), float(ci.low), float(ci.high), float(p_val)
 
 
 def _logit_cov_and_se(X: np.ndarray, beta: np.ndarray) -> float:
@@ -294,8 +295,37 @@ def _normalise_cohort_df(df: pd.DataFrame) -> pd.DataFrame:
     return df_clean
 
 
+def _enrich_cohort_mutations(
+    clin_df: pd.DataFrame, cohort_dir: Path
+) -> pd.DataFrame:
+    """Enriches clinical DataFrame with driver mutation flags from mutations_cleaned.csv."""
+    mut_path = cohort_dir / "mutations_cleaned.csv"
+    if not mut_path.exists():
+        return clin_df
+
+    mut_df = pd.read_csv(mut_path, index_col="SAMPLE_ID")
+    df_enriched = clin_df.copy()
+    for gene in ["BRAF", "NRAS", "NF1"]:
+        if gene in mut_df.columns:
+            df_enriched[f"mut_{gene}"] = df_enriched.index.map(
+                lambda sid: (1.0 if mut_df.loc[sid, gene] > 0 else 0.0)
+                if sid in mut_df.index else np.nan
+            )
+    return df_enriched
+
+
+def _load_single_cohort(
+    data_dir: Path, cohort_folder: str, loader_fn
+) -> pd.DataFrame:
+    """Loads, standardises clinical metadata, and enriches driver mutations."""
+    _, clin_df = loader_fn(data_dir)
+    norm_df = _normalise_cohort_df(clin_df)
+    cohort_dir = data_dir / "processed" / cohort_folder
+    return _enrich_cohort_mutations(norm_df, cohort_dir)
+
+
 def _prepare_clinical_cohorts(data_dir: Path) -> Dict[str, pd.DataFrame]:
-    """Loads and standardises clinical trial cohort datasets.
+    """Loads and standardises clinical trial cohort datasets with driver mutations.
 
     Args:
         data_dir: Path to project data directory.
@@ -303,14 +333,10 @@ def _prepare_clinical_cohorts(data_dir: Path) -> Dict[str, pd.DataFrame]:
     Returns:
         Dictionary mapping cohort names to clean DataFrames.
     """
-    _, clin_liu = load_liu_2019(data_dir)
-    _, clin_hugo = load_hugo_2016(data_dir)
-    _, clin_riaz = load_riaz_2017(data_dir)
-
     return {
-        "Liu 2019": _normalise_cohort_df(clin_liu),
-        "Hugo 2016": _normalise_cohort_df(clin_hugo),
-        "Riaz 2017": _normalise_cohort_df(clin_riaz),
+        "Liu 2019": _load_single_cohort(data_dir, "liu_2019", load_liu_2019),
+        "Hugo 2016": _load_single_cohort(data_dir, "hugo_2016", load_hugo_2016),
+        "Riaz 2017": _load_single_cohort(data_dir, "riaz_2017", load_riaz_2017),
     }
 
 
