@@ -757,8 +757,8 @@ def _plot_cluster_heatmap(
         columns=col_labels,
     )
 
-    fig = plt.figure(figsize=(max(10, 2.5 * n_clusters), 8.5))
-    gs = fig.add_gridspec(3, 1, height_ratios=[0.9, 4.5, 0.4], hspace=0.18)
+    fig = plt.figure(figsize=(max(10, 2.5 * n_clusters), 11.0))
+    gs = fig.add_gridspec(3, 1, height_ratios=[0.9, 6.5, 0.55], hspace=0.15)
 
     ax_top = fig.add_subplot(gs[0])
     ax_top.axis("off")
@@ -790,7 +790,7 @@ def _plot_cluster_heatmap(
         linecolor="white",
         ax=ax_heat,
     )
-    ax_heat.set_yticklabels(ax_heat.get_yticklabels(), rotation=0, fontsize=10, weight="bold")
+    ax_heat.set_yticklabels(ax_heat.get_yticklabels(), rotation=0, fontsize=10, weight="normal")
     ax_heat.set_xticklabels(ax_heat.get_xticklabels(), rotation=0, ha="center", fontsize=9, weight="bold")
 
     # Match ax_top's horizontal position and width to ax_heat's heatmap grid
@@ -857,7 +857,7 @@ def _plot_cluster_heatmap(
         "raw mutational burden (mut/Mb), or mutation prevalence (% mut)."
     )
     ax_bot.text(
-        0.5, 0.28, note_text,
+        0.5, 0.12, note_text,
         ha="center", va="center", fontsize=8.5, style="italic", color="#37474F",
         bbox=dict(boxstyle="round,pad=0.5", facecolor="#F8FAFC", edgecolor="#B3D0CB", alpha=0.9, linewidth=0.8),
         transform=ax_bot.transAxes,
