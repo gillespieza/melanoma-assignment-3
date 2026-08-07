@@ -28,22 +28,23 @@ import seaborn as sns
 # Bootstrap project root resolution for top-level imports
 # ---------------------------------------------------------------------------
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-if str(BASE_DIR) not in sys.path:
-    sys.path.append(str(BASE_DIR))
+_SUBPROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(_SUBPROJECT_ROOT) not in sys.path:
+    sys.path.append(str(_SUBPROJECT_ROOT))
 
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.signatures import extract_all_signatures
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
+from src.utils.paths import DATA_DIR, PLOTS_DIR
 from src.utils.plotting import save_fig
 
 set_presentation_style()
 
 # Module-level Constants
 SIG_PLOT_DIR = PLOTS_DIR / "signatures"
-LOG_PATH = LOG_DIR / "run_extra_plots.log"
+_LOG_DIR = _SUBPROJECT_ROOT / "logs"
+LOG_PATH = _LOG_DIR / "run_extra_plots.log"
 
 
 def _prepare_signatures(
@@ -786,7 +787,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    _LOG_DIR.mkdir(parents=True, exist_ok=True)
     with open(LOG_PATH, "w", encoding="utf-8") as log_file:
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)

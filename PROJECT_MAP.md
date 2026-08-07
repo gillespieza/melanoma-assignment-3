@@ -96,7 +96,7 @@ melanoma-assignment-3/
 | `pillar-1-cohort-preprocessing/run_dimensionality_reduction.py` | PCA / UMAP projections, top 50 variable gene heatmaps, and batch correction evaluation |
 | `pillar-1-cohort-preprocessing/run_genomic_characterisation.py` | TMB calculation, driver mutation prevalence (`BRAF`, `NRAS`, `NF1`), Fisher's exact co-occurrence |
 | `pillar-1-cohort-preprocessing/run_clinical_analysis.py` | Clinical feature distributions, Kaplan-Meier OS curves, and univariate log-rank tests |
-| `pillar-2-clinical-subtyping/run_clinical_clustering.py` | Exploratory clinical phenotyping and cluster-based patient stratification |
+| `pillar-2-clinical-subtyping/run_clinical_clustering.py` | Exploratory clinical phenotyping, cluster-based patient stratification, and PCA / t-SNE / UMAP 2D projection comparisons |
 | `pillar-2-clinical-subtyping/run_clinical_feature_selection.py` | Clinical feature selection and univariate association benchmarking |
 | `pillar-2-clinical-subtyping/run_univariate_associations.py` | Statistical testing of baseline clinical covariates against ICI response |
 | `pillar-2-clinical-subtyping/plot_cluster_profile_visualizations.py` | Radar and violin plot visualisations for clinical patient clusters |

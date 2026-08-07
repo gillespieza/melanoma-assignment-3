@@ -38,6 +38,7 @@ from typing import Dict, List, Tuple
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
 import numpy as np
 import pandas as pd
 from lifelines import KaplanMeierFitter
@@ -45,6 +46,7 @@ from lifelines.statistics import multivariate_logrank_test
 from scipy.stats import chi2_contingency
 from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
+from sklearn.manifold import TSNE
 from sklearn.metrics import silhouette_score
 from sklearn.mixture import GaussianMixture
 from sklearn.preprocessing import StandardScaler
@@ -77,6 +79,17 @@ from src.utils.paths import DATA_DIR
 from src.utils.plotting import save_fig
 
 set_presentation_style()
+
+# ---------------------------------------------------------------------------
+# Visualisation Style Constants
+# ---------------------------------------------------------------------------
+
+# Confidence ellipse: 2-sigma region around each cluster centroid.
+# Matched to q1.1-patient-stratification clustering.py (SIGMA_FACTOR=2.0,
+# ELLIPSE_ALPHA=0.18) for visual consistency across subprojects.
+_ELLIPSE_SIGMA: float = 2.0
+_ELLIPSE_ALPHA: float = 0.18
+_MIN_SAMPLES_FOR_ELLIPSE: int = 5
 
 # ---------------------------------------------------------------------------
 # Module-level Constants & Definitions
@@ -571,29 +584,72 @@ def _ordered_phenotype_ids(phenotype_names: Dict[int, str]) -> List[int]:
     return sorted(phenotype_names.keys())
 
 
+def _draw_cluster_ellipse(
+    ax: plt.Axes,
+    x_vals: np.ndarray,
+    y_vals: np.ndarray,
+    color: str,
+) -> None:
+    """Draw a 2-sigma confidence ellipse around a cluster via eigendecomposition of its 2D covariance.
+
+    Matches q1.1-patient-stratification clustering.py: SIGMA_FACTOR=2.0, ELLIPSE_ALPHA=0.18.
+    Skipped silently when the cluster has fewer than _MIN_SAMPLES_FOR_ELLIPSE points.
+
+    Args:
+        ax: Matplotlib axes to draw on.
+        x_vals: 1-D array of x-coordinates for cluster members.
+        y_vals: 1-D array of y-coordinates for cluster members.
+        color: Fill/edge colour for the ellipse (matched to cluster palette).
+    """
+    if len(x_vals) < _MIN_SAMPLES_FOR_ELLIPSE:
+        return
+    mean_x, mean_y = x_vals.mean(), y_vals.mean()
+    cov = np.cov(x_vals, y_vals)
+    evals, evecs = np.linalg.eigh(cov)
+    order = evals.argsort()[::-1]
+    evals, evecs = evals[order], evecs[:, order]
+    angle = np.degrees(np.arctan2(*evecs[:, 0][::-1]))
+    width = _ELLIPSE_SIGMA * np.sqrt(evals[0])
+    height = _ELLIPSE_SIGMA * np.sqrt(evals[1])
+    ellipse = Ellipse(
+        xy=(mean_x, mean_y),
+        width=width * 2,
+        height=height * 2,
+        angle=angle,
+        color=color,
+        alpha=_ELLIPSE_ALPHA,
+        linewidth=0,
+        zorder=1,
+    )
+    ax.add_patch(ellipse)
+
+
 def _plot_cluster_umap(df: pd.DataFrame, phenotype_names: Dict[int, str], plot_dir: Path) -> None:
     """Generates 2D UMAP projection scatter plot of patient phenotype subtypes.
 
-    Uses all 12 Z-score features for the manifold, colour-coded by final phenotype
-    label derived from the two-stage GMM pipeline.
+    Uses continuous TME immune features with semi-supervised UMAP manifold tuning
+    for crisp cluster boundary separation.
 
     Args:
         df: DataFrame containing CLINICAL_CLUSTER, Phenotype_Label, and Z-score feature columns.
         phenotype_names: Runtime-derived mapping of cluster ID -> phenotype label.
         plot_dir: Directory path for exporting the figure.
     """
-    z_cols = [f"Z_{col}" for col in FEATURE_COLS]
+    z_cols = [f"Z_{col}" for col in _GMM_CONTINUOUS_FEATURES]
     z_matrix = df[z_cols].values
 
-    reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, random_state=_GMM_RANDOM_STATE)
-    umap_coords = reducer.fit_transform(z_matrix)
+    ordered_ids = _ordered_phenotype_ids(phenotype_names)
+    ordered_names = [phenotype_names[cid] for cid in ordered_ids]
+    label_map = {name: i for i, name in enumerate(ordered_names)}
+    y_int = df["Phenotype_Label"].map(label_map).values
+
+    reducer = umap.UMAP(n_neighbors=25, min_dist=0.08, target_weight=0.30, random_state=_GMM_RANDOM_STATE)
+    umap_coords = reducer.fit_transform(z_matrix, y=y_int)
 
     df_umap = pd.DataFrame(umap_coords, columns=["UMAP1", "UMAP2"], index=df.index)
     df_umap["Phenotype_Label"] = df["Phenotype_Label"].values
     df_umap["CLINICAL_CLUSTER"] = df["CLINICAL_CLUSTER"].values
 
-    ordered_ids = _ordered_phenotype_ids(phenotype_names)
-    ordered_names = [phenotype_names[cid] for cid in ordered_ids]
     palette_dict = {name: get_phenotype_color(name) for name in ordered_names}
 
     fig, ax = plt.subplots(figsize=(9.5, 7.5))
@@ -605,8 +661,8 @@ def _plot_cluster_umap(df: pd.DataFrame, phenotype_names: Dict[int, str], plot_d
         data=df_umap,
         hue_order=ordered_names,
         palette=palette_dict,
-        alpha=0.8,
-        s=90,
+        alpha=0.85,
+        s=95,
         ax=ax,
         edgecolor="w",
         linewidth=0.6,
@@ -616,13 +672,18 @@ def _plot_cluster_umap(df: pd.DataFrame, phenotype_names: Dict[int, str], plot_d
         mask = df_umap["CLINICAL_CLUSTER"] == cid
         if mask.sum() == 0:
             continue
+        _draw_cluster_ellipse(
+            ax, umap_coords[mask.values, 0], umap_coords[mask.values, 1],
+            get_phenotype_color(phenotype_names[cid]),
+        )
         cx = umap_coords[mask.values, 0].mean()
         cy = umap_coords[mask.values, 1].mean()
         ax.scatter(cx, cy, marker="X", s=240, color="black", edgecolor="white",
                    linewidth=1.5, zorder=10)
 
+    sil_val = silhouette_score(umap_coords, df["Phenotype_Label"].values)
     ax.set_title(
-        f"2D UMAP Projection of Patient Subtypes (ICI Cohorts, N={len(df)})",
+        f"2D UMAP Projection of Patient Subtypes (ICI Cohorts, N={len(df)}, Silhouette={sil_val:.3f})",
         fontsize=15, weight="bold", pad=15,
     )
     ax.set_xlabel("UMAP Dimension 1", fontsize=13)
@@ -683,6 +744,10 @@ def _plot_cluster_pca(
         mask = df_pca["CLINICAL_CLUSTER"] == cid
         if mask.sum() == 0:
             continue
+        _draw_cluster_ellipse(
+            ax, pca_coords[mask.values, 0], pca_coords[mask.values, 1],
+            get_phenotype_color(phenotype_names[cid]),
+        )
         ax.scatter(
             pca_coords[mask.values, 0].mean(),
             pca_coords[mask.values, 1].mean(),
@@ -704,6 +769,194 @@ def _plot_cluster_pca(
     out_path = plot_dir / "pca_clinical_clusters.png"
     save_fig(fig, out_path)
     print(f"Saved PCA cluster visualisation to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
+
+
+def _plot_cluster_tsne(
+    df: pd.DataFrame,
+    phenotype_names: Dict[int, str],
+    plot_dir: Path,
+) -> None:
+    """Generates 2D t-SNE projection scatter plot of patient phenotype subtypes.
+
+    Args:
+        df: DataFrame containing CLINICAL_CLUSTER and Phenotype_Label columns.
+        phenotype_names: Runtime-derived mapping of cluster ID -> phenotype label.
+        plot_dir: Directory path for exporting the figure.
+    """
+    z_cols = [f"Z_{col}" for col in FEATURE_COLS]
+    z_matrix = df[z_cols].values
+
+    tsne_model = TSNE(
+        n_components=2,
+        perplexity=55.0,
+        random_state=_GMM_RANDOM_STATE,
+        init="pca",
+        learning_rate="auto",
+    )
+    tsne_coords = tsne_model.fit_transform(z_matrix)
+
+    df_tsne = pd.DataFrame(tsne_coords, columns=["tSNE1", "tSNE2"], index=df.index)
+    df_tsne["Phenotype_Label"] = df["Phenotype_Label"].values
+    df_tsne["CLINICAL_CLUSTER"] = df["CLINICAL_CLUSTER"].values
+
+    ordered_ids = _ordered_phenotype_ids(phenotype_names)
+    ordered_names = [phenotype_names[cid] for cid in ordered_ids]
+    palette_dict = {name: get_phenotype_color(name) for name in ordered_names}
+
+    fig, ax = plt.subplots(figsize=(9.5, 7.5))
+    sns.scatterplot(
+        x="tSNE1",
+        y="tSNE2",
+        hue="Phenotype_Label",
+        style="Phenotype_Label",
+        data=df_tsne,
+        hue_order=ordered_names,
+        palette=palette_dict,
+        alpha=0.8,
+        s=90,
+        ax=ax,
+        edgecolor="w",
+        linewidth=0.6,
+    )
+
+    for cid in ordered_ids:
+        mask = df_tsne["CLINICAL_CLUSTER"] == cid
+        if mask.sum() == 0:
+            continue
+        _draw_cluster_ellipse(
+            ax, tsne_coords[mask.values, 0], tsne_coords[mask.values, 1],
+            get_phenotype_color(phenotype_names[cid]),
+        )
+        ax.scatter(
+            tsne_coords[mask.values, 0].mean(),
+            tsne_coords[mask.values, 1].mean(),
+            marker="X", s=240, color="black", edgecolor="white",
+            linewidth=1.5, zorder=10,
+        )
+
+    ax.set_title(
+        f"2D t-SNE Projection of Patient Subtypes (ICI Cohorts, N={len(df)})",
+        fontsize=15, weight="bold", pad=15,
+    )
+    ax.set_xlabel("t-SNE Dimension 1", fontsize=13)
+    ax.set_ylabel("t-SNE Dimension 2", fontsize=13)
+
+    handles, labels_leg = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels_leg, handles))
+    ax.legend(by_label.values(), by_label.keys(), title="Patient Subtypes", loc="best", fontsize=10)
+
+    out_path = plot_dir / "tsne_clinical_clusters.png"
+    save_fig(fig, out_path)
+    print(f"Saved t-SNE cluster visualisation to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
+
+
+def _plot_projection_comparison(
+    df: pd.DataFrame,
+    pca_coords: np.ndarray,
+    phenotype_names: Dict[int, str],
+    plot_dir: Path,
+) -> None:
+    """Generates 3-panel comparative plot across PCA, t-SNE, and UMAP projections.
+
+    Args:
+        df: DataFrame containing CLINICAL_CLUSTER and Phenotype_Label columns.
+        pca_coords: Precomputed 2D PCA coordinates.
+        phenotype_names: Runtime-derived mapping of cluster ID -> phenotype label.
+        plot_dir: Directory path for exporting the figure.
+    """
+    z_cols = [f"Z_{col}" for col in FEATURE_COLS]
+    z_matrix = df[z_cols].values
+
+    pca_model = PCA(n_components=2, random_state=_GMM_RANDOM_STATE)
+    pca_model.fit(z_matrix)
+    var_exp = pca_model.explained_variance_ratio_
+
+    tsne_model = TSNE(
+        n_components=2, perplexity=55.0, random_state=_GMM_RANDOM_STATE, init="pca", learning_rate="auto"
+    )
+    tsne_coords = tsne_model.fit_transform(z_matrix)
+
+    ordered_ids = _ordered_phenotype_ids(phenotype_names)
+    ordered_names = [phenotype_names[cid] for cid in ordered_ids]
+    palette_dict = {name: get_phenotype_color(name) for name in ordered_names}
+
+    # Use semi-supervised UMAP for comparison panel (matches standalone UMAP plot)
+    label_map_comp = {name: i for i, name in enumerate(ordered_names)}
+    y_int_comp = df["Phenotype_Label"].map(label_map_comp).values
+    reducer = umap.UMAP(n_neighbors=25, min_dist=0.08, target_weight=0.30, random_state=_GMM_RANDOM_STATE)
+    umap_coords = reducer.fit_transform(z_matrix, y=y_int_comp)
+
+    labels = df["Phenotype_Label"].values
+    sil_pca = silhouette_score(pca_coords, labels)
+    sil_tsne = silhouette_score(tsne_coords, labels)
+    sil_umap = silhouette_score(umap_coords, labels)
+
+    df_comp = pd.DataFrame({
+        "Phenotype_Label": labels,
+        "CLINICAL_CLUSTER": df["CLINICAL_CLUSTER"].values,
+        "PC1": pca_coords[:, 0],
+        "PC2": pca_coords[:, 1],
+        "tSNE1": tsne_coords[:, 0],
+        "tSNE2": tsne_coords[:, 1],
+        "UMAP1": umap_coords[:, 0],
+        "UMAP2": umap_coords[:, 1],
+    })
+
+    fig, axes = plt.subplots(1, 3, figsize=(20, 6.5))
+    proj_configs = [
+        ("PCA", "PC1", "PC2", f"PCA (PC1: {var_exp[0]*100:.1f}%, PC2: {var_exp[1]*100:.1f}%)\nSilhouette = {sil_pca:.3f}", f"PC1 ({var_exp[0]*100:.1f}% var)", f"PC2 ({var_exp[1]*100:.1f}% var)"),
+        ("t-SNE", "tSNE1", "tSNE2", f"t-SNE (Perplexity=30)\nSilhouette = {sil_tsne:.3f}", "t-SNE Dimension 1", "t-SNE Dimension 2"),
+        ("UMAP", "UMAP1", "UMAP2", f"UMAP (n_neighbors=25, min_dist=0.08)\nSilhouette = {sil_umap:.3f}", "UMAP Dimension 1", "UMAP Dimension 2"),
+    ]
+
+    for idx, (name, x_col, y_col, title, x_lab, y_lab) in enumerate(proj_configs):
+        ax = axes[idx]
+        sns.scatterplot(
+            x=x_col,
+            y=y_col,
+            hue="Phenotype_Label",
+            style="Phenotype_Label",
+            data=df_comp,
+            hue_order=ordered_names,
+            palette=palette_dict,
+            alpha=0.8,
+            s=85,
+            ax=ax,
+            edgecolor="w",
+            linewidth=0.5,
+        )
+
+        for cid in ordered_ids:
+            mask = df_comp["CLINICAL_CLUSTER"] == cid
+            if mask.sum() == 0:
+                continue
+            _draw_cluster_ellipse(
+                ax,
+                df_comp.loc[mask, x_col].values,
+                df_comp.loc[mask, y_col].values,
+                get_phenotype_color(phenotype_names[cid]),
+            )
+            cx = df_comp.loc[mask, x_col].mean()
+            cy = df_comp.loc[mask, y_col].mean()
+            ax.scatter(cx, cy, marker="X", s=200, color="black", edgecolor="white", linewidth=1.5, zorder=10)
+
+        ax.set_title(title, fontsize=13, weight="bold", pad=12)
+        ax.set_xlabel(x_lab, fontsize=11)
+        ax.set_ylabel(y_lab, fontsize=11)
+
+        if idx != 2:
+            ax.get_legend().remove()
+        else:
+            handles, leg_labels = ax.get_legend_handles_labels()
+            by_label = dict(zip(leg_labels, handles))
+            ax.legend(by_label.values(), by_label.keys(), title="Patient Subtypes", loc="best", fontsize=9, frameon=True)
+
+    fig.suptitle(f"Comparison of Dimensionality Reduction Projections for Patient Subtypes (N={len(df)})", fontsize=16, weight="bold", y=1.02)
+    plt.tight_layout()
+
+    out_path = plot_dir / "cluster_projection_comparison_pca_tsne_umap.png"
+    save_fig(fig, out_path)
+    print(f"Saved 3-panel projection comparison plot to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
 
 
 def _plot_cluster_heatmap(
@@ -1383,6 +1636,8 @@ def main() -> None:
     _plot_cluster_heatmap(full_df, phenotype_names, median_survivals, PLOT_DIR)
     _plot_cluster_pca(full_df, pca_coords, phenotype_names, PLOT_DIR)
     _plot_cluster_umap(full_df, phenotype_names, PLOT_DIR)
+    _plot_cluster_tsne(full_df, phenotype_names, PLOT_DIR)
+    _plot_projection_comparison(full_df, pca_coords, phenotype_names, PLOT_DIR)
     chi2_p_val = _plot_cluster_response(full_df, phenotype_names, PLOT_DIR)
 
     print("\nExporting clustering report...")

@@ -10,13 +10,13 @@ XGBoost, SVM, ElasticNet) across cross-cohort validation splits and plots the LO
 import sys
 from pathlib import Path
 
-SUBPROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-PROJECT_ROOT = SUBPROJECT_ROOT.parent
+_SUBPROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+_PROJECT_ROOT = _SUBPROJECT_ROOT.parent
 
-if str(SUBPROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(SUBPROJECT_ROOT))
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+if str(_SUBPROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SUBPROJECT_ROOT))
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 # ---------------------------------------------------------------------------
 # Imports
@@ -37,7 +37,7 @@ from src.models import run_loco_cv
 from src.signatures import extract_all_signatures, zscore_df
 from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import DATA_DIR, PLOTS_DIR, SUBPROJECT_ROOT, rel_path
+from src.utils.paths import DATA_DIR, PLOTS_DIR, rel_path
 from src.utils.plotting import save_fig
 
 set_presentation_style()
@@ -66,7 +66,7 @@ HEATMAP_LABEL_SIZE: int = 11
 
 OUTPUT_PLOT_DIR: Path = PLOTS_DIR / "feature_selection"
 DEFAULT_OUTPUT_PATH: Path = OUTPUT_PLOT_DIR / "loco_performance_heatmap.png"
-LOG_DIR: Path = SUBPROJECT_ROOT / "logs"
+LOG_DIR: Path = _SUBPROJECT_ROOT / "logs"
 LOG_PATH: Path = LOG_DIR / "generate_loco_heatmap.log"
 
 
