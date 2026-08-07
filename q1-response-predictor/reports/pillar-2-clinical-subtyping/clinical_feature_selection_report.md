@@ -44,6 +44,7 @@ This report presents a comprehensive **two-tiered feature selection architecture
 
 ### 1.1. Random Forest Importance for Overall Survival ($N = 686$)
 Random Forest feature importance (500 estimators) trained on the $N = 686$ overall survival cohort:
+
 ![Tier 1 Random Forest OS](../../plots/clinical/clinical_feature_importance.png)
 
 ### 1.2. Univariate vs. Multivariate Cox Hazard Ratio Comparison ($N = 676$)

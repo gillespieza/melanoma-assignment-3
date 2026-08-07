@@ -45,16 +45,16 @@ from src.utils.formatting import (
     format_count_percentage,
     generate_obsidian_frontmatter,
 )
+from src.utils.io import safe_save_csv
 from src.utils.logging import TeeStream
 from src.utils.paths import (
-    CONFIG_DIR,
     DATA_DIR,
     LOG_DIR,
     PLOTS_DIR,
     REPORTS_DIR,
     SUBPROJECT_ROOT,
 )
-from src.utils.plotting import save_fig
+from src.utils.plotting import build_radar_angles, save_fig
 
 set_presentation_style()
 
@@ -62,11 +62,13 @@ set_presentation_style()
 # Module-level Constants & Definitions
 # ---------------------------------------------------------------------------
 
-CONFIG_PATH = CONFIG_DIR / "datasets.yaml"
+# Derive CONFIG_PATH from _SUBPROJECT_ROOT
+CONFIG_PATH = _SUBPROJECT_ROOT / "config" / "datasets.yaml"
 PLOT_DIR = PLOTS_DIR / "clinical"
 REPORT_DIR = REPORTS_DIR / "pillar-2-clinical-subtyping"
 REPORT_PATH = REPORT_DIR / "clinical_phenotyping_and_feature_selection.md"
 LOG_PATH = LOG_DIR / "run_clinical_clustering.log"
+CLUSTER_CSV_PATH = DATA_DIR / "processed" / "merged" / "clinical_clusters.csv"
 
 FEATURE_COLS: List[str] = [
     "IFN_gamma",
@@ -227,8 +229,7 @@ def _plot_cluster_radar(df: pd.DataFrame, plot_dir: Path) -> None:
         "Age",
     ]
     n_vars = len(FEATURE_COLS)
-    angles = [n / float(n_vars) * 2 * np.pi for n in range(n_vars)]
-    angles += angles[:1]
+    angles = build_radar_angles(n_vars)
 
     fig, ax = plt.subplots(figsize=(9, 8.5), subplot_kw=dict(polar=True))
 
@@ -788,6 +789,10 @@ def main() -> None:
 
     print("\nExecuting Agglomerative Hierarchical Clustering (Ward linkage, K=3)...")
     full_df, pca_coords = _perform_clustering(full_df)
+
+    print("\nExporting cluster assignments to CSV...")
+    safe_save_csv(full_df.reset_index(), CLUSTER_CSV_PATH)
+    print(f"  Cluster CSV written to {CLUSTER_CSV_PATH.relative_to(DATA_DIR.parent).as_posix()}")
 
     counts = full_df["CLINICAL_CLUSTER"].value_counts().sort_index().tolist()
     print(f"Cluster sample sizes: {', '.join([f'{CLUSTER_PLOT_NAMES[c]} (N={counts[c]})' for c in range(3)])}")
