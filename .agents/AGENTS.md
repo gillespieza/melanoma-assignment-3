@@ -55,6 +55,15 @@ Whenever generating plots, figures, web artifacts, or presentation reports for t
   - ✅ **In scope** — apply British spelling to: markdown report body text and headings; code **comments** (`# ...`); **docstrings** (`"""..."""`); **plot title and axis label strings** (e.g. `set_title(...)`, `set_xlabel(...)`, `ax.text(...)`); **print/log output strings** and `f.write(...)` report content.
   - ❌ **Out of scope** — do **not** apply British spelling to: Python **function argument names or kwarg values** (e.g. `ha="center"`, `va="center"`, `loc="lower center"`, `color=...`, `edgecolor=...` — these are library API tokens and must match exactly what the library expects); **YAML key strings** in frontmatter or cssclass lists (e.g. `table-center` is the Obsidian CSS class name and must not be changed); **Python dictionary key strings** used as internal code identifiers (e.g. `{"color": "#aabbcc"}`); **import lines and module/class names** (e.g. `from matplotlib.colors import ...`); **variable names, loop variables, and function parameter names** (e.g. `for color in palette`, `return color`).
 - **Gene Names**: Always wrap all gene names and gene symbols in backticks (e.g., `CD274`, `PDCD1`, `BRAF`, `BRAF V600`, `BRAF V600E`, `NRAS`, `NF1`, `B2M`, `TAP1`, `JAK1`, `STAT1`) across all generated markdown files, documentation, reports, and text artifacts.
+- **Canonical Immune Signature Order**: Whenever immune signatures are listed — in code (`List[str]` constants, function arguments, column selectors), report body text, table column headers, plot axis tick labels, radar spokes, legend entries, or feature importance tables — they MUST always appear in this fixed order:
+  1. `IFN_gamma` (IFN-γ Signature)
+  2. `TIS` (Tumour Inflammation Score)
+  3. `CYT` (Cytolytic Activity Score)
+  4. `CD8_Tcell` (CD8+ T-cell Abundance)
+  5. `IMPRES` (Immune Predictive Score)
+  6. `PD_L1` (PD-L1 Expression Proxy)
+
+  This order is biologically motivated: it groups T-cell activation signatures together before moving to the checkpoint/exhaustion axis. Any re-ordering (e.g. alphabetical or arbitrary) is a style error. This applies project-wide across all scripts, notebooks, and generated artefacts.
 - **Horizontal Rules**: Never use horizontal rules (`---` or `***`) in markdown files or responses unless explicitly instructed to do so (the project's custom CSS automatically renders horizontal rules beneath `<h1>` and `<h2>` headings).
 
 

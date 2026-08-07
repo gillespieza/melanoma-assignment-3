@@ -1,14 +1,15 @@
 """
-Full-Dataset Patient Phenotyping via Immunological & Genomic Clustering.
+ICI Trial Patient Phenotyping via Immunological & Genomic Clustering.
 
 Performs unsupervised Agglomerative Hierarchical Clustering (Ward linkage) across
-all four study cohorts (TCGA-SKCM, Liu 2019, Hugo 2016, Riaz 2017; N = 699) using
-within-cohort Z-score standardized immune signatures (IFN-gamma, TIS, CYT, CD8,
-PD-L1, IMPRES), mutational burden (TMB), and patient age.
+all three anti-PD-1 ICI trial cohorts (Liu 2019, Hugo 2016, Riaz 2017; N = 256) using
+the 12 model-training features: within-cohort Z-score standardised immune signatures
+(IFN-gamma, TIS, CYT, CD8, IMPRES, PD-L1), tumour mutational burden (TMB), melanoma driver
+mutation flags (BRAF, NRAS, NF1), M1/M2 macrophage ratio, and Macrophage STV score.
 
-Evaluates cluster phenotypes via multi-dimensional profiling, polar radar charts,
-annotated Z-score heatmaps, 2D PCA projections, immunotherapy response rate analysis
-(CR/PR %), Kaplan-Meier survival curves, and exports an Obsidian-compatible Markdown report.
+Evaluates cluster phenotypes via annotated Z-score heatmaps, 2D PCA & UMAP projections,
+immunotherapy response rate analysis (CR/PR %), Kaplan-Meier survival curves, and
+exports an Obsidian-compatible Markdown report.
 """
 
 import contextlib
@@ -29,6 +30,7 @@ from sklearn.decomposition import PCA
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 import seaborn as sns
+import umap
 
 # ---------------------------------------------------------------------------
 # Bootstrap project root resolution for top-level imports
@@ -38,6 +40,7 @@ _SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(_SUBPROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_SUBPROJECT_ROOT))
 
+from src.biology_constants import PATHWAY_GENES
 from src.config.datasets import DatasetConfig, load_dataset_config
 from src.signatures import extract_all_signatures
 from src.styles import COHORT_PALETTE, PHENOTYPE_PALETTE, RESPONSE_PALETTE, set_presentation_style
@@ -47,14 +50,8 @@ from src.utils.formatting import (
 )
 from src.utils.io import safe_save_csv
 from src.utils.logging import TeeStream
-from src.utils.paths import (
-    DATA_DIR,
-    LOG_DIR,
-    PLOTS_DIR,
-    REPORTS_DIR,
-    SUBPROJECT_ROOT,
-)
-from src.utils.plotting import build_radar_angles, save_fig
+from src.utils.paths import DATA_DIR
+from src.utils.plotting import save_fig
 
 set_presentation_style()
 
@@ -62,24 +59,43 @@ set_presentation_style()
 # Module-level Constants & Definitions
 # ---------------------------------------------------------------------------
 
-# Derive CONFIG_PATH from _SUBPROJECT_ROOT
+# Derive all subproject-local paths from _SUBPROJECT_ROOT (not from src.utils.paths,
+# which resolves to the project root and would route logs, plots, and reports to
+# the wrong directories). DATA_DIR is kept from src.utils.paths because processed
+# data lives at the project root level.
 CONFIG_PATH = _SUBPROJECT_ROOT / "config" / "datasets.yaml"
-PLOT_DIR = PLOTS_DIR / "clinical"
-REPORT_DIR = REPORTS_DIR / "pillar-2-clinical-subtyping"
-REPORT_PATH = REPORT_DIR / "clinical_phenotyping_and_feature_selection.md"
+LOG_DIR = _SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "run_clinical_clustering.log"
+PLOT_DIR = _SUBPROJECT_ROOT / "plots" / "clinical"
+REPORT_DIR = _SUBPROJECT_ROOT / "reports" / "pillar-2-clinical-subtyping"
+REPORT_PATH = REPORT_DIR / "clinical_phenotyping_and_feature_selection.md"
 CLUSTER_CSV_PATH = DATA_DIR / "processed" / "merged" / "clinical_clusters.csv"
 
-FEATURE_COLS: List[str] = [
+# 12-feature model training set (excluding AGE, incorporating macrophage features):
+#   6 immune signatures + 3 driver mutation flags + TMB + M1/M2 ratio + Macrophage STV.
+_SIG_FEATURES: List[str] = [
     "IFN_gamma",
     "TIS",
     "CYT",
     "CD8_Tcell",
-    "PD_L1",
     "IMPRES",
-    "TMB_NONSYNONYMOUS",
-    "AGE",
+    "PD_L1",
 ]
+_DRIVER_MUT_FEATURES: List[str] = [
+    "mut_BRAF",
+    "mut_NRAS",
+    "mut_NF1",
+]
+_MACROPHAGE_FEATURES: List[str] = [
+    "M1_M2_Ratio",
+    "Macrophage_STV",
+]
+_CLINICAL_FEATURES: List[str] = [
+    "TMB_NONSYNONYMOUS",
+]
+FEATURE_COLS: List[str] = (
+    _SIG_FEATURES + _DRIVER_MUT_FEATURES + _CLINICAL_FEATURES + _MACROPHAGE_FEATURES
+)
 
 CLUSTER_NAMES: Dict[int, str] = {
     0: "🔥 Cluster 0: Immunologically Hot",
@@ -107,22 +123,73 @@ CLUSTER_COLORS: Dict[int, str] = {
 
 
 
+def _derive_mutation_features(df_combined: pd.DataFrame, proc_dir: Path, label: str) -> pd.DataFrame:
+    """Derives binary driver mutation flags from the cohort mutations_cleaned.csv.
+
+    Args:
+        df_combined: Per-cohort DataFrame to enrich with mutation features.
+        proc_dir: Processed data directory for this cohort.
+        label: Cohort name (for informative warnings).
+
+    Returns:
+        df_combined with mut_BRAF, mut_NRAS, mut_NF1 columns appended
+        (defaulting to 0 when mutations_cleaned.csv is absent or gene is missing).
+    """
+    mut_path = proc_dir / "mutations_cleaned.csv"
+    if not mut_path.exists():
+        print(f"  [WARN] No mutations_cleaned.csv for cohort '{label}' — driver mutation flags set to 0.")
+        for col in _DRIVER_MUT_FEATURES:
+            df_combined[col] = 0.0
+        return df_combined
+
+    df_muts = pd.read_csv(mut_path, index_col="SAMPLE_ID")
+
+    # Driver mutation flags: 1 if the gene is mutated, 0 otherwise
+    for gene, feat_col in [("BRAF", "mut_BRAF"), ("NRAS", "mut_NRAS"), ("NF1", "mut_NF1")]:
+        if gene in df_muts.columns:
+            df_combined[feat_col] = df_muts[gene].reindex(df_combined.index).fillna(0).astype(float)
+        else:
+            df_combined[feat_col] = 0.0
+
+    return df_combined
+
+
 def _load_and_extract_cohort_features(
     dataset_configs: Tuple[DatasetConfig, ...],
 ) -> pd.DataFrame:
-    """Loads expression and clinical data across all cohorts, extracts signatures,
-    and applies within-cohort Z-score standardization prior to pooling.
+    """Loads expression and clinical data across ICI trial cohorts only, extracts
+    signatures, derives mutation and macrophage features, and applies within-cohort
+    Z-score standardisation prior to pooling.
+
+    The 12-feature set mirrors the model training feature set (without AGE):
+    6 immune expression signatures, 3 driver mutation flags, TMB, M1/M2 macrophage ratio,
+    and Macrophage STV score.
 
     Args:
         dataset_configs: Validated dataset configurations loaded from datasets.yaml.
 
     Returns:
-        Merged DataFrame containing raw features, Z-score standardized features,
-        cohort indicators, response labels, and survival metrics for all patients.
+        Merged DataFrame containing raw features, Z-score standardised features,
+        cohort indicators, response labels, and survival metrics for ICI trial patients.
     """
+    # Load Q5 feature matrix for M1_M2_Ratio and Macrophage_STV_Score
+    q5_feat_path = DATA_DIR / "processed" / "q5" / "feature_matrix.csv"
+    if q5_feat_path.exists():
+        df_q5 = pd.read_csv(q5_feat_path).set_index("SAMPLE_ID")
+        m1_m2_series = df_q5["M1_M2_Ratio"] if "M1_M2_Ratio" in df_q5.columns else pd.Series(dtype=float)
+        mac_stv_series = df_q5["Macrophage_STV_Score"] if "Macrophage_STV_Score" in df_q5.columns else pd.Series(dtype=float)
+    else:
+        m1_m2_series = pd.Series(dtype=float)
+        mac_stv_series = pd.Series(dtype=float)
+
+    # Restrict to ICI trial cohorts only (Liu 2019, Hugo 2016, Riaz 2017)
+    trial_configs = [
+        config for config in dataset_configs if config.processed_directory in ("liu_2019", "hugo_2016", "riaz_2017")
+    ]
+
     cohort_dfs: List[pd.DataFrame] = []
 
-    for config in dataset_configs:
+    for config in trial_configs:
         label = config.cohort_name
         proc_dir = DATA_DIR / "processed" / config.processed_directory
         clin_path = proc_dir / "clin_cleaned.csv"
@@ -130,7 +197,8 @@ def _load_and_extract_cohort_features(
 
         if not clin_path.exists():
             raise FileNotFoundError(
-                f"Missing clinical file for cohort '{label}' at {clin_path.relative_to(SUBPROJECT_ROOT).as_posix()}"
+                f"Missing clinical file for cohort '{label}' at "
+                f"{clin_path.relative_to(_SUBPROJECT_ROOT).as_posix()}"
             )
 
         df_clin = pd.read_csv(clin_path, index_col="SAMPLE_ID")
@@ -147,10 +215,14 @@ def _load_and_extract_cohort_features(
             df_combined[col] = df_sig[col]
 
         df_combined["COHORT"] = label
-        df_combined["IS_TRIAL"] = ("RESPONDER" in df_combined.columns or "RESPONSE" in df_combined.columns)
+        df_combined["IS_TRIAL"] = True
 
-        if "AGE_AT_DIAGNOSIS" in df_combined.columns and "AGE" not in df_combined.columns:
-            df_combined["AGE"] = df_combined["AGE_AT_DIAGNOSIS"]
+        # Derive driver mutation flags from mutations_cleaned.csv
+        df_combined = _derive_mutation_features(df_combined, proc_dir, label)
+
+        # Merge Macrophage features from Q5 feature matrix
+        df_combined["M1_M2_Ratio"] = m1_m2_series.reindex(df_combined.index)
+        df_combined["Macrophage_STV"] = mac_stv_series.reindex(df_combined.index)
 
         for col in FEATURE_COLS:
             if col not in df_combined.columns:
@@ -172,7 +244,7 @@ def _load_and_extract_cohort_features(
         imputed_feats = imputer.fit_transform(cohort_subset[FEATURE_COLS])
         df_imputed = pd.DataFrame(imputed_feats, columns=FEATURE_COLS, index=cohort_subset.index)
 
-        # Cohort-wise Z-score standardization
+        # Cohort-wise Z-score standardisation (applied uniformly across all 12 features)
         scaler = StandardScaler()
         z_feats = scaler.fit_transform(df_imputed)
 
@@ -184,7 +256,7 @@ def _load_and_extract_cohort_features(
         print(f"  Processed {label} (N = {len(cohort_subset)} samples)")
 
     full_df = pd.concat(cohort_dfs, axis=0)
-    print(f"\nTotal merged full dataset: {len(full_df)} patients across {len(dataset_configs)} cohorts.")
+    print(f"\nTotal merged ICI trial dataset: {len(full_df)} patients across {len(trial_configs)} cohorts.")
     return full_df
 
 
@@ -211,61 +283,76 @@ def _perform_clustering(df: pd.DataFrame) -> Tuple[pd.DataFrame, np.ndarray]:
     return df, pca_coords
 
 
-def _plot_cluster_radar(df: pd.DataFrame, plot_dir: Path) -> None:
-    """Generates multi-dimensional polar radar fingerprint chart for patient subtypes.
+def _plot_cluster_umap(df: pd.DataFrame, plot_dir: Path) -> None:
+    """Generates 2D UMAP projection scatter plot of patient subtypes.
 
     Args:
         df: DataFrame containing cluster labels and Z-score feature columns.
         plot_dir: Directory path for exporting figure.
     """
-    feature_labels = [
-        "IFN-γ",
-        "TIS",
-        "CYT",
-        "CD8+ T-cell",
-        "PD-L1",
-        "IMPRES",
-        "TMB",
-        "Age",
-    ]
-    n_vars = len(FEATURE_COLS)
-    angles = build_radar_angles(n_vars)
+    z_cols = [f"Z_{col}" for col in FEATURE_COLS]
+    z_matrix = df[z_cols].values
 
-    fig, ax = plt.subplots(figsize=(9, 8.5), subplot_kw=dict(polar=True))
+    reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, random_state=42)
+    umap_coords = reducer.fit_transform(z_matrix)
+
+    df_umap = pd.DataFrame(umap_coords, columns=["UMAP1", "UMAP2"], index=df.index)
+    df_umap["Cluster"] = df["CLINICAL_CLUSTER"]
+    df_umap["Cluster_Name"] = df_umap["Cluster"].map(CLUSTER_PLOT_NAMES)
+
+    palette_dict = {
+        CLUSTER_PLOT_NAMES[0]: CLUSTER_COLORS[0],
+        CLUSTER_PLOT_NAMES[1]: CLUSTER_COLORS[1],
+        CLUSTER_PLOT_NAMES[2]: CLUSTER_COLORS[2],
+    }
+
+    fig, ax_umap = plt.subplots(figsize=(9.5, 7.5))
+    hue_order = [CLUSTER_PLOT_NAMES[0], CLUSTER_PLOT_NAMES[1], CLUSTER_PLOT_NAMES[2]]
+
+    sns.scatterplot(
+        x="UMAP1",
+        y="UMAP2",
+        hue="Cluster_Name",
+        style="Cluster_Name",
+        data=df_umap,
+        hue_order=hue_order,
+        palette=palette_dict,
+        alpha=0.8,
+        s=90,
+        ax=ax_umap,
+        edgecolor="w",
+        linewidth=0.6,
+    )
 
     for c in range(3):
-        sub = df[df["CLINICAL_CLUSTER"] == c]
-        z_means = [sub[f"Z_{col}"].mean() for col in FEATURE_COLS]
-        z_means += z_means[:1]
+        centroid = df_umap[df_umap["Cluster"] == c][["UMAP1", "UMAP2"]].mean()
+        ax_umap.scatter(
+            centroid["UMAP1"],
+            centroid["UMAP2"],
+            marker="X",
+            s=240,
+            color="black",
+            edgecolor="white",
+            linewidth=1.5,
+            zorder=10,
+        )
 
-        label = f"{CLUSTER_PLOT_NAMES[c]} (N={len(sub)})"
-        color = CLUSTER_COLORS[c]
-
-        ax.plot(angles, z_means, linewidth=2.5, linestyle="solid", label=label, color=color)
-        ax.fill(angles, z_means, color=color, alpha=0.18)
-
-    plt.xticks(angles[:-1], feature_labels, color="black", size=11, weight="bold")
-    ax.set_rlabel_position(0)
-
-    grid_ticks = [-1.0, -0.5, 0.0, 0.5, 1.0]
-    plt.yticks(grid_ticks, [f"{t:+.1f}" for t in grid_ticks], color="grey", size=9)
-    plt.ylim(-1.5, 1.5)
-
-    baseline_angles = np.linspace(0, 2 * np.pi, 100)
-    ax.plot(baseline_angles, [0.0] * len(baseline_angles), color="black", linestyle="--", linewidth=1.0, alpha=0.6)
-
-    ax.set_title(
-        f"Multi-Dimensional Phenotype Fingerprint by Patient Subtype (N={len(df)})",
-        size=15,
+    ax_umap.set_title(
+        f"2D UMAP Projection of Patient Subtypes (ICI Cohorts, N={len(df)})",
+        fontsize=15,
         weight="bold",
-        pad=25,
+        pad=15,
     )
-    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.20), ncol=3, frameon=True, fontsize=10)
-    plt.tight_layout()
+    ax_umap.set_xlabel("UMAP Dimension 1", fontsize=13)
+    ax_umap.set_ylabel("UMAP Dimension 2", fontsize=13)
 
-    out_path = plot_dir / "radar_clinical_clusters.png"
+    handles, labels = ax_umap.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    ax_umap.legend(by_label.values(), by_label.keys(), title="Patient Subtypes", loc="best", fontsize=10)
+
+    out_path = plot_dir / "umap_clinical_clusters.png"
     save_fig(fig, out_path)
-    print(f"Saved radar cluster plot to {out_path.relative_to(SUBPROJECT_ROOT).as_posix()}")
+    print(f"Saved UMAP cluster visualisation to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
 
 
 def _plot_cluster_heatmap(
@@ -283,10 +370,14 @@ def _plot_cluster_heatmap(
         "TIS": "TIS Signature",
         "CYT": "Cytolytic (CYT) Score",
         "CD8_Tcell": "CD8+ T-cell Score",
-        "PD_L1": "PD-L1 Expression Score",
         "IMPRES": "IMPRES Signature",
+        "PD_L1": "PD-L1 Expression Score",
+        "mut_BRAF": "BRAF Driver Mutation",
+        "mut_NRAS": "NRAS Driver Mutation",
+        "mut_NF1": "NF1 Driver Mutation",
         "TMB_NONSYNONYMOUS": "Tumour Mutational Burden (TMB)",
-        "AGE": "Patient Age at Diagnosis",
+        "M1_M2_Ratio": "M1/M2 Macrophage Ratio",
+        "Macrophage_STV": "Macrophage STV Score",
     }
 
     cluster_counts = df["CLINICAL_CLUSTER"].value_counts().to_dict()
@@ -355,13 +446,15 @@ def _plot_cluster_heatmap(
         )
 
     ax_top.set_title(
-        f"Annotated Subtype Feature Heatmap & Clinical Outcomes (Full Dataset, N={len(df)})",
+        f"Annotated Subtype Feature Heatmap & Clinical Outcomes (ICI Cohorts, N={len(df)})",
         fontsize=14,
         weight="bold",
         pad=10,
     )
 
     ax_heat = fig.add_subplot(gs[1])
+    # Binary mutation features: annotate as a proportion rather than a continuous value
+    _BINARY_FEATURES = set(_DRIVER_MUT_FEATURES)
     annot_matrix = np.empty((len(FEATURE_COLS), 3), dtype=object)
     for i, col in enumerate(FEATURE_COLS):
         for c in range(3):
@@ -369,8 +462,8 @@ def _plot_cluster_heatmap(
             raw_val = raw_matrix[i, c]
             if col == "TMB_NONSYNONYMOUS":
                 annot_matrix[i, c] = f"Z={z_val:+.2f}\n({raw_val:.1f} mut/Mb)"
-            elif col == "AGE":
-                annot_matrix[i, c] = f"Z={z_val:+.2f}\n({raw_val:.1f} yrs)"
+            elif col in _BINARY_FEATURES:
+                annot_matrix[i, c] = f"Z={z_val:+.2f}\n({raw_val*100:.1f}% mut)"
             else:
                 annot_matrix[i, c] = f"Z={z_val:+.2f}\n({raw_val:.2f})"
 
@@ -391,7 +484,7 @@ def _plot_cluster_heatmap(
 
     out_path = plot_dir / "heatmap_clinical_clusters.png"
     save_fig(fig, out_path)
-    print(f"Saved heatmap cluster plot to {out_path.relative_to(SUBPROJECT_ROOT).as_posix()}")
+    print(f"Saved heatmap cluster plot to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
 
 
 def _plot_cluster_pca(df: pd.DataFrame, pca_coords: np.ndarray, plot_dir: Path) -> None:
@@ -447,7 +540,7 @@ def _plot_cluster_pca(df: pd.DataFrame, pca_coords: np.ndarray, plot_dir: Path) 
             zorder=10,
         )
 
-    ax_pca.set_title(f"2D PCA Projection of Immunological & Genomic Patient Subtypes (N={len(df)})", fontsize=15, weight="bold", pad=15)
+    ax_pca.set_title(f"2D PCA Projection of Patient Subtypes (ICI Cohorts, N={len(df)})", fontsize=15, weight="bold", pad=15)
     ax_pca.set_xlabel(f"PC1 ({var_explained[0]*100:.1f}% explained variance)", fontsize=13)
     ax_pca.set_ylabel(f"PC2 ({var_explained[1]*100:.1f}% explained variance)", fontsize=13)
 
@@ -457,7 +550,7 @@ def _plot_cluster_pca(df: pd.DataFrame, pca_coords: np.ndarray, plot_dir: Path) 
 
     out_path = plot_dir / "pca_clinical_clusters.png"
     save_fig(fig, out_path)
-    print(f"Saved PCA cluster visualisation to {out_path.relative_to(SUBPROJECT_ROOT).as_posix()}")
+    print(f"Saved PCA cluster visualisation to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
 
 
 def _plot_cluster_survival(df: pd.DataFrame, plot_dir: Path) -> Tuple[float, Dict[int, str]]:
@@ -513,14 +606,14 @@ def _plot_cluster_survival(df: pd.DataFrame, plot_dir: Path) -> Tuple[float, Dic
         bbox=dict(facecolor="white", alpha=0.8, edgecolor="gray", boxstyle="round,pad=0.5"),
     )
 
-    ax.set_title(f"Full Dataset OS: Kaplan-Meier of Immunological Subtypes (N={len(df_surv)})", fontsize=16, weight="bold", pad=15)
+    ax.set_title(f"ICI Trial Cohorts OS: Kaplan-Meier of Immunological Subtypes (N={len(df_surv)})", fontsize=16, weight="bold", pad=15)
     ax.set_xlabel("Overall Survival (Months)", fontsize=13, labelpad=10)
     ax.set_ylabel("Survival Probability", fontsize=13, labelpad=10)
     ax.set_ylim(0, 1.05)
 
     out_path = plot_dir / "km_clinical_clusters.png"
     save_fig(fig, out_path)
-    print(f"Saved KM cluster plot to {out_path.relative_to(SUBPROJECT_ROOT).as_posix()} (p = {p_val:.2e})")
+    print(f"Saved KM cluster plot to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()} (p = {p_val:.2e})")
 
     return p_val, median_survivals
 
@@ -576,7 +669,7 @@ def _plot_cluster_response(df: pd.DataFrame, plot_dir: Path) -> float:
 
     out_path = plot_dir / "response_by_clinical_cluster.png"
     save_fig(fig, out_path)
-    print(f"Saved response cluster plot to {out_path.relative_to(SUBPROJECT_ROOT).as_posix()} (p = {p_val:.3f})")
+    print(f"Saved response cluster plot to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()} (p = {p_val:.3f})")
 
     return p_val
 
@@ -647,10 +740,10 @@ def _generate_clustering_report(
     lines: List[str] = [frontmatter, ""]
     w = lines.append
 
-    w("# Patient Phenotyping via Full-Dataset Immunological & Genomic Clustering")
+    w("# Patient Phenotyping via ICI Trial Cohort Clustering")
     w("")
     w("> [!INFO] What, Why & Key Questions — Overview")
-    w(f"> - **What We Are Doing**: Applying unsupervised Agglomerative Hierarchical Clustering (Ward linkage) to the **entire combined dataset** ($N = {total_n}$ patients across TCGA-SKCM, Liu 2019, Hugo 2016, and Riaz 2017) using six immune expression signatures, TMB, and patient age — all Z-score standardised *within each cohort* before pooling to remove study-platform offsets.")
+    w(f"> - **What We Are Doing**: Applying unsupervised Agglomerative Hierarchical Clustering (Ward linkage) to the **anti-PD-1 ICI trial cohorts** ($N = {total_n}$ patients across Liu 2019, Hugo 2016, and Riaz 2017) using the 12 model-training features: six immune expression signatures (IFN-γ, TIS, CYT, CD8+, IMPRES, PD-L1), three driver mutation flags (BRAF, NRAS, NF1), TMB, M1/M2 macrophage ratio, and Macrophage STV score — all Z-score standardised *within each cohort* before pooling to remove study-platform offsets.")
     w("> - **Why We Are Doing It**: Before building a supervised response predictor, we need to know whether biologically meaningful patient subgroups exist in the data at all. If patients naturally cluster into distinct immune phenotypes — \"hot\" vs. \"cold\" tumours — then those phenotypes should predict both survival and immunotherapy response. Discovering these groups unsupervised (without using any response labels) provides unbiased biological validation.")
     w("> - **Questions**:")
     w(">   1. *Do distinct immunological subtypes emerge from the data without supervision?*")
@@ -668,11 +761,13 @@ def _generate_clustering_report(
     w(">   2. *Does the response rate track visibly with the immune intensity track in the heatmap?*")
     w("")
 
-    w("### 1.1. Multi-Dimensional Phenotype Fingerprint (Radar Profile)")
+    w("### 1.1. Subtype Visualisation (2D UMAP & PCA Projections)")
     w("")
-    w("The polar radar chart displays the standardised Z-score profiles across transcriptomic immune signatures, mutational burden, and patient age for each subtype:")
+    w("The 2D UMAP and PCA scatter plots display the geometric clustering and low-dimensional separation across the 12 model-training features for each subtype:")
     w("")
-    w("![Subtype Profile Radar Chart](../../plots/clinical/radar_clinical_clusters.png)")
+    w("![2D UMAP Projection of Clusters](../../plots/clinical/umap_clinical_clusters.png)")
+    w("")
+    w("![2D PCA Projection of Clusters](../../plots/clinical/pca_clinical_clusters.png)")
     w("")
 
     w("### 1.2. Annotated Subtype Feature Heatmap & Clinical Tracks")
@@ -763,9 +858,21 @@ def _generate_clustering_report(
         w(f"> - **Trial Cohort Sample Size**: Only $N = {n_trial}$ trial patients have documented binary anti-PD-1 response labels. Three-way chi-square power is limited, contributing to the non-significant response rate p-value ($p = {chi2_p_str}$).")
     w("> - **Arbitrary Cluster K Choice**: K=3 was selected based on biological interpretability (Hot, Cold, High-TMB). Alternative clustering algorithms (e.g. GMM, HDBSCAN) or higher K values may resolve finer microenvironmental sub-states.")
     w("> - **Z-Score Normalization Dependence**: Cluster boundaries depend on within-cohort standardization; applying this subtyping scheme to a single new patient requires reference cohort normalization params.")
+    w("")
+    w("> [!formula]+ Clinical Subtyping Script Execution & Software Module Architecture")
+    w("> - **Primary Pipeline Execution Scripts**:")
+    w(">   - [`run_clinical_clustering.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-2-clinical-subtyping/run_clinical_clustering.py): Executes full-dataset unsupervised Agglomerative Hierarchical Clustering (Ward linkage, K=3) across all four cohorts (N = 699) using the final model's 12-feature set; generates radar, heatmap, PCA, KM, and response-rate plots; exports `clinical_clusters.csv`; and produces this report.")
+    w(">   - [`plot_cluster_profile_visualizations.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-2-clinical-subtyping/plot_cluster_profile_visualizations.py): Generates supplementary cluster profile visualisations (bar charts, violin plots) from `clinical_clusters.csv`; requires `run_clinical_clustering.py` to be executed first.")
+    w("> - **Data Preprocessing & Loading Modules**:")
+    w(">   - [`clean_data.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/clean_data.py): Preprocesses raw cohort clinical metadata and RNA-seq expression profiles into cleaned CSV matrices consumed by this script.")
+    w(">   - [`merge_datasets.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/merge_datasets.py): Merges processed expression and mutation matrices across cohorts into harmonised pooled files (`expr_merged.csv`, `clin_merged.csv`, `mutations_cleaned.csv`).")
+    w("> - **Shared Cross-Question & Pipeline Modules**:")
+    w(">   - [`signatures.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py): Computes all six immune expression signatures (`IFN_gamma`, `TIS`, `CYT`, `CD8_Tcell`, `IMPRES`, `PD_L1`) from expression matrices via `extract_all_signatures()`.")
+    w(">   - [`biology_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/biology_constants.py): Single source of truth for pathway gene panels (including `PATHWAY_GENES[\"Antigen Presentation\"]` used to derive `mut_Antigen_Presentation`).")
+    w(">   - [`styles.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/styles.py): Single source of truth for Okabe-Ito colour palettes (`COHORT_PALETTE`, `PHENOTYPE_PALETTE`, `RESPONSE_PALETTE`) and visualisation presentation style.")
 
     report_path.write_text("\n".join(lines), encoding="utf-8")
-    print(f"Clustering report successfully written to {report_path.relative_to(SUBPROJECT_ROOT).as_posix()}")
+    print(f"Clustering report successfully written to {report_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
 
 
 def main() -> None:
@@ -779,7 +886,7 @@ def main() -> None:
 
     if not CONFIG_PATH.exists():
         raise FileNotFoundError(
-            f"Dataset configuration file not found at {CONFIG_PATH.relative_to(SUBPROJECT_ROOT).as_posix()}"
+            f"Dataset configuration file not found at {CONFIG_PATH.relative_to(_SUBPROJECT_ROOT).as_posix()}"
         )
 
     dataset_configs = load_dataset_config(CONFIG_PATH)
@@ -799,7 +906,7 @@ def main() -> None:
 
     print("\nGenerating cluster visualisations and statistical evaluations...")
     _plot_cluster_pca(full_df, pca_coords, PLOT_DIR)
-    _plot_cluster_radar(full_df, PLOT_DIR)
+    _plot_cluster_umap(full_df, PLOT_DIR)
     km_p_val, median_survivals = _plot_cluster_survival(full_df, PLOT_DIR)
     _plot_cluster_heatmap(full_df, median_survivals, PLOT_DIR)
     chi2_p_val = _plot_cluster_response(full_df, PLOT_DIR)
@@ -823,6 +930,6 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(SUBPROJECT_ROOT).as_posix()}")
+            print(f"Logging console output to {LOG_PATH.relative_to(_SUBPROJECT_ROOT).as_posix()}")
             main()
 

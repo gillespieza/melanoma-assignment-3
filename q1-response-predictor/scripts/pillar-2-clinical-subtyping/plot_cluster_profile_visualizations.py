@@ -1,10 +1,9 @@
 """
 Cluster Profile Visualisations for Clinical Phenotyping.
 
-Generates a presentation-ready polar radar profile fingerprint chart
-for patient clusters identified via Ward's hierarchical clustering,
-reading live cluster assignments from the persisted CSV output of
-run_clinical_clustering.py.
+Generates a presentation-ready 2D UMAP profile scatter plot for patient clusters
+identified via Ward's hierarchical clustering, reading live cluster assignments from
+the persisted CSV output of run_clinical_clustering.py.
 
 Prerequisite: run_clinical_clustering.py must be executed first so that
 data/processed/merged/clinical_clusters.csv exists.
@@ -19,6 +18,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
+import umap
 
 # ---------------------------------------------------------------------------
 # Bootstrap project root resolution for top-level imports
@@ -31,7 +32,7 @@ if str(BASE_DIR) not in sys.path:
 from src.styles import PHENOTYPE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, PLOTS_DIR, get_subproject_log_dir, rel_path
-from src.utils.plotting import build_radar_angles, save_fig
+from src.utils.plotting import save_fig
 
 set_presentation_style()
 
@@ -48,51 +49,37 @@ PLOT_DIR = PLOTS_DIR / "clinical"
 # CSV produced by run_clinical_clustering.py — prerequisite for this script
 CLUSTER_CSV_PATH = DATA_DIR / "processed" / "merged" / "clinical_clusters.csv"
 
-# Cluster colour palette: sourced from PHENOTYPE_PALETTE, consistent with
-# CLUSTER_COLORS in run_clinical_clustering.py (AGENTS.md Rules 3, 12).
+# Cluster colour palette: sourced from PHENOTYPE_PALETTE
 CLUSTER_COLORS: dict[int, str] = {
     0: PHENOTYPE_PALETTE["Immune Hot"],                 # Vermillion Red (#D55E00)
     1: PHENOTYPE_PALETTE["Immune Cold"],                # Okabe-Ito Blue (#0072B2)
     2: PHENOTYPE_PALETTE["Immunosuppressive M2-High"],  # Reddish Purple (#CC79A7)
 }
 
-# Short display names aligned with run_clinical_clustering.CLUSTER_PLOT_NAMES
 _CLUSTER_LABELS: dict[int, str] = {
     0: "Cluster 0 (Hot)",
     1: "Cluster 1 (Cold)",
     2: "Cluster 2 (High-TMB)",
 }
 
-# Radar axis configuration: (display label, source column in cluster CSV)
-# These clinical/genomic axes complement (not duplicate) the Z-score axes in
-# run_clinical_clustering._plot_cluster_radar.
-_RADAR_AXES: list[tuple[str, str]] = [
-    ("TMB",         "TMB_NONSYNONYMOUS"),
-    ("IFN-γ Score", "IFN_gamma"),
-    ("CD8+ T-cell", "CD8_Tcell"),
-    ("CYT Score",   "CYT"),
-    ("PD-L1 Proxy", "PD_L1"),
-    ("IMPRES",      "IMPRES"),
-    ("Median OS",   "_os_median"),   # Sentinel: computed from OS_MONTHS
+_FEATURE_COLS: list[str] = [
+    "IFN_gamma",
+    "TIS",
+    "CYT",
+    "CD8_Tcell",
+    "IMPRES",
+    "PD_L1",
+    "mut_BRAF",
+    "mut_NRAS",
+    "mut_NF1",
+    "TMB_NONSYNONYMOUS",
+    "M1_M2_Ratio",
+    "Macrophage_STV",
 ]
-
-_N_CLUSTERS = 3
-
-
-# ---------------------------------------------------------------------------
-# Private helpers
-# ---------------------------------------------------------------------------
 
 
 def _load_cluster_data() -> pd.DataFrame:
-    """Loads the persisted cluster assignment CSV from run_clinical_clustering.py.
-
-    Returns:
-        DataFrame with CLINICAL_CLUSTER assignments and feature columns.
-
-    Raises:
-        FileNotFoundError: If the cluster CSV does not exist.
-    """
+    """Loads the persisted cluster assignment CSV from run_clinical_clustering.py."""
     if not CLUSTER_CSV_PATH.exists():
         raise FileNotFoundError(
             f"Cluster data not found at {rel_path(CLUSTER_CSV_PATH)}. "
@@ -101,103 +88,75 @@ def _load_cluster_data() -> pd.DataFrame:
     return pd.read_csv(CLUSTER_CSV_PATH, encoding="utf-8")
 
 
-def _compute_radar_values(df: pd.DataFrame) -> dict[int, list[float]]:
-    """Computes per-cluster radar axis values, normalised to [0, 1] across clusters.
-
-    Args:
-        df: DataFrame with CLINICAL_CLUSTER assignments and feature columns.
-
-    Returns:
-        Dict mapping cluster index to a list of normalised axis values.
-    """
-    raw: dict[int, list[float]] = {}
-    for c in range(_N_CLUSTERS):
-        sub = df[df["CLINICAL_CLUSTER"] == c]
-        row: list[float] = []
-        for _, col in _RADAR_AXES:
-            if col == "_os_median":
-                val = sub["OS_MONTHS"].median() if "OS_MONTHS" in sub.columns else 0.0
-            else:
-                val = sub[col].mean() if col in sub.columns else 0.0
-            row.append(float(np.nan_to_num(val, nan=0.0)))
-        raw[c] = row
-
-    # Min-max normalise each axis across clusters so all axes span [0, 1]
-    n_axes = len(_RADAR_AXES)
-    all_vals = np.array([raw[c] for c in range(_N_CLUSTERS)])
-    col_max = all_vals.max(axis=0)
-    col_max[col_max == 0] = 1.0  # Prevent zero-division for constant axes
-
-    return {c: (np.array(raw[c]) / col_max).tolist() for c in range(_N_CLUSTERS)}
-
-
-def _render_radar_chart(
-    ax: plt.Axes,
-    angles: list[float],
-    cluster_values: dict[int, list[float]],
-    cluster_ns: dict[int, int],
-) -> None:
-    """Renders cluster traces onto an existing polar Axes.
-
-    Args:
-        ax: Matplotlib polar Axes to draw on.
-        angles: Closed-loop angle array from build_radar_angles().
-        cluster_values: Normalised [0, 1] radar values per cluster.
-        cluster_ns: Patient count per cluster for legend labels.
-    """
-    categories = [label for label, _ in _RADAR_AXES]
-    for c, vals in cluster_values.items():
-        closed_vals = vals + vals[:1]
-        label = f"{_CLUSTER_LABELS[c]} (N={cluster_ns.get(c, 0)})"
-        ax.plot(angles, closed_vals, linewidth=2.5, linestyle="solid",
-                label=label, color=CLUSTER_COLORS[c])
-        ax.fill(angles, closed_vals, color=CLUSTER_COLORS[c], alpha=0.15)
-
-    plt.xticks(angles[:-1], categories, color="black", size=10, weight="bold")
-    ax.set_rlabel_position(0)
-    plt.yticks(
-        [0.2, 0.4, 0.6, 0.8, 1.0],
-        ["0.2", "0.4", "0.6", "0.8", "1.0"],
-        color="grey",
-        size=8,
-    )
-    plt.ylim(0, 1.05)
-
-
-def _plot_cluster_radar(plot_dir: Path) -> None:
-    """Generates a multi-dimensional polar radar fingerprint chart for clinical clusters.
-
-    Loads live cluster assignments from CLUSTER_CSV_PATH, computes per-cluster
-    axis values dynamically, and saves a PNG to plot_dir.
-
-    Args:
-        plot_dir: Directory path to export the plot artifact.
-    """
+def _plot_cluster_umap(plot_dir: Path) -> None:
+    """Generates a 2D UMAP scatter plot for clinical clusters."""
     df = _load_cluster_data()
-    cluster_ns: dict[int, int] = df["CLINICAL_CLUSTER"].value_counts().to_dict()
-    cluster_values = _compute_radar_values(df)
-    angles = build_radar_angles(len(_RADAR_AXES))
+    z_cols = [f"Z_{c}" for c in _FEATURE_COLS if f"Z_{c}" in df.columns]
+    if not z_cols:
+        z_cols = [c for c in _FEATURE_COLS if c in df.columns]
 
-    fig, ax = plt.subplots(figsize=(8.5, 8.5), subplot_kw=dict(polar=True))
-    _render_radar_chart(ax, angles, cluster_values, cluster_ns)
+    z_matrix = df[z_cols].values
+
+    reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, random_state=42)
+    umap_coords = reducer.fit_transform(z_matrix)
+
+    df_umap = pd.DataFrame(umap_coords, columns=["UMAP1", "UMAP2"], index=df.index)
+    df_umap["Cluster"] = df["CLINICAL_CLUSTER"]
+    df_umap["Cluster_Name"] = df_umap["Cluster"].map(_CLUSTER_LABELS)
+
+    palette_dict = {
+        _CLUSTER_LABELS[0]: CLUSTER_COLORS[0],
+        _CLUSTER_LABELS[1]: CLUSTER_COLORS[1],
+        _CLUSTER_LABELS[2]: CLUSTER_COLORS[2],
+    }
+    fig, ax_umap = plt.subplots(figsize=(9, 7.5))
+    hue_order = [_CLUSTER_LABELS[0], _CLUSTER_LABELS[1], _CLUSTER_LABELS[2]]
+
+    sns.scatterplot(
+        x="UMAP1",
+        y="UMAP2",
+        hue="Cluster_Name",
+        style="Cluster_Name",
+        data=df_umap,
+        hue_order=hue_order,
+        palette=palette_dict,
+        alpha=0.8,
+        s=90,
+        ax=ax_umap,
+        edgecolor="w",
+        linewidth=0.6,
+    )
+
+    for c in range(3):
+        centroid = df_umap[df_umap["Cluster"] == c][["UMAP1", "UMAP2"]].mean()
+        ax_umap.scatter(
+            centroid["UMAP1"],
+            centroid["UMAP2"],
+            marker="X",
+            s=240,
+            color="black",
+            edgecolor="white",
+            linewidth=1.5,
+            zorder=10,
+        )
 
     n_total = len(df)
-    ax.set_title(
-        f"Multi-Dimensional Clinical Profile Fingerprint (N={n_total})",
+    ax_umap.set_title(
+        f"2D UMAP Projection of Patient Subtypes (N={n_total})",
         size=14,
         weight="bold",
-        pad=25,
+        pad=15,
     )
-    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.18), ncol=3, frameon=True)
+    ax_umap.set_xlabel("UMAP Dimension 1", fontsize=12)
+    ax_umap.set_ylabel("UMAP Dimension 2", fontsize=12)
 
-    out_path = plot_dir / "cluster_profile_radar.png"
+    handles, labels = ax_umap.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    ax_umap.legend(by_label.values(), by_label.keys(), title="Patient Subtypes", loc="best", fontsize=10)
+
+    out_path = plot_dir / "cluster_profile_umap.png"
     save_fig(fig, out_path)
-    print(f"Saved Cluster Profile Radar Chart to {rel_path(out_path)}")
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
+    print(f"Saved Cluster Profile UMAP Chart to {rel_path(out_path)}")
 
 
 def main() -> None:
@@ -207,7 +166,7 @@ def main() -> None:
     print("==================================================\n")
 
     PLOT_DIR.mkdir(parents=True, exist_ok=True)
-    _plot_cluster_radar(PLOT_DIR)
+    _plot_cluster_umap(PLOT_DIR)
 
     print("\n==================================================")
     print("Done!")
