@@ -9,12 +9,12 @@ tags:
   - tmb
   - neoantigens
   - comut
-created: 2026-08-07 10:11
+created: 2026-08-07 13:41
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-07 10:11
+updated: 2026-08-07 13:41
 ---
 
 # Genomic Characteristics of Data Cohorts
@@ -24,9 +24,9 @@ updated: 2026-08-07 10:11
 > [!INFO] Why We Are Doing This
 >
 > **What**: We compare somatic mutation frequencies of key cutaneous melanoma driver genes
-> (`BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across all four study cohorts:
-> **TCGA-SKCM** ($N = 428$), **Liu 2019** ($N = 122$), **Hugo 2016**
-> ($N = 27$), and **Riaz 2017** ($N = 107$).
+> (`BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across the three ICI trial
+> cohorts: **Liu 2019** ($N = 122$), **Hugo 2016** ($N = 27$),
+> and **Riaz 2017** ($N = 107$).
 > **Why**: To confirm that our clinical trial cohorts accurately reflect real-world melanoma
 > epidemiology and to evaluate whether pre-treatment mutations in antigen presentation
 > (`B2M`, `TAP1`, `TAP2`) or IFN-$\gamma$ signalling (`JAK1`, `JAK2`, `STAT1`) drive primary
@@ -34,8 +34,7 @@ updated: 2026-08-07 10:11
 > **Question Answered**: Are clinical trial cohorts representative of baseline melanoma genomics,
 > and do patients harbour pre-existing mutations in immune evasion pathways prior to therapy?
 
-This report presents a comparative analysis of the genomic features across study cohorts:
-- **TCGA-SKCM**: Baseline genomic reference population ($N = 428$).
+This report presents a comparative analysis of the genomic features across the three ICI trial cohorts:
 - **Liu 2019**: Anti-PD-1 clinical trial cohort ($N = 122$).
 - **Hugo 2016**: Anti-PD-1 clinical trial cohort ($N = 27$).
 - **Riaz 2017**: Anti-PD-1 clinical trial cohort ($N = 107$).
@@ -44,42 +43,22 @@ This report presents a comparative analysis of the genomic features across study
 
 ![Driver Mutation Frequencies](../../plots/genomic/genomic_driver_frequencies.png)
 
-_**Figure 1: Driver Mutation Frequencies across Melanoma Cohorts.** Frequencies of `BRAF`,
-`NRAS`, `NF1`, and Triple-WT genotypes across individual trial cohorts and TCGA-SKCM reference._
-
-### 1.2 Extended Pathway Somatic Mutation Frequencies
-
-To further characterse tumour immunogenicity and mechanisms of resistance, we evaluated
-- **Antigen Presentation Machinery**: `B2M`, `TAP1`, `TAP2`
-  (loss causes HLA class I downregulation).
-- **IFN-$\gamma$ Signalling**: `JAK1`, `JAK2`, `STAT1`
-  (induces insensitivity to T-cell cytotoxicity).
-- **Immune Checkpoints**: `CD274`, `CTLA4`, `IDO1` (modulators of immune evasion).
-- **Cytolytic Machinery**: `GZMA`, `PRF1` (effectors of cytotoxic lymphocyte killing).
-- **Survival & Proliferation Drivers**: `PTEN`, `CDKN2A`, `PIK3CA` (oncogenic drivers).
-
-![Extended Pathway Mutation Frequencies](
-../../plots/genomic/extended_pathway_mutation_frequencies.png
-)
-
-_**Figure 2: Pre-Treatment Somatic Mutation & Pathway Frequencies across Cohorts.**_
+_**Figure 1: Driver Mutation Frequencies across ICI Trial Cohorts.** Frequencies of `BRAF`,
+`NRAS`, `NF1`, and Triple-WT genotypes across Liu 2019, Hugo 2016, and Riaz 2017._
 
 > [!INSIGHT] Key Insights: Mutation Landscape
 >
-> 1. **Alignment with Real-World Melanoma Genetics**: The reference **TCGA-SKCM** cohort
-> ($N = 428$) closely matches expected cutaneous melanoma driver distribution (`BRAF`:
-> **52.1%**, `NRAS`: **28.0%**, `NF1`: **17.1%**,
-> Triple-WT: **15.2%**).
-> 2. **Representative Clinical Trial Cohorts**: All trial cohorts align closely with TCGA baseline
-> frequencies. **Liu 2019** ($N = 122$) displays representative driver mutation rates
-> (`BRAF`: **41.0%**, `NRAS`: **30.3%**, `NF1`:
-> **17.2%**). **Riaz 2017** ($N = 107$) also mirrors expected distribution
-> (`BRAF`: **23.4%**, `NRAS`: **18.7%**, `NF1`:
-> **3.7%**, Triple-WT: **58.9%**).
-> 3. **MAPK Driver Mutual Exclusivity**: Driver mutations act through independent growth
+> 1. **Consistent Driver Mutation Profiles Across ICI Trial Cohorts**: Driver mutation frequencies
+> are broadly consistent across all three trial cohorts. **Liu 2019** (`BRAF`: **41.0%**,
+> `NRAS`: **30.3%**, `NF1`: **17.2%**, Triple-WT: **23.8%**);
+> **Hugo 2016** (`BRAF`: **59.3%**, `NRAS`: **18.5%**, `NF1`:
+> **25.9%**, Triple-WT: **14.8%**); **Riaz 2017** (`BRAF`:
+> **23.4%**, `NRAS`: **18.7%**, `NF1`: **3.7%**,
+> Triple-WT: **58.9%**).
+> 2. **MAPK Driver Mutual Exclusivity**: Driver mutations act through independent growth
 > pathways: tumours with `BRAF` mutations almost never harbour co-occurring `NRAS` mutations,
 > validating established melanoma oncogenic principles.
-> 4. **Immune Evasion Mutations Are Rare Before Therapy**: Pre-treatment non-synonymous mutations
+> 3. **Immune Evasion Mutations Are Rare Before Therapy**: Pre-treatment non-synonymous mutations
 > in antigen presentation (`B2M`, `TAP1`, `TAP2`) and interferon signalling (`JAK1`, `JAK2`)
 > occur at minimal frequencies prior to checkpoint blockade. Genetic disruption of antigen
 > presentation is primarily an **acquired resistance mechanism** that emerges under selection
@@ -129,8 +108,8 @@ Pooled Trial Cohorts ($N = 256$).**_
 > [!INFO] Why We Are Doing This
 >
 > **What**: We compute Spearman rank correlations between continuous genomic features (TMB,
-> neoantigen subtypes) and transcriptomic immune signatures across trial ($N = 256$)
-> and reference ($N = 428$) cohorts.
+> neoantigen subtypes) and transcriptomic immune signatures across pooled trial
+> ($N = 256$) cohorts.
 > **Why**: To identify feature redundancy before model training and evaluate whether genomic
 > mutational burden and transcriptomic immune infiltration capture independent biological axes.
 > **Question Answered**: Are TMB and neoantigen subtypes redundant, and do mutational burden
@@ -150,7 +129,7 @@ $N = 256$).**_
 ### 3.2 Genomic Burden vs. Immune Infiltration
 
 To evaluate how tumour genomic features affect the microenvironment, we evaluated how mutational
-burden (**TMB**, evaluated in TCGA-SKCM and pooled trials, $N = 256$) correlates
+burden (**TMB**, evaluated in pooled trials, $N = 256$) correlates
 with continuous transcriptomic immune signatures.
 
 ![Genomic Burden vs Immune Heatmap](../../plots/biomarkers/extended_immune_correlations.png)
@@ -173,39 +152,7 @@ _**Figure 5: Correlation between Genomic Burden Metrics and Transcriptomic Immun
 > that TMB and immune inflammation capture **two independent biological axes**, confirming
 > that predictive models should combine both modalities.
 
-## 4. TCGA Survival Stratification by Genomic Features
-
-> [!INFO] Why We Are Doing This
->
-> **What**: We stratify Kaplan-Meier overall survival in the reference **TCGA-SKCM** cohort
-> ($N = 423$) by driver mutation subtype (`BRAF`, `NRAS`, `NF1`) and TMB median
-> split.
-> **Why**: To determine whether baseline genomic mutations act as general prognostic survival
-> markers in untreated/standard-of-care melanoma.
-> **Question Answered**: Do driver mutations or TMB predict baseline overall survival in general
-> melanoma populations?
-
-Overall Survival (OS) in the reference **TCGA-SKCM** survival cohort ($N = 423$)
-is stratified below. Figure 6 shows stratification by driver mutation subtype and TMB status
-($N = 423$).
-
-![TCGA Driver and TMB Survival](../../plots/genomic/tcga_survival_by_mutation.png)
-
-_**Figure 6: TCGA-SKCM Overall Survival Stratified by Driver Mutation Subtype (Left) and TMB
-Median Split (Right).**_
-
-> [!INSIGHT] Key Insights: Prognostic Value of Genomic Features
->
-> 1. **Driver Mutations Do Not Predict Baseline Survival (Log-rank $p = 0.0899$)**:
-> Overall survival in standard melanoma patients does not differ significantly between `BRAF`,
-> `NRAS`, `NF1` mutant, and Triple-WT genotypes. Driver mutations guide targeted therapy selection
-> but do not dictate baseline patient survival under standard care.
-> 2. **TMB Is Predictive, Not Prognostic (Log-rank $p = 0.4120$)**: Stratifying TCGA
-> overall survival by TMB using a median split reveals no prognostic survival separation. While
-> TMB predicts response specifically under immune checkpoint blockade, it has no general
-> prognostic survival benefit in unselected populations.
-
-## 5. Co-Mutation Landscape (Oncoplot)
+## 4. Co-Mutation Landscape (Oncoplot)
 
 > [!INFO] Why We Are Doing This
 >
@@ -224,7 +171,7 @@ Disease patients without a binary response classification) is presented below.
 
 ![Co-Mutation Landscape (Merged Trials)](../../plots/genomic/comut_landscape_merged.png)
 
-_**Figure 7: Co-Mutation Landscape across Clinical Trial Cohorts ($N = 195$).**
+_**Figure 5: Co-Mutation Landscape across Clinical Trial Cohorts ($N = 195$).**
 Rows represent driver and resistance genes; columns represent individual patient samples with
 clinical annotation tracks._
 
@@ -243,13 +190,10 @@ clinical annotation tracks._
 > across all driver genotypes (`BRAF`, `NRAS`, `NF1`, and Triple-WT), confirming visually that
 > driver mutation status alone cannot predict anti-PD-1 clinical outcome.
 
-## 6. Technical Analysis Notes
+## 5. Technical Analysis Notes
 
 > [!WARNING] Methodological Limitations & Analytical Scope
 >
-> - **Unstratified Survival Analysis**: All Kaplan-Meier survival curves in TCGA-SKCM are
-> unstratified and descriptive. They do not adjust for demographic, clinical, stage, or
-> treatment confounding factors.
 > - **Pre-Treatment Sampling Scope**: Somatic mutation profiles reflect pre-treatment tumor
 > biopsies. Genetic alterations acquired during therapy or under drug selection pressure are
 > not captured in baseline sequencing.
@@ -260,7 +204,7 @@ clinical annotation tracks._
 > [!formula]+ Genomic Characterisation Script Execution & Software Module Architecture
 >
 > - **Primary Pipeline Execution Scripts**:
->   - [`run_genomic_characterisation.py`](file:///C:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_genomic_characterisation.py): Performs cross-cohort genomic analyses including driver mutation frequency comparison (`BRAF`, `NRAS`, `NF1`, Triple-WT), extended pathway mutation frequencies, TMB distribution benchmarking, neoantigen correlation analysis, TCGA overall survival (OS) stratification by genomic features, and outputs `cohort_characteristics_genomic.md`.
+>   - [`run_genomic_characterisation.py`](file:///C:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_genomic_characterisation.py): Performs cross-cohort genomic analyses including driver mutation frequency comparison (`BRAF`, `NRAS`, `NF1`, Triple-WT), TMB distribution benchmarking, neoantigen correlation analysis, and outputs `cohort_characteristics_genomic.md`.
 > - **Data Preprocessing & Loading Modules**:
 >   - [`clean_data.py`](file:///C:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/clean_data.py): Preprocesses raw cohort clinical metadata, mutation calls, and RNA-seq expression profiles into cleaned CSV matrices.
 >   - [`merge_datasets.py`](file:///C:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/merge_datasets.py): Merges processed expression and mutation matrices across cohorts into harmonised pooled datasets (`merged_genomic.csv`, `clin_merged.csv`).
