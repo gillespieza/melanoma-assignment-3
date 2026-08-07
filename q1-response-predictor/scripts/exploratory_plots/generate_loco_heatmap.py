@@ -48,10 +48,10 @@ set_presentation_style()
 MODEL_ORDER: List[str] = ["xgb", "rf", "svm", "elasticnet", "lr"]
 MODEL_LABELS: Dict[str, str] = {
     "xgb": "XGBoost",
-    "rf": "Random Forest",
-    "svm": "Support Vector Machine",
-    "elasticnet": "ElasticNet",
-    "lr": "Logistic Regression",
+    "rf": "Random\nForest",
+    "svm": "Support Vector\nMachine",
+    "elasticnet": "Elastic\nNet",
+    "lr": "Logistic\nRegression",
 }
 DEFAULT_FEATURE_COLS: List[str] = ["IFN_gamma", "TIS", "CYT", "CD8_Tcell", "IMPRES", "PD_L1"]
 
@@ -117,7 +117,7 @@ def _build_loco_summary_dataframe(
 
     # Append cross-model mean row — model-agnostic AUC per cohort
     cross_model_mean = df.mean(axis=0)
-    cross_model_mean.name = "Cross-Model Mean"
+    cross_model_mean.name = "Cross-Model\nMean"
     df = pd.concat([df, cross_model_mean.to_frame().T])
     return df
 
@@ -152,14 +152,15 @@ def plot_loco_heatmap_from_results(
         ax=ax_heatmap,
     )
 
-    # Bold outline around the best-performing model in each column (cohorts only, not mean row)
-    for col_idx, col_name in enumerate(df_heatmap.columns):
-        col_data = df_heatmap[col_name].iloc[:n_data_rows]
-        best_row_name = col_data.idxmax()
-        row_idx = list(df_heatmap.index).index(best_row_name)
+    # Bold outline around the peak held-out cohort for each model architecture (row-wise)
+    n_cohort_cols = n_cols - 1  # Exclude Mean LOCO summary column
+    for row_idx in range(n_data_rows):
+        row_data = df_heatmap.iloc[row_idx, :n_cohort_cols]
+        best_col_name = row_data.idxmax()
+        col_idx = list(df_heatmap.columns).index(best_col_name)
         ax_heatmap.add_patch(plt.Rectangle(
             (col_idx, row_idx), 1, 1,
-            fill=False, edgecolor="black", linewidth=2.5,
+            fill=False, edgecolor="red", linewidth=2.5,
         ))
 
     # Thick white vertical line separating the Mean LOCO summary column
@@ -179,16 +180,26 @@ def plot_loco_heatmap_from_results(
 
     # Explicit margins force the heatmap to fill the 16:9 canvas rather than
     # shrinking to fit cell aspect ratios (which tight_layout would do).
-    fig.subplots_adjust(left=0.18, right=0.86, top=0.88, bottom=0.14)
+    fig.subplots_adjust(left=0.22, right=0.86, top=0.88, bottom=0.14)
     target_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Save at exact figsize (16:9) — no bbox_inches="tight" so canvas ratio is preserved
     fig.savefig(target_path, dpi=300)
     print(f"Saved LOCO performance heatmap dynamically to {rel_path(target_path)}")
 
+    # Also save to plots/models/ for report reference
+    models_path = PLOTS_DIR / "models" / target_path.name
+    if models_path.resolve() != target_path.resolve():
+        models_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(models_path, dpi=300)
+        print(f"Saved LOCO performance heatmap to {rel_path(models_path)}")
+
     transparent_path = target_path.parent / (target_path.stem + "_transparent.png")
     fig.savefig(transparent_path, transparent=True, dpi=300)
     print(f"Saved transparent LOCO performance heatmap to {rel_path(transparent_path)}")
+    models_trans = models_path.parent / (models_path.stem + "_transparent.png")
+    if models_trans.resolve() != transparent_path.resolve():
+        fig.savefig(models_trans, transparent=True, dpi=300)
 
     plt.close(fig)
     return target_path

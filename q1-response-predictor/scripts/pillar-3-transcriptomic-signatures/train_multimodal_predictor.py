@@ -264,12 +264,12 @@ def _plot_multimodal_auc_comparison(plot_data: List[Dict[str, Any]], n_models: i
         ax=ax,
     )
 
-    # Bold black outline on best-performing tier per model row (data rows only)
+    # Red outline on best-performing tier per model row (data rows only)
     best_col_per_row = np.argmax(means, axis=1)
     for row_idx, best_c in enumerate(best_col_per_row):
         ax.add_patch(plt.Rectangle(
             (best_c, row_idx), 1, 1,
-            fill=False, edgecolor="black", linewidth=_HIGHLIGHT_BOX_LW,
+            fill=False, edgecolor="red", linewidth=_HIGHLIGHT_BOX_LW,
         ))
 
     # Thick white horizontal separator above Cross-Model Mean row

@@ -14,7 +14,7 @@ cssclasses:
   - table-center
   - row-alt
 created: 2026-07-23 17:21
-updated: 2026-08-02 16:50
+updated: 2026-08-07 15:26
 ---
 # Curated Gene Expression Signatures, Extended Biomarkers & Model Evaluation Report
 
@@ -30,13 +30,13 @@ This report outlines the transcriptomic feature engineering strategy for the Mel
 > - **Questions**:
 >   1. *Why can't we just use all 20,000 genes as features?*
 >   2. *How does gene-level collinearity undermine model interpretability?*
->   3. *How do batch effects across Liu (122), Hugo (27), Riaz (107), and TCGA (443) corrupt feature scaling?*
+>   3. *How do batch effects across Liu (122), Hugo (27), and Riaz (107) corrupt feature scaling?*
 
 High-throughput RNA sequencing measures over $20,000$ genes per patient sample. Training machine learning models directly on raw expression vectors introduces three major challenges:
 
 * **Overfitting ($D \gg N$)**: Evaluating $>20,000$ features on typical clinical cohorts ($N \approx 100\text{--}500$) causes classifiers to memorise sample-specific noise rather than generalisable biology.
 * **Multicollinearity**: Immune genes operate in tightly co-expressed networks, creating redundant features that destabilise linear model weights.
-* **Batch Effects**: Technical variation across sequencing platforms and clinical studies (Liu 2019, Hugo 2016, Riaz 2017, TCGA-SKCM) introduces noise that obscures true biological signal.
+* **Batch Effects**: Technical variation across sequencing platforms and clinical studies (Liu 2019, Hugo 2016, Riaz 2017) introduces noise that obscures true biological signal.
 
 > [!TIP] The Solution
 > **Gene Signatures** compress high-dimensional gene matrices into **6 continuous, pathway-specific scores**, acting as noise-reducing biological filters that reliably align across diverse patient cohorts.
@@ -76,7 +76,7 @@ We have implemented six distinct curated signature modalities in [signatures.py]
 > - **Questions**: *Is elevated expression of individual immune signatures significantly associated with clinical response to anti-PD-1 therapy at baseline?*
 
 
-Each signature distribution is visualised using a **raincloud plot** — combining a half-violin KDE (showing the full distribution shape), a compact IQR box with whiskers, and a jittered strip of individual patient data points — stratified by Responder (CR/PR) and Non-Responder (PD) clinical outcome. All six signatures are Z-score normalised to a shared axis for direct visual comparison.
+Each signature distribution is visualised using a **raincloud plot** — combining a half-violin KDE (showing the full distribution shape), a compact IQR box with whiskers, and a jittered strip of individual patient data points — stratified by Responder (CR/PR) and Non-Responder (PD) clinical outcome. All 12 features in our multimodal matrix (6 transcriptomic signatures, Macrophage STV score, M1/M2 ratio, 3 driver mutation flags, and TMB) are Z-score normalised to a shared axis for direct visual comparison.
 
 ![Immune Signature Distributions — Raincloud Plot](../../plots/signatures/signature_raincloud_by_response.png)
 
@@ -96,62 +96,8 @@ For a comprehensive view contrasting pooled single-variable effect magnitude aga
 > * **Motivation for Multimodal ML**: Overlap in single features proves why we must combine these 6 signatures with orthogonal genomic features (`TMB`) in multivariate ML models (XGBoost / Random Forest).
 
 
-## 3. Preprocessing & Batch Alignment Workflow
 
-> [!NOTE] Section Context
-> - **What We Are Doing**: Applying **cohort-independent Z-score standardisation** to signature scores — computing each study's Z-scores using only that study's own mean and variance, then concatenating the scaled cohorts before model training.
-> - **Why We Are Doing It**: When combining data across four independent studies (Liu, Hugo, Riaz, TCGA), sequencing platform differences and laboratory protocols create strong **batch effects** that can make study membership the dominant signal — causing a classifier to learn *which lab ran the samples* rather than *which patients responded*. Standardising within each cohort removes this offset. Critically, doing so independently per cohort (rather than on the pooled dataset) guarantees **zero data leakage**: a held-out test cohort's expression values never influence the scaling of training data.
-> - **Questions**:
->   1. *Do uncorrected signature scores cluster by study cohort rather than biological outcome in PCA?*
->   2. *Does cohort Z-score standardisation dissolve the study-level separation?*
->   3. *How does this approach prevent data leakage during Leave-One-Cohort-Out validation?*
-
-When combining patient data across 4 independent clinical studies (**Liu 2019**, $N = 122$; **Hugo 2016**, $N = 27$; **Riaz 2017**, $N = 107$; and **TCGA-SKCM**, $N = 443$), technical variations across sequencing platforms and lab protocols introduce strong **batch effects**. Uncorrected expression profiles cluster heavily by study cohort rather than biological outcome.
-
-### 3.1. Zero-Leakage Cohort Z-Score Standardisation
-To eliminate study-level batch offsets while guaranteeing **zero data leakage** during **Leave-One-Cohort-Out (LOCO)** cross-validation, we apply **Cohort-Independent Z-Score Standardisation** in [run_extended_biomarkers.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/biomarkers/run_extended_biomarkers.py#L250-L255):
-
-```python
-# Standardise each cohort's signatures individually (Z-score)
-df_liu_sigs_scaled = zscore_df(df_liu_sigs)
-df_hugo_sigs_scaled = zscore_df(df_hugo_sigs)
-df_riaz_sigs_scaled = zscore_df(df_riaz_sigs)
-df_sigs_merged = pd.concat([df_liu_sigs_scaled, df_hugo_sigs_scaled, df_riaz_sigs_scaled])
-```
-
-* **Zero Leakage**: Standardising each study using only its internal mean and variance ensures test-set data is never used to adjust training features.
-* **Effective Scale Alignment**: Successfully removes baseline study offsets, allowing true biological signals to align across clinical cohorts.
-
-### 3.2. Cohort Batch Assessment & Visualising Batch Correction Impact
-
-#### 3.2.1 Full Cohort Batch Assessment ($N = 699$)
-
-> [!INFO] Full Cohort Assessment Purpose
-> - **What**: We perform Principal Component Analysis (PCA) across all $N = 699$ patients from four combined melanoma cohorts (**TCGA-SKCM** [$N = 443$], **Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], and **Riaz 2017** [$N = 107$]) using the top 1,000 most variable genes selected from the 19,757 common genes across all datasets.
-> - **Why**: Combining transcriptomic data from diverse sequencing centres introduces technical distortions (batch effects). Uncorrected models risk classifying sequencing centres rather than patient biology.
-> - **Question Answered**: Does cohort-independent Z-score standardisation eliminate macro-level technical separation between reference tissue (TCGA-SKCM) and active clinical trial cohorts?
-
-![PCA Batch Effect Assessment Across Full Cohort](../../plots/biomarkers/batch_effect_pca.png)
-
-##### Key Observations
-- **Panel A: Before Batch Correction (Raw Data)**: The uncorrected PCA projection reveals a strong separation between the TCGA-SKCM reference dataset and the three clinical trial cohorts. Uncorrected PC1 (95.3% variance) and PC2 (0.7% variance) reflect laboratory platform shifts.
-- **Panel B: After Cohort-Specific Z-Score Standardisation**: Cohort-wise Z-score standardisation (centering each gene to $\mu = 0, \sigma = 1$ within each study) aligns the TCGA-SKCM reference with trial cohorts. Post-correction PC1 (13.2% variance) and PC2 (9.6% variance) show homogeneous distribution across datasets.
-
-#### 3.2.2 ICI Trial Cohort Batch Assessment ($N = 256$)
-
-> [!INFO] Trial Cohort Assessment Purpose
-> - **What**: We evaluate technical batch effects specifically between the three active anti-PD-1 training cohorts (**Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], and **Riaz 2017** [$N = 107$]; $N = 256$) across all 58,954 common trial genes before and after cohort-wise Z-score standardisation.
-> - **Why**: These trials vary by platform (Illumina HiSeq 2500 vs HiSeq 2000), tissue state (fresh-frozen vs FFPE), and prior treatment. We must verify baseline offsets are eliminated before Leave-One-Cohort-Out (LOCO) cross-validation.
-> - **Question Answered**: Are inter-trial technical offsets harmonised across the model training cohorts without leaking test-set information?
-
-![ICI Trial Batch Effect Assessment](../../plots/biomarkers/batch_effect_ici_pca.png)
-
-##### Key Observations
-- **Panel A: Before Batch Correction (Uncorrected Raw Expression)**: In uncorrected $\log_2(\text{TPM})$ space across all 58,954 trial genes, `Liu 2019` ($N = 122$, HiSeq 2500) separates along PC1 (28.9% variance) from `Riaz 2017` ($N = 107$, HiSeq 2000 / FFPE) and `Hugo 2016` ($N = 27$, HiSeq 2000 / fresh-frozen). This confirms that sequencing depth and platform chemistry dominate raw expression signals.
-- **Panel B: After Cohort-Wise Z-Score Standardisation**: Standardising gene expression independently within each cohort completely removes artificial study-level separation. The distributions for Liu 2019, Hugo 2016, and Riaz 2017 overlap smoothly across PC1 (7.0% variance) and PC2 (4.2% variance), ensuring unbiased model training.
-
-
-## 4. Statistical Relationships & Biomarker Orthogonality
+## 3. Statistical Relationships & Biomarker Orthogonality
 
 > [!NOTE] Section Context
 > - **What We Are Doing**: Evaluating pairwise correlations between all biomarker features — TMB vs. neoantigen load, genomic burden vs. immune signatures, and inter-signature correlations — using Spearman rank correlation and multivariate odds ratio modelling.
@@ -163,17 +109,17 @@ df_sigs_merged = pd.concat([df_liu_sigs_scaled, df_hugo_sigs_scaled, df_riaz_sig
 
 Before training predictive models, we evaluate feature correlations to eliminate redundant metrics and identify independent biological signals.
 
-### 4.1. TMB vs. Neoantigen Load: High Feature Redundancy
+### 3.1. TMB vs. Neoantigen Load: High Feature Redundancy
 Somatic mutation rate (`TMB`) and predicted neoantigen count capture the exact same biological signal ($r_s = 0.96$ in Liu 2019; $r_s = 0.872$ in pooled trials, $N = 222$).
 * **Decision**: Including both creates unnecessary feature redundancy. We retain **TMB** as our clean genomic surrogate in all models.
 
 ![Neoantigen vs TMB Regression](../../plots/genomic/tmb_distributions_by_cohort.png)
 
-### 4.2. Genomic Burden vs. Immune Signatures: Independent (Orthogonal) Modalities
+### 3.2. Genomic Burden vs. Immune Signatures: Independent (Orthogonal) Modalities
 
 > [!NOTE] Analysis Scope
 > - **What We Are Doing**: Computing Spearman rank correlations between nonsynonymous mutational burden (`TMB_NONSYNONYMOUS`) and all six curated transcriptomic immune signatures.
-> - **Cohort**: Restricted to the **pooled ICI trial cohort only** ($N = 195$: Liu 2019, Hugo 2016, Riaz 2017). The TCGA reference cohort is excluded here — its mutation landscape and clinical context (treatment-naïve resections rather than ICI-treated patients) would conflate two biologically distinct populations.
+> - **Cohort**: Pooled ICI trial cohort ($N = 195$: Liu 2019, Hugo 2016, Riaz 2017).
 > - **Why**: Establishing whether genomic mutational burden and transcriptomic immune activity are independent axes of variation within the ICI-treated population — a prerequisite for justifying a multimodal (genomic + transcriptomic) model.
 
 Spearman rank correlation between nonsynonymous TMB and the six curated immune signatures in the pooled ICI trial cohort ($N = 195$) reveals near-complete biological orthogonality across all signature axes ($|r_s| \leq 0.091$, all $p > 0.20$):
@@ -186,9 +132,9 @@ Spearman rank correlation between nonsynonymous TMB and the six curated immune s
 ![Nonsynonymous TMB vs. Curated Immune Signatures — ICI Trial Cohort (N=195)](../../plots/biomarkers/extended_immune_correlations.png)
 
 > [!INSIGHT] The Multimodal Pitch
-> **Genomic burden (TMB) and transcriptomic immune signatures are orthogonal, independent axes of variation** within the ICI-treated melanoma population. No meaningful linear or rank-order relationship exists between the number of nonsynonymous somatic mutations a tumour carries and its inflammatory transcriptomic state ($|r_s| \leq 0.091$, all $p > 0.20$). A tumour can be hypermutated but immunologically cold, or nearly diploid yet profoundly inflamed. This orthogonality is precisely what makes a multimodal model (Signatures + TMB + Drivers) theoretically justified and, as shown in Section 5, empirically superior to any single modality alone.
+> **Genomic burden (TMB) and transcriptomic immune signatures are orthogonal, independent axes of variation** within the ICI-treated melanoma population. No meaningful linear or rank-order relationship exists between the number of nonsynonymous somatic mutations a tumour carries and its inflammatory transcriptomic state ($|r_s| \leq 0.091$, all $p > 0.20$). A tumour can be hypermutated but immunologically cold, or nearly diploid yet profoundly inflamed. This orthogonality is precisely what makes a multimodal model (Signatures + TMB + Drivers) theoretically justified and, as shown in Section 4, empirically superior to any single modality alone.
 
-### 4.3. Inter-Signature Correlations & Multivariate Drivers
+### 3.3. Inter-Signature Correlations & Multivariate Drivers
 * **High Collinearity**: Signature modalities (TIS, IFN-γ, CYT, CD8 T-cell) are strongly co-expressed ($r_s \approx 0.85\text{--}0.90$), reflecting their shared biological basis in cytotoxic lymphocyte infiltration.
 * **Independent Response Drivers**: In multivariate logistic regression restricted to the six curated signatures (Z-scored, $N = 195$), **Tumour Inflammation Signature (TIS)** and **IMPRES** emerge as the primary non-redundant predictors of response — both showing OR > 1, consistent with their univariate effect sizes. Signatures sharing the same biological axis (IFN-γ, CYT, CD8 T-cell) show attenuated or reversed coefficients due to multicollinearity; interpretation should focus on the joint model's overall discriminative performance rather than individual ORs.
 
@@ -198,26 +144,14 @@ Spearman rank correlation between nonsynonymous TMB and the six curated immune s
 > 1. **High collinearity within the cytotoxic axis**: IFN-γ, TIS, CYT, and CD8 T-cell co-vary so tightly ($r_s \approx 0.85$–$0.90$) that they effectively measure a single latent dimension — cytotoxic lymphocyte infiltration. Including all four in a linear model inflates variance and produces unreliable individual coefficients; the relevant quantity is the axis itself, not any one signature.
 > 2. **TIS and IMPRES are the non-redundant predictors**: In multivariate regression, **TIS** and **IMPRES** are the only two signatures that retain independent predictive signal. This is biologically coherent: TIS captures the cytotoxic infiltration axis, while IMPRES encodes a mechanistically distinct immune checkpoint resistance score derived from ligand–receptor interaction ratios — it is genuinely orthogonal to the infiltration axis.
 > 3. **Practical consequence for feature selection**: Rather than entering all six signatures as raw features (which would introduce severe multicollinearity), the 12-feature multimodal model uses them as a structured block. Tree-based models (RF, XGBoost) handle this gracefully through implicit feature selection; linear models (LR, Elastic-Net) benefit from the L1/L2 penalty forcing coefficient shrinkage on redundant predictors.
-> 4. **Interaction with genomic features**: Because TMB is orthogonal to all six signatures (Section 4.2), adding it to the model introduces genuinely new information on the genomic axis — explaining why XGBoost AUROC jumps from 0.618 (signatures only) to 0.692 when TMB is included, without requiring any adjustment for correlated input features.
+> 4. **Interaction with genomic features**: Because TMB is orthogonal to all six signatures (Section 3.2), adding it to the model introduces genuinely new information on the genomic axis — explaining why XGBoost AUROC jumps from 0.618 (signatures only) to 0.692 when TMB is included, without requiring any adjustment for correlated input features.
 
-## 5. Multimodal Response Prediction Models
+## 4. Multimodal Response Prediction Models
 
 > [!summary] What, Why & Key Questions
 > - **What We Are Doing**: Training five classifiers on pooled trials ($N = 195$) using 5-fold stratified CV across six feature permutation tiers of the 12 final features.
 > - **Why We Are Doing It**: Evaluating whether adding TMB, driver mutations, M1/M2 ratio, Macrophage STV, or age/pathways improves upon signatures alone and identifying the best model architecture.
 > - **Questions**: Does adding drivers/TMB/macrophage features improve AUROC? Which model family performs best?
-
-### Table 2. Cross-validated multimodal response prediction performance (AUROC mean ± SD)
-
-| Model Architecture | Sigs Only (6) | Sigs + Drivers (9) | Sigs + TMB (7) | Sigs + M1/M2 Ratio (7) | Sigs + Macrophage STV (7) | 12-Feature Final Model* |
-|:--- |:---:|:---:|:---:|:---:|:---:|:---:|
-| **Logistic Regression (LR)** | 0.600 (+/-0.071) | 0.568 (+/-0.057) | 0.597 (+/-0.069) | 0.594 (+/-0.066) | **0.602 (+/-0.046)** | 0.566 (+/-0.069) |
-| **Random Forest (RF)** | 0.678 (+/-0.070) | 0.670 (+/-0.078) | 0.683 (+/-0.086) | 0.628 (+/-0.098) | 0.687 (+/-0.051) | **0.695 (+/-0.080)** |
-| **XGBoost (XGB, tuned)** | 0.618 (+/-0.076) | 0.589 (+/-0.136) | 0.692 (+/-0.062) | 0.645 (+/-0.025) | 0.673 (+/-0.044) | **0.699 (+/-0.058)** |
-| **Support Vector Machine (SVM)** | **0.649 (+/-0.080)** | 0.620 (+/-0.078) | 0.627 (+/-0.096) | 0.632 (+/-0.071) | 0.625 (+/-0.061) | 0.573 (+/-0.091) |
-| **Elastic-Net** | 0.625 (+/-0.067) | 0.590 (+/-0.065) | **0.637 (+/-0.079)** | 0.612 (+/-0.059) | 0.595 (+/-0.049) | 0.578 (+/-0.051) |
-
-\* *Footnote: 12-Feature Final Model: 6 signatures (IFN-γ, TIS, CYT, CD8 T-cell, IMPRES, PD-L1), 3 driver flags (BRAF, NRAS, NF1), TMB, Age, and Antigen Presentation pathway. Total neoantigens excluded due to collinearity ($r_s = 0.756$).*
 
 ![Multimodal AUROC Heatmap](../../plots/biomarkers/multimodal_auc_heatmap.png)
 
@@ -226,7 +160,7 @@ Spearman rank correlation between nonsynonymous TMB and the six curated immune s
 2. **Tree-based models benefit from feature permutations**: RF peaks at AUROC = 0.695 on the 12-Feature Final Model, while XGBoost reaches AUROC = 0.699 on the 12-Feature Final Model (and 0.692 on Sigs + TMB).
 3. **Clinical interpretation**: AUROC of ~0.70–0.72 correctly ranks responder above non-responder ~71% of time, competitive with published IO response predictors.
 
-## 6. Leave-One-Cohort-Out Model Evaluation
+## 5. Leave-One-Cohort-Out Model Evaluation
 
 > [!NOTE] Section Context
 > - **What We Are Doing**: Evaluating the same trained models using **Leave-One-Cohort-Out (LOCO)** cross-validation — training on two immunotherapy trial cohorts and testing on the third held-out cohort. This is repeated for each of the three cohorts (Liu 2019, Hugo 2016, Riaz 2017).
@@ -234,7 +168,7 @@ Spearman rank correlation between nonsynonymous TMB and the six curated immune s
 > - **Questions**:
 >   1. *Do models trained on two cohorts generalise to a third unseen cohort?*
 >   2. *Which cohort is hardest to predict when held out — and why?*
->   3. *How does LOCO AUC compare to the pooled 5-fold AUC reported in Section 5?*
+>   3. *How does LOCO AUC compare to the pooled 5-fold AUC reported in Section 4?*
 
 **Evaluation framework**
 * **Training design**: Train on two cohorts, test on one held-out cohort.
@@ -267,7 +201,7 @@ The full diagnostic outputs are saved in `plots/models/`:
 * Confusion matrices: `confusion_matrices_lr.png`, `confusion_matrices_rf.png`, `confusion_matrices_xgb.png`, `confusion_matrices_svm.png`, `confusion_matrices_elasticnet.png`
 
 
-## 7. Consolidated Conclusion
+## 6. Consolidated Conclusion
 
 > [!NOTE] Consolidated Conclusion Rationale
 > - Given everything we have tested, what is the best practical approach for predicting immunotherapy response in melanoma from baseline tumour profiling?
@@ -277,9 +211,11 @@ The full diagnostic outputs are saved in `plots/models/`:
 3. **LOCO is harder than pooled CV**: Cross-study generalisation (LOCO AUC ≈ 0.58–0.68) lags behind pooled 5-fold CV (AUC ≈ 0.72–0.74), especially for small held-out cohorts. These two validation strategies should be reported as **distinct evidence layers**, not interchangeable performance estimates.
 4. **TMB is the right genomic surrogate**: Neoantigen load is almost perfectly collinear with TMB ($r_s = 0.872$), so retaining both adds redundancy without new information. TMB alone is sufficient.
 
+---
+
 > [!formula]+ Pillar 3 Script Execution & Software Module Architecture
 > - **Primary Pipeline Execution Scripts**:
->   - [`train_multimodal_predictor.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-3-transcriptomic-signatures/train_multimodal_predictor.py): Trains cross-validated classifiers (LR, RF, XGB, SVM, Elastic-Net) across 5 feature-set tiers, generates AUROC comparison heatmaps, and updates Section 5 of this report with live cross-validation results.
+>   - [`train_multimodal_predictor.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-3-transcriptomic-signatures/train_multimodal_predictor.py): Trains cross-validated classifiers (LR, RF, XGB, SVM, Elastic-Net) across 5 feature-set tiers, generates AUROC comparison heatmaps, and updates Section 4 of this report with live cross-validation results.
 >   - [`run_extended_biomarkers.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-3-transcriptomic-signatures/run_extended_biomarkers.py): Evaluates neoantigen load, TMB–immune signature Spearman correlations, TCGA aneuploidy and TMB survival stratification, and pathway mutation frequencies across trial cohorts.
 > - **Core Supporting Python Modules**:
 >   - [`signatures.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py): Computes the six curated immune signatures (IFN-γ, TIS, CYT, IMPRES, CD8 T-cell, TCGA 20-gene OS) from normalised gene expression matrices.

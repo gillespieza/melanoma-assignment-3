@@ -64,6 +64,14 @@ Whenever generating plots, figures, web artifacts, or presentation reports for t
   6. `PD_L1` (PD-L1 Expression Proxy)
 
   This order is biologically motivated: it groups T-cell activation signatures together before moving to the checkpoint/exhaustion axis. Any re-ordering (e.g. alphabetical or arbitrary) is a style error. This applies project-wide across all scripts, notebooks, and generated artefacts.
+- **Canonical ML Model Presentation Order**: Whenever the five ML classifiers are listed — in report tables, heatmap row/column labels, legend entries, code loops, or any other enumeration — they MUST always appear in this fixed order:
+  1. XGBoost (XGB)
+  2. Random Forest (RF)
+  3. Support Vector Machine (SVM)
+  4. Elastic-Net
+  5. Logistic Regression (LR)
+
+  This order is performance-motivated: it leads with the strongest tree-based models, then the kernel method, then regularised linear models, finishing with the baseline linear classifier. Any re-ordering is a style error. This applies project-wide across all scripts, notebooks, and generated artefacts.
 - **Horizontal Rules**: Never use horizontal rules (`---` or `***`) in markdown files or responses unless explicitly instructed to do so (the project's custom CSS automatically renders horizontal rules beneath `<h1>` and `<h2>` headings).
 
 

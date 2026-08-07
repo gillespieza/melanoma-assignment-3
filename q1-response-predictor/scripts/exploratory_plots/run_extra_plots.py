@@ -108,14 +108,27 @@ def _prepare_signatures(
 # Raincloud plot helpers
 # ---------------------------------------------------------------------------
 
-_JITTER_OFFSET = 0.18   # vertical distance of jitter strip from row centre
-_VIOLIN_SCALE = 0.38    # maximum half-height of the KDE violin
-_BOX_WIDTH = 0.12       # half-height of the IQR box
+_JITTER_OFFSET = 0.14   # vertical distance of jitter strip from row centre
+_VIOLIN_SCALE = 0.30    # maximum half-height of the KDE violin
+_BOX_WIDTH = 0.09       # half-height of the IQR box
 _KDE_POINTS = 200       # resolution of KDE curve
 
 # Signatures to include in all distribution and model plots — exactly the 6 curated
 # signatures from the report table (Section 2.1), in table order.
-_REPORT_SIGS = ["IFN_gamma", "TIS", "CYT", "CD8_Tcell", "IMPRES", "PD_L1"]
+_REPORT_SIGS = [
+    "IFN_gamma",
+    "TIS",
+    "CYT",
+    "CD8_Tcell",
+    "IMPRES",
+    "PD_L1",
+    "Macrophage_STV_Score",
+    "M1_M2_Ratio",
+    "mut_BRAF",
+    "mut_NRAS",
+    "mut_NF1",
+    "TMB_NONSYNONYMOUS",
+]
 
 
 def _cohens_d(a: np.ndarray, b: np.ndarray) -> float:
@@ -150,11 +163,13 @@ def _draw_half_violin(
         side: 'left' draws violin above y_centre, 'right' below.
         scale: Maximum half-width of the KDE curve.
     """
+    if len(values) < 2 or np.std(values) == 0:
+        return
     kde = gaussian_kde(values, bw_method="scott")
     x_grid = np.linspace(values.min() - 0.5, values.max() + 0.5, _KDE_POINTS)
     density = kde(x_grid)
-    # Normalise so the peak maps to `scale`
-    density = density / density.max() * scale
+    if density.max() > 0:
+        density = density / density.max() * scale
 
     sign = -1.0 if side == "left" else 1.0
     # Plot is horizontal: scores on X-axis, row index on Y-axis.
@@ -253,7 +268,7 @@ def _plot_signature_raincloud(
     ordered_sigs = available_sigs
 
     n_sigs = len(ordered_sigs)
-    fig, ax = plt.subplots(figsize=(12, 1.6 * n_sigs + 1.4))
+    fig, ax = plt.subplots(figsize=(10, 7.5))  # Exact 4:3 aspect ratio
 
     for row_idx, sig in enumerate(ordered_sigs):
         y_centre = float(row_idx)
@@ -278,29 +293,26 @@ def _plot_signature_raincloud(
         d = _cohens_d(r_vals, nr_vals)
         p_str = f"p = {p:.3f}" if p >= 0.001 else f"p = {p:.2e}"
         d_str = f"d = {d:+.2f}"
-        # Place annotation above the violin body: with invert_yaxis, subtracting from
-        # y_centre moves the text visually upward (toward the top of the axes).
-        # _VIOLIN_SCALE = 0.38, so y_centre - 0.32 clears the upper violin edge.
-        x_annot = sig_z[sig].max() + 0.6   # beyond the KDE grid extent (max + 0.5)
+        x_annot = sig_z[sig].max() + 0.5   # beyond the KDE grid extent
         ax.text(
-            x_annot, y_centre - 0.32, f"{p_str}   {d_str}",
-            va="bottom", ha="left", fontsize=9.5, fontweight="bold", color="#212B32",
+            x_annot, y_centre - 0.25, f"{p_str}   {d_str}",
+            va="bottom", ha="left", fontsize=8.5, fontweight="bold", color="#212B32",
         )
 
     n_total = len(y_all)
     ax.set_yticks(range(n_sigs))
-    ax.set_yticklabels(ordered_sigs, fontsize=11, fontweight="bold")
-    ax.set_xlabel("Z-Scored Signature Score", fontsize=12, fontweight="bold")
+    ax.set_yticklabels(ordered_sigs, fontsize=9.5, fontweight="bold")
+    ax.set_xlabel("Z-Scored Signature Score", fontsize=11, fontweight="bold")
     ax.set_title(
-        f"Immune Signature Distributions by Immunotherapy Response — Raincloud Plot\n"
-        f"(Pooled & Batch-Corrected Trial Cohorts, N={n_total}; ranked by Wilcoxon p)",
-        fontsize=13, fontweight="bold", pad=16,
+        f"Multimodal 12-Feature Distributions by Immunotherapy Response — Raincloud Plot\n"
+        f"(Pooled & Batch-Corrected Trial Cohorts, N={n_total})",
+        fontsize=11.5, fontweight="bold", pad=12,
     )
     ax.axvline(0, color="#9BAAB3", linewidth=0.8, linestyle="--")
     # Extend x-axis right boundary by an extra unit so right text annotations are spacious and clear
     x_max_val = float(sig_z.values.max())
     x_min_val = float(sig_z.values.min())
-    ax.set_xlim(left=x_min_val - 0.5, right=x_max_val + 1.8)
+    ax.set_xlim(left=x_min_val - 0.4, right=x_max_val + 1.8)
 
     # Table order: first entry at top row (index 0 = top with invert_yaxis)
     ax.invert_yaxis()
@@ -311,7 +323,7 @@ def _plot_signature_raincloud(
         Patch(facecolor=color_r, alpha=0.7, label="Responder (CR/PR)"),
         Patch(facecolor=color_nr, alpha=0.7, label="Non-Responder (PD)"),
     ]
-    ax.legend(handles=legend_handles, loc="lower right", framealpha=0.9, fontsize=10)
+    ax.legend(handles=legend_handles, loc="lower right", framealpha=0.9, fontsize=8.5)
 
     plt.tight_layout()
     out_path = plot_dir / "signature_raincloud_by_response.png"
