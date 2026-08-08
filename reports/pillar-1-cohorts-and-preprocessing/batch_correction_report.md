@@ -10,53 +10,53 @@ tags:
   - umap
   - tme
   - transcriptomics
-created: 2026-08-08 15:39
+created: 2026-08-08 18:18
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-08 15:39
+updated: 2026-08-08 18:18
 ---
 
 # Batch Effect Assessment & Dimensionality Reduction Analysis
 
-This report documents how technical batch effects were evaluated and harmonised across four melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017**) and tests if global profiles separate therapeutic responses.
+This report documents how technical batch effects were evaluated and harmonised across 6 melanoma cohorts (**Liu 2019**, **Hugo 2016**, **Riaz 2017**, **TCGA GDC 2025**, **Gide 2019**, **Van Allen 2015**) and tests if global profiles separate therapeutic responses.
 
 ## 1. Cohort Batch Assessment
 
-### 1.1 Full Cohort Batch Assessment (N = 699)
+### 1.1 Full Cohort Batch Assessment (N = 478)
 
 > [!INFO] Why We Are Doing This
 >
-> **What**: PCA across $N = 699$ patients from four cohorts (**TCGA-SKCM** [$N = 443$], **Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], **Riaz 2017** [$N = 107$]) using 1,000 genes from 19,757 common genes.
+> **What**: PCA across $N = 478$ patients from cohorts (**Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], **Riaz 2017** [$N = 107$], **TCGA GDC 2025** [$N = 91$], **Gide 2019** [$N = 91$], **Van Allen 2015** [$N = 40$]) using 1,000 genes from 20,918 common genes.
 > **Why**: Combining transcriptomic data introduces batch effects. Uncorrected models risk classifying sequencing centres rather than patient biology.
-> **Question Answered**: Does cohort-independent Z-score standardisation eliminate technical separation between reference (TCGA) and trial cohorts?
+> **Question Answered**: Does cohort-independent Z-score standardisation eliminate technical separation between reference and trial cohorts?
 
 ![[batch_effect_pca.png]]
 
 ### Key Observations
-- **Raw**: Separation between TCGA and trial cohorts. Uncorrected PC1 (95.3%) and PC2 (0.7%) reflect platform shifts.
-- **Corrected**: Standardisation ($\mu=0, \sigma=1$ per study) aligns datasets. Post-correction PC1 (13.2%) and PC2 (9.6%) show homogeneous spread.
+- **Raw**: Separation between reference and trial cohorts. Uncorrected PC1 (66.3%) and PC2 (16.4%) reflect platform shifts.
+- **Corrected**: Standardisation ($\mu=0, \sigma=1$ per study) aligns datasets. Post-correction PC1 (13.9%) and PC2 (8.8%) show homogeneous spread.
 
-### 1.2 ICI Trial Cohort Batch Assessment (N = 256)
+### 1.2 ICI Trial Cohort Batch Assessment (N = 478)
 
 > [!INFO] Why We Are Doing This
 >
-> **What**: Technical effects between 3 training cohorts (**Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], **Riaz 2017** [$N = 107$]; $N = 256$) across 58,954 trial genes.
+> **What**: Technical effects between 6 training cohorts (**Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], **Riaz 2017** [$N = 107$], **TCGA GDC 2025** [$N = 91$], **Gide 2019** [$N = 91$], **Van Allen 2015** [$N = 40$]; $N = 478$) across 20,918 trial genes.
 > **Why**: Trials vary by platform, tissue state, and treatment. Verify baseline offsets are eliminated before LOCO cross-validation.
 > **Question Answered**: Are inter-trial offsets harmonised without leaking test data?
 
 ![[batch_effect_ici_pca.png]]
 
 ### Key Observations
-- **Raw**: In $\log_2(\text{TPM})$, `Liu 2019` ($N = 122$) separates from `Riaz 2017` ($N = 107$) and `Hugo 2016` ($N = 27$) along PC1 (28.9%), confirming sequencing depth/platform dominate signals.
-- **Corrected**: Standardisation removes study-level separation. distributions overlap smoothly across PC1 (7.0%) and PC2 (4.2%).
+- **Raw**: In $\log_2(\text{TPM})$, study-level offsets along PC1 (42.4%) and PC2 (14.3%) confirm sequencing depth and platform dominate raw signals.
+- **Corrected**: Standardisation removes study-level separation. Distributions overlap smoothly across PC1 (9.7%) and PC2 (6.6%).
 
-## 2. Immunotherapy Trial Dimensionality Reduction (N = 256)
+## 2. Immunotherapy Trial Dimensionality Reduction (N = 478)
 
 > [!INFO] Why We Are Doing This
 >
-> **What**: Linear (PCA) and non-linear (UMAP) reduction to $N = 256$ response-annotated patients (Liu 2019, Hugo 2016, Riaz 2017) using 1,000 genes.
+> **What**: Linear (PCA) and non-linear (UMAP) reduction to $N = 478$ response-annotated patients (Liu 2019, Hugo 2016, Riaz 2017, TCGA GDC 2025, Gide 2019, Van Allen 2015) using 1,000 genes.
 > **Why**: Test if baseline expression profiles naturally segregate responders.
 > **Question Answered**: Can therapeutic response be predicted directly from global 2D expression clusters?
 
@@ -66,7 +66,7 @@ This report documents how technical batch effects were evaluated and harmonised 
 
 > [!INSIGHT] Key Insights
 >
-> - **Harmonisation**: Z-score scaling integrates `Liu 2019` ($N = 122$), `Riaz 2017` ($N = 107$), `Hugo 2016` ($N = 27$) in embeddings.
+> - **Harmonisation**: Z-score scaling integrates `Liu 2019` ($N = 122$), `Hugo 2016` ($N = 27$), `Riaz 2017` ($N = 107$), `TCGA GDC 2025` ($N = 91$), `Gide 2019` ($N = 91$), `Van Allen 2015` ($N = 40$) in embeddings.
 > - **Mixing**: Responders (CR/PR) and non-responders (PD) mix homogeneously.
 > - **Biological Rationale**: Response is driven by multi-pathway immune features, not global variance. Simple 2D projections cannot separate response groups.
 
@@ -74,19 +74,19 @@ This report documents how technical batch effects were evaluated and harmonised 
 
 > [!INFO] Why We Are Doing This
 >
-> **What**: Inspect individual gene heatmaps for top 50 genes across trial patients ($N = 256$) with hierarchical clustering.
-> **Why**: Validate batch effects at individual gene resolutions.
-> **Question Answered**: Does Z-score prevent gene-based cohort clustering?
+> **What**: Inspect heatmaps for top 50 genes by average within-cohort variance across trial patients ($N = 478$). Samples are sorted by cohort, then by responder status (CR/PR before PD) within each cohort, with no hierarchical column clustering, to make cohort-level baseline differences and response group separation directly readable.
+> **Why**: Validate batch effects at individual gene resolution and assess whether per-cohort Z-score correction removes study-level baseline shifts while preserving responder vs. non-responder biological contrast.
+> **Question Answered**: Are cohort expression baselines visibly harmonised after per-cohort Z-score standardisation, and does the response group signal become more consistent across cohorts?
 
 ### Raw & Standardised
 ![[heatmap_top_variance_genes_raw.png]]
 ![[heatmap_top_variance_genes_standardized.png]]
 
 ### Key Observations
-- **Raw**: Columns cluster by cohort source, showing distinct blocks.
-- **Corrected**: Within-cohort Z-score standardisation eliminates study-based clustering, producing complete cohort mixing.
+- **Raw** (`log2(TPM+1)`, robust 2nd–98th percentile scaling): Cohort blocks are visible in the Cohort colour bar. Van Allen 2015 shows a notably elevated baseline due to its different normalisation pipeline. The four iAtlas cohorts (Liu 2019, Hugo 2016, Riaz 2017, Gide 2019) share similar expression scales, reflecting their common preprocessing.
+- **Corrected** (per-cohort Z-score, $\mu=0$, $\sigma=1$): Study-level baseline offsets are removed. Gene expression patterns now reflect within-cohort biological variation rather than technical platform differences, with the responder/non-responder contrast becoming more consistent across cohorts.
 
-## 4. Cross-Validation Rigor & Data Leakage Prevention
+## 4. Cross-Validation Rigour & Data Leakage Prevention
 
 > [!INFO] Why We Are Doing This
 >
@@ -101,6 +101,12 @@ Standardising independently per cohort (using internal $\mu, \sigma$) guarantees
 
 > [!WARNING] Limitations
 >
-> - **Constraints**: `Hugo 2016` ($N = 27$) has lower power than `Liu 2019` ($N = 122$) and `Riaz 2017` ($N = 107$).
-> - **Scope**: Projections confirm single-gene thresholds are insufficient, motivating a 12-feature multimodal ensemble approach.
+> - **Constraints**: Sample sizes vary across trial cohorts (`Liu 2019` ($N = 122$), `Hugo 2016` ($N = 27$), `Riaz 2017` ($N = 107$), `TCGA GDC 2025` ($N = 91$), `Gide 2019` ($N = 91$), `Van Allen 2015` ($N = 40$)).
+> - **Scope**: Projections confirm single-gene thresholds are insufficient, motivating a multimodal ensemble feature approach.
 
+> [!NOTE] Script Reference
+>
+> - [`run_dimensionality_reduction.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_dimensionality_reduction.py): Performs PCA and UMAP dimensionality reduction across all active ICI trial cohorts, evaluates cohort-independent Z-score standardisation against raw expression profiles, and produces `batch_correction_report.md`.
+> - [`run_expression_heatmap.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/exploratory_plots/run_expression_heatmap.py): Generates raw log2(TPM+1) and per-cohort Z-score heatmap visualisations for top high-variance genes across trial cohorts (`heatmap_top_variance_genes_raw.png`, `heatmap_top_variance_genes_standardized.png`).
+> - [`data_loaders.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/data_loaders.py): Provides `load_merged_immunotherapy()` to retrieve aligned raw and standardised expression matrices and clinical metadata across ICI trial cohorts.
+> - [`styles.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/styles.py): Central definition of Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`).

@@ -1,8 +1,7 @@
-"""
-Gene Expression Heatmaps: Top Genes by Variance.
+"""Gene Expression Heatmaps: Top Genes by Variance.
 
 Generates gene-level expression heatmaps (Top 50 highly variable genes) before and after
-per-cohort Z-score batch correction across Liu 2019, Hugo 2016, and Riaz 2017 cohorts.
+per-cohort Z-score batch correction across dynamically loaded trial cohorts.
 """
 
 import contextlib
@@ -25,8 +24,8 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
-from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
-from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+from src.data_loaders import load_merged_immunotherapy
+from src.styles import RESPONSE_PALETTE, resolve_cohort_palette, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import find_project_root
 from src.utils.plotting import save_fig
@@ -36,9 +35,10 @@ set_presentation_style()
 # Module-level Constants
 DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
 PLOT_DIR = BASE_DIR / "plots" / "exploratory"
-REPORT_DIR = BASE_DIR  / "reports" / "pillar-1-cohorts-and-preprocessing"
+REPORT_DIR = BASE_DIR / "reports" / "pillar-1-cohorts-and-preprocessing"
 LOG_DIR = BASE_DIR / "logs"
 LOG_PATH = LOG_DIR / "run_expression_heatmap.log"
+N_TOP_HEATMAP_GENES: int = 50
 
 
 def zscore_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -48,7 +48,7 @@ def zscore_df(df: pd.DataFrame) -> pd.DataFrame:
         df: Input pandas DataFrame.
 
     Returns:
-        Z-score standardized DataFrame.
+        Z-score standardised DataFrame.
     """
     means = df.mean(axis=0)
     stds = df.std(axis=0).replace(0, 1.0).fillna(1.0)
@@ -64,61 +64,85 @@ def main() -> None:
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
     REPORT_DIR.mkdir(exist_ok=True, parents=True)
 
-    print("Loading datasets...")
-    expr_liu, clin_liu = load_liu_2019(DATA_DIR)
-    expr_hugo, clin_hugo = load_hugo_2016(DATA_DIR)
-    expr_riaz, clin_riaz = load_riaz_2017(DATA_DIR)
+    print(f"Loading pre-merged immunotherapy dataset from data/processed/merged/immunotherapy/...")
+    expr_dict, clin_dict, cohort_order, trial_names = load_merged_immunotherapy(DATA_DIR)
 
-    response_map = {
-        "Complete Response": 1,
-        "Partial Response": 1,
-        "Progressive Disease": 0,
-        "Stable Disease": np.nan,
-        "Mixed Response": np.nan,
-    }
+    if not trial_names:
+        raise ValueError("No valid trial cohorts loaded from configuration.")
 
-    for name, df_clin, _ in [("Liu 2019", clin_liu, expr_liu), ("Hugo 2016", clin_hugo, expr_hugo), ("Riaz 2017", clin_riaz, expr_riaz)]:
-        df_clin["temp_resp"] = df_clin["RESPONSE"].map(response_map)
-        df_clin.dropna(subset=["temp_resp"], inplace=True)
-        df_clin.drop(columns=["temp_resp"], inplace=True)
+    print(f"Active trial cohorts: {trial_names}")
 
-        if name == "Liu 2019":
-            expr_liu = expr_liu.loc[df_clin.index]
-        elif name == "Hugo 2016":
-            expr_hugo = expr_hugo.loc[df_clin.index]
-        elif name == "Riaz 2017":
-            expr_riaz = expr_riaz.loc[df_clin.index]
+    clean_expr_dict: dict[str, pd.DataFrame] = {}
+    clean_clin_dict: dict[str, pd.DataFrame] = {}
 
-    common_genes = list(expr_liu.columns.intersection(expr_hugo.columns).intersection(expr_riaz.columns))
-    common_genes.sort()
-    print(f"Number of common genes: {len(common_genes)}")
+    for name in trial_names:
+        df_clin = clin_dict[name].copy()
+        df_expr = expr_dict[name].copy()
 
-    expr_liu = expr_liu[common_genes]
-    expr_hugo = expr_hugo[common_genes]
-    expr_riaz = expr_riaz[common_genes]
+        resp_col = None
+        for col in ["RESPONSE_BINARY", "response", "RESPONDER"]:
+            if col in df_clin.columns:
+                resp_col = col
+                break
 
-    expr_raw_merged = pd.concat([expr_liu, expr_hugo, expr_riaz], axis=0)
+        if resp_col is not None:
+            df_clin["temp_resp"] = pd.to_numeric(df_clin[resp_col], errors="coerce")
+            df_clin.dropna(subset=["temp_resp"], inplace=True)
+            df_clin["Response"] = df_clin["temp_resp"].map(
+                {1.0: "Responder (CR/PR)", 0.0: "Non-responder (PD)"}
+            )
+            df_clin.drop(columns=["temp_resp"], inplace=True)
+        else:
+            df_clin["Response"] = np.nan
 
-    expr_liu_scaled = zscore_df(expr_liu)
-    expr_hugo_scaled = zscore_df(expr_hugo)
-    expr_riaz_scaled = zscore_df(expr_riaz)
-    expr_scaled_merged = pd.concat([expr_liu_scaled, expr_hugo_scaled, expr_riaz_scaled], axis=0)
+        df_clin.dropna(subset=["Response"], inplace=True)
+        common = df_expr.index.intersection(df_clin.index)
+        clean_expr_dict[name] = df_expr.loc[common]
+        clean_clin_dict[name] = df_clin.loc[common]
 
-    clin_liu["Cohort"] = "Liu 2019"
-    clin_hugo["Cohort"] = "Hugo 2016"
-    clin_riaz["Cohort"] = "Riaz 2017"
-
-    clin_merged = pd.concat(
-        [clin_liu[["Cohort", "response"]], clin_hugo[["Cohort", "response"]], clin_riaz[["Cohort", "response"]]],
-        axis=0,
+    common_genes = sorted(
+        list(set.intersection(*(set(clean_expr_dict[c].columns) for c in trial_names)))
     )
+    print(f"Number of common genes across trial cohorts: {len(common_genes)}")
 
-    expr_raw_merged = expr_raw_merged.loc[clin_merged.index]
-    expr_scaled_merged = expr_scaled_merged.loc[clin_merged.index]
+    raw_dfs: list[pd.DataFrame] = []
+    scaled_dfs: list[pd.DataFrame] = []
+    clin_dfs: list[pd.DataFrame] = []
 
-    clin_merged["Response"] = clin_merged["response"].map({1.0: "Responder (CR/PR)", 0.0: "Non-responder (PD)"})
+    for name in trial_names:
+        e_raw = clean_expr_dict[name][common_genes]
+        e_scaled = zscore_df(e_raw)
+        c_df = clean_clin_dict[name][["Cohort", "Response"]]
 
-    colors_cohort = COHORT_PALETTE
+        raw_dfs.append(e_raw)
+        scaled_dfs.append(e_scaled)
+        clin_dfs.append(c_df)
+
+    expr_raw_merged = pd.concat(raw_dfs, axis=0)
+    expr_scaled_merged = pd.concat(scaled_dfs, axis=0)
+    clin_merged = pd.concat(clin_dfs, axis=0)
+
+    # Sort samples: Cohort order (as loaded), then Responder before Non-responder within each cohort
+    _cohort_order_map = {name: i for i, name in enumerate(trial_names)}
+    _response_order_map = {"Responder (CR/PR)": 0, "Non-responder (PD)": 1}
+    clin_merged["_cohort_rank"] = clin_merged["Cohort"].map(_cohort_order_map)
+    clin_merged["_response_rank"] = clin_merged["Response"].map(_response_order_map)
+    clin_merged.sort_values(["_cohort_rank", "_response_rank"], inplace=True)
+    clin_merged.drop(columns=["_cohort_rank", "_response_rank"], inplace=True)
+
+    sort_idx = clin_merged.index
+    expr_raw_merged = expr_raw_merged.loc[sort_idx]
+    expr_scaled_merged = expr_scaled_merged.loc[sort_idx]
+
+    # Average within-cohort gene variance to select top biological genes
+    gene_variances = pd.DataFrame({
+        name: df[common_genes].var(axis=0) for name, df in clean_expr_dict.items()
+    }).mean(axis=1)
+
+    top_heatmap_genes = gene_variances.sort_values(ascending=False).head(N_TOP_HEATMAP_GENES).index.tolist()
+    print("Top 5 genes by average within-cohort variance:", top_heatmap_genes[:5])
+
+    colors_cohort = resolve_cohort_palette(trial_names)
     colors_response = {
         "Responder (CR/PR)": RESPONSE_PALETTE["CR/PR"],
         "Non-responder (PD)": RESPONSE_PALETTE["PD"],
@@ -129,38 +153,35 @@ def main() -> None:
     col_colors["Response"] = clin_merged["Response"].map(colors_response)
 
     legend_elements = [
-        Patch(facecolor=COHORT_PALETTE["Liu 2019"], label="Liu 2019"),
-        Patch(facecolor=COHORT_PALETTE["Hugo 2016"], label="Hugo 2016"),
-        Patch(facecolor=COHORT_PALETTE["Riaz 2017"], label="Riaz 2017"),
+        Patch(facecolor=colors_cohort[name], label=name) for name in trial_names if name in colors_cohort
+    ] + [
         Patch(facecolor="white", edgecolor="none", label=""),
         Patch(facecolor=RESPONSE_PALETTE["CR/PR"], label="Responder (CR/PR)"),
         Patch(facecolor=RESPONSE_PALETTE["PD"], label="Non-responder (PD)"),
     ]
 
-    print("Calculating gene variances on raw log2 data...")
-    raw_variances = expr_raw_merged.var(axis=0)
-    top_50_genes = raw_variances.sort_values(ascending=False).head(50).index.tolist()
-    print("Top 5 genes by variance:", top_50_genes[:5])
+    # Raw: plot true log2(TPM+1) values so cross-cohort baseline shifts are genuinely visible
+    df_raw_heatmap = expr_raw_merged[top_heatmap_genes].T
+    df_scaled_heatmap = expr_scaled_merged[top_heatmap_genes].T
 
-    df_raw_heatmap = expr_raw_merged[top_50_genes].T
-    df_scaled_heatmap = expr_scaled_merged[top_50_genes].T
-
-    print("Generating raw expression heatmap...")
+    print("Generating raw expression heatmap (before cohort batch correction)...")
     g_raw = sns.clustermap(
         df_raw_heatmap,
         method="ward",
         metric="euclidean",
         cmap="viridis",
         col_colors=col_colors,
+        col_cluster=False,
         figsize=(12, 14),
         yticklabels=True,
         xticklabels=False,
+        robust=True,
         cbar_pos=(0.02, 0.8, 0.035, 0.15),
-        cbar_kws={"label": "log2(Expression + 1)"},
+        cbar_kws={"label": "log2(TPM+1)"},
     )
 
     g_raw.ax_col_dendrogram.set_title(
-        "Expression Heatmap Before Batch Correction (Top 50 Genes by Variance)",
+        f"Expression Heatmap Before Batch Correction (Top {N_TOP_HEATMAP_GENES} Genes by Variance)",
         fontsize=14,
         fontweight="bold",
         pad=15,
@@ -175,7 +196,7 @@ def main() -> None:
         handles=legend_elements,
         loc="lower center",
         bbox_to_anchor=(0.5, -0.25),
-        ncol=4,
+        ncol=min(4, len(legend_elements)),
         frameon=True,
     )
 
@@ -183,24 +204,25 @@ def main() -> None:
     save_fig(g_raw.fig, raw_heatmap_path)
     print(f"Saved raw heatmap to {raw_heatmap_path.relative_to(BASE_DIR).as_posix()}")
 
-    print("Generating standardized expression heatmap...")
+    print("Generating standardised expression heatmap (after per-cohort Z-score correction)...")
     g_scaled = sns.clustermap(
         df_scaled_heatmap,
         method="ward",
         metric="euclidean",
-        cmap="RdBu_r",
+        cmap="viridis",
         col_colors=col_colors,
+        col_cluster=False,
         figsize=(12, 14),
         yticklabels=True,
         xticklabels=False,
         vmin=-3,
         vmax=3,
         cbar_pos=(0.02, 0.8, 0.035, 0.15),
-        cbar_kws={"label": "Z-score Expression"},
+        cbar_kws={"label": "Standardised Z-score (Per-Cohort)"},
     )
 
     g_scaled.ax_col_dendrogram.set_title(
-        "Expression Heatmap After Batch Correction (Top 50 Genes by Variance)",
+        f"Expression Heatmap After Batch Correction (Top {N_TOP_HEATMAP_GENES} Genes by Variance)",
         fontsize=14,
         fontweight="bold",
         pad=15,
@@ -215,7 +237,7 @@ def main() -> None:
         handles=legend_elements,
         loc="lower center",
         bbox_to_anchor=(0.5, -0.25),
-        ncol=4,
+        ncol=min(4, len(legend_elements)),
         frameon=True,
     )
 

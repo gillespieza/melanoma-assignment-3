@@ -1,9 +1,10 @@
 """
 Dimensionality Reduction & Batch Correction Analysis across Melanoma Cohorts.
 
-Performs PCA and UMAP projections across TCGA-SKCM, Liu 2019, Hugo 2016, and Riaz 2017 cohorts
-to assess technical batch effects before and after cohort-independent Z-score scaling,
-and updates batch_correction_report.md.
+Performs PCA and UMAP projections across all ICI trial cohorts loaded from
+data/processed/merged/immunotherapy/ (Liu 2019, Hugo 2016, Riaz 2017, TCGA GDC 2025,
+Gide 2019, Van Allen 2015) to assess technical batch effects before and after
+cohort-independent Z-score scaling, and updates batch_correction_report.md.
 """
 
 # ---------------------------------------------------------------------------
@@ -55,7 +56,8 @@ if str(PROJECT_ROOT) not in sys.path:
 # Project Imports
 # ---------------------------------------------------------------------------
 
-from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
+from src.config.datasets import DatasetConfig, load_dataset_config
+from src.data_loaders import load_merged_immunotherapy
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, resolve_cohort_palette, set_presentation_style
 from src.utils.formatting import generate_obsidian_frontmatter
 from src.utils.logging import TeeStream
@@ -79,6 +81,9 @@ _COL_COHORT: str = "Cohort"
 _COL_RESPONSE: str = "Response"
 _COL_RAW_RESPONSE: str = "response"
 
+# Config Path
+CONFIG_PATH: Path = SUBPROJECT_ROOT / "config" / "datasets.yaml"
+
 # Dimension Reduction Hyperparameters
 N_TOP_VARIABLE_GENES: int = 1000
 N_PCA_COMPONENTS: int = 2
@@ -97,12 +102,11 @@ N_TOP_HEATMAP_GENES: int = 50
 
 # Target Directories & Logging Paths
 EXPLORATORY_PLOT_DIR: Path = SUBPROJECT_ROOT / "plots" / "exploratory"
-REPORT_DIR: Path = PROJECT_ROOT / "reports" / "pillar-1-cohorts-and-preprocessing"
+REPORT_DIR: Path = SUBPROJECT_ROOT / "reports" / "pillar-1-cohorts-and-preprocessing"
 LOG_DIR: Path = get_subproject_log_dir(SCRIPT_DIR)
 LOG_PATH: Path = LOG_DIR / "run_dimensionality_reduction.log"
 
 # Domain Category Labels & Orders
-COHORT_ORDER: List[str] = ["TCGA-SKCM", "Liu 2019", "Hugo 2016", "Riaz 2017"]
 RESPONSE_ORDER: List[str] = ["Responder (CR/PR)", "Non-responder (PD)"]
 RESPONSE_LABEL_MAP: Dict[float, str] = {
     1.0: "Responder (CR/PR)",
@@ -144,55 +148,45 @@ def _align_expr_clin(
     return expr.loc[common], clin.loc[common]
 
 
-def load_all_cohorts(
-    data_dir: Path,
-) -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]]:
-    """Loads and aligns Liu, Hugo, Riaz, and TCGA-SKCM datasets.
+def load_all_cohorts() -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], List[str], List[str]]:
+    """Loads and aligns the pre-merged immunotherapy dataset.
 
-    Args:
-        data_dir: Path to raw and processed data directory.
+    Delegates to load_merged_immunotherapy() which reads from
+    data/processed/merged/immunotherapy/, the authoritative source that
+    includes the TCGA GDC 2025 immunotherapy-treated subset.
 
     Returns:
-        Tuple of dicts mapping cohort names to expr and clin DataFrames.
+        Tuple of (expr_dict, clin_dict, cohort_order, trial_names).
     """
-    e_liu, c_liu = _align_expr_clin(*load_liu_2019(data_dir))
-    e_hugo, c_hugo = _align_expr_clin(*load_hugo_2016(data_dir))
-    e_riaz, c_riaz = _align_expr_clin(*load_riaz_2017(data_dir))
-
-    tcga_dir = PROCESSED_DIR / "skcm_tcga_pan_can_atlas_2018"
-    e_tcga = pd.read_csv(tcga_dir / "expr_cleaned.csv", index_col=_COL_SAMPLE_ID)
-    c_tcga = pd.read_csv(tcga_dir / "clin_cleaned.csv", index_col=_COL_SAMPLE_ID)
-    e_tcga, c_tcga = _align_expr_clin(e_tcga, c_tcga)
-
-    c_tcga[_COL_COHORT] = COHORT_ORDER[0]
-    c_liu[_COL_COHORT] = COHORT_ORDER[1]
-    c_hugo[_COL_COHORT] = COHORT_ORDER[2]
-    c_riaz[_COL_COHORT] = COHORT_ORDER[3]
-
-    expr_dict = dict(zip(COHORT_ORDER, [e_tcga, e_liu, e_hugo, e_riaz]))
-    clin_dict = dict(zip(COHORT_ORDER, [c_tcga, c_liu, c_hugo, c_riaz]))
-    return expr_dict, clin_dict
+    return load_merged_immunotherapy(DATA_DIR)
 
 
 def select_top_variable_genes(
-    expr_dict: Dict[str, pd.DataFrame], top_n: int = N_TOP_VARIABLE_GENES
+    expr_dict: Dict[str, pd.DataFrame],
+    trial_names: List[str],
+    top_n: int = N_TOP_VARIABLE_GENES,
 ) -> Tuple[List[str], List[str], List[str]]:
     """Identifies common genes across cohorts and selects top variable genes.
 
     Args:
         expr_dict: Dictionary mapping cohort names to expression DataFrames.
+        trial_names: Ordered list of trial cohort names.
         top_n: Number of high-variance genes to select.
 
     Returns:
-        Tuple of (4-cohort common genes, 3-trial common genes, top N variable genes).
+        Tuple of (all-cohort common genes, trial-cohort common genes, top N variable genes).
     """
-    g4 = sorted(list(set.intersection(*(set(df.columns) for df in expr_dict.values()))))
-    trial_dfs = [expr_dict[c] for c in COHORT_ORDER[1:]]
-    g3 = sorted(list(set.intersection(*(set(df.columns) for df in trial_dfs))))
+    g_all = sorted(list(set.intersection(*(set(df.columns) for df in expr_dict.values()))))
+    trial_dfs = [expr_dict[c] for c in trial_names if c in expr_dict]
+    g_trials = (
+        sorted(list(set.intersection(*(set(df.columns) for df in trial_dfs))))
+        if trial_dfs
+        else g_all
+    )
 
-    pooled_g4 = pd.concat([df[g4] for df in expr_dict.values()], axis=0)
-    top_genes = pooled_g4.var(axis=0).sort_values(ascending=False).head(top_n).index.tolist()
-    return g4, g3, top_genes
+    pooled_g = pd.concat([df[g_all] for df in expr_dict.values()], axis=0)
+    top_genes = pooled_g.var(axis=0).sort_values(ascending=False).head(top_n).index.tolist()
+    return g_all, g_trials, top_genes
 
 
 # ---------------------------------------------------------------------------
@@ -406,15 +400,19 @@ def _render_2x2_scatter_grid(
 
 
 def _get_grid_configs(
-    dim_prefix: str, method_name: str, resp_colors: Dict[str, str]
+    dim_prefix: str,
+    method_name: str,
+    trial_names: List[str],
+    resp_colors: Dict[str, str],
 ) -> List[Any]:
     """Builds tuple configurations for 2x2 scatter plot grid panels."""
+    cohort_palette = resolve_cohort_palette(trial_names)
     return [
-        (*_grid_col_names(dim_prefix, "Raw"), _COL_COHORT, COHORT_ORDER[1:], COHORT_PALETTE,
+        (*_grid_col_names(dim_prefix, "Raw"), _COL_COHORT, trial_names, cohort_palette,
          f"{method_name} Before Batch Correction (Coloured by Cohort)"),
         (*_grid_col_names(dim_prefix, "Raw"), _COL_RESPONSE, RESPONSE_ORDER, resp_colors,
          f"{method_name} Before Batch Correction (Coloured by Response)"),
-        (*_grid_col_names(dim_prefix, "Scaled"), _COL_COHORT, COHORT_ORDER[1:], COHORT_PALETTE,
+        (*_grid_col_names(dim_prefix, "Scaled"), _COL_COHORT, trial_names, cohort_palette,
          f"{method_name} After Batch Correction (Coloured by Cohort)"),
         (*_grid_col_names(dim_prefix, "Scaled"), _COL_RESPONSE, RESPONSE_ORDER, resp_colors,
          f"{method_name} After Batch Correction (Coloured by Response)"),
@@ -426,6 +424,7 @@ def plot_trial_reduction_grid(
     dim_prefix: str,
     pc_vars: Tuple[float, float, float, float],
     method_name: str,
+    trial_names: List[str],
     output_path: Path,
 ) -> None:
     """Renders 2x2 grid of scatter plots coloured by Cohort and Response."""
@@ -435,7 +434,7 @@ def plot_trial_reduction_grid(
         "Non-responder (PD)": RESPONSE_PALETTE["PD"],
     }
     pc1_r, pc2_r, pc1_s, pc2_s = pc_vars
-    configs = _get_grid_configs(dim_prefix, method_name, resp_colors)
+    configs = _get_grid_configs(dim_prefix, method_name, trial_names, resp_colors)
 
     _render_2x2_scatter_grid(axes, df, configs, dim_prefix, pc1_r, pc1_s, pc2_r, pc2_s)
     plt.suptitle(
@@ -452,25 +451,30 @@ def plot_trial_reduction_grid(
 # ---------------------------------------------------------------------------
 
 def _report_section_1a(
-    n_full: int, n_tcga: int, n_liu: int, n_hugo: int, n_riaz: int,
-    n_top: int, n_g4: int, var_full: Tuple[float, float, float, float],
+    n_full: int,
+    cohort_counts: Dict[str, int],
+    n_top: int,
+    n_g_all: int,
+    var_full: Tuple[float, float, float, float],
 ) -> str:
     """Returns Markdown text for Section 1.1: Full Cohort Batch Assessment."""
     p1_rf, p2_rf, p1_sf, p2_sf = var_full
+    cohort_breakdown = ", ".join(
+        f"**{name}** [$N = {count}$]" for name, count in cohort_counts.items()
+    )
     return (
         f"### 1.1 Full Cohort Batch Assessment (N = {n_full})\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        f"> **What**: PCA across $N = {n_full}$ patients from four cohorts (**TCGA-SKCM** "
-        f"[$N = {n_tcga}$], **Liu 2019** [$N = {n_liu}$], **Hugo 2016** [$N = {n_hugo}$], "
-        f"**Riaz 2017** [$N = {n_riaz}$]) using {n_top:,} genes from {n_g4:,} common genes.\n"
+        f"> **What**: PCA across $N = {n_full}$ patients from cohorts ({cohort_breakdown}) "
+        f"using {n_top:,} genes from {n_g_all:,} common genes.\n"
         "> **Why**: Combining transcriptomic data introduces batch effects. Uncorrected "
         "models risk classifying sequencing centres rather than patient biology.\n"
         "> **Question Answered**: Does cohort-independent Z-score standardisation eliminate "
-        "technical separation between reference (TCGA) and trial cohorts?\n\n"
+        "technical separation between reference and trial cohorts?\n\n"
         "![[batch_effect_pca.png]]\n\n"
         "### Key Observations\n"
-        f"- **Raw**: Separation between TCGA and trial cohorts. Uncorrected PC1 "
+        f"- **Raw**: Separation between reference and trial cohorts. Uncorrected PC1 "
         f"({p1_rf:.1f}%) and PC2 ({p2_rf:.1f}%) reflect platform shifts.\n"
         f"- **Corrected**: Standardisation ($\\mu=0, \\sigma=1$ per study) aligns datasets. "
         f"Post-correction PC1 ({p1_sf:.1f}%) and PC2 ({p2_sf:.1f}%) show homogeneous spread.\n\n"
@@ -478,53 +482,66 @@ def _report_section_1a(
 
 
 def _report_section_1b(
-    n_trials: int, n_liu: int, n_hugo: int, n_riaz: int, n_g3: int,
+    n_trials: int,
+    trial_counts: Dict[str, int],
+    n_g_trials: int,
     var_trials: Tuple[float, float, float, float],
 ) -> str:
     """Returns Markdown text for Section 1.2: ICI Trial Cohort Batch Assessment."""
     p1_rt, p2_rt, p1_st, p2_st = var_trials
+    n_trial_cohorts = len(trial_counts)
+    trial_breakdown = ", ".join(
+        f"**{name}** [$N = {count}$]" for name, count in trial_counts.items()
+    )
     return (
         f"### 1.2 ICI Trial Cohort Batch Assessment (N = {n_trials})\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        f"> **What**: Technical effects between 3 training cohorts (**Liu 2019** [$N = {n_liu}$], "
-        f"**Hugo 2016** [$N = {n_hugo}$], **Riaz 2017** [$N = {n_riaz}$]; $N = {n_trials}$) "
-        f"across {n_g3:,} trial genes.\n"
+        f"> **What**: Technical effects between {n_trial_cohorts} training cohorts ({trial_breakdown}; "
+        f"$N = {n_trials}$) across {n_g_trials:,} trial genes.\n"
         "> **Why**: Trials vary by platform, tissue state, and treatment. Verify baseline "
         "offsets are eliminated before LOCO cross-validation.\n"
         "> **Question Answered**: Are inter-trial offsets harmonised without leaking test data?\n\n"
         "![[batch_effect_ici_pca.png]]\n\n"
         "### Key Observations\n"
-        f"- **Raw**: In $\\log_2(\\text{{TPM}})$, `Liu 2019` ($N = {n_liu}$) separates from "
-        f"`Riaz 2017` ($N = {n_riaz}$) and `Hugo 2016` ($N = {n_hugo}$) along PC1 "
-        f"({p1_rt:.1f}%), confirming sequencing depth/platform dominate signals.\n"
-        f"- **Corrected**: Standardisation removes study-level separation. distributions "
+        f"- **Raw**: In $\\log_2(\\text{{TPM}})$, study-level offsets along PC1 ({p1_rt:.1f}%) "
+        f"and PC2 ({p2_rt:.1f}%) confirm sequencing depth and platform dominate raw signals.\n"
+        f"- **Corrected**: Standardisation removes study-level separation. Distributions "
         f"overlap smoothly across PC1 ({p1_st:.1f}%) and PC2 ({p2_st:.1f}%).\n\n"
     )
 
 
 def _report_section_1(
-    n_full: int, n_tcga: int, n_liu: int, n_hugo: int, n_riaz: int,
-    n_trials: int, n_top: int, n_g4: int, n_g3: int,
+    n_full: int,
+    cohort_counts: Dict[str, int],
+    n_trials: int,
+    trial_counts: Dict[str, int],
+    n_top: int,
+    n_g_all: int,
+    n_g_trials: int,
     var_full: Tuple[float, float, float, float],
     var_trials: Tuple[float, float, float, float],
 ) -> str:
     """Returns Markdown text for Section 1: Cohort Batch Assessment."""
-    sec1a = _report_section_1a(n_full, n_tcga, n_liu, n_hugo, n_riaz, n_top, n_g4, var_full)
-    sec1b = _report_section_1b(n_trials, n_liu, n_hugo, n_riaz, n_g3, var_trials)
-    return f"## 1. Cohort Batch Assessment\n\n{sec1a}{sec1b}" 
+    sec1a = _report_section_1a(n_full, cohort_counts, n_top, n_g_all, var_full)
+    sec1b = _report_section_1b(n_trials, trial_counts, n_g_trials, var_trials)
+    return f"## 1. Cohort Batch Assessment\n\n{sec1a}{sec1b}"
 
 
 def _report_section_2(
-    n_trials: int, n_top: int, n_liu: int, n_hugo: int, n_riaz: int,
+    n_trials: int,
+    n_top: int,
+    trial_counts: Dict[str, int],
 ) -> str:
     """Returns Markdown text for Section 2: Immunotherapy Trial Reduction."""
+    trial_names_str = ", ".join(trial_counts.keys())
+    trial_bullets_str = ", ".join(f"`{name}` ($N = {count}$)" for name, count in trial_counts.items())
     return (
         f"## 2. Immunotherapy Trial Dimensionality Reduction (N = {n_trials})\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
         f"> **What**: Linear (PCA) and non-linear (UMAP) reduction to $N = {n_trials}$ "
-        f"response-annotated patients (Liu 2019, Hugo 2016, Riaz 2017) using {n_top:,} genes.\n"
+        f"response-annotated patients ({trial_names_str}) using {n_top:,} genes.\n"
         "> **Why**: Test if baseline expression profiles naturally segregate responders.\n"
         "> **Question Answered**: Can therapeutic response be predicted directly from global "
         "2D expression clusters?\n\n"
@@ -533,8 +550,7 @@ def _report_section_2(
         "![[umap_dimensionality_reduction.png]]\n\n"
         "> [!INSIGHT] Key Insights\n"
         ">\n"
-        f"> - **Harmonisation**: Z-score scaling integrates `Liu 2019` ($N = {n_liu}$), "
-        f"`Riaz 2017` ($N = {n_riaz}$), `Hugo 2016` ($N = {n_hugo}$) in embeddings.\n"
+        f"> - **Harmonisation**: Z-score scaling integrates {trial_bullets_str} in embeddings.\n"
         "> - **Mixing**: Responders (CR/PR) and non-responders (PD) mix homogeneously.\n"
         "> - **Biological Rationale**: Response is driven by multi-pathway immune features, "
         "not global variance. Simple 2D projections cannot separate response groups.\n\n"
@@ -547,24 +563,37 @@ def _report_section_3(n_trials: int) -> str:
         f"## 3. Gene-Level Expression Heatmaps (Top {N_TOP_HEATMAP_GENES} Genes)\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        f"> **What**: Inspect individual gene heatmaps for top {N_TOP_HEATMAP_GENES} genes "
-        f"across trial patients ($N = {n_trials}$) with hierarchical clustering.\n"
-        "> **Why**: Validate batch effects at individual gene resolutions.\n"
-        "> **Question Answered**: Does Z-score prevent gene-based cohort clustering?\n\n"
+        f"> **What**: Inspect heatmaps for top {N_TOP_HEATMAP_GENES} genes by average within-cohort variance "
+        f"across trial patients ($N = {n_trials}$). Samples are sorted by cohort, then by responder "
+        "status (CR/PR before PD) within each cohort, with no hierarchical column clustering, "
+        "to make cohort-level baseline differences and response group separation directly readable.\n"
+        "> **Why**: Validate batch effects at individual gene resolution and assess whether "
+        "per-cohort Z-score correction removes study-level baseline shifts while preserving "
+        "responder vs. non-responder biological contrast.\n"
+        "> **Question Answered**: Are cohort expression baselines visibly harmonised after "
+        "per-cohort Z-score standardisation, and does the response group signal become "
+        "more consistent across cohorts?\n\n"
         "### Raw & Standardised\n"
         "![[heatmap_top_variance_genes_raw.png]]\n"
         "![[heatmap_top_variance_genes_standardized.png]]\n\n"
         "### Key Observations\n"
-        "- **Raw**: Columns cluster by cohort source, showing distinct blocks.\n"
-        "- **Corrected**: Within-cohort Z-score standardisation eliminates study-based "
-        "clustering, producing complete cohort mixing.\n\n"
+        "- **Raw** (`log2(TPM+1)`, robust 2nd–98th percentile scaling): Cohort blocks are visible "
+        "in the Cohort colour bar. Van Allen 2015 shows a notably elevated baseline due to its "
+        "different normalisation pipeline. The four iAtlas cohorts (Liu 2019, Hugo 2016, Riaz 2017, "
+        "Gide 2019) share similar expression scales, reflecting their common preprocessing.\n"
+        "- **Corrected** (per-cohort Z-score, $\\mu=0$, $\\sigma=1$): Study-level baseline offsets "
+        "are removed. Gene expression patterns now reflect within-cohort biological variation rather "
+        "than technical platform differences, with the responder/non-responder contrast "
+        "becoming more consistent across cohorts.\n\n"
     )
 
 
-def _report_section_4(n_liu: int, n_hugo: int, n_riaz: int) -> str:
+
+def _report_section_4(trial_counts: Dict[str, int]) -> str:
     """Returns Markdown text for Section 4: Cross-Validation Rigour."""
+    trial_bullets = ", ".join(f"`{name}` ($N = {count}$)" for name, count in trial_counts.items())
     return (
-        "## 4. Cross-Validation Rigor & Data Leakage Prevention\n\n"
+        "## 4. Cross-Validation Rigour & Data Leakage Prevention\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
         "> **What**: Compare cohort-independent Z-score against global batch correction.\n"
@@ -578,16 +607,36 @@ def _report_section_4(n_liu: int, n_hugo: int, n_riaz: int) -> str:
         "zero leakage. Each held-out study remains unobserved during training.\n\n"
         "> [!WARNING] Limitations\n"
         ">\n"
-        f"> - **Constraints**: `Hugo 2016` ($N = {n_hugo}$) has lower power than "
-        f"`Liu 2019` ($N = {n_liu}$) and `Riaz 2017` ($N = {n_riaz}$).\n"
+        f"> - **Constraints**: Sample sizes vary across trial cohorts ({trial_bullets}).\n"
         "> - **Scope**: Projections confirm single-gene thresholds are insufficient, "
-        "motivating a 12-feature multimodal ensemble approach.\n\n"
+        "motivating a multimodal ensemble feature approach.\n\n"
+    )
+
+
+def _report_section_5() -> str:
+    """Returns Markdown text for Script Reference callout box."""
+    return (
+        "> [!NOTE] Script Reference\n"
+        ">\n"
+        "> - [`run_dimensionality_reduction.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_dimensionality_reduction.py): "
+        "Performs PCA and UMAP dimensionality reduction across all active ICI trial cohorts, evaluates cohort-independent Z-score standardisation against raw expression profiles, and produces `batch_correction_report.md`.\n"
+        "> - [`run_expression_heatmap.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/exploratory_plots/run_expression_heatmap.py): "
+        "Generates raw log2(TPM+1) and per-cohort Z-score heatmap visualisations for top high-variance genes across trial cohorts (`heatmap_top_variance_genes_raw.png`, `heatmap_top_variance_genes_standardized.png`).\n"
+        "> - [`data_loaders.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/data_loaders.py): "
+        "Provides `load_merged_immunotherapy()` to retrieve aligned raw and standardised expression matrices and clinical metadata across ICI trial cohorts.\n"
+        "> - [`styles.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/styles.py): "
+        "Central definition of Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`).\n"
     )
 
 
 def generate_report_content(
-    n_full: int, n_tcga: int, n_liu: int, n_hugo: int, n_riaz: int,
-    n_trials: int, n_top: int, n_g4: int, n_g3: int,
+    n_full: int,
+    cohort_counts: Dict[str, int],
+    n_trials: int,
+    trial_counts: Dict[str, int],
+    n_top: int,
+    n_g_all: int,
+    n_g_trials: int,
     var_full: Tuple[float, float, float, float],
     var_trials_all: Tuple[float, float, float, float],
 ) -> str:
@@ -598,18 +647,24 @@ def generate_report_content(
         tags=["melanoma", "batch-correction", "pca", "umap", "tme", "transcriptomics"],
         extra_css_classes=["table-center", "row-alt"],
     )
+    cohorts_str = ", ".join(f"**{name}**" for name in cohort_counts.keys())
     intro = (
         "# Batch Effect Assessment & Dimensionality Reduction Analysis\n\n"
-        "This report documents how technical batch effects were evaluated and harmonised "
-        "across four melanoma cohorts (**TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and "
-        "**Riaz 2017**) and tests if global profiles separate therapeutic responses.\n\n"
+        f"This report documents how technical batch effects were evaluated and harmonised "
+        f"across {len(cohort_counts)} melanoma cohorts ({cohorts_str}) and tests if "
+        "global profiles separate therapeutic responses.\n\n"
     )
     return (
-        f"{fm}\n\n" + intro + _report_section_1(
-            n_full, n_tcga, n_liu, n_hugo, n_riaz, n_trials, n_top, n_g4, n_g3,
+        f"{fm}\n\n"
+        + intro
+        + _report_section_1(
+            n_full, cohort_counts, n_trials, trial_counts, n_top, n_g_all, n_g_trials,
             var_full, var_trials_all,
-        ) + _report_section_2(n_trials, n_top, n_liu, n_hugo, n_riaz)
-        + _report_section_3(n_trials) + _report_section_4(n_liu, n_hugo, n_riaz)
+        )
+        + _report_section_2(n_trials, n_top, trial_counts)
+        + _report_section_3(n_trials)
+        + _report_section_4(trial_counts)
+        + _report_section_5()
     )
 
 
@@ -633,21 +688,22 @@ def _run_pca_batch_projections(
     expr_dict: Dict[str, pd.DataFrame],
     clin_dict: Dict[str, pd.DataFrame],
     top_genes: List[str],
-    g3: List[str],
+    g_trials: List[str],
+    cohort_order: List[str],
     trial_names: List[str],
 ) -> Tuple[Tuple[float, float, float, float], Tuple[float, float, float, float], int]:
     """Runs full and trial cohort PCA projections."""
     expr_full_raw, expr_full_scaled, clin_full = _build_concat(
-        expr_dict, clin_dict, COHORT_ORDER, top_genes, with_response=False
+        expr_dict, clin_dict, cohort_order, top_genes, with_response=False
     )
     pcs_r, pcs_s, p1_rf, p2_rf, p1_sf, p2_sf = fit_pca_projection(expr_full_raw, expr_full_scaled)
     _assign_pca_coords(clin_full, pcs_r, pcs_s)
     plot_cohort_batch_pca(
-        clin_full, (p1_rf, p2_rf, p1_sf, p2_sf), COHORT_ORDER,
+        clin_full, (p1_rf, p2_rf, p1_sf, p2_sf), cohort_order,
         "Full Cohort", EXPLORATORY_PLOT_DIR / "batch_effect_pca.png",
     )
     expr_tr_all_raw, expr_tr_all_scaled, clin_tr_all = _build_concat(
-        expr_dict, clin_dict, trial_names, g3, with_response=False
+        expr_dict, clin_dict, trial_names, g_trials, with_response=False
     )
     pcs_tr_r, pcs_tr_s, p1_rt, p2_rt, p1_st, p2_st = fit_pca_projection(
         expr_tr_all_raw, expr_tr_all_scaled
@@ -677,13 +733,13 @@ def _run_trial_reduction_grids(
     _assign_pca_coords(clin_tr_resp, pcs_top_r, pcs_top_s)
     plot_trial_reduction_grid(
         clin_tr_resp, "PCA", (p1_tr, p2_tr, p1_ts, p2_ts),
-        "PCA", EXPLORATORY_PLOT_DIR / "pca_dimensionality_reduction.png",
+        "PCA", trial_names, EXPLORATORY_PLOT_DIR / "pca_dimensionality_reduction.png",
     )
     um_raw, um_scaled = fit_umap_or_tsne(expr_tr_top_raw, expr_tr_top_scaled)
     _assign_umap_coords(clin_tr_resp, um_raw, um_scaled)
     plot_trial_reduction_grid(
         clin_tr_resp, "UMAP", (0.0, 0.0, 0.0, 0.0),
-        "UMAP", EXPLORATORY_PLOT_DIR / "umap_dimensionality_reduction.png",
+        "UMAP", trial_names, EXPLORATORY_PLOT_DIR / "umap_dimensionality_reduction.png",
     )
 
 
@@ -694,21 +750,26 @@ def main() -> None:
     print("==================================================\n")
     for directory in [EXPLORATORY_PLOT_DIR, REPORT_DIR]:
         directory.mkdir(exist_ok=True, parents=True)
-    expr_dict, clin_dict = load_all_cohorts(DATA_DIR)
-    g4, g3, top_genes = select_top_variable_genes(expr_dict)
-    trial_names = COHORT_ORDER[1:]
+    expr_dict, clin_dict, cohort_order, trial_names = load_all_cohorts()
+    g_all, g_trials, top_genes = select_top_variable_genes(expr_dict, trial_names)
+
     var_full, var_trials, n_full = _run_pca_batch_projections(
-        expr_dict, clin_dict, top_genes, g3, trial_names
+        expr_dict, clin_dict, top_genes, g_trials, cohort_order, trial_names
     )
     _run_trial_reduction_grids(expr_dict, clin_dict, top_genes, trial_names)
-    n_tcga, n_liu = len(expr_dict["TCGA-SKCM"]), len(expr_dict["Liu 2019"])
-    n_hugo, n_riaz = len(expr_dict["Hugo 2016"]), len(expr_dict["Riaz 2017"])
-    n_tr_all = sum(len(expr_dict[c]) for c in trial_names)
+
+    cohort_counts = {c: len(expr_dict[c]) for c in cohort_order}
+    trial_counts = {c: len(expr_dict[c]) for c in trial_names}
+    n_tr_all = sum(trial_counts.values())
+
     report_md = generate_report_content(
-        n_full, n_tcga, n_liu, n_hugo, n_riaz, n_tr_all,
-        len(top_genes), len(g4), len(g3), var_full, var_trials,
+        n_full, cohort_counts, n_tr_all, trial_counts,
+        len(top_genes), len(g_all), len(g_trials), var_full, var_trials,
     )
     write_batch_correction_report(REPORT_DIR / "batch_correction_report.md", report_md)
+    root_report_dir = PROJECT_ROOT / "reports" / "pillar-1-cohorts-and-preprocessing"
+    if root_report_dir != REPORT_DIR:
+        write_batch_correction_report(root_report_dir / "batch_correction_report.md", report_md)
     print("==================================================")
     print("Done!")
     print("==================================================")
