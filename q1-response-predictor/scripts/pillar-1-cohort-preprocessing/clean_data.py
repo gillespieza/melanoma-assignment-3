@@ -1328,6 +1328,21 @@ def main() -> None:
 
     success_count = _run_cleaning_pipeline(datasets)
 
+    if success_count > 0:
+        try:
+            print("\n  Updating config/data_dictionary.json...")
+            from scripts.pillar_1_cohort_preprocessing.generate_data_dictionary import (
+                OUTPUT_JSON,
+                build_full_data_dictionary,
+            )
+            dictionary = build_full_data_dictionary(PROCESSED_DIR)
+            with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
+                import json
+                json.dump(dictionary, f, indent=2)
+            print(f"  Data dictionary updated ({len(dictionary['columns']):,} features mapped).")
+        except Exception as err:
+            print(f"  [WARNING] Could not update data dictionary: {err}")
+
     print(f"\n{_BANNER_LINE}")
     print(
         f"Workflow completed: "
