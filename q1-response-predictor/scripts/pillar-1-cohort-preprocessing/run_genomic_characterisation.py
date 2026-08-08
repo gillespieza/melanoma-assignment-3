@@ -707,12 +707,10 @@ def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, An
 
 def _build_section_1_info(s: Dict[str, Any]) -> str:
     """Builds Section 1 INFO callout box."""
-    c_str = ", ".join([f"**{c}** ($N = {s['cohort_counts'].get(c, 0)}$)" for c in s["cohort_order"]])
     return f"""> [!INFO] Why We Are Doing This
 >
 > **What**: We compare somatic mutation frequencies of key cutaneous melanoma driver genes
-> (`BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across active ICI trial
-> cohorts: {c_str}.
+> (`BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across active ICI trial cohorts.
 > **Why**: To confirm that our clinical trial cohorts accurately reflect real-world melanoma
 > epidemiology and to evaluate whether pre-treatment mutations in antigen presentation
 > (`B2M`, `TAP1`, `TAP2`) or IFN-$\\gamma$ signalling (`JAK1`, `JAK2`, `STAT1`) drive primary

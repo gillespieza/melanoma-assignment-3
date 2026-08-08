@@ -9,12 +9,12 @@ tags:
   - tmb
   - neoantigens
   - comut
-created: 2026-08-08 15:39
+created: 2026-08-08 19:17
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-08 15:39
+updated: 2026-08-08 19:17
 ---
 
 # Genomic Characteristics of Data Cohorts
@@ -24,8 +24,7 @@ updated: 2026-08-08 15:39
 > [!INFO] Why We Are Doing This
 >
 > **What**: We compare somatic mutation frequencies of key cutaneous melanoma driver genes
-> (`BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across active ICI trial
-> cohorts: **Liu 2019** ($N = 122$), **Hugo 2016** ($N = 27$), **Riaz 2017** ($N = 107$), **TCGA GDC 2025** ($N = 473$), **Gide 2019** ($N = 91$), **Van Allen 2015** ($N = 110$).
+> (`BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across active ICI trial cohorts.
 > **Why**: To confirm that our clinical trial cohorts accurately reflect real-world melanoma
 > epidemiology and to evaluate whether pre-treatment mutations in antigen presentation
 > (`B2M`, `TAP1`, `TAP2`) or IFN-$\gamma$ signalling (`JAK1`, `JAK2`, `STAT1`) drive primary
