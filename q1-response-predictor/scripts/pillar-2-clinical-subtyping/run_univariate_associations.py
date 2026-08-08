@@ -54,6 +54,7 @@ _POOLED_COLS: List[str] = [
     "CLINICAL_STAGE",
     "mut_BRAF",
     "mut_BRAF_V600",
+    "mut_BRAF_V600E",
     "mut_NRAS",
     "mut_NF1",
     "TMB_NONSYNONYMOUS",
@@ -68,6 +69,7 @@ CATEGORICAL_VARS: Dict[str, str] = {
     "Stage (IV vs III)": "CLINICAL_STAGE",
     "BRAF (Any Mutation)": "mut_BRAF",
     "BRAF V600 (Mut vs WT)": "mut_BRAF_V600",
+    "BRAF V600E (Mut vs WT)": "mut_BRAF_V600E",
     "NRAS Mutation (Mut vs WT)": "mut_NRAS",
     "NF1 Mutation (Mut vs WT)": "mut_NF1",
 }
@@ -313,7 +315,7 @@ def _enrich_cohort_mutations(
 
     mut_df = pd.read_csv(mut_path, index_col="SAMPLE_ID")
     df_enriched = clin_df.copy()
-    for gene in ["BRAF", "BRAF_V600", "NRAS", "NF1"]:
+    for gene in ["BRAF", "BRAF_V600", "BRAF_V600E", "NRAS", "NF1"]:
         if gene in mut_df.columns:
             df_enriched[f"mut_{gene}"] = df_enriched.index.map(
                 lambda sid: (1.0 if mut_df.loc[sid, gene] > 0 else 0.0)
@@ -564,46 +566,92 @@ def _add_forest_legend(ax: plt.Axes, cohort_counts: Dict[str, int]) -> None:
     )
 
 
-def _save_forest_artifacts(
-    fig: plt.Figure, all_results: pd.DataFrame, plot_dir: Path
+def _render_single_forest_plot(
+    variables: List[str],
+    all_results: pd.DataFrame,
+    cohort_counts: Dict[str, int],
+    title: str,
+    out_filename: str,
+    plot_dir: Path,
 ) -> None:
-    """Saves output forest plot PNG figure and statistics CSV."""
-    out_path = plot_dir / "univariate_associations.png"
-    save_fig(fig, out_path)
-    print(f"\nSaved univariate associations forest plot to {rel_path(out_path)}")
-
-    csv_path = plot_dir / "univariate_associations_stats.csv"
-    all_results.to_csv(csv_path, index=False)
-    print(f"Saved univariate association statistics table to {rel_path(csv_path)}")
-
-
-def _plot_univariate_associations(
-    all_results: pd.DataFrame, cohort_counts: Dict[str, int], plot_dir: Path
-) -> None:
-    """Renders a publication-ready Forest Plot of Odds Ratios with 95% CIs."""
+    """Renders and saves a single domain-specific Forest Plot figure."""
     cohort_order = ["Pooled Trials"] + [c for c in cohort_counts.keys() if c != "Pooled Trials"]
-    variables = all_results["Variable"].unique().tolist()
+    valid_vars = [v for v in variables if v in all_results["Variable"].unique()]
+    if not valid_vars:
+        return
 
-    n_entries = len(variables) * len(cohort_order)
-    fig_height = max(11, int(n_entries * 0.30) + 4)
+    n_entries = len(valid_vars) * len(cohort_order)
+    fig_height = max(5.5, int(n_entries * 0.32) + 3.0)
 
     fig, ax = plt.subplots(figsize=(14, fig_height))
-    plt.subplots_adjust(left=0.28, right=0.62, top=0.92, bottom=0.15)
+    plt.subplots_adjust(left=0.28, right=0.62, top=0.90, bottom=0.18)
 
     ax.set_xscale("log")
     ax.axvline(1.0, color="#37474F", linestyle="--", linewidth=1.5, zorder=1)
 
     y_pos, y_ticks, y_labels = _draw_forest_variable_rows(
-        ax, variables, all_results, cohort_order, cohort_counts
+        ax, valid_vars, all_results, cohort_order, cohort_counts
     )
     _configure_forest_axes(
         ax, y_pos, y_ticks, y_labels, cohort_counts.get("Pooled Trials", 0)
+    )
+    ax.set_title(
+        f"Univariate Associations: {title} (Forest Plot, N={cohort_counts.get('Pooled Trials', 0)})",
+        fontsize=14, fontweight="bold", pad=15,
     )
     _add_forest_legend(ax, cohort_counts)
 
     sns.despine(ax=ax, top=True, right=True)
     ax.set_axisbelow(True)
-    _save_forest_artifacts(fig, all_results, plot_dir)
+
+    out_path = plot_dir / out_filename
+    save_fig(fig, out_path)
+    print(f"Saved {title.lower()} forest plot to {rel_path(out_path)}")
+
+
+def _plot_univariate_associations(
+    all_results: pd.DataFrame, cohort_counts: Dict[str, int], plot_dir: Path
+) -> None:
+    """Renders master and domain-specific Forest Plots of Odds Ratios with 95% CIs."""
+    # 1. Save master statistics CSV
+    csv_path = plot_dir / "univariate_associations_stats.csv"
+    all_results.to_csv(csv_path, index=False)
+    print(f"Saved univariate association statistics table to {rel_path(csv_path)}")
+
+    # 2. Master plot (all variables)
+    master_vars = all_results["Variable"].unique().tolist()
+    _render_single_forest_plot(
+        master_vars, all_results, cohort_counts,
+        "All Clinical & Genomic Variables", "univariate_associations.png", plot_dir
+    )
+
+    # 3. Separate domain plots
+    _render_single_forest_plot(
+        ["Sex (Male vs Female)", "Stage (IV vs III)", "Age (per SD)"],
+        all_results, cohort_counts,
+        "Clinical Demographics & Stage", "univariate_associations_clinical.png", plot_dir
+    )
+    _render_single_forest_plot(
+        [
+            "BRAF (Any Mutation)",
+            "BRAF V600 (Mut vs WT)",
+            "BRAF V600E (Mut vs WT)",
+            "NRAS Mutation (Mut vs WT)",
+            "NF1 Mutation (Mut vs WT)",
+        ],
+        all_results, cohort_counts,
+        "Driver Mutations", "univariate_associations_mutations.png", plot_dir
+    )
+    _render_single_forest_plot(
+        [
+            "TMB (per SD)",
+            "Total Neoantigens (per SD)",
+            "SNV Neoantigens (per SD)",
+            "Indel Neoantigens (per SD)",
+        ],
+        all_results, cohort_counts,
+        "TMB & Neoantigen Load", "univariate_associations_genomics.png", plot_dir
+    )
 
 
 def _build_pooled_df(cohorts: Dict[str, pd.DataFrame]) -> pd.DataFrame:

@@ -356,10 +356,20 @@ def parse_maf_mutations(
     aa_col = next((c for c in ["HGVSp_Short", "HGVSp", "Protein_Change"] if c in df_mut.columns), None)
     if aa_col:
         is_braf_v600 = (df_mut["Hugo_Symbol"] == "BRAF") & df_mut[aa_col].astype(str).str.contains("V600", case=False, na=False)
-        v600_rows = df_mut[is_braf_v600].copy()
-        if not v600_rows.empty:
+        is_braf_v600e = (df_mut["Hugo_Symbol"] == "BRAF") & df_mut[aa_col].astype(str).str.contains("V600E", case=False, na=False)
+
+        to_concat = []
+        if is_braf_v600.any():
+            v600_rows = df_mut[is_braf_v600].copy()
             v600_rows["Hugo_Symbol"] = "BRAF_V600"
-            df_mut = pd.concat([df_mut, v600_rows], ignore_index=True)
+            to_concat.append(v600_rows)
+        if is_braf_v600e.any():
+            v600e_rows = df_mut[is_braf_v600e].copy()
+            v600e_rows["Hugo_Symbol"] = "BRAF_V600E"
+            to_concat.append(v600e_rows)
+
+        if to_concat:
+            df_mut = pd.concat([df_mut] + to_concat, ignore_index=True)
 
     mutation_matrix = (
         df_mut.assign(mutation=1)
