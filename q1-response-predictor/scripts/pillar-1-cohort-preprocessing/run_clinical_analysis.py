@@ -47,6 +47,7 @@ from src.styles import (
     OKABE_ITO,
     SEX_PALETTE,
     get_cohort_color,
+    resolve_cohort_palette,
     set_presentation_style,
 )
 from src.utils.formatting import (
@@ -405,7 +406,7 @@ def _plot_age_panel(
         df_ages = pd.concat(age_dfs, axis=0, ignore_index=True)
         sns.histplot(
             data=df_ages, x="Age", hue="Cohort", multiple="stack",
-            palette=COHORT_PALETTE, ax=ax, bins=20, kde=True,
+            palette=resolve_cohort_palette(df_ages["Cohort"]), ax=ax, bins=20, kde=True,
             legend=False,
         )
         ax.axvline(

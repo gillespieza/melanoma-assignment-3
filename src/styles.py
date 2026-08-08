@@ -12,6 +12,9 @@ COHORT_PALETTE = {
     "Liu 2019": "#0072B2",               # Okabe-Ito Blue
     "Hugo 2016": "#E69F00",               # Okabe-Ito Orange
     "Riaz 2017": "#CC79A7",               # Okabe-Ito Reddish Purple
+    "Gide 2019": "#56B4E9",               # Okabe-Ito Sky Blue
+    "Van Allen 2015": "#F0E442",           # Okabe-Ito Yellow
+    "TCGA GDC 2025": "#37474F",           # Dark Slate Charcoal Reference
     "TCGA-SKCM": "#37474F",               # Dark Slate Charcoal Reference
     "Pooled Trials": "#009E73",           # Okabe-Ito Bluish Green Benchmark
 }
@@ -180,12 +183,38 @@ def set_presentation_style(font_scale: float = 1.0, dpi: int = 300):
     })
 
 
-def get_cohort_color(cohort_name: str, default: str = "#37474F") -> str:
+def get_cohort_color(cohort_name: str, default: str = None) -> str:
     """Returns the standardized hex colour code for a given cohort."""
+    if not isinstance(cohort_name, str):
+        return default or "#37474F"
     for key, color in COHORT_PALETTE.items():
         if key.lower() in cohort_name.lower():
             return color
-    return default
+    return default or "#37474F"
+
+
+def resolve_cohort_palette(labels) -> dict[str, str]:
+    """Dynamically resolves colorblind-safe Okabe-Ito palette for any set of cohort labels.
+
+    Handles base cohort names, (N=...) suffixed labels, and auto-assigns Okabe-Ito colors
+    for any newly added datasets not explicitly listed in COHORT_PALETTE.
+    """
+    if hasattr(labels, "unique"):
+        labels = labels.unique().tolist()
+    elif isinstance(labels, dict):
+        labels = list(labels.keys())
+
+    resolved = {}
+    fallback_idx = 0
+    for label in labels:
+        if not isinstance(label, str):
+            continue
+        color = get_cohort_color(label, default=None)
+        if color is None:
+            color = OKABE_ITO[fallback_idx % len(OKABE_ITO)]
+            fallback_idx += 1
+        resolved[label] = color
+    return resolved
 
 
 

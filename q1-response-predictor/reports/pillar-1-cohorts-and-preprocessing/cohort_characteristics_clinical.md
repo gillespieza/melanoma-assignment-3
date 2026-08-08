@@ -9,12 +9,12 @@ tags:
   - survival-analysis
   - kaplan-meier
   - immunotherapy
-created: 2026-08-07 13:28
+created: 2026-08-08 15:10
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-07 13:28
+updated: 2026-08-08 15:10
 ---
 
 # Clinical Characteristics of Immunotherapy Data Cohorts
@@ -39,35 +39,35 @@ _**Figure 1: 2×2 Grid of Clinical Demographics and Treatment Histories across I
 
 #### Key Demographics & Treatment Insights
 
-- **Panel A: Sex Distribution ($N = 241$)**: The overall trial cohort shows a male predominance (**56.0% Male** [$N = 135$] vs. **44.0% Female** [$N = 106$]), reflecting real-world cutaneous melanoma incidence patterns where male patients account for the majority of advanced presentations.
-- **Panel B: Age Distribution across Studies**: Evaluated patient ages span from 19 to 89 years with a **median age of 57.0 years** ($	ext{IQR} = 50.0	ext{--}64.0	ext{ years}$). Trial cohorts (`Hugo 2016`: median 61.0; `Riaz 2017`: median 56.0) display consistent age distributions centred around late middle age. *Note: Baseline age annotations were omitted for Liu 2019 ($N = 122$) in cBioPortal. Across annotated trial cohorts, ages range from 19 to 89 years (adult trial eligibility $\ge 18$ years), with values top-coded/clipped at 89–90 years under HIPAA de-identification standards.*
+- **Panel A: Sex Distribution ($N = 915$)**: The overall trial cohort shows a male predominance (**61.9% Male** [$N = 566$] vs. **38.1% Female** [$N = 349$]), reflecting real-world cutaneous melanoma incidence patterns where male patients account for the majority of advanced presentations.
+- **Panel B: Age Distribution across Studies**: Evaluated patient ages span from 18 to 90 years with a **median age of 59.0 years** ($	ext{IQR} = 48.0	ext{--}70.0	ext{ years}$). Trial cohorts (`Hugo 2016`: median 61.0; `Riaz 2017`: median 56.0) display consistent age distributions centred around late middle age. *Note: Baseline age annotations were omitted for Liu 2019 ($N = 122$) in cBioPortal. Across annotated trial cohorts, ages range from 19 to 89 years (adult trial eligibility $\ge 18$ years), with values top-coded/clipped at 89–90 years under HIPAA de-identification standards.*
 - **Panel C: Anti-PD-1 Agent Administered ($N = 256$)**: Across the trial cohorts, **Pembrolizumab** is administered to **38.3%** [$N = 98$] of patients (all Hugo 2016 and a subset of Liu 2019) and **Nivolumab** is administered to **61.7%** [$N = 158$] of patients (all Riaz 2017 and a subset of Liu 2019).
-- **Panel D: Prior Anti-CTLA-4 Therapy Status ($N = 256$)**: Across all trial patients, **40.2%** [$N = 103$] received prior anti-CTLA-4 therapy (Ipilimumab), while **59.8%** [$N = 153$] were anti-CTLA-4 naïve prior to anti-PD-1 initiation.
+- **Panel D: Prior Anti-CTLA-4 Therapy Status ($N = 930$)**: Across all trial patients, **11.1%** [$N = 103$] received prior anti-CTLA-4 therapy (Ipilimumab), while **88.9%** [$N = 827$] were anti-CTLA-4 naïve prior to anti-PD-1 initiation.
 
 _**Table 1: Baseline Patient and Disease Characteristics**_
 
-| Characteristic             | Liu 2019    | Hugo 2016        | Riaz 2017        |
-|:---------------------------|:------------|:-----------------|:-----------------|
-| **N**                      | 122         | 27               | 107              |
-|                            |             |                  |                  |
-| **Demographics**           |             |                  |                  |
-| Age, median (IQR)          | N/A         | 61.0 (54.0-68.5) | 56.0 (48.8-63.0) |
-| Female sex, n (%)          | 51 (41.8%)  | 8 (29.6%)        | 47 (51.1%)       |
-|                            |             |                  |                  |
-| **Treatment**              |             |                  |                  |
-| ICI agent — Pembrolizumab  | 71 (58.2%)  | 27 (100.0%)      | 0 (0.0%)         |
-| ICI agent — Nivolumab      | 51 (41.8%)  | 0 (0.0%)         | 107 (100.0%)     |
-| Prior anti-CTLA-4          | 48 (100.0%) | 0 (0.0%)         | 55 (100.0%)      |
-|                            |             |                  |                  |
-| **Survival Outcomes**      |             |                  |                  |
-| Median OS, months (95% CI) | 22.6        | 32.2             | 21.2             |
-| OS events, n (%)           | 62 (50.8%)  | 12 (46.2%)       | 63 (62.4%)       |
-| Median follow-up, months   | 17.5        | 14.4             | 17.8             |
+| Characteristic             | Liu 2019    | Hugo 2016        | Riaz 2017        | TCGA GDC 2025    | Gide 2019        | Van Allen 2015   |
+|:---------------------------|:------------|:-----------------|:-----------------|:-----------------|:-----------------|:-----------------|
+| **N**                      | 122         | 27               | 107              | 473              | 91               | 110              |
+|                            |             |                  |                  |                  |                  |                  |
+| **Demographics**           |             |                  |                  |                  |                  |                  |
+| Age, median (IQR)          | N/A         | 61.0 (54.0-68.5) | 56.0 (48.8-63.0) | 58.0 (48.0-71.0) | 61.0 (51.5-71.5) | 61.5 (46.2-71.0) |
+| Female sex, n (%)          | 51 (41.8%)  | 8 (29.6%)        | 47 (51.1%)       | 180 (38.1%)      | 31 (34.1%)       | 32 (29.1%)       |
+|                            |             |                  |                  |                  |                  |                  |
+| **Treatment**              |             |                  |                  |                  |                  |                  |
+| ICI agent — Pembrolizumab  | 71 (58.2%)  | 27 (100.0%)      | 0 (0.0%)         | —                | —                | —                |
+| ICI agent — Nivolumab      | 51 (41.8%)  | 0 (0.0%)         | 107 (100.0%)     | —                | —                | —                |
+| Prior anti-CTLA-4          | 48 (100.0%) | 0 (0.0%)         | 55 (100.0%)      | —                | —                | —                |
+|                            |             |                  |                  |                  |                  |                  |
+| **Survival Outcomes**      |             |                  |                  |                  |                  |                  |
+| Median OS, months (95% CI) | 22.6        | 32.2             | 21.2             | 74.7             | 32.6             | 9.0              |
+| OS events, n (%)           | 62 (50.8%)  | 12 (46.2%)       | 63 (62.4%)       | 222 (48.4%)      | 36 (39.6%)       | 83 (75.5%)       |
+| Median follow-up, months   | 17.5        | 14.4             | 17.8             | 36.9             | 20.5             | 9.1              |
 
 ## 2. Sample Preprocessing Attrition
 
 > [!INFO] Why We Are Doing This
-> **What**: We track sample retention through quality control, identifier standardisation, and clinical-expression alignment across all $N = 256$ initial records.
+> **What**: We track sample retention through quality control, identifier standardisation, and clinical-expression alignment across all $N = 930$ initial records.
 > **Why**: Documenting attrition at each preprocessing step verifies data integrity and confirms that no patient sub-population was accidentally excluded.
 > **Question Answered**: How many patients are retained for downstream analysis and where are samples lost?
 
@@ -75,22 +75,31 @@ The data preprocessing workflow applies quality control, identifier standardisat
 
 _**Table 2: Sample Attrition Across Preprocessing Steps**_
 
-| Cohort    | Preprocessing Step            |   N Initial |   N Retained |   N Removed | Rationale                                                                                              |
-|:----------|:------------------------------|------------:|-------------:|------------:|:-------------------------------------------------------------------------------------------------------|
-| Liu 2019  | Clinical data loaded          |         122 |          122 |           0 | Merged patient-level and sample-level clinical records.                                                |
-| Liu 2019  | Clinical data harmonised      |         122 |          122 |           0 | Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation. |
-| Liu 2019  | Clinical-expression alignment |         122 |          122 |           0 | Retained samples with matching clinical and expression data.                                           |
-| Hugo 2016 | Clinical data loaded          |          27 |           27 |           0 | Merged patient-level and sample-level clinical records.                                                |
-| Hugo 2016 | Clinical data harmonised      |          27 |           27 |           0 | Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation. |
-| Hugo 2016 | Clinical-expression alignment |          27 |           27 |           0 | Retained samples with matching clinical and expression data.                                           |
-| Riaz 2017 | Clinical data loaded          |         107 |          107 |           0 | Merged patient-level and sample-level clinical records.                                                |
-| Riaz 2017 | Clinical data harmonised      |         107 |          107 |           0 | Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation. |
-| Riaz 2017 | Clinical-expression alignment |         107 |          107 |           0 | Retained samples with matching clinical and expression data.                                           |
+| Cohort         | Preprocessing Step           |   N Initial |   N Retained |   N Removed | Rationale                                                                                              |
+|:---------------|:-----------------------------|------------:|-------------:|------------:|:-------------------------------------------------------------------------------------------------------|
+| Liu 2019       | Clinical data loaded         |         122 |          122 |           0 | Merged patient-level and sample-level clinical records.                                                |
+| Liu 2019       | Clinical data harmonised     |         122 |          122 |           0 | Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation. |
+| Liu 2019       | Expression data availability |         122 |          122 |           0 | Identified samples with matching RNA-seq gene expression data.                                         |
+| Hugo 2016      | Clinical data loaded         |          27 |           27 |           0 | Merged patient-level and sample-level clinical records.                                                |
+| Hugo 2016      | Clinical data harmonised     |          27 |           27 |           0 | Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation. |
+| Hugo 2016      | Expression data availability |          27 |           27 |           0 | Identified samples with matching RNA-seq gene expression data.                                         |
+| Riaz 2017      | Clinical data loaded         |         107 |          107 |           0 | Merged patient-level and sample-level clinical records.                                                |
+| Riaz 2017      | Clinical data harmonised     |         107 |          107 |           0 | Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation. |
+| Riaz 2017      | Expression data availability |         107 |          107 |           0 | Identified samples with matching RNA-seq gene expression data.                                         |
+| TCGA GDC 2025  | Clinical data loaded         |         473 |          473 |           0 | Merged patient-level and sample-level clinical records.                                                |
+| TCGA GDC 2025  | Clinical data harmonised     |         473 |          473 |           0 | Applied identifier standardisation and clinical data cleaning.                                         |
+| TCGA GDC 2025  | Expression data availability |         473 |          472 |           1 | Identified samples with matching RNA-seq gene expression data.                                         |
+| Gide 2019      | Clinical data loaded         |          91 |           91 |           0 | Merged patient-level and sample-level clinical records.                                                |
+| Gide 2019      | Clinical data harmonised     |          91 |           91 |           0 | Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation. |
+| Gide 2019      | Expression data availability |          91 |           91 |           0 | Identified samples with matching RNA-seq gene expression data.                                         |
+| Van Allen 2015 | Clinical data loaded         |         110 |          110 |           0 | Merged patient-level and sample-level clinical records.                                                |
+| Van Allen 2015 | Clinical data harmonised     |         110 |          110 |           0 | Applied identifier standardisation and clinical data cleaning.                                         |
+| Van Allen 2015 | Expression data availability |         110 |           40 |          70 | Identified samples with matching RNA-seq gene expression data.                                         |
 
 ### Key Observations
-1. **Overall Cohort Size ($N = 256$)**: The largest individual dataset is **Liu 2019** ($N = 122$). Combined across all three trial cohorts, **$N = 256$** cleaned patient records were harmonised for downstream analysis.
-2. **Sample Attrition (100.0% Retention)**: Across all 256 initial records, ****Liu 2019** retained 100% of samples (N = 122); **Hugo 2016** retained 100% of samples (N = 27); **Riaz 2017** retained 100% of samples (N = 107)**. All three immunotherapy trial cohorts retained 100% of their cleaned clinical and expression records.
-3. **Follow-up Duration**: **Riaz 2017** shows the longest median follow-up duration (**17.8 months**).
+1. **Overall Cohort Size ($N = 930$)**: The largest individual dataset is **TCGA GDC 2025** ($N = 473$). Combined across all three trial cohorts, **$N = 859$** cleaned patient records were harmonised for downstream analysis.
+2. **Sample Attrition (92.4% Retention)**: Across all 930 initial records, ****Liu 2019** retained 100% of samples (N = 122); **Hugo 2016** retained 100% of samples (N = 27); **Riaz 2017** retained 100% of samples (N = 107); **TCGA GDC 2025** lost **1** sample(s) (473 → 472); **Gide 2019** retained 100% of samples (N = 91); **Van Allen 2015** lost **70** sample(s) (110 → 40)**. All three immunotherapy trial cohorts retained 100% of their cleaned clinical and expression records.
+3. **Follow-up Duration**: **TCGA GDC 2025** shows the longest median follow-up duration (**36.9 months**).
 4. **Treatment History & Clinical Context**: All $N = 107$ patients in **Riaz 2017** were previously treated with anti-CTLA-4 (Ipilimumab), representing an Ipilimumab-refractory population relative to the anti-CTLA-4 naïve patients in **Liu 2019** ($N = 122$) and **Hugo 2016** ($N = 27$).
 
 ## 3. Overall Survival Curves (KM Plots)
@@ -109,7 +118,7 @@ _**Figure 2: Unstratified Overall Survival KM Curves across All Three Immunother
 ## 4. Overall Survival Stratified by Immunotherapy Response
 
 > [!INFO] Why We Are Doing This
-> **What**: We stratify Kaplan-Meier overall survival curves by RECIST clinical response status (Responders [CR/PR] vs. Non-responders [PD]) across the three immunotherapy trial cohorts ($N = 256$).
+> **What**: We stratify Kaplan-Meier overall survival curves by RECIST clinical response status (Responders [CR/PR] vs. Non-responders [PD]) across the three immunotherapy trial cohorts ($N = 930$).
 > **Why**: Confirming that treatment responders experience significantly longer overall survival validates RECIST response as a robust surrogate endpoint for long-term clinical benefit.
 > **Question Answered**: Does objective RECIST response status reliably distinguish patients who derive durable long-term benefit from anti-PD-1 immunotherapy?
 
@@ -148,8 +157,6 @@ _**Figure 4: Forest Plot of Univariate Odds Ratios for Clinical and Genomic Feat
 > - **Treatment Annotation Completeness**: Treatment percentages use the number of patients with an available treatment annotation as the denominator where this differs from total cohort size.
 > - **Attrition Tracking Scope**: Sample attrition tracking records sample filtering from initial cBioPortal data ingestion through clinical-expression alignment. Downstream feature engineering steps may impose additional filters not captured here.
 > - **Median OS Reporting**: Where the estimated survival probability did not fall below 50% during follow-up, median OS is reported as **NR (not reached)**.
-
----
 
 > [!formula]+ Clinical Analysis Script Execution & Software Module Architecture
 > - **Primary Pipeline Execution Scripts**:

@@ -56,7 +56,7 @@ if str(PROJECT_ROOT) not in sys.path:
 # ---------------------------------------------------------------------------
 
 from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
-from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, resolve_cohort_palette, set_presentation_style
 from src.utils.formatting import generate_obsidian_frontmatter
 from src.utils.logging import TeeStream
 from src.utils.paths import (
@@ -342,7 +342,7 @@ def _render_pca_panel_axes(
     for ax, (xcol, ycol, title) in zip(axes, panels):
         sns.scatterplot(
             data=df, x=xcol, y=ycol, hue=_COL_COHORT, hue_order=cohort_list,
-            palette=COHORT_PALETTE, alpha=SCATTER_ALPHA, s=SCATTER_SIZE,
+            palette=resolve_cohort_palette(cohort_list), alpha=SCATTER_ALPHA, s=SCATTER_SIZE,
             edgecolor="w", linewidth=0.5, ax=ax,
         )
         ax.set_title(title, fontsize=12, fontweight="bold")
