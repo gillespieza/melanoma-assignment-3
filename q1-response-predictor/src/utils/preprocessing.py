@@ -747,6 +747,12 @@ def map_entrez_to_symbols(
 
                     if query and symbol:
                         cache[str(query)] = str(symbol)
+                    elif query:
+                        cache[str(query)] = str(query)
+
+                for entrez_id in chunk:
+                    if entrez_id not in cache:
+                        cache[entrez_id] = entrez_id
 
                 break
 

@@ -1,4 +1,4 @@
 cohort,step,n_before,n_after,n_removed,reason
 TCGA GDC 2025,Clinical data loaded,473,473,0,Merged patient-level and sample-level clinical records.
 TCGA GDC 2025,Clinical data harmonised,473,473,0,Applied identifier standardisation and clinical data cleaning.
-TCGA GDC 2025,Clinical-expression alignment,473,472,1,Retained samples with matching clinical and expression data.
+TCGA GDC 2025,Expression data availability,473,472,1,Identified samples with matching RNA-seq gene expression data.

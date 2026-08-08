@@ -716,15 +716,17 @@ def _align_and_record_expression(
     dataset: DatasetConfig,
     attrition: list[AttritionRecord],
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Align expression matrix with clinical data and record attrition."""
-    n_before = len(clinical_df)
-    expr_df, clin_df = align_expression_and_clinical(expression_df, clinical_df)
+    """Filter expression matrix to clinical samples and record expression availability."""
+    common_samples = expression_df.index.intersection(clinical_df.index)
+    aligned_expr = expression_df.loc[common_samples].copy()
+    aligned_expr.index.name = _COL_SAMPLE_ID
     _record_attrition(
-        attrition, dataset, step="Clinical-expression alignment",
-        n_before=n_before, n_after=len(clin_df),
-        reason="Retained samples with matching clinical and expression data.",
+        attrition, dataset, step="Expression data availability",
+        n_before=len(clinical_df), n_after=len(common_samples),
+        reason="Identified samples with matching RNA-seq gene expression data.",
     )
-    return expr_df, clin_df
+    return aligned_expr, clinical_df
+
 
 
 def process_iatlas_dataset(
@@ -810,7 +812,12 @@ def _finalise_dataset(
         processed_dir, bundle.clinical_df, bundle.expression_df, bundle.mutation_df,
     )
     print(f"  {dataset.cohort_name}: Cleaned {len(bundle.clinical_df):,} samples.")
-    _run_sanity_checks(raw_dir=raw_dir, processed_dir=processed_dir, dataset=dataset)
+    _run_sanity_checks(
+        raw_dir=raw_dir,
+        processed_dir=processed_dir,
+        dataset=dataset,
+        bundle=bundle,
+    )
     return bundle.attrition_records
 
 
@@ -1146,15 +1153,12 @@ def _check_tcga_gene_count_plausibility(
 
 def _evaluate_dataset_integrities(
     raw_dir: Path,
-    processed_dir: Path,
     dataset: DatasetConfig,
-    required_files: dict[str, Path],
+    clinical_df: pd.DataFrame,
+    expression_df: pd.DataFrame,
+    mutation_df: pd.DataFrame,
 ) -> None:
-    """Read cleaned output dataframes and execute integrity assertion checks."""
-    clinical_df = pd.read_csv(required_files["clinical"])
-    expression_df = pd.read_csv(required_files["expression"], index_col=0)
-    mutation_df = pd.read_csv(required_files["mutation"], index_col=0)
-
+    """Execute integrity assertion checks against in-memory cleaned DataFrames."""
     _print_dataset_dimensions(clinical_df, expression_df, mutation_df)
     _check_clinical_integrity(clinical_df)
     _check_expression_integrity(expression_df)
@@ -1171,8 +1175,9 @@ def _run_sanity_checks(
     raw_dir: Path,
     processed_dir: Path,
     dataset: DatasetConfig,
+    bundle: CleanedDataBundle,
 ) -> None:
-    """Run post-processing sanity checks on cleaned dataset outputs."""
+    """Run post-processing sanity checks using in-memory bundle."""
     print("\n  Running post-processing sanity checks...")
 
     required_files = {
@@ -1182,7 +1187,13 @@ def _run_sanity_checks(
     }
 
     if _check_output_files_exist(required_files):
-        _evaluate_dataset_integrities(raw_dir, processed_dir, dataset, required_files)
+        # Use in-memory DataFrames — avoids re-reading multi-hundred MB expression
+        # and mutation CSVs that were just written to disk.
+        clinical_df = bundle.clinical_df.reset_index()
+        _evaluate_dataset_integrities(
+            raw_dir, dataset,
+            clinical_df, bundle.expression_df, bundle.mutation_df,
+        )
         print("\n  Sanity checks complete.")
 
 # ============================================================================

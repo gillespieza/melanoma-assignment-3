@@ -11,7 +11,7 @@ The model is trained and evaluated under **Leave-One-Cohort-Out (LOCO) Cross-Val
 
 ## 🚀 Single-Patient Predictor (`predictor.py`)
 
-The subproject root contains [`predictor.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/predictor.py), a dedicated inference tool that predicts a single patient's immunotherapy response probability using our trained, calibrated **Support Vector Machine (SVM)** model (`final_svm_model.pkl`) and StandardScaler (`final_scaler.pkl`).
+The subproject root contains [`predictor.py`](predictor.py), a dedicated inference tool that predicts a single patient's immunotherapy response probability using our trained, calibrated **Support Vector Machine (SVM)** model (`final_svm_model.pkl`) and StandardScaler (`final_scaler.pkl`).
 
 The predictor requires **12 multimodal features**:
 - **8 Transcriptomic / Microenvironment Signatures**: `IFN_gamma`, `TIS`, `CYT`, `CD8_Tcell`, `IMPRES`, `PD_L1` (`CD274`), `Macrophage_STV_Score`, `M1_M2_Ratio`
@@ -186,4 +186,4 @@ q1-response-predictor/
     └── run_pipeline.py                   # Master pipeline orchestrator
 ```
 
-For full analytical reports and methodology details, see [`reports/README.md`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/README.md) or [`reports/executive_summary.md`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/executive_summary.md).
+For full analytical reports and methodology details, see [`reports/README.md`](reports/README.md) or [`reports/executive_summary.md`](reports/executive_summary.md).

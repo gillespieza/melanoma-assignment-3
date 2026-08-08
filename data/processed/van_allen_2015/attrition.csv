@@ -1,4 +1,4 @@
 cohort,step,n_before,n_after,n_removed,reason
 Van Allen 2015,Clinical data loaded,110,110,0,Merged patient-level and sample-level clinical records.
 Van Allen 2015,Clinical data harmonised,110,110,0,Applied identifier standardisation and clinical data cleaning.
-Van Allen 2015,Clinical-expression alignment,110,40,70,Retained samples with matching clinical and expression data.
+Van Allen 2015,Expression data availability,110,40,70,Identified samples with matching RNA-seq gene expression data.
