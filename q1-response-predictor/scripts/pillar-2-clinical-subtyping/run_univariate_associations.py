@@ -325,19 +325,27 @@ def _load_single_cohort(
 
 
 def _prepare_clinical_cohorts(data_dir: Path) -> Dict[str, pd.DataFrame]:
-    """Loads and standardises clinical trial cohort datasets with driver mutations.
+    """Loads and standardises all configured clinical trial cohort datasets with driver mutations."""
+    _SCRIPT_DIR = Path(__file__).resolve().parent
+    CONFIG_PATH = _SCRIPT_DIR.parent.parent / "config" / "datasets.yaml"
 
-    Args:
-        data_dir: Path to project data directory.
+    if CONFIG_PATH.exists():
+        from src.config.datasets import load_dataset_config
+        all_configs = load_dataset_config(CONFIG_PATH)
+        dataset_configs = [c for c in all_configs if c.cohort_name != "TCGA-SKCM"]
+    else:
+        dataset_configs = []
 
-    Returns:
-        Dictionary mapping cohort names to clean DataFrames.
-    """
-    return {
-        "Liu 2019": _load_single_cohort(data_dir, "liu_2019", load_liu_2019),
-        "Hugo 2016": _load_single_cohort(data_dir, "hugo_2016", load_hugo_2016),
-        "Riaz 2017": _load_single_cohort(data_dir, "riaz_2017", load_riaz_2017),
-    }
+    cohorts: Dict[str, pd.DataFrame] = {}
+    for config in dataset_configs:
+        proc_dir = data_dir / "processed" / config.processed_directory
+        clin_path = proc_dir / "clin_cleaned.csv"
+        if clin_path.exists():
+            clin_df = pd.read_csv(clin_path, index_col="SAMPLE_ID")
+            norm_df = _normalise_cohort_df(clin_df)
+            cohorts[config.cohort_name] = _enrich_cohort_mutations(norm_df, proc_dir)
+
+    return cohorts
 
 
 def _draw_forest_errorbar(
@@ -538,13 +546,13 @@ def _create_legend_handle(cohort: str, count: int) -> mlines.Line2D:
 
 def _add_forest_legend(ax: plt.Axes, cohort_counts: Dict[str, int]) -> None:
     """Adds cohort markers legend to forest plot."""
-    cohort_keys = ["Pooled Trials", "Liu 2019", "Hugo 2016", "Riaz 2017"]
+    cohort_keys = list(cohort_counts.keys())
     legend_elements = [
         _create_legend_handle(c, cohort_counts.get(c, 0)) for c in cohort_keys
     ]
     ax.legend(
-        handles=legend_elements, loc="upper center", bbox_to_anchor=(0.5, -0.155),
-        ncol=2, frameon=True, facecolor="white", edgecolor="#CCCCCC", fontsize=9.5,
+        handles=legend_elements, loc="upper center", bbox_to_anchor=(0.5, -0.12),
+        ncol=min(4, len(cohort_keys)), frameon=True, facecolor="white", edgecolor="#CCCCCC", fontsize=8.5,
     )
 
 
@@ -565,11 +573,14 @@ def _plot_univariate_associations(
     all_results: pd.DataFrame, cohort_counts: Dict[str, int], plot_dir: Path
 ) -> None:
     """Renders a publication-ready Forest Plot of Odds Ratios with 95% CIs."""
-    cohort_order = ["Pooled Trials", "Liu 2019", "Hugo 2016", "Riaz 2017"]
+    cohort_order = ["Pooled Trials"] + [c for c in cohort_counts.keys() if c != "Pooled Trials"]
     variables = all_results["Variable"].unique().tolist()
 
-    fig, ax = plt.subplots(figsize=_PLOT_FIGSIZE)
-    plt.subplots_adjust(left=0.28, right=0.62, top=0.90, bottom=0.20)
+    n_entries = len(variables) * len(cohort_order)
+    fig_height = max(11, int(n_entries * 0.30) + 4)
+
+    fig, ax = plt.subplots(figsize=(14, fig_height))
+    plt.subplots_adjust(left=0.28, right=0.62, top=0.92, bottom=0.15)
 
     ax.set_xscale("log")
     ax.axvline(1.0, color="#37474F", linestyle="--", linewidth=1.5, zorder=1)
@@ -616,11 +627,9 @@ def _compute_cohort_counts(
     Returns:
         Mapping of cohort name to non-null response count.
     """
-    counts = {
-        c: len(cohorts[c][cohorts[c]["response"].notna()])
-        for c in cohorts
-    }
-    counts["Pooled Trials"] = len(pooled_df[pooled_df["response"].notna()])
+    counts: Dict[str, int] = {"Pooled Trials": len(pooled_df[pooled_df["response"].notna()])}
+    for c in cohorts:
+        counts[c] = len(cohorts[c][cohorts[c]["response"].notna()])
     return counts
 
 
@@ -633,18 +642,17 @@ def main() -> None:
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
     cohorts = _prepare_clinical_cohorts(DATA_DIR)
 
-    results_liu = calculate_associations(cohorts["Liu 2019"], "Liu 2019")
-    results_hugo = calculate_associations(cohorts["Hugo 2016"], "Hugo 2016")
-    results_riaz = calculate_associations(cohorts["Riaz 2017"], "Riaz 2017")
+    results_list: List[pd.DataFrame] = []
+    for cname, df in cohorts.items():
+        results_list.append(calculate_associations(df, cname))
 
     pooled_df = _build_pooled_df(cohorts)
     results_pooled = calculate_associations(pooled_df, "Pooled Trials")
+    results_list.append(results_pooled)
     cohort_counts = _compute_cohort_counts(cohorts, pooled_df)
 
-    all_results = pd.concat(
-        [results_liu, results_hugo, results_riaz, results_pooled],
-        ignore_index=True,
-    )
+    all_results = pd.concat(results_list, ignore_index=True)
+    print(all_results.to_string())
     print(all_results.to_string())
 
     _plot_univariate_associations(all_results, cohort_counts, PLOT_DIR)

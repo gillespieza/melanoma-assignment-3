@@ -40,29 +40,32 @@ PLOT_DIR = PLOTS_DIR / "clinical"
 LOG_PATH = LOG_DIR / "run_response_km_curves.log"
 
 
+def _resolve_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
+    for c in candidates:
+        if c in df.columns:
+            return c
+    return None
+
+
 def plot_cohort_km_by_response(ax: plt.Axes, df_clin: pd.DataFrame, cohort_name: str) -> None:
-    """Plots Kaplan-Meier survival curves stratified by immunotherapy response for a single cohort.
+    """Plots Kaplan-Meier survival curves stratified by immunotherapy response for a single cohort."""
+    time_col = _resolve_col(df_clin, ["OS_MONTHS", "os_months", "OS_DAYS"])
+    event_col = _resolve_col(df_clin, ["OS_STATUS", "os_status", "OS_EVENT"])
+    resp_col = _resolve_col(df_clin, ["RESPONSE_BINARY", "response", "RESPONSE"])
 
-    Args:
-        ax: Matplotlib Axes to draw on.
-        df_clin: Clinical DataFrame.
-        cohort_name: Title label string for the cohort.
-    """
-    time_col = "os_months" if "os_months" in df_clin.columns else ("OS_MONTHS" if "OS_MONTHS" in df_clin.columns else None)
-    event_col = "os_status" if "os_status" in df_clin.columns else ("OS_STATUS" if "OS_STATUS" in df_clin.columns else None)
-
-    if not time_col or not event_col or "response" not in df_clin.columns:
+    if not time_col or not event_col or not resp_col:
         print(f"Skipping {cohort_name}: missing survival or response columns")
         return
 
-    df = df_clin[[time_col, event_col, "response"]].copy()
+    df = df_clin[[time_col, event_col, resp_col]].copy()
     df[time_col] = pd.to_numeric(df[time_col], errors="coerce")
     df[event_col] = pd.to_numeric(df[event_col], errors="coerce")
+    df[resp_col] = pd.to_numeric(df[resp_col], errors="coerce")
     df = df.dropna().copy()
     df = df[df[time_col] > 0]
 
-    responders = df[df["response"] == 1.0]
-    non_responders = df[df["response"] == 0.0]
+    responders = df[df[resp_col] == 1.0]
+    non_responders = df[df[resp_col] == 0.0]
 
     if len(responders) == 0 or len(non_responders) == 0:
         print(f"Skipping {cohort_name}: missing response groups")
@@ -113,22 +116,41 @@ def main() -> None:
 
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
-    _, clin_liu = load_liu_2019(DATA_DIR)
-    _, clin_hugo = load_hugo_2016(DATA_DIR)
-    _, clin_riaz = load_riaz_2017(DATA_DIR)
+    CONFIG_PATH = BASE_DIR / "config" / "datasets.yaml"
+    from src.config.datasets import load_dataset_config
+    all_configs = load_dataset_config(CONFIG_PATH)
+    dataset_configs = [c for c in all_configs if c.cohort_name != "TCGA-SKCM"]
+    cohort_order = [c.cohort_name for c in dataset_configs]
 
-    fig, axes = plt.subplots(1, 3, figsize=(22, 5.5))
+    cohort_data: dict[str, pd.DataFrame] = {}
+    for config in dataset_configs:
+        clin_path = DATA_DIR / "processed" / config.processed_directory / "clin_cleaned.csv"
+        if clin_path.exists():
+            cohort_data[config.cohort_name] = pd.read_csv(clin_path, index_col="SAMPLE_ID")
 
-    plot_cohort_km_by_response(axes[0], clin_liu, "Liu 2019")
-    plot_cohort_km_by_response(axes[1], clin_hugo, "Hugo 2016")
-    plot_cohort_km_by_response(axes[2], clin_riaz, "Riaz 2017")
+    n_cohorts = len(cohort_order)
+    max_cols = 3
+    n_cols = min(max_cols, n_cohorts)
+    n_rows = (n_cohorts + n_cols - 1) // n_cols
+
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5.5 * n_cols, 4.5 * n_rows))
+    axes_flat = np.array(axes).flatten() if n_cohorts > 1 else [axes]
+
+    for i, label in enumerate(cohort_order):
+        ax = axes_flat[i]
+        df_clin = cohort_data.get(label, pd.DataFrame())
+        plot_cohort_km_by_response(ax, df_clin, label)
+
+    # Hide any unused subplot axes
+    for j in range(n_cohorts, len(axes_flat)):
+        axes_flat[j].set_visible(False)
 
     fig.suptitle("Overall Survival by Immunotherapy Response (RECIST)", fontsize=16, fontweight="bold", y=1.02)
     plt.tight_layout()
 
     out_path = PLOT_DIR / "km_os_by_response.png"
     save_fig(fig, out_path)
-    
+
     sub_path = BASE_DIR / "plots" / "clinical" / "km_os_by_response.png"
     if sub_path != out_path:
         sub_path.parent.mkdir(parents=True, exist_ok=True)
@@ -136,9 +158,9 @@ def main() -> None:
 
     # Export transparent copies
     fig.patch.set_alpha(0.0)
-    for ax in axes:
+    for ax in axes_flat:
         ax.patch.set_alpha(0.0)
-    
+
     out_trans = PLOT_DIR / "km_os_by_response_transparent.png"
     sub_trans = BASE_DIR / "plots" / "clinical" / "km_os_by_response_transparent.png"
     fig.savefig(out_trans, transparent=True, bbox_inches="tight", dpi=300)
