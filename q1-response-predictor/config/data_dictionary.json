@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Melanoma Immunotherapy Preprocessing Data Dictionary",
   "version": "1.0.0",
-  "created": "2026-08-08T14:05:24.485578+00:00",
+  "created": "2026-08-08T14:39:04.698270+00:00",
   "project": "HSE ED / Melanoma Response Predictor",
   "description": "Comprehensive data dictionary for harmonised clinical, genomic, transcriptomic, and treatment features across melanoma cohorts.",
   "columns": {
@@ -157930,6 +157930,13 @@
       "category": "Clinical Feature",
       "standard_unit": "text / numeric",
       "harmonised_definition": "Clinical metadata attribute BRAF_MUT."
+    },
+    "BRAF_V600": {
+      "display_name": "Braf V600",
+      "datatype": "STRING",
+      "category": "Clinical Feature",
+      "standard_unit": "text / numeric",
+      "harmonised_definition": "Clinical metadata attribute BRAF_V600."
     },
     "BRAP": {
       "display_name": "Brap",

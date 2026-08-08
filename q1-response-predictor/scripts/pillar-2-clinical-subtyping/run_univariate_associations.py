@@ -53,15 +53,21 @@ _POOLED_COLS: List[str] = [
     "SEX",
     "CLINICAL_STAGE",
     "mut_BRAF",
+    "mut_BRAF_V600",
     "mut_NRAS",
     "mut_NF1",
     "TMB_NONSYNONYMOUS",
+    "TOTAL_NEOANTIGEN",
+    "NEOAGCNT",
+    "SNV_NEOANTIGEN",
+    "INDEL_NEOANTIGEN",
 ]
 
 CATEGORICAL_VARS: Dict[str, str] = {
     "Sex (Male vs Female)": "SEX",
     "Stage (IV vs III)": "CLINICAL_STAGE",
-    "BRAF Mutation (Mut vs WT)": "mut_BRAF",
+    "BRAF (Any Mutation)": "mut_BRAF",
+    "BRAF V600 (Mut vs WT)": "mut_BRAF_V600",
     "NRAS Mutation (Mut vs WT)": "mut_NRAS",
     "NF1 Mutation (Mut vs WT)": "mut_NF1",
 }
@@ -69,6 +75,7 @@ CATEGORICAL_VARS: Dict[str, str] = {
 CONTINUOUS_VARS: Dict[str, List[str]] = {
     "Age (per SD)": ["AGE", "AGE_AT_DIAGNOSIS", "AGE (YRS)", "age"],
     "TMB (per SD)": ["TMB_NONSYNONYMOUS"],
+    "Total Neoantigens (per SD)": ["TOTAL_NEOANTIGEN", "NEOAGCNT"],
     "SNV Neoantigens (per SD)": ["SNV_NEOANTIGEN"],
     "Indel Neoantigens (per SD)": ["INDEL_NEOANTIGEN"],
 }
@@ -306,7 +313,7 @@ def _enrich_cohort_mutations(
 
     mut_df = pd.read_csv(mut_path, index_col="SAMPLE_ID")
     df_enriched = clin_df.copy()
-    for gene in ["BRAF", "NRAS", "NF1"]:
+    for gene in ["BRAF", "BRAF_V600", "NRAS", "NF1"]:
         if gene in mut_df.columns:
             df_enriched[f"mut_{gene}"] = df_enriched.index.map(
                 lambda sid: (1.0 if mut_df.loc[sid, gene] > 0 else 0.0)
