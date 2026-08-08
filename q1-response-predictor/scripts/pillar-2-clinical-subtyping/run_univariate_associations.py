@@ -286,10 +286,11 @@ def _normalise_cohort_df(df: pd.DataFrame) -> pd.DataFrame:
         df_clean["SEX"] = df_clean["SEX"].map(
             {"Male": "Male", "Female": "Female", "M": "Male", "F": "Female"}
         )
-    if "CLINICAL_STAGE" in df_clean.columns:
-        df_clean["CLINICAL_STAGE"] = df_clean["CLINICAL_STAGE"].apply(
-            lambda x: "IV" if str(x).startswith("IV") else (
-                "III" if str(x).startswith("III") else np.nan
+    stage_col = next((c for c in ["CLINICAL_STAGE", "PATH_STAGE", "TUMOR_STAGE"] if c in df_clean.columns), None)
+    if stage_col:
+        df_clean["CLINICAL_STAGE"] = df_clean[stage_col].apply(
+            lambda x: "IV" if "IV" in str(x).upper() else (
+                "III" if "III" in str(x).upper() else np.nan
             )
         )
     return df_clean
