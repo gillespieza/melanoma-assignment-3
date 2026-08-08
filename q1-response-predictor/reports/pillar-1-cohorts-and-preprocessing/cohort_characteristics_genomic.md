@@ -9,12 +9,12 @@ tags:
   - tmb
   - neoantigens
   - comut
-created: 2026-08-07 13:41
+created: 2026-08-08 15:28
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-07 13:41
+updated: 2026-08-08 15:28
 ---
 
 # Genomic Characteristics of Data Cohorts
@@ -24,9 +24,8 @@ updated: 2026-08-07 13:41
 > [!INFO] Why We Are Doing This
 >
 > **What**: We compare somatic mutation frequencies of key cutaneous melanoma driver genes
-> (`BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across the three ICI trial
-> cohorts: **Liu 2019** ($N = 122$), **Hugo 2016** ($N = 27$),
-> and **Riaz 2017** ($N = 107$).
+> (`BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across active ICI trial
+> cohorts: **Liu 2019** ($N = 122$), **Hugo 2016** ($N = 27$), **Riaz 2017** ($N = 107$), **TCGA GDC 2025** ($N = 473$), **Gide 2019** ($N = 91$), **Van Allen 2015** ($N = 110$).
 > **Why**: To confirm that our clinical trial cohorts accurately reflect real-world melanoma
 > epidemiology and to evaluate whether pre-treatment mutations in antigen presentation
 > (`B2M`, `TAP1`, `TAP2`) or IFN-$\gamma$ signalling (`JAK1`, `JAK2`, `STAT1`) drive primary
@@ -34,27 +33,25 @@ updated: 2026-08-07 13:41
 > **Question Answered**: Are clinical trial cohorts representative of baseline melanoma genomics,
 > and do patients harbour pre-existing mutations in immune evasion pathways prior to therapy?
 
-This report presents a comparative analysis of the genomic features across the three ICI trial cohorts:
-- **Liu 2019**: Anti-PD-1 clinical trial cohort ($N = 122$).
-- **Hugo 2016**: Anti-PD-1 clinical trial cohort ($N = 27$).
-- **Riaz 2017**: Anti-PD-1 clinical trial cohort ($N = 107$).
+This report presents a comparative analysis of the genomic features across active ICI trial cohorts:
+- **Liu 2019**: Anti-PD-1/CTLA-4 trial cohort ($N = 122$).
+- **Hugo 2016**: Anti-PD-1/CTLA-4 trial cohort ($N = 27$).
+- **Riaz 2017**: Anti-PD-1/CTLA-4 trial cohort ($N = 107$).
+- **TCGA GDC 2025**: Anti-PD-1/CTLA-4 trial cohort ($N = 473$).
+- **Gide 2019**: Anti-PD-1/CTLA-4 trial cohort ($N = 91$).
+- **Van Allen 2015**: Anti-PD-1/CTLA-4 trial cohort ($N = 110$).
 
 ### 1.1 Driver Mutation Frequencies
 
 ![Driver Mutation Frequencies](../../plots/genomic/genomic_driver_frequencies.png)
 
 _**Figure 1: Driver Mutation Frequencies across ICI Trial Cohorts.** Frequencies of `BRAF`,
-`NRAS`, `NF1`, and Triple-WT genotypes across Liu 2019, Hugo 2016, and Riaz 2017._
+`NRAS`, `NF1`, and Triple-WT genotypes across Liu 2019, Hugo 2016, Riaz 2017, TCGA GDC 2025, Gide 2019, Van Allen 2015._
 
 > [!INSIGHT] Key Insights: Mutation Landscape
 >
 > 1. **Consistent Driver Mutation Profiles Across ICI Trial Cohorts**: Driver mutation frequencies
-> are broadly consistent across all three trial cohorts. **Liu 2019** (`BRAF`: **41.0%**,
-> `NRAS`: **30.3%**, `NF1`: **17.2%**, Triple-WT: **23.8%**);
-> **Hugo 2016** (`BRAF`: **59.3%**, `NRAS`: **18.5%**, `NF1`:
-> **25.9%**, Triple-WT: **14.8%**); **Riaz 2017** (`BRAF`:
-> **23.4%**, `NRAS`: **18.7%**, `NF1`: **3.7%**,
-> Triple-WT: **58.9%**).
+> are broadly consistent across active trial cohorts (**Liu 2019** (`BRAF`: **0.0%**, `NRAS`: **0.0%**, `NF1`: **0.0%**, Triple-WT: **0.0%**); **Hugo 2016** (`BRAF`: **0.0%**, `NRAS`: **0.0%**, `NF1`: **0.0%**, Triple-WT: **0.0%**); **Riaz 2017** (`BRAF`: **0.0%**, `NRAS`: **0.0%**, `NF1`: **0.0%**, Triple-WT: **0.0%**); **TCGA GDC 2025** (`BRAF`: **0.0%**, `NRAS`: **0.0%**, `NF1`: **0.0%**, Triple-WT: **0.0%**); **Gide 2019** (`BRAF`: **0.0%**, `NRAS`: **0.0%**, `NF1`: **0.0%**, Triple-WT: **0.0%**); **Van Allen 2015** (`BRAF`: **0.0%**, `NRAS`: **0.0%**, `NF1`: **0.0%**, Triple-WT: **0.0%**)).
 > 2. **MAPK Driver Mutual Exclusivity**: Driver mutations act through independent growth
 > pathways: tumours with `BRAF` mutations almost never harbour co-occurring `NRAS` mutations,
 > validating established melanoma oncogenic principles.
@@ -71,7 +68,7 @@ _**Figure 1: Driver Mutation Frequencies across ICI Trial Cohorts.** Frequencies
 > **What**: We analyse the distribution of Tumour Mutational Burden (TMB) across immunotherapy
 > response arms (Responders [CR/PR] vs. Non-responders [PD]) and evaluate the correlation
 > between TMB and predicted total neoantigen load across pooled trial cohorts
-> ($N = 256$).
+> ($N = 930$).
 > **Why**: Somatic mutations generate novel peptide antigens (neoantigens) that trigger T-cell
 > recognition. We test whether TMB correlates with treatment response and whether total TMB can
 > serve as a surrogate marker for predicted neoantigen burden.
@@ -81,14 +78,14 @@ _**Figure 1: Driver Mutation Frequencies across ICI Trial Cohorts.** Frequencies
 Tumour Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumour
 immunogenicity. Below, we present the TMB distribution by response alongside the correlation
 scatter plot illustrating Neoantigen Collinearity with TMB in the pooled trial cohorts
-($N = 256$).
+($N = 930$).
 
 ![TMB Distributions and Neoantigen Collinearity](
 ../../plots/genomic/tmb_distributions_by_cohort.png
 )
 
 _**Figure 3: Pre-treatment TMB Distributions by Response Status and Neoantigen Collinearity in
-Pooled Trial Cohorts ($N = 256$).**_
+Pooled Trial Cohorts ($N = 930$).**_
 
 > [!INSIGHT] Key Insights: TMB & Neoantigen Collinearity
 >
@@ -109,7 +106,7 @@ Pooled Trial Cohorts ($N = 256$).**_
 >
 > **What**: We compute Spearman rank correlations between continuous genomic features (TMB,
 > neoantigen subtypes) and transcriptomic immune signatures across pooled trial
-> ($N = 256$) cohorts.
+> ($N = 930$) cohorts.
 > **Why**: To identify feature redundancy before model training and evaluate whether genomic
 > mutational burden and transcriptomic immune infiltration capture independent biological axes.
 > **Question Answered**: Are TMB and neoantigen subtypes redundant, and do mutational burden
@@ -119,17 +116,17 @@ Pooled Trial Cohorts ($N = 256$).**_
 
 A Spearman rank correlation matrix mapping the relationships between continuous genomic features
 (somatic mutation and neoantigen subtypes) across the **Pooled Trials** cohort
-($N = 256$) is presented below.
+($N = 930$) is presented below.
 
 ![Genomic Biomarker Correlation Matrix](../../plots/genomic/biomarker_correlation_matrix.png)
 
 _**Figure 4: Genomic & Neoantigen Biomarker Spearman Correlation Matrix (Pooled Trials,
-$N = 256$).**_
+$N = 930$).**_
 
 ### 3.2 Genomic Burden vs. Immune Infiltration
 
 To evaluate how tumour genomic features affect the microenvironment, we evaluated how mutational
-burden (**TMB**, evaluated in pooled trials, $N = 256$) correlates
+burden (**TMB**, evaluated in pooled trials, $N = 930$) correlates
 with continuous transcriptomic immune signatures.
 
 ![Genomic Burden vs Immune Heatmap](../../plots/biomarkers/extended_immune_correlations.png)
@@ -156,8 +153,8 @@ _**Figure 5: Correlation between Genomic Burden Metrics and Transcriptomic Immun
 
 > [!INFO] Why We Are Doing This
 >
-> **What**: We construct a multi-track co-mutation oncoplot across $N = 195$ trial
-> patients with binary response labels (CR/PR vs. PD; excluding $N = 61$ Stable Disease
+> **What**: We construct a multi-track co-mutation oncoplot across $N = 473$ trial
+> patients with binary response labels (CR/PR vs. PD; excluding $N = 457$ Stable Disease
 > patients), mapping somatic mutations in driver and resistance genes alongside patient TMB,
 > response status, study cohort, and sex.
 > **Why**: To visualise patient-level co-occurrence, mutual exclusivity, and driver mutation
@@ -166,12 +163,12 @@ _**Figure 5: Correlation between Genomic Burden Metrics and Transcriptomic Immun
 > trial patients, and are treatment responders enriched in specific driver genotypes?
 
 The complete co-mutation (oncoplot) landscape for patients with binary response labels across all
-three clinical trial cohorts ($N = 195$; excluding $N = 61$ Stable
+three clinical trial cohorts ($N = 473$; excluding $N = 457$ Stable
 Disease patients without a binary response classification) is presented below.
 
 ![Co-Mutation Landscape (Merged Trials)](../../plots/genomic/comut_landscape_merged.png)
 
-_**Figure 5: Co-Mutation Landscape across Clinical Trial Cohorts ($N = 195$).**
+_**Figure 5: Co-Mutation Landscape across Clinical Trial Cohorts ($N = 473$).**
 Rows represent driver and resistance genes; columns represent individual patient samples with
 clinical annotation tracks._
 
@@ -200,8 +197,6 @@ clinical annotation tracks._
 > - **Binary Response Filtering**: Oncoplot co-mutation visualization and response-stratified TMB
 > analyses focus on patients with definitive RECIST response classifications (CR/PR vs. PD),
 > excluding Stable Disease.
-
----
 
 > [!formula]+ Genomic Characterisation Script Execution & Software Module Architecture
 >

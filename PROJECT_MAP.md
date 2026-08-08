@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-07 (Refactored `run_univariate_associations.py` per AGENTS.md guidelines: fixed subproject log routing, eliminated 5 unused imports, extracted 6 domain constants, decomposed 100% of functions to $\le 30$ lines in AST, zero lines $>100$ characters, eliminated in-place DataFrame mutations in loops, 100% type hint coverage, and verified execution with exit code 0).
+> **Last updated**: 2026-08-08 (Futureproofed Pillar-1 & Pillar-2 analysis scripts across all 6 active study cohorts: dynamicised `run_clinical_analysis.py`, `run_dimensionality_reduction.py`, `run_response_km_curves.py`, `run_univariate_associations.py`, and `run_genomic_characterisation.py`; updated Table 1 with dynamic Total column, KM grid layouts capped to max 3 columns, and response-stratified survival/forest plots across all active datasets).
 
 ## Repository Overview
 

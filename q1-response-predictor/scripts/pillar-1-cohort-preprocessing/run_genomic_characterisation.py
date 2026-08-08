@@ -87,8 +87,9 @@ REPORT_PATH = (
     / "cohort_characteristics_genomic.md"
 )
 
-POOLED_LABEL = "Pooled Trials"
-_TRIAL_COHORTS: List[str] = ["Liu 2019", "Hugo 2016", "Riaz 2017"]
+def _get_trial_cohort_names(cohorts: Dict[str, pd.DataFrame]) -> List[str]:
+    """Returns all active trial cohort names (excluding reference TCGA-SKCM)."""
+    return [c for c in cohorts.keys() if c != "TCGA-SKCM"]
 NEOANTIGEN_SUBTYPES: List[str] = [
     "SNV_NEOANTIGEN", "INDEL_NEOANTIGEN", "FUSION_NEOANTIGEN",
     "SPLICE_NEOANTIGEN", "CTA_SELF_NEOANTIGEN",
@@ -257,7 +258,8 @@ def _calculate_driver_frequencies(
     """Computes percentage mutation frequencies for driver genes across ICI trial cohorts only."""
     mut_data = []
     cohort_labels = {}
-    for name in _TRIAL_COHORTS:
+    trial_names = _get_trial_cohort_names(cohorts)
+    for name in trial_names:
         if name not in cohorts:
             continue
         rec, label_n = _compute_single_cohort_driver_stats(cohorts[name], name)
@@ -315,16 +317,20 @@ def _plot_mutation_frequencies(cohorts: Dict[str, pd.DataFrame], plot_dir: Path)
 def _prepare_tmb_response_df(cohorts: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Prepares combined TMB dataset stratified by binary response."""
     trial_list = []
-    for name in _TRIAL_COHORTS:
-        df = cohorts[name][[_COL_TMB, _COL_RESPONSE]].dropna().copy()
-        df["Cohort"] = f"{name} (N={len(df)})"
-        df["Base_Cohort"] = name
-        trial_list.append(df)
+    trial_names = _get_trial_cohort_names(cohorts)
+    for name in trial_names:
+        if name in cohorts and _COL_TMB in cohorts[name].columns and _COL_RESPONSE in cohorts[name].columns:
+            df = cohorts[name][[_COL_TMB, _COL_RESPONSE]].dropna().copy()
+            if len(df) > 0:
+                df["Cohort"] = f"{name} (N={len(df)})"
+                df["Base_Cohort"] = name
+                trial_list.append(df)
 
-    df_trials = pd.concat(trial_list, ignore_index=True)
-    df_trials["Response"] = df_trials[_COL_RESPONSE].map(
-        {_RESP_RESPONDER: "Responder (CR/PR)", _RESP_NON_RESPONDER: "Non-responder (PD)"}
-    )
+    df_trials = pd.concat(trial_list, ignore_index=True) if trial_list else pd.DataFrame()
+    if not df_trials.empty:
+        df_trials["Response"] = df_trials[_COL_RESPONSE].map(
+            {_RESP_RESPONDER: "Responder (CR/PR)", _RESP_NON_RESPONDER: "Non-responder (PD)"}
+        )
     return df_trials
 
 
@@ -368,14 +374,16 @@ def _render_tmb_boxplot(ax: plt.Axes, df_trials: pd.DataFrame) -> None:
 def _prepare_neoantigen_df(cohorts: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Extracts and sums total neoantigens for pooled trial cohorts."""
     neo_list = []
-    for name in _TRIAL_COHORTS:
-        df_c = cohorts[name]
-        avail_neo = [c for c in NEOANTIGEN_SUBTYPES if c in df_c.columns]
-        if _COL_TMB in df_c.columns and avail_neo:
-            sub_df = df_c[[_COL_TMB] + avail_neo].dropna().copy()
-            if len(sub_df) > 0:
-                sub_df["TOTAL_NEOANTIGEN"] = sub_df[avail_neo].sum(axis=1)
-                neo_list.append(sub_df)
+    trial_names = _get_trial_cohort_names(cohorts)
+    for name in trial_names:
+        if name in cohorts:
+            df_c = cohorts[name]
+            avail_neo = [c for c in NEOANTIGEN_SUBTYPES if c in df_c.columns]
+            if _COL_TMB in df_c.columns and avail_neo:
+                sub_df = df_c[[_COL_TMB] + avail_neo].dropna().copy()
+                if len(sub_df) > 0:
+                    sub_df["TOTAL_NEOANTIGEN"] = sub_df[avail_neo].sum(axis=1)
+                    neo_list.append(sub_df)
 
     return pd.concat(neo_list, ignore_index=True) if neo_list else pd.DataFrame()
 
@@ -422,7 +430,8 @@ def _extract_pooled_biomarkers(cohorts: Dict[str, pd.DataFrame]) -> pd.DataFrame
     """Extracts continuous genomic and neoantigen features for pooled trial cohorts."""
     neo_cols = [_COL_TMB] + [c for c in NEOANTIGEN_FEATURES if c != _COL_TMB]
     pooled_sub_dfs = []
-    for name in _TRIAL_COHORTS:
+    trial_names = _get_trial_cohort_names(cohorts)
+    for name in trial_names:
         if name in cohorts:
             df = cohorts[name]
             avail = [c for c in neo_cols if c in df.columns]
@@ -465,6 +474,87 @@ def _plot_biomarker_correlations(cohorts: Dict[str, pd.DataFrame], plot_dir: Pat
         _render_correlation_heatmap(corr_df, plot_dir)
 
 
+# ---------------------------------------------------------------------------
+# Report Generation Helpers
+# ---------------------------------------------------------------------------
+def _compute_single_driver_pcts(df: pd.DataFrame) -> Dict[str, float]:
+    """Helper to compute driver gene percentage frequencies for one DataFrame."""
+    n = len(df)
+    if n == 0:
+        return {"braf": 0.0, "nras": 0.0, "nf1": 0.0, "twt": 0.0}
+    b_pct = (df.get("mut_BRAF", pd.Series(0)).sum() / n) * 100.0
+    n_pct = (df.get("mut_NRAS", pd.Series(0)).sum() / n) * 100.0
+    f_pct = (df.get("mut_NF1", pd.Series(0)).sum() / n) * 100.0
+    twt_pct = (
+        (df.get("mut_BRAF", 0) == 0) & (df.get("mut_NRAS", 0) == 0) & (df.get("mut_NF1", 0) == 0)
+    ).mean() * 100.0
+    return {"braf": b_pct, "nras": n_pct, "nf1": f_pct, "twt": twt_pct}
+
+
+def _compute_driver_stats(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, float]:
+    """Computes driver gene mutation percentages for ICI trial cohorts."""
+    stats = {}
+    trial_names = _get_trial_cohort_names(cohorts)
+    for c in trial_names:
+        if c in cohorts:
+            p = _compute_single_driver_pcts(cohorts[c])
+            key = c.lower().replace(" ", "_")
+            stats[f"{key}_braf"] = p["braf"]
+            stats[f"{key}_nras"] = p["nras"]
+            stats[f"{key}_nf1"] = p["nf1"]
+            stats[f"{key}_twt"] = p["twt"]
+    return stats
+
+
+def _compute_neoantigen_correlations(
+    cohorts: Dict[str, pd.DataFrame]
+) -> Tuple[float, float, float, float]:
+    """Computes TMB vs neoantigen subtype Spearman rank correlations."""
+    trial_names = _get_trial_cohort_names(cohorts)
+    pooled = pd.concat(
+        [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
+    )
+    avail = [c for c in NEOANTIGEN_SUBTYPES if c in pooled.columns]
+    r_tot, r_snv, r_ind, r_cta = float("nan"), float("nan"), float("nan"), float("nan")
+
+    if avail and _COL_TMB in pooled.columns:
+        df_neo = pooled[[_COL_TMB] + avail].dropna().copy()
+        df_neo["TOTAL_NEOANTIGEN"] = df_neo[avail].sum(axis=1)
+        r_tot, _ = spearmanr(df_neo[_COL_TMB], df_neo["TOTAL_NEOANTIGEN"])
+        if "SNV_NEOANTIGEN" in df_neo.columns:
+            r_snv, _ = spearmanr(df_neo[_COL_TMB], df_neo["SNV_NEOANTIGEN"])
+        if "INDEL_NEOANTIGEN" in df_neo.columns:
+            r_ind, _ = spearmanr(df_neo[_COL_TMB], df_neo["INDEL_NEOANTIGEN"])
+        if "CTA_SELF_NEOANTIGEN" in df_neo.columns:
+            r_cta, _ = spearmanr(df_neo[_COL_TMB], df_neo["CTA_SELF_NEOANTIGEN"])
+
+    return r_tot, r_snv, r_ind, r_cta
+
+
+def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
+    """Computes all dynamic statistics required for Markdown report formatting."""
+    trial_names = _get_trial_cohort_names(cohorts)
+    n_trials = sum(len(cohorts[c]) for c in trial_names if c in cohorts)
+
+    drv_stats = _compute_driver_stats(cohorts)
+    r_tot, r_snv, r_ind, r_cta = _compute_neoantigen_correlations(cohorts)
+
+    pooled = pd.concat(
+        [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
+    )
+    if _COL_RESPONSE in pooled.columns:
+        valid_resp = pooled[_COL_RESPONSE].isin([_RESP_NON_RESPONDER, _RESP_RESPONDER])
+        n_oncoplot = len(pooled[valid_resp])
+    else:
+        n_oncoplot = 0
+
+    return {
+        "n_trials": n_trials, **drv_stats,
+        "r_tot": r_tot, "r_snv": r_snv, "r_ind": r_ind, "r_cta": r_cta,
+        "n_oncoplot": n_oncoplot, "n_sd": n_trials - n_oncoplot,
+    }
+
+
 
 
 
@@ -504,8 +594,9 @@ def _compute_neoantigen_correlations(
     cohorts: Dict[str, pd.DataFrame]
 ) -> Tuple[float, float, float, float]:
     """Computes TMB vs neoantigen subtype Spearman rank correlations."""
+    trial_names = _get_trial_cohort_names(cohorts)
     pooled = pd.concat(
-        [cohorts[c] for c in _TRIAL_COHORTS], ignore_index=True
+        [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
     )
     avail = [c for c in NEOANTIGEN_SUBTYPES if c in pooled.columns]
     r_tot, r_snv, r_ind, r_cta = float("nan"), float("nan"), float("nan"), float("nan")
@@ -526,15 +617,14 @@ def _compute_neoantigen_correlations(
 
 def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
     """Computes all dynamic statistics required for Markdown report formatting."""
-    n_liu = len(cohorts["Liu 2019"])
-    n_hugo, n_riaz = len(cohorts["Hugo 2016"]), len(cohorts["Riaz 2017"])
-    n_trials = n_liu + n_hugo + n_riaz
+    trial_names = _get_trial_cohort_names(cohorts)
+    n_trials = sum(len(cohorts[c]) for c in trial_names if c in cohorts)
 
     drv_stats = _compute_driver_stats(cohorts)
     r_tot, r_snv, r_ind, r_cta = _compute_neoantigen_correlations(cohorts)
 
     pooled = pd.concat(
-        [cohorts[c] for c in _TRIAL_COHORTS], ignore_index=True
+        [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
     )
     if _COL_RESPONSE in pooled.columns:
         valid_resp = pooled[_COL_RESPONSE].isin([_RESP_NON_RESPONDER, _RESP_RESPONDER])
@@ -543,7 +633,6 @@ def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, An
         n_oncoplot = 0
 
     return {
-        "n_liu": n_liu, "n_hugo": n_hugo, "n_riaz": n_riaz,
         "n_trials": n_trials, **drv_stats,
         "r_tot": r_tot, "r_snv": r_snv, "r_ind": r_ind, "r_cta": r_cta,
         "n_oncoplot": n_oncoplot, "n_sd": n_trials - n_oncoplot,
@@ -588,14 +677,42 @@ def _build_script_reference_callout() -> str:
     )
 
 
+def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
+    """Computes all dynamic statistics required for Markdown report formatting."""
+    trial_names = _get_trial_cohort_names(cohorts)
+    cohort_counts = {c: len(cohorts[c]) for c in trial_names if c in cohorts}
+    n_trials = sum(cohort_counts.values())
+
+    drv_stats = _compute_driver_stats(cohorts)
+    r_tot, r_snv, r_ind, r_cta = _compute_neoantigen_correlations(cohorts)
+
+    pooled = pd.concat(
+        [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
+    )
+    if _COL_RESPONSE in pooled.columns:
+        valid_resp = pooled[_COL_RESPONSE].isin([_RESP_NON_RESPONDER, _RESP_RESPONDER])
+        n_oncoplot = len(pooled[valid_resp])
+    else:
+        n_oncoplot = 0
+
+    return {
+        "cohort_order": trial_names,
+        "cohort_counts": cohort_counts,
+        "n_trials": n_trials,
+        "drv_stats": drv_stats,
+        "r_tot": r_tot, "r_snv": r_snv, "r_ind": r_ind, "r_cta": r_cta,
+        "n_oncoplot": n_oncoplot, "n_sd": n_trials - n_oncoplot,
+    }
+
+
 def _build_section_1_info(s: Dict[str, Any]) -> str:
     """Builds Section 1 INFO callout box."""
+    c_str = ", ".join([f"**{c}** ($N = {s['cohort_counts'].get(c, 0)}$)" for c in s["cohort_order"]])
     return f"""> [!INFO] Why We Are Doing This
 >
 > **What**: We compare somatic mutation frequencies of key cutaneous melanoma driver genes
-> (`BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across the three ICI trial
-> cohorts: **Liu 2019** ($N = {s['n_liu']}$), **Hugo 2016** ($N = {s['n_hugo']}$),
-> and **Riaz 2017** ($N = {s['n_riaz']}$).
+> (`BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across active ICI trial
+> cohorts: {c_str}.
 > **Why**: To confirm that our clinical trial cohorts accurately reflect real-world melanoma
 > epidemiology and to evaluate whether pre-treatment mutations in antigen presentation
 > (`B2M`, `TAP1`, `TAP2`) or IFN-$\\gamma$ signalling (`JAK1`, `JAK2`, `STAT1`) drive primary
@@ -606,15 +723,20 @@ def _build_section_1_info(s: Dict[str, Any]) -> str:
 
 def _build_section_1_insight(s: Dict[str, Any]) -> str:
     """Builds Section 1 INSIGHT callout box."""
+    drv = s["drv_stats"]
+    bullets = []
+    for c in s["cohort_order"]:
+        key = c.lower().replace(" ", "_")
+        b = drv.get(f"{key}_braf", 0.0)
+        n = drv.get(f"{key}_nras", 0.0)
+        f = drv.get(f"{key}_nf1", 0.0)
+        t = drv.get(f"{key}_twt", 0.0)
+        bullets.append(f"**{c}** (`BRAF`: **{b:.1f}%**, `NRAS`: **{n:.1f}%**, `NF1`: **{f:.1f}%**, Triple-WT: **{t:.1f}%**)")
+    drv_str = "; ".join(bullets)
     return f"""> [!INSIGHT] Key Insights: Mutation Landscape
 >
 > 1. **Consistent Driver Mutation Profiles Across ICI Trial Cohorts**: Driver mutation frequencies
-> are broadly consistent across all three trial cohorts. **Liu 2019** (`BRAF`: **{s['liu_braf']:.1f}%**,
-> `NRAS`: **{s['liu_nras']:.1f}%**, `NF1`: **{s['liu_nf1']:.1f}%**, Triple-WT: **{s['liu_twt']:.1f}%**);
-> **Hugo 2016** (`BRAF`: **{s['hugo_braf']:.1f}%**, `NRAS`: **{s['hugo_nras']:.1f}%**, `NF1`:
-> **{s['hugo_nf1']:.1f}%**, Triple-WT: **{s['hugo_twt']:.1f}%**); **Riaz 2017** (`BRAF`:
-> **{s['riaz_braf']:.1f}%**, `NRAS`: **{s['riaz_nras']:.1f}%**, `NF1`: **{s['riaz_nf1']:.1f}%**,
-> Triple-WT: **{s['riaz_twt']:.1f}%**).
+> are broadly consistent across active trial cohorts ({drv_str}).
 > 2. **MAPK Driver Mutual Exclusivity**: Driver mutations act through independent growth
 > pathways: tumours with `BRAF` mutations almost never harbour co-occurring `NRAS` mutations,
 > validating established melanoma oncogenic principles.
@@ -629,19 +751,19 @@ def _build_section_1_drivers(s: Dict[str, Any]) -> str:
     """Builds Section 1.1 driver mutation frequencies section."""
     hdr = (
         "This report presents a comparative analysis of the "
-        "genomic features across the three ICI trial cohorts:"
+        "genomic features across active ICI trial cohorts:"
     )
+    bullets = "\n".join([f"- **{c}**: Anti-PD-1/CTLA-4 trial cohort ($N = {s['cohort_counts'].get(c, 0)}$)." for c in s["cohort_order"]])
+    c_names = ", ".join(s["cohort_order"])
     return f"""{hdr}
-- **Liu 2019**: Anti-PD-1 clinical trial cohort ($N = {s['n_liu']}$).
-- **Hugo 2016**: Anti-PD-1 clinical trial cohort ($N = {s['n_hugo']}$).
-- **Riaz 2017**: Anti-PD-1 clinical trial cohort ($N = {s['n_riaz']}$).
+{bullets}
 
 ### 1.1 Driver Mutation Frequencies
 
 ![Driver Mutation Frequencies](../../plots/genomic/genomic_driver_frequencies.png)
 
 _**Figure 1: Driver Mutation Frequencies across ICI Trial Cohorts.** Frequencies of `BRAF`,
-`NRAS`, `NF1`, and Triple-WT genotypes across Liu 2019, Hugo 2016, and Riaz 2017._"""
+`NRAS`, `NF1`, and Triple-WT genotypes across {c_names}._"""
 
 
 def _build_section_1_body(s: Dict[str, Any]) -> str:
