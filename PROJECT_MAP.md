@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-08 (Futureproofed Pillar-1 & Pillar-2 analysis scripts across all 6 active study cohorts: dynamicised `run_clinical_analysis.py`, `run_dimensionality_reduction.py`, `run_response_km_curves.py`, `run_univariate_associations.py`, and `run_genomic_characterisation.py`; updated Table 1 with dynamic Total column, KM grid layouts capped to max 3 columns, and response-stratified survival/forest plots across all active datasets).
+> **Last updated**: 2026-08-08 (Extracted synthetic `BRAF_V600` and `BRAF_V600E` mutation features across all MAF files; updated `run_univariate_associations.py` to output 3 domain-specific forest plots [`univariate_associations_clinical.png`, `univariate_associations_mutations.png`, `univariate_associations_genomics.png`] plus master plot `univariate_associations.png`; mapped Van Allen 2015 `NEOAGCNT` into Total Neoantigens association testing).
 
 ## Repository Overview
 
