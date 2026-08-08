@@ -7,7 +7,9 @@ overall survival stratification on TCGA-SKCM.
 
 from __future__ import annotations
 
+import argparse
 import contextlib
+import importlib
 import pickle
 import sys
 from pathlib import Path
@@ -916,8 +918,84 @@ def _run_multimodal_and_save(
     return all_combined_results
 
 
-def main() -> None:
+def parse_args(args: list[str] | None = None) -> argparse.Namespace:
+    """Parse command-line arguments for master pipeline execution."""
+    parser = argparse.ArgumentParser(
+        description="Master Preprocessing, LOCO Cross-Validation & Model Evaluation Pipeline."
+    )
+    parser.add_argument(
+        "--download",
+        action="store_true",
+        help="Download raw datasets from cBioPortal / sources before running pipeline.",
+    )
+    parser.add_argument(
+        "--clean",
+        action="store_true",
+        help="Clean and preprocess raw datasets before running pipeline.",
+    )
+    parser.add_argument(
+        "--merge",
+        action="store_true",
+        help="Merge cleaned datasets into unified cohorts before running pipeline.",
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Run full end-to-end workflow: download -> clean -> merge -> LOCO evaluation.",
+    )
+    parser.add_argument(
+        "--skip-eval",
+        action="store_true",
+        help="Run specified preprocessing steps (download/clean/merge) but skip model evaluation.",
+    )
+    return parser.parse_args(args)
+
+
+def main(args: list[str] | None = None) -> None:
     """Run master LOCO cross-validation and evaluation pipeline."""
+    parsed_args = parse_args(args)
+
+    run_download_step = parsed_args.download or parsed_args.all
+    run_clean_step = parsed_args.clean or parsed_args.all
+    run_merge_step = parsed_args.merge or parsed_args.all
+
+    if run_download_step:
+        print("\n" + "=" * 50)
+        print("PIPELINE STEP: Downloading Raw Datasets")
+        print("=" * 50)
+        download_module = importlib.import_module(
+            "scripts.pillar-1-cohort-preprocessing.download_data"
+        )
+        download_module.main()
+
+    if run_clean_step:
+        print("\n" + "=" * 50)
+        print("PIPELINE STEP: Cleaning & Preprocessing Datasets")
+        print("=" * 50)
+        clean_module = importlib.import_module(
+            "scripts.pillar-1-cohort-preprocessing.clean_data"
+        )
+        clean_module.main()
+
+    if run_merge_step:
+        print("\n" + "=" * 50)
+        print("PIPELINE STEP: Merging Cohort Datasets")
+        print("=" * 50)
+        merge_module = importlib.import_module(
+            "scripts.pillar-1-cohort-preprocessing.merge_datasets"
+        )
+        merge_module.main()
+
+    if parsed_args.skip_eval:
+        print("\n" + "=" * 50)
+        print("Preprocessing steps completed. Skipping model evaluation (--skip-eval requested).")
+        print("=" * 50)
+        return
+
+    print("\n" + "=" * 50)
+    print("PIPELINE STEP: LOCO CV, Survival Analysis & Model Evaluation")
+    print("=" * 50)
+
     (
         all_loco_results, survival_results, sig_corrected, y_train_full,
         sigs, clins,

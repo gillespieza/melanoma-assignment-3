@@ -100,9 +100,40 @@ res_expr = predictor.predict_from_expression(single_patient_gene_expression_df)
 ```
 
 
-## 🛠️ Full Pipeline Execution Order
+## 🛠️ Full Pipeline Execution
 
-To re-run the full data ingestion, preprocessing, training, and report generation pipeline locally:
+You can run the pipeline either end-to-end using the master `run_pipeline.py` CLI or step-by-step using individual module scripts.
+
+### 1. Master Pipeline Orchestration (`run_pipeline.py`)
+
+The master pipeline script (`q1-response-predictor/scripts/run_pipeline.py`) supports CLI options to orchestrate downloading, cleaning, merging, and evaluating models:
+
+* **Run Full End-to-End Pipeline (Download → Clean → Merge → LOCO CV & Evaluation)**:
+  ```bash
+  python q1-response-predictor/scripts/run_pipeline.py --all
+  ```
+
+* **Run Specific Preprocessing Steps Before Model Evaluation**:
+  ```bash
+  # Download, clean, and merge data, then train/evaluate models
+  python q1-response-predictor/scripts/run_pipeline.py --download --clean --merge
+  ```
+
+* **Run Preprocessing Only (Skip Model Training & Evaluation)**:
+  ```bash
+  python q1-response-predictor/scripts/run_pipeline.py --download --clean --merge --skip-eval
+  ```
+
+* **Run LOCO Cross-Validation & Model Evaluation Only (Assumes Data Prepared)**:
+  ```bash
+  python q1-response-predictor/scripts/run_pipeline.py
+  ```
+
+---
+
+### 2. Step-by-Step Individual Module Execution
+
+Alternatively, individual pillar scripts can be run sequentially:
 
 1. **Download Raw Data**:
    ```bash
@@ -116,7 +147,7 @@ To re-run the full data ingestion, preprocessing, training, and report generatio
    ```bash
    python q1-response-predictor/scripts/pillar-1-cohort-preprocessing/merge_datasets.py
    ```
-4. **Execute Pipeline & Train Models**:
+4. **Execute LOCO Cross-Validation & Model Training**:
    ```bash
    python q1-response-predictor/scripts/run_pipeline.py
    ```
