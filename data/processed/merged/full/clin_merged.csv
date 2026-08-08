@@ -1,700 +1,860 @@
-SAMPLE_ID,PATIENT_ID,COHORT,OS_MONTHS,OS_STATUS,AGE,RACE,SEX,RESPONSE,RESPONSE_BINARY,SPECIMEN_TYPE,IMMUNOTHERAPY,TMB_NONSYNONYMOUS,SNV_NEOANTIGEN,INDEL_NEOANTIGEN,FUSION_NEOANTIGEN,SPLICE_NEOANTIGEN,CTA_SELF_NEOANTIGEN,VIRUS_NEOANTIGEN,ERV_NEOANTIGEN,ANEUPLOIDY_SCORE,MSI_SCORE_MANTIS,MSI_SENSOR_SCORE
-LIU_SAMPLE1,LIU_PATIENT1,Liu 2019,9.3,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,3.133333333,52.0,2.0,4.0,51.0,2.0,0.0,0.0,,,
-LIU_SAMPLE10,LIU_PATIENT10,Liu 2019,37.42,1.0,,,Female,Partial Response,1.0,Metastatic,1,3.733333333,63.0,1.0,1.0,43.0,6.0,0.0,0.0,,,
-LIU_SAMPLE100,LIU_PATIENT100,Liu 2019,30.81,1.0,,,Female,Partial Response,1.0,Metastatic,1,4.466666667,39.0,1.0,1.0,85.0,5.0,0.0,0.0,,,
-LIU_SAMPLE102,LIU_PATIENT102,Liu 2019,25.79,0.0,,,Male,Stable Disease,,Metastatic,1,8.7,68.0,1.0,0.0,43.0,18.0,0.0,0.0,,,
-LIU_SAMPLE105,LIU_PATIENT105,Liu 2019,17.12,1.0,,,Female,Stable Disease,,Metastatic,1,5.166666667,16.0,0.0,0.0,81.0,3.0,0.0,0.0,,,
-LIU_SAMPLE106,LIU_PATIENT106,Liu 2019,25.62,0.0,,,Female,Complete Response,1.0,Metastatic,1,8.3,64.0,3.0,3.0,32.0,10.0,0.0,0.0,,,
-LIU_SAMPLE107,LIU_PATIENT107,Liu 2019,1.54,1.0,,,Male,Partial Response,1.0,Metastatic,1,5.7,2.0,0.0,0.0,2.0,0.0,0.0,0.0,,,
-LIU_SAMPLE108,LIU_PATIENT108,Liu 2019,5.42,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,7.733333333,4.0,0.0,0.0,45.0,2.0,0.0,0.0,,,
-LIU_SAMPLE11,LIU_PATIENT11,Liu 2019,5.26,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,7.533333333,89.0,7.0,7.0,28.0,11.0,0.0,0.0,,,
-LIU_SAMPLE112,LIU_PATIENT112,Liu 2019,17.12,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,8.366666667,46.0,3.0,0.0,14.0,1.0,0.0,0.0,,,
-LIU_SAMPLE116,LIU_PATIENT116,Liu 2019,3.88,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,8.066666667,58.0,0.0,4.0,47.0,16.0,0.0,0.0,,,
-LIU_SAMPLE117,LIU_PATIENT117,Liu 2019,9.69,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,3.7,24.0,4.0,8.0,41.0,6.0,0.0,0.0,,,
-LIU_SAMPLE121,LIU_PATIENT121,Liu 2019,42.9,0.0,,,Female,Partial Response,1.0,Metastatic,1,28.5,261.0,9.0,0.0,48.0,4.0,0.0,0.0,,,
-LIU_SAMPLE125,LIU_PATIENT125,Liu 2019,32.13,0.0,,,Male,Complete Response,1.0,Metastatic,1,6.333333333,21.0,5.0,1.0,43.0,4.0,0.0,0.0,,,
-LIU_SAMPLE126,LIU_PATIENT126,Liu 2019,32.59,0.0,,,Male,Partial Response,1.0,Metastatic,1,22.23333333,205.0,4.0,4.0,49.0,10.0,0.0,0.0,,,
-LIU_SAMPLE127,LIU_PATIENT127,Liu 2019,28.45,0.0,,,Male,Complete Response,1.0,Metastatic,1,17.86666667,92.0,10.0,2.0,21.0,17.0,0.0,0.0,,,
-LIU_SAMPLE13,LIU_PATIENT13,Liu 2019,1.91,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,22.5,198.0,5.0,5.0,44.0,8.0,0.0,0.0,,,
-LIU_SAMPLE130,LIU_PATIENT130,Liu 2019,6.31,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,10.96666667,58.0,0.0,3.0,15.0,3.0,0.0,0.0,,,
-LIU_SAMPLE131,LIU_PATIENT131,Liu 2019,27.37,0.0,,,Male,Partial Response,1.0,Metastatic,1,11.8,32.0,3.0,0.0,48.0,2.0,0.0,0.0,,,
-LIU_SAMPLE132,LIU_PATIENT132,Liu 2019,24.28,0.0,,,Male,Complete Response,1.0,Metastatic,1,22.43333333,116.0,3.0,1.0,20.0,15.0,0.0,0.0,,,
-LIU_SAMPLE133,LIU_PATIENT133,Liu 2019,12.16,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,11.76666667,84.0,4.0,1.0,88.0,3.0,0.0,0.0,,,
-LIU_SAMPLE134,LIU_PATIENT134,Liu 2019,19.38,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,12.5,92.0,2.0,0.0,50.0,7.0,0.0,0.0,,,
-LIU_SAMPLE135,LIU_PATIENT135,Liu 2019,20.63,0.0,,,Male,Complete Response,1.0,Metastatic,1,14.0,105.0,0.0,0.0,48.0,24.0,0.0,0.0,,,
-LIU_SAMPLE137,LIU_PATIENT137,Liu 2019,25.36,0.0,,,Female,Complete Response,1.0,Metastatic,1,29.26666667,112.0,0.0,0.0,48.0,1.0,0.0,0.0,,,
-LIU_SAMPLE14,LIU_PATIENT14,Liu 2019,6.11,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,2.633333333,30.0,0.0,3.0,50.0,9.0,0.0,0.0,,,
-LIU_SAMPLE140,LIU_PATIENT140,Liu 2019,11.53,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,71.5,577.0,7.0,3.0,55.0,5.0,0.0,0.0,,,
-LIU_SAMPLE141,LIU_PATIENT141,Liu 2019,28.75,0.0,,,Female,Partial Response,1.0,Metastatic,1,2.633333333,23.0,0.0,0.0,40.0,1.0,0.0,0.0,,,
-LIU_SAMPLE142,LIU_PATIENT142,Liu 2019,32.72,0.0,,,Female,Stable Disease,,Metastatic,1,2.366666667,19.0,0.0,1.0,76.0,4.0,0.0,0.0,,,
-LIU_SAMPLE143,LIU_PATIENT143,Liu 2019,20.7,0.0,,,Male,Progressive Disease,0.0,N/A,1,13.06666667,68.0,2.0,0.0,44.0,4.0,0.0,0.0,,,
-LIU_SAMPLE144,LIU_PATIENT144,Liu 2019,21.75,0.0,,,Male,Partial Response,1.0,Metastatic,1,30.0,62.0,3.0,0.0,63.0,6.0,0.0,0.0,,,
-LIU_SAMPLE145,LIU_PATIENT145,Liu 2019,27.37,0.0,,,Male,Complete Response,1.0,Metastatic,1,10.66666667,58.0,1.0,0.0,34.0,5.0,0.0,0.0,,,
-LIU_SAMPLE146,LIU_PATIENT146,Liu 2019,20.11,0.0,,,Female,Complete Response,1.0,Metastatic,1,13.86666667,119.0,5.0,1.0,32.0,12.0,0.0,0.0,,,
-LIU_SAMPLE147,LIU_PATIENT147,Liu 2019,31.54,0.0,,,Male,Complete Response,1.0,Metastatic,1,18.6,137.0,1.0,0.0,14.0,5.0,0.0,0.0,,,
-LIU_SAMPLE148,LIU_PATIENT148,Liu 2019,26.02,0.0,,,Female,Partial Response,1.0,Metastatic,1,11.36666667,62.0,1.0,3.0,53.0,6.0,0.0,0.0,,,
-LIU_SAMPLE149,LIU_PATIENT149,Liu 2019,16.33,1.0,,,Male,Stable Disease,,Metastatic,1,8.033333333,52.0,1.0,0.0,66.0,5.0,0.0,0.0,,,
-LIU_SAMPLE15,LIU_PATIENT15,Liu 2019,4.89,1.0,,,Female,Partial Response,1.0,Metastatic,1,9.066666667,56.0,0.0,3.0,46.0,6.0,0.0,0.0,,,
-LIU_SAMPLE150,LIU_PATIENT150,Liu 2019,22.5,0.0,,,Male,Partial Response,1.0,Metastatic,1,1.666666667,13.0,3.0,5.0,32.0,10.0,0.0,0.0,,,
-LIU_SAMPLE154,LIU_PATIENT154,Liu 2019,20.86,0.0,,,Female,Stable Disease,,N/A,1,1.0,17.0,0.0,0.0,21.0,9.0,0.0,0.0,,,
-LIU_SAMPLE155,LIU_PATIENT155,Liu 2019,15.6,0.0,,,Male,Progressive Disease,0.0,N/A,1,9.233333333,60.0,2.0,0.0,9.0,9.0,0.0,0.0,,,
-LIU_SAMPLE156,LIU_PATIENT156,Liu 2019,2.86,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,7.0,72.0,0.0,3.0,69.0,15.0,0.0,0.0,,,
-LIU_SAMPLE158,LIU_PATIENT158,Liu 2019,6.37,0.0,,,Male,Partial Response,1.0,Metastatic,1,75.3,680.0,39.0,2.0,33.0,9.0,0.0,0.0,,,
-LIU_SAMPLE159,LIU_PATIENT159,Liu 2019,9.46,0.0,,,Female,Stable Disease,,Metastatic,1,2.2,24.0,2.0,12.0,89.0,14.0,0.0,0.0,,,
-LIU_SAMPLE162,LIU_PATIENT162,Liu 2019,6.6,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,56.63333333,299.0,3.0,4.0,18.0,6.0,0.0,0.0,,,
-LIU_SAMPLE163,LIU_PATIENT163,Liu 2019,5.68,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,7.733333333,57.0,3.0,1.0,52.0,6.0,0.0,0.0,,,
-LIU_SAMPLE165,LIU_PATIENT165,Liu 2019,2.46,0.0,,,Male,Progressive Disease,0.0,Metastatic,1,24.06666667,226.0,4.0,1.0,109.0,12.0,0.0,0.0,,,
-LIU_SAMPLE166,LIU_PATIENT166,Liu 2019,6.73,1.0,,,Female,Partial Response,1.0,Metastatic,1,0.366666667,7.0,0.0,8.0,23.0,9.0,0.0,0.0,,,
-LIU_SAMPLE167,LIU_PATIENT167,Liu 2019,9.26,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,0.966666667,5.0,1.0,6.0,29.0,8.0,0.0,0.0,,,
-LIU_SAMPLE168,LIU_PATIENT168,Liu 2019,20.47,0.0,,,Male,Partial Response,1.0,Metastatic,1,0.8,11.0,0.0,2.0,53.0,21.0,0.0,0.0,,,
-LIU_SAMPLE169,LIU_PATIENT169,Liu 2019,17.84,0.0,,,Male,Partial Response,1.0,Metastatic,1,48.6,336.0,5.0,2.0,21.0,14.0,0.0,0.0,,,
-LIU_SAMPLE17,LIU_PATIENT17,Liu 2019,22.54,1.0,,,Male,Stable Disease,,Metastatic,1,15.36666667,97.0,7.0,6.0,51.0,5.0,0.0,0.0,,,
-LIU_SAMPLE170,LIU_PATIENT170,Liu 2019,11.4,0.0,,,Male,Stable Disease,,N/A,1,2.5,22.0,1.0,10.0,3.0,14.0,0.0,0.0,,,
-LIU_SAMPLE172,LIU_PATIENT172,Liu 2019,8.94,0.0,,,Male,Stable Disease,,N/A,1,23.73333333,126.0,5.0,0.0,32.0,7.0,0.0,0.0,,,
-LIU_SAMPLE173,LIU_PATIENT173,Liu 2019,1.38,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,5.8,65.0,2.0,13.0,54.0,14.0,0.0,0.0,,,
-LIU_SAMPLE179,LIU_PATIENT179,Liu 2019,21.45,0.0,,,Female,Partial Response,1.0,Metastatic,1,16.3,52.0,0.0,1.0,16.0,2.0,0.0,0.0,,,
-LIU_SAMPLE18,LIU_PATIENT18,Liu 2019,4.27,1.0,,,Male,Progressive Disease,0.0,N/A,1,13.93333333,116.0,0.0,4.0,45.0,11.0,0.0,0.0,,,
-LIU_SAMPLE181,LIU_PATIENT181,Liu 2019,15.64,0.0,,,Female,Complete Response,1.0,Metastatic,1,10.7,69.0,3.0,1.0,79.0,10.0,0.0,0.0,,,
-LIU_SAMPLE183,LIU_PATIENT183,Liu 2019,18.79,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,12.06666667,19.0,1.0,0.0,41.0,3.0,0.0,0.0,,,
-LIU_SAMPLE184,LIU_PATIENT184,Liu 2019,16.85,0.0,,,Male,Complete Response,1.0,Metastatic,1,71.66666667,61.0,1.0,0.0,9.0,1.0,0.0,0.0,,,
-LIU_SAMPLE185,LIU_PATIENT185,Liu 2019,6.67,0.0,,,Male,Stable Disease,,Metastatic,1,6.133333333,17.0,1.0,0.0,42.0,2.0,0.0,0.0,,,
-LIU_SAMPLE187,LIU_PATIENT187,Liu 2019,20.27,0.0,,,Female,Complete Response,1.0,Metastatic,1,4.9,37.0,1.0,0.0,42.0,18.0,0.0,0.0,,,
-LIU_SAMPLE188,LIU_PATIENT188,Liu 2019,2.43,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,1.266666667,13.0,0.0,2.0,19.0,25.0,0.0,0.0,,,
-LIU_SAMPLE189,LIU_PATIENT189,Liu 2019,23.59,0.0,,,Female,Partial Response,1.0,Metastatic,1,1.666666667,12.0,0.0,1.0,121.0,5.0,0.0,0.0,,,
-LIU_SAMPLE191,LIU_PATIENT191,Liu 2019,21.62,0.0,,,Male,Partial Response,1.0,Metastatic,1,143.1,966.0,2.0,2.0,34.0,8.0,0.0,0.0,,,
-LIU_SAMPLE192,LIU_PATIENT192,Liu 2019,9.53,0.0,,,Female,Partial Response,1.0,Metastatic,1,17.3,115.0,4.0,3.0,65.0,6.0,0.0,0.0,,,
-LIU_SAMPLE193,LIU_PATIENT193,Liu 2019,21.65,0.0,,,Female,Stable Disease,,N/A,1,21.76666667,138.0,2.0,1.0,26.0,11.0,0.0,0.0,,,
-LIU_SAMPLE195,LIU_PATIENT195,Liu 2019,29.4,0.0,,,Male,Partial Response,1.0,Metastatic,1,66.03333333,436.0,5.0,3.0,43.0,7.0,0.0,0.0,,,
-LIU_SAMPLE196,LIU_PATIENT196,Liu 2019,2.66,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,58.4,388.0,4.0,4.0,50.0,5.0,0.0,0.0,,,
-LIU_SAMPLE197,LIU_PATIENT197,Liu 2019,31.54,0.0,,,Female,Partial Response,1.0,Metastatic,1,2.5,14.0,1.0,4.0,40.0,10.0,0.0,0.0,,,
-LIU_SAMPLE20,LIU_PATIENT20,Liu 2019,7.95,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,16.33333333,98.0,1.0,2.0,32.0,6.0,0.0,0.0,,,
-LIU_SAMPLE200,LIU_PATIENT200,Liu 2019,16.82,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,25.76666667,257.0,1.0,0.0,46.0,6.0,0.0,0.0,,,
-LIU_SAMPLE201,LIU_PATIENT201,Liu 2019,5.49,1.0,,,Male,Progressive Disease,0.0,N/A,1,2.833333333,6.0,2.0,2.0,2.0,1.0,0.0,0.0,,,
-LIU_SAMPLE203,LIU_PATIENT203,Liu 2019,20.57,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,3.1,44.0,0.0,29.0,32.0,8.0,0.0,0.0,,,
-LIU_SAMPLE204,LIU_PATIENT204,Liu 2019,26.91,0.0,,,Male,Complete Response,1.0,Metastatic,1,69.26666667,381.0,2.0,3.0,3.0,10.0,0.0,0.0,,,
-LIU_SAMPLE205,LIU_PATIENT205,Liu 2019,12.88,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,20.5,100.0,2.0,2.0,33.0,15.0,0.0,0.0,,,
-LIU_SAMPLE206,LIU_PATIENT206,Liu 2019,2.96,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,185.4,1259.0,0.0,4.0,32.0,7.0,0.0,0.0,,,
-LIU_SAMPLE21,LIU_PATIENT21,Liu 2019,29.76,0.0,,,Female,Partial Response,1.0,Metastatic,1,9.966666667,36.0,14.0,2.0,4.0,8.0,0.0,0.0,,,
-LIU_SAMPLE22,LIU_PATIENT22,Liu 2019,8.31,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,3.166666667,27.0,3.0,7.0,18.0,7.0,0.0,0.0,,,
-LIU_SAMPLE23,LIU_PATIENT23,Liu 2019,32.03,0.0,,,Male,Progressive Disease,0.0,N/A,1,7.1,37.0,8.0,5.0,41.0,9.0,0.0,0.0,,,
-LIU_SAMPLE24,LIU_PATIENT24,Liu 2019,4.5,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,10.93333333,45.0,3.0,3.0,16.0,12.0,0.0,0.0,,,
-LIU_SAMPLE25,LIU_PATIENT25,Liu 2019,36.01,0.0,,,Male,Partial Response,1.0,Metastatic,1,12.56666667,75.0,2.0,2.0,62.0,6.0,0.0,0.0,,,
-LIU_SAMPLE27,LIU_PATIENT27,Liu 2019,14.16,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,7.966666667,58.0,1.0,0.0,156.0,8.0,0.0,0.0,,,
-LIU_SAMPLE30,LIU_PATIENT30,Liu 2019,7.0,1.0,,,Female,Stable Disease,,Metastatic,1,22.73333333,78.0,1.0,2.0,50.0,7.0,0.0,1.0,,,
-LIU_SAMPLE31,LIU_PATIENT31,Liu 2019,13.99,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,6.5,106.0,5.0,1.0,23.0,8.0,0.0,0.0,,,
-LIU_SAMPLE32,LIU_PATIENT32,Liu 2019,1.74,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,11.2,44.0,2.0,0.0,108.0,5.0,0.0,0.0,,,
-LIU_SAMPLE33,LIU_PATIENT33,Liu 2019,55.16,0.0,,,Female,Partial Response,1.0,Metastatic,1,2.966666667,197.0,0.0,1.0,102.0,2.0,0.0,0.0,,,
-LIU_SAMPLE34,LIU_PATIENT34,Liu 2019,55.55,0.0,,,Male,Partial Response,1.0,Metastatic,1,1.133333333,23.0,0.0,0.0,415.0,2.0,0.0,0.0,,,
-LIU_SAMPLE35,LIU_PATIENT35,Liu 2019,31.8,1.0,,,Male,Stable Disease,,Metastatic,1,3.2,12.0,4.0,3.0,20.0,4.0,0.0,0.0,,,
-LIU_SAMPLE36,LIU_PATIENT36,Liu 2019,14.82,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,6.766666667,50.0,1.0,0.0,58.0,3.0,0.0,0.0,,,
-LIU_SAMPLE37,LIU_PATIENT37,Liu 2019,9.03,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,2.866666667,16.0,0.0,1.0,68.0,4.0,0.0,0.0,,,
-LIU_SAMPLE38,LIU_PATIENT38,Liu 2019,11.27,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,2.6,32.0,3.0,6.0,41.0,2.0,0.0,0.0,,,
-LIU_SAMPLE4,LIU_PATIENT4,Liu 2019,19.71,1.0,,,Male,Complete Response,1.0,Metastatic,1,15.26666667,111.0,4.0,0.0,88.0,4.0,0.0,1.0,,,
-LIU_SAMPLE40,LIU_PATIENT40,Liu 2019,15.37,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,250.8333333,2330.0,26.0,2.0,51.0,4.0,0.0,0.0,,,
-LIU_SAMPLE42,LIU_PATIENT42,Liu 2019,33.74,0.0,,,Male,Complete Response,1.0,Metastatic,1,17.66666667,115.0,1.0,1.0,25.0,12.0,0.0,0.0,,,
-LIU_SAMPLE44,LIU_PATIENT44,Liu 2019,30.29,0.0,,,Male,Partial Response,1.0,Metastatic,1,5.366666667,0.0,0.0,0.0,6.0,2.0,0.0,0.0,,,
-LIU_SAMPLE45,LIU_PATIENT45,Liu 2019,54.73,0.0,,,Male,Partial Response,1.0,Metastatic,1,10.83333333,46.0,0.0,5.0,41.0,7.0,0.0,0.0,,,
-LIU_SAMPLE47,LIU_PATIENT47,Liu 2019,30.78,0.0,,,Female,Progressive Disease,0.0,Metastatic,1,27.9,244.0,3.0,5.0,23.0,15.0,0.0,0.0,,,
-LIU_SAMPLE48,LIU_PATIENT48,Liu 2019,1.74,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,2.733333333,22.0,4.0,1.0,34.0,4.0,0.0,0.0,,,
-LIU_SAMPLE51,LIU_PATIENT51,Liu 2019,50.82,0.0,,,Male,Partial Response,1.0,Metastatic,1,39.36666667,31.0,1.0,0.0,10.0,2.0,0.0,0.0,,,
-LIU_SAMPLE56,LIU_PATIENT56,Liu 2019,4.01,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,1.966666667,47.0,0.0,5.0,55.0,3.0,0.0,0.0,,,
-LIU_SAMPLE58,LIU_PATIENT58,Liu 2019,9.95,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,3.8,10.0,0.0,0.0,20.0,1.0,0.0,0.0,,,
-LIU_SAMPLE6,LIU_PATIENT6,Liu 2019,22.57,1.0,,,Female,Stable Disease,,Metastatic,1,39.86666667,423.0,7.0,4.0,21.0,3.0,0.0,0.0,,,
-LIU_SAMPLE61,LIU_PATIENT61,Liu 2019,32.42,0.0,,,Female,Stable Disease,,Metastatic,1,70.96666667,41.0,2.0,0.0,0.0,5.0,0.0,0.0,,,
-LIU_SAMPLE62,LIU_PATIENT62,Liu 2019,32.88,0.0,,,Female,Partial Response,1.0,Metastatic,1,211.9333333,2003.0,14.0,5.0,42.0,16.0,0.0,0.0,,,
-LIU_SAMPLE63,LIU_PATIENT63,Liu 2019,5.85,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,10.86666667,84.0,6.0,3.0,62.0,5.0,0.0,0.0,,,
-LIU_SAMPLE67,LIU_PATIENT67,Liu 2019,4.47,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,11.7,33.0,2.0,0.0,59.0,8.0,0.0,0.0,,,
-LIU_SAMPLE7,LIU_PATIENT7,Liu 2019,8.84,1.0,,,Male,Stable Disease,,Metastatic,1,7.033333333,207.0,4.0,11.0,44.0,5.0,0.0,0.0,,,
-LIU_SAMPLE72,LIU_PATIENT72,Liu 2019,12.98,0.0,,,Male,Progressive Disease,0.0,Metastatic,1,5.333333333,83.0,2.0,2.0,46.0,9.0,0.0,0.0,,,
-LIU_SAMPLE73,LIU_PATIENT73,Liu 2019,27.79,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,3.733333333,35.0,3.0,0.0,38.0,10.0,0.0,0.0,,,
-LIU_SAMPLE75,LIU_PATIENT75,Liu 2019,29.27,0.0,,,Male,Partial Response,1.0,Metastatic,1,24.46666667,87.0,1.0,1.0,13.0,8.0,0.0,0.0,,,
-LIU_SAMPLE77,LIU_PATIENT77,Liu 2019,14.59,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,4.1,61.0,3.0,4.0,43.0,10.0,0.0,0.0,,,
-LIU_SAMPLE78,LIU_PATIENT78,Liu 2019,11.7,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,1.333333333,80.0,2.0,6.0,25.0,19.0,0.0,0.0,,,
-LIU_SAMPLE79,LIU_PATIENT79,Liu 2019,27.89,0.0,,,Female,Progressive Disease,0.0,Metastatic,1,6.6,76.0,0.0,3.0,14.0,14.0,0.0,0.0,,,
-LIU_SAMPLE8,LIU_PATIENT8,Liu 2019,33.02,1.0,,,Male,Stable Disease,,Metastatic,1,11.43333333,211.0,0.0,1.0,42.0,4.0,0.0,0.0,,,
-LIU_SAMPLE82,LIU_PATIENT82,Liu 2019,4.3,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,61.96666667,559.0,4.0,0.0,42.0,16.0,0.0,0.0,,,
-LIU_SAMPLE83,LIU_PATIENT83,Liu 2019,2.33,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,8.033333333,93.0,1.0,1.0,65.0,17.0,0.0,0.0,,,
-LIU_SAMPLE86,LIU_PATIENT86,Liu 2019,43.59,0.0,,,Male,Stable Disease,,Metastatic,1,9.7,116.0,3.0,1.0,49.0,4.0,0.0,0.0,,,
-LIU_SAMPLE87,LIU_PATIENT87,Liu 2019,41.49,0.0,,,Female,Partial Response,1.0,Metastatic,1,4.3,66.0,5.0,39.0,80.0,7.0,0.0,0.0,,,
-LIU_SAMPLE9,LIU_PATIENT9,Liu 2019,31.64,0.0,,,Female,Progressive Disease,0.0,N/A,1,24.66666667,197.0,6.0,1.0,39.0,7.0,0.0,0.0,,,
-LIU_SAMPLE94,LIU_PATIENT94,Liu 2019,1.31,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,8.866666667,143.0,0.0,2.0,47.0,22.0,0.0,2.0,,,
-LIU_SAMPLE96,LIU_PATIENT96,Liu 2019,29.99,0.0,,,Male,Complete Response,1.0,Metastatic,1,22.36666667,220.0,8.0,2.0,74.0,9.0,0.0,0.0,,,
-LIU_SAMPLE98,LIU_PATIENT98,Liu 2019,22.44,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,10.3,86.0,1.0,3.0,145.0,7.0,0.0,0.0,,,
-LIU_SAMPLE99,LIU_PATIENT99,Liu 2019,30.26,0.0,,,Male,Partial Response,1.0,Metastatic,1,29.76666667,267.0,2.0,3.0,25.0,33.0,0.0,0.0,,,
-HUGO_PT1,HUGO_PT1,Hugo 2016,19.94,1.0,66.0,,Female,Progressive Disease,0.0,N/A,1,77.86666667,615.0,9.0,6.0,14.0,21.0,0.0,0.0,,,
-HUGO_PT10,HUGO_PT10,Hugo 2016,12.71,0.0,60.0,,Male,Progressive Disease,0.0,N/A,1,8.433333333,63.0,2.0,2.0,9.0,17.0,0.0,0.0,,,
-HUGO_PT12,HUGO_PT12,Hugo 2016,10.74,1.0,59.0,,Male,Progressive Disease,0.0,N/A,1,2.7,13.0,0.0,2.0,12.0,10.0,0.0,0.0,,,
-HUGO_PT13,HUGO_PT13,Hugo 2016,30.12,0.0,53.0,,Female,Complete Response,1.0,N/A,1,15.53333333,160.0,3.0,1.0,19.0,18.0,0.0,0.0,,,
-HUGO_PT14,HUGO_PT14,Hugo 2016,1.77,0.0,27.0,,Female,Progressive Disease,0.0,N/A,1,50.53333333,402.0,2.0,2.0,12.0,25.0,0.0,0.0,,,
-HUGO_PT15,HUGO_PT15,Hugo 2016,32.19,1.0,70.0,,Male,Partial Response,1.0,N/A,1,23.86666667,206.0,2.0,4.0,23.0,27.0,0.0,0.0,,,
-HUGO_PT16,HUGO_PT16,Hugo 2016,6.11,1.0,19.0,,Male,Progressive Disease,0.0,N/A,1,18.96666667,132.0,1.0,2.0,13.0,15.0,0.0,0.0,,,
-HUGO_PT19,HUGO_PT19,Hugo 2016,34.82,0.0,45.0,,Male,Partial Response,1.0,N/A,1,21.1,102.0,2.0,0.0,45.0,10.0,1.0,0.0,,,
-HUGO_PT2,HUGO_PT2,Hugo 2016,30.45,0.0,55.0,,Male,Partial Response,1.0,N/A,1,65.4,468.0,5.0,4.0,7.0,3.0,0.0,0.0,,,
-HUGO_PT20,HUGO_PT20,Hugo 2016,11.07,1.0,63.0,,Female,Progressive Disease,0.0,N/A,1,19.6,173.0,2.0,2.0,38.0,16.0,0.0,0.0,,,
-HUGO_PT22,HUGO_PT22,Hugo 2016,5.98,1.0,55.0,,Male,Progressive Disease,0.0,N/A,1,6.5,62.0,0.0,3.0,117.0,13.0,0.0,0.0,,,
-HUGO_PT23,HUGO_PT23,Hugo 2016,3.38,1.0,63.0,,Male,Progressive Disease,0.0,N/A,1,9.266666667,93.0,1.0,3.0,5.0,8.0,0.0,0.0,,,
-HUGO_PT25,HUGO_PT25,Hugo 2016,8.61,1.0,74.0,,Male,Progressive Disease,0.0,N/A,1,4.566666667,31.0,1.0,2.0,8.0,9.0,0.0,0.0,,,
-HUGO_PT27,HUGO_PT27,Hugo 2016,18.0,0.0,83.0,,Male,Complete Response,1.0,N/A,1,86.53333333,694.0,5.0,1.0,31.0,9.0,0.0,0.0,,,
-HUGO_PT28,HUGO_PT28,Hugo 2016,14.42,1.0,82.0,,Male,Partial Response,1.0,N/A,1,29.1,356.0,2.0,1.0,114.0,4.0,0.0,0.0,,,
-HUGO_PT29,HUGO_PT29,Hugo 2016,8.84,1.0,84.0,,Male,Progressive Disease,0.0,N/A,1,8.366666667,87.0,8.0,5.0,30.0,13.0,0.0,0.0,,,
-HUGO_PT31,HUGO_PT31,Hugo 2016,23.13,0.0,47.0,,Male,Progressive Disease,0.0,N/A,1,21.76666667,144.0,3.0,1.0,22.0,19.0,0.0,0.0,,,
-HUGO_PT32,HUGO_PT32,Hugo 2016,5.62,1.0,47.0,,Male,Progressive Disease,0.0,N/A,1,9.866666667,93.0,1.0,0.0,3.0,18.0,0.0,0.0,,,
-HUGO_PT35,HUGO_PT35,Hugo 2016,14.03,0.0,65.0,,Female,Partial Response,1.0,N/A,1,11.33333333,100.0,2.0,3.0,12.0,10.0,0.0,0.0,,,
-HUGO_PT37,HUGO_PT37,Hugo 2016,11.96,0.0,70.0,,Female,Partial Response,1.0,N/A,1,19.2,113.0,0.0,0.0,11.0,20.0,0.0,0.0,,,
-HUGO_PT38,HUGO_PT38,Hugo 2016,14.72,0.0,57.0,,Female,Partial Response,1.0,N/A,1,2.6,41.0,0.0,0.0,19.0,15.0,0.0,0.0,,,
-HUGO_PT4,HUGO_PT4,Hugo 2016,31.14,0.0,62.0,,Male,Partial Response,1.0,N/A,1,131.1333333,1239.0,13.0,0.0,41.0,12.0,0.0,0.0,,,
-HUGO_PT5,HUGO_PT5,Hugo 2016,14.42,0.0,61.0,,Male,Partial Response,1.0,N/A,1,11.86666667,104.0,2.0,4.0,14.0,27.0,0.0,0.0,,,
-HUGO_PT6,HUGO_PT6,Hugo 2016,28.98,0.0,51.0,,Male,Partial Response,1.0,N/A,1,8.0,55.0,0.0,0.0,23.0,15.0,1.0,0.0,,,
-HUGO_PT7,HUGO_PT7,Hugo 2016,21.75,1.0,55.0,,Female,Progressive Disease,0.0,N/A,1,40.73333333,236.0,2.0,8.0,5.0,7.0,0.0,0.0,,,
-HUGO_PT8,HUGO_PT8,Hugo 2016,,0.0,69.0,,Male,Complete Response,1.0,N/A,1,583.6,255.0,5.0,3.0,3.0,22.0,0.0,0.0,,,
-HUGO_PT9,HUGO_PT9,Hugo 2016,34.63,0.0,68.0,,Male,Complete Response,1.0,N/A,1,17.86666667,171.0,2.0,0.0,17.0,31.0,0.0,0.0,,,
-RIAZ_PT101_ON,RIAZ_PT101,Riaz 2017,27.4,0.0,47.0,White,Female,Partial Response,1.0,N/A,1,0.2,0.0,0.0,0.0,12.0,3.0,0.0,0.0,,,
-RIAZ_PT101_PRE,RIAZ_PT101,Riaz 2017,27.4,0.0,47.0,White,Female,Partial Response,1.0,N/A,1,0.466666667,1.0,0.0,0.0,11.0,6.0,0.0,0.0,,,
-RIAZ_PT103_ON,RIAZ_PT103,Riaz 2017,15.9,0.0,52.0,Asian,Female,Progressive Disease,0.0,N/A,1,1.366666667,7.0,4.0,1.0,3.0,3.0,0.0,0.0,,,
-RIAZ_PT103_PRE,RIAZ_PT103,Riaz 2017,15.9,0.0,52.0,Asian,Female,Progressive Disease,0.0,N/A,1,0.733333333,3.0,0.0,0.0,12.0,2.0,0.0,0.0,,,
-RIAZ_PT105_ON,RIAZ_PT105,Riaz 2017,,,,,N/A,,,N/A,1,,,,,,,,,,,
-RIAZ_PT106_ON,RIAZ_PT106,Riaz 2017,2.99,1.0,53.0,White,Male,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT106_PRE,RIAZ_PT106,Riaz 2017,2.99,1.0,53.0,White,Male,Progressive Disease,0.0,N/A,1,24.2,118.0,3.0,1.0,7.0,13.0,0.0,0.0,,,
-RIAZ_PT108_ON,RIAZ_PT108,Riaz 2017,29.99,0.0,37.0,White,Female,Stable Disease,,N/A,1,,,,,,,,,,,
-RIAZ_PT10_ON,RIAZ_PT10,Riaz 2017,8.41,1.0,81.0,White,Female,Stable Disease,,N/A,1,2.566666667,18.0,1.0,3.0,3.0,7.0,0.0,0.0,,,
-RIAZ_PT10_PRE,RIAZ_PT10,Riaz 2017,8.41,1.0,81.0,White,Female,Stable Disease,,N/A,1,3.066666667,9.0,0.0,1.0,0.0,3.0,0.0,0.0,,,
-RIAZ_PT11_ON,RIAZ_PT11,Riaz 2017,27.5,1.0,61.0,White,Female,Progressive Disease,0.0,N/A,1,4.033333333,18.0,1.0,0.0,5.0,3.0,0.0,0.0,,,
-RIAZ_PT11_PRE,RIAZ_PT11,Riaz 2017,27.5,1.0,61.0,White,Female,Progressive Disease,0.0,N/A,1,3.6,14.0,0.0,0.0,4.0,8.0,0.0,0.0,,,
-RIAZ_PT13_ON,RIAZ_PT13,Riaz 2017,9.2,1.0,67.0,White,Male,Progressive Disease,0.0,N/A,1,5.766666667,21.0,2.0,1.0,14.0,3.0,0.0,0.0,,,
-RIAZ_PT16_ON,RIAZ_PT16,Riaz 2017,,,,,N/A,,,N/A,1,,,,,,,,,,,
-RIAZ_PT17_ON,RIAZ_PT17,Riaz 2017,1.87,1.0,48.0,White,Female,Progressive Disease,0.0,N/A,1,1.1,5.0,2.0,0.0,5.0,1.0,0.0,0.0,,,
-RIAZ_PT17_PRE,RIAZ_PT17,Riaz 2017,1.87,1.0,48.0,White,Female,Progressive Disease,0.0,N/A,1,1.0,4.0,0.0,1.0,5.0,4.0,0.0,0.0,,,
-RIAZ_PT18_ON,RIAZ_PT18,Riaz 2017,35.25,0.0,53.0,White,Male,Partial Response,1.0,N/A,1,0.333333333,0.0,0.0,1.0,8.0,2.0,0.0,0.0,,,
-RIAZ_PT18_PRE,RIAZ_PT18,Riaz 2017,35.25,0.0,53.0,White,Male,Partial Response,1.0,N/A,1,7.833333333,46.0,1.0,2.0,9.0,16.0,0.0,0.0,,,
-RIAZ_PT1_ON,RIAZ_PT1,Riaz 2017,5.26,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT1_PRE,RIAZ_PT1,Riaz 2017,5.26,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT23_ON,RIAZ_PT23,Riaz 2017,1.71,1.0,53.0,White,Female,,,N/A,1,23.9,143.0,2.0,1.0,8.0,9.0,0.0,0.0,,,
-RIAZ_PT23_PRE,RIAZ_PT23,Riaz 2017,1.71,1.0,53.0,White,Female,,,N/A,1,21.86666667,123.0,0.0,0.0,6.0,10.0,0.0,0.0,,,
-RIAZ_PT24_PRE,RIAZ_PT24,Riaz 2017,4.89,0.0,63.0,White,Male,Progressive Disease,0.0,N/A,1,0.866666667,0.0,0.0,1.0,2.0,2.0,0.0,0.0,,,
-RIAZ_PT26_ON,RIAZ_PT26,Riaz 2017,31.27,0.0,22.0,White,Female,Stable Disease,,N/A,1,3.866666667,26.0,0.0,0.0,3.0,4.0,0.0,0.0,,,
-RIAZ_PT26_PRE,RIAZ_PT26,Riaz 2017,31.27,0.0,22.0,White,Female,Stable Disease,,N/A,1,3.9,23.0,0.0,1.0,4.0,2.0,0.0,0.0,,,
-RIAZ_PT27_ON,RIAZ_PT27,Riaz 2017,15.6,1.0,65.0,White,Male,Progressive Disease,0.0,N/A,1,6.3,29.0,2.0,1.0,5.0,3.0,0.0,0.0,,,
-RIAZ_PT27_PRE,RIAZ_PT27,Riaz 2017,15.6,1.0,65.0,White,Male,Progressive Disease,0.0,N/A,1,6.5,12.0,0.0,1.0,4.0,1.0,0.0,0.0,,,
-RIAZ_PT28_ON,RIAZ_PT28,Riaz 2017,24.31,1.0,79.0,White,Female,Progressive Disease,0.0,N/A,1,2.1,18.0,1.0,4.0,12.0,8.0,0.0,0.0,,,
-RIAZ_PT28_PRE,RIAZ_PT28,Riaz 2017,24.31,1.0,79.0,White,Female,Progressive Disease,0.0,N/A,1,1.566666667,6.0,2.0,5.0,13.0,6.0,0.0,0.0,,,
-RIAZ_PT29_PRE,RIAZ_PT29,Riaz 2017,8.97,1.0,57.0,White,Female,Progressive Disease,0.0,N/A,1,13.36666667,89.0,1.0,0.0,8.0,14.0,0.0,0.0,,,
-RIAZ_PT2_ON,RIAZ_PT2,Riaz 2017,9.03,1.0,,,N/A,Stable Disease,,N/A,1,,,,,,,,,,,
-RIAZ_PT2_PRE,RIAZ_PT2,Riaz 2017,9.03,1.0,,,N/A,Stable Disease,,N/A,1,,,,,,,,,,,
-RIAZ_PT30_ON,RIAZ_PT30,Riaz 2017,34.59,0.0,89.0,White,Female,Complete Response,1.0,N/A,1,0.533333333,3.0,3.0,2.0,6.0,2.0,0.0,0.0,,,
-RIAZ_PT30_PRE,RIAZ_PT30,Riaz 2017,34.59,0.0,89.0,White,Female,Complete Response,1.0,N/A,1,2.2,11.0,1.0,3.0,5.0,27.0,0.0,0.0,,,
-RIAZ_PT31_ON,RIAZ_PT31,Riaz 2017,31.57,0.0,56.0,White,Female,Progressive Disease,0.0,N/A,1,15.66666667,104.0,2.0,1.0,18.0,19.0,0.0,0.0,,,
-RIAZ_PT31_PRE,RIAZ_PT31,Riaz 2017,31.57,0.0,56.0,White,Female,Progressive Disease,0.0,N/A,1,15.4,74.0,2.0,0.0,17.0,12.0,0.0,0.0,,,
-RIAZ_PT32_ON,RIAZ_PT32,Riaz 2017,3.75,0.0,34.0,White,Male,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT34_ON,RIAZ_PT34,Riaz 2017,27.4,0.0,71.0,White,Male,Partial Response,1.0,N/A,1,0.4,0.0,0.0,0.0,4.0,1.0,0.0,0.0,,,
-RIAZ_PT34_PRE,RIAZ_PT34,Riaz 2017,27.4,0.0,71.0,White,Male,Partial Response,1.0,N/A,1,7.733333333,26.0,0.0,0.0,8.0,10.0,0.0,0.0,,,
-RIAZ_PT35_ON,RIAZ_PT35,Riaz 2017,,,,,N/A,,,N/A,1,,,,,,,,,,,
-RIAZ_PT36_ON,RIAZ_PT36,Riaz 2017,35.51,0.0,58.0,White,Male,Stable Disease,,N/A,1,,,,,,,,,,,
-RIAZ_PT36_PRE,RIAZ_PT36,Riaz 2017,35.51,0.0,58.0,White,Male,Stable Disease,,N/A,1,0.2,0.0,0.0,2.0,3.0,2.0,0.0,0.0,,,
-RIAZ_PT37_ON,RIAZ_PT37,Riaz 2017,21.22,1.0,63.0,White,Male,Stable Disease,,N/A,1,0.966666667,2.0,0.0,2.0,7.0,5.0,0.0,0.0,,,
-RIAZ_PT37_PRE,RIAZ_PT37,Riaz 2017,21.22,1.0,63.0,White,Male,Stable Disease,,N/A,1,1.166666667,4.0,1.0,2.0,5.0,10.0,0.0,0.0,,,
-RIAZ_PT38_ON,RIAZ_PT38,Riaz 2017,5.49,1.0,54.0,White,Female,Stable Disease,,N/A,1,,,,,,,,,,,
-RIAZ_PT38_PRE,RIAZ_PT38,Riaz 2017,5.49,1.0,54.0,White,Female,Stable Disease,,N/A,1,11.86666667,136.0,3.0,0.0,7.0,2.0,0.0,0.0,,,
-RIAZ_PT39_PRE,RIAZ_PT39,Riaz 2017,5.45,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT3_ON,RIAZ_PT3,Riaz 2017,37.58,0.0,52.0,White,Male,Partial Response,1.0,N/A,1,6.1,15.0,2.0,1.0,4.0,7.0,0.0,0.0,,,
-RIAZ_PT3_PRE,RIAZ_PT3,Riaz 2017,37.58,0.0,52.0,White,Male,Partial Response,1.0,N/A,1,6.366666667,30.0,3.0,1.0,3.0,5.0,0.0,0.0,,,
-RIAZ_PT44_ON,RIAZ_PT44,Riaz 2017,35.91,0.0,61.0,White,Male,Partial Response,1.0,N/A,1,0.433333333,0.0,0.0,1.0,5.0,4.0,0.0,0.0,,,
-RIAZ_PT44_PRE,RIAZ_PT44,Riaz 2017,35.91,0.0,61.0,White,Male,Partial Response,1.0,N/A,1,13.23333333,123.0,2.0,3.0,7.0,14.0,0.0,0.0,,,
-RIAZ_PT46_ON,RIAZ_PT46,Riaz 2017,7.46,1.0,79.0,White,Male,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT46_PRE,RIAZ_PT46,Riaz 2017,7.46,1.0,79.0,White,Male,Progressive Disease,0.0,N/A,1,7.233333333,3.0,0.0,1.0,10.0,3.0,0.0,0.0,,,
-RIAZ_PT47_ON,RIAZ_PT47,Riaz 2017,23.59,1.0,52.0,White,Male,Progressive Disease,0.0,N/A,1,34.26666667,214.0,3.0,1.0,4.0,18.0,0.0,0.0,,,
-RIAZ_PT47_PRE,RIAZ_PT47,Riaz 2017,23.59,1.0,52.0,White,Male,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT48_ON,RIAZ_PT48,Riaz 2017,34.36,0.0,44.0,White,Male,Complete Response,1.0,N/A,1,0.3,2.0,2.0,1.0,11.0,0.0,0.0,0.0,,,
-RIAZ_PT48_PRE,RIAZ_PT48,Riaz 2017,34.36,0.0,44.0,White,Male,Complete Response,1.0,N/A,1,5.633333333,10.0,1.0,1.0,22.0,6.0,0.0,0.0,,,
-RIAZ_PT49_ON,RIAZ_PT49,Riaz 2017,27.17,0.0,52.0,White,Female,Partial Response,1.0,N/A,1,,,,,,,,,,,
-RIAZ_PT49_PRE,RIAZ_PT49,Riaz 2017,27.17,0.0,52.0,White,Female,Partial Response,1.0,N/A,1,28.2,85.0,0.0,3.0,11.0,22.0,0.0,0.0,,,
-RIAZ_PT4_ON,RIAZ_PT4,Riaz 2017,20.8,1.0,62.0,White,Female,Stable Disease,,N/A,1,,,,,,,,,,,
-RIAZ_PT4_PRE,RIAZ_PT4,Riaz 2017,20.8,1.0,62.0,White,Female,Stable Disease,,N/A,1,9.3,73.0,2.0,0.0,3.0,6.0,0.0,0.0,,,
-RIAZ_PT52_ON,RIAZ_PT52,Riaz 2017,15.64,1.0,45.0,White,Female,Progressive Disease,0.0,N/A,1,12.93333333,75.0,1.0,0.0,4.0,18.0,0.0,0.0,,,
-RIAZ_PT52_PRE,RIAZ_PT52,Riaz 2017,15.64,1.0,45.0,White,Female,Progressive Disease,0.0,N/A,1,12.2,41.0,1.0,0.0,4.0,13.0,0.0,0.0,,,
-RIAZ_PT58_ON,RIAZ_PT58,Riaz 2017,16.39,1.0,53.0,White,Female,Stable Disease,,N/A,1,44.8,306.0,2.0,0.0,4.0,8.0,0.0,0.0,,,
-RIAZ_PT59_PRE,RIAZ_PT59,Riaz 2017,23.26,1.0,49.0,White,Female,Stable Disease,,N/A,1,15.03333333,90.0,1.0,0.0,21.0,12.0,1.0,0.0,,,
-RIAZ_PT5_ON,RIAZ_PT5,Riaz 2017,7.29,1.0,58.0,White,Female,Progressive Disease,0.0,N/A,1,2.133333333,17.0,2.0,5.0,5.0,10.0,0.0,0.0,,,
-RIAZ_PT5_PRE,RIAZ_PT5,Riaz 2017,7.29,1.0,58.0,White,Female,Progressive Disease,0.0,N/A,1,1.866666667,12.0,1.0,3.0,34.0,1.0,0.0,0.0,,,
-RIAZ_PT62_ON,RIAZ_PT62,Riaz 2017,15.51,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT62_PRE,RIAZ_PT62,Riaz 2017,15.51,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT65_ON,RIAZ_PT65,Riaz 2017,22.73,0.0,63.0,White,Female,Stable Disease,,N/A,1,,,,,,,,,,,
-RIAZ_PT65_PRE,RIAZ_PT65,Riaz 2017,22.73,0.0,63.0,White,Female,Stable Disease,,N/A,1,87.3,723.0,3.0,11.0,13.0,7.0,0.0,0.0,,,
-RIAZ_PT66_PRE,RIAZ_PT66,Riaz 2017,17.81,1.0,49.0,White,Female,Progressive Disease,0.0,N/A,1,4.8,27.0,2.0,1.0,3.0,23.0,0.0,0.0,,,
-RIAZ_PT67_ON,RIAZ_PT67,Riaz 2017,33.9,0.0,33.0,White,Female,Stable Disease,,N/A,1,0.566666667,1.0,0.0,0.0,17.0,0.0,0.0,0.0,,,
-RIAZ_PT67_PRE,RIAZ_PT67,Riaz 2017,33.9,0.0,33.0,White,Female,Stable Disease,,N/A,1,0.4,1.0,0.0,1.0,27.0,3.0,0.0,0.0,,,
-RIAZ_PT68_ON,RIAZ_PT68,Riaz 2017,27.66,0.0,69.0,White,Male,Partial Response,1.0,N/A,1,,,,,,,,,,,
-RIAZ_PT69_ON,RIAZ_PT69,Riaz 2017,,,,,N/A,,,N/A,1,,,,,,,,,,,
-RIAZ_PT72_PRE,RIAZ_PT72,Riaz 2017,25.3,1.0,43.0,White,Female,Partial Response,1.0,N/A,1,16.83333333,79.0,1.0,1.0,4.0,8.0,0.0,0.0,,,
-RIAZ_PT76_PRE,RIAZ_PT76,Riaz 2017,0.33,1.0,60.0,White,Male,,,N/A,1,8.5,35.0,3.0,0.0,5.0,7.0,0.0,0.0,,,
-RIAZ_PT77_ON,RIAZ_PT77,Riaz 2017,15.47,1.0,56.0,White,Female,Stable Disease,,N/A,1,,,,,,,,,,,
-RIAZ_PT77_PRE,RIAZ_PT77,Riaz 2017,15.47,1.0,56.0,White,Female,Stable Disease,,N/A,1,1.766666667,6.0,0.0,1.0,26.0,4.0,0.0,0.0,,,
-RIAZ_PT78_ON,RIAZ_PT78,Riaz 2017,2.56,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT78_PRE,RIAZ_PT78,Riaz 2017,2.56,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT79_ON,RIAZ_PT79,Riaz 2017,7.16,1.0,64.0,White,Male,Stable Disease,,N/A,1,,,,,,,,,,,
-RIAZ_PT79_PRE,RIAZ_PT79,Riaz 2017,7.16,1.0,64.0,White,Male,Stable Disease,,N/A,1,,,,,,,,,,,
-RIAZ_PT80_ON,RIAZ_PT80,Riaz 2017,,,,,N/A,,,N/A,1,,,,,,,,,,,
-RIAZ_PT81_ON,RIAZ_PT81,Riaz 2017,,,,,N/A,,,N/A,1,,,,,,,,,,,
-RIAZ_PT82_ON,RIAZ_PT82,Riaz 2017,14.09,1.0,60.0,White,Female,Stable Disease,,N/A,1,1.4,9.0,2.0,1.0,15.0,4.0,0.0,0.0,,,
-RIAZ_PT82_PRE,RIAZ_PT82,Riaz 2017,14.09,1.0,60.0,White,Female,Stable Disease,,N/A,1,1.4,8.0,2.0,2.0,5.0,2.0,0.0,0.0,,,
-RIAZ_PT84_ON,RIAZ_PT84,Riaz 2017,4.96,1.0,48.0,White,Female,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT84_PRE,RIAZ_PT84,Riaz 2017,4.96,1.0,48.0,White,Female,Progressive Disease,0.0,N/A,1,0.6,4.0,2.0,0.0,3.0,1.0,0.0,0.0,,,
-RIAZ_PT85_ON,RIAZ_PT85,Riaz 2017,29.7,0.0,66.0,White,Male,Progressive Disease,0.0,N/A,1,,,,,,,,,,,
-RIAZ_PT85_PRE,RIAZ_PT85,Riaz 2017,29.7,0.0,66.0,White,Male,Progressive Disease,0.0,N/A,1,4.233333333,43.0,0.0,0.0,7.0,2.0,0.0,0.0,,,
-RIAZ_PT87_ON,RIAZ_PT87,Riaz 2017,32.0,0.0,68.0,White,Male,Stable Disease,,N/A,1,,,,,,,,,,,
-RIAZ_PT89_ON,RIAZ_PT89,Riaz 2017,27.73,1.0,56.0,White,Male,Stable Disease,,N/A,1,6.9,44.0,0.0,1.0,7.0,14.0,0.0,0.0,,,
-RIAZ_PT89_PRE,RIAZ_PT89,Riaz 2017,27.73,1.0,56.0,White,Male,Stable Disease,,N/A,1,7.133333333,49.0,0.0,0.0,7.0,15.0,1.0,0.0,,,
-RIAZ_PT8_ON,RIAZ_PT8,Riaz 2017,8.51,1.0,40.0,White,Male,Progressive Disease,0.0,N/A,1,3.4,27.0,4.0,0.0,8.0,1.0,0.0,0.0,,,
-RIAZ_PT8_PRE,RIAZ_PT8,Riaz 2017,8.51,1.0,40.0,White,Male,Progressive Disease,0.0,N/A,1,3.166666667,21.0,0.0,0.0,4.0,1.0,0.0,0.0,,,
-RIAZ_PT90_PRE,RIAZ_PT90,Riaz 2017,5.72,1.0,60.0,White,Female,Progressive Disease,0.0,N/A,1,23.86666667,129.0,2.0,4.0,27.0,14.0,0.0,0.0,,,
-RIAZ_PT92_ON,RIAZ_PT92,Riaz 2017,10.94,1.0,58.0,White,Male,Stable Disease,,N/A,1,21.93333333,80.0,1.0,2.0,5.0,13.0,0.0,0.0,,,
-RIAZ_PT92_PRE,RIAZ_PT92,Riaz 2017,10.94,1.0,58.0,White,Male,Stable Disease,,N/A,1,22.0,108.0,0.0,0.0,5.0,11.0,0.0,0.0,,,
-RIAZ_PT93_ON,RIAZ_PT93,Riaz 2017,27.89,0.0,52.0,White,Male,Progressive Disease,0.0,N/A,1,13.56666667,68.0,2.0,1.0,5.0,10.0,0.0,0.0,,,
-RIAZ_PT94_ON,RIAZ_PT94,Riaz 2017,32.23,0.0,41.0,White,Male,Complete Response,1.0,N/A,1,,,,,,,,,,,
-RIAZ_PT94_PRE,RIAZ_PT94,Riaz 2017,32.23,0.0,41.0,White,Male,Complete Response,1.0,N/A,1,13.43333333,71.0,1.0,2.0,9.0,6.0,0.0,0.0,,,
-RIAZ_PT98_ON,RIAZ_PT98,Riaz 2017,24.54,1.0,74.0,White,Male,Stable Disease,,N/A,1,,,,,,,,,,,
-RIAZ_PT98_PRE,RIAZ_PT98,Riaz 2017,24.54,1.0,74.0,White,Male,Stable Disease,,N/A,1,0.733333333,10.0,0.0,0.0,14.0,10.0,0.0,0.0,,,
-RIAZ_PT9_ON,RIAZ_PT9,Riaz 2017,3.02,1.0,46.0,White,Male,Progressive Disease,0.0,N/A,1,13.23333333,99.0,0.0,1.0,7.0,32.0,0.0,0.0,,,
-RIAZ_PT9_PRE,RIAZ_PT9,Riaz 2017,3.02,1.0,46.0,White,Male,Progressive Disease,0.0,N/A,1,13.16666667,84.0,0.0,1.0,6.0,28.0,0.0,0.0,,,
-TCGA-3N-A9WB-06,TCGA-3N-A9WB,TCGA-SKCM,17.02995036,1.0,71.0,White,Male,,,Metastatic,0,4.733333333,,,,,,,,9.0,,
-TCGA-3N-A9WC-06,TCGA-3N-A9WC,TCGA-SKCM,66.47598383,0.0,82.0,White,Male,,,Metastatic,0,51.0,,,,,,,,8.0,,
-TCGA-3N-A9WD-06,TCGA-3N-A9WD,TCGA-SKCM,12.98615906,1.0,82.0,White,Male,,,Metastatic,0,26.33333333,,,,,,,,10.0,,
-TCGA-BF-A1PU-01,TCGA-BF-A1PU,TCGA-SKCM,12.72314824,0.0,46.0,White,Female,,,Primary,0,47.7,,,,,,,,8.0,0.3035,0.26
-TCGA-BF-A1PV-01,TCGA-BF-A1PV,TCGA-SKCM,0.460268929,0.0,74.0,White,Female,,,Primary,0,8.466666667,,,,,,,,6.0,0.2519,0.08
-TCGA-BF-A1PX-01,TCGA-BF-A1PX,TCGA-SKCM,9.271131275,1.0,56.0,White,Male,,,Primary,0,23.26666667,,,,,,,,8.0,0.2612,0.02
-TCGA-BF-A1PZ-01,TCGA-BF-A1PZ,TCGA-SKCM,28.04352829,0.0,71.0,White,Female,,,Primary,0,54.16666667,,,,,,,,8.0,0.3157,0.94
-TCGA-BF-A1Q0-01,TCGA-BF-A1Q0,TCGA-SKCM,27.32024855,0.0,80.0,White,Male,,,Primary,0,87.76666667,,,,,,,,19.0,0.3037,0.05
-TCGA-BF-A3DJ-01,TCGA-BF-A3DJ,TCGA-SKCM,15.25462735,0.0,36.0,White,Female,,,Primary,0,4.1,,,,,,,,11.0,0.3519,0.0
-TCGA-BF-A3DL-01,TCGA-BF-A3DL,TCGA-SKCM,25.28191472,0.0,84.0,White,Female,,,Primary,0,12.46666667,,,,,,,,18.0,0.3458,0.0
-TCGA-BF-A3DM-01,TCGA-BF-A3DM,TCGA-SKCM,19.75868758,0.0,63.0,White,Male,,,Primary,0,12.73333333,,,,,,,,6.0,0.3254,0.07
-TCGA-BF-A3DN-01,TCGA-BF-A3DN,TCGA-SKCM,23.57234441,0.0,81.0,White,Female,,,Primary,0,2.3,,,,,,,,23.0,0.3656,0.02
-TCGA-BF-A5EO-01,TCGA-BF-A5EO,TCGA-SKCM,23.11207548,0.0,65.0,White,Male,,,Primary,0,17.43333333,,,,,,,,8.0,0.3131,0.0
-TCGA-BF-A5EP-01,TCGA-BF-A5EP,TCGA-SKCM,11.01357793,0.0,75.0,White,Female,,,Primary,0,4.8,,,,,,,,29.0,0.3271,0.21
-TCGA-BF-A5EQ-01,TCGA-BF-A5EQ,TCGA-SKCM,10.61906171,0.0,63.0,White,Male,,,Primary,0,16.66666667,,,,,,,,16.0,0.3023,0.0
-TCGA-BF-A5ER-01,TCGA-BF-A5ER,TCGA-SKCM,10.75056712,0.0,63.0,White,Male,,,Primary,0,5.3,,,,,,,,10.0,0.302,0.01
-TCGA-BF-A5ES-01,TCGA-BF-A5ES,TCGA-SKCM,16.1094125,0.0,76.0,White,Female,,,Primary,0,13.93333333,,,,,,,,2.0,0.3099,0.02
-TCGA-BF-AAP0-06,TCGA-BF-AAP0,TCGA-SKCM,14.92586383,0.0,40.0,White,Female,,,Metastatic,0,12.9,,,,,,,,6.0,,
-TCGA-D3-A1Q1-06,TCGA-D3-A1Q1,TCGA-SKCM,16.56968143,1.0,79.0,White,Female,,,Metastatic,1,16.2,,,,,,,,27.0,,
-TCGA-D3-A1Q3-06,TCGA-D3-A1Q3,TCGA-SKCM,16.66831048,1.0,64.0,White,Male,,,Metastatic,0,48.56666667,,,,,,,,9.0,,
-TCGA-D3-A1Q4-06,TCGA-D3-A1Q4,TCGA-SKCM,112.0426078,0.0,53.0,White,Female,,,Metastatic,0,9.533333333,,,,,,,,13.0,,
-TCGA-D3-A1Q5-06,TCGA-D3-A1Q5,TCGA-SKCM,112.5686294,1.0,60.0,White,Male,,,Metastatic,0,10.06666667,,,,,,,,21.0,,
-TCGA-D3-A1Q6-06,TCGA-D3-A1Q6,TCGA-SKCM,71.80195286,1.0,55.0,White,Male,,,Metastatic,1,31.76666667,,,,,,,,18.0,,
-TCGA-D3-A1Q7-06,TCGA-D3-A1Q7,TCGA-SKCM,133.2478548,0.0,42.0,White,Female,,,Metastatic,0,2.533333333,,,,,,,,6.0,,
-TCGA-D3-A1Q8-06,TCGA-D3-A1Q8,TCGA-SKCM,28.07640464,1.0,33.0,White,Male,,,Metastatic,0,6.666666667,,,,,,,,9.0,,
-TCGA-D3-A1Q9-06,TCGA-D3-A1Q9,TCGA-SKCM,31.59417431,1.0,72.0,White,Male,,,Metastatic,0,1.066666667,,,,,,,,21.0,,
-TCGA-D3-A1QA-06,TCGA-D3-A1QA,TCGA-SKCM,90.90311339,0.0,55.0,White,Male,,,Metastatic,0,37.4,,,,,,,,7.0,,
-TCGA-D3-A1QB-06,TCGA-D3-A1QB,TCGA-SKCM,95.73593714,0.0,75.0,White,Female,,,Metastatic,0,11.66666667,,,,,,,,3.0,,
-TCGA-D3-A2J6-06,TCGA-D3-A2J6,TCGA-SKCM,43.42966105,1.0,65.0,White,Male,,,Metastatic,0,48.0,,,,,,,,12.0,,
-TCGA-D3-A2J7-06,TCGA-D3-A2J7,TCGA-SKCM,103.10024,1.0,67.0,White,Male,,,Metastatic,0,11.63333333,,,,,,,,10.0,,
-TCGA-D3-A2J8-06,TCGA-D3-A2J8,TCGA-SKCM,65.48969326,1.0,48.0,White,Male,,,Metastatic,0,31.7,,,,,,,,4.0,,
-TCGA-D3-A2J9-06,TCGA-D3-A2J9,TCGA-SKCM,23.76960253,1.0,75.0,White,Male,,,Metastatic,0,7.2,,,,,,,,6.0,,
-TCGA-D3-A2JA-06,TCGA-D3-A2JA,TCGA-SKCM,115.5275011,0.0,68.0,White,Male,,,Metastatic,0,10.6,,,,,,,,29.0,,
-TCGA-D3-A2JB-06,TCGA-D3-A2JB,TCGA-SKCM,,,70.0,Black or African American,Female,,,Metastatic,0,29.73333333,,,,,,,,6.0,,
-TCGA-D3-A2JC-06,TCGA-D3-A2JC,TCGA-SKCM,86.76069303,0.0,53.0,White,Female,,,Metastatic,1,105.0,,,,,,,,22.0,,
-TCGA-D3-A2JD-06,TCGA-D3-A2JD,TCGA-SKCM,11.86836309,1.0,58.0,White,Male,,,Metastatic,0,40.86666667,,,,,,,,19.0,,
-TCGA-D3-A2JE-06,TCGA-D3-A2JE,TCGA-SKCM,27.64901207,1.0,75.0,White,Female,,,Metastatic,0,9.1,,,,,,,,24.0,,
-TCGA-D3-A2JF-06,TCGA-D3-A2JF,TCGA-SKCM,62.07055265,0.0,74.0,White,Male,,,Metastatic,0,40.5,,,,,,,,17.0,,
-TCGA-D3-A2JG-06,TCGA-D3-A2JG,TCGA-SKCM,113.5220436,1.0,30.0,White,Female,,,Metastatic,0,19.06666667,,,,,,,,8.0,,
-TCGA-D3-A2JH-06,TCGA-D3-A2JH,TCGA-SKCM,42.08173061,0.0,68.0,White,Male,,,Metastatic,1,21.76666667,,,,,,,,2.0,,
-TCGA-D3-A2JK-06,TCGA-D3-A2JK,TCGA-SKCM,12.09849755,1.0,24.0,White,Male,,,Metastatic,0,26.0,,,,,,,,5.0,,
-TCGA-D3-A2JL-06,TCGA-D3-A2JL,TCGA-SKCM,171.5816813,0.0,43.0,White,Female,,,Metastatic,0,40.0,,,,,,,,25.0,,
-TCGA-D3-A2JN-06,TCGA-D3-A2JN,TCGA-SKCM,66.47598383,1.0,46.0,White,Female,,,Metastatic,1,24.66666667,,,,,,,,24.0,,
-TCGA-D3-A2JO-06,TCGA-D3-A2JO,TCGA-SKCM,66.0814676,0.0,50.0,White,Female,,,Metastatic,0,43.0,,,,,,,,22.0,,
-TCGA-D3-A2JP-06,TCGA-D3-A2JP,TCGA-SKCM,59.5719499,0.0,37.0,White,Male,,,Metastatic,1,138.2,,,,,,,,19.0,,
-TCGA-D3-A3BZ-06,TCGA-D3-A3BZ,TCGA-SKCM,130.7163757,0.0,63.0,White,Male,,,Metastatic,0,2.066666667,,,,,,,,0.0,,
-TCGA-D3-A3C1-06,TCGA-D3-A3C1,TCGA-SKCM,,0.0,,White,Male,,,Metastatic,0,4.633333333,,,,,,,,26.0,,
-TCGA-D3-A3C3-06,TCGA-D3-A3C3,TCGA-SKCM,,0.0,,White,Female,,,Metastatic,0,7.466666667,,,,,,,,12.0,,
-TCGA-D3-A3C6-06,TCGA-D3-A3C6,TCGA-SKCM,58.0596377,1.0,54.0,White,Female,,,Metastatic,0,19.76666667,,,,,,,,9.0,,
-TCGA-D3-A3C7-06,TCGA-D3-A3C7,TCGA-SKCM,46.98030707,0.0,57.0,White,Female,,,Metastatic,1,48.13333333,,,,,,,,9.0,,
-TCGA-D3-A3C8-06,TCGA-D3-A3C8,TCGA-SKCM,46.32278002,0.0,58.0,White,Female,,,Metastatic,0,52.3,,,,,,,,0.0,,
-TCGA-D3-A3CB-06,TCGA-D3-A3CB,TCGA-SKCM,166.5187231,0.0,39.0,White,Male,,,Metastatic,0,17.9,,,,,,,,11.0,,
-TCGA-D3-A3CC-06,TCGA-D3-A3CC,TCGA-SKCM,86.92507479,0.0,69.0,White,Female,,,Metastatic,0,2.933333333,,,,,,,,21.0,,
-TCGA-D3-A3CE-06,TCGA-D3-A3CE,TCGA-SKCM,60.22947694,1.0,74.0,White,Female,,,Metastatic,0,70.26666667,,,,,,,,24.0,,
-TCGA-D3-A3CF-06,TCGA-D3-A3CF,TCGA-SKCM,24.52575862,1.0,61.0,White,Female,,,Metastatic,0,3.433333333,,,,,,,,9.0,,
-TCGA-D3-A3ML-06,TCGA-D3-A3ML,TCGA-SKCM,13.87382056,1.0,70.0,White,Male,,,Metastatic,0,25.66666667,,,,,,,,8.0,,
-TCGA-D3-A3MO-06,TCGA-D3-A3MO,TCGA-SKCM,9.336883979,1.0,47.0,White,Male,,,Metastatic,0,2.033333333,,,,,,,,5.0,,
-TCGA-D3-A3MR-06,TCGA-D3-A3MR,TCGA-SKCM,103.5933853,0.0,42.0,White,Male,,,Metastatic,0,24.0,,,,,,,,16.0,,
-TCGA-D3-A3MU-06,TCGA-D3-A3MU,TCGA-SKCM,39.74750962,0.0,53.0,White,Male,,,Metastatic,0,13.96666667,,,,,,,,11.0,,
-TCGA-D3-A3MV-06,TCGA-D3-A3MV,TCGA-SKCM,45.30361311,0.0,38.0,White,Female,,,Metastatic,1,13.56666667,,,,,,,,24.0,,
-TCGA-D3-A51E-06,TCGA-D3-A51E,TCGA-SKCM,174.8364402,0.0,39.0,White,Female,,,Metastatic,0,7.8,,,,,,,,6.0,,
-TCGA-D3-A51F-06,TCGA-D3-A51F,TCGA-SKCM,55.72541671,0.0,51.0,White,Male,,,Metastatic,0,3.433333333,,,,,,,,,,
-TCGA-D3-A51G-06,TCGA-D3-A51G,TCGA-SKCM,,,,White,Male,,,Metastatic,0,33.26666667,,,,,,,,31.0,,
-TCGA-D3-A51H-06,TCGA-D3-A51H,TCGA-SKCM,56.3500674,0.0,60.0,White,Male,,,Metastatic,0,0.933333333,,,,,,,,0.0,,
-TCGA-D3-A51J-06,TCGA-D3-A51J,TCGA-SKCM,145.1162179,0.0,19.0,White,Male,,,Metastatic,0,12.96666667,,,,,,,,13.0,,
-TCGA-D3-A51K-06,TCGA-D3-A51K,TCGA-SKCM,32.94210474,0.0,51.0,White,Male,,,Metastatic,0,0.766666667,,,,,,,,10.0,,
-TCGA-D3-A51N-06,TCGA-D3-A51N,TCGA-SKCM,22.6189302,0.0,56.0,White,Female,,,Metastatic,0,2.766666667,,,,,,,,11.0,,
-TCGA-D3-A51R-06,TCGA-D3-A51R,TCGA-SKCM,63.81299931,0.0,60.0,White,Male,,,Metastatic,0,19.7,,,,,,,,5.0,,
-TCGA-D3-A51T-06,TCGA-D3-A51T,TCGA-SKCM,26.89285597,0.0,59.0,White,Female,,,Metastatic,0,32.6,,,,,,,,10.0,,
-TCGA-D3-A5GL-06,TCGA-D3-A5GL,TCGA-SKCM,125.7849229,0.0,74.0,White,Male,,,Metastatic,0,12.33333333,,,,,,,,5.0,,
-TCGA-D3-A5GN-06,TCGA-D3-A5GN,TCGA-SKCM,135.7464576,0.0,15.0,White,Female,,,Metastatic,0,13.1,,,,,,,,27.0,,
-TCGA-D3-A5GO-06,TCGA-D3-A5GO,TCGA-SKCM,137.9162968,0.0,61.0,White,Male,,,Metastatic,0,43.5,,,,,,,,18.0,,
-TCGA-D3-A5GR-06,TCGA-D3-A5GR,TCGA-SKCM,178.3213335,0.0,23.0,White,Female,,,Metastatic,0,7.133333333,,,,,,,,,,
-TCGA-D3-A5GS-06,TCGA-D3-A5GS,TCGA-SKCM,18.18062268,0.0,58.0,White,Male,,,Metastatic,0,10.86666667,,,,,,,,9.0,,
-TCGA-D3-A5GT-01,TCGA-D3-A5GT,TCGA-SKCM,16.01078344,0.0,43.0,White,Male,,,Primary,1,0.766666667,,,,,,,,20.0,0.3116,0.02
-TCGA-D3-A5GU-06,TCGA-D3-A5GU,TCGA-SKCM,125.1931486,0.0,36.0,White,Male,,,Metastatic,0,21.0,,,,,,,,27.0,,
-TCGA-D3-A8GB-06,TCGA-D3-A8GB,TCGA-SKCM,30.83801821,1.0,48.0,White,Male,,,Metastatic,1,28.5,,,,,,,,10.0,,
-TCGA-D3-A8GC-06,TCGA-D3-A8GC,TCGA-SKCM,79.59364829,1.0,48.0,White,Male,,,Metastatic,0,23.1,,,,,,,,31.0,,
-TCGA-D3-A8GD-06,TCGA-D3-A8GD,TCGA-SKCM,23.60522077,0.0,63.0,White,Female,,,Metastatic,0,3.3,,,,,,,,20.0,,
-TCGA-D3-A8GE-06,TCGA-D3-A8GE,TCGA-SKCM,26.43258704,0.0,26.0,White,Male,,,Metastatic,0,0.2,,,,,,,,0.0,,
-TCGA-D3-A8GI-06,TCGA-D3-A8GI,TCGA-SKCM,58.51990663,1.0,68.0,White,Male,,,Metastatic,0,142.7666667,,,,,,,,24.0,,
-TCGA-D3-A8GJ-06,TCGA-D3-A8GJ,TCGA-SKCM,241.3781767,0.0,18.0,White,Male,,,Metastatic,0,4.966666667,,,,,,,,5.0,,
-TCGA-D3-A8GK-06,TCGA-D3-A8GK,TCGA-SKCM,170.2008745,0.0,45.0,White,Male,,,Metastatic,0,15.73333333,,,,,,,,4.0,,
-TCGA-D3-A8GL-06,TCGA-D3-A8GL,TCGA-SKCM,89.12779038,1.0,43.0,White,Male,,,Metastatic,0,50.8,,,,,,,,10.0,,
-TCGA-D3-A8GM-06,TCGA-D3-A8GM,TCGA-SKCM,107.1440313,1.0,73.0,White,Male,,,Metastatic,0,109.6,,,,,,,,20.0,,
-TCGA-D3-A8GN-06,TCGA-D3-A8GN,TCGA-SKCM,160.9954959,0.0,27.0,White,Female,,,Metastatic,1,6.333333333,,,,,,,,22.0,,
-TCGA-D3-A8GO-06,TCGA-D3-A8GO,TCGA-SKCM,,1.0,,White,Female,,,Metastatic,0,15.46666667,,,,,,,,25.0,,
-TCGA-D3-A8GP-06,TCGA-D3-A8GP,TCGA-SKCM,152.7435316,0.0,77.0,White,Male,,,Metastatic,0,16.7,,,,,,,,24.0,,
-TCGA-D3-A8GQ-06,TCGA-D3-A8GQ,TCGA-SKCM,29.0626952,1.0,66.0,White,Male,,,Metastatic,0,38.96666667,,,,,,,,11.0,,
-TCGA-D3-A8GR-06,TCGA-D3-A8GR,TCGA-SKCM,,,54.0,White,Female,,,Metastatic,0,10.63333333,,,,,,,,8.0,,
-TCGA-D3-A8GS-06,TCGA-D3-A8GS,TCGA-SKCM,117.1713187,1.0,52.0,White,Male,,,Metastatic,0,5.866666667,,,,,,,,16.0,,
-TCGA-D3-A8GV-06,TCGA-D3-A8GV,TCGA-SKCM,167.7022718,1.0,25.0,White,Male,,,Metastatic,0,11.5,,,,,,,,4.0,,
-TCGA-D9-A148-06,TCGA-D9-A148,TCGA-SKCM,151.5271066,0.0,40.0,White,Male,,,Metastatic,1,28.13333333,,,,,,,,21.0,,
-TCGA-D9-A149-06,TCGA-D9-A149,TCGA-SKCM,54.67337344,0.0,65.0,White,Female,,,Metastatic,0,24.23333333,,,,,,,,18.0,,
-TCGA-D9-A1JW-06,TCGA-D9-A1JW,TCGA-SKCM,3.649275076,0.0,82.0,White,Male,,,Metastatic,0,25.23333333,,,,,,,,9.0,,
-TCGA-D9-A1JX-06,TCGA-D9-A1JX,TCGA-SKCM,7.101292041,1.0,80.0,White,Female,,,Metastatic,0,6.6,,,,,,,,9.0,,
-TCGA-D9-A1X3-06,TCGA-D9-A1X3,TCGA-SKCM,18.11486997,0.0,63.0,White,Male,,,Metastatic,0,13.8,,,,,,,,,,
-TCGA-D9-A3Z1-06,TCGA-D9-A3Z1,TCGA-SKCM,15.38613276,1.0,66.0,White,Male,,,Metastatic,0,13.46666667,,,,,,,,3.0,,
-TCGA-D9-A3Z3-06,TCGA-D9-A3Z3,TCGA-SKCM,22.29016668,0.0,39.0,White,Female,,,Metastatic,0,3.766666667,,,,,,,,14.0,,
-TCGA-D9-A3Z4-01,TCGA-D9-A3Z4,TCGA-SKCM,17.06282671,1.0,54.0,White,Male,,,Primary,0,4.166666667,,,,,,,,11.0,0.3319,0.07
-TCGA-D9-A4Z2-01,TCGA-D9-A4Z2,TCGA-SKCM,6.246506888,1.0,50.0,White,Male,,,Primary,0,0.766666667,,,,,,,,10.0,0.3189,0.05
-TCGA-D9-A4Z3-01,TCGA-D9-A4Z3,TCGA-SKCM,16.60255778,0.0,73.0,White,Female,,,Primary,0,22.66666667,,,,,,,,9.0,0.3193,0.12
-TCGA-D9-A4Z5-01,TCGA-D9-A4Z5,TCGA-SKCM,7.167044745,0.0,68.0,White,Male,,,Primary,0,2.2,,,,,,,,21.0,0.3262,0.33
-TCGA-D9-A4Z6-06,TCGA-D9-A4Z6,TCGA-SKCM,18.44363349,1.0,54.0,White,Male,,,Metastatic,0,8.033333333,,,,,,,,,,
-TCGA-D9-A6E9-06,TCGA-D9-A6E9,TCGA-SKCM,9.895781964,0.0,75.0,White,Female,,,Metastatic,0,5.433333333,,,,,,,,24.0,,
-TCGA-D9-A6EA-06,TCGA-D9-A6EA,TCGA-SKCM,25.18328566,0.0,70.0,White,Male,,,Metastatic,0,18.13333333,,,,,,,,25.0,,
-TCGA-D9-A6EC-06,TCGA-D9-A6EC,TCGA-SKCM,77.55531446,0.0,56.0,White,Male,,,Metastatic,0,122.8,,,,,,,,24.0,,
-TCGA-D9-A6EG-06,TCGA-D9-A6EG,TCGA-SKCM,22.94769372,1.0,56.0,White,Male,,,Metastatic,0,2.2,,,,,,,,13.0,,
-TCGA-DA-A1HV-06,TCGA-DA-A1HV,TCGA-SKCM,76.5690239,0.0,75.0,White,Female,,,Metastatic,0,42.1,,,,,,,,20.0,,
-TCGA-DA-A1HW-06,TCGA-DA-A1HW,TCGA-SKCM,26.95860867,0.0,37.0,White,Female,,,Metastatic,0,12.23333333,,,,,,,,14.0,,
-TCGA-DA-A1HY-06,TCGA-DA-A1HY,TCGA-SKCM,144.8860834,0.0,42.0,White,Male,,,Metastatic,0,20.8,,,,,,,,7.0,,
-TCGA-DA-A1I0-06,TCGA-DA-A1I0,TCGA-SKCM,20.38333827,1.0,63.0,White,Male,,,Metastatic,0,13.86666667,,,,,,,,10.0,,
-TCGA-DA-A1I1-06,TCGA-DA-A1I1,TCGA-SKCM,222.5071506,0.0,55.0,White,Male,,,Metastatic,1,51.1,,,,,,,,22.0,,
-TCGA-DA-A1I2-06,TCGA-DA-A1I2,TCGA-SKCM,176.5460105,1.0,45.0,White,Male,,,Metastatic,0,3.533333333,,,,,,,,22.0,,
-TCGA-DA-A1I4-06,TCGA-DA-A1I4,TCGA-SKCM,35.93385278,1.0,51.0,White,Male,,,Metastatic,0,7.7,,,,,,,,13.0,,
-TCGA-DA-A1I5-06,TCGA-DA-A1I5,TCGA-SKCM,135.0231778,0.0,27.0,White,Female,,,Metastatic,0,21.56666667,,,,,,,,13.0,,
-TCGA-DA-A1I7-06,TCGA-DA-A1I7,TCGA-SKCM,88.86477956,0.0,62.0,White,Male,,,Metastatic,0,28.26666667,,,,,,,,19.0,,
-TCGA-DA-A1I8-06,TCGA-DA-A1I8,TCGA-SKCM,53.91721735,1.0,63.0,White,Female,,,Metastatic,0,4.733333333,,,,,,,,29.0,,
-TCGA-DA-A1IA-06,TCGA-DA-A1IA,TCGA-SKCM,65.91708584,1.0,32.0,White,Female,,,Metastatic,0,10.56666667,,,,,,,,14.0,,
-TCGA-DA-A1IB-06,TCGA-DA-A1IB,TCGA-SKCM,27.12299043,0.0,69.0,White,Female,,,Metastatic,0,70.83333333,,,,,,,,3.0,,
-TCGA-DA-A1IC-06,TCGA-DA-A1IC,TCGA-SKCM,68.08692508,1.0,81.0,White,Male,,,Metastatic,0,27.2,,,,,,,,8.0,,
-TCGA-DA-A3F2-06,TCGA-DA-A3F2,TCGA-SKCM,33.92839531,1.0,55.0,White,Male,,,Metastatic,1,,,,,,,,,0.0,,
-TCGA-DA-A3F3-06,TCGA-DA-A3F3,TCGA-SKCM,10.4875563,1.0,52.0,White,Male,,,Metastatic,0,8.633333333,,,,,,,,5.0,,
-TCGA-DA-A3F5-06,TCGA-DA-A3F5,TCGA-SKCM,225.9591676,1.0,45.0,White,Male,,,Metastatic,1,9.866666667,,,,,,,,29.0,,
-TCGA-DA-A3F8-06,TCGA-DA-A3F8,TCGA-SKCM,43.36390834,0.0,39.0,White,Male,,,Metastatic,0,33.13333333,,,,,,,,5.0,,
-TCGA-DA-A95V-06,TCGA-DA-A95V,TCGA-SKCM,72.09784002,0.0,83.0,White,Female,,,Metastatic,0,7.833333333,,,,,,,,19.0,,
-TCGA-DA-A95W-06,TCGA-DA-A95W,TCGA-SKCM,37.34753592,0.0,52.0,White,Male,,,Metastatic,0,4.666666667,,,,,,,,8.0,,
-TCGA-DA-A95X-06,TCGA-DA-A95X,TCGA-SKCM,73.93891574,0.0,62.0,White,Male,,,Metastatic,0,14.53333333,,,,,,,,12.0,,
-TCGA-DA-A95Y-06,TCGA-DA-A95Y,TCGA-SKCM,14.13683138,1.0,68.0,White,Male,,,Metastatic,0,12.3,,,,,,,,11.0,,
-TCGA-DA-A95Z-06,TCGA-DA-A95Z,TCGA-SKCM,13.01903541,0.0,87.0,White,Male,,,Metastatic,0,53.7,,,,,,,,15.0,,
-TCGA-EB-A1NK-01,TCGA-EB-A1NK,TCGA-SKCM,34.15852977,0.0,48.0,White,Male,,,Primary,0,10.03333333,,,,,,,,8.0,0.2847,0.0
-TCGA-EB-A24C-01,TCGA-EB-A24C,TCGA-SKCM,20.77785449,0.0,56.0,White,Male,,,Primary,1,10.46666667,,,,,,,,10.0,0.3121,0.37
-TCGA-EB-A24D-01,TCGA-EB-A24D,TCGA-SKCM,21.20524707,0.0,72.0,White,Male,,,Primary,1,23.3,,,,,,,,29.0,0.296,0.54
-TCGA-EB-A299-01,TCGA-EB-A299,TCGA-SKCM,12.42726107,0.0,63.0,White,Male,,,Primary,0,19.66666667,,,,,,,,8.0,0.2988,0.02
-TCGA-EB-A3HV-01,TCGA-EB-A3HV,TCGA-SKCM,1.28217773,0.0,37.0,White,Male,,,Primary,0,1.333333333,,,,,,,,7.0,0.3257,0.05
-TCGA-EB-A3XB-01,TCGA-EB-A3XB,TCGA-SKCM,26.16957622,0.0,63.0,White,Male,,,Primary,0,14.23333333,,,,,,,,17.0,0.3192,0.16
-TCGA-EB-A3XC-01,TCGA-EB-A3XC,TCGA-SKCM,21.36962883,0.0,74.0,White,Male,,,Primary,0,11.33333333,,,,,,,,20.0,0.3191,0.08
-TCGA-EB-A3XD-01,TCGA-EB-A3XD,TCGA-SKCM,38.13656837,0.0,53.0,White,Female,,,Primary,0,10.7,,,,,,,,8.0,0.3358,0.27
-TCGA-EB-A3XE-01,TCGA-EB-A3XE,TCGA-SKCM,5.917743367,0.0,77.0,White,Female,,,Primary,0,0.633333333,,,,,,,,6.0,0.3283,0.01
-TCGA-EB-A3XF-01,TCGA-EB-A3XF,TCGA-SKCM,9.139625867,0.0,57.0,White,Male,,,Primary,0,10.96666667,,,,,,,,5.0,0.3309,0.25
-TCGA-EB-A3Y6-01,TCGA-EB-A3Y6,TCGA-SKCM,4.142420357,0.0,56.0,White,Female,,,Primary,0,16.53333333,,,,,,,,9.0,0.3275,0.11
-TCGA-EB-A3Y7-01,TCGA-EB-A3Y7,TCGA-SKCM,10.71769077,1.0,86.0,White,Female,,,Primary,0,31.26666667,,,,,,,,4.0,0.3203,0.01
-TCGA-EB-A41A-01,TCGA-EB-A41A,TCGA-SKCM,8.613604235,0.0,90.0,White,Male,,,Primary,0,51.2,,,,,,,,6.0,0.3049,0.05
-TCGA-EB-A41B-01,TCGA-EB-A41B,TCGA-SKCM,9.567018444,0.0,76.0,White,Female,,,Primary,0,10.93333333,,,,,,,,7.0,0.3318,0.14
-TCGA-EB-A42Y-01,TCGA-EB-A42Y,TCGA-SKCM,23.70384982,1.0,73.0,Asian,Female,,,Primary,0,2.133333333,,,,,,,,6.0,0.3128,0.28
-TCGA-EB-A42Z-01,TCGA-EB-A42Z,TCGA-SKCM,14.49847125,0.0,49.0,Asian,Male,,,Primary,0,3.133333333,,,,,,,,7.0,0.313,0.1
-TCGA-EB-A430-01,TCGA-EB-A430,TCGA-SKCM,0.0,0.0,83.0,White,Male,,,Primary,0,11.46666667,,,,,,,,13.0,0.3082,0.0
-TCGA-EB-A431-01,TCGA-EB-A431,TCGA-SKCM,18.67376796,0.0,34.0,White,Male,,,Primary,0,46.63333333,,,,,,,,17.0,0.3386,0.02
-TCGA-EB-A44N-01,TCGA-EB-A44N,TCGA-SKCM,6.739652168,1.0,59.0,White,Male,,,Primary,0,4.133333333,,,,,,,,0.0,0.3187,0.07
-TCGA-EB-A44O-01,TCGA-EB-A44O,TCGA-SKCM,2.662984515,0.0,69.0,White,Male,,,Primary,0,13.56666667,,,,,,,,9.0,0.333,0.3
-TCGA-EB-A44P-01,TCGA-EB-A44P,TCGA-SKCM,24.36137686,0.0,58.0,White,Female,,,Primary,0,9.166666667,,,,,,,,4.0,0.2998,0.07
-TCGA-EB-A44Q-06,TCGA-EB-A44Q,TCGA-SKCM,13.87382056,0.0,51.0,Asian,Female,,,Metastatic,0,1.4,,,,,,,,6.0,,
-TCGA-EB-A44R-06,TCGA-EB-A44R,TCGA-SKCM,10.35605089,1.0,52.0,Asian,Male,,,Metastatic,0,1.566666667,,,,,,,,22.0,,
-TCGA-EB-A4IQ-01,TCGA-EB-A4IQ,TCGA-SKCM,20.9093599,1.0,42.0,Asian,Female,,,Primary,0,0.233333333,,,,,,,,21.0,0.2981,0.09
-TCGA-EB-A4IS-01,TCGA-EB-A4IS,TCGA-SKCM,25.44629648,0.0,77.0,White,Male,,,Primary,0,14.93333333,,,,,,,,24.0,0.3,0.04
-TCGA-EB-A4OY-01,TCGA-EB-A4OY,TCGA-SKCM,32.12019594,0.0,65.0,White,Female,,,Primary,0,1.766666667,,,,,,,,17.0,0.3231,0.0
-TCGA-EB-A4OZ-01,TCGA-EB-A4OZ,TCGA-SKCM,20.38333827,0.0,41.0,White,Female,,,Primary,0,0.333333333,,,,,,,,4.0,0.3045,0.03
-TCGA-EB-A4P0-01,TCGA-EB-A4P0,TCGA-SKCM,10.71769077,1.0,82.0,White,Male,,,Primary,0,5.166666667,,,,,,,,23.0,0.32,0.11
-TCGA-EB-A4XL-01,TCGA-EB-A4XL,TCGA-SKCM,25.54492554,0.0,56.0,White,Female,,,Primary,0,13.03333333,,,,,,,,8.0,0.3016,0.06
-TCGA-EB-A551-01,TCGA-EB-A551,TCGA-SKCM,19.3970477,0.0,78.0,White,Female,,,Primary,0,9.533333333,,,,,,,,8.0,0.3135,0.0
-TCGA-EB-A553-01,TCGA-EB-A553,TCGA-SKCM,7.430055561,0.0,62.0,White,Male,,,Primary,0,9.3,,,,,,,,22.0,0.3134,0.25
-TCGA-EB-A57M-01,TCGA-EB-A57M,TCGA-SKCM,15.51763816,1.0,56.0,Asian,Male,,,Primary,1,1.8,,,,,,,,12.0,0.3308,0.0
-TCGA-EB-A5FP-01,TCGA-EB-A5FP,TCGA-SKCM,14.92586383,1.0,65.0,White,Female,,,Primary,0,11.0,,,,,,,,17.0,0.317,0.04
-TCGA-EB-A5KH-06,TCGA-EB-A5KH,TCGA-SKCM,20.35046191,1.0,55.0,Asian,Male,,,Metastatic,1,1.166666667,,,,,,,,5.0,,
-TCGA-EB-A5SE-01,TCGA-EB-A5SE,TCGA-SKCM,13.18341717,1.0,73.0,White,Male,,,Primary,0,7.733333333,,,,,,,,7.0,0.3337,0.04
-TCGA-EB-A5SF-01,TCGA-EB-A5SF,TCGA-SKCM,12.1313739,1.0,78.0,White,Female,,,Primary,0,0.9,,,,,,,,12.0,0.3197,0.02
-TCGA-EB-A5SG-06,TCGA-EB-A5SG,TCGA-SKCM,68.25130684,0.0,57.0,White,Female,,,Metastatic,0,7.666666667,,,,,,,,7.0,,
-TCGA-EB-A5SH-06,TCGA-EB-A5SH,TCGA-SKCM,54.0158464,0.0,60.0,White,Female,,,Metastatic,1,2.966666667,,,,,,,,22.0,,
-TCGA-EB-A5UL-06,TCGA-EB-A5UL,TCGA-SKCM,29.29282967,0.0,71.0,White,Male,,,Metastatic,0,13.23333333,,,,,,,,14.0,,
-TCGA-EB-A5UM-01,TCGA-EB-A5UM,TCGA-SKCM,25.61067824,0.0,48.0,White,Female,,,Primary,0,15.83333333,,,,,,,,6.0,0.3285,0.03
-TCGA-EB-A5UN-06,TCGA-EB-A5UN,TCGA-SKCM,58.91442286,0.0,49.0,White,Male,,,Metastatic,0,20.9,,,,,,,,11.0,,
-TCGA-EB-A5VU-01,TCGA-EB-A5VU,TCGA-SKCM,10.55330901,1.0,56.0,Asian,Male,,,Primary,0,1.366666667,,,,,,,,28.0,0.3156,0.26
-TCGA-EB-A5VV-06,TCGA-EB-A5VV,TCGA-SKCM,7.035539337,0.0,74.0,White,Female,,,Metastatic,0,,,,,,,,,0.0,,
-TCGA-EB-A6L9-06,TCGA-EB-A6L9,TCGA-SKCM,36.45987441,0.0,55.0,Asian,Male,,,Metastatic,0,0.6,,,,,,,,29.0,,
-TCGA-EB-A6QY-01,TCGA-EB-A6QY,TCGA-SKCM,12.55876648,0.0,71.0,White,Male,,,Primary,1,16.76666667,,,,,,,,29.0,0.3271,0.05
-TCGA-EB-A6QZ-01,TCGA-EB-A6QZ,TCGA-SKCM,11.57247592,1.0,76.0,White,Female,,,Primary,0,7.6,,,,,,,,7.0,0.3295,0.37
-TCGA-EB-A6R0-01,TCGA-EB-A6R0,TCGA-SKCM,19.98882204,1.0,58.0,White,Female,,,Primary,0,10.6,,,,,,,,10.0,0.3173,0.05
-TCGA-EE-A17X-06,TCGA-EE-A17X,TCGA-SKCM,29.8188513,1.0,54.0,White,Male,,,Metastatic,0,22.7,,,,,,,,3.0,,
-TCGA-EE-A17Y-06,TCGA-EE-A17Y,TCGA-SKCM,27.22161949,1.0,69.0,Asian,Male,,,Metastatic,0,9.9,,,,,,,,28.0,,
-TCGA-EE-A17Z-06,TCGA-EE-A17Z,TCGA-SKCM,8.646480587,1.0,57.0,White,Male,,,Metastatic,0,37.0,,,,,,,,5.0,,
-TCGA-EE-A180-06,TCGA-EE-A180,TCGA-SKCM,94.97978104,1.0,69.0,White,Male,,,Metastatic,0,14.83333333,,,,,,,,20.0,,
-TCGA-EE-A181-06,TCGA-EE-A181,TCGA-SKCM,33.73113719,1.0,82.0,White,Female,,,Metastatic,0,151.1666667,,,,,,,,18.0,,
-TCGA-EE-A182-06,TCGA-EE-A182,TCGA-SKCM,14.69572936,1.0,84.0,White,Female,,,Metastatic,0,40.53333333,,,,,,,,6.0,,
-TCGA-EE-A183-06,TCGA-EE-A183,TCGA-SKCM,,,48.0,White,Male,,,Metastatic,0,71.7,,,,,,,,6.0,,
-TCGA-EE-A184-06,TCGA-EE-A184,TCGA-SKCM,68.15267778,1.0,72.0,White,Male,,,Metastatic,0,36.2,,,,,,,,9.0,,
-TCGA-EE-A185-06,TCGA-EE-A185,TCGA-SKCM,4.964329158,1.0,55.0,White,Female,,,Metastatic,0,6.233333333,,,,,,,,8.0,,
-TCGA-EE-A20B-06,TCGA-EE-A20B,TCGA-SKCM,133.8067528,0.0,66.0,White,Female,,,Metastatic,0,5.733333333,,,,,,,,12.0,,
-TCGA-EE-A20C-06,TCGA-EE-A20C,TCGA-SKCM,,,59.0,White,Male,,,Metastatic,0,69.2,,,,,,,,16.0,,
-TCGA-EE-A20F-06,TCGA-EE-A20F,TCGA-SKCM,91.56064043,0.0,53.0,White,Male,,,Metastatic,0,61.53333333,,,,,,,,3.0,,
-TCGA-EE-A20H-06,TCGA-EE-A20H,TCGA-SKCM,168.2611697,1.0,56.0,White,Male,,,Metastatic,0,17.36666667,,,,,,,,24.0,,
-TCGA-EE-A20I-06,TCGA-EE-A20I,TCGA-SKCM,13.54505704,1.0,79.0,White,Male,,,Metastatic,0,0.733333333,,,,,,,,11.0,,
-TCGA-EE-A29A-06,TCGA-EE-A29A,TCGA-SKCM,63.35273038,1.0,68.0,White,Male,,,Metastatic,0,7.1,,,,,,,,12.0,,
-TCGA-EE-A29B-06,TCGA-EE-A29B,TCGA-SKCM,85.08399908,1.0,67.0,White,Male,,,Metastatic,0,16.5,,,,,,,,6.0,,
-TCGA-EE-A29C-06,TCGA-EE-A29C,TCGA-SKCM,78.9689976,1.0,20.0,White,Male,,,Metastatic,1,11.96666667,,,,,,,,15.0,,
-TCGA-EE-A29D-06,TCGA-EE-A29D,TCGA-SKCM,13.97244962,1.0,87.0,White,Male,,,Metastatic,0,103.1,,,,,,,,19.0,,
-TCGA-EE-A29E-06,TCGA-EE-A29E,TCGA-SKCM,63.78012296,0.0,54.0,White,Male,,,Metastatic,0,120.7333333,,,,,,,,8.0,,
-TCGA-EE-A29G-06,TCGA-EE-A29G,TCGA-SKCM,72.06496367,1.0,53.0,White,Male,,,Metastatic,0,22.63333333,,,,,,,,25.0,,
-TCGA-EE-A29H-06,TCGA-EE-A29H,TCGA-SKCM,64.63490811,0.0,59.0,White,Female,,,Metastatic,0,9.133333333,,,,,,,,9.0,,
-TCGA-EE-A29L-06,TCGA-EE-A29L,TCGA-SKCM,2.597231811,1.0,78.0,White,Male,,,Metastatic,0,73.86666667,,,,,,,,19.0,,
-TCGA-EE-A29M-06,TCGA-EE-A29M,TCGA-SKCM,56.84321268,0.0,33.0,White,Female,,,Metastatic,0,65.5,,,,,,,,15.0,,
-TCGA-EE-A29N-06,TCGA-EE-A29N,TCGA-SKCM,18.60801526,1.0,78.0,White,Male,,,Metastatic,0,19.23333333,,,,,,,,6.0,,
-TCGA-EE-A29P-06,TCGA-EE-A29P,TCGA-SKCM,56.4158201,0.0,73.0,White,Female,,,Metastatic,0,13.86666667,,,,,,,,23.0,,
-TCGA-EE-A29Q-06,TCGA-EE-A29Q,TCGA-SKCM,66.73899464,1.0,70.0,White,Female,,,Metastatic,0,20.53333333,,,,,,,,9.0,,
-TCGA-EE-A29R-06,TCGA-EE-A29R,TCGA-SKCM,14.4655949,0.0,48.0,White,Female,,,Metastatic,0,18.36666667,,,,,,,,26.0,,
-TCGA-EE-A29S-06,TCGA-EE-A29S,TCGA-SKCM,61.2815202,1.0,79.0,White,Male,,,Metastatic,0,33.5,,,,,,,,7.0,,
-TCGA-EE-A29T-06,TCGA-EE-A29T,TCGA-SKCM,369.9247132,0.0,51.0,White,Female,,,Metastatic,0,10.9,,,,,,,,24.0,,
-TCGA-EE-A29V-06,TCGA-EE-A29V,TCGA-SKCM,25.87368906,1.0,85.0,White,Male,,,Metastatic,0,33.66666667,,,,,,,,7.0,,
-TCGA-EE-A29W-06,TCGA-EE-A29W,TCGA-SKCM,,,42.0,White,Male,,,Metastatic,0,9.1,,,,,,,,30.0,,
-TCGA-EE-A29X-06,TCGA-EE-A29X,TCGA-SKCM,17.91761186,1.0,58.0,White,Female,,,Metastatic,0,34.2,,,,,,,,18.0,,
-TCGA-EE-A2A0-06,TCGA-EE-A2A0,TCGA-SKCM,46.81592531,1.0,77.0,White,Female,,,Metastatic,0,17.43333333,,,,,,,,10.0,,
-TCGA-EE-A2A1-06,TCGA-EE-A2A1,TCGA-SKCM,115.9548937,0.0,46.0,White,Male,,,Metastatic,0,11.33333333,,,,,,,,9.0,,
-TCGA-EE-A2A2-06,TCGA-EE-A2A2,TCGA-SKCM,59.6377026,0.0,71.0,White,Male,,,Metastatic,0,43.5,,,,,,,,8.0,,
-TCGA-EE-A2A5-06,TCGA-EE-A2A5,TCGA-SKCM,39.28724069,1.0,43.0,White,Male,,,Metastatic,0,15.7,,,,,,,,22.0,,
-TCGA-EE-A2A6-06,TCGA-EE-A2A6,TCGA-SKCM,86.13604235,0.0,43.0,White,Male,,,Metastatic,0,12.66666667,,,,,,,,,,
-TCGA-EE-A2GB-06,TCGA-EE-A2GB,TCGA-SKCM,59.27606273,0.0,51.0,White,Male,,,Metastatic,0,19.33333333,,,,,,,,17.0,,
-TCGA-EE-A2GC-06,TCGA-EE-A2GC,TCGA-SKCM,67.42939803,0.0,82.0,White,Male,,,Metastatic,0,64.93333333,,,,,,,,25.0,,
-TCGA-EE-A2GD-06,TCGA-EE-A2GD,TCGA-SKCM,340.1387382,1.0,58.0,White,Female,,,Metastatic,0,16.0,,,,,,,,7.0,,
-TCGA-EE-A2GE-06,TCGA-EE-A2GE,TCGA-SKCM,173.7843969,0.0,44.0,White,Male,,,Metastatic,0,22.13333333,,,,,,,,21.0,,
-TCGA-EE-A2GH-06,TCGA-EE-A2GH,TCGA-SKCM,220.2386823,0.0,34.0,White,Male,,,Metastatic,0,35.13333333,,,,,,,,13.0,,
-TCGA-EE-A2GI-06,TCGA-EE-A2GI,TCGA-SKCM,48.72275372,0.0,39.0,White,Male,,,Metastatic,0,52.23333333,,,,,,,,20.0,,
-TCGA-EE-A2GJ-06,TCGA-EE-A2GJ,TCGA-SKCM,107.3741658,1.0,83.0,White,Male,,,Metastatic,0,32.43333333,,,,,,,,7.0,,
-TCGA-EE-A2GK-06,TCGA-EE-A2GK,TCGA-SKCM,54.73912615,0.0,46.0,White,Female,,,Metastatic,0,13.66666667,,,,,,,,0.0,,
-TCGA-EE-A2GL-06,TCGA-EE-A2GL,TCGA-SKCM,79.65940099,0.0,40.0,White,Female,,,Metastatic,0,10.26666667,,,,,,,,8.0,,
-TCGA-EE-A2GM-06,TCGA-EE-A2GM,TCGA-SKCM,75.48410428,0.0,70.0,White,Female,,,Metastatic,0,21.06666667,,,,,,,,30.0,,
-TCGA-EE-A2GN-06,TCGA-EE-A2GN,TCGA-SKCM,102.1139494,1.0,67.0,White,Male,,,Metastatic,0,49.63333333,,,,,,,,18.0,,
-TCGA-EE-A2GO-06,TCGA-EE-A2GO,TCGA-SKCM,126.8040898,0.0,66.0,White,Female,,,Metastatic,0,63.53333333,,,,,,,,18.0,,
-TCGA-EE-A2GP-06,TCGA-EE-A2GP,TCGA-SKCM,13.90669691,1.0,80.0,White,Male,,,Metastatic,0,17.23333333,,,,,,,,23.0,,
-TCGA-EE-A2GR-06,TCGA-EE-A2GR,TCGA-SKCM,42.772134,1.0,78.0,White,Male,,,Metastatic,0,58.36666667,,,,,,,,9.0,,
-TCGA-EE-A2GS-06,TCGA-EE-A2GS,TCGA-SKCM,81.20458954,1.0,28.0,White,Female,,,Metastatic,1,10.2,,,,,,,,7.0,,
-TCGA-EE-A2GT-06,TCGA-EE-A2GT,TCGA-SKCM,44.87622054,0.0,77.0,White,Male,,,Metastatic,0,56.4,,,,,,,,5.0,,
-TCGA-EE-A2GU-06,TCGA-EE-A2GU,TCGA-SKCM,94.81539928,0.0,65.0,White,Female,,,Metastatic,0,16.83333333,,,,,,,,8.0,,
-TCGA-EE-A2M5-06,TCGA-EE-A2M5,TCGA-SKCM,21.66551599,1.0,49.0,White,Male,,,Metastatic,0,65.63333333,,,,,,,,5.0,,
-TCGA-EE-A2M6-06,TCGA-EE-A2M6,TCGA-SKCM,129.2698162,0.0,61.0,White,Male,,,Metastatic,0,19.36666667,,,,,,,,24.0,,
-TCGA-EE-A2M7-06,TCGA-EE-A2M7,TCGA-SKCM,28.83256074,1.0,66.0,White,Male,,,Metastatic,0,20.4,,,,,,,,25.0,,
-TCGA-EE-A2M8-06,TCGA-EE-A2M8,TCGA-SKCM,19.75868758,1.0,54.0,White,Female,,,Metastatic,0,26.16666667,,,,,,,,9.0,,
-TCGA-EE-A2MC-06,TCGA-EE-A2MC,TCGA-SKCM,61.51165467,1.0,73.0,White,Male,,,Metastatic,0,21.7,,,,,,,,1.0,,
-TCGA-EE-A2MD-06,TCGA-EE-A2MD,TCGA-SKCM,47.27619423,1.0,52.0,White,Male,,,Metastatic,0,72.56666667,,,,,,,,8.0,,
-TCGA-EE-A2ME-06,TCGA-EE-A2ME,TCGA-SKCM,103.2646218,1.0,51.0,White,Male,,,Metastatic,0,17.33333333,,,,,,,,0.0,,
-TCGA-EE-A2MF-06,TCGA-EE-A2MF,TCGA-SKCM,268.7313016,1.0,39.0,White,Female,,,Metastatic,0,20.7,,,,,,,,8.0,,
-TCGA-EE-A2MG-06,TCGA-EE-A2MG,TCGA-SKCM,103.1988691,1.0,23.0,White,Male,,,Metastatic,0,31.63333333,,,,,,,,13.0,,
-TCGA-EE-A2MH-06,TCGA-EE-A2MH,TCGA-SKCM,16.96419765,1.0,66.0,White,Male,,,Metastatic,0,6.633333333,,,,,,,,7.0,,
-TCGA-EE-A2MI-06,TCGA-EE-A2MI,TCGA-SKCM,204.6552915,1.0,43.0,White,Male,,,Metastatic,0,30.3,,,,,,,,3.0,,
-TCGA-EE-A2MJ-06,TCGA-EE-A2MJ,TCGA-SKCM,96.22908242,1.0,60.0,White,Male,,,Metastatic,0,57.33333333,,,,,,,,10.0,,
-TCGA-EE-A2MK-06,TCGA-EE-A2MK,TCGA-SKCM,180.3925436,0.0,18.0,White,Female,,,Metastatic,0,20.53333333,,,,,,,,20.0,,
-TCGA-EE-A2ML-06,TCGA-EE-A2ML,TCGA-SKCM,216.6551599,1.0,35.0,White,Male,,,Metastatic,1,21.93333333,,,,,,,,4.0,,
-TCGA-EE-A2MM-06,TCGA-EE-A2MM,TCGA-SKCM,167.8995299,1.0,63.0,White,Female,,,Metastatic,0,43.83333333,,,,,,,,13.0,,
-TCGA-EE-A2MN-06,TCGA-EE-A2MN,TCGA-SKCM,47.53920505,1.0,58.0,White,Male,,,Metastatic,0,9.466666667,,,,,,,,9.0,,
-TCGA-EE-A2MP-06,TCGA-EE-A2MP,TCGA-SKCM,248.6438505,0.0,34.0,White,Female,,,Metastatic,0,13.13333333,,,,,,,,23.0,,
-TCGA-EE-A2MQ-06,TCGA-EE-A2MQ,TCGA-SKCM,43.23240293,1.0,70.0,White,Female,,,Metastatic,0,20.83333333,,,,,,,,14.0,,
-TCGA-EE-A2MR-06,TCGA-EE-A2MR,TCGA-SKCM,134.3985271,0.0,61.0,White,Male,,,Metastatic,0,97.33333333,,,,,,,,15.0,,
-TCGA-EE-A2MS-06,TCGA-EE-A2MS,TCGA-SKCM,162.4749318,0.0,72.0,White,Male,,,Metastatic,0,82.06666667,,,,,,,,19.0,,
-TCGA-EE-A2MT-06,TCGA-EE-A2MT,TCGA-SKCM,71.21017852,0.0,45.0,White,Male,,,Metastatic,0,26.4,,,,,,,,2.0,,
-TCGA-EE-A2MU-06,TCGA-EE-A2MU,TCGA-SKCM,53.25969031,0.0,71.0,White,Male,,,Metastatic,0,19.1,,,,,,,,23.0,,
-TCGA-EE-A3AA-06,TCGA-EE-A3AA,TCGA-SKCM,124.3054871,0.0,47.0,White,Male,,,Metastatic,0,91.43333333,,,,,,,,11.0,,
-TCGA-EE-A3AB-06,TCGA-EE-A3AB,TCGA-SKCM,122.7274222,0.0,30.0,White,Male,,,Metastatic,0,21.93333333,,,,,,,,17.0,,
-TCGA-EE-A3AC-06,TCGA-EE-A3AC,TCGA-SKCM,64.04313377,0.0,47.0,White,Male,,,Metastatic,0,62.23333333,,,,,,,,5.0,,
-TCGA-EE-A3AD-06,TCGA-EE-A3AD,TCGA-SKCM,28.76680804,1.0,50.0,White,Male,,,Metastatic,0,53.73333333,,,,,,,,17.0,,
-TCGA-EE-A3AE-06,TCGA-EE-A3AE,TCGA-SKCM,54.50899168,0.0,52.0,White,Female,,,Metastatic,0,41.33333333,,,,,,,,21.0,,
-TCGA-EE-A3AF-06,TCGA-EE-A3AF,TCGA-SKCM,13.80806786,1.0,48.0,White,Female,,,Metastatic,0,29.26666667,,,,,,,,10.0,,
-TCGA-EE-A3AG-06,TCGA-EE-A3AG,TCGA-SKCM,41.58858533,1.0,25.0,White,Male,,,Metastatic,0,65.16666667,,,,,,,,13.0,,
-TCGA-EE-A3AH-06,TCGA-EE-A3AH,TCGA-SKCM,138.8039583,1.0,30.0,White,Male,,,Metastatic,0,17.76666667,,,,,,,,12.0,,
-TCGA-EE-A3J3-06,TCGA-EE-A3J3,TCGA-SKCM,172.1734556,1.0,42.0,White,Male,,,Metastatic,0,4.433333333,,,,,,,,19.0,,
-TCGA-EE-A3J4-06,TCGA-EE-A3J4,TCGA-SKCM,127.198606,1.0,72.0,White,Male,,,Metastatic,0,9.033333333,,,,,,,,5.0,,
-TCGA-EE-A3J5-06,TCGA-EE-A3J5,TCGA-SKCM,36.95301969,1.0,71.0,White,Male,,,Metastatic,0,60.33333333,,,,,,,,10.0,,
-TCGA-EE-A3J7-06,TCGA-EE-A3J7,TCGA-SKCM,64.07601013,0.0,43.0,White,Male,,,Metastatic,0,27.26666667,,,,,,,,28.0,,
-TCGA-EE-A3J8-06,TCGA-EE-A3J8,TCGA-SKCM,34.32291153,1.0,59.0,White,Male,,,Metastatic,0,7.333333333,,,,,,,,6.0,,
-TCGA-EE-A3JA-06,TCGA-EE-A3JA,TCGA-SKCM,53.1939376,1.0,44.0,White,Male,,,Metastatic,0,27.76666667,,,,,,,,22.0,,
-TCGA-EE-A3JB-06,TCGA-EE-A3JB,TCGA-SKCM,201.7950488,0.0,60.0,White,Female,,,Metastatic,0,17.3,,,,,,,,21.0,,
-TCGA-EE-A3JD-06,TCGA-EE-A3JD,TCGA-SKCM,27.3531249,1.0,70.0,White,Male,,,Metastatic,0,64.3,,,,,,,,4.0,,
-TCGA-EE-A3JE-06,TCGA-EE-A3JE,TCGA-SKCM,51.35286189,0.0,75.0,White,Male,,,Metastatic,0,8.1,,,,,,,,5.0,,
-TCGA-EE-A3JH-06,TCGA-EE-A3JH,TCGA-SKCM,134.3327744,0.0,54.0,White,Male,,,Metastatic,0,4.766666667,,,,,,,,26.0,,
-TCGA-EE-A3JI-06,TCGA-EE-A3JI,TCGA-SKCM,152.8092843,1.0,48.0,White,Male,,,Metastatic,1,33.2,,,,,,,,21.0,,
-TCGA-ER-A193-06,TCGA-ER-A193,TCGA-SKCM,31.3969162,1.0,62.0,White,Male,,,Metastatic,0,56.76666667,,,,,,,,8.0,,
-TCGA-ER-A194-01,TCGA-ER-A194,TCGA-SKCM,44.51458066,1.0,77.0,White,Male,,,Primary,0,37.76666667,,,,,,,,3.0,0.3088,0.0
-TCGA-ER-A195-06,TCGA-ER-A195,TCGA-SKCM,35.4407075,1.0,46.0,White,Male,,,Metastatic,1,21.73333333,,,,,,,,4.0,,
-TCGA-ER-A196-01,TCGA-ER-A196,TCGA-SKCM,58.68428839,0.0,64.0,White,Female,,,Primary,0,8.466666667,,,,,,,,1.0,0.2876,0.0
-TCGA-ER-A197-06,TCGA-ER-A197,TCGA-SKCM,13.93957327,1.0,83.0,White,Female,,,Metastatic,0,1.466666667,,,,,,,,26.0,,
-TCGA-ER-A198-06,TCGA-ER-A198,TCGA-SKCM,50.76108755,1.0,45.0,White,Male,,,Metastatic,0,13.93333333,,,,,,,,1.0,,
-TCGA-ER-A199-06,TCGA-ER-A199,TCGA-SKCM,9.172502219,1.0,86.0,White,Female,,,Metastatic,0,8.266666667,,,,,,,,26.0,,
-TCGA-ER-A19A-06,TCGA-ER-A19A,TCGA-SKCM,77.75257258,0.0,79.0,White,Male,,,Metastatic,0,5.133333333,,,,,,,,,,
-TCGA-ER-A19B-06,TCGA-ER-A19B,TCGA-SKCM,98.39892166,1.0,42.0,White,Male,,,Metastatic,0,50.8,,,,,,,,21.0,,
-TCGA-ER-A19C-06,TCGA-ER-A19C,TCGA-SKCM,48.88713548,1.0,77.0,White,Male,,,Metastatic,0,20.06666667,,,,,,,,16.0,,
-TCGA-ER-A19D-06,TCGA-ER-A19D,TCGA-SKCM,12.59164283,1.0,46.0,White,Female,,,Metastatic,0,13.03333333,,,,,,,,13.0,,
-TCGA-ER-A19E-06,TCGA-ER-A19E,TCGA-SKCM,13.01903541,1.0,36.0,White,Female,,,Metastatic,0,18.06666667,,,,,,,,20.0,,
-TCGA-ER-A19F-06,TCGA-ER-A19F,TCGA-SKCM,26.36683434,1.0,82.0,White,Male,,,Metastatic,0,55.46666667,,,,,,,,5.0,,
-TCGA-ER-A19G-06,TCGA-ER-A19G,TCGA-SKCM,302.0679225,0.0,48.0,White,Female,,,Metastatic,0,31.86666667,,,,,,,,24.0,,
-TCGA-ER-A19H-06,TCGA-ER-A19H,TCGA-SKCM,152.3490154,1.0,40.0,White,Male,,,Metastatic,0,32.23333333,,,,,,,,17.0,,
-TCGA-ER-A19J-06,TCGA-ER-A19J,TCGA-SKCM,6.443765,1.0,54.0,White,Male,,,Metastatic,0,6.2,,,,,,,,8.0,,
-TCGA-ER-A19K-01,TCGA-ER-A19K,TCGA-SKCM,15.41900911,1.0,79.0,White,Female,,,Primary,0,13.0,,,,,,,,5.0,0.303,0.0
-TCGA-ER-A19L-06,TCGA-ER-A19L,TCGA-SKCM,131.5054082,1.0,35.0,White,Male,,,Metastatic,0,2.0,,,,,,,,12.0,,
-TCGA-ER-A19M-06,TCGA-ER-A19M,TCGA-SKCM,61.05138574,1.0,36.0,White,Male,,,Metastatic,1,13.1,,,,,,,,17.0,,
-TCGA-ER-A19N-06,TCGA-ER-A19N,TCGA-SKCM,44.08718809,1.0,47.0,White,Male,,,Metastatic,1,38.26666667,,,,,,,,12.0,,
-TCGA-ER-A19O-06,TCGA-ER-A19O,TCGA-SKCM,,1.0,56.0,White,Male,,,Metastatic,1,7.3,,,,,,,,5.0,,
-TCGA-ER-A19P-06,TCGA-ER-A19P,TCGA-SKCM,162.0804156,1.0,47.0,White,Female,,,Metastatic,0,96.83333333,,,,,,,,8.0,,
-TCGA-ER-A19Q-06,TCGA-ER-A19Q,TCGA-SKCM,50.89259296,1.0,37.0,White,Female,,,Metastatic,1,16.26666667,,,,,,,,7.0,,
-TCGA-ER-A19S-06,TCGA-ER-A19S,TCGA-SKCM,49.47890982,0.0,81.0,White,Female,,,Metastatic,0,6.566666667,,,,,,,,11.0,,
-TCGA-ER-A19T-01,TCGA-ER-A19T,TCGA-SKCM,8.876615051,1.0,51.0,White,Male,,,Primary,0,7.233333333,,,,,,,,19.0,0.2759,0.53
-TCGA-ER-A19T-06,TCGA-ER-A19T,TCGA-SKCM,8.876615051,1.0,51.0,White,Male,,,Metastatic,0,14.1,,,,,,,,17.0,,
-TCGA-ER-A19W-06,TCGA-ER-A19W,TCGA-SKCM,148.1737186,1.0,48.0,White,Female,,,Metastatic,0,9.1,,,,,,,,10.0,,
-TCGA-ER-A1A1-06,TCGA-ER-A1A1,TCGA-SKCM,105.0728211,0.0,58.0,White,Male,,,Metastatic,1,23.3,,,,,,,,0.0,,
-TCGA-ER-A2NB-01,TCGA-ER-A2NB,TCGA-SKCM,28.1750337,1.0,57.0,White,Male,,,Primary,0,2.266666667,,,,,,,,19.0,0.2785,0.0
-TCGA-ER-A2NC-06,TCGA-ER-A2NC,TCGA-SKCM,43.82417727,1.0,50.0,White,Male,,,Metastatic,0,11.63333333,,,,,,,,11.0,,
-TCGA-ER-A2ND-06,TCGA-ER-A2ND,TCGA-SKCM,23.34220995,1.0,57.0,White,Female,,,Metastatic,0,3.4,,,,,,,,20.0,,
-TCGA-ER-A2NE-06,TCGA-ER-A2NE,TCGA-SKCM,,,39.0,White,Male,,,Metastatic,0,5.133333333,,,,,,,,9.0,,
-TCGA-ER-A2NF-01,TCGA-ER-A2NF,TCGA-SKCM,28.83256074,1.0,53.0,White,Male,,,Primary,1,1.766666667,,,,,,,,7.0,0.2743,0.0
-TCGA-ER-A2NF-06,TCGA-ER-A2NF,TCGA-SKCM,28.83256074,1.0,53.0,White,Male,,,Metastatic,1,8.933333333,,,,,,,,8.0,,
-TCGA-ER-A2NG-06,TCGA-ER-A2NG,TCGA-SKCM,48.98576454,1.0,43.0,White,Female,,,Metastatic,1,7.533333333,,,,,,,,11.0,,
-TCGA-ER-A2NH-06,TCGA-ER-A2NH,TCGA-SKCM,41.55570898,0.0,49.0,White,Male,,,Metastatic,0,29.6,,,,,,,,9.0,,
-TCGA-ER-A3ES-06,TCGA-ER-A3ES,TCGA-SKCM,247.0329092,1.0,25.0,White,Male,,,Metastatic,0,0.7,,,,,,,,1.0,,
-TCGA-ER-A3ET-06,TCGA-ER-A3ET,TCGA-SKCM,93.00719992,1.0,64.0,White,Female,,,Metastatic,0,3.0,,,,,,,,11.0,,
-TCGA-ER-A3EV-06,TCGA-ER-A3EV,TCGA-SKCM,46.98030707,1.0,55.0,White,Male,,,Metastatic,0,2.6,,,,,,,,9.0,,
-TCGA-ER-A3PL-06,TCGA-ER-A3PL,TCGA-SKCM,33.20511556,0.0,30.0,White,Male,,,Metastatic,0,9.766666667,,,,,,,,30.0,,
-TCGA-ER-A42H-01,TCGA-ER-A42H,TCGA-SKCM,14.00532597,1.0,76.0,White,Male,,,Primary,0,1.833333333,,,,,,,,20.0,0.3079,0.44
-TCGA-ER-A42K-06,TCGA-ER-A42K,TCGA-SKCM,12.9532827,1.0,40.0,White,Female,,,Metastatic,0,5.5,,,,,,,,8.0,,
-TCGA-ER-A42L-06,TCGA-ER-A42L,TCGA-SKCM,149.0285038,0.0,49.0,White,Male,,,Metastatic,0,25.36666667,,,,,,,,35.0,,
-TCGA-FR-A2OS-01,TCGA-FR-A2OS,TCGA-SKCM,12.09849755,1.0,49.0,White,Female,,,Primary,0,0.433333333,,,,,,,,6.0,0.3319,0.0
-TCGA-FR-A3R1-01,TCGA-FR-A3R1,TCGA-SKCM,22.52030115,0.0,69.0,White,Male,,,Primary,0,11.1,,,,,,,,3.0,0.3587,0.18
-TCGA-FR-A3YN-06,TCGA-FR-A3YN,TCGA-SKCM,92.97432357,0.0,44.0,White,Male,,,Metastatic,1,15.46666667,,,,,,,,32.0,,
-TCGA-FR-A3YO-06,TCGA-FR-A3YO,TCGA-SKCM,,0.0,,White,Female,,,Metastatic,0,23.26666667,,,,,,,,20.0,,
-TCGA-FR-A44A-06,TCGA-FR-A44A,TCGA-SKCM,174.2117895,0.0,29.0,White,Female,,,Metastatic,1,8.2,,,,,,,,24.0,,
-TCGA-FR-A69P-06,TCGA-FR-A69P,TCGA-SKCM,15.71489628,0.0,34.0,White,Female,,,Metastatic,1,6.166666667,,,,,,,,22.0,,
-TCGA-FR-A726-01,TCGA-FR-A726,TCGA-SKCM,10.02728737,1.0,90.0,White,Male,,,Primary,0,195.2,,,,,,,,5.0,0.3257,0.14
-TCGA-FR-A728-01,TCGA-FR-A728,TCGA-SKCM,19.16691324,0.0,54.0,White,Female,,,Primary,0,11.06666667,,,,,,,,13.0,0.3252,0.03
-TCGA-FR-A729-06,TCGA-FR-A729,TCGA-SKCM,220.7975803,0.0,38.0,White,Female,,,Metastatic,1,24.6,,,,,,,,22.0,,
-TCGA-FR-A7U8-06,TCGA-FR-A7U8,TCGA-SKCM,27.84627018,0.0,50.0,White,Male,,,Metastatic,1,1.0,,,,,,,,9.0,,
-TCGA-FR-A7U9-06,TCGA-FR-A7U9,TCGA-SKCM,18.77239702,0.0,63.0,White,Female,,,Metastatic,1,50.23333333,,,,,,,,15.0,,
-TCGA-FR-A7UA-06,TCGA-FR-A7UA,TCGA-SKCM,38.26807378,0.0,65.0,White,Female,,,Metastatic,0,5.1,,,,,,,,6.0,,
-TCGA-FR-A8YC-06,TCGA-FR-A8YC,TCGA-SKCM,34.81605681,1.0,78.0,White,Male,,,Metastatic,0,82.9,,,,,,,,12.0,,
-TCGA-FR-A8YD-06,TCGA-FR-A8YD,TCGA-SKCM,36.2626163,1.0,56.0,White,Female,,,Metastatic,1,3.5,,,,,,,,9.0,,
-TCGA-FR-A8YE-06,TCGA-FR-A8YE,TCGA-SKCM,104.4152941,0.0,41.0,White,Male,,,Metastatic,0,9.433333333,,,,,,,,7.0,,
-TCGA-FS-A1YW-06,TCGA-FS-A1YW,TCGA-SKCM,216.9181708,1.0,52.0,White,Male,,,Metastatic,0,5.066666667,,,,,,,,7.0,,
-TCGA-FS-A1YX-06,TCGA-FS-A1YX,TCGA-SKCM,48.59124832,1.0,39.0,White,Female,,,Metastatic,0,1.666666667,,,,,,,,12.0,,
-TCGA-FS-A1YY-06,TCGA-FS-A1YY,TCGA-SKCM,228.5892757,1.0,55.0,White,Female,,,Metastatic,0,5.666666667,,,,,,,,7.0,,
-TCGA-FS-A1Z0-06,TCGA-FS-A1Z0,TCGA-SKCM,202.649834,1.0,32.0,White,Female,,,Metastatic,0,35.66666667,,,,,,,,9.0,,
-TCGA-FS-A1Z3-06,TCGA-FS-A1Z3,TCGA-SKCM,20.9093599,1.0,72.0,White,Female,,,Metastatic,0,28.73333333,,,,,,,,9.0,,
-TCGA-FS-A1Z4-06,TCGA-FS-A1Z4,TCGA-SKCM,28.07640464,1.0,62.0,White,Male,,,Metastatic,0,20.3,,,,,,,,11.0,,
-TCGA-FS-A1Z7-06,TCGA-FS-A1Z7,TCGA-SKCM,7.791695434,1.0,19.0,White,Male,,,Metastatic,0,5.166666667,,,,,,,,12.0,,
-TCGA-FS-A1ZA-06,TCGA-FS-A1ZA,TCGA-SKCM,27.71476477,1.0,45.0,White,Female,,,Metastatic,0,36.3,,,,,,,,19.0,,
-TCGA-FS-A1ZB-06,TCGA-FS-A1ZB,TCGA-SKCM,48.85425913,1.0,57.0,White,Male,,,Metastatic,0,40.86666667,,,,,,,,4.0,,
-TCGA-FS-A1ZC-06,TCGA-FS-A1ZC,TCGA-SKCM,357.3659467,1.0,51.0,White,Male,,,Metastatic,0,25.06666667,,,,,,,,17.0,,
-TCGA-FS-A1ZD-06,TCGA-FS-A1ZD,TCGA-SKCM,53.52270112,1.0,63.0,White,Male,,,Metastatic,0,15.33333333,,,,,,,,19.0,,
-TCGA-FS-A1ZE-06,TCGA-FS-A1ZE,TCGA-SKCM,46.45428543,1.0,40.0,White,Male,,,Metastatic,0,4.066666667,,,,,,,,6.0,,
-TCGA-FS-A1ZF-06,TCGA-FS-A1ZF,TCGA-SKCM,15.45188546,1.0,78.0,White,Female,,,Metastatic,0,6.9,,,,,,,,8.0,,
-TCGA-FS-A1ZG-06,TCGA-FS-A1ZG,TCGA-SKCM,9.698523852,1.0,60.0,White,Female,,,Metastatic,0,61.53333333,,,,,,,,7.0,,
-TCGA-FS-A1ZH-06,TCGA-FS-A1ZH,TCGA-SKCM,32.74484663,1.0,71.0,White,Female,,,Metastatic,0,1.9,,,,,,,,19.0,,
-TCGA-FS-A1ZJ-06,TCGA-FS-A1ZJ,TCGA-SKCM,47.37482329,1.0,75.0,White,Female,,,Metastatic,0,15.5,,,,,,,,13.0,,
-TCGA-FS-A1ZK-06,TCGA-FS-A1ZK,TCGA-SKCM,23.93398429,1.0,68.0,White,Male,,,Metastatic,0,48.66666667,,,,,,,,21.0,,
-TCGA-FS-A1ZM-06,TCGA-FS-A1ZM,TCGA-SKCM,101.2591643,0.0,74.0,White,Male,,,Metastatic,0,24.86666667,,,,,,,,22.0,,
-TCGA-FS-A1ZN-01,TCGA-FS-A1ZN,TCGA-SKCM,23.99973699,1.0,43.0,White,Male,,,Primary,0,22.2,,,,,,,,5.0,0.2738,0.04
-TCGA-FS-A1ZP-06,TCGA-FS-A1ZP,TCGA-SKCM,74.72794819,1.0,52.0,White,Male,,,Metastatic,0,42.0,,,,,,,,5.0,,
-TCGA-FS-A1ZQ-06,TCGA-FS-A1ZQ,TCGA-SKCM,133.543742,1.0,31.0,White,Male,,,Metastatic,0,37.86666667,,,,,,,,11.0,,
-TCGA-FS-A1ZR-06,TCGA-FS-A1ZR,TCGA-SKCM,11.40809416,1.0,36.0,White,Male,,,Metastatic,0,34.33333333,,,,,,,,12.0,,
-TCGA-FS-A1ZS-06,TCGA-FS-A1ZS,TCGA-SKCM,148.7983693,0.0,54.0,White,Male,,,Metastatic,1,7.833333333,,,,,,,,19.0,,
-TCGA-FS-A1ZT-06,TCGA-FS-A1ZT,TCGA-SKCM,53.16106125,0.0,55.0,White,Male,,,Metastatic,1,4.9,,,,,,,,4.0,,
-TCGA-FS-A1ZU-06,TCGA-FS-A1ZU,TCGA-SKCM,26.56409245,1.0,70.0,White,Female,,,Metastatic,0,5.133333333,,,,,,,,20.0,,
-TCGA-FS-A1ZW-06,TCGA-FS-A1ZW,TCGA-SKCM,49.47890982,0.0,65.0,White,Male,,,Metastatic,1,19.7,,,,,,,,12.0,,
-TCGA-FS-A1ZY-06,TCGA-FS-A1ZY,TCGA-SKCM,27.09011408,1.0,71.0,White,Male,,,Metastatic,0,3.633333333,,,,,,,,19.0,,
-TCGA-FS-A1ZZ-06,TCGA-FS-A1ZZ,TCGA-SKCM,27.02436138,1.0,54.0,White,Female,,,Metastatic,0,51.03333333,,,,,,,,5.0,,
-TCGA-FS-A4F0-06,TCGA-FS-A4F0,TCGA-SKCM,77.81832528,0.0,67.0,White,Female,,,Metastatic,1,15.6,,,,,,,,3.0,,
-TCGA-FS-A4F2-06,TCGA-FS-A4F2,TCGA-SKCM,50.13643686,1.0,46.0,White,Female,,,Metastatic,0,,,,,,,,,31.0,,
-TCGA-FS-A4F4-06,TCGA-FS-A4F4,TCGA-SKCM,66.67324194,1.0,64.0,White,Male,,,Metastatic,0,1.3,,,,,,,,9.0,,
-TCGA-FS-A4F5-06,TCGA-FS-A4F5,TCGA-SKCM,28.73393168,1.0,77.0,White,Female,,,Metastatic,0,21.63333333,,,,,,,,23.0,,
-TCGA-FS-A4F8-06,TCGA-FS-A4F8,TCGA-SKCM,174.8364402,1.0,52.0,White,Male,,,Metastatic,0,5.3,,,,,,,,13.0,,
-TCGA-FS-A4F9-06,TCGA-FS-A4F9,TCGA-SKCM,34.02702436,0.0,80.0,White,Male,,,Metastatic,0,12.66666667,,,,,,,,5.0,,
-TCGA-FS-A4FB-06,TCGA-FS-A4FB,TCGA-SKCM,26.72847421,1.0,46.0,White,Female,,,Metastatic,0,5.266666667,,,,,,,,7.0,,
-TCGA-FS-A4FC-06,TCGA-FS-A4FC,TCGA-SKCM,54.41036263,1.0,75.0,White,Female,,,Metastatic,0,20.4,,,,,,,,2.0,,
-TCGA-FS-A4FD-06,TCGA-FS-A4FD,TCGA-SKCM,80.67856791,1.0,39.0,White,Male,,,Metastatic,0,12.56666667,,,,,,,,9.0,,
-TCGA-FW-A3I3-06,TCGA-FW-A3I3,TCGA-SKCM,17.45734293,0.0,59.0,White,Female,,,Metastatic,0,1.466666667,,,,,,,,14.0,,
-TCGA-FW-A3R5-06,TCGA-FW-A3R5,TCGA-SKCM,36.95301969,0.0,68.0,White,Male,,,Metastatic,1,1052.2,,,,,,,,,,
-TCGA-FW-A3TU-06,TCGA-FW-A3TU,TCGA-SKCM,55.5939113,1.0,72.0,White,Female,,,Metastatic,0,21.4,,,,,,,,7.0,,
-TCGA-FW-A3TV-06,TCGA-FW-A3TV,TCGA-SKCM,13.51218069,0.0,57.0,White,Female,,,Metastatic,1,9.066666667,,,,,,,,5.0,,
-TCGA-FW-A5DX-01,TCGA-FW-A5DX,TCGA-SKCM,21.04086531,0.0,71.0,White,Male,,,Primary,0,5.366666667,,,,,,,,29.0,0.3495,1.03
-TCGA-FW-A5DY-06,TCGA-FW-A5DY,TCGA-SKCM,19.29841865,0.0,48.0,White,Female,,,Metastatic,0,5.0,,,,,,,,1.0,,
-TCGA-GF-A2C7-01,TCGA-GF-A2C7,TCGA-SKCM,0.690403393,0.0,48.0,White,Male,,,Primary,0,13.26666667,,,,,,,,14.0,0.2916,0.03
-TCGA-GF-A3OT-06,TCGA-GF-A3OT,TCGA-SKCM,9.895781964,0.0,58.0,White,Female,,,Metastatic,1,15.3,,,,,,,,2.0,,
-TCGA-GF-A4EO-06,TCGA-GF-A4EO,TCGA-SKCM,19.42992406,0.0,74.0,White,Female,,,Metastatic,0,7.066666667,,,,,,,,27.0,,
-TCGA-GF-A6C8-06,TCGA-GF-A6C8,TCGA-SKCM,2.038333827,0.0,62.0,White,Female,,,Metastatic,0,10.73333333,,,,,,,,8.0,,
-TCGA-GF-A6C9-06,TCGA-GF-A6C9,TCGA-SKCM,15.78064898,0.0,78.0,White,Male,,,Metastatic,0,77.23333333,,,,,,,,10.0,,
-TCGA-GF-A769-01,TCGA-GF-A769,TCGA-SKCM,35.17769668,1.0,39.0,White,Male,,,Primary,0,4.066666667,,,,,,,,13.0,0.3383,0.51
-TCGA-GN-A262-06,TCGA-GN-A262,TCGA-SKCM,139.8888779,0.0,47.0,White,Female,,,Metastatic,0,31.93333333,,,,,,,,10.0,,
-TCGA-GN-A263-01,TCGA-GN-A263,TCGA-SKCM,15.3532564,1.0,24.0,White,Male,,,Primary,0,15.76666667,,,,,,,,3.0,0.3012,0.0
-TCGA-GN-A264-06,TCGA-GN-A264,TCGA-SKCM,117.9274748,1.0,60.0,White,Male,,,Metastatic,1,6.333333333,,,,,,,,16.0,,
-TCGA-GN-A265-06,TCGA-GN-A265,TCGA-SKCM,96.91948581,0.0,53.0,White,Male,,,Metastatic,0,32.26666667,,,,,,,,15.0,,
-TCGA-GN-A266-06,TCGA-GN-A266,TCGA-SKCM,10.12591643,1.0,45.0,White,Male,,,Metastatic,0,109.2333333,,,,,,,,22.0,,
-TCGA-GN-A267-06,TCGA-GN-A267,TCGA-SKCM,64.43765,1.0,38.0,White,Male,,,Metastatic,0,12.63333333,,,,,,,,12.0,,
-TCGA-GN-A268-06,TCGA-GN-A268,TCGA-SKCM,62.7938324,1.0,83.0,White,Female,,,Metastatic,0,10.8,,,,,,,,10.0,,
-TCGA-GN-A26A-06,TCGA-GN-A26A,TCGA-SKCM,32.48183582,1.0,63.0,White,Female,,,Metastatic,0,15.23333333,,,,,,,,22.0,,
-TCGA-GN-A26C-01,TCGA-GN-A26C,TCGA-SKCM,26.99148503,1.0,77.0,White,Male,,,Primary,0,82.3,,,,,,,,26.0,0.2422,0.03
-TCGA-GN-A26D-06,TCGA-GN-A26D,TCGA-SKCM,47.99947398,1.0,72.0,White,Female,,,Metastatic,0,21.46666667,,,,,,,,27.0,,
-TCGA-GN-A4U3-06,TCGA-GN-A4U3,TCGA-SKCM,121.9055134,0.0,30.0,White,Male,,,Metastatic,1,8.633333333,,,,,,,,28.0,,
-TCGA-GN-A4U4-06,TCGA-GN-A4U4,TCGA-SKCM,39.35299339,0.0,73.0,White,Male,,,Metastatic,1,19.26666667,,,,,,,,2.0,,
-TCGA-GN-A4U5-01,TCGA-GN-A4U5,TCGA-SKCM,38.00506296,0.0,61.0,White,Female,,,Primary,1,9.3,,,,,,,,5.0,0.3185,0.05
-TCGA-GN-A4U7-06,TCGA-GN-A4U7,TCGA-SKCM,10.4218036,1.0,56.0,White,Female,,,Metastatic,0,6.833333333,,,,,,,,8.0,,
-TCGA-GN-A4U8-06,TCGA-GN-A4U8,TCGA-SKCM,48.88713548,0.0,51.0,White,Male,,,Metastatic,1,11.83333333,,,,,,,,3.0,,
-TCGA-GN-A4U9-06,TCGA-GN-A4U9,TCGA-SKCM,22.12578492,1.0,71.0,White,Male,,,Metastatic,1,1.966666667,,,,,,,,22.0,,
-TCGA-GN-A8LK-06,TCGA-GN-A8LK,TCGA-SKCM,50.10356051,1.0,70.0,White,Male,,,Metastatic,0,55.6,,,,,,,,11.0,,
-TCGA-GN-A8LL-06,TCGA-GN-A8LL,TCGA-SKCM,21.36962883,1.0,68.0,White,Female,,,Metastatic,0,1.533333333,,,,,,,,8.0,,
-TCGA-GN-A9SD-06,TCGA-GN-A9SD,TCGA-SKCM,59.40756814,1.0,59.0,White,Female,,,Metastatic,0,4.233333333,,,,,,,,8.0,,
-TCGA-HR-A2OG-06,TCGA-HR-A2OG,TCGA-SKCM,0.230134464,0.0,50.0,,Female,,,Metastatic,0,17.7,,,,,,,,,,
-TCGA-HR-A2OH-06,TCGA-HR-A2OH,TCGA-SKCM,65.88420949,1.0,46.0,,Female,,,Metastatic,1,4.0,,,,,,,,,,
-TCGA-IH-A3EA-01,TCGA-IH-A3EA,TCGA-SKCM,17.22720847,0.0,61.0,White,Male,,,Primary,0,42.2,,,,,,,,6.0,0.3382,0.0
-TCGA-LH-A9QB-06,TCGA-LH-A9QB,TCGA-SKCM,368.7740408,0.0,24.0,White,Female,,,Metastatic,0,6.966666667,,,,,,,,8.0,,
-TCGA-OD-A75X-06,TCGA-OD-A75X,TCGA-SKCM,297.8926258,1.0,49.0,White,Male,,,Metastatic,0,28.9,,,,,,,,16.0,,
-TCGA-QB-A6FS-06,TCGA-QB-A6FS,TCGA-SKCM,7.232797449,0.0,49.0,White,Male,,,Metastatic,0,32.23333333,,,,,,,,10.0,,
-TCGA-QB-AA9O-06,TCGA-QB-AA9O,TCGA-SKCM,18.04911727,1.0,73.0,White,Male,,,Metastatic,1,42.13333333,,,,,,,,15.0,,
-TCGA-RP-A690-06,TCGA-RP-A690,TCGA-SKCM,0.197258112,0.0,66.0,White,Female,,,Metastatic,0,0.533333333,,,,,,,,0.0,,
-TCGA-RP-A693-06,TCGA-RP-A693,TCGA-SKCM,0.32876352,0.0,77.0,White,Male,,,Metastatic,0,22.76666667,,,,,,,,12.0,,
-TCGA-RP-A694-06,TCGA-RP-A694,TCGA-SKCM,0.690403393,0.0,71.0,White,Male,,,Metastatic,0,19.8,,,,,,,,9.0,,
-TCGA-RP-A695-06,TCGA-RP-A695,TCGA-SKCM,,0.0,,White,Male,,,Metastatic,0,24.2,,,,,,,,17.0,,
-TCGA-RP-A6K9-06,TCGA-RP-A6K9,TCGA-SKCM,,0.0,,White,Female,,,Metastatic,0,1.666666667,,,,,,,,16.0,,
-TCGA-W3-A824-06,TCGA-W3-A824,TCGA-SKCM,228.1618832,0.0,63.0,White,Male,,,Metastatic,1,41.13333333,,,,,,,,3.0,,
-TCGA-W3-A825-06,TCGA-W3-A825,TCGA-SKCM,63.02396686,1.0,60.0,White,Female,,,Metastatic,1,30.73333333,,,,,,,,24.0,,
-TCGA-W3-A828-06,TCGA-W3-A828,TCGA-SKCM,121.0836046,1.0,66.0,White,Male,,,Metastatic,1,38.56666667,,,,,,,,2.0,,
-TCGA-W3-AA1O-06,TCGA-W3-AA1O,TCGA-SKCM,4.010914949,1.0,85.0,White,Male,,,Metastatic,0,20.96666667,,,,,,,,10.0,,
-TCGA-W3-AA1Q-06,TCGA-W3-AA1Q,TCGA-SKCM,69.07321564,1.0,57.0,White,Male,,,Metastatic,1,25.56666667,,,,,,,,4.0,,
-TCGA-W3-AA1R-06,TCGA-W3-AA1R,TCGA-SKCM,111.0891935,1.0,71.0,White,Male,,,Metastatic,1,48.6,,,,,,,,11.0,,
-TCGA-W3-AA1V-06,TCGA-W3-AA1V,TCGA-SKCM,42.08173061,1.0,63.0,White,Male,,,Metastatic,1,152.2,,,,,,,,16.0,,
-TCGA-W3-AA1W-06,TCGA-W3-AA1W,TCGA-SKCM,219.1537627,0.0,64.0,White,Male,,,Metastatic,1,19.53333333,,,,,,,,9.0,,
-TCGA-W3-AA21-06,TCGA-W3-AA21,TCGA-SKCM,105.0399448,1.0,26.0,White,Male,,,Metastatic,1,14.26666667,,,,,,,,11.0,,
-TCGA-WE-A8JZ-06,TCGA-WE-A8JZ,TCGA-SKCM,24.03261334,0.0,70.0,,Male,,,Metastatic,0,5.6,,,,,,,,29.0,,
-TCGA-WE-A8K1-06,TCGA-WE-A8K1,TCGA-SKCM,49.05151724,0.0,74.0,White,Male,,,Metastatic,0,9.366666667,,,,,,,,5.0,,
-TCGA-WE-A8K5-06,TCGA-WE-A8K5,TCGA-SKCM,61.15001479,1.0,65.0,White,Male,,,Metastatic,0,31.56666667,,,,,,,,11.0,,
-TCGA-WE-A8K6-06,TCGA-WE-A8K6,TCGA-SKCM,17.95048821,0.0,79.0,White,Male,,,Metastatic,0,7.166666667,,,,,,,,22.0,,
-TCGA-WE-A8ZM-06,TCGA-WE-A8ZM,TCGA-SKCM,101.324917,0.0,70.0,White,Male,,,Metastatic,1,2.366666667,,,,,,,,18.0,,
-TCGA-WE-A8ZN-06,TCGA-WE-A8ZN,TCGA-SKCM,58.98017556,0.0,57.0,,Male,,,Metastatic,0,4.566666667,,,,,,,,3.0,,
-TCGA-WE-A8ZO-06,TCGA-WE-A8ZO,TCGA-SKCM,70.51977513,0.0,73.0,,Female,,,Metastatic,0,10.16666667,,,,,,,,6.0,,
-TCGA-WE-A8ZQ-06,TCGA-WE-A8ZQ,TCGA-SKCM,63.22122497,0.0,48.0,,Male,,,Metastatic,0,5.0,,,,,,,,19.0,,
-TCGA-WE-A8ZT-06,TCGA-WE-A8ZT,TCGA-SKCM,11.80261038,0.0,25.0,White,Female,,,Metastatic,0,12.93333333,,,,,,,,3.0,,
-TCGA-WE-A8ZX-06,TCGA-WE-A8ZX,TCGA-SKCM,35.80234737,0.0,45.0,White,Male,,,Metastatic,0,15.53333333,,,,,,,,34.0,,
-TCGA-WE-A8ZY-06,TCGA-WE-A8ZY,TCGA-SKCM,49.51178617,1.0,62.0,White,Male,,,Metastatic,0,6.666666667,,,,,,,,24.0,,
-TCGA-WE-AA9Y-06,TCGA-WE-AA9Y,TCGA-SKCM,12.16425026,0.0,37.0,White,Male,,,Metastatic,0,2.066666667,,,,,,,,11.0,,
-TCGA-WE-AAA0-06,TCGA-WE-AAA0,TCGA-SKCM,40.40503666,0.0,47.0,White,Male,,,Metastatic,1,40.73333333,,,,,,,,4.0,,
-TCGA-WE-AAA3-06,TCGA-WE-AAA3,TCGA-SKCM,21.40250518,0.0,84.0,White,Female,,,Metastatic,0,9.933333333,,,,,,,,29.0,,
-TCGA-WE-AAA4-06,TCGA-WE-AAA4,TCGA-SKCM,24.98602755,0.0,56.0,White,Female,,,Metastatic,1,6.7,,,,,,,,6.0,,
-TCGA-XV-AB01-06,TCGA-XV-AB01,TCGA-SKCM,13.24916987,0.0,54.0,White,Female,,,Metastatic,1,,,,,,,,,,,
-TCGA-YD-A89C-06,TCGA-YD-A89C,TCGA-SKCM,6.904033928,0.0,43.0,White,Female,,,Metastatic,0,47.36666667,,,,,,,,8.0,,
-TCGA-YD-A9TA-06,TCGA-YD-A9TA,TCGA-SKCM,49.18302265,0.0,75.0,White,Male,,,Metastatic,0,92.9,,,,,,,,9.0,,
-TCGA-YD-A9TB-06,TCGA-YD-A9TB,TCGA-SKCM,,0.0,,White,Female,,,Metastatic,0,9.3,,,,,,,,25.0,,
-TCGA-YG-AA3O-06,TCGA-YG-AA3O,TCGA-SKCM,37.93931025,1.0,62.0,,Male,,,Metastatic,1,31.33333333,,,,,,,,23.0,,
-TCGA-YG-AA3P-06,TCGA-YG-AA3P,TCGA-SKCM,14.43271855,0.0,63.0,,Female,,,Metastatic,1,2.133333333,,,,,,,,24.0,,
-TCGA-Z2-A8RT-06,TCGA-Z2-A8RT,TCGA-SKCM,27.58325936,0.0,42.0,White,Female,,,Metastatic,0,80.66666667,,,,,,,,7.0,,
-TCGA-Z2-AA3S-06,TCGA-Z2-AA3S,TCGA-SKCM,96.98523852,0.0,58.0,White,Male,,,Metastatic,0,5.7,,,,,,,,7.0,,
-TCGA-Z2-AA3V-06,TCGA-Z2-AA3V,TCGA-SKCM,15.97790709,0.0,57.0,White,Female,,,Metastatic,0,12.0,,,,,,,,8.0,,
+SAMPLE_ID,PATIENT_ID,COHORT,OS_MONTHS,OS_STATUS,AGE,RACE,SEX,RESPONSE,RESPONSE_BINARY,SPECIMEN_TYPE,IMMUNOTHERAPY,TMB_NONSYNONYMOUS,SNV_NEOANTIGEN,INDEL_NEOANTIGEN,FUSION_NEOANTIGEN,SPLICE_NEOANTIGEN,CTA_SELF_NEOANTIGEN,VIRUS_NEOANTIGEN,ERV_NEOANTIGEN
+LIU_SAMPLE1,LIU_PATIENT1,Liu 2019,9.3,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,3.133333333,52.0,2.0,4.0,51.0,2.0,0.0,0.0
+LIU_SAMPLE10,LIU_PATIENT10,Liu 2019,37.42,1.0,,,Female,Partial Response,1.0,Metastatic,1,3.733333333,63.0,1.0,1.0,43.0,6.0,0.0,0.0
+LIU_SAMPLE100,LIU_PATIENT100,Liu 2019,30.81,1.0,,,Female,Partial Response,1.0,Metastatic,1,4.466666667,39.0,1.0,1.0,85.0,5.0,0.0,0.0
+LIU_SAMPLE102,LIU_PATIENT102,Liu 2019,25.79,0.0,,,Male,Stable Disease,,Metastatic,1,8.7,68.0,1.0,0.0,43.0,18.0,0.0,0.0
+LIU_SAMPLE105,LIU_PATIENT105,Liu 2019,17.12,1.0,,,Female,Stable Disease,,Metastatic,1,5.166666667,16.0,0.0,0.0,81.0,3.0,0.0,0.0
+LIU_SAMPLE106,LIU_PATIENT106,Liu 2019,25.62,0.0,,,Female,Complete Response,1.0,Metastatic,1,8.3,64.0,3.0,3.0,32.0,10.0,0.0,0.0
+LIU_SAMPLE107,LIU_PATIENT107,Liu 2019,1.54,1.0,,,Male,Partial Response,1.0,Metastatic,1,5.7,2.0,0.0,0.0,2.0,0.0,0.0,0.0
+LIU_SAMPLE108,LIU_PATIENT108,Liu 2019,5.42,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,7.733333333,4.0,0.0,0.0,45.0,2.0,0.0,0.0
+LIU_SAMPLE11,LIU_PATIENT11,Liu 2019,5.26,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,7.533333333,89.0,7.0,7.0,28.0,11.0,0.0,0.0
+LIU_SAMPLE112,LIU_PATIENT112,Liu 2019,17.12,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,8.366666667,46.0,3.0,0.0,14.0,1.0,0.0,0.0
+LIU_SAMPLE116,LIU_PATIENT116,Liu 2019,3.88,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,8.066666667,58.0,0.0,4.0,47.0,16.0,0.0,0.0
+LIU_SAMPLE117,LIU_PATIENT117,Liu 2019,9.69,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,3.7,24.0,4.0,8.0,41.0,6.0,0.0,0.0
+LIU_SAMPLE121,LIU_PATIENT121,Liu 2019,42.9,0.0,,,Female,Partial Response,1.0,Metastatic,1,28.5,261.0,9.0,0.0,48.0,4.0,0.0,0.0
+LIU_SAMPLE125,LIU_PATIENT125,Liu 2019,32.13,0.0,,,Male,Complete Response,1.0,Metastatic,1,6.333333333,21.0,5.0,1.0,43.0,4.0,0.0,0.0
+LIU_SAMPLE126,LIU_PATIENT126,Liu 2019,32.59,0.0,,,Male,Partial Response,1.0,Metastatic,1,22.23333333,205.0,4.0,4.0,49.0,10.0,0.0,0.0
+LIU_SAMPLE127,LIU_PATIENT127,Liu 2019,28.45,0.0,,,Male,Complete Response,1.0,Metastatic,1,17.86666667,92.0,10.0,2.0,21.0,17.0,0.0,0.0
+LIU_SAMPLE13,LIU_PATIENT13,Liu 2019,1.91,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,22.5,198.0,5.0,5.0,44.0,8.0,0.0,0.0
+LIU_SAMPLE130,LIU_PATIENT130,Liu 2019,6.31,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,10.96666667,58.0,0.0,3.0,15.0,3.0,0.0,0.0
+LIU_SAMPLE131,LIU_PATIENT131,Liu 2019,27.37,0.0,,,Male,Partial Response,1.0,Metastatic,1,11.8,32.0,3.0,0.0,48.0,2.0,0.0,0.0
+LIU_SAMPLE132,LIU_PATIENT132,Liu 2019,24.28,0.0,,,Male,Complete Response,1.0,Metastatic,1,22.43333333,116.0,3.0,1.0,20.0,15.0,0.0,0.0
+LIU_SAMPLE133,LIU_PATIENT133,Liu 2019,12.16,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,11.76666667,84.0,4.0,1.0,88.0,3.0,0.0,0.0
+LIU_SAMPLE134,LIU_PATIENT134,Liu 2019,19.38,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,12.5,92.0,2.0,0.0,50.0,7.0,0.0,0.0
+LIU_SAMPLE135,LIU_PATIENT135,Liu 2019,20.63,0.0,,,Male,Complete Response,1.0,Metastatic,1,14.0,105.0,0.0,0.0,48.0,24.0,0.0,0.0
+LIU_SAMPLE137,LIU_PATIENT137,Liu 2019,25.36,0.0,,,Female,Complete Response,1.0,Metastatic,1,29.26666667,112.0,0.0,0.0,48.0,1.0,0.0,0.0
+LIU_SAMPLE14,LIU_PATIENT14,Liu 2019,6.11,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,2.633333333,30.0,0.0,3.0,50.0,9.0,0.0,0.0
+LIU_SAMPLE140,LIU_PATIENT140,Liu 2019,11.53,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,71.5,577.0,7.0,3.0,55.0,5.0,0.0,0.0
+LIU_SAMPLE141,LIU_PATIENT141,Liu 2019,28.75,0.0,,,Female,Partial Response,1.0,Metastatic,1,2.633333333,23.0,0.0,0.0,40.0,1.0,0.0,0.0
+LIU_SAMPLE142,LIU_PATIENT142,Liu 2019,32.72,0.0,,,Female,Stable Disease,,Metastatic,1,2.366666667,19.0,0.0,1.0,76.0,4.0,0.0,0.0
+LIU_SAMPLE143,LIU_PATIENT143,Liu 2019,20.7,0.0,,,Male,Progressive Disease,0.0,N/A,1,13.06666667,68.0,2.0,0.0,44.0,4.0,0.0,0.0
+LIU_SAMPLE144,LIU_PATIENT144,Liu 2019,21.75,0.0,,,Male,Partial Response,1.0,Metastatic,1,30.0,62.0,3.0,0.0,63.0,6.0,0.0,0.0
+LIU_SAMPLE145,LIU_PATIENT145,Liu 2019,27.37,0.0,,,Male,Complete Response,1.0,Metastatic,1,10.66666667,58.0,1.0,0.0,34.0,5.0,0.0,0.0
+LIU_SAMPLE146,LIU_PATIENT146,Liu 2019,20.11,0.0,,,Female,Complete Response,1.0,Metastatic,1,13.86666667,119.0,5.0,1.0,32.0,12.0,0.0,0.0
+LIU_SAMPLE147,LIU_PATIENT147,Liu 2019,31.54,0.0,,,Male,Complete Response,1.0,Metastatic,1,18.6,137.0,1.0,0.0,14.0,5.0,0.0,0.0
+LIU_SAMPLE148,LIU_PATIENT148,Liu 2019,26.02,0.0,,,Female,Partial Response,1.0,Metastatic,1,11.36666667,62.0,1.0,3.0,53.0,6.0,0.0,0.0
+LIU_SAMPLE149,LIU_PATIENT149,Liu 2019,16.33,1.0,,,Male,Stable Disease,,Metastatic,1,8.033333333,52.0,1.0,0.0,66.0,5.0,0.0,0.0
+LIU_SAMPLE15,LIU_PATIENT15,Liu 2019,4.89,1.0,,,Female,Partial Response,1.0,Metastatic,1,9.066666667,56.0,0.0,3.0,46.0,6.0,0.0,0.0
+LIU_SAMPLE150,LIU_PATIENT150,Liu 2019,22.5,0.0,,,Male,Partial Response,1.0,Metastatic,1,1.666666667,13.0,3.0,5.0,32.0,10.0,0.0,0.0
+LIU_SAMPLE154,LIU_PATIENT154,Liu 2019,20.86,0.0,,,Female,Stable Disease,,N/A,1,1.0,17.0,0.0,0.0,21.0,9.0,0.0,0.0
+LIU_SAMPLE155,LIU_PATIENT155,Liu 2019,15.6,0.0,,,Male,Progressive Disease,0.0,N/A,1,9.233333333,60.0,2.0,0.0,9.0,9.0,0.0,0.0
+LIU_SAMPLE156,LIU_PATIENT156,Liu 2019,2.86,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,7.0,72.0,0.0,3.0,69.0,15.0,0.0,0.0
+LIU_SAMPLE158,LIU_PATIENT158,Liu 2019,6.37,0.0,,,Male,Partial Response,1.0,Metastatic,1,75.3,680.0,39.0,2.0,33.0,9.0,0.0,0.0
+LIU_SAMPLE159,LIU_PATIENT159,Liu 2019,9.46,0.0,,,Female,Stable Disease,,Metastatic,1,2.2,24.0,2.0,12.0,89.0,14.0,0.0,0.0
+LIU_SAMPLE162,LIU_PATIENT162,Liu 2019,6.6,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,56.63333333,299.0,3.0,4.0,18.0,6.0,0.0,0.0
+LIU_SAMPLE163,LIU_PATIENT163,Liu 2019,5.68,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,7.733333333,57.0,3.0,1.0,52.0,6.0,0.0,0.0
+LIU_SAMPLE165,LIU_PATIENT165,Liu 2019,2.46,0.0,,,Male,Progressive Disease,0.0,Metastatic,1,24.06666667,226.0,4.0,1.0,109.0,12.0,0.0,0.0
+LIU_SAMPLE166,LIU_PATIENT166,Liu 2019,6.73,1.0,,,Female,Partial Response,1.0,Metastatic,1,0.366666667,7.0,0.0,8.0,23.0,9.0,0.0,0.0
+LIU_SAMPLE167,LIU_PATIENT167,Liu 2019,9.26,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,0.966666667,5.0,1.0,6.0,29.0,8.0,0.0,0.0
+LIU_SAMPLE168,LIU_PATIENT168,Liu 2019,20.47,0.0,,,Male,Partial Response,1.0,Metastatic,1,0.8,11.0,0.0,2.0,53.0,21.0,0.0,0.0
+LIU_SAMPLE169,LIU_PATIENT169,Liu 2019,17.84,0.0,,,Male,Partial Response,1.0,Metastatic,1,48.6,336.0,5.0,2.0,21.0,14.0,0.0,0.0
+LIU_SAMPLE17,LIU_PATIENT17,Liu 2019,22.54,1.0,,,Male,Stable Disease,,Metastatic,1,15.36666667,97.0,7.0,6.0,51.0,5.0,0.0,0.0
+LIU_SAMPLE170,LIU_PATIENT170,Liu 2019,11.4,0.0,,,Male,Stable Disease,,N/A,1,2.5,22.0,1.0,10.0,3.0,14.0,0.0,0.0
+LIU_SAMPLE172,LIU_PATIENT172,Liu 2019,8.94,0.0,,,Male,Stable Disease,,N/A,1,23.73333333,126.0,5.0,0.0,32.0,7.0,0.0,0.0
+LIU_SAMPLE173,LIU_PATIENT173,Liu 2019,1.38,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,5.8,65.0,2.0,13.0,54.0,14.0,0.0,0.0
+LIU_SAMPLE179,LIU_PATIENT179,Liu 2019,21.45,0.0,,,Female,Partial Response,1.0,Metastatic,1,16.3,52.0,0.0,1.0,16.0,2.0,0.0,0.0
+LIU_SAMPLE18,LIU_PATIENT18,Liu 2019,4.27,1.0,,,Male,Progressive Disease,0.0,N/A,1,13.93333333,116.0,0.0,4.0,45.0,11.0,0.0,0.0
+LIU_SAMPLE181,LIU_PATIENT181,Liu 2019,15.64,0.0,,,Female,Complete Response,1.0,Metastatic,1,10.7,69.0,3.0,1.0,79.0,10.0,0.0,0.0
+LIU_SAMPLE183,LIU_PATIENT183,Liu 2019,18.79,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,12.06666667,19.0,1.0,0.0,41.0,3.0,0.0,0.0
+LIU_SAMPLE184,LIU_PATIENT184,Liu 2019,16.85,0.0,,,Male,Complete Response,1.0,Metastatic,1,71.66666667,61.0,1.0,0.0,9.0,1.0,0.0,0.0
+LIU_SAMPLE185,LIU_PATIENT185,Liu 2019,6.67,0.0,,,Male,Stable Disease,,Metastatic,1,6.133333333,17.0,1.0,0.0,42.0,2.0,0.0,0.0
+LIU_SAMPLE187,LIU_PATIENT187,Liu 2019,20.27,0.0,,,Female,Complete Response,1.0,Metastatic,1,4.9,37.0,1.0,0.0,42.0,18.0,0.0,0.0
+LIU_SAMPLE188,LIU_PATIENT188,Liu 2019,2.43,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,1.266666667,13.0,0.0,2.0,19.0,25.0,0.0,0.0
+LIU_SAMPLE189,LIU_PATIENT189,Liu 2019,23.59,0.0,,,Female,Partial Response,1.0,Metastatic,1,1.666666667,12.0,0.0,1.0,121.0,5.0,0.0,0.0
+LIU_SAMPLE191,LIU_PATIENT191,Liu 2019,21.62,0.0,,,Male,Partial Response,1.0,Metastatic,1,143.1,966.0,2.0,2.0,34.0,8.0,0.0,0.0
+LIU_SAMPLE192,LIU_PATIENT192,Liu 2019,9.53,0.0,,,Female,Partial Response,1.0,Metastatic,1,17.3,115.0,4.0,3.0,65.0,6.0,0.0,0.0
+LIU_SAMPLE193,LIU_PATIENT193,Liu 2019,21.65,0.0,,,Female,Stable Disease,,N/A,1,21.76666667,138.0,2.0,1.0,26.0,11.0,0.0,0.0
+LIU_SAMPLE195,LIU_PATIENT195,Liu 2019,29.4,0.0,,,Male,Partial Response,1.0,Metastatic,1,66.03333333,436.0,5.0,3.0,43.0,7.0,0.0,0.0
+LIU_SAMPLE196,LIU_PATIENT196,Liu 2019,2.66,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,58.4,388.0,4.0,4.0,50.0,5.0,0.0,0.0
+LIU_SAMPLE197,LIU_PATIENT197,Liu 2019,31.54,0.0,,,Female,Partial Response,1.0,Metastatic,1,2.5,14.0,1.0,4.0,40.0,10.0,0.0,0.0
+LIU_SAMPLE20,LIU_PATIENT20,Liu 2019,7.95,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,16.33333333,98.0,1.0,2.0,32.0,6.0,0.0,0.0
+LIU_SAMPLE200,LIU_PATIENT200,Liu 2019,16.82,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,25.76666667,257.0,1.0,0.0,46.0,6.0,0.0,0.0
+LIU_SAMPLE201,LIU_PATIENT201,Liu 2019,5.49,1.0,,,Male,Progressive Disease,0.0,N/A,1,2.833333333,6.0,2.0,2.0,2.0,1.0,0.0,0.0
+LIU_SAMPLE203,LIU_PATIENT203,Liu 2019,20.57,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,3.1,44.0,0.0,29.0,32.0,8.0,0.0,0.0
+LIU_SAMPLE204,LIU_PATIENT204,Liu 2019,26.91,0.0,,,Male,Complete Response,1.0,Metastatic,1,69.26666667,381.0,2.0,3.0,3.0,10.0,0.0,0.0
+LIU_SAMPLE205,LIU_PATIENT205,Liu 2019,12.88,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,20.5,100.0,2.0,2.0,33.0,15.0,0.0,0.0
+LIU_SAMPLE206,LIU_PATIENT206,Liu 2019,2.96,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,185.4,1259.0,0.0,4.0,32.0,7.0,0.0,0.0
+LIU_SAMPLE21,LIU_PATIENT21,Liu 2019,29.76,0.0,,,Female,Partial Response,1.0,Metastatic,1,9.966666667,36.0,14.0,2.0,4.0,8.0,0.0,0.0
+LIU_SAMPLE22,LIU_PATIENT22,Liu 2019,8.31,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,3.166666667,27.0,3.0,7.0,18.0,7.0,0.0,0.0
+LIU_SAMPLE23,LIU_PATIENT23,Liu 2019,32.03,0.0,,,Male,Progressive Disease,0.0,N/A,1,7.1,37.0,8.0,5.0,41.0,9.0,0.0,0.0
+LIU_SAMPLE24,LIU_PATIENT24,Liu 2019,4.5,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,10.93333333,45.0,3.0,3.0,16.0,12.0,0.0,0.0
+LIU_SAMPLE25,LIU_PATIENT25,Liu 2019,36.01,0.0,,,Male,Partial Response,1.0,Metastatic,1,12.56666667,75.0,2.0,2.0,62.0,6.0,0.0,0.0
+LIU_SAMPLE27,LIU_PATIENT27,Liu 2019,14.16,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,7.966666667,58.0,1.0,0.0,156.0,8.0,0.0,0.0
+LIU_SAMPLE30,LIU_PATIENT30,Liu 2019,7.0,1.0,,,Female,Stable Disease,,Metastatic,1,22.73333333,78.0,1.0,2.0,50.0,7.0,0.0,1.0
+LIU_SAMPLE31,LIU_PATIENT31,Liu 2019,13.99,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,6.5,106.0,5.0,1.0,23.0,8.0,0.0,0.0
+LIU_SAMPLE32,LIU_PATIENT32,Liu 2019,1.74,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,11.2,44.0,2.0,0.0,108.0,5.0,0.0,0.0
+LIU_SAMPLE33,LIU_PATIENT33,Liu 2019,55.16,0.0,,,Female,Partial Response,1.0,Metastatic,1,2.966666667,197.0,0.0,1.0,102.0,2.0,0.0,0.0
+LIU_SAMPLE34,LIU_PATIENT34,Liu 2019,55.55,0.0,,,Male,Partial Response,1.0,Metastatic,1,1.133333333,23.0,0.0,0.0,415.0,2.0,0.0,0.0
+LIU_SAMPLE35,LIU_PATIENT35,Liu 2019,31.8,1.0,,,Male,Stable Disease,,Metastatic,1,3.2,12.0,4.0,3.0,20.0,4.0,0.0,0.0
+LIU_SAMPLE36,LIU_PATIENT36,Liu 2019,14.82,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,6.766666667,50.0,1.0,0.0,58.0,3.0,0.0,0.0
+LIU_SAMPLE37,LIU_PATIENT37,Liu 2019,9.03,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,2.866666667,16.0,0.0,1.0,68.0,4.0,0.0,0.0
+LIU_SAMPLE38,LIU_PATIENT38,Liu 2019,11.27,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,2.6,32.0,3.0,6.0,41.0,2.0,0.0,0.0
+LIU_SAMPLE4,LIU_PATIENT4,Liu 2019,19.71,1.0,,,Male,Complete Response,1.0,Metastatic,1,15.26666667,111.0,4.0,0.0,88.0,4.0,0.0,1.0
+LIU_SAMPLE40,LIU_PATIENT40,Liu 2019,15.37,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,250.8333333,2330.0,26.0,2.0,51.0,4.0,0.0,0.0
+LIU_SAMPLE42,LIU_PATIENT42,Liu 2019,33.74,0.0,,,Male,Complete Response,1.0,Metastatic,1,17.66666667,115.0,1.0,1.0,25.0,12.0,0.0,0.0
+LIU_SAMPLE44,LIU_PATIENT44,Liu 2019,30.29,0.0,,,Male,Partial Response,1.0,Metastatic,1,5.366666667,0.0,0.0,0.0,6.0,2.0,0.0,0.0
+LIU_SAMPLE45,LIU_PATIENT45,Liu 2019,54.73,0.0,,,Male,Partial Response,1.0,Metastatic,1,10.83333333,46.0,0.0,5.0,41.0,7.0,0.0,0.0
+LIU_SAMPLE47,LIU_PATIENT47,Liu 2019,30.78,0.0,,,Female,Progressive Disease,0.0,Metastatic,1,27.9,244.0,3.0,5.0,23.0,15.0,0.0,0.0
+LIU_SAMPLE48,LIU_PATIENT48,Liu 2019,1.74,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,2.733333333,22.0,4.0,1.0,34.0,4.0,0.0,0.0
+LIU_SAMPLE51,LIU_PATIENT51,Liu 2019,50.82,0.0,,,Male,Partial Response,1.0,Metastatic,1,39.36666667,31.0,1.0,0.0,10.0,2.0,0.0,0.0
+LIU_SAMPLE56,LIU_PATIENT56,Liu 2019,4.01,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,1.966666667,47.0,0.0,5.0,55.0,3.0,0.0,0.0
+LIU_SAMPLE58,LIU_PATIENT58,Liu 2019,9.95,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,3.8,10.0,0.0,0.0,20.0,1.0,0.0,0.0
+LIU_SAMPLE6,LIU_PATIENT6,Liu 2019,22.57,1.0,,,Female,Stable Disease,,Metastatic,1,39.86666667,423.0,7.0,4.0,21.0,3.0,0.0,0.0
+LIU_SAMPLE61,LIU_PATIENT61,Liu 2019,32.42,0.0,,,Female,Stable Disease,,Metastatic,1,70.96666667,41.0,2.0,0.0,0.0,5.0,0.0,0.0
+LIU_SAMPLE62,LIU_PATIENT62,Liu 2019,32.88,0.0,,,Female,Partial Response,1.0,Metastatic,1,211.9333333,2003.0,14.0,5.0,42.0,16.0,0.0,0.0
+LIU_SAMPLE63,LIU_PATIENT63,Liu 2019,5.85,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,10.86666667,84.0,6.0,3.0,62.0,5.0,0.0,0.0
+LIU_SAMPLE67,LIU_PATIENT67,Liu 2019,4.47,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,11.7,33.0,2.0,0.0,59.0,8.0,0.0,0.0
+LIU_SAMPLE7,LIU_PATIENT7,Liu 2019,8.84,1.0,,,Male,Stable Disease,,Metastatic,1,7.033333333,207.0,4.0,11.0,44.0,5.0,0.0,0.0
+LIU_SAMPLE72,LIU_PATIENT72,Liu 2019,12.98,0.0,,,Male,Progressive Disease,0.0,Metastatic,1,5.333333333,83.0,2.0,2.0,46.0,9.0,0.0,0.0
+LIU_SAMPLE73,LIU_PATIENT73,Liu 2019,27.79,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,3.733333333,35.0,3.0,0.0,38.0,10.0,0.0,0.0
+LIU_SAMPLE75,LIU_PATIENT75,Liu 2019,29.27,0.0,,,Male,Partial Response,1.0,Metastatic,1,24.46666667,87.0,1.0,1.0,13.0,8.0,0.0,0.0
+LIU_SAMPLE77,LIU_PATIENT77,Liu 2019,14.59,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,4.1,61.0,3.0,4.0,43.0,10.0,0.0,0.0
+LIU_SAMPLE78,LIU_PATIENT78,Liu 2019,11.7,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,1.333333333,80.0,2.0,6.0,25.0,19.0,0.0,0.0
+LIU_SAMPLE79,LIU_PATIENT79,Liu 2019,27.89,0.0,,,Female,Progressive Disease,0.0,Metastatic,1,6.6,76.0,0.0,3.0,14.0,14.0,0.0,0.0
+LIU_SAMPLE8,LIU_PATIENT8,Liu 2019,33.02,1.0,,,Male,Stable Disease,,Metastatic,1,11.43333333,211.0,0.0,1.0,42.0,4.0,0.0,0.0
+LIU_SAMPLE82,LIU_PATIENT82,Liu 2019,4.3,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,61.96666667,559.0,4.0,0.0,42.0,16.0,0.0,0.0
+LIU_SAMPLE83,LIU_PATIENT83,Liu 2019,2.33,1.0,,,Male,Progressive Disease,0.0,Metastatic,1,8.033333333,93.0,1.0,1.0,65.0,17.0,0.0,0.0
+LIU_SAMPLE86,LIU_PATIENT86,Liu 2019,43.59,0.0,,,Male,Stable Disease,,Metastatic,1,9.7,116.0,3.0,1.0,49.0,4.0,0.0,0.0
+LIU_SAMPLE87,LIU_PATIENT87,Liu 2019,41.49,0.0,,,Female,Partial Response,1.0,Metastatic,1,4.3,66.0,5.0,39.0,80.0,7.0,0.0,0.0
+LIU_SAMPLE9,LIU_PATIENT9,Liu 2019,31.64,0.0,,,Female,Progressive Disease,0.0,N/A,1,24.66666667,197.0,6.0,1.0,39.0,7.0,0.0,0.0
+LIU_SAMPLE94,LIU_PATIENT94,Liu 2019,1.31,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,8.866666667,143.0,0.0,2.0,47.0,22.0,0.0,2.0
+LIU_SAMPLE96,LIU_PATIENT96,Liu 2019,29.99,0.0,,,Male,Complete Response,1.0,Metastatic,1,22.36666667,220.0,8.0,2.0,74.0,9.0,0.0,0.0
+LIU_SAMPLE98,LIU_PATIENT98,Liu 2019,22.44,1.0,,,Female,Progressive Disease,0.0,Metastatic,1,10.3,86.0,1.0,3.0,145.0,7.0,0.0,0.0
+LIU_SAMPLE99,LIU_PATIENT99,Liu 2019,30.26,0.0,,,Male,Partial Response,1.0,Metastatic,1,29.76666667,267.0,2.0,3.0,25.0,33.0,0.0,0.0
+HUGO_PT1,HUGO_PT1,Hugo 2016,19.94,1.0,66.0,,Female,Progressive Disease,0.0,N/A,1,77.86666667,615.0,9.0,6.0,14.0,21.0,0.0,0.0
+HUGO_PT10,HUGO_PT10,Hugo 2016,12.71,0.0,60.0,,Male,Progressive Disease,0.0,N/A,1,8.433333333,63.0,2.0,2.0,9.0,17.0,0.0,0.0
+HUGO_PT12,HUGO_PT12,Hugo 2016,10.74,1.0,59.0,,Male,Progressive Disease,0.0,N/A,1,2.7,13.0,0.0,2.0,12.0,10.0,0.0,0.0
+HUGO_PT13,HUGO_PT13,Hugo 2016,30.12,0.0,53.0,,Female,Complete Response,1.0,N/A,1,15.53333333,160.0,3.0,1.0,19.0,18.0,0.0,0.0
+HUGO_PT14,HUGO_PT14,Hugo 2016,1.77,0.0,27.0,,Female,Progressive Disease,0.0,N/A,1,50.53333333,402.0,2.0,2.0,12.0,25.0,0.0,0.0
+HUGO_PT15,HUGO_PT15,Hugo 2016,32.19,1.0,70.0,,Male,Partial Response,1.0,N/A,1,23.86666667,206.0,2.0,4.0,23.0,27.0,0.0,0.0
+HUGO_PT16,HUGO_PT16,Hugo 2016,6.11,1.0,19.0,,Male,Progressive Disease,0.0,N/A,1,18.96666667,132.0,1.0,2.0,13.0,15.0,0.0,0.0
+HUGO_PT19,HUGO_PT19,Hugo 2016,34.82,0.0,45.0,,Male,Partial Response,1.0,N/A,1,21.1,102.0,2.0,0.0,45.0,10.0,1.0,0.0
+HUGO_PT2,HUGO_PT2,Hugo 2016,30.45,0.0,55.0,,Male,Partial Response,1.0,N/A,1,65.4,468.0,5.0,4.0,7.0,3.0,0.0,0.0
+HUGO_PT20,HUGO_PT20,Hugo 2016,11.07,1.0,63.0,,Female,Progressive Disease,0.0,N/A,1,19.6,173.0,2.0,2.0,38.0,16.0,0.0,0.0
+HUGO_PT22,HUGO_PT22,Hugo 2016,5.98,1.0,55.0,,Male,Progressive Disease,0.0,N/A,1,6.5,62.0,0.0,3.0,117.0,13.0,0.0,0.0
+HUGO_PT23,HUGO_PT23,Hugo 2016,3.38,1.0,63.0,,Male,Progressive Disease,0.0,N/A,1,9.266666667,93.0,1.0,3.0,5.0,8.0,0.0,0.0
+HUGO_PT25,HUGO_PT25,Hugo 2016,8.61,1.0,74.0,,Male,Progressive Disease,0.0,N/A,1,4.566666667,31.0,1.0,2.0,8.0,9.0,0.0,0.0
+HUGO_PT27,HUGO_PT27,Hugo 2016,18.0,0.0,83.0,,Male,Complete Response,1.0,N/A,1,86.53333333,694.0,5.0,1.0,31.0,9.0,0.0,0.0
+HUGO_PT28,HUGO_PT28,Hugo 2016,14.42,1.0,82.0,,Male,Partial Response,1.0,N/A,1,29.1,356.0,2.0,1.0,114.0,4.0,0.0,0.0
+HUGO_PT29,HUGO_PT29,Hugo 2016,8.84,1.0,84.0,,Male,Progressive Disease,0.0,N/A,1,8.366666667,87.0,8.0,5.0,30.0,13.0,0.0,0.0
+HUGO_PT31,HUGO_PT31,Hugo 2016,23.13,0.0,47.0,,Male,Progressive Disease,0.0,N/A,1,21.76666667,144.0,3.0,1.0,22.0,19.0,0.0,0.0
+HUGO_PT32,HUGO_PT32,Hugo 2016,5.62,1.0,47.0,,Male,Progressive Disease,0.0,N/A,1,9.866666667,93.0,1.0,0.0,3.0,18.0,0.0,0.0
+HUGO_PT35,HUGO_PT35,Hugo 2016,14.03,0.0,65.0,,Female,Partial Response,1.0,N/A,1,11.33333333,100.0,2.0,3.0,12.0,10.0,0.0,0.0
+HUGO_PT37,HUGO_PT37,Hugo 2016,11.96,0.0,70.0,,Female,Partial Response,1.0,N/A,1,19.2,113.0,0.0,0.0,11.0,20.0,0.0,0.0
+HUGO_PT38,HUGO_PT38,Hugo 2016,14.72,0.0,57.0,,Female,Partial Response,1.0,N/A,1,2.6,41.0,0.0,0.0,19.0,15.0,0.0,0.0
+HUGO_PT4,HUGO_PT4,Hugo 2016,31.14,0.0,62.0,,Male,Partial Response,1.0,N/A,1,131.1333333,1239.0,13.0,0.0,41.0,12.0,0.0,0.0
+HUGO_PT5,HUGO_PT5,Hugo 2016,14.42,0.0,61.0,,Male,Partial Response,1.0,N/A,1,11.86666667,104.0,2.0,4.0,14.0,27.0,0.0,0.0
+HUGO_PT6,HUGO_PT6,Hugo 2016,28.98,0.0,51.0,,Male,Partial Response,1.0,N/A,1,8.0,55.0,0.0,0.0,23.0,15.0,1.0,0.0
+HUGO_PT7,HUGO_PT7,Hugo 2016,21.75,1.0,55.0,,Female,Progressive Disease,0.0,N/A,1,40.73333333,236.0,2.0,8.0,5.0,7.0,0.0,0.0
+HUGO_PT8,HUGO_PT8,Hugo 2016,,0.0,69.0,,Male,Complete Response,1.0,N/A,1,583.6,255.0,5.0,3.0,3.0,22.0,0.0,0.0
+HUGO_PT9,HUGO_PT9,Hugo 2016,34.63,0.0,68.0,,Male,Complete Response,1.0,N/A,1,17.86666667,171.0,2.0,0.0,17.0,31.0,0.0,0.0
+RIAZ_PT101_ON,RIAZ_PT101,Riaz 2017,27.4,0.0,47.0,White,Female,Partial Response,1.0,N/A,1,0.2,0.0,0.0,0.0,12.0,3.0,0.0,0.0
+RIAZ_PT101_PRE,RIAZ_PT101,Riaz 2017,27.4,0.0,47.0,White,Female,Partial Response,1.0,N/A,1,0.466666667,1.0,0.0,0.0,11.0,6.0,0.0,0.0
+RIAZ_PT103_ON,RIAZ_PT103,Riaz 2017,15.9,0.0,52.0,Asian,Female,Progressive Disease,0.0,N/A,1,1.366666667,7.0,4.0,1.0,3.0,3.0,0.0,0.0
+RIAZ_PT103_PRE,RIAZ_PT103,Riaz 2017,15.9,0.0,52.0,Asian,Female,Progressive Disease,0.0,N/A,1,0.733333333,3.0,0.0,0.0,12.0,2.0,0.0,0.0
+RIAZ_PT105_ON,RIAZ_PT105,Riaz 2017,,,,,N/A,,,N/A,1,,,,,,,,
+RIAZ_PT106_ON,RIAZ_PT106,Riaz 2017,2.99,1.0,53.0,White,Male,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT106_PRE,RIAZ_PT106,Riaz 2017,2.99,1.0,53.0,White,Male,Progressive Disease,0.0,N/A,1,24.2,118.0,3.0,1.0,7.0,13.0,0.0,0.0
+RIAZ_PT108_ON,RIAZ_PT108,Riaz 2017,29.99,0.0,37.0,White,Female,Stable Disease,,N/A,1,,,,,,,,
+RIAZ_PT10_ON,RIAZ_PT10,Riaz 2017,8.41,1.0,81.0,White,Female,Stable Disease,,N/A,1,2.566666667,18.0,1.0,3.0,3.0,7.0,0.0,0.0
+RIAZ_PT10_PRE,RIAZ_PT10,Riaz 2017,8.41,1.0,81.0,White,Female,Stable Disease,,N/A,1,3.066666667,9.0,0.0,1.0,0.0,3.0,0.0,0.0
+RIAZ_PT11_ON,RIAZ_PT11,Riaz 2017,27.5,1.0,61.0,White,Female,Progressive Disease,0.0,N/A,1,4.033333333,18.0,1.0,0.0,5.0,3.0,0.0,0.0
+RIAZ_PT11_PRE,RIAZ_PT11,Riaz 2017,27.5,1.0,61.0,White,Female,Progressive Disease,0.0,N/A,1,3.6,14.0,0.0,0.0,4.0,8.0,0.0,0.0
+RIAZ_PT13_ON,RIAZ_PT13,Riaz 2017,9.2,1.0,67.0,White,Male,Progressive Disease,0.0,N/A,1,5.766666667,21.0,2.0,1.0,14.0,3.0,0.0,0.0
+RIAZ_PT16_ON,RIAZ_PT16,Riaz 2017,,,,,N/A,,,N/A,1,,,,,,,,
+RIAZ_PT17_ON,RIAZ_PT17,Riaz 2017,1.87,1.0,48.0,White,Female,Progressive Disease,0.0,N/A,1,1.1,5.0,2.0,0.0,5.0,1.0,0.0,0.0
+RIAZ_PT17_PRE,RIAZ_PT17,Riaz 2017,1.87,1.0,48.0,White,Female,Progressive Disease,0.0,N/A,1,1.0,4.0,0.0,1.0,5.0,4.0,0.0,0.0
+RIAZ_PT18_ON,RIAZ_PT18,Riaz 2017,35.25,0.0,53.0,White,Male,Partial Response,1.0,N/A,1,0.333333333,0.0,0.0,1.0,8.0,2.0,0.0,0.0
+RIAZ_PT18_PRE,RIAZ_PT18,Riaz 2017,35.25,0.0,53.0,White,Male,Partial Response,1.0,N/A,1,7.833333333,46.0,1.0,2.0,9.0,16.0,0.0,0.0
+RIAZ_PT1_ON,RIAZ_PT1,Riaz 2017,5.26,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT1_PRE,RIAZ_PT1,Riaz 2017,5.26,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT23_ON,RIAZ_PT23,Riaz 2017,1.71,1.0,53.0,White,Female,,,N/A,1,23.9,143.0,2.0,1.0,8.0,9.0,0.0,0.0
+RIAZ_PT23_PRE,RIAZ_PT23,Riaz 2017,1.71,1.0,53.0,White,Female,,,N/A,1,21.86666667,123.0,0.0,0.0,6.0,10.0,0.0,0.0
+RIAZ_PT24_PRE,RIAZ_PT24,Riaz 2017,4.89,0.0,63.0,White,Male,Progressive Disease,0.0,N/A,1,0.866666667,0.0,0.0,1.0,2.0,2.0,0.0,0.0
+RIAZ_PT26_ON,RIAZ_PT26,Riaz 2017,31.27,0.0,22.0,White,Female,Stable Disease,,N/A,1,3.866666667,26.0,0.0,0.0,3.0,4.0,0.0,0.0
+RIAZ_PT26_PRE,RIAZ_PT26,Riaz 2017,31.27,0.0,22.0,White,Female,Stable Disease,,N/A,1,3.9,23.0,0.0,1.0,4.0,2.0,0.0,0.0
+RIAZ_PT27_ON,RIAZ_PT27,Riaz 2017,15.6,1.0,65.0,White,Male,Progressive Disease,0.0,N/A,1,6.3,29.0,2.0,1.0,5.0,3.0,0.0,0.0
+RIAZ_PT27_PRE,RIAZ_PT27,Riaz 2017,15.6,1.0,65.0,White,Male,Progressive Disease,0.0,N/A,1,6.5,12.0,0.0,1.0,4.0,1.0,0.0,0.0
+RIAZ_PT28_ON,RIAZ_PT28,Riaz 2017,24.31,1.0,79.0,White,Female,Progressive Disease,0.0,N/A,1,2.1,18.0,1.0,4.0,12.0,8.0,0.0,0.0
+RIAZ_PT28_PRE,RIAZ_PT28,Riaz 2017,24.31,1.0,79.0,White,Female,Progressive Disease,0.0,N/A,1,1.566666667,6.0,2.0,5.0,13.0,6.0,0.0,0.0
+RIAZ_PT29_PRE,RIAZ_PT29,Riaz 2017,8.97,1.0,57.0,White,Female,Progressive Disease,0.0,N/A,1,13.36666667,89.0,1.0,0.0,8.0,14.0,0.0,0.0
+RIAZ_PT2_ON,RIAZ_PT2,Riaz 2017,9.03,1.0,,,N/A,Stable Disease,,N/A,1,,,,,,,,
+RIAZ_PT2_PRE,RIAZ_PT2,Riaz 2017,9.03,1.0,,,N/A,Stable Disease,,N/A,1,,,,,,,,
+RIAZ_PT30_ON,RIAZ_PT30,Riaz 2017,34.59,0.0,89.0,White,Female,Complete Response,1.0,N/A,1,0.533333333,3.0,3.0,2.0,6.0,2.0,0.0,0.0
+RIAZ_PT30_PRE,RIAZ_PT30,Riaz 2017,34.59,0.0,89.0,White,Female,Complete Response,1.0,N/A,1,2.2,11.0,1.0,3.0,5.0,27.0,0.0,0.0
+RIAZ_PT31_ON,RIAZ_PT31,Riaz 2017,31.57,0.0,56.0,White,Female,Progressive Disease,0.0,N/A,1,15.66666667,104.0,2.0,1.0,18.0,19.0,0.0,0.0
+RIAZ_PT31_PRE,RIAZ_PT31,Riaz 2017,31.57,0.0,56.0,White,Female,Progressive Disease,0.0,N/A,1,15.4,74.0,2.0,0.0,17.0,12.0,0.0,0.0
+RIAZ_PT32_ON,RIAZ_PT32,Riaz 2017,3.75,0.0,34.0,White,Male,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT34_ON,RIAZ_PT34,Riaz 2017,27.4,0.0,71.0,White,Male,Partial Response,1.0,N/A,1,0.4,0.0,0.0,0.0,4.0,1.0,0.0,0.0
+RIAZ_PT34_PRE,RIAZ_PT34,Riaz 2017,27.4,0.0,71.0,White,Male,Partial Response,1.0,N/A,1,7.733333333,26.0,0.0,0.0,8.0,10.0,0.0,0.0
+RIAZ_PT35_ON,RIAZ_PT35,Riaz 2017,,,,,N/A,,,N/A,1,,,,,,,,
+RIAZ_PT36_ON,RIAZ_PT36,Riaz 2017,35.51,0.0,58.0,White,Male,Stable Disease,,N/A,1,,,,,,,,
+RIAZ_PT36_PRE,RIAZ_PT36,Riaz 2017,35.51,0.0,58.0,White,Male,Stable Disease,,N/A,1,0.2,0.0,0.0,2.0,3.0,2.0,0.0,0.0
+RIAZ_PT37_ON,RIAZ_PT37,Riaz 2017,21.22,1.0,63.0,White,Male,Stable Disease,,N/A,1,0.966666667,2.0,0.0,2.0,7.0,5.0,0.0,0.0
+RIAZ_PT37_PRE,RIAZ_PT37,Riaz 2017,21.22,1.0,63.0,White,Male,Stable Disease,,N/A,1,1.166666667,4.0,1.0,2.0,5.0,10.0,0.0,0.0
+RIAZ_PT38_ON,RIAZ_PT38,Riaz 2017,5.49,1.0,54.0,White,Female,Stable Disease,,N/A,1,,,,,,,,
+RIAZ_PT38_PRE,RIAZ_PT38,Riaz 2017,5.49,1.0,54.0,White,Female,Stable Disease,,N/A,1,11.86666667,136.0,3.0,0.0,7.0,2.0,0.0,0.0
+RIAZ_PT39_PRE,RIAZ_PT39,Riaz 2017,5.45,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT3_ON,RIAZ_PT3,Riaz 2017,37.58,0.0,52.0,White,Male,Partial Response,1.0,N/A,1,6.1,15.0,2.0,1.0,4.0,7.0,0.0,0.0
+RIAZ_PT3_PRE,RIAZ_PT3,Riaz 2017,37.58,0.0,52.0,White,Male,Partial Response,1.0,N/A,1,6.366666667,30.0,3.0,1.0,3.0,5.0,0.0,0.0
+RIAZ_PT44_ON,RIAZ_PT44,Riaz 2017,35.91,0.0,61.0,White,Male,Partial Response,1.0,N/A,1,0.433333333,0.0,0.0,1.0,5.0,4.0,0.0,0.0
+RIAZ_PT44_PRE,RIAZ_PT44,Riaz 2017,35.91,0.0,61.0,White,Male,Partial Response,1.0,N/A,1,13.23333333,123.0,2.0,3.0,7.0,14.0,0.0,0.0
+RIAZ_PT46_ON,RIAZ_PT46,Riaz 2017,7.46,1.0,79.0,White,Male,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT46_PRE,RIAZ_PT46,Riaz 2017,7.46,1.0,79.0,White,Male,Progressive Disease,0.0,N/A,1,7.233333333,3.0,0.0,1.0,10.0,3.0,0.0,0.0
+RIAZ_PT47_ON,RIAZ_PT47,Riaz 2017,23.59,1.0,52.0,White,Male,Progressive Disease,0.0,N/A,1,34.26666667,214.0,3.0,1.0,4.0,18.0,0.0,0.0
+RIAZ_PT47_PRE,RIAZ_PT47,Riaz 2017,23.59,1.0,52.0,White,Male,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT48_ON,RIAZ_PT48,Riaz 2017,34.36,0.0,44.0,White,Male,Complete Response,1.0,N/A,1,0.3,2.0,2.0,1.0,11.0,0.0,0.0,0.0
+RIAZ_PT48_PRE,RIAZ_PT48,Riaz 2017,34.36,0.0,44.0,White,Male,Complete Response,1.0,N/A,1,5.633333333,10.0,1.0,1.0,22.0,6.0,0.0,0.0
+RIAZ_PT49_ON,RIAZ_PT49,Riaz 2017,27.17,0.0,52.0,White,Female,Partial Response,1.0,N/A,1,,,,,,,,
+RIAZ_PT49_PRE,RIAZ_PT49,Riaz 2017,27.17,0.0,52.0,White,Female,Partial Response,1.0,N/A,1,28.2,85.0,0.0,3.0,11.0,22.0,0.0,0.0
+RIAZ_PT4_ON,RIAZ_PT4,Riaz 2017,20.8,1.0,62.0,White,Female,Stable Disease,,N/A,1,,,,,,,,
+RIAZ_PT4_PRE,RIAZ_PT4,Riaz 2017,20.8,1.0,62.0,White,Female,Stable Disease,,N/A,1,9.3,73.0,2.0,0.0,3.0,6.0,0.0,0.0
+RIAZ_PT52_ON,RIAZ_PT52,Riaz 2017,15.64,1.0,45.0,White,Female,Progressive Disease,0.0,N/A,1,12.93333333,75.0,1.0,0.0,4.0,18.0,0.0,0.0
+RIAZ_PT52_PRE,RIAZ_PT52,Riaz 2017,15.64,1.0,45.0,White,Female,Progressive Disease,0.0,N/A,1,12.2,41.0,1.0,0.0,4.0,13.0,0.0,0.0
+RIAZ_PT58_ON,RIAZ_PT58,Riaz 2017,16.39,1.0,53.0,White,Female,Stable Disease,,N/A,1,44.8,306.0,2.0,0.0,4.0,8.0,0.0,0.0
+RIAZ_PT59_PRE,RIAZ_PT59,Riaz 2017,23.26,1.0,49.0,White,Female,Stable Disease,,N/A,1,15.03333333,90.0,1.0,0.0,21.0,12.0,1.0,0.0
+RIAZ_PT5_ON,RIAZ_PT5,Riaz 2017,7.29,1.0,58.0,White,Female,Progressive Disease,0.0,N/A,1,2.133333333,17.0,2.0,5.0,5.0,10.0,0.0,0.0
+RIAZ_PT5_PRE,RIAZ_PT5,Riaz 2017,7.29,1.0,58.0,White,Female,Progressive Disease,0.0,N/A,1,1.866666667,12.0,1.0,3.0,34.0,1.0,0.0,0.0
+RIAZ_PT62_ON,RIAZ_PT62,Riaz 2017,15.51,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT62_PRE,RIAZ_PT62,Riaz 2017,15.51,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT65_ON,RIAZ_PT65,Riaz 2017,22.73,0.0,63.0,White,Female,Stable Disease,,N/A,1,,,,,,,,
+RIAZ_PT65_PRE,RIAZ_PT65,Riaz 2017,22.73,0.0,63.0,White,Female,Stable Disease,,N/A,1,87.3,723.0,3.0,11.0,13.0,7.0,0.0,0.0
+RIAZ_PT66_PRE,RIAZ_PT66,Riaz 2017,17.81,1.0,49.0,White,Female,Progressive Disease,0.0,N/A,1,4.8,27.0,2.0,1.0,3.0,23.0,0.0,0.0
+RIAZ_PT67_ON,RIAZ_PT67,Riaz 2017,33.9,0.0,33.0,White,Female,Stable Disease,,N/A,1,0.566666667,1.0,0.0,0.0,17.0,0.0,0.0,0.0
+RIAZ_PT67_PRE,RIAZ_PT67,Riaz 2017,33.9,0.0,33.0,White,Female,Stable Disease,,N/A,1,0.4,1.0,0.0,1.0,27.0,3.0,0.0,0.0
+RIAZ_PT68_ON,RIAZ_PT68,Riaz 2017,27.66,0.0,69.0,White,Male,Partial Response,1.0,N/A,1,,,,,,,,
+RIAZ_PT69_ON,RIAZ_PT69,Riaz 2017,,,,,N/A,,,N/A,1,,,,,,,,
+RIAZ_PT72_PRE,RIAZ_PT72,Riaz 2017,25.3,1.0,43.0,White,Female,Partial Response,1.0,N/A,1,16.83333333,79.0,1.0,1.0,4.0,8.0,0.0,0.0
+RIAZ_PT76_PRE,RIAZ_PT76,Riaz 2017,0.33,1.0,60.0,White,Male,,,N/A,1,8.5,35.0,3.0,0.0,5.0,7.0,0.0,0.0
+RIAZ_PT77_ON,RIAZ_PT77,Riaz 2017,15.47,1.0,56.0,White,Female,Stable Disease,,N/A,1,,,,,,,,
+RIAZ_PT77_PRE,RIAZ_PT77,Riaz 2017,15.47,1.0,56.0,White,Female,Stable Disease,,N/A,1,1.766666667,6.0,0.0,1.0,26.0,4.0,0.0,0.0
+RIAZ_PT78_ON,RIAZ_PT78,Riaz 2017,2.56,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT78_PRE,RIAZ_PT78,Riaz 2017,2.56,1.0,,,N/A,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT79_ON,RIAZ_PT79,Riaz 2017,7.16,1.0,64.0,White,Male,Stable Disease,,N/A,1,,,,,,,,
+RIAZ_PT79_PRE,RIAZ_PT79,Riaz 2017,7.16,1.0,64.0,White,Male,Stable Disease,,N/A,1,,,,,,,,
+RIAZ_PT80_ON,RIAZ_PT80,Riaz 2017,,,,,N/A,,,N/A,1,,,,,,,,
+RIAZ_PT81_ON,RIAZ_PT81,Riaz 2017,,,,,N/A,,,N/A,1,,,,,,,,
+RIAZ_PT82_ON,RIAZ_PT82,Riaz 2017,14.09,1.0,60.0,White,Female,Stable Disease,,N/A,1,1.4,9.0,2.0,1.0,15.0,4.0,0.0,0.0
+RIAZ_PT82_PRE,RIAZ_PT82,Riaz 2017,14.09,1.0,60.0,White,Female,Stable Disease,,N/A,1,1.4,8.0,2.0,2.0,5.0,2.0,0.0,0.0
+RIAZ_PT84_ON,RIAZ_PT84,Riaz 2017,4.96,1.0,48.0,White,Female,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT84_PRE,RIAZ_PT84,Riaz 2017,4.96,1.0,48.0,White,Female,Progressive Disease,0.0,N/A,1,0.6,4.0,2.0,0.0,3.0,1.0,0.0,0.0
+RIAZ_PT85_ON,RIAZ_PT85,Riaz 2017,29.7,0.0,66.0,White,Male,Progressive Disease,0.0,N/A,1,,,,,,,,
+RIAZ_PT85_PRE,RIAZ_PT85,Riaz 2017,29.7,0.0,66.0,White,Male,Progressive Disease,0.0,N/A,1,4.233333333,43.0,0.0,0.0,7.0,2.0,0.0,0.0
+RIAZ_PT87_ON,RIAZ_PT87,Riaz 2017,32.0,0.0,68.0,White,Male,Stable Disease,,N/A,1,,,,,,,,
+RIAZ_PT89_ON,RIAZ_PT89,Riaz 2017,27.73,1.0,56.0,White,Male,Stable Disease,,N/A,1,6.9,44.0,0.0,1.0,7.0,14.0,0.0,0.0
+RIAZ_PT89_PRE,RIAZ_PT89,Riaz 2017,27.73,1.0,56.0,White,Male,Stable Disease,,N/A,1,7.133333333,49.0,0.0,0.0,7.0,15.0,1.0,0.0
+RIAZ_PT8_ON,RIAZ_PT8,Riaz 2017,8.51,1.0,40.0,White,Male,Progressive Disease,0.0,N/A,1,3.4,27.0,4.0,0.0,8.0,1.0,0.0,0.0
+RIAZ_PT8_PRE,RIAZ_PT8,Riaz 2017,8.51,1.0,40.0,White,Male,Progressive Disease,0.0,N/A,1,3.166666667,21.0,0.0,0.0,4.0,1.0,0.0,0.0
+RIAZ_PT90_PRE,RIAZ_PT90,Riaz 2017,5.72,1.0,60.0,White,Female,Progressive Disease,0.0,N/A,1,23.86666667,129.0,2.0,4.0,27.0,14.0,0.0,0.0
+RIAZ_PT92_ON,RIAZ_PT92,Riaz 2017,10.94,1.0,58.0,White,Male,Stable Disease,,N/A,1,21.93333333,80.0,1.0,2.0,5.0,13.0,0.0,0.0
+RIAZ_PT92_PRE,RIAZ_PT92,Riaz 2017,10.94,1.0,58.0,White,Male,Stable Disease,,N/A,1,22.0,108.0,0.0,0.0,5.0,11.0,0.0,0.0
+RIAZ_PT93_ON,RIAZ_PT93,Riaz 2017,27.89,0.0,52.0,White,Male,Progressive Disease,0.0,N/A,1,13.56666667,68.0,2.0,1.0,5.0,10.0,0.0,0.0
+RIAZ_PT94_ON,RIAZ_PT94,Riaz 2017,32.23,0.0,41.0,White,Male,Complete Response,1.0,N/A,1,,,,,,,,
+RIAZ_PT94_PRE,RIAZ_PT94,Riaz 2017,32.23,0.0,41.0,White,Male,Complete Response,1.0,N/A,1,13.43333333,71.0,1.0,2.0,9.0,6.0,0.0,0.0
+RIAZ_PT98_ON,RIAZ_PT98,Riaz 2017,24.54,1.0,74.0,White,Male,Stable Disease,,N/A,1,,,,,,,,
+RIAZ_PT98_PRE,RIAZ_PT98,Riaz 2017,24.54,1.0,74.0,White,Male,Stable Disease,,N/A,1,0.733333333,10.0,0.0,0.0,14.0,10.0,0.0,0.0
+RIAZ_PT9_ON,RIAZ_PT9,Riaz 2017,3.02,1.0,46.0,White,Male,Progressive Disease,0.0,N/A,1,13.23333333,99.0,0.0,1.0,7.0,32.0,0.0,0.0
+RIAZ_PT9_PRE,RIAZ_PT9,Riaz 2017,3.02,1.0,46.0,White,Male,Progressive Disease,0.0,N/A,1,13.16666667,84.0,0.0,1.0,6.0,28.0,0.0,0.0
+TCGA_GDC_TCGA-3N-A9WB-06A,TCGA_GDC_TCGA-3N-A9WB,TCGA GDC 2025,17.017082785808146,1.0,71.0,WHITE,Male,,,Metastatic,0,4.466666666666667,,,,,,,
+TCGA_GDC_TCGA-3N-A9WC-06A,TCGA_GDC_TCGA-3N-A9WC,TCGA GDC 2025,66.4257555847569,0.0,82.0,WHITE,Male,,,Metastatic,0,47.53333333333333,,,,,,,
+TCGA_GDC_TCGA-3N-A9WD-06A,TCGA_GDC_TCGA-3N-A9WD,TCGA GDC 2025,12.976346911957949,1.0,82.0,WHITE,Male,,,Metastatic,0,23.7,,,,,,,
+TCGA_GDC_TCGA-BF-A1PU-01A,TCGA_GDC_TCGA-BF-A1PU,TCGA GDC 2025,12.713534822601838,0.0,46.0,WHITE,Female,,,Primary,0,2.2,,,,,,,
+TCGA_GDC_TCGA-BF-A1PV-01A,TCGA_GDC_TCGA-BF-A1PV,TCGA GDC 2025,0.4599211563731931,0.0,74.0,WHITE,Female,,,Primary,0,7.566666666666666,,,,,,,
+TCGA_GDC_TCGA-BF-A1PX-01A,TCGA_GDC_TCGA-BF-A1PX,TCGA GDC 2025,9.264126149802893,1.0,56.0,WHITE,Male,,,Primary,0,7.866666666666666,,,,,,,
+TCGA_GDC_TCGA-BF-A1PZ-01A,TCGA_GDC_TCGA-BF-A1PZ,TCGA GDC 2025,28.02233902759527,0.0,71.0,WHITE,Female,,,Primary,0,6.266666666666667,,,,,,,
+TCGA_GDC_TCGA-BF-A1Q0-01A,TCGA_GDC_TCGA-BF-A1Q0,TCGA GDC 2025,27.299605781865964,0.0,80.0,WHITE,Male,,,Primary,0,16.366666666666667,,,,,,,
+TCGA_GDC_TCGA-BF-A3DJ-01A,TCGA_GDC_TCGA-BF-A3DJ,TCGA GDC 2025,15.2431011826544,0.0,36.0,WHITE,Female,,,Primary,0,3.733333333333333,,,,,,,
+TCGA_GDC_TCGA-BF-A3DL-01A,TCGA_GDC_TCGA-BF-A3DL,TCGA GDC 2025,25.26281208935611,0.0,84.0,WHITE,Female,,,Primary,0,12.1,,,,,,,
+TCGA_GDC_TCGA-BF-A3DM-01A,TCGA_GDC_TCGA-BF-A3DM,TCGA GDC 2025,19.7437582128778,0.0,63.0,WHITE,Male,,,Primary,0,11.466666666666669,,,,,,,
+TCGA_GDC_TCGA-BF-A3DN-01A,TCGA_GDC_TCGA-BF-A3DN,TCGA GDC 2025,23.5545335085414,0.0,81.0,WHITE,Female,,,Primary,0,2.1,,,,,,,
+TCGA_GDC_TCGA-BF-A5EO-01A,TCGA_GDC_TCGA-BF-A5EO,TCGA GDC 2025,23.0946123521682,0.0,65.0,WHITE,Male,,,Primary,0,16.3,,,,,,,
+TCGA_GDC_TCGA-BF-A5EP-01A,TCGA_GDC_TCGA-BF-A5EP,TCGA GDC 2025,11.00525624178712,0.0,75.0,WHITE,Female,,,Primary,0,4.466666666666667,,,,,,,
+TCGA_GDC_TCGA-BF-A5EQ-01A,TCGA_GDC_TCGA-BF-A5EQ,TCGA GDC 2025,10.611038107752956,0.0,63.0,WHITE,Male,,,Primary,0,15.5,,,,,,,
+TCGA_GDC_TCGA-BF-A5ER-01A,TCGA_GDC_TCGA-BF-A5ER,TCGA GDC 2025,10.74244415243101,0.0,63.0,WHITE,Male,,,Primary,0,4.966666666666667,,,,,,,
+TCGA_GDC_TCGA-BF-A5ES-01A,TCGA_GDC_TCGA-BF-A5ES,TCGA GDC 2025,16.09724047306176,0.0,76.0,WHITE,Female,,,Primary,0,13.4,,,,,,,
+TCGA_GDC_TCGA-BF-A9VF-01A,TCGA_GDC_TCGA-BF-A9VF,TCGA GDC 2025,14.45466491458607,0.0,77.0,WHITE,Male,,,Primary,0,2.1333333333333333,,,,,,,
+TCGA_GDC_TCGA-BF-AAOU-01A,TCGA_GDC_TCGA-BF-AAOU,TCGA GDC 2025,15.637319316688568,0.0,73.0,WHITE,Female,,,Primary,0,8.4,,,,,,,
+TCGA_GDC_TCGA-BF-AAOX-01A,TCGA_GDC_TCGA-BF-AAOX,TCGA GDC 2025,14.586070959264124,0.0,83.0,WHITE,Male,,,Primary,0,32.36666666666667,,,,,,,
+TCGA_GDC_TCGA-BF-AAP0-06A,TCGA_GDC_TCGA-BF-AAP0,TCGA GDC 2025,14.914586070959263,0.0,40.0,WHITE,Female,,,Metastatic,0,10.9,,,,,,,
+TCGA_GDC_TCGA-BF-AAP1-01A,TCGA_GDC_TCGA-BF-AAP1,TCGA GDC 2025,13.436268068331144,0.0,86.0,WHITE,Male,,,Primary,0,21.566666666666663,,,,,,,
+TCGA_GDC_TCGA-BF-AAP2-01A,TCGA_GDC_TCGA-BF-AAP2,TCGA GDC 2025,13.304862023653088,0.0,62.0,WHITE,Male,,,Primary,0,34.3,,,,,,,
+TCGA_GDC_TCGA-BF-AAP4-01A,TCGA_GDC_TCGA-BF-AAP4,TCGA GDC 2025,11.00525624178712,0.0,61.0,WHITE,Male,,,Primary,0,20.566666666666663,,,,,,,
+TCGA_GDC_TCGA-BF-AAP6-01A,TCGA_GDC_TCGA-BF-AAP6,TCGA GDC 2025,10.676741130091983,0.0,55.0,WHITE,Male,,,Primary,0,1.8,,,,,,,
+TCGA_GDC_TCGA-BF-AAP7-01A,TCGA_GDC_TCGA-BF-AAP7,TCGA GDC 2025,10.446780551905388,0.0,76.0,WHITE,Female,,,Primary,0,12.0,,,,,,,
+TCGA_GDC_TCGA-BF-AAP8-01A,TCGA_GDC_TCGA-BF-AAP8,TCGA GDC 2025,14.684625492772668,0.0,58.0,WHITE,Male,,,Primary,0,0.2666666666666666,,,,,,,
+TCGA_GDC_TCGA-D3-A1Q1-06A,TCGA_GDC_TCGA-D3-A1Q1,TCGA GDC 2025,16.557161629434955,1.0,79.0,WHITE,Female,,,Metastatic,0,1.3666666666666667,,,,,,,
+TCGA_GDC_TCGA-D3-A1Q3-06A,TCGA_GDC_TCGA-D3-A1Q3,TCGA GDC 2025,16.655716162943495,1.0,64.0,WHITE,Male,,,Metastatic,0,0.9666666666666668,,,,,,,
+TCGA_GDC_TCGA-D3-A1Q4-06A,TCGA_GDC_TCGA-D3-A1Q4,TCGA GDC 2025,111.95795006570302,0.0,53.0,WHITE,Female,,,Metastatic,0,6.633333333333334,,,,,,,
+TCGA_GDC_TCGA-D3-A1Q5-06A,TCGA_GDC_TCGA-D3-A1Q5,TCGA GDC 2025,112.48357424441524,1.0,60.0,WHITE,Male,,,Metastatic,0,9.3,,,,,,,
+TCGA_GDC_TCGA-D3-A1Q6-06A,TCGA_GDC_TCGA-D3-A1Q6,TCGA GDC 2025,71.74770039421813,1.0,55.0,WHITE,Male,,,Metastatic,0,20.1,,,,,,,
+TCGA_GDC_TCGA-D3-A1Q7-06A,TCGA_GDC_TCGA-D3-A1Q7,TCGA GDC 2025,133.1471747700394,0.0,42.0,WHITE,Female,,,Metastatic,0,2.2666666666666666,,,,,,,
+TCGA_GDC_TCGA-D3-A1Q8-06A,TCGA_GDC_TCGA-D3-A1Q8,TCGA GDC 2025,28.055190538764784,1.0,33.0,WHITE,Male,,,Metastatic,0,5.966666666666667,,,,,,,
+TCGA_GDC_TCGA-D3-A1Q9-06A,TCGA_GDC_TCGA-D3-A1Q9,TCGA GDC 2025,31.57030223390276,1.0,72.0,WHITE,Male,,,Metastatic,0,0.9666666666666668,,,,,,,
+TCGA_GDC_TCGA-D3-A1QA-06A,TCGA_GDC_TCGA-D3-A1QA,TCGA GDC 2025,90.83442838370564,0.0,55.0,WHITE,Male,,,Metastatic,0,10.833333333333334,,,,,,,
+TCGA_GDC_TCGA-D3-A1QA-07A,TCGA_GDC_TCGA-D3-A1QA,TCGA GDC 2025,90.83442838370564,0.0,55.0,WHITE,Male,,,Metastatic,0,,,,,,,,
+TCGA_GDC_TCGA-D3-A1QB-06A,TCGA_GDC_TCGA-D3-A1QB,TCGA GDC 2025,95.66360052562418,0.0,75.0,WHITE,Female,,,Metastatic,0,9.733333333333333,,,,,,,
+TCGA_GDC_TCGA-D3-A2J6-06A,TCGA_GDC_TCGA-D3-A2J6,TCGA GDC 2025,43.39684625492772,1.0,65.0,WHITE,Male,,,Metastatic,0,0.4,,,,,,,
+TCGA_GDC_TCGA-D3-A2J7-06A,TCGA_GDC_TCGA-D3-A2J7,TCGA GDC 2025,103.02233902759528,1.0,67.0,WHITE,Male,,,Metastatic,0,9.133333333333333,,,,,,,
+TCGA_GDC_TCGA-D3-A2J8-06A,TCGA_GDC_TCGA-D3-A2J8,TCGA GDC 2025,65.44021024967148,1.0,48.0,WHITE,Male,,,Metastatic,0,12.7,,,,,,,
+TCGA_GDC_TCGA-D3-A2J9-06A,TCGA_GDC_TCGA-D3-A2J9,TCGA GDC 2025,23.75164257555848,1.0,75.0,WHITE,Male,,,Metastatic,0,1.3,,,,,,,
+TCGA_GDC_TCGA-D3-A2JA-06A,TCGA_GDC_TCGA-D3-A2JA,TCGA GDC 2025,115.44021024967148,0.0,68.0,WHITE,Male,,,Metastatic,0,9.166666666666666,,,,,,,
+TCGA_GDC_TCGA-D3-A2JB-06A,TCGA_GDC_TCGA-D3-A2JB,TCGA GDC 2025,167.8712220762155,1.0,70.0,BLACK OR AFRICAN AMERICAN,Female,,,Metastatic,0,0.4,,,,,,,
+TCGA_GDC_TCGA-D3-A2JC-06A,TCGA_GDC_TCGA-D3-A2JC,TCGA GDC 2025,86.69513797634691,0.0,53.0,WHITE,Female,,,Metastatic,0,4.766666666666667,,,,,,,
+TCGA_GDC_TCGA-D3-A2JD-06A,TCGA_GDC_TCGA-D3-A2JD,TCGA GDC 2025,11.85939553219448,1.0,58.0,WHITE,Male,,,Metastatic,0,9.3,,,,,,,
+TCGA_GDC_TCGA-D3-A2JE-06A,TCGA_GDC_TCGA-D3-A2JE,TCGA GDC 2025,27.628120893561103,1.0,75.0,WHITE,Female,,,Metastatic,0,8.166666666666666,,,,,,,
+TCGA_GDC_TCGA-D3-A2JF-06A,TCGA_GDC_TCGA-D3-A2JF,TCGA GDC 2025,62.023653088042046,0.0,74.0,WHITE,Male,,,Metastatic,0,37.86666666666667,,,,,,,
+TCGA_GDC_TCGA-D3-A2JG-06A,TCGA_GDC_TCGA-D3-A2JG,TCGA GDC 2025,113.43626806833116,1.0,30.0,WHITE,Female,,,Metastatic,0,2.6,,,,,,,
+TCGA_GDC_TCGA-D3-A2JH-06A,TCGA_GDC_TCGA-D3-A2JH,TCGA GDC 2025,42.04993429697766,0.0,68.0,WHITE,Male,,,Metastatic,0,15.3,,,,,,,
+TCGA_GDC_TCGA-D3-A2JK-06A,TCGA_GDC_TCGA-D3-A2JK,TCGA GDC 2025,12.089356110381075,1.0,24.0,WHITE,Male,,,Metastatic,0,7.566666666666666,,,,,,,
+TCGA_GDC_TCGA-D3-A2JL-06A,TCGA_GDC_TCGA-D3-A2JL,TCGA GDC 2025,171.4520367936925,0.0,43.0,WHITE,Female,,,Metastatic,0,7.7,,,,,,,
+TCGA_GDC_TCGA-D3-A2JN-06A,TCGA_GDC_TCGA-D3-A2JN,TCGA GDC 2025,66.4257555847569,1.0,46.0,WHITE,Female,,,Metastatic,0,8.733333333333333,,,,,,,
+TCGA_GDC_TCGA-D3-A2JO-06A,TCGA_GDC_TCGA-D3-A2JO,TCGA GDC 2025,66.03153745072274,0.0,50.0,WHITE,Female,,,Metastatic,0,15.2,,,,,,,
+TCGA_GDC_TCGA-D3-A2JP-06A,TCGA_GDC_TCGA-D3-A2JP,TCGA GDC 2025,59.526938239159,0.0,37.0,WHITE,Male,,,Metastatic,0,6.6,,,,,,,
+TCGA_GDC_TCGA-D3-A3BZ-06A,TCGA_GDC_TCGA-D3-A3BZ,TCGA GDC 2025,130.61760840998684,0.0,63.0,WHITE,Male,,,Metastatic,0,1.6666666666666667,,,,,,,
+TCGA_GDC_TCGA-D3-A3C1-06A,TCGA_GDC_TCGA-D3-A3C1,TCGA GDC 2025,,0.0,,WHITE,Male,,,Metastatic,0,3.7666666666666666,,,,,,,
+TCGA_GDC_TCGA-D3-A3C3-06A,TCGA_GDC_TCGA-D3-A3C3,TCGA GDC 2025,,0.0,,WHITE,Female,,,Metastatic,0,6.9,,,,,,,
+TCGA_GDC_TCGA-D3-A3C6-06A,TCGA_GDC_TCGA-D3-A3C6,TCGA GDC 2025,58.01576872536136,1.0,54.0,WHITE,Female,,,Metastatic,0,2.566666666666667,,,,,,,
+TCGA_GDC_TCGA-D3-A3C7-06A,TCGA_GDC_TCGA-D3-A3C7,TCGA GDC 2025,46.94480946123522,0.0,57.0,WHITE,Female,,,Metastatic,0,24.766666666666666,,,,,,,
+TCGA_GDC_TCGA-D3-A3C8-06A,TCGA_GDC_TCGA-D3-A3C8,TCGA GDC 2025,46.28777923784494,0.0,58.0,WHITE,Female,,,Metastatic,0,10.2,,,,,,,
+TCGA_GDC_TCGA-D3-A3CB-06A,TCGA_GDC_TCGA-D3-A3CB,TCGA GDC 2025,166.39290407358737,0.0,39.0,WHITE,Male,,,Metastatic,0,5.7,,,,,,,
+TCGA_GDC_TCGA-D3-A3CC-06A,TCGA_GDC_TCGA-D3-A3CC,TCGA GDC 2025,86.85939553219448,0.0,69.0,WHITE,Female,,,Metastatic,0,0.9,,,,,,,
+TCGA_GDC_TCGA-D3-A3CE-06A,TCGA_GDC_TCGA-D3-A3CE,TCGA GDC 2025,60.18396846254928,1.0,74.0,WHITE,Female,,,Metastatic,0,0.9,,,,,,,
+TCGA_GDC_TCGA-D3-A3CF-06A,TCGA_GDC_TCGA-D3-A3CF,TCGA GDC 2025,24.50722733245729,1.0,61.0,WHITE,Female,,,Metastatic,0,0.8333333333333334,,,,,,,
+TCGA_GDC_TCGA-D3-A3ML-06A,TCGA_GDC_TCGA-D3-A3ML,TCGA GDC 2025,13.863337713534822,1.0,70.0,WHITE,Male,,,Metastatic,0,24.0,,,,,,,
+TCGA_GDC_TCGA-D3-A3MO-06A,TCGA_GDC_TCGA-D3-A3MO,TCGA GDC 2025,9.32982917214192,1.0,47.0,WHITE,Male,,,Metastatic,0,1.6333333333333333,,,,,,,
+TCGA_GDC_TCGA-D3-A3MR-06A,TCGA_GDC_TCGA-D3-A3MR,TCGA GDC 2025,103.51511169513796,0.0,42.0,WHITE,Male,,,Metastatic,0,21.53333333333333,,,,,,,
+TCGA_GDC_TCGA-D3-A3MU-06A,TCGA_GDC_TCGA-D3-A3MU,TCGA GDC 2025,39.71747700394218,0.0,53.0,WHITE,Male,,,Metastatic,0,13.333333333333334,,,,,,,
+TCGA_GDC_TCGA-D3-A3MV-06A,TCGA_GDC_TCGA-D3-A3MV,TCGA GDC 2025,45.269382391590014,0.0,38.0,WHITE,Female,,,Metastatic,0,13.0,,,,,,,
+TCGA_GDC_TCGA-D3-A51E-06A,TCGA_GDC_TCGA-D3-A51E,TCGA GDC 2025,174.70433639947436,0.0,39.0,WHITE,Female,,,Metastatic,0,7.166666666666667,,,,,,,
+TCGA_GDC_TCGA-D3-A51F-06A,TCGA_GDC_TCGA-D3-A51F,TCGA GDC 2025,55.68331143232589,0.0,51.0,WHITE,Male,,,Metastatic,0,2.5,,,,,,,
+TCGA_GDC_TCGA-D3-A51G-06A,TCGA_GDC_TCGA-D3-A51G,TCGA GDC 2025,,0.0,,WHITE,Male,,,Metastatic,0,30.666666666666668,,,,,,,
+TCGA_GDC_TCGA-D3-A51H-06A,TCGA_GDC_TCGA-D3-A51H,TCGA GDC 2025,56.30749014454665,0.0,60.0,WHITE,Male,,,Metastatic,0,0.4,,,,,,,
+TCGA_GDC_TCGA-D3-A51J-06A,TCGA_GDC_TCGA-D3-A51J,TCGA GDC 2025,145.0065703022339,0.0,19.0,WHITE,Male,,,Metastatic,0,11.866666666666667,,,,,,,
+TCGA_GDC_TCGA-D3-A51K-06A,TCGA_GDC_TCGA-D3-A51K,TCGA GDC 2025,32.91721419185282,0.0,51.0,WHITE,Male,,,Metastatic,0,0.7,,,,,,,
+TCGA_GDC_TCGA-D3-A51N-06A,TCGA_GDC_TCGA-D3-A51N,TCGA GDC 2025,22.60183968462549,0.0,56.0,WHITE,Female,,,Metastatic,0,2.466666666666667,,,,,,,
+TCGA_GDC_TCGA-D3-A51R-06A,TCGA_GDC_TCGA-D3-A51R,TCGA GDC 2025,63.76478318002628,0.0,60.0,WHITE,Male,,,Metastatic,0,18.33333333333333,,,,,,,
+TCGA_GDC_TCGA-D3-A51T-06A,TCGA_GDC_TCGA-D3-A51T,TCGA GDC 2025,26.872536136662287,0.0,59.0,WHITE,Female,,,Metastatic,0,30.466666666666665,,,,,,,
+TCGA_GDC_TCGA-D3-A5GL-06A,TCGA_GDC_TCGA-D3-A5GL,TCGA GDC 2025,125.6898817345598,0.0,74.0,WHITE,Male,,,Metastatic,0,11.266666666666667,,,,,,,
+TCGA_GDC_TCGA-D3-A5GN-06A,TCGA_GDC_TCGA-D3-A5GN,TCGA GDC 2025,135.64388961892246,0.0,18.0,WHITE,Female,,,Metastatic,0,12.233333333333333,,,,,,,
+TCGA_GDC_TCGA-D3-A5GO-06A,TCGA_GDC_TCGA-D3-A5GO,TCGA GDC 2025,137.81208935611036,0.0,61.0,WHITE,Male,,,Metastatic,0,40.266666666666666,,,,,,,
+TCGA_GDC_TCGA-D3-A5GR-06A,TCGA_GDC_TCGA-D3-A5GR,TCGA GDC 2025,178.18659658344282,0.0,23.0,WHITE,Female,,,Metastatic,0,6.6,,,,,,,
+TCGA_GDC_TCGA-D3-A5GS-06A,TCGA_GDC_TCGA-D3-A5GS,TCGA GDC 2025,18.166885676741128,0.0,58.0,WHITE,Male,,,Metastatic,0,10.2,,,,,,,
+TCGA_GDC_TCGA-D3-A5GT-01A,TCGA_GDC_TCGA-D3-A5GT,TCGA GDC 2025,15.99868593955322,0.0,43.0,WHITE,Male,,,Primary,0,0.7,,,,,,,
+TCGA_GDC_TCGA-D3-A5GU-06A,TCGA_GDC_TCGA-D3-A5GU,TCGA GDC 2025,125.09855453350852,0.0,36.0,WHITE,Male,,,Metastatic,0,19.766666666666666,,,,,,,
+TCGA_GDC_TCGA-D3-A8GB-06A,TCGA_GDC_TCGA-D3-A8GB,TCGA GDC 2025,30.814717477003946,1.0,48.0,WHITE,Male,,,Metastatic,0,26.23333333333333,,,,,,,
+TCGA_GDC_TCGA-D3-A8GC-06A,TCGA_GDC_TCGA-D3-A8GC,TCGA GDC 2025,79.5335085413929,1.0,48.0,WHITE,Male,,,Metastatic,0,21.6,,,,,,,
+TCGA_GDC_TCGA-D3-A8GD-06A,TCGA_GDC_TCGA-D3-A8GD,TCGA GDC 2025,23.587385019710904,0.0,63.0,WHITE,Female,,,Metastatic,0,2.933333333333333,,,,,,,
+TCGA_GDC_TCGA-D3-A8GE-06A,TCGA_GDC_TCGA-D3-A8GE,TCGA GDC 2025,26.41261498028909,0.0,26.0,WHITE,Male,,,Metastatic,0,0.1333333333333333,,,,,,,
+TCGA_GDC_TCGA-D3-A8GI-06A,TCGA_GDC_TCGA-D3-A8GI,TCGA GDC 2025,58.47568988173456,1.0,68.0,WHITE,Male,,,Metastatic,0,132.3,,,,,,,
+TCGA_GDC_TCGA-D3-A8GJ-06A,TCGA_GDC_TCGA-D3-A8GJ,TCGA GDC 2025,241.19579500657028,0.0,18.0,WHITE,Male,,,Metastatic,0,4.6,,,,,,,
+TCGA_GDC_TCGA-D3-A8GK-06A,TCGA_GDC_TCGA-D3-A8GK,TCGA GDC 2025,170.07227332457293,0.0,45.0,WHITE,Male,,,Metastatic,0,14.733333333333333,,,,,,,
+TCGA_GDC_TCGA-D3-A8GL-06A,TCGA_GDC_TCGA-D3-A8GL,TCGA GDC 2025,89.0604467805519,1.0,43.0,WHITE,Male,,,Metastatic,0,47.36666666666667,,,,,,,
+TCGA_GDC_TCGA-D3-A8GM-06A,TCGA_GDC_TCGA-D3-A8GM,TCGA GDC 2025,107.06307490144546,1.0,73.0,WHITE,Male,,,Metastatic,0,101.1,,,,,,,
+TCGA_GDC_TCGA-D3-A8GN-06A,TCGA_GDC_TCGA-D3-A8GN,TCGA GDC 2025,160.87385019710905,0.0,27.0,WHITE,Female,,,Metastatic,0,5.633333333333334,,,,,,,
+TCGA_GDC_TCGA-D3-A8GO-06A,TCGA_GDC_TCGA-D3-A8GO,TCGA GDC 2025,,1.0,,WHITE,Female,,,Metastatic,0,14.233333333333333,,,,,,,
+TCGA_GDC_TCGA-D3-A8GP-06A,TCGA_GDC_TCGA-D3-A8GP,TCGA GDC 2025,152.365308804205,0.0,77.0,WHITE,Male,,,Metastatic,0,15.9,,,,,,,
+TCGA_GDC_TCGA-D3-A8GQ-06A,TCGA_GDC_TCGA-D3-A8GQ,TCGA GDC 2025,29.0407358738502,1.0,66.0,WHITE,Male,,,Metastatic,0,36.46666666666667,,,,,,,
+TCGA_GDC_TCGA-D3-A8GR-06A,TCGA_GDC_TCGA-D3-A8GR,TCGA GDC 2025,129.5335085413929,1.0,54.0,WHITE,Female,,,Metastatic,0,10.0,,,,,,,
+TCGA_GDC_TCGA-D3-A8GS-06A,TCGA_GDC_TCGA-D3-A8GS,TCGA GDC 2025,117.08278580814716,1.0,52.0,WHITE,Male,,,Metastatic,0,5.366666666666666,,,,,,,
+TCGA_GDC_TCGA-D3-A8GV-06A,TCGA_GDC_TCGA-D3-A8GV,TCGA GDC 2025,167.5755584756899,1.0,25.0,WHITE,Male,,,Metastatic,0,10.5,,,,,,,
+TCGA_GDC_TCGA-D9-A148-06A,TCGA_GDC_TCGA-D9-A148,TCGA GDC 2025,151.41261498028908,0.0,40.0,WHITE,Male,,,Metastatic,0,7.033333333333333,,,,,,,
+TCGA_GDC_TCGA-D9-A149-06A,TCGA_GDC_TCGA-D9-A149,TCGA GDC 2025,54.632063074901446,0.0,65.0,WHITE,Female,,,Metastatic,0,6.2,,,,,,,
+TCGA_GDC_TCGA-D9-A1JW-06A,TCGA_GDC_TCGA-D9-A1JW,TCGA GDC 2025,3.6465177398160313,0.0,82.0,WHITE,Male,,,Metastatic,0,23.0,,,,,,,
+TCGA_GDC_TCGA-D9-A1JX-06A,TCGA_GDC_TCGA-D9-A1JX,TCGA GDC 2025,7.09592641261498,1.0,80.0,WHITE,Female,,,Metastatic,0,4.566666666666666,,,,,,,
+TCGA_GDC_TCGA-D9-A1X3-06A,TCGA_GDC_TCGA-D9-A1X3,TCGA GDC 2025,18.101182654402105,0.0,63.0,WHITE,Male,,,Metastatic,0,0.8666666666666667,,,,,,,
+TCGA_GDC_TCGA-D9-A3Z1-06A,TCGA_GDC_TCGA-D9-A3Z1,TCGA GDC 2025,15.374507227332456,1.0,66.0,WHITE,Male,,,Metastatic,0,12.666666666666666,,,,,,,
+TCGA_GDC_TCGA-D9-A3Z3-06A,TCGA_GDC_TCGA-D9-A3Z3,TCGA GDC 2025,22.27332457293036,0.0,39.0,WHITE,Female,,,Metastatic,0,3.533333333333333,,,,,,,
+TCGA_GDC_TCGA-D9-A3Z4-01A,TCGA_GDC_TCGA-D9-A3Z4,TCGA GDC 2025,17.04993429697766,1.0,54.0,WHITE,Male,,,Primary,0,3.866666666666666,,,,,,,
+TCGA_GDC_TCGA-D9-A4Z2-01A,TCGA_GDC_TCGA-D9-A4Z2,TCGA GDC 2025,6.241787122207621,1.0,50.0,WHITE,Male,,,Primary,0,0.6333333333333333,,,,,,,
+TCGA_GDC_TCGA-D9-A4Z3-01A,TCGA_GDC_TCGA-D9-A4Z3,TCGA GDC 2025,16.590013140604466,0.0,73.0,WHITE,Female,,,Primary,0,21.566666666666663,,,,,,,
+TCGA_GDC_TCGA-D9-A4Z5-01A,TCGA_GDC_TCGA-D9-A4Z5,TCGA GDC 2025,7.161629434954008,0.0,68.0,WHITE,Male,,,Primary,0,1.8,,,,,,,
+TCGA_GDC_TCGA-D9-A4Z6-06A,TCGA_GDC_TCGA-D9-A4Z6,TCGA GDC 2025,18.42969776609724,1.0,54.0,WHITE,Male,,,Metastatic,0,7.533333333333333,,,,,,,
+TCGA_GDC_TCGA-D9-A6E9-06A,TCGA_GDC_TCGA-D9-A6E9,TCGA GDC 2025,9.888304862023652,0.0,75.0,WHITE,Female,,,Metastatic,0,4.8,,,,,,,
+TCGA_GDC_TCGA-D9-A6EA-06A,TCGA_GDC_TCGA-D9-A6EA,TCGA GDC 2025,25.164257555847566,0.0,70.0,WHITE,Male,,,Metastatic,0,17.066666666666666,,,,,,,
+TCGA_GDC_TCGA-D9-A6EC-06A,TCGA_GDC_TCGA-D9-A6EC,TCGA GDC 2025,77.49671484888304,0.0,56.0,WHITE,Male,,,Metastatic,0,114.3,,,,,,,
+TCGA_GDC_TCGA-D9-A6EG-06A,TCGA_GDC_TCGA-D9-A6EG,TCGA GDC 2025,22.93035479632063,1.0,56.0,WHITE,Male,,,Metastatic,0,1.8666666666666667,,,,,,,
+TCGA_GDC_TCGA-DA-A1HV-06A,TCGA_GDC_TCGA-DA-A1HV,TCGA GDC 2025,76.51116951379763,0.0,75.0,WHITE,Female,,,Metastatic,0,35.4,,,,,,,
+TCGA_GDC_TCGA-DA-A1HW-06A,TCGA_GDC_TCGA-DA-A1HW,TCGA GDC 2025,36.00525624178712,1.0,37.0,WHITE,Female,,,Metastatic,0,8.5,,,,,,,
+TCGA_GDC_TCGA-DA-A1HY-06A,TCGA_GDC_TCGA-DA-A1HY,TCGA GDC 2025,144.7766097240473,0.0,42.0,WHITE,Male,,,Metastatic,0,19.166666666666668,,,,,,,
+TCGA_GDC_TCGA-DA-A1I0-06A,TCGA_GDC_TCGA-DA-A1I0,TCGA GDC 2025,20.367936925098554,1.0,63.0,WHITE,Male,,,Metastatic,0,12.966666666666669,,,,,,,
+TCGA_GDC_TCGA-DA-A1I1-06A,TCGA_GDC_TCGA-DA-A1I1,TCGA GDC 2025,222.33902759526936,0.0,55.0,WHITE,Male,,,Metastatic,0,10.033333333333331,,,,,,,
+TCGA_GDC_TCGA-DA-A1I2-06A,TCGA_GDC_TCGA-DA-A1I2,TCGA GDC 2025,176.41261498028908,1.0,45.0,WHITE,Male,,,Metastatic,0,2.966666666666667,,,,,,,
+TCGA_GDC_TCGA-DA-A1I4-06A,TCGA_GDC_TCGA-DA-A1I4,TCGA GDC 2025,35.90670170827858,1.0,51.0,WHITE,Male,,,Metastatic,0,7.066666666666666,,,,,,,
+TCGA_GDC_TCGA-DA-A1I5-06A,TCGA_GDC_TCGA-DA-A1I5,TCGA GDC 2025,134.92115637319316,0.0,27.0,WHITE,Female,,,Metastatic,0,11.666666666666666,,,,,,,
+TCGA_GDC_TCGA-DA-A1I7-06A,TCGA_GDC_TCGA-DA-A1I7,TCGA GDC 2025,88.7976346911958,0.0,62.0,WHITE,Male,,,Metastatic,0,10.766666666666667,,,,,,,
+TCGA_GDC_TCGA-DA-A1I8-06A,TCGA_GDC_TCGA-DA-A1I8,TCGA GDC 2025,53.87647831800263,1.0,63.0,WHITE,Female,,,Metastatic,0,4.233333333333333,,,,,,,
+TCGA_GDC_TCGA-DA-A1IA-06A,TCGA_GDC_TCGA-DA-A1IA,TCGA GDC 2025,65.86727989487517,1.0,32.0,WHITE,Female,,,Metastatic,0,9.066666666666666,,,,,,,
+TCGA_GDC_TCGA-DA-A1IB-06A,TCGA_GDC_TCGA-DA-A1IB,TCGA GDC 2025,40.57161629434954,1.0,69.0,WHITE,Female,,,Metastatic,0,0.0666666666666666,,,,,,,
+TCGA_GDC_TCGA-DA-A1IC-06A,TCGA_GDC_TCGA-DA-A1IC,TCGA GDC 2025,68.03547963206307,1.0,81.0,WHITE,Male,,,Metastatic,0,25.633333333333333,,,,,,,
+TCGA_GDC_TCGA-DA-A3F2-06A,TCGA_GDC_TCGA-DA-A3F2,TCGA GDC 2025,33.90275952693824,1.0,55.0,WHITE,Male,,,Metastatic,0,,,,,,,,
+TCGA_GDC_TCGA-DA-A3F3-06A,TCGA_GDC_TCGA-DA-A3F3,TCGA GDC 2025,10.4796320630749,1.0,52.0,WHITE,Male,,,Metastatic,0,8.166666666666666,,,,,,,
+TCGA_GDC_TCGA-DA-A3F5-06A,TCGA_GDC_TCGA-DA-A3F5,TCGA GDC 2025,225.78843626806832,1.0,45.0,WHITE,Male,,,Metastatic,0,8.766666666666667,,,,,,,
+TCGA_GDC_TCGA-DA-A3F8-06A,TCGA_GDC_TCGA-DA-A3F8,TCGA GDC 2025,43.33114323258869,0.0,39.0,WHITE,Male,,,Metastatic,0,30.3,,,,,,,
+TCGA_GDC_TCGA-DA-A95V-06A,TCGA_GDC_TCGA-DA-A95V,TCGA GDC 2025,72.04336399474376,0.0,83.0,WHITE,Female,,,Metastatic,0,7.0,,,,,,,
+TCGA_GDC_TCGA-DA-A95W-06A,TCGA_GDC_TCGA-DA-A95W,TCGA GDC 2025,37.31931668856768,0.0,52.0,WHITE,Male,,,Metastatic,0,4.166666666666667,,,,,,,
+TCGA_GDC_TCGA-DA-A95X-06A,TCGA_GDC_TCGA-DA-A95X,TCGA GDC 2025,73.88304862023652,0.0,62.0,WHITE,Male,,,Metastatic,0,14.1,,,,,,,
+TCGA_GDC_TCGA-DA-A95Y-06A,TCGA_GDC_TCGA-DA-A95Y,TCGA GDC 2025,14.126149802890932,1.0,68.0,WHITE,Male,,,Metastatic,0,11.233333333333333,,,,,,,
+TCGA_GDC_TCGA-DA-A95Z-06A,TCGA_GDC_TCGA-DA-A95Z,TCGA GDC 2025,13.009198423127463,0.0,87.0,WHITE,Male,,,Metastatic,0,50.766666666666666,,,,,,,
+TCGA_GDC_TCGA-DA-A960-01A,TCGA_GDC_TCGA-DA-A960,TCGA GDC 2025,26.41261498028909,0.0,73.0,WHITE,Male,,,Primary,0,22.3,,,,,,,
+TCGA_GDC_TCGA-EB-A1NK-01A,TCGA_GDC_TCGA-EB-A1NK,TCGA GDC 2025,34.13272010512483,0.0,48.0,WHITE,Male,,,Primary,0,3.6666666666666665,,,,,,,
+TCGA_GDC_TCGA-EB-A24C-01A,TCGA_GDC_TCGA-EB-A24C,TCGA GDC 2025,20.76215505913272,0.0,56.0,WHITE,Male,,,Primary,0,0.7666666666666667,,,,,,,
+TCGA_GDC_TCGA-EB-A24D-01A,TCGA_GDC_TCGA-EB-A24D,TCGA GDC 2025,21.1892247043364,0.0,72.0,WHITE,Male,,,Primary,0,14.533333333333331,,,,,,,
+TCGA_GDC_TCGA-EB-A299-01A,TCGA_GDC_TCGA-EB-A299,TCGA GDC 2025,12.417871222076217,0.0,63.0,WHITE,Male,,,Primary,0,3.7666666666666666,,,,,,,
+TCGA_GDC_TCGA-EB-A3HV-01A,TCGA_GDC_TCGA-EB-A3HV,TCGA GDC 2025,1.281208935611038,0.0,37.0,WHITE,Male,,,Primary,0,1.1666666666666667,,,,,,,
+TCGA_GDC_TCGA-EB-A3XB-01A,TCGA_GDC_TCGA-EB-A3XB,TCGA GDC 2025,26.149802890932985,0.0,63.0,WHITE,Male,,,Primary,0,13.466666666666669,,,,,,,
+TCGA_GDC_TCGA-EB-A3XC-01A,TCGA_GDC_TCGA-EB-A3XC,TCGA GDC 2025,21.353482260183966,0.0,74.0,WHITE,Male,,,Primary,0,10.6,,,,,,,
+TCGA_GDC_TCGA-EB-A3XD-01A,TCGA_GDC_TCGA-EB-A3XD,TCGA GDC 2025,38.107752956636006,0.0,53.0,WHITE,Female,,,Primary,0,8.3,,,,,,,
+TCGA_GDC_TCGA-EB-A3XE-01A,TCGA_GDC_TCGA-EB-A3XE,TCGA GDC 2025,5.913272010512483,0.0,77.0,WHITE,Female,,,Primary,0,0.5666666666666667,,,,,,,
+TCGA_GDC_TCGA-EB-A3XF-01A,TCGA_GDC_TCGA-EB-A3XF,TCGA GDC 2025,9.132720105124836,0.0,57.0,WHITE,Male,,,Primary,0,10.033333333333331,,,,,,,
+TCGA_GDC_TCGA-EB-A3Y6-01A,TCGA_GDC_TCGA-EB-A3Y6,TCGA GDC 2025,4.139290407358739,0.0,56.0,WHITE,Female,,,Primary,0,15.766666666666667,,,,,,,
+TCGA_GDC_TCGA-EB-A3Y7-01A,TCGA_GDC_TCGA-EB-A3Y7,TCGA GDC 2025,10.709592641261498,1.0,86.0,WHITE,Female,,,Primary,0,28.866666666666667,,,,,,,
+TCGA_GDC_TCGA-EB-A41A-01A,TCGA_GDC_TCGA-EB-A41A,TCGA GDC 2025,0.0,0.0,89.0,WHITE,Male,,,Primary,0,48.43333333333333,,,,,,,
+TCGA_GDC_TCGA-EB-A41B-01A,TCGA_GDC_TCGA-EB-A41B,TCGA GDC 2025,9.559789750328514,0.0,76.0,WHITE,Female,,,Primary,0,10.233333333333333,,,,,,,
+TCGA_GDC_TCGA-EB-A42Y-01A,TCGA_GDC_TCGA-EB-A42Y,TCGA GDC 2025,23.68593955321945,1.0,73.0,ASIAN,Female,,,Primary,0,1.8333333333333333,,,,,,,
+TCGA_GDC_TCGA-EB-A42Z-01A,TCGA_GDC_TCGA-EB-A42Z,TCGA GDC 2025,14.487516425755585,0.0,49.0,ASIAN,Male,,,Primary,0,2.7,,,,,,,
+TCGA_GDC_TCGA-EB-A430-01A,TCGA_GDC_TCGA-EB-A430,TCGA GDC 2025,-0.0657030223390276,0.0,83.0,WHITE,Male,,,Primary,0,10.8,,,,,,,
+TCGA_GDC_TCGA-EB-A431-01A,TCGA_GDC_TCGA-EB-A431,TCGA GDC 2025,18.65965834428384,0.0,34.0,WHITE,Male,,,Primary,0,43.9,,,,,,,
+TCGA_GDC_TCGA-EB-A44N-01A,TCGA_GDC_TCGA-EB-A44N,TCGA GDC 2025,6.734559789750328,1.0,59.0,WHITE,Male,,,Primary,0,3.866666666666666,,,,,,,
+TCGA_GDC_TCGA-EB-A44O-01A,TCGA_GDC_TCGA-EB-A44O,TCGA GDC 2025,2.6609724047306176,0.0,69.0,WHITE,Male,,,Primary,0,12.8,,,,,,,
+TCGA_GDC_TCGA-EB-A44P-01A,TCGA_GDC_TCGA-EB-A44P,TCGA GDC 2025,24.342969776609724,0.0,58.0,WHITE,Female,,,Primary,0,8.266666666666667,,,,,,,
+TCGA_GDC_TCGA-EB-A44Q-06A,TCGA_GDC_TCGA-EB-A44Q,TCGA GDC 2025,13.863337713534822,0.0,51.0,ASIAN,Female,,,Metastatic,0,1.2333333333333334,,,,,,,
+TCGA_GDC_TCGA-EB-A44R-06A,TCGA_GDC_TCGA-EB-A44R,TCGA GDC 2025,10.348226018396844,1.0,52.0,ASIAN,Male,,,Metastatic,0,1.3,,,,,,,
+TCGA_GDC_TCGA-EB-A4IQ-01A,TCGA_GDC_TCGA-EB-A4IQ,TCGA GDC 2025,20.89356110381077,1.0,42.0,ASIAN,Female,,,Primary,0,0.3,,,,,,,
+TCGA_GDC_TCGA-EB-A4IS-01A,TCGA_GDC_TCGA-EB-A4IS,TCGA GDC 2025,25.42706964520368,0.0,77.0,WHITE,Male,,,Primary,0,13.666666666666666,,,,,,,
+TCGA_GDC_TCGA-EB-A4OY-01A,TCGA_GDC_TCGA-EB-A4OY,TCGA GDC 2025,32.09592641261498,0.0,65.0,WHITE,Female,,,Primary,0,1.5,,,,,,,
+TCGA_GDC_TCGA-EB-A4OZ-01A,TCGA_GDC_TCGA-EB-A4OZ,TCGA GDC 2025,20.367936925098554,0.0,41.0,WHITE,Female,,,Primary,0,0.2666666666666666,,,,,,,
+TCGA_GDC_TCGA-EB-A4P0-01A,TCGA_GDC_TCGA-EB-A4P0,TCGA GDC 2025,10.709592641261498,1.0,82.0,WHITE,Male,,,Primary,0,4.8,,,,,,,
+TCGA_GDC_TCGA-EB-A4XL-01A,TCGA_GDC_TCGA-EB-A4XL,TCGA GDC 2025,25.52562417871222,0.0,56.0,WHITE,Female,,,Primary,0,12.0,,,,,,,
+TCGA_GDC_TCGA-EB-A51B-01A,TCGA_GDC_TCGA-EB-A51B,TCGA GDC 2025,30.584756898817343,0.0,53.0,WHITE,Male,,,Primary,0,10.5,,,,,,,
+TCGA_GDC_TCGA-EB-A550-01A,TCGA_GDC_TCGA-EB-A550,TCGA GDC 2025,8.672798948751643,1.0,75.0,WHITE,Female,,,Primary,0,4.266666666666667,,,,,,,
+TCGA_GDC_TCGA-EB-A551-01A,TCGA_GDC_TCGA-EB-A551,TCGA GDC 2025,19.38239159001314,0.0,78.0,WHITE,Female,,,Primary,0,8.666666666666666,,,,,,,
+TCGA_GDC_TCGA-EB-A553-01A,TCGA_GDC_TCGA-EB-A553,TCGA GDC 2025,7.424441524310118,0.0,62.0,WHITE,Male,,,Primary,0,8.8,,,,,,,
+TCGA_GDC_TCGA-EB-A57M-01A,TCGA_GDC_TCGA-EB-A57M,TCGA GDC 2025,15.505913272010512,1.0,56.0,ASIAN,Male,,,Primary,0,1.2666666666666666,,,,,,,
+TCGA_GDC_TCGA-EB-A5FP-01A,TCGA_GDC_TCGA-EB-A5FP,TCGA GDC 2025,14.914586070959263,1.0,65.0,WHITE,Female,,,Primary,0,10.3,,,,,,,
+TCGA_GDC_TCGA-EB-A5KH-06A,TCGA_GDC_TCGA-EB-A5KH,TCGA GDC 2025,20.33508541392904,1.0,55.0,ASIAN,Male,,,Metastatic,0,1.0,,,,,,,
+TCGA_GDC_TCGA-EB-A5SE-01A,TCGA_GDC_TCGA-EB-A5SE,TCGA GDC 2025,13.173455978975031,1.0,73.0,WHITE,Male,,,Primary,0,7.3,,,,,,,
+TCGA_GDC_TCGA-EB-A5SF-01A,TCGA_GDC_TCGA-EB-A5SF,TCGA GDC 2025,12.12220762155059,1.0,78.0,WHITE,Female,,,Primary,0,0.7666666666666667,,,,,,,
+TCGA_GDC_TCGA-EB-A5SG-06A,TCGA_GDC_TCGA-EB-A5SG,TCGA GDC 2025,68.19973718791064,0.0,57.0,WHITE,Female,,,Metastatic,0,6.466666666666667,,,,,,,
+TCGA_GDC_TCGA-EB-A5SH-06A,TCGA_GDC_TCGA-EB-A5SH,TCGA GDC 2025,53.975032851511166,0.0,60.0,WHITE,Female,,,Metastatic,0,2.6,,,,,,,
+TCGA_GDC_TCGA-EB-A5UL-06A,TCGA_GDC_TCGA-EB-A5UL,TCGA GDC 2025,29.27069645203679,0.0,71.0,WHITE,Male,,,Metastatic,0,11.7,,,,,,,
+TCGA_GDC_TCGA-EB-A5UM-01A,TCGA_GDC_TCGA-EB-A5UM,TCGA GDC 2025,25.591327201051246,0.0,48.0,WHITE,Female,,,Primary,0,14.7,,,,,,,
+TCGA_GDC_TCGA-EB-A5UN-06A,TCGA_GDC_TCGA-EB-A5UN,TCGA GDC 2025,58.86990801576872,0.0,49.0,WHITE,Male,,,Metastatic,0,18.933333333333334,,,,,,,
+TCGA_GDC_TCGA-EB-A5VU-01A,TCGA_GDC_TCGA-EB-A5VU,TCGA GDC 2025,10.545335085413928,1.0,56.0,ASIAN,Male,,,Primary,0,1.1,,,,,,,
+TCGA_GDC_TCGA-EB-A5VV-06A,TCGA_GDC_TCGA-EB-A5VV,TCGA GDC 2025,7.030223390275952,0.0,74.0,WHITE,Female,,,Metastatic,0,,,,,,,,
+TCGA_GDC_TCGA-EB-A6L9-06A,TCGA_GDC_TCGA-EB-A6L9,TCGA GDC 2025,36.4323258869908,0.0,55.0,ASIAN,Male,,,Metastatic,0,0.4666666666666667,,,,,,,
+TCGA_GDC_TCGA-EB-A6QY-01A,TCGA_GDC_TCGA-EB-A6QY,TCGA GDC 2025,12.54927726675427,0.0,71.0,WHITE,Male,,,Primary,0,15.833333333333334,,,,,,,
+TCGA_GDC_TCGA-EB-A6QZ-01A,TCGA_GDC_TCGA-EB-A6QZ,TCGA GDC 2025,11.563731931668856,1.0,76.0,WHITE,Female,,,Primary,0,7.1,,,,,,,
+TCGA_GDC_TCGA-EB-A6R0-01A,TCGA_GDC_TCGA-EB-A6R0,TCGA GDC 2025,19.97371879106439,1.0,58.0,WHITE,Female,,,Primary,0,9.933333333333334,,,,,,,
+TCGA_GDC_TCGA-EB-A82B-01A,TCGA_GDC_TCGA-EB-A82B,TCGA GDC 2025,12.81208935611038,0.0,58.0,ASIAN,Female,,,Primary,0,1.1,,,,,,,
+TCGA_GDC_TCGA-EB-A82C-01A,TCGA_GDC_TCGA-EB-A82C,TCGA GDC 2025,0.5584756898817346,0.0,70.0,ASIAN,Female,,,Primary,0,0.8333333333333334,,,,,,,
+TCGA_GDC_TCGA-EB-A85I-01A,TCGA_GDC_TCGA-EB-A85I,TCGA GDC 2025,11.892247043363994,0.0,66.0,WHITE,Male,,,Primary,0,5.333333333333333,,,,,,,
+TCGA_GDC_TCGA-EB-A85J-01A,TCGA_GDC_TCGA-EB-A85J,TCGA GDC 2025,11.826544021024969,0.0,66.0,WHITE,Female,,,Primary,0,10.233333333333333,,,,,,,
+TCGA_GDC_TCGA-EB-A97M-01A,TCGA_GDC_TCGA-EB-A97M,TCGA GDC 2025,13.600525624178712,0.0,66.0,WHITE,Male,,,Primary,0,7.9,,,,,,,
+TCGA_GDC_TCGA-EE-A17X-06A,TCGA_GDC_TCGA-EE-A17X,TCGA GDC 2025,29.79632063074901,1.0,54.0,WHITE,Male,,,Metastatic,0,21.166666666666668,,,,,,,
+TCGA_GDC_TCGA-EE-A17Y-06A,TCGA_GDC_TCGA-EE-A17Y,TCGA GDC 2025,27.201051248357423,1.0,69.0,ASIAN,Male,,,Metastatic,0,4.233333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A17Z-06A,TCGA_GDC_TCGA-EE-A17Z,TCGA GDC 2025,8.639947437582128,1.0,57.0,WHITE,Male,,,Metastatic,0,0.6333333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A180-06A,TCGA_GDC_TCGA-EE-A180,TCGA GDC 2025,94.90801576872536,1.0,69.0,WHITE,Male,,,Metastatic,0,13.9,,,,,,,
+TCGA_GDC_TCGA-EE-A181-06A,TCGA_GDC_TCGA-EE-A181,TCGA GDC 2025,33.70565045992115,1.0,82.0,WHITE,Female,,,Metastatic,0,68.73333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A182-06A,TCGA_GDC_TCGA-EE-A182,TCGA GDC 2025,14.684625492772668,1.0,84.0,WHITE,Female,,,Metastatic,0,37.766666666666666,,,,,,,
+TCGA_GDC_TCGA-EE-A183-06A,TCGA_GDC_TCGA-EE-A183,TCGA GDC 2025,26.872536136662287,1.0,48.0,WHITE,Male,,,Metastatic,0,17.7,,,,,,,
+TCGA_GDC_TCGA-EE-A184-06A,TCGA_GDC_TCGA-EE-A184,TCGA GDC 2025,68.1011826544021,1.0,72.0,WHITE,Male,,,Metastatic,0,7.266666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A185-06A,TCGA_GDC_TCGA-EE-A185,TCGA GDC 2025,4.960578186596584,1.0,55.0,WHITE,Female,,,Metastatic,0,5.0,,,,,,,
+TCGA_GDC_TCGA-EE-A20B-06A,TCGA_GDC_TCGA-EE-A20B,TCGA GDC 2025,133.70565045992117,0.0,66.0,WHITE,Female,,,Metastatic,0,5.033333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A20C-06A,TCGA_GDC_TCGA-EE-A20C,TCGA GDC 2025,151.149802890933,1.0,59.0,WHITE,Male,,,Metastatic,0,53.73333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A20F-06A,TCGA_GDC_TCGA-EE-A20F,TCGA GDC 2025,91.49145860709592,0.0,53.0,WHITE,Male,,,Metastatic,0,11.733333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A20H-06A,TCGA_GDC_TCGA-EE-A20H,TCGA GDC 2025,168.13403416557162,1.0,56.0,WHITE,Male,,,Metastatic,0,15.933333333333334,,,,,,,
+TCGA_GDC_TCGA-EE-A20I-06A,TCGA_GDC_TCGA-EE-A20I,TCGA GDC 2025,13.534822601839684,1.0,79.0,WHITE,Male,,,Metastatic,0,0.4333333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A29A-06A,TCGA_GDC_TCGA-EE-A29A,TCGA GDC 2025,63.30486202365309,1.0,68.0,WHITE,Male,,,Metastatic,0,6.633333333333334,,,,,,,
+TCGA_GDC_TCGA-EE-A29B-06A,TCGA_GDC_TCGA-EE-A29B,TCGA GDC 2025,85.0197109067017,1.0,67.0,WHITE,Male,,,Metastatic,0,14.633333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A29C-06A,TCGA_GDC_TCGA-EE-A29C,TCGA GDC 2025,78.90932982917214,1.0,20.0,WHITE,Male,,,Metastatic,0,10.866666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A29D-06A,TCGA_GDC_TCGA-EE-A29D,TCGA GDC 2025,13.961892247043364,1.0,87.0,WHITE,Male,,,Metastatic,0,95.53333333333332,,,,,,,
+TCGA_GDC_TCGA-EE-A29E-06A,TCGA_GDC_TCGA-EE-A29E,TCGA GDC 2025,63.73193166885677,0.0,54.0,WHITE,Male,,,Metastatic,0,88.43333333333334,,,,,,,
+TCGA_GDC_TCGA-EE-A29G-06A,TCGA_GDC_TCGA-EE-A29G,TCGA GDC 2025,72.01051248357425,1.0,53.0,WHITE,Male,,,Metastatic,0,8.366666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A29H-06A,TCGA_GDC_TCGA-EE-A29H,TCGA GDC 2025,64.58607095926412,0.0,59.0,WHITE,Female,,,Metastatic,0,8.0,,,,,,,
+TCGA_GDC_TCGA-EE-A29L-06A,TCGA_GDC_TCGA-EE-A29L,TCGA GDC 2025,2.59526938239159,1.0,78.0,WHITE,Male,,,Metastatic,0,49.7,,,,,,,
+TCGA_GDC_TCGA-EE-A29M-06A,TCGA_GDC_TCGA-EE-A29M,TCGA GDC 2025,56.80026281208935,0.0,33.0,WHITE,Female,,,Metastatic,0,60.86666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A29N-06A,TCGA_GDC_TCGA-EE-A29N,TCGA GDC 2025,18.593955321944808,1.0,78.0,WHITE,Male,,,Metastatic,0,16.0,,,,,,,
+TCGA_GDC_TCGA-EE-A29P-06A,TCGA_GDC_TCGA-EE-A29P,TCGA GDC 2025,56.37319316688568,0.0,73.0,WHITE,Female,,,Metastatic,0,7.766666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A29Q-06A,TCGA_GDC_TCGA-EE-A29Q,TCGA GDC 2025,66.688567674113,1.0,70.0,WHITE,Female,,,Metastatic,0,7.6,,,,,,,
+TCGA_GDC_TCGA-EE-A29R-06A,TCGA_GDC_TCGA-EE-A29R,TCGA GDC 2025,14.45466491458607,0.0,48.0,WHITE,Female,,,Metastatic,0,16.766666666666666,,,,,,,
+TCGA_GDC_TCGA-EE-A29S-06A,TCGA_GDC_TCGA-EE-A29S,TCGA GDC 2025,61.23521681997372,1.0,79.0,WHITE,Male,,,Metastatic,0,26.766666666666666,,,,,,,
+TCGA_GDC_TCGA-EE-A29T-06A,TCGA_GDC_TCGA-EE-A29T,TCGA GDC 2025,369.6452036793692,0.0,51.0,WHITE,Female,,,Metastatic,0,10.033333333333331,,,,,,,
+TCGA_GDC_TCGA-EE-A29V-06A,TCGA_GDC_TCGA-EE-A29V,TCGA GDC 2025,25.85413929040736,1.0,85.0,WHITE,Male,,,Metastatic,0,26.666666666666668,,,,,,,
+TCGA_GDC_TCGA-EE-A29W-06A,TCGA_GDC_TCGA-EE-A29W,TCGA GDC 2025,194.87516425755584,0.0,42.0,WHITE,Male,,,Metastatic,0,2.066666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A29X-06A,TCGA_GDC_TCGA-EE-A29X,TCGA GDC 2025,17.904073587385017,1.0,58.0,WHITE,Female,,,Metastatic,0,3.533333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2A0-06A,TCGA_GDC_TCGA-EE-A2A0,TCGA GDC 2025,46.78055190538765,1.0,77.0,WHITE,Female,,,Metastatic,0,10.9,,,,,,,
+TCGA_GDC_TCGA-EE-A2A1-06A,TCGA_GDC_TCGA-EE-A2A1,TCGA GDC 2025,115.86727989487515,0.0,46.0,WHITE,Male,,,Metastatic,0,9.833333333333334,,,,,,,
+TCGA_GDC_TCGA-EE-A2A2-06A,TCGA_GDC_TCGA-EE-A2A2,TCGA GDC 2025,59.59264126149802,0.0,71.0,WHITE,Male,,,Metastatic,0,39.53333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2A5-06A,TCGA_GDC_TCGA-EE-A2A5,TCGA GDC 2025,39.25755584756899,1.0,43.0,WHITE,Male,,,Metastatic,0,8.633333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2A6-06A,TCGA_GDC_TCGA-EE-A2A6,TCGA GDC 2025,86.07095926412615,0.0,43.0,WHITE,Male,,,Metastatic,0,7.566666666666666,,,,,,,
+TCGA_GDC_TCGA-EE-A2GB-06A,TCGA_GDC_TCGA-EE-A2GB,TCGA GDC 2025,59.23127463863337,0.0,51.0,WHITE,Male,,,Metastatic,0,17.2,,,,,,,
+TCGA_GDC_TCGA-EE-A2GC-06A,TCGA_GDC_TCGA-EE-A2GC,TCGA GDC 2025,67.3784494086728,0.0,82.0,WHITE,Male,,,Metastatic,0,60.13333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2GD-06A,TCGA_GDC_TCGA-EE-A2GD,TCGA GDC 2025,339.8817345597897,1.0,58.0,WHITE,Female,,,Metastatic,0,14.133333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2GE-06A,TCGA_GDC_TCGA-EE-A2GE,TCGA GDC 2025,173.65308804204992,0.0,44.0,WHITE,Male,,,Metastatic,0,5.833333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2GH-06A,TCGA_GDC_TCGA-EE-A2GH,TCGA GDC 2025,220.07227332457293,0.0,34.0,WHITE,Male,,,Metastatic,0,8.233333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2GI-06A,TCGA_GDC_TCGA-EE-A2GI,TCGA GDC 2025,48.68593955321945,0.0,39.0,WHITE,Male,,,Metastatic,0,39.03333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2GJ-06A,TCGA_GDC_TCGA-EE-A2GJ,TCGA GDC 2025,74.57293035479631,1.0,83.0,WHITE,Male,,,Metastatic,0,29.866666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A2GK-06A,TCGA_GDC_TCGA-EE-A2GK,TCGA GDC 2025,54.69776609724047,0.0,46.0,WHITE,Female,,,Metastatic,0,,,,,,,,
+TCGA_GDC_TCGA-EE-A2GL-06A,TCGA_GDC_TCGA-EE-A2GL,TCGA GDC 2025,79.59921156373193,0.0,40.0,WHITE,Female,,,Metastatic,0,8.466666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A2GM-06B,TCGA_GDC_TCGA-EE-A2GM,TCGA GDC 2025,75.42706964520367,0.0,70.0,WHITE,Female,,,Metastatic,0,18.73333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2GN-06A,TCGA_GDC_TCGA-EE-A2GN,TCGA GDC 2025,102.03679369250985,1.0,67.0,WHITE,Male,,,Metastatic,0,11.5,,,,,,,
+TCGA_GDC_TCGA-EE-A2GO-06A,TCGA_GDC_TCGA-EE-A2GO,TCGA GDC 2025,126.7082785808147,0.0,66.0,WHITE,Female,,,Metastatic,0,49.8,,,,,,,
+TCGA_GDC_TCGA-EE-A2GP-06A,TCGA_GDC_TCGA-EE-A2GP,TCGA GDC 2025,13.896189224704337,1.0,80.0,WHITE,Male,,,Metastatic,0,16.1,,,,,,,
+TCGA_GDC_TCGA-EE-A2GR-06A,TCGA_GDC_TCGA-EE-A2GR,TCGA GDC 2025,42.73981603153745,1.0,78.0,WHITE,Male,,,Metastatic,0,40.3,,,,,,,
+TCGA_GDC_TCGA-EE-A2GS-06A,TCGA_GDC_TCGA-EE-A2GS,TCGA GDC 2025,81.14323258869908,1.0,28.0,WHITE,Female,,,Metastatic,0,9.1,,,,,,,
+TCGA_GDC_TCGA-EE-A2GT-06A,TCGA_GDC_TCGA-EE-A2GT,TCGA GDC 2025,44.842312746386334,0.0,77.0,WHITE,Male,,,Metastatic,0,8.2,,,,,,,
+TCGA_GDC_TCGA-EE-A2GU-06A,TCGA_GDC_TCGA-EE-A2GU,TCGA GDC 2025,94.7437582128778,0.0,65.0,WHITE,Female,,,Metastatic,0,14.833333333333334,,,,,,,
+TCGA_GDC_TCGA-EE-A2M5-06A,TCGA_GDC_TCGA-EE-A2M5,TCGA GDC 2025,21.64914586070959,1.0,49.0,WHITE,Male,,,Metastatic,0,51.63333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2M6-06A,TCGA_GDC_TCGA-EE-A2M6,TCGA GDC 2025,129.17214191852824,0.0,61.0,WHITE,Male,,,Metastatic,0,14.366666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A2M7-06A,TCGA_GDC_TCGA-EE-A2M7,TCGA GDC 2025,28.8107752956636,1.0,66.0,WHITE,Male,,,Metastatic,0,1.3666666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A2M8-06A,TCGA_GDC_TCGA-EE-A2M8,TCGA GDC 2025,19.7437582128778,1.0,54.0,WHITE,Female,,,Metastatic,0,2.4,,,,,,,
+TCGA_GDC_TCGA-EE-A2MC-06A,TCGA_GDC_TCGA-EE-A2MC,TCGA GDC 2025,61.46517739816032,1.0,73.0,WHITE,Male,,,Metastatic,0,19.633333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2MD-06A,TCGA_GDC_TCGA-EE-A2MD,TCGA GDC 2025,47.24047306176084,1.0,52.0,WHITE,Male,,,Metastatic,0,42.766666666666666,,,,,,,
+TCGA_GDC_TCGA-EE-A2ME-06A,TCGA_GDC_TCGA-EE-A2ME,TCGA GDC 2025,103.18659658344284,1.0,51.0,WHITE,Male,,,Metastatic,0,0.5666666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A2MF-06A,TCGA_GDC_TCGA-EE-A2MF,TCGA GDC 2025,268.5282522996057,1.0,39.0,WHITE,Female,,,Metastatic,0,19.7,,,,,,,
+TCGA_GDC_TCGA-EE-A2MG-06A,TCGA_GDC_TCGA-EE-A2MG,TCGA GDC 2025,103.1208935611038,1.0,23.0,WHITE,Male,,,Metastatic,0,5.166666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A2MH-06A,TCGA_GDC_TCGA-EE-A2MH,TCGA GDC 2025,16.95137976346912,1.0,66.0,WHITE,Male,,,Metastatic,0,3.333333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2MI-06A,TCGA_GDC_TCGA-EE-A2MI,TCGA GDC 2025,204.50065703022332,1.0,43.0,WHITE,Male,,,Metastatic,0,27.7,,,,,,,
+TCGA_GDC_TCGA-EE-A2MJ-06A,TCGA_GDC_TCGA-EE-A2MJ,TCGA GDC 2025,96.15637319316689,1.0,60.0,WHITE,Male,,,Metastatic,0,45.3,,,,,,,
+TCGA_GDC_TCGA-EE-A2MK-06A,TCGA_GDC_TCGA-EE-A2MK,TCGA GDC 2025,180.2562417871222,0.0,18.0,WHITE,Female,,,Metastatic,0,7.533333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2ML-06A,TCGA_GDC_TCGA-EE-A2ML,TCGA GDC 2025,216.49145860709592,1.0,35.0,WHITE,Male,,,Metastatic,0,14.466666666666669,,,,,,,
+TCGA_GDC_TCGA-EE-A2MM-06A,TCGA_GDC_TCGA-EE-A2MM,TCGA GDC 2025,167.77266754270696,1.0,63.0,WHITE,Female,,,Metastatic,0,13.8,,,,,,,
+TCGA_GDC_TCGA-EE-A2MN-06A,TCGA_GDC_TCGA-EE-A2MN,TCGA GDC 2025,47.50328515111695,1.0,58.0,WHITE,Male,,,Metastatic,0,3.933333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2MP-06A,TCGA_GDC_TCGA-EE-A2MP,TCGA GDC 2025,248.45597897503285,0.0,34.0,WHITE,Female,,,Metastatic,0,7.966666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A2MQ-06A,TCGA_GDC_TCGA-EE-A2MQ,TCGA GDC 2025,43.19973718791064,1.0,70.0,WHITE,Female,,,Metastatic,0,6.566666666666666,,,,,,,
+TCGA_GDC_TCGA-EE-A2MR-06A,TCGA_GDC_TCGA-EE-A2MR,TCGA GDC 2025,134.2969776609724,0.0,61.0,WHITE,Male,,,Metastatic,0,75.76666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A2MS-06A,TCGA_GDC_TCGA-EE-A2MS,TCGA GDC 2025,162.35216819973718,0.0,72.0,WHITE,Male,,,Metastatic,0,72.4,,,,,,,
+TCGA_GDC_TCGA-EE-A2MT-06A,TCGA_GDC_TCGA-EE-A2MT,TCGA GDC 2025,71.15637319316689,0.0,45.0,WHITE,Male,,,Metastatic,0,24.23333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A2MU-06A,TCGA_GDC_TCGA-EE-A2MU,TCGA GDC 2025,53.21944809461235,0.0,71.0,WHITE,Male,,,Metastatic,0,16.533333333333335,,,,,,,
+TCGA_GDC_TCGA-EE-A3AA-06A,TCGA_GDC_TCGA-EE-A3AA,TCGA GDC 2025,124.21156373193166,0.0,47.0,WHITE,Male,,,Metastatic,0,30.33333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A3AB-06A,TCGA_GDC_TCGA-EE-A3AB,TCGA GDC 2025,122.634691195795,0.0,30.0,WHITE,Male,,,Metastatic,0,17.5,,,,,,,
+TCGA_GDC_TCGA-EE-A3AC-06A,TCGA_GDC_TCGA-EE-A3AC,TCGA GDC 2025,63.99474375821288,0.0,47.0,WHITE,Male,,,Metastatic,0,25.2,,,,,,,
+TCGA_GDC_TCGA-EE-A3AD-06A,TCGA_GDC_TCGA-EE-A3AD,TCGA GDC 2025,28.74507227332457,1.0,50.0,WHITE,Male,,,Metastatic,0,10.7,,,,,,,
+TCGA_GDC_TCGA-EE-A3AE-06A,TCGA_GDC_TCGA-EE-A3AE,TCGA GDC 2025,54.46780551905388,0.0,52.0,WHITE,Female,,,Metastatic,0,37.4,,,,,,,
+TCGA_GDC_TCGA-EE-A3AF-06A,TCGA_GDC_TCGA-EE-A3AF,TCGA GDC 2025,13.797634691195794,1.0,48.0,WHITE,Female,,,Metastatic,0,27.1,,,,,,,
+TCGA_GDC_TCGA-EE-A3AG-06A,TCGA_GDC_TCGA-EE-A3AG,TCGA GDC 2025,41.55716162943495,1.0,25.0,WHITE,Male,,,Metastatic,0,41.9,,,,,,,
+TCGA_GDC_TCGA-EE-A3AH-06A,TCGA_GDC_TCGA-EE-A3AH,TCGA GDC 2025,138.69908015768723,1.0,30.0,WHITE,Male,,,Metastatic,0,10.733333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A3J3-06A,TCGA_GDC_TCGA-EE-A3J3,TCGA GDC 2025,172.04336399474374,1.0,42.0,WHITE,Male,,,Metastatic,0,4.233333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A3J4-06A,TCGA_GDC_TCGA-EE-A3J4,TCGA GDC 2025,127.10249671484888,1.0,72.0,WHITE,Male,,,Metastatic,0,8.266666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A3J5-06A,TCGA_GDC_TCGA-EE-A3J5,TCGA GDC 2025,36.92509855453351,1.0,71.0,WHITE,Male,,,Metastatic,0,56.766666666666666,,,,,,,
+TCGA_GDC_TCGA-EE-A3J7-06A,TCGA_GDC_TCGA-EE-A3J7,TCGA GDC 2025,64.02759526938239,0.0,43.0,WHITE,Male,,,Metastatic,0,25.666666666666668,,,,,,,
+TCGA_GDC_TCGA-EE-A3J8-06A,TCGA_GDC_TCGA-EE-A3J8,TCGA GDC 2025,34.2969776609724,1.0,59.0,WHITE,Male,,,Metastatic,0,7.033333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A3JA-06A,TCGA_GDC_TCGA-EE-A3JA,TCGA GDC 2025,53.15374507227333,1.0,44.0,WHITE,Male,,,Metastatic,0,25.966666666666665,,,,,,,
+TCGA_GDC_TCGA-EE-A3JB-06A,TCGA_GDC_TCGA-EE-A3JB,TCGA GDC 2025,201.64257555847567,0.0,60.0,WHITE,Female,,,Metastatic,0,16.366666666666667,,,,,,,
+TCGA_GDC_TCGA-EE-A3JD-06A,TCGA_GDC_TCGA-EE-A3JD,TCGA GDC 2025,27.33245729303548,1.0,70.0,WHITE,Male,,,Metastatic,0,46.8,,,,,,,
+TCGA_GDC_TCGA-EE-A3JE-06A,TCGA_GDC_TCGA-EE-A3JE,TCGA GDC 2025,51.31406044678055,0.0,75.0,WHITE,Male,,,Metastatic,0,6.433333333333334,,,,,,,
+TCGA_GDC_TCGA-EE-A3JH-06A,TCGA_GDC_TCGA-EE-A3JH,TCGA GDC 2025,134.23127463863338,0.0,54.0,WHITE,Male,,,Metastatic,0,4.233333333333333,,,,,,,
+TCGA_GDC_TCGA-EE-A3JI-06A,TCGA_GDC_TCGA-EE-A3JI,TCGA GDC 2025,152.6938239159001,1.0,48.0,WHITE,Male,,,Metastatic,0,30.666666666666668,,,,,,,
+TCGA_GDC_TCGA-ER-A193-06A,TCGA_GDC_TCGA-ER-A193,TCGA GDC 2025,31.37319316688568,1.0,62.0,WHITE,Male,,,Metastatic,0,51.03333333333333,,,,,,,
+TCGA_GDC_TCGA-ER-A194-01A,TCGA_GDC_TCGA-ER-A194,TCGA GDC 2025,44.48094612352168,1.0,77.0,WHITE,Male,,,Primary,0,35.5,,,,,,,
+TCGA_GDC_TCGA-ER-A195-06A,TCGA_GDC_TCGA-ER-A195,TCGA GDC 2025,35.41392904073587,1.0,46.0,WHITE,Male,,,Metastatic,0,6.433333333333334,,,,,,,
+TCGA_GDC_TCGA-ER-A196-01A,TCGA_GDC_TCGA-ER-A196,TCGA GDC 2025,58.63994743758212,0.0,64.0,WHITE,Female,,,Primary,0,0.5333333333333333,,,,,,,
+TCGA_GDC_TCGA-ER-A197-06A,TCGA_GDC_TCGA-ER-A197,TCGA GDC 2025,13.92904073587385,1.0,83.0,WHITE,Female,,,Metastatic,0,1.1,,,,,,,
+TCGA_GDC_TCGA-ER-A198-06A,TCGA_GDC_TCGA-ER-A198,TCGA GDC 2025,50.7227332457293,1.0,45.0,WHITE,Male,,,Metastatic,0,12.866666666666667,,,,,,,
+TCGA_GDC_TCGA-ER-A199-06A,TCGA_GDC_TCGA-ER-A199,TCGA GDC 2025,9.165571616294349,1.0,86.0,WHITE,Female,,,Metastatic,0,7.033333333333333,,,,,,,
+TCGA_GDC_TCGA-ER-A19A-06A,TCGA_GDC_TCGA-ER-A19A,TCGA GDC 2025,77.69382391590013,0.0,79.0,WHITE,Male,,,Metastatic,0,4.0,,,,,,,
+TCGA_GDC_TCGA-ER-A19B-06A,TCGA_GDC_TCGA-ER-A19B,TCGA GDC 2025,98.3245729303548,1.0,42.0,WHITE,Male,,,Metastatic,0,2.833333333333333,,,,,,,
+TCGA_GDC_TCGA-ER-A19C-06A,TCGA_GDC_TCGA-ER-A19C,TCGA GDC 2025,48.85019710906702,1.0,77.0,WHITE,Male,,,Metastatic,0,1.8,,,,,,,
+TCGA_GDC_TCGA-ER-A19D-06A,TCGA_GDC_TCGA-ER-A19D,TCGA GDC 2025,12.582128777923783,1.0,46.0,WHITE,Female,,,Metastatic,0,11.4,,,,,,,
+TCGA_GDC_TCGA-ER-A19E-06A,TCGA_GDC_TCGA-ER-A19E,TCGA GDC 2025,13.009198423127463,1.0,36.0,WHITE,Female,,,Metastatic,0,12.033333333333331,,,,,,,
+TCGA_GDC_TCGA-ER-A19F-06A,TCGA_GDC_TCGA-ER-A19F,TCGA GDC 2025,26.346911957950063,1.0,82.0,WHITE,Male,,,Metastatic,0,25.0,,,,,,,
+TCGA_GDC_TCGA-ER-A19G-06A,TCGA_GDC_TCGA-ER-A19G,TCGA GDC 2025,301.83968462549274,0.0,48.0,WHITE,Female,,,Metastatic,0,13.333333333333334,,,,,,,
+TCGA_GDC_TCGA-ER-A19H-06A,TCGA_GDC_TCGA-ER-A19H,TCGA GDC 2025,152.23390275952693,1.0,40.0,WHITE,Male,,,Metastatic,0,6.533333333333333,,,,,,,
+TCGA_GDC_TCGA-ER-A19J-06A,TCGA_GDC_TCGA-ER-A19J,TCGA GDC 2025,6.438896189224704,1.0,54.0,WHITE,Male,,,Metastatic,0,5.5,,,,,,,
+TCGA_GDC_TCGA-ER-A19K-01A,TCGA_GDC_TCGA-ER-A19K,TCGA GDC 2025,15.407358738501973,1.0,79.0,WHITE,Female,,,Primary,0,9.533333333333331,,,,,,,
+TCGA_GDC_TCGA-ER-A19L-06A,TCGA_GDC_TCGA-ER-A19L,TCGA GDC 2025,131.4060446780552,1.0,35.0,WHITE,Male,,,Metastatic,0,1.4333333333333331,,,,,,,
+TCGA_GDC_TCGA-ER-A19M-06A,TCGA_GDC_TCGA-ER-A19M,TCGA GDC 2025,61.00525624178712,1.0,36.0,WHITE,Male,,,Metastatic,0,12.366666666666667,,,,,,,
+TCGA_GDC_TCGA-ER-A19N-06A,TCGA_GDC_TCGA-ER-A19N,TCGA GDC 2025,44.053876478318,1.0,47.0,WHITE,Male,,,Metastatic,0,11.266666666666667,,,,,,,
+TCGA_GDC_TCGA-ER-A19O-06A,TCGA_GDC_TCGA-ER-A19O,TCGA GDC 2025,,1.0,56.0,WHITE,Male,,,Metastatic,0,4.633333333333334,,,,,,,
+TCGA_GDC_TCGA-ER-A19P-06A,TCGA_GDC_TCGA-ER-A19P,TCGA GDC 2025,161.95795006570302,1.0,47.0,WHITE,Female,,,Metastatic,0,4.466666666666667,,,,,,,
+TCGA_GDC_TCGA-ER-A19Q-06A,TCGA_GDC_TCGA-ER-A19Q,TCGA GDC 2025,50.85413929040735,1.0,37.0,WHITE,Female,,,Metastatic,0,3.4,,,,,,,
+TCGA_GDC_TCGA-ER-A19S-06A,TCGA_GDC_TCGA-ER-A19S,TCGA GDC 2025,49.44152431011826,0.0,81.0,WHITE,Female,,,Metastatic,0,4.833333333333333,,,,,,,
+TCGA_GDC_TCGA-ER-A19T-01A,TCGA_GDC_TCGA-ER-A19T,TCGA GDC 2025,8.869908015768726,1.0,51.0,WHITE,Male,,,Primary,0,1.4333333333333331,,,,,,,
+TCGA_GDC_TCGA-ER-A19T-06A,TCGA_GDC_TCGA-ER-A19T,TCGA GDC 2025,8.869908015768726,1.0,51.0,WHITE,Male,,,Metastatic,0,1.2666666666666666,,,,,,,
+TCGA_GDC_TCGA-ER-A19W-06A,TCGA_GDC_TCGA-ER-A19W,TCGA GDC 2025,148.0617608409987,1.0,48.0,WHITE,Female,,,Metastatic,0,8.133333333333333,,,,,,,
+TCGA_GDC_TCGA-ER-A1A1-06A,TCGA_GDC_TCGA-ER-A1A1,TCGA GDC 2025,104.99342969776608,0.0,58.0,WHITE,Male,,,Metastatic,0,1.4,,,,,,,
+TCGA_GDC_TCGA-ER-A2NB-01A,TCGA_GDC_TCGA-ER-A2NB,TCGA GDC 2025,28.153745072273324,1.0,57.0,WHITE,Male,,,Primary,0,1.7333333333333334,,,,,,,
+TCGA_GDC_TCGA-ER-A2NC-06A,TCGA_GDC_TCGA-ER-A2NC,TCGA GDC 2025,43.79106438896189,1.0,50.0,WHITE,Male,,,Metastatic,0,9.9,,,,,,,
+TCGA_GDC_TCGA-ER-A2ND-06A,TCGA_GDC_TCGA-ER-A2ND,TCGA GDC 2025,23.3245729303548,1.0,57.0,WHITE,Female,,,Metastatic,0,2.933333333333333,,,,,,,
+TCGA_GDC_TCGA-ER-A2NE-06A,TCGA_GDC_TCGA-ER-A2NE,TCGA GDC 2025,20.13797634691196,1.0,39.0,WHITE,Male,,,Metastatic,0,3.4,,,,,,,
+TCGA_GDC_TCGA-ER-A2NF-01A,TCGA_GDC_TCGA-ER-A2NF,TCGA GDC 2025,28.8107752956636,1.0,53.0,WHITE,Male,,,Primary,0,0.9333333333333332,,,,,,,
+TCGA_GDC_TCGA-ER-A2NF-06A,TCGA_GDC_TCGA-ER-A2NF,TCGA GDC 2025,28.8107752956636,1.0,53.0,WHITE,Male,,,Metastatic,0,0.8333333333333334,,,,,,,
+TCGA_GDC_TCGA-ER-A2NG-06A,TCGA_GDC_TCGA-ER-A2NG,TCGA GDC 2025,48.94875164257556,1.0,43.0,WHITE,Female,,,Metastatic,0,6.6,,,,,,,
+TCGA_GDC_TCGA-ER-A2NH-06A,TCGA_GDC_TCGA-ER-A2NH,TCGA GDC 2025,41.52431011826544,0.0,49.0,WHITE,Male,,,Metastatic,0,7.666666666666667,,,,,,,
+TCGA_GDC_TCGA-ER-A3ES-06A,TCGA_GDC_TCGA-ER-A3ES,TCGA GDC 2025,246.84625492772668,1.0,25.0,WHITE,Male,,,Metastatic,0,0.6333333333333333,,,,,,,
+TCGA_GDC_TCGA-ER-A3ET-06A,TCGA_GDC_TCGA-ER-A3ET,TCGA GDC 2025,92.93692509855452,1.0,64.0,WHITE,Female,,,Metastatic,0,2.7,,,,,,,
+TCGA_GDC_TCGA-ER-A3EV-06A,TCGA_GDC_TCGA-ER-A3EV,TCGA GDC 2025,46.94480946123522,1.0,55.0,WHITE,Male,,,Metastatic,0,2.2,,,,,,,
+TCGA_GDC_TCGA-ER-A3PL-06A,TCGA_GDC_TCGA-ER-A3PL,TCGA GDC 2025,33.18002628120893,0.0,30.0,WHITE,Male,,,Metastatic,0,9.066666666666666,,,,,,,
+TCGA_GDC_TCGA-ER-A42H-01A,TCGA_GDC_TCGA-ER-A42H,TCGA GDC 2025,13.994743758212875,1.0,76.0,WHITE,Male,,,Primary,0,1.5,,,,,,,
+TCGA_GDC_TCGA-ER-A42K-06A,TCGA_GDC_TCGA-ER-A42K,TCGA GDC 2025,12.943495400788436,1.0,40.0,WHITE,Female,,,Metastatic,0,5.366666666666666,,,,,,,
+TCGA_GDC_TCGA-ER-A42L-06A,TCGA_GDC_TCGA-ER-A42L,TCGA GDC 2025,148.91590013140603,0.0,49.0,WHITE,Male,,,Metastatic,0,22.0,,,,,,,
+TCGA_GDC_TCGA-FR-A2OS-01A,TCGA_GDC_TCGA-FR-A2OS,TCGA GDC 2025,12.089356110381075,1.0,49.0,WHITE,Female,,,Primary,0,0.4,,,,,,,
+TCGA_GDC_TCGA-FR-A3R1-01A,TCGA_GDC_TCGA-FR-A3R1,TCGA GDC 2025,22.503285151116952,0.0,69.0,WHITE,Male,,,Primary,0,10.566666666666666,,,,,,,
+TCGA_GDC_TCGA-FR-A3YN-06A,TCGA_GDC_TCGA-FR-A3YN,TCGA GDC 2025,92.904073587385,0.0,44.0,WHITE,Male,,,Metastatic,0,14.366666666666667,,,,,,,
+TCGA_GDC_TCGA-FR-A3YO-06A,TCGA_GDC_TCGA-FR-A3YO,TCGA GDC 2025,,0.0,,WHITE,Female,,,Metastatic,0,21.73333333333333,,,,,,,
+TCGA_GDC_TCGA-FR-A44A-06A,TCGA_GDC_TCGA-FR-A44A,TCGA GDC 2025,174.0801576872536,0.0,29.0,WHITE,Female,,,Metastatic,0,7.466666666666667,,,,,,,
+TCGA_GDC_TCGA-FR-A69P-06A,TCGA_GDC_TCGA-FR-A69P,TCGA GDC 2025,15.703022339027594,0.0,34.0,WHITE,Female,,,Metastatic,0,5.8,,,,,,,
+TCGA_GDC_TCGA-FR-A726-01A,TCGA_GDC_TCGA-FR-A726,TCGA GDC 2025,0.0,1.0,89.0,WHITE,Male,,,Primary,0,180.06666666666666,,,,,,,
+TCGA_GDC_TCGA-FR-A728-01A,TCGA_GDC_TCGA-FR-A728,TCGA GDC 2025,19.152431011826543,0.0,54.0,WHITE,Female,,,Primary,0,9.866666666666667,,,,,,,
+TCGA_GDC_TCGA-FR-A729-06A,TCGA_GDC_TCGA-FR-A729,TCGA GDC 2025,220.63074901445464,0.0,38.0,WHITE,Female,,,Metastatic,0,22.633333333333333,,,,,,,
+TCGA_GDC_TCGA-FR-A7U8-06A,TCGA_GDC_TCGA-FR-A7U8,TCGA GDC 2025,27.825229960578184,0.0,50.0,WHITE,Male,,,Metastatic,0,0.9,,,,,,,
+TCGA_GDC_TCGA-FR-A7U9-06A,TCGA_GDC_TCGA-FR-A7U9,TCGA GDC 2025,18.75821287779237,0.0,63.0,WHITE,Female,,,Metastatic,0,46.36666666666667,,,,,,,
+TCGA_GDC_TCGA-FR-A7UA-06A,TCGA_GDC_TCGA-FR-A7UA,TCGA GDC 2025,38.23915900131406,0.0,65.0,WHITE,Female,,,Metastatic,0,4.233333333333333,,,,,,,
+TCGA_GDC_TCGA-FR-A8YC-06A,TCGA_GDC_TCGA-FR-A8YC,TCGA GDC 2025,34.78975032851511,1.0,78.0,WHITE,Male,,,Metastatic,0,77.3,,,,,,,
+TCGA_GDC_TCGA-FR-A8YD-06A,TCGA_GDC_TCGA-FR-A8YD,TCGA GDC 2025,36.23521681997372,1.0,56.0,WHITE,Female,,,Metastatic,0,3.1333333333333333,,,,,,,
+TCGA_GDC_TCGA-FR-A8YE-06A,TCGA_GDC_TCGA-FR-A8YE,TCGA GDC 2025,104.3363994743758,0.0,41.0,WHITE,Male,,,Metastatic,0,8.033333333333333,,,,,,,
+TCGA_GDC_TCGA-FS-A1YW-06A,TCGA_GDC_TCGA-FS-A1YW,TCGA GDC 2025,216.75427069645204,1.0,52.0,WHITE,Male,,,Metastatic,0,4.0,,,,,,,
+TCGA_GDC_TCGA-FS-A1YX-06A,TCGA_GDC_TCGA-FS-A1YX,TCGA GDC 2025,48.55453350854139,1.0,39.0,WHITE,Female,,,Metastatic,0,0.7666666666666667,,,,,,,
+TCGA_GDC_TCGA-FS-A1YY-06A,TCGA_GDC_TCGA-FS-A1YY,TCGA GDC 2025,228.4165571616294,1.0,55.0,WHITE,Female,,,Metastatic,0,5.3,,,,,,,
+TCGA_GDC_TCGA-FS-A1Z0-06A,TCGA_GDC_TCGA-FS-A1Z0,TCGA GDC 2025,202.49671484888304,1.0,32.0,WHITE,Female,,,Metastatic,0,6.9,,,,,,,
+TCGA_GDC_TCGA-FS-A1Z3-06A,TCGA_GDC_TCGA-FS-A1Z3,TCGA GDC 2025,20.89356110381077,1.0,72.0,WHITE,Female,,,Metastatic,0,27.266666666666666,,,,,,,
+TCGA_GDC_TCGA-FS-A1Z4-06A,TCGA_GDC_TCGA-FS-A1Z4,TCGA GDC 2025,28.055190538764784,1.0,62.0,WHITE,Male,,,Metastatic,0,0.9666666666666668,,,,,,,
+TCGA_GDC_TCGA-FS-A1Z7-06A,TCGA_GDC_TCGA-FS-A1Z7,TCGA GDC 2025,7.7858081471747695,1.0,19.0,WHITE,Male,,,Metastatic,0,4.633333333333334,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZA-06A,TCGA_GDC_TCGA-FS-A1ZA,TCGA GDC 2025,27.69382391590013,1.0,45.0,WHITE,Female,,,Metastatic,0,31.7,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZB-06A,TCGA_GDC_TCGA-FS-A1ZB,TCGA GDC 2025,48.8173455978975,1.0,57.0,WHITE,Male,,,Metastatic,0,5.666666666666667,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZC-06A,TCGA_GDC_TCGA-FS-A1ZC,TCGA GDC 2025,357.095926412615,1.0,51.0,WHITE,Male,,,Metastatic,0,17.833333333333332,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZD-06A,TCGA_GDC_TCGA-FS-A1ZD,TCGA GDC 2025,53.482260183968464,1.0,63.0,WHITE,Male,,,Metastatic,0,6.633333333333334,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZE-06A,TCGA_GDC_TCGA-FS-A1ZE,TCGA GDC 2025,46.419185282523,1.0,40.0,WHITE,Male,,,Metastatic,0,3.8,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZF-06A,TCGA_GDC_TCGA-FS-A1ZF,TCGA GDC 2025,15.440210249671484,1.0,78.0,WHITE,Female,,,Metastatic,0,5.2,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZG-06A,TCGA_GDC_TCGA-FS-A1ZG,TCGA GDC 2025,9.69119579500657,1.0,60.0,WHITE,Female,,,Metastatic,0,0.8,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZH-06A,TCGA_GDC_TCGA-FS-A1ZH,TCGA GDC 2025,32.72010512483574,1.0,71.0,WHITE,Female,,,Metastatic,0,0.8,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZJ-06A,TCGA_GDC_TCGA-FS-A1ZJ,TCGA GDC 2025,47.33902759526938,1.0,75.0,WHITE,Female,,,Metastatic,0,1.6,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZK-06A,TCGA_GDC_TCGA-FS-A1ZK,TCGA GDC 2025,23.915900131406044,1.0,68.0,WHITE,Male,,,Metastatic,0,39.4,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZM-06A,TCGA_GDC_TCGA-FS-A1ZM,TCGA GDC 2025,101.18265440210249,0.0,74.0,WHITE,Male,,,Metastatic,0,6.3,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZN-01A,TCGA_GDC_TCGA-FS-A1ZN,TCGA GDC 2025,23.98160315374507,1.0,43.0,WHITE,Male,,,Primary,0,2.566666666666667,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZP-06A,TCGA_GDC_TCGA-FS-A1ZP,TCGA GDC 2025,74.67148488830486,1.0,52.0,WHITE,Male,,,Metastatic,0,10.3,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZQ-06A,TCGA_GDC_TCGA-FS-A1ZQ,TCGA GDC 2025,133.44283837056503,1.0,31.0,WHITE,Male,,,Metastatic,0,11.866666666666667,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZR-06A,TCGA_GDC_TCGA-FS-A1ZR,TCGA GDC 2025,11.399474375821288,1.0,36.0,WHITE,Male,,,Metastatic,0,3.5,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZS-06A,TCGA_GDC_TCGA-FS-A1ZS,TCGA GDC 2025,148.68593955321944,0.0,54.0,WHITE,Male,,,Metastatic,0,6.433333333333334,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZT-06A,TCGA_GDC_TCGA-FS-A1ZT,TCGA GDC 2025,53.120893561103806,0.0,55.0,WHITE,Male,,,Metastatic,0,4.433333333333334,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZU-06A,TCGA_GDC_TCGA-FS-A1ZU,TCGA GDC 2025,26.544021024967147,1.0,70.0,WHITE,Female,,,Metastatic,0,1.1666666666666667,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZW-06A,TCGA_GDC_TCGA-FS-A1ZW,TCGA GDC 2025,49.44152431011826,0.0,65.0,WHITE,Male,,,Metastatic,0,17.533333333333335,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZY-06A,TCGA_GDC_TCGA-FS-A1ZY,TCGA GDC 2025,27.069645203679368,1.0,71.0,WHITE,Male,,,Metastatic,0,0.7,,,,,,,
+TCGA_GDC_TCGA-FS-A1ZZ-06A,TCGA_GDC_TCGA-FS-A1ZZ,TCGA GDC 2025,27.003942181340346,1.0,54.0,WHITE,Female,,,Metastatic,0,38.16666666666666,,,,,,,
+TCGA_GDC_TCGA-FS-A4F0-06A,TCGA_GDC_TCGA-FS-A4F0,TCGA GDC 2025,77.75952693823916,0.0,67.0,WHITE,Female,,,Metastatic,0,14.533333333333331,,,,,,,
+TCGA_GDC_TCGA-FS-A4F2-06A,TCGA_GDC_TCGA-FS-A4F2,TCGA GDC 2025,50.09855453350854,1.0,46.0,WHITE,Female,,,Metastatic,0,18.33333333333333,,,,,,,
+TCGA_GDC_TCGA-FS-A4F4-06A,TCGA_GDC_TCGA-FS-A4F4,TCGA GDC 2025,66.62286465177398,1.0,64.0,WHITE,Male,,,Metastatic,0,1.1,,,,,,,
+TCGA_GDC_TCGA-FS-A4F5-06A,TCGA_GDC_TCGA-FS-A4F5,TCGA GDC 2025,28.71222076215506,1.0,77.0,WHITE,Female,,,Metastatic,0,20.433333333333334,,,,,,,
+TCGA_GDC_TCGA-FS-A4F8-06A,TCGA_GDC_TCGA-FS-A4F8,TCGA GDC 2025,174.70433639947436,1.0,52.0,WHITE,Male,,,Metastatic,0,4.433333333333334,,,,,,,
+TCGA_GDC_TCGA-FS-A4F9-06A,TCGA_GDC_TCGA-FS-A4F9,TCGA GDC 2025,34.00131406044678,0.0,80.0,WHITE,Male,,,Metastatic,0,11.833333333333334,,,,,,,
+TCGA_GDC_TCGA-FS-A4FB-06A,TCGA_GDC_TCGA-FS-A4FB,TCGA GDC 2025,26.70827858081472,1.0,46.0,WHITE,Female,,,Metastatic,0,5.0,,,,,,,
+TCGA_GDC_TCGA-FS-A4FC-06A,TCGA_GDC_TCGA-FS-A4FC,TCGA GDC 2025,54.369250985545335,1.0,75.0,WHITE,Female,,,Metastatic,0,19.166666666666668,,,,,,,
+TCGA_GDC_TCGA-FS-A4FD-06A,TCGA_GDC_TCGA-FS-A4FD,TCGA GDC 2025,80.61760840998686,1.0,39.0,WHITE,Male,,,Metastatic,0,11.866666666666667,,,,,,,
+TCGA_GDC_TCGA-FW-A3I3-06A,TCGA_GDC_TCGA-FW-A3I3,TCGA GDC 2025,17.444152431011826,0.0,59.0,WHITE,Female,,,Metastatic,0,1.3666666666666667,,,,,,,
+TCGA_GDC_TCGA-FW-A3R5-06A,TCGA_GDC_TCGA-FW-A3R5,TCGA GDC 2025,36.92509855453351,0.0,68.0,WHITE,Male,,,Metastatic,0,463.26666666666665,,,,,,,
+TCGA_GDC_TCGA-FW-A3TU-06A,TCGA_GDC_TCGA-FW-A3TU,TCGA GDC 2025,55.55190538764783,1.0,72.0,WHITE,Female,,,Metastatic,0,20.1,,,,,,,
+TCGA_GDC_TCGA-FW-A3TV-06A,TCGA_GDC_TCGA-FW-A3TV,TCGA GDC 2025,13.501971090670173,0.0,57.0,WHITE,Female,,,Metastatic,0,8.533333333333333,,,,,,,
+TCGA_GDC_TCGA-FW-A5DX-01A,TCGA_GDC_TCGA-FW-A5DX,TCGA GDC 2025,21.02496714848883,0.0,71.0,WHITE,Male,,,Primary,0,4.966666666666667,,,,,,,
+TCGA_GDC_TCGA-FW-A5DY-06A,TCGA_GDC_TCGA-FW-A5DY,TCGA GDC 2025,19.2838370565046,0.0,48.0,WHITE,Female,,,Metastatic,0,3.433333333333333,,,,,,,
+TCGA_GDC_TCGA-GF-A2C7-01A,TCGA_GDC_TCGA-GF-A2C7,TCGA GDC 2025,0.6898817345597897,0.0,48.0,WHITE,Male,,,Primary,0,1.9666666666666663,,,,,,,
+TCGA_GDC_TCGA-GF-A3OT-06A,TCGA_GDC_TCGA-GF-A3OT,TCGA GDC 2025,9.888304862023652,0.0,58.0,WHITE,Female,,,Metastatic,0,13.966666666666669,,,,,,,
+TCGA_GDC_TCGA-GF-A4EO-06A,TCGA_GDC_TCGA-GF-A4EO,TCGA GDC 2025,19.415243101182654,0.0,74.0,WHITE,Female,,,Metastatic,0,6.233333333333333,,,,,,,
+TCGA_GDC_TCGA-GF-A6C8-06A,TCGA_GDC_TCGA-GF-A6C8,TCGA GDC 2025,2.0367936925098555,0.0,62.0,WHITE,Female,,,Metastatic,0,9.9,,,,,,,
+TCGA_GDC_TCGA-GF-A6C9-06A,TCGA_GDC_TCGA-GF-A6C9,TCGA GDC 2025,15.768725361366622,0.0,78.0,WHITE,Male,,,Metastatic,0,67.76666666666667,,,,,,,
+TCGA_GDC_TCGA-GF-A769-01A,TCGA_GDC_TCGA-GF-A769,TCGA GDC 2025,35.15111695137976,1.0,39.0,WHITE,Male,,,Primary,0,3.633333333333333,,,,,,,
+TCGA_GDC_TCGA-GN-A262-06A,TCGA_GDC_TCGA-GN-A262,TCGA GDC 2025,139.7831800262812,0.0,47.0,WHITE,Female,,,Metastatic,0,8.933333333333334,,,,,,,
+TCGA_GDC_TCGA-GN-A263-01A,TCGA_GDC_TCGA-GN-A263,TCGA GDC 2025,15.341655716162943,1.0,24.0,WHITE,Male,,,Primary,0,11.6,,,,,,,
+TCGA_GDC_TCGA-GN-A264-06A,TCGA_GDC_TCGA-GN-A264,TCGA GDC 2025,117.838370565046,1.0,60.0,WHITE,Male,,,Metastatic,0,1.2,,,,,,,
+TCGA_GDC_TCGA-GN-A265-06A,TCGA_GDC_TCGA-GN-A265,TCGA GDC 2025,96.84625492772668,0.0,53.0,WHITE,Male,,,Metastatic,0,5.466666666666667,,,,,,,
+TCGA_GDC_TCGA-GN-A266-06A,TCGA_GDC_TCGA-GN-A266,TCGA GDC 2025,10.11826544021025,1.0,45.0,WHITE,Male,,,Metastatic,0,97.4,,,,,,,
+TCGA_GDC_TCGA-GN-A267-06A,TCGA_GDC_TCGA-GN-A267,TCGA GDC 2025,64.38896189224704,1.0,38.0,WHITE,Male,,,Metastatic,0,11.0,,,,,,,
+TCGA_GDC_TCGA-GN-A268-06A,TCGA_GDC_TCGA-GN-A268,TCGA GDC 2025,62.74638633377135,1.0,83.0,WHITE,Female,,,Metastatic,0,9.033333333333331,,,,,,,
+TCGA_GDC_TCGA-GN-A26A-06A,TCGA_GDC_TCGA-GN-A26A,TCGA GDC 2025,32.45729303547963,1.0,63.0,WHITE,Female,,,Metastatic,0,8.466666666666667,,,,,,,
+TCGA_GDC_TCGA-GN-A26C-01A,TCGA_GDC_TCGA-GN-A26C,TCGA GDC 2025,26.971090670170828,1.0,77.0,WHITE,Male,,,Primary,0,43.5,,,,,,,
+TCGA_GDC_TCGA-GN-A26D-06A,TCGA_GDC_TCGA-GN-A26D,TCGA GDC 2025,47.96320630749014,1.0,72.0,WHITE,Female,,,Metastatic,0,1.2333333333333334,,,,,,,
+TCGA_GDC_TCGA-GN-A4U3-06A,TCGA_GDC_TCGA-GN-A4U3,TCGA GDC 2025,121.81340341655716,0.0,30.0,WHITE,Male,,,Metastatic,0,7.9,,,,,,,
+TCGA_GDC_TCGA-GN-A4U4-06A,TCGA_GDC_TCGA-GN-A4U4,TCGA GDC 2025,39.32325886990802,0.0,73.0,WHITE,Male,,,Metastatic,0,18.0,,,,,,,
+TCGA_GDC_TCGA-GN-A4U5-01A,TCGA_GDC_TCGA-GN-A4U5,TCGA GDC 2025,37.97634691195795,0.0,61.0,WHITE,Female,,,Primary,0,8.433333333333334,,,,,,,
+TCGA_GDC_TCGA-GN-A4U7-06A,TCGA_GDC_TCGA-GN-A4U7,TCGA GDC 2025,10.413929040735871,1.0,56.0,WHITE,Female,,,Metastatic,0,6.2,,,,,,,
+TCGA_GDC_TCGA-GN-A4U8-06A,TCGA_GDC_TCGA-GN-A4U8,TCGA GDC 2025,48.85019710906702,0.0,51.0,WHITE,Male,,,Metastatic,0,10.4,,,,,,,
+TCGA_GDC_TCGA-GN-A4U9-06A,TCGA_GDC_TCGA-GN-A4U9,TCGA GDC 2025,22.109067017082783,1.0,71.0,WHITE,Male,,,Metastatic,0,1.7666666666666666,,,,,,,
+TCGA_GDC_TCGA-GN-A8LK-06A,TCGA_GDC_TCGA-GN-A8LK,TCGA GDC 2025,50.06570302233902,1.0,70.0,WHITE,Male,,,Metastatic,0,51.93333333333333,,,,,,,
+TCGA_GDC_TCGA-GN-A8LL-06A,TCGA_GDC_TCGA-GN-A8LL,TCGA GDC 2025,21.353482260183966,1.0,68.0,WHITE,Female,,,Metastatic,0,1.3333333333333333,,,,,,,
+TCGA_GDC_TCGA-GN-A8LN-01A,TCGA_GDC_TCGA-GN-A8LN,TCGA GDC 2025,25.36136662286465,0.0,68.0,WHITE,Male,,,Primary,0,6.966666666666667,,,,,,,
+TCGA_GDC_TCGA-GN-A9SD-06A,TCGA_GDC_TCGA-GN-A9SD,TCGA GDC 2025,59.36268068331143,1.0,59.0,WHITE,Female,,,Metastatic,0,3.5,,,,,,,
+TCGA_GDC_TCGA-HR-A2OG-06A,TCGA_GDC_TCGA-HR-A2OG,TCGA GDC 2025,0.2299605781865965,0.0,59.0,,Female,,,Metastatic,0,4.966666666666667,,,,,,,
+TCGA_GDC_TCGA-HR-A2OH-06A,TCGA_GDC_TCGA-HR-A2OH,TCGA GDC 2025,65.83442838370564,1.0,46.0,,Female,,,Metastatic,0,2.9,,,,,,,
+TCGA_GDC_TCGA-HR-A5NC-01A,TCGA_GDC_TCGA-HR-A5NC,TCGA GDC 2025,0.0,0.0,89.0,,Female,,,Primary,0,1.5666666666666669,,,,,,,
+TCGA_GDC_TCGA-IH-A3EA-01A,TCGA_GDC_TCGA-IH-A3EA,TCGA GDC 2025,17.21419185282523,0.0,61.0,WHITE,Male,,,Primary,0,39.6,,,,,,,
+TCGA_GDC_TCGA-LH-A9QB-06A,TCGA_GDC_TCGA-LH-A9QB,TCGA GDC 2025,368.49540078843626,0.0,24.0,WHITE,Female,,,Metastatic,0,6.5,,,,,,,
+TCGA_GDC_TCGA-OD-A75X-06A,TCGA_GDC_TCGA-OD-A75X,TCGA GDC 2025,297.6675427069645,1.0,49.0,WHITE,Male,,,Metastatic,0,27.23333333333333,,,,,,,
+TCGA_GDC_TCGA-QB-A6FS-06A,TCGA_GDC_TCGA-QB-A6FS,TCGA GDC 2025,7.227332457293035,0.0,49.0,WHITE,Male,,,Metastatic,0,30.166666666666668,,,,,,,
+TCGA_GDC_TCGA-QB-AA9O-06A,TCGA_GDC_TCGA-QB-AA9O,TCGA GDC 2025,18.03547963206308,1.0,73.0,WHITE,Male,,,Metastatic,0,38.9,,,,,,,
+TCGA_GDC_TCGA-RP-A690-06A,TCGA_GDC_TCGA-RP-A690,TCGA GDC 2025,0.1971090670170827,0.0,66.0,WHITE,Female,,,Metastatic,0,0.4666666666666667,,,,,,,
+TCGA_GDC_TCGA-RP-A693-06A,TCGA_GDC_TCGA-RP-A693,TCGA GDC 2025,0.328515111695138,0.0,77.0,WHITE,Male,,,Metastatic,0,20.666666666666668,,,,,,,
+TCGA_GDC_TCGA-RP-A694-06A,TCGA_GDC_TCGA-RP-A694,TCGA GDC 2025,0.6898817345597897,0.0,71.0,WHITE,Male,,,Metastatic,0,18.433333333333334,,,,,,,
+TCGA_GDC_TCGA-RP-A695-06A,TCGA_GDC_TCGA-RP-A695,TCGA GDC 2025,,0.0,,WHITE,Male,,,Metastatic,0,22.933333333333334,,,,,,,
+TCGA_GDC_TCGA-RP-A6K9-06A,TCGA_GDC_TCGA-RP-A6K9,TCGA GDC 2025,,0.0,,WHITE,Female,,,Metastatic,0,1.4333333333333331,,,,,,,
+TCGA_GDC_TCGA-W3-A824-06A,TCGA_GDC_TCGA-W3-A824,TCGA GDC 2025,227.98948751642573,0.0,63.0,WHITE,Male,,,Metastatic,0,38.66666666666666,,,,,,,
+TCGA_GDC_TCGA-W3-A825-06A,TCGA_GDC_TCGA-W3-A825,TCGA GDC 2025,62.97634691195795,1.0,60.0,WHITE,Female,,,Metastatic,0,28.933333333333334,,,,,,,
+TCGA_GDC_TCGA-W3-A828-06A,TCGA_GDC_TCGA-W3-A828,TCGA GDC 2025,120.99211563731932,1.0,66.0,WHITE,Male,,,Metastatic,0,36.8,,,,,,,
+TCGA_GDC_TCGA-W3-AA1O-06A,TCGA_GDC_TCGA-W3-AA1O,TCGA GDC 2025,4.007884362680684,1.0,85.0,WHITE,Male,,,Metastatic,0,19.666666666666668,,,,,,,
+TCGA_GDC_TCGA-W3-AA1Q-06A,TCGA_GDC_TCGA-W3-AA1Q,TCGA GDC 2025,69.02102496714849,1.0,57.0,WHITE,Male,,,Metastatic,0,24.03333333333333,,,,,,,
+TCGA_GDC_TCGA-W3-AA1R-06A,TCGA_GDC_TCGA-W3-AA1R,TCGA GDC 2025,111.00525624178712,1.0,71.0,WHITE,Male,,,Metastatic,0,45.43333333333333,,,,,,,
+TCGA_GDC_TCGA-W3-AA1V-06B,TCGA_GDC_TCGA-W3-AA1V,TCGA GDC 2025,42.04993429697766,1.0,63.0,WHITE,Male,,,Metastatic,0,141.0,,,,,,,
+TCGA_GDC_TCGA-W3-AA1W-06A,TCGA_GDC_TCGA-W3-AA1W,TCGA GDC 2025,218.98817345597897,0.0,64.0,WHITE,Male,,,Metastatic,0,17.766666666666666,,,,,,,
+TCGA_GDC_TCGA-W3-AA21-06A,TCGA_GDC_TCGA-W3-AA21,TCGA GDC 2025,104.96057818659658,1.0,26.0,WHITE,Male,,,Metastatic,0,13.2,,,,,,,
+TCGA_GDC_TCGA-WE-A8JZ-06A,TCGA_GDC_TCGA-WE-A8JZ,TCGA GDC 2025,24.014454664914584,0.0,70.0,,Male,,,Metastatic,0,5.266666666666667,,,,,,,
+TCGA_GDC_TCGA-WE-A8K1-06A,TCGA_GDC_TCGA-WE-A8K1,TCGA GDC 2025,49.01445466491458,0.0,74.0,WHITE,Male,,,Metastatic,0,8.733333333333333,,,,,,,
+TCGA_GDC_TCGA-WE-A8K4-01A,TCGA_GDC_TCGA-WE-A8K4,TCGA GDC 2025,20.17082785808147,0.0,85.0,WHITE,Male,,,Primary,0,21.73333333333333,,,,,,,
+TCGA_GDC_TCGA-WE-A8K5-06A,TCGA_GDC_TCGA-WE-A8K5,TCGA GDC 2025,61.10381077529566,1.0,65.0,WHITE,Male,,,Metastatic,0,29.166666666666668,,,,,,,
+TCGA_GDC_TCGA-WE-A8K6-06A,TCGA_GDC_TCGA-WE-A8K6,TCGA GDC 2025,17.936925098554532,0.0,79.0,WHITE,Male,,,Metastatic,0,6.6,,,,,,,
+TCGA_GDC_TCGA-WE-A8ZM-06A,TCGA_GDC_TCGA-WE-A8ZM,TCGA GDC 2025,101.24835742444152,0.0,70.0,WHITE,Male,,,Metastatic,0,2.2,,,,,,,
+TCGA_GDC_TCGA-WE-A8ZN-06A,TCGA_GDC_TCGA-WE-A8ZN,TCGA GDC 2025,58.93561103810775,0.0,57.0,,Male,,,Metastatic,0,4.4,,,,,,,
+TCGA_GDC_TCGA-WE-A8ZO-06A,TCGA_GDC_TCGA-WE-A8ZO,TCGA GDC 2025,70.4664914586071,0.0,73.0,,Female,,,Metastatic,0,9.233333333333333,,,,,,,
+TCGA_GDC_TCGA-WE-A8ZQ-06A,TCGA_GDC_TCGA-WE-A8ZQ,TCGA GDC 2025,63.17345597897503,0.0,48.0,,Male,,,Metastatic,0,4.366666666666666,,,,,,,
+TCGA_GDC_TCGA-WE-A8ZR-06A,TCGA_GDC_TCGA-WE-A8ZR,TCGA GDC 2025,9.00131406044678,1.0,49.0,WHITE,Male,,,Metastatic,0,0.7333333333333333,,,,,,,
+TCGA_GDC_TCGA-WE-A8ZT-06A,TCGA_GDC_TCGA-WE-A8ZT,TCGA GDC 2025,11.793692509855452,0.0,25.0,WHITE,Female,,,Metastatic,0,11.8,,,,,,,
+TCGA_GDC_TCGA-WE-A8ZX-06A,TCGA_GDC_TCGA-WE-A8ZX,TCGA GDC 2025,35.775295663600524,0.0,45.0,WHITE,Male,,,Metastatic,0,14.566666666666666,,,,,,,
+TCGA_GDC_TCGA-WE-A8ZY-06A,TCGA_GDC_TCGA-WE-A8ZY,TCGA GDC 2025,49.47437582128778,1.0,62.0,WHITE,Male,,,Metastatic,0,6.033333333333333,,,,,,,
+TCGA_GDC_TCGA-WE-AA9Y-06A,TCGA_GDC_TCGA-WE-AA9Y,TCGA GDC 2025,12.155059132720105,0.0,37.0,WHITE,Male,,,Metastatic,0,1.6666666666666667,,,,,,,
+TCGA_GDC_TCGA-WE-AAA0-06A,TCGA_GDC_TCGA-WE-AAA0,TCGA GDC 2025,40.37450722733246,0.0,47.0,WHITE,Male,,,Metastatic,0,38.1,,,,,,,
+TCGA_GDC_TCGA-WE-AAA3-06A,TCGA_GDC_TCGA-WE-AAA3,TCGA GDC 2025,21.38633377135348,0.0,84.0,WHITE,Female,,,Metastatic,0,9.233333333333333,,,,,,,
+TCGA_GDC_TCGA-WE-AAA4-06A,TCGA_GDC_TCGA-WE-AAA4,TCGA GDC 2025,24.967148488830485,0.0,56.0,WHITE,Female,,,Metastatic,0,6.066666666666666,,,,,,,
+TCGA_GDC_TCGA-XV-A9VZ-01A,TCGA_GDC_TCGA-XV-A9VZ,TCGA GDC 2025,0.0,0.0,89.0,WHITE,Female,,,Primary,0,0.4,,,,,,,
+TCGA_GDC_TCGA-XV-A9W2-01A,TCGA_GDC_TCGA-XV-A9W2,TCGA GDC 2025,13.699080157687254,0.0,81.0,WHITE,Male,,,Primary,0,1.0333333333333334,,,,,,,
+TCGA_GDC_TCGA-XV-A9W5-01A,TCGA_GDC_TCGA-XV-A9W5,TCGA GDC 2025,12.877792378449408,0.0,51.0,WHITE,Male,,,Primary,0,2.2666666666666666,,,,,,,
+TCGA_GDC_TCGA-XV-AAZV-01A,TCGA_GDC_TCGA-XV-AAZV,TCGA GDC 2025,13.534822601839684,0.0,56.0,WHITE,Female,,,Primary,0,2.7,,,,,,,
+TCGA_GDC_TCGA-XV-AAZW-01A,TCGA_GDC_TCGA-XV-AAZW,TCGA GDC 2025,12.91064388961892,1.0,62.0,WHITE,Female,,,Primary,0,3.866666666666666,,,,,,,
+TCGA_GDC_TCGA-XV-AAZY-01A,TCGA_GDC_TCGA-XV-AAZY,TCGA GDC 2025,13.304862023653088,0.0,76.0,WHITE,Female,,,Primary,0,4.333333333333333,,,,,,,
+TCGA_GDC_TCGA-XV-AB01-06A,TCGA_GDC_TCGA-XV-AB01,TCGA GDC 2025,13.23915900131406,0.0,54.0,WHITE,Female,,,Metastatic,0,5.433333333333334,,,,,,,
+TCGA_GDC_TCGA-YD-A89C-06A,TCGA_GDC_TCGA-YD-A89C,TCGA GDC 2025,6.898817345597897,0.0,43.0,WHITE,Female,,,Metastatic,0,44.1,,,,,,,
+TCGA_GDC_TCGA-YD-A9TA-06A,TCGA_GDC_TCGA-YD-A9TA,TCGA GDC 2025,49.14586070959264,0.0,75.0,WHITE,Male,,,Metastatic,0,85.16666666666667,,,,,,,
+TCGA_GDC_TCGA-YD-A9TB-06A,TCGA_GDC_TCGA-YD-A9TB,TCGA GDC 2025,,0.0,,WHITE,Female,,,Metastatic,0,8.5,,,,,,,
+TCGA_GDC_TCGA-YG-AA3N-01A,TCGA_GDC_TCGA-YG-AA3N,TCGA GDC 2025,10.052562417871222,0.0,67.0,,Male,,,Primary,0,51.9,,,,,,,
+TCGA_GDC_TCGA-YG-AA3O-06A,TCGA_GDC_TCGA-YG-AA3O,TCGA GDC 2025,37.91064388961892,1.0,62.0,,Male,,,Metastatic,0,29.766666666666666,,,,,,,
+TCGA_GDC_TCGA-YG-AA3P-06A,TCGA_GDC_TCGA-YG-AA3P,TCGA GDC 2025,14.421813403416555,0.0,63.0,,Female,,,Metastatic,0,1.8333333333333333,,,,,,,
+TCGA_GDC_TCGA-Z2-A8RT-06A,TCGA_GDC_TCGA-Z2-A8RT,TCGA GDC 2025,27.56241787122208,0.0,42.0,WHITE,Female,,,Metastatic,0,75.83333333333333,,,,,,,
+TCGA_GDC_TCGA-Z2-AA3S-06A,TCGA_GDC_TCGA-Z2-AA3S,TCGA GDC 2025,96.9119579500657,0.0,58.0,WHITE,Male,,,Metastatic,0,5.466666666666667,,,,,,,
+TCGA_GDC_TCGA-Z2-AA3V-06A,TCGA_GDC_TCGA-Z2-AA3V,TCGA GDC 2025,15.965834428383705,0.0,57.0,WHITE,Female,,,Metastatic,0,11.033333333333331,,,,,,,
+GIDE_PD02_PRE,GIDE_PD02,Gide 2019,2.14,1.0,61.0,,Female,Progressive Disease,0.0,N/A,1,,,,4.0,55.0,13.0,0.0,0.0
+GIDE_PD03_PRE,GIDE_PD03,Gide 2019,1.94,1.0,50.0,,Male,Progressive Disease,0.0,N/A,1,,,,13.0,50.0,2.0,0.0,0.0
+GIDE_PD04_PRE,GIDE_PD04,Gide 2019,0.72,1.0,84.0,,Male,Progressive Disease,0.0,N/A,1,,,,0.0,187.0,5.0,0.0,0.0
+GIDE_PD05_PRE,GIDE_PD05,Gide 2019,5.09,1.0,67.0,,Male,Progressive Disease,0.0,N/A,1,,,,26.0,84.0,10.0,0.0,0.0
+GIDE_PD06_PRE,GIDE_PD06,Gide 2019,3.09,1.0,68.0,,Male,Progressive Disease,0.0,N/A,1,,,,0.0,76.0,6.0,0.0,0.0
+GIDE_PD07_PRE,GIDE_PD07,Gide 2019,2.63,1.0,57.0,,Female,Progressive Disease,0.0,N/A,1,,,,2.0,53.0,7.0,0.0,0.0
+GIDE_PD08_ON,GIDE_PD08,Gide 2019,1.91,1.0,85.0,,Female,Progressive Disease,0.0,N/A,1,,,,4.0,99.0,8.0,0.0,0.0
+GIDE_PD08_PRE,GIDE_PD08,Gide 2019,1.91,1.0,85.0,,Female,Progressive Disease,0.0,N/A,1,,,,4.0,103.0,13.0,0.0,0.0
+GIDE_PD09_PRE,GIDE_PD09,Gide 2019,3.25,1.0,70.0,,Female,Progressive Disease,0.0,N/A,1,,,,1.0,72.0,5.0,0.0,0.0
+GIDE_PD10_ON,GIDE_PD10,Gide 2019,18.1,0.0,90.0,,Male,Progressive Disease,0.0,N/A,1,,,,1.0,50.0,15.0,0.0,0.0
+GIDE_PD10_PRE,GIDE_PD10,Gide 2019,18.1,0.0,90.0,,Male,Progressive Disease,0.0,N/A,1,,,,2.0,42.0,19.0,0.0,0.0
+GIDE_PD11_PRE,GIDE_PD11,Gide 2019,5.45,1.0,66.0,,Male,Progressive Disease,0.0,N/A,1,,,,1.0,77.0,3.0,0.0,0.0
+GIDE_PD12_PRE,GIDE_PD12,Gide 2019,6.54,1.0,52.0,,Male,Stable Disease,,N/A,1,,,,5.0,66.0,20.0,0.0,0.0
+GIDE_PD13_ON,GIDE_PD13,Gide 2019,3.15,1.0,69.0,,Male,Progressive Disease,0.0,N/A,1,,,,4.0,110.0,11.0,0.0,0.0
+GIDE_PD13_PRE,GIDE_PD13,Gide 2019,3.15,1.0,69.0,,Male,Progressive Disease,0.0,N/A,1,,,,1.0,113.0,10.0,0.0,0.0
+GIDE_PD14_PRE,GIDE_PD14,Gide 2019,32.62,1.0,58.0,,Male,Progressive Disease,0.0,N/A,1,,,,1.0,82.0,26.0,0.0,0.0
+GIDE_PD15_PRE,GIDE_PD15,Gide 2019,9.86,1.0,76.0,,Female,Progressive Disease,0.0,N/A,1,,,,3.0,96.0,7.0,0.0,0.0
+GIDE_PD16_PRE,GIDE_PD16,Gide 2019,5.55,1.0,55.0,,Male,Progressive Disease,0.0,N/A,1,,,,1.0,46.0,13.0,0.0,0.0
+GIDE_PD17_ON,GIDE_PD17,Gide 2019,8.48,1.0,37.0,,Male,Progressive Disease,0.0,N/A,1,,,,3.0,99.0,22.0,0.0,0.0
+GIDE_PD17_PRE,GIDE_PD17,Gide 2019,8.48,1.0,37.0,,Male,Progressive Disease,0.0,N/A,1,,,,3.0,27.0,19.0,0.0,0.0
+GIDE_PD18_PRE,GIDE_PD18,Gide 2019,7.49,1.0,62.0,,Male,Progressive Disease,0.0,N/A,1,,,,1.0,25.0,4.0,0.0,0.0
+GIDE_PD19_PRE,GIDE_PD19,Gide 2019,12.65,1.0,54.0,,Male,Stable Disease,,N/A,1,,,,9.0,59.0,16.0,0.0,0.0
+GIDE_PD21_PRE,GIDE_PD21,Gide 2019,18.1,1.0,67.0,,Male,Stable Disease,,N/A,1,,,,1.0,54.0,3.0,0.0,0.0
+GIDE_PD23_PRE,GIDE_PD23,Gide 2019,6.27,1.0,40.0,,Male,Stable Disease,,N/A,1,,,,4.0,71.0,16.0,0.0,0.0
+GIDE_PD25_ON,GIDE_PD25,Gide 2019,29.47,1.0,49.0,,Male,Partial Response,1.0,N/A,1,,,,2.0,64.0,10.0,0.0,0.0
+GIDE_PD25_PRE,GIDE_PD25,Gide 2019,29.47,1.0,49.0,,Male,Partial Response,1.0,N/A,1,,,,5.0,59.0,16.0,0.0,0.0
+GIDE_PD27_PRE,GIDE_PD27,Gide 2019,35.05,1.0,76.0,,Male,Partial Response,1.0,N/A,1,,,,10.0,91.0,13.0,0.0,0.0
+GIDE_PD29_ON,GIDE_PD29,Gide 2019,27.1,1.0,55.0,,Male,Stable Disease,,N/A,1,,,,0.0,111.0,5.0,0.0,0.0
+GIDE_PD29_PRE,GIDE_PD29,Gide 2019,27.1,1.0,55.0,,Male,Stable Disease,,N/A,1,,,,2.0,109.0,7.0,0.0,0.0
+GIDE_PD30_PRE,GIDE_PD30,Gide 2019,19.09,0.0,86.0,,Female,Stable Disease,,N/A,1,,,,0.0,138.0,13.0,0.0,0.0
+GIDE_PD34_PRE,GIDE_PD34,Gide 2019,28.84,1.0,78.0,,Male,Partial Response,1.0,N/A,1,,,,2.0,143.0,15.0,0.0,0.0
+GIDE_PD35_PRE,GIDE_PD35,Gide 2019,35.84,0.0,55.0,,Female,Partial Response,1.0,N/A,1,,,,1.0,118.0,4.0,0.0,0.0
+GIDE_PD36_PRE,GIDE_PD36,Gide 2019,19.94,1.0,76.0,,Male,Partial Response,1.0,N/A,1,,,,0.0,87.0,14.0,0.0,0.0
+GIDE_PD38_PRE,GIDE_PD38,Gide 2019,50.82,0.0,69.0,,Female,Partial Response,1.0,N/A,1,,,,2.0,27.0,8.0,0.0,0.0
+GIDE_PD40_PRE,GIDE_PD40,Gide 2019,27.76,0.0,78.0,,Male,Partial Response,1.0,N/A,1,,,,0.0,111.0,2.0,0.0,0.0
+GIDE_PD41_ON,GIDE_PD41,Gide 2019,29.11,0.0,61.0,,Female,Partial Response,1.0,N/A,1,,,,3.0,61.0,7.0,0.0,0.0
+GIDE_PD41_PRE,GIDE_PD41,Gide 2019,29.11,0.0,61.0,,Female,Partial Response,1.0,N/A,1,,,,3.0,52.0,10.0,0.0,0.0
+GIDE_PD42_PRE,GIDE_PD42,Gide 2019,29.27,0.0,59.0,,Female,Complete Response,1.0,N/A,1,,,,5.0,144.0,12.0,0.0,0.0
+GIDE_PD44_PRE,GIDE_PD44,Gide 2019,35.32,0.0,45.0,,Female,Partial Response,1.0,N/A,1,,,,0.0,76.0,16.0,0.0,0.0
+GIDE_PD45_PRE,GIDE_PD45,Gide 2019,35.64,0.0,82.0,,Male,Partial Response,1.0,N/A,1,,,,3.0,99.0,4.0,0.0,0.0
+GIDE_PD46_PRE,GIDE_PD46,Gide 2019,36.07,0.0,71.0,,Male,Partial Response,1.0,N/A,1,,,,1.0,53.0,5.0,0.0,0.0
+GIDE_PD47_ON,GIDE_PD47,Gide 2019,38.57,0.0,62.0,,Male,Partial Response,1.0,N/A,1,,,,0.0,28.0,4.0,0.0,0.0
+GIDE_PD47_PRE,GIDE_PD47,Gide 2019,38.57,0.0,62.0,,Male,Partial Response,1.0,N/A,1,,,,2.0,45.0,5.0,0.0,0.0
+GIDE_PD48_ON,GIDE_PD48,Gide 2019,39.06,0.0,40.0,,Male,Partial Response,1.0,N/A,1,,,,1.0,134.0,7.0,0.0,0.0
+GIDE_PD48_PRE,GIDE_PD48,Gide 2019,39.06,0.0,40.0,,Male,Partial Response,1.0,N/A,1,,,,0.0,100.0,6.0,0.0,0.0
+GIDE_PD49_PRE,GIDE_PD49,Gide 2019,43.63,0.0,72.0,,Female,Complete Response,1.0,N/A,1,,,,4.0,73.0,6.0,0.0,0.0
+GIDE_PD50_PRE,GIDE_PD50,Gide 2019,44.09,0.0,86.0,,Male,Complete Response,1.0,N/A,1,,,,4.0,116.0,3.0,0.0,0.0
+GIDE_PD52_PRE,GIDE_PD52,Gide 2019,51.02,0.0,63.0,,Female,Partial Response,1.0,N/A,1,,,,4.0,72.0,10.0,0.0,0.0
+GIDE_PD53_PRE,GIDE_PD53,Gide 2019,52.2,0.0,71.0,,Female,Complete Response,1.0,N/A,1,,,,0.0,67.0,4.0,0.0,0.0
+GIDE_PD54_PRE,GIDE_PD54,Gide 2019,52.66,0.0,52.0,,Female,Partial Response,1.0,N/A,1,,,,4.0,92.0,9.0,0.0,0.0
+GIDE_IP01_ON,GIDE_IP01,Gide 2019,22.63,0.0,42.0,,Female,Progressive Disease,0.0,N/A,1,,,,0.0,238.0,11.0,0.0,0.0
+GIDE_IP01_PRE,GIDE_IP01,Gide 2019,22.63,0.0,42.0,,Female,Progressive Disease,0.0,N/A,1,,,,0.0,201.0,6.0,0.0,0.0
+GIDE_IP02_PRE,GIDE_IP02,Gide 2019,17.41,0.0,41.0,,Male,Progressive Disease,0.0,N/A,1,,,,0.0,33.0,10.0,0.0,0.0
+GIDE_IP04_ON,GIDE_IP04,Gide 2019,4.24,0.0,48.0,,Male,Progressive Disease,0.0,N/A,1,,,,3.0,139.0,7.0,0.0,0.0
+GIDE_IP06_PRE,GIDE_IP06,Gide 2019,3.55,1.0,75.0,,Male,Progressive Disease,0.0,N/A,1,,,,0.0,84.0,6.0,0.0,0.0
+GIDE_IP07_PRE,GIDE_IP07,Gide 2019,5.55,0.0,59.0,,Male,Partial Response,1.0,N/A,1,,,,1.0,46.0,6.0,0.0,0.0
+GIDE_IP08_PRE,GIDE_IP08,Gide 2019,20.93,0.0,55.0,,Male,Progressive Disease,0.0,N/A,1,,,,2.0,120.0,20.0,0.0,0.0
+GIDE_IP09_ON,GIDE_IP09,Gide 2019,5.12,1.0,56.0,,Male,Progressive Disease,0.0,N/A,1,,,,10.0,60.0,5.0,0.0,0.0
+GIDE_IP10_PRE,GIDE_IP10,Gide 2019,5.78,1.0,51.0,,Male,Progressive Disease,0.0,N/A,1,,,,0.0,51.0,2.0,0.0,0.0
+GIDE_IP12_PRE,GIDE_IP12,Gide 2019,9.63,0.0,55.0,,Female,Progressive Disease,0.0,N/A,1,,,,,,,,
+GIDE_IP13_ON,GIDE_IP13,Gide 2019,11.73,1.0,68.0,,Female,Partial Response,1.0,N/A,1,,,,6.0,131.0,8.0,0.0,0.0
+GIDE_IP13_PRE,GIDE_IP13,Gide 2019,11.73,1.0,68.0,,Female,Partial Response,1.0,N/A,1,,,,3.0,98.0,12.0,0.0,0.0
+GIDE_IP14_PRE,GIDE_IP14,Gide 2019,22.7,0.0,47.0,,Female,Stable Disease,,N/A,1,,,,8.0,55.0,3.0,0.0,0.0
+GIDE_IP15_PRE,GIDE_IP15,Gide 2019,21.68,1.0,57.0,,Male,Stable Disease,,N/A,1,,,,6.0,85.0,4.0,0.0,0.0
+GIDE_IP17_PRE,GIDE_IP17,Gide 2019,6.44,0.0,48.0,,Female,Partial Response,1.0,N/A,1,,,,0.0,108.0,22.0,0.0,0.0
+GIDE_IP19_ON,GIDE_IP19,Gide 2019,20.86,0.0,56.0,,Male,Stable Disease,,N/A,1,,,,3.0,104.0,6.0,0.0,0.0
+GIDE_IP19_PRE,GIDE_IP19,Gide 2019,20.86,0.0,56.0,,Male,Stable Disease,,N/A,1,,,,2.0,88.0,4.0,0.0,0.0
+GIDE_IP20_PRE,GIDE_IP20,Gide 2019,17.67,0.0,57.0,,Male,Stable Disease,,N/A,1,,,,0.0,201.0,3.0,0.0,1.0
+GIDE_IP21_PRE,GIDE_IP21,Gide 2019,13.47,0.0,63.0,,Male,Partial Response,1.0,N/A,1,,,,0.0,7.0,8.0,0.0,0.0
+GIDE_IP23_PRE,GIDE_IP23,Gide 2019,16.62,0.0,51.0,,Female,Partial Response,1.0,N/A,1,,,,1.0,127.0,4.0,0.0,0.0
+GIDE_IP24_PRE,GIDE_IP24,Gide 2019,39.52,0.0,34.0,,Male,Partial Response,1.0,N/A,1,,,,0.0,70.0,7.0,0.0,0.0
+GIDE_IP25_PRE,GIDE_IP25,Gide 2019,17.02,1.0,67.0,,Female,Stable Disease,,N/A,1,,,,2.0,178.0,6.0,0.0,0.0
+GIDE_IP26_PRE,GIDE_IP26,Gide 2019,17.87,0.0,75.0,,Male,Complete Response,1.0,N/A,1,,,,1.0,263.0,20.0,0.0,0.0
+GIDE_IP27_ON,GIDE_IP27,Gide 2019,17.94,0.0,49.0,,Male,Complete Response,1.0,N/A,1,,,,4.0,60.0,17.0,0.0,0.0
+GIDE_IP27_PRE,GIDE_IP27,Gide 2019,17.94,0.0,49.0,,Male,Complete Response,1.0,N/A,1,,,,4.0,44.0,13.0,0.0,0.0
+GIDE_IP32_PRE,GIDE_IP32,Gide 2019,19.61,0.0,71.0,,Male,Complete Response,1.0,N/A,1,,,,1.0,283.0,14.0,0.0,1.0
+GIDE_IP33_ON,GIDE_IP33,Gide 2019,20.01,0.0,73.0,,Male,Partial Response,1.0,N/A,1,,,,1.0,40.0,9.0,0.0,0.0
+GIDE_IP33_PRE,GIDE_IP33,Gide 2019,20.01,0.0,73.0,,Male,Partial Response,1.0,N/A,1,,,,0.0,34.0,15.0,0.0,0.0
+GIDE_IP34_PRE,GIDE_IP34,Gide 2019,20.47,0.0,51.0,,Male,Complete Response,1.0,N/A,1,,,,0.0,39.0,10.0,0.0,0.0
+GIDE_IP35_ON,GIDE_IP35,Gide 2019,20.6,0.0,72.0,,Male,Complete Response,1.0,N/A,1,,,,1.0,63.0,10.0,0.0,0.0
+GIDE_IP35_PRE,GIDE_IP35,Gide 2019,20.6,0.0,72.0,,Male,Complete Response,1.0,N/A,1,,,,0.0,51.0,7.0,0.0,0.0
+GIDE_IP36_ON,GIDE_IP36,Gide 2019,20.93,0.0,74.0,,Female,Complete Response,1.0,N/A,1,,,,2.0,65.0,15.0,0.0,0.0
+GIDE_IP36_PRE,GIDE_IP36,Gide 2019,20.93,0.0,74.0,,Female,Complete Response,1.0,N/A,1,,,,1.0,44.0,7.0,0.0,0.0
+GIDE_IP37_PRE,GIDE_IP37,Gide 2019,20.93,0.0,76.0,,Male,Partial Response,1.0,N/A,1,,,,2.0,90.0,7.0,0.0,0.0
+GIDE_IP38_PRE,GIDE_IP38,Gide 2019,21.35,0.0,59.0,,Female,Complete Response,1.0,N/A,1,,,,0.0,133.0,15.0,0.0,0.0
+GIDE_IP44_PRE,GIDE_IP44,Gide 2019,22.83,0.0,68.0,,Male,Partial Response,1.0,N/A,1,,,,0.0,125.0,3.0,0.0,0.0
+GIDE_IP45_PRE,GIDE_IP45,Gide 2019,23.69,0.0,70.0,,Male,Complete Response,1.0,N/A,1,,,,2.0,192.0,13.0,0.0,0.0
+GIDE_IP46_PRE,GIDE_IP46,Gide 2019,23.69,0.0,54.0,,Female,Complete Response,1.0,N/A,1,,,,0.0,57.0,3.0,0.0,0.0
+GIDE_IP47_PRE,GIDE_IP47,Gide 2019,24.05,0.0,24.0,,Female,Partial Response,1.0,N/A,1,,,,1.0,116.0,3.0,0.0,0.0
+GIDE_IP49_PRE,GIDE_IP49,Gide 2019,25.46,0.0,36.0,,Male,Complete Response,1.0,N/A,1,,,,0.0,131.0,9.0,0.0,0.0
+GIDE_IP50_PRE,GIDE_IP50,Gide 2019,29.7,0.0,68.0,,Male,Partial Response,1.0,N/A,1,,,,1.0,67.0,7.0,0.0,0.0
+VAN_ALLEN_PAT02,VAN_ALLEN_PAT02,Van Allen 2015,54.4,0.0,42.0,,Female,Stable Disease,,N/A,0,7.56666666667,,,,,,,
+VAN_ALLEN_PAT03,VAN_ALLEN_PAT03,Van Allen 2015,3.333333333,1.0,61.0,,Female,Progressive Disease,0.0,N/A,0,12.3,,,,,,,
+VAN_ALLEN_PAT04,VAN_ALLEN_PAT04,Van Allen 2015,32.9,0.0,71.0,,Male,Partial Response,1.0,N/A,0,10.9333333333,,,,,,,
+VAN_ALLEN_PAT06,VAN_ALLEN_PAT06,Van Allen 2015,5.366666667,1.0,33.0,,Male,Progressive Disease,0.0,N/A,0,5.7,,,,,,,
+VAN_ALLEN_PAT08,VAN_ALLEN_PAT08,Van Allen 2015,4.666666667,1.0,73.0,,Male,Progressive Disease,0.0,N/A,0,8.5,,,,,,,
+VAN_ALLEN_PAT118,VAN_ALLEN_PAT118,Van Allen 2015,10.43333333,1.0,43.0,,Female,Progressive Disease,0.0,N/A,0,3.66666666667,,,,,,,
+VAN_ALLEN_PAT119,VAN_ALLEN_PAT119,Van Allen 2015,26.93333333,0.0,61.0,,Male,Progressive Disease,0.0,N/A,0,9.6,,,,,,,
+VAN_ALLEN_PAT123,VAN_ALLEN_PAT123,Van Allen 2015,28.43333333,1.0,50.0,,Female,Stable Disease,,N/A,0,15.7,,,,,,,
+VAN_ALLEN_PAT126,VAN_ALLEN_PAT126,Van Allen 2015,21.36666667,0.0,77.0,,Male,Partial Response,1.0,N/A,0,12.8666666667,,,,,,,
+VAN_ALLEN_PAT14,VAN_ALLEN_PAT14,Van Allen 2015,5.433333332999999,1.0,48.0,,Female,Progressive Disease,0.0,N/A,0,1.43333333333,,,,,,,
+VAN_ALLEN_PAT15,VAN_ALLEN_PAT15,Van Allen 2015,1.666666667,1.0,32.0,,Male,Progressive Disease,0.0,N/A,0,7.96666666667,,,,,,,
+VAN_ALLEN_PAT16,VAN_ALLEN_PAT16,Van Allen 2015,27.03333333,1.0,68.0,,Female,Progressive Disease,0.0,N/A,0,61.6,,,,,,,
+VAN_ALLEN_PAT19,VAN_ALLEN_PAT19,Van Allen 2015,5.833333333,1.0,59.0,,Male,Progressive Disease,0.0,N/A,0,15.2333333333,,,,,,,
+VAN_ALLEN_PAT25,VAN_ALLEN_PAT25,Van Allen 2015,10.83333333,1.0,69.0,,Male,Progressive Disease,0.0,N/A,0,1.63333333333,,,,,,,
+VAN_ALLEN_PAT27,VAN_ALLEN_PAT27,Van Allen 2015,45.96666667,0.0,61.0,,Male,Progressive Disease,0.0,N/A,0,1.0,,,,,,,
+VAN_ALLEN_PAT28,VAN_ALLEN_PAT28,Van Allen 2015,39.46666667,1.0,77.0,,Male,Progressive Disease,0.0,N/A,0,24.6666666667,,,,,,,
+VAN_ALLEN_PAT29,VAN_ALLEN_PAT29,Van Allen 2015,44.2,0.0,82.0,,Male,,,N/A,0,1.16666666667,,,,,,,
+VAN_ALLEN_PAT33,VAN_ALLEN_PAT33,Van Allen 2015,7.033333333,1.0,65.0,,Male,Progressive Disease,0.0,N/A,0,0.433333333333,,,,,,,
+VAN_ALLEN_PAT36,VAN_ALLEN_PAT36,Van Allen 2015,1.8,1.0,52.0,,Female,Progressive Disease,0.0,N/A,0,0.366666666667,,,,,,,
+VAN_ALLEN_PAT37,VAN_ALLEN_PAT37,Van Allen 2015,2.333333333,1.0,47.0,,Female,Progressive Disease,0.0,N/A,0,3.4,,,,,,,
+VAN_ALLEN_PAT38,VAN_ALLEN_PAT38,Van Allen 2015,51.3,0.0,45.0,,Male,Partial Response,1.0,N/A,0,78.4666666667,,,,,,,
+VAN_ALLEN_PAT39,VAN_ALLEN_PAT39,Van Allen 2015,49.56666667,0.0,67.0,,Male,Complete Response,1.0,N/A,0,2.43333333333,,,,,,,
+VAN_ALLEN_PAT40,VAN_ALLEN_PAT40,Van Allen 2015,1.133333333,1.0,74.0,,Male,Progressive Disease,0.0,N/A,0,3.5,,,,,,,
+VAN_ALLEN_PAT41,VAN_ALLEN_PAT41,Van Allen 2015,4.266666667,1.0,64.0,,Male,Progressive Disease,0.0,N/A,0,11.3,,,,,,,
+VAN_ALLEN_PAT43,VAN_ALLEN_PAT43,Van Allen 2015,1.233333333,1.0,75.0,,Female,Progressive Disease,0.0,N/A,0,5.46666666667,,,,,,,
+VAN_ALLEN_PAT44,VAN_ALLEN_PAT44,Van Allen 2015,9.033333333,1.0,57.0,,Female,Progressive Disease,0.0,N/A,0,1.03333333333,,,,,,,
+VAN_ALLEN_PAT45,VAN_ALLEN_PAT45,Van Allen 2015,2.966666667,1.0,68.0,,Male,Progressive Disease,0.0,N/A,0,30.2333333333,,,,,,,
+VAN_ALLEN_PAT46,VAN_ALLEN_PAT46,Van Allen 2015,5.333333333,1.0,36.0,,Female,Progressive Disease,0.0,N/A,0,7.83333333333,,,,,,,
+VAN_ALLEN_PAT47,VAN_ALLEN_PAT47,Van Allen 2015,36.86666667,0.0,78.0,,Male,Complete Response,1.0,N/A,0,4.5,,,,,,,
+VAN_ALLEN_PAT49,VAN_ALLEN_PAT49,Van Allen 2015,34.46666667,0.0,36.0,,Male,Stable Disease,,N/A,0,21.8333333333,,,,,,,
+VAN_ALLEN_PAT50,VAN_ALLEN_PAT50,Van Allen 2015,2.166666667,1.0,77.0,,Male,Progressive Disease,0.0,N/A,0,14.5,,,,,,,
+VAN_ALLEN_PAT79,VAN_ALLEN_PAT79,Van Allen 2015,26.7,1.0,69.0,,Male,Partial Response,1.0,N/A,0,10.5,,,,,,,
+VAN_ALLEN_PAT80,VAN_ALLEN_PAT80,Van Allen 2015,24.13333333,1.0,48.0,,Male,Stable Disease,,N/A,0,6.3,,,,,,,
+VAN_ALLEN_PAT81,VAN_ALLEN_PAT81,Van Allen 2015,20.93333333,1.0,54.0,,Female,Progressive Disease,0.0,N/A,0,3.66666666667,,,,,,,
+VAN_ALLEN_PAT83,VAN_ALLEN_PAT83,Van Allen 2015,34.23333333,0.0,22.0,,Male,Progressive Disease,0.0,N/A,0,1.23333333333,,,,,,,
+VAN_ALLEN_PAT85,VAN_ALLEN_PAT85,Van Allen 2015,15.26666667,1.0,83.0,,Male,Progressive Disease,0.0,N/A,0,13.4333333333,,,,,,,
+VAN_ALLEN_PAT86,VAN_ALLEN_PAT86,Van Allen 2015,9.766666667,1.0,55.0,,Male,Stable Disease,,N/A,0,2.0,,,,,,,
+VAN_ALLEN_PAT88,VAN_ALLEN_PAT88,Van Allen 2015,32.96666667,0.0,60.0,,Female,Stable Disease,,N/A,0,51.9333333333,,,,,,,
+VAN_ALLEN_PAT90,VAN_ALLEN_PAT90,Van Allen 2015,33.5,0.0,59.0,,Male,Partial Response,1.0,N/A,0,6.73333333333,,,,,,,
+VAN_ALLEN_PAT98,VAN_ALLEN_PAT98,Van Allen 2015,4.666666667,1.0,57.0,,Female,Progressive Disease,0.0,N/A,0,1.1,,,,,,,

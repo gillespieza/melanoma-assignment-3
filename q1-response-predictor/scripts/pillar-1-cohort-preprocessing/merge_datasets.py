@@ -688,8 +688,17 @@ def _print_merge_summary(df_clin_full: pd.DataFrame, df_clin_immuno: pd.DataFram
 
 def main() -> None:
     """Run the configuration-driven dataset merge."""
-    datasets = load_dataset_config(CONFIG_PATH)
+    all_datasets = load_dataset_config(CONFIG_PATH)
+    datasets = [d for d in all_datasets if d.merge_enabled]
     _print_merge_header(datasets)
+
+    disabled = [d for d in all_datasets if not d.merge_enabled]
+    if disabled:
+        print("Datasets excluded from merge (merge_enabled: false):")
+        for d in disabled:
+            print(f"  - {d.cohort_name} ({d.study_id})")
+        print()
+
     expression_data, clinical_data, mutation_data = _prepare_dataset_data(datasets)
 
     df_expr_full, df_clin_full = build_merged_cohort(

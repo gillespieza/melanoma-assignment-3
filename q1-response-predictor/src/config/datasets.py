@@ -56,6 +56,11 @@ class DatasetConfig:
         sample_prefix:
             Prefix applied to sample identifiers to prevent collisions between
             cohorts.
+
+        merge_enabled:
+            Whether this dataset should be included in merged cohort outputs.
+            Set to False to include in cleaning/QC but exclude from merges
+            (e.g. superseded datasets kept for archival reference).
     """
 
     cohort_name: str
@@ -70,6 +75,7 @@ class DatasetConfig:
 
     baseline_only: bool = False
     mutations_by_patient: bool = False
+    merge_enabled: bool = True
     patient_prefix: str = ""
     sample_prefix: str = ""
 
@@ -162,6 +168,7 @@ def load_dataset_config(
         *required_fields,
         "baseline_only",
         "mutations_by_patient",
+        "merge_enabled",
         "patient_prefix",
         "sample_prefix",
     }
@@ -227,6 +234,7 @@ def _validate_field_types(
     boolean_fields = {
         "baseline_only",
         "mutations_by_patient",
+        "merge_enabled",
     }
 
     for field in string_fields:

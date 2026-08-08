@@ -301,6 +301,15 @@ def _harmonise_clinical_data(
     if dataset.baseline_only:
         df = df[df[_COL_SAMPLE_ID].str.endswith(_BASELINE_SUFFIX)]
 
+    if _COL_RESPONSE not in df.columns and "DURABLE_CLINICAL_BENEFIT" in df.columns:
+        recist_map = {
+            "CR": "Complete Response",
+            "PR": "Partial Response",
+            "SD": "Stable Disease",
+            "PD": "Progressive Disease",
+        }
+        df[_COL_RESPONSE] = df["DURABLE_CLINICAL_BENEFIT"].map(recist_map)
+
     if _COL_RESPONSE in df.columns:
         df["RESPONSE_BINARY"] = df[_COL_RESPONSE].map(RECIST_RESPONSE_MAP)
     else:
@@ -327,7 +336,15 @@ def _process_raw_expression_matrix(
 ) -> pd.DataFrame:
     """Clean, aggregate, transpose, and log2-transform expression matrix."""
     if _COL_HUGO_SYMBOL not in df_expr.columns:
-        raise ValueError("Expression file does not contain Hugo_Symbol.")
+        if _COL_ENTREZ_ID in df_expr.columns:
+            cache_path = CONFIG_PATH.parent / _ENTREZ_CACHE_FILENAME
+            df_expr = _map_tcga_entrez_identifiers(df_expr, cache_path)
+            df_expr = df_expr.groupby(level=0).mean(numeric_only=True)
+            df_expr = df_expr.T
+            df_expr.index = df_expr.index.astype(str).str.strip().str.upper()
+            df_expr.index.name = _COL_SAMPLE_ID
+            return np.log2(df_expr + 1.0)
+        raise ValueError("Expression file does not contain Hugo_Symbol or Entrez_Gene_Id.")
 
     df_expr = df_expr.dropna(subset=[_COL_HUGO_SYMBOL]).set_index(_COL_HUGO_SYMBOL)
     if _COL_ENTREZ_ID in df_expr.columns:
@@ -567,6 +584,9 @@ def _add_tcga_treatment_features(
     print("  Found treatment timeline data. Aggregating treatment features...")
     df_treatment = pd.read_csv(timeline_path, sep="\t", comment="#", low_memory=False)
 
+    if "THERAPEUTIC_AGENT" in df_treatment.columns and _COL_AGENT not in df_treatment.columns:
+        df_treatment = df_treatment.rename(columns={"THERAPEUTIC_AGENT": _COL_AGENT})
+
     required_cols = {_COL_PATIENT_ID, _COL_TREATMENT_TYPE, _COL_AGENT}
     if not required_cols.issubset(df_treatment.columns):
         return clinical_df
@@ -638,6 +658,32 @@ def _process_iatlas_clinical_stage(
     return df_clean
 
 
+_DURABLE_BENEFIT_RECIST_MAP: dict[str, str] = {
+    "CR": "Complete Response",
+    "PR": "Partial Response",
+    "SD": "Stable Disease",
+    "PD": "Progressive Disease",
+}
+
+
+def _map_durable_benefit_to_response(df: pd.DataFrame) -> pd.DataFrame:
+    """Map DURABLE_CLINICAL_BENEFIT abbreviations to canonical RESPONSE/RESPONSE_BINARY.
+
+    Used for datasets (e.g. Van Allen 2015) that store response as CR/PR/SD/PD
+    rather than the iAtlas full-text RESPONSE column.  Skipped silently when
+    RESPONSE is already present or DURABLE_CLINICAL_BENEFIT is absent.
+    """
+    if _COL_RESPONSE not in df.columns and "DURABLE_CLINICAL_BENEFIT" in df.columns:
+        df = df.copy()
+        df[_COL_RESPONSE] = df["DURABLE_CLINICAL_BENEFIT"].map(_DURABLE_BENEFIT_RECIST_MAP)
+
+    if _COL_RESPONSE in df.columns and "RESPONSE_BINARY" not in df.columns:
+        df = df.copy() if not df.columns.duplicated().any() else df
+        df["RESPONSE_BINARY"] = df[_COL_RESPONSE].map(RECIST_RESPONSE_MAP)
+
+    return df
+
+
 def _process_tcga_clinical_stage(
     raw_dir: Path,
     dataset: DatasetConfig,
@@ -660,6 +706,7 @@ def _process_tcga_clinical_stage(
     )
     df_clean = _add_tcga_treatment_features(df_clean, raw_dir)
     df_clean = _add_tcga_hypoxia_features(df_clean, raw_dir)
+    df_clean = _map_durable_benefit_to_response(df_clean)
     return df_clean.set_index(_COL_SAMPLE_ID)
 
 
@@ -698,6 +745,14 @@ def process_iatlas_dataset(
     return _finalise_dataset(dataset, bundle, raw_dir, processed_dir)
 
 
+def _resolve_entrez_cache_path(processed_dir: Path) -> Path:
+    """Resolve Entrez-to-symbol cache path, preferring config/ over processed_dir/."""
+    config_cache = CONFIG_PATH.parent / _ENTREZ_CACHE_FILENAME
+    if config_cache.exists():
+        return config_cache
+    return processed_dir / _ENTREZ_CACHE_FILENAME
+
+
 def process_tcga_dataset(
     dataset: DatasetConfig,
     raw_dir: Path,
@@ -707,8 +762,9 @@ def process_tcga_dataset(
     print(f"Cleaning {dataset.cohort_name} ({dataset.study_id})...")
     attrition: list[AttritionRecord] = []
     clinical_df = _process_tcga_clinical_stage(raw_dir, dataset, attrition)
+    cache_path = _resolve_entrez_cache_path(processed_dir)
     expression_df = _load_tcga_expression(
-        raw_dir / dataset.expression_file, dataset, processed_dir / _ENTREZ_CACHE_FILENAME
+        raw_dir / dataset.expression_file, dataset, cache_path
     )
     expression_df, clinical_df = _align_and_record_expression(
         expression_df, clinical_df, dataset, attrition
@@ -716,6 +772,7 @@ def process_tcga_dataset(
     mutation_df = _process_mutations(raw_dir, clinical_df, dataset)
     bundle = CleanedDataBundle(clinical_df, expression_df, mutation_df, attrition)
     return _finalise_dataset(dataset, bundle, raw_dir, processed_dir)
+
 
 
 def process_dataset(
@@ -1056,14 +1113,8 @@ def _check_sample_overlap(
     mutation_ids = set(mutation_df.index.astype(str))
 
     print("\n  Sample identifier overlap:")
-    print(
-        f"    Clinical \u2194 Expression: "
-        f"{len(clinical_ids & expression_ids):,}"
-    )
-    print(
-        f"    Clinical \u2194 Mutation:   "
-        f"{len(clinical_ids & mutation_ids):,}"
-    )
+    print(f"    Clinical <-> Expression: {len(clinical_ids & expression_ids):,}")
+    print(f"    Clinical <-> Mutation:   {len(clinical_ids & mutation_ids):,}")
 
 
 def _print_dataset_dimensions(

@@ -51,6 +51,7 @@ datasets:
     mutation_file: "data_mutations.txt"
     baseline_only: false
     mutations_by_patient: false
+    merge_enabled: false  # Superseded by skcm_tcga_gdc; retained for archival QC only
     patient_prefix: ""
     sample_prefix: ""
     processing_strategy: "tcga"
@@ -95,4 +96,4 @@ datasets:
     mutations_by_patient: false
     patient_prefix: "van_allen_"
     sample_prefix: "van_allen_"
-    processing_strategy: "tcga"
+    processing_strategy: "tcga"  # Expression file uses Entrez_Gene_Id, not Hugo_Symbol
