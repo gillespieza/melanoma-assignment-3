@@ -961,13 +961,17 @@ def _run_km_plotting_stage(
 ) -> tuple[dict[str, dict[str, Any]], Path]:
     """Generates Kaplan-Meier OS curves across cohorts and saves figure."""
     n_cohorts = len(cohort_order)
-    fig, axes = plt.subplots(1, n_cohorts, figsize=(5 * n_cohorts, 5))
-    if n_cohorts == 1:
-        axes = [axes]
+    max_cols = 3
+    n_cols = min(max_cols, n_cohorts)
+    n_rows = (n_cohorts + n_cols - 1) // n_cols
+
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5.5 * n_cols, 4.5 * n_rows))
+    axes_flat = np.array(axes).flatten() if n_cohorts > 1 else [axes]
 
     cohort_results: dict[str, dict[str, Any]] = {}
 
-    for ax, label in zip(axes, cohort_order):
+    for i, label in enumerate(cohort_order):
+        ax = axes_flat[i]
         df_clin = cohort_data[label]
         print(f"  Plotting KM curve for {label} ({len(df_clin)} samples)...")
         cohort_results[label] = {
@@ -977,7 +981,11 @@ def _run_km_plotting_stage(
             "treatment": calculate_treatment_statistics(df_clin, label),
         }
 
-    fig.suptitle("Overall Survival — Immunotherapy Trial Cohorts", fontsize=16, fontweight="bold", y=1.03)
+    # Hide any unused subplot axes
+    for j in range(n_cohorts, len(axes_flat)):
+        axes_flat[j].set_visible(False)
+
+    fig.suptitle("Overall Survival — Immunotherapy Trial Cohorts", fontsize=16, fontweight="bold", y=1.02)
     fig.tight_layout()
 
     out_path = PLOT_DIR / "km_os_grid.png"
