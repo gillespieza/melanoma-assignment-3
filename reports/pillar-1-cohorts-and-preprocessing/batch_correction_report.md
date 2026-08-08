@@ -10,12 +10,12 @@ tags:
   - umap
   - tme
   - transcriptomics
-created: 2026-08-08 19:10
+created: 2026-08-08 19:16
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-08 19:10
+updated: 2026-08-08 19:16
 ---
 
 # Batch Effect Assessment & Dimensionality Reduction Analysis
@@ -92,9 +92,9 @@ Standardising independently per cohort (using internal $\mu, \sigma$) guarantees
 
 ---
 
-> [!formula]+ Script Reference
+> [!formula]+ Dimensionality Reduction Script Execution & Software Module Architecture
 >
-> - [`run_dimensionality_reduction.py`](q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_dimensionality_reduction.py): Performs PCA and UMAP dimensionality reduction across all active ICI trial cohorts, evaluates cohort-independent Z-score standardisation against raw expression profiles, and produces `batch_correction_report.md`.
-> - [`run_expression_heatmap.py`](q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_expression_heatmap.py): Generates raw log2(TPM+1) and per-cohort Z-score heatmap visualisations for top high-variance genes across trial cohorts (`heatmap_top_variance_genes_raw.png`, `heatmap_top_variance_genes_standardized.png`).
-> - [`data_loaders.py`](q1-response-predictor/src/data_loaders.py): Provides `load_merged_immunotherapy()` to retrieve aligned raw and standardised expression matrices and clinical metadata across ICI trial cohorts.
-> - [`styles.py`](src/styles.py): Central definition of Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`).
+> - [`run_dimensionality_reduction.py`](../../scripts/pillar-1-cohort-preprocessing/run_dimensionality_reduction.py): Performs PCA and UMAP dimensionality reduction across all active ICI trial cohorts, evaluates cohort-independent Z-score standardisation against raw expression profiles, and produces `batch_correction_report.md`.
+> - [`run_expression_heatmap.py`](../../scripts/pillar-1-cohort-preprocessing/run_expression_heatmap.py): Generates raw log2(TPM+1) and per-cohort Z-score heatmap visualisations for top high-variance genes across trial cohorts (`heatmap_top_variance_genes_raw.png`, `heatmap_top_variance_genes_standardized.png`).
+> - [`data_loaders.py`](../../src/data_loaders.py): Provides `load_merged_immunotherapy()` to retrieve aligned raw and standardised expression matrices and clinical metadata across ICI trial cohorts.
+> - [`styles.py`](../../../src/styles.py): Central definition of Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`).
