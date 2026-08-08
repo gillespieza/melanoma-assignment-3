@@ -36,8 +36,10 @@ from src.utils.plotting import save_fig
 set_presentation_style()
 
 # Module-level Constants
-PLOT_DIR = PLOTS_DIR / "clinical"
+_SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
+LOG_DIR = _SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "run_response_km_curves.log"
+PLOT_DIR = PLOTS_DIR / "clinical"
 
 
 def _resolve_col(df: pd.DataFrame, candidates: list[str]) -> str | None:
@@ -179,5 +181,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {rel_path(LOG_PATH)}")
+            print(f"Logging console output to {LOG_PATH.relative_to(_SUBPROJECT_ROOT).as_posix()}")
             main()
