@@ -327,18 +327,11 @@ def _copy_clinical_specimen_and_tx(
 ) -> None:
     """Copy and normalise specimen type, response, and immunotherapy flags."""
     df[_COL_RESPONSE] = df_clin[_COL_RESPONSE] if _COL_RESPONSE in df_clin.columns else np.nan
-    df[_COL_RESPONSE_BINARY] = (
-        pd.to_numeric(df_clin[_COL_RESPONSE_BINARY], errors="coerce")
-        if _COL_RESPONSE_BINARY in df_clin.columns else np.nan
-    )
-
-    spec_cols = (_COL_SPECIMEN_TYPE, "SAMPLE_TYPE", "BIOPSY_SITE")
-    spec_col = next((c for c in spec_cols if c in df_clin.columns), None)
-    df[_COL_SPECIMEN_TYPE] = _normalise_specimen_type(df_clin[spec_col]) if spec_col else _VAL_NA
-
-    # Check explicit column first, then fall back to prefix match — the GDC
-    # dataset uses "TX_TYPE_IMMUNOTHERAPY_(INCLUDING_VACCINES)" while PanCan
-    # uses the bare "TX_TYPE_IMMUNOTHERAPY".
+def _resolve_immunotherapy_column(
+    df_clin: pd.DataFrame,
+    dataset: DatasetConfig,
+) -> pd.Series:
+    """Resolve and format the immunotherapy treatment indicator series."""
     exact_tx_cols = (_COL_IMMUNOTHERAPY, "TX_TYPE_IMMUNOTHERAPY")
     tx_col = next((c for c in exact_tx_cols if c in df_clin.columns), None)
     if tx_col is None:
@@ -347,16 +340,28 @@ def _copy_clinical_specimen_and_tx(
             None,
         )
     if tx_col:
-        df[_COL_IMMUNOTHERAPY] = (
+        return (
             pd.to_numeric(df_clin[tx_col], errors="coerce")
             .fillna(0).astype(int)
         )
-    else:
-        # No per-sample immunotherapy column: use the cohort-level config flag.
-        # iAtlas cohorts are implicitly all-immunotherapy; others must declare
-        # cohort_immunotherapy: true explicitly in datasets.yaml.
-        is_immuno = dataset.cohort_immunotherapy or dataset.processing_strategy == _STRATEGY_IATLAS
-        df[_COL_IMMUNOTHERAPY] = 1 if is_immuno else 0
+    is_immuno = dataset.cohort_immunotherapy or dataset.processing_strategy == _STRATEGY_IATLAS
+    return pd.Series(1 if is_immuno else 0, index=df_clin.index)
+
+
+def _copy_clinical_specimen_and_tx(
+    df_clin: pd.DataFrame,
+    df: pd.DataFrame,
+    dataset: DatasetConfig,
+) -> None:
+    """Copy specimen type and immunotherapy treatment indicators to harmonised DataFrame."""
+    df[_COL_RESPONSE_BINARY] = (
+        pd.to_numeric(df_clin[_COL_RESPONSE_BINARY], errors="coerce")
+        if _COL_RESPONSE_BINARY in df_clin.columns else np.nan
+    )
+    spec_cols = (_COL_SPECIMEN_TYPE, "SAMPLE_TYPE", "BIOPSY_SITE")
+    spec_col = next((c for c in spec_cols if c in df_clin.columns), None)
+    df[_COL_SPECIMEN_TYPE] = _normalise_specimen_type(df_clin[spec_col]) if spec_col else _VAL_NA
+    df[_COL_IMMUNOTHERAPY] = _resolve_immunotherapy_column(df_clin, dataset)
 
 
 def _copy_clinical_genomic_burdens(df_clin: pd.DataFrame, df: pd.DataFrame) -> None:
@@ -698,18 +703,22 @@ def _print_merge_summary(df_clin_full: pd.DataFrame, df_clin_immuno: pd.DataFram
     print(f"  Immunotherapy output: {display_path(IMMUNOTHERAPY_DIR)}")
 
 
-def main() -> None:
-    """Run the configuration-driven dataset merge."""
-    all_datasets = load_dataset_config(CONFIG_PATH)
-    datasets = [d for d in all_datasets if d.merge_enabled]
-    _print_merge_header(datasets)
-
+def _print_disabled_datasets(all_datasets: list[DatasetConfig]) -> None:
+    """Print datasets excluded from merge."""
     disabled = [d for d in all_datasets if not d.merge_enabled]
     if disabled:
         print("Datasets excluded from merge (merge_enabled: false):")
         for d in disabled:
             print(f"  - {d.cohort_name} ({d.study_id})")
         print()
+
+
+def main() -> None:
+    """Run the configuration-driven dataset merge."""
+    all_datasets = load_dataset_config(CONFIG_PATH)
+    datasets = [d for d in all_datasets if d.merge_enabled]
+    _print_merge_header(datasets)
+    _print_disabled_datasets(all_datasets)
 
     expression_data, clinical_data, mutation_data = _prepare_dataset_data(datasets)
 
@@ -719,12 +728,8 @@ def main() -> None:
     )
 
     df_expr_immuno, df_clin_immuno = build_merged_cohort(
-        datasets=datasets,
-        expression_data=expression_data,
-        clinical_data=clinical_data,
-        mutation_data=mutation_data,
-        output_dir=IMMUNOTHERAPY_DIR,
-        label="Immunotherapy",
+        datasets=datasets, expression_data=expression_data, clinical_data=clinical_data,
+        mutation_data=mutation_data, output_dir=IMMUNOTHERAPY_DIR, label="Immunotherapy",
         immunotherapy_only=True,
     )
 

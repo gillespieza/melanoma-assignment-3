@@ -682,51 +682,43 @@ def _build_script_reference_callout(report_path: Path) -> str:
     )
 
 
+def _extract_report_subset_counts(
+    cohorts: Dict[str, pd.DataFrame],
+    trial_names: list[str],
+) -> tuple[int, int, int, int, int]:
+    """Computes dynamic subset sample counts for TMB, Neoantigen, Biomarkers, and Oncoplot."""
+    df_tmb_resp = _prepare_tmb_response_df(cohorts)
+    n_tmb_resp = len(df_tmb_resp)
+    n_tmb_cohorts = df_tmb_resp["Base_Cohort"].nunique() if not df_tmb_resp.empty else 0
+    n_neo = len(_prepare_neoantigen_df(cohorts))
+    n_biomarkers = len(_extract_pooled_biomarkers(cohorts))
+    pooled = pd.concat(
+        [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
+    )
+    n_oncoplot = (
+        len(pooled[pooled[_COL_RESPONSE].isin([_RESP_NON_RESPONDER, _RESP_RESPONDER])])
+        if _COL_RESPONSE in pooled.columns else 0
+    )
+    return n_tmb_resp, n_tmb_cohorts, n_neo, n_biomarkers, n_oncoplot
+
+
 def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
     """Computes all dynamic statistics required for Markdown report formatting."""
     trial_names = _get_trial_cohort_names(cohorts)
     cohort_counts = {c: len(cohorts[c]) for c in trial_names if c in cohorts}
     n_trials = sum(cohort_counts.values())
-
-    # Load treatment labels from datasets.yaml as the single source of truth.
     dataset_configs = load_dataset_config(CONFIG_PATH)
-    treatment_labels: Dict[str, str] = {
-        cfg.cohort_name: cfg.treatment_label for cfg in dataset_configs
-    }
-
+    treatment_labels = {cfg.cohort_name: cfg.treatment_label for cfg in dataset_configs}
     drv_stats = _compute_driver_stats(cohorts)
     r_tot, r_snv, r_ind, r_cta = _compute_neoantigen_correlations(cohorts)
-
-    # Dynamic subset sample sizes for TMB, Neoantigen, and Biomarker correlations
-    df_tmb_resp = _prepare_tmb_response_df(cohorts)
-    n_tmb_resp = len(df_tmb_resp)
-    n_tmb_cohorts = df_tmb_resp["Base_Cohort"].nunique() if not df_tmb_resp.empty else 0
-
-    df_neo = _prepare_neoantigen_df(cohorts)
-    n_neo = len(df_neo)
-
-    df_bio = _extract_pooled_biomarkers(cohorts)
-    n_biomarkers = len(df_bio)
-
-    pooled = pd.concat(
-        [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
+    n_tmb_resp, n_tmb_cohorts, n_neo, n_biomarkers, n_oncoplot = (
+        _extract_report_subset_counts(cohorts, trial_names)
     )
-    if _COL_RESPONSE in pooled.columns:
-        valid_resp = pooled[_COL_RESPONSE].isin([_RESP_NON_RESPONDER, _RESP_RESPONDER])
-        n_oncoplot = len(pooled[valid_resp])
-    else:
-        n_oncoplot = 0
-
     return {
-        "cohort_order": trial_names,
-        "cohort_counts": cohort_counts,
-        "treatment_labels": treatment_labels,
-        "n_trials": n_trials,
-        "n_tmb_resp": n_tmb_resp,
-        "n_tmb_cohorts": n_tmb_cohorts,
-        "n_neo": n_neo,
-        "n_biomarkers": n_biomarkers,
-        "drv_stats": drv_stats,
+        "cohort_order": trial_names, "cohort_counts": cohort_counts,
+        "treatment_labels": treatment_labels, "n_trials": n_trials,
+        "n_tmb_resp": n_tmb_resp, "n_tmb_cohorts": n_tmb_cohorts,
+        "n_neo": n_neo, "n_biomarkers": n_biomarkers, "drv_stats": drv_stats,
         "r_tot": r_tot, "r_snv": r_snv, "r_ind": r_ind, "r_cta": r_cta,
         "n_oncoplot": n_oncoplot, "n_sd": n_trials - n_oncoplot,
     }

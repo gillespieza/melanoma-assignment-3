@@ -539,6 +539,25 @@ def _extract_best_outcome(series: pd.Series) -> str | float:
     return max(valid, key=lambda x: _RESPONSE_RANK[x])
 
 
+def _extract_best_outcomes_for_treatment(df_treatment: pd.DataFrame, df_sum: pd.DataFrame) -> None:
+    """Extract and assign TREATMENT_OUTCOME and TX_IMMUNOTHERAPY_OUTCOME to df_sum."""
+    outcome_col = next(
+        (c for c in ("TREATMENT_OUTCOME", "MEASURE_OF_RESPONSE") if c in df_treatment.columns),
+        None,
+    )
+    if not outcome_col:
+        return
+    df_tx = df_treatment.copy()
+    df_tx["_canon_outcome"] = (
+        df_tx[outcome_col].astype(str).str.strip().str.upper().map(_OUTCOME_CANONICAL_MAP)
+    )
+    df_sum["TREATMENT_OUTCOME"] = df_tx.groupby(_COL_PATIENT_ID)["_canon_outcome"].apply(_extract_best_outcome)
+    immuno_mask = df_tx[_COL_TREATMENT_TYPE].astype(str).str.upper().str.contains("IMMUNO", na=False)
+    if immuno_mask.any():
+        immuno = df_tx[immuno_mask].groupby(_COL_PATIENT_ID)["_canon_outcome"].apply(_extract_best_outcome)
+        df_sum["TX_IMMUNOTHERAPY_OUTCOME"] = immuno
+
+
 def _build_treatment_summary_features(
     df_treatment: pd.DataFrame,
 ) -> pd.DataFrame:
@@ -546,39 +565,14 @@ def _build_treatment_summary_features(
     df_sum = df_treatment.groupby(_COL_PATIENT_ID).agg(
         TREATMENT_TYPES=(
             _COL_TREATMENT_TYPE,
-            lambda values: ", ".join(
-                sorted(set(values.dropna().astype(str)))
-            ),
+            lambda values: ", ".join(sorted(set(values.dropna().astype(str)))),
         ),
         TREATMENT_AGENTS=(
             _COL_AGENT,
-            lambda values: ", ".join(
-                sorted(set(values.dropna().astype(str)))
-            ),
+            lambda values: ", ".join(sorted(set(values.dropna().astype(str)))),
         ),
     )
-
-    outcome_col = next(
-        (c for c in ("TREATMENT_OUTCOME", "MEASURE_OF_RESPONSE") if c in df_treatment.columns),
-        None,
-    )
-    if outcome_col:
-        df_tx = df_treatment.copy()
-        df_tx["_canon_outcome"] = (
-            df_tx[outcome_col]
-            .astype(str)
-            .str.strip()
-            .str.upper()
-            .map(_OUTCOME_CANONICAL_MAP)
-        )
-        overall = df_tx.groupby(_COL_PATIENT_ID)["_canon_outcome"].apply(_extract_best_outcome)
-        df_sum["TREATMENT_OUTCOME"] = overall
-
-        immuno_mask = df_tx[_COL_TREATMENT_TYPE].astype(str).str.upper().str.contains("IMMUNO", na=False)
-        if immuno_mask.any():
-            immuno = df_tx[immuno_mask].groupby(_COL_PATIENT_ID)["_canon_outcome"].apply(_extract_best_outcome)
-            df_sum["TX_IMMUNOTHERAPY_OUTCOME"] = immuno
-
+    _extract_best_outcomes_for_treatment(df_treatment, df_sum)
     return df_sum
 
 
@@ -618,35 +612,41 @@ def _build_key_agent_indicators(
     return treatment_features
 
 
+def _load_and_validate_tcga_timeline(timeline_path: Path) -> pd.DataFrame | None:
+    """Loads TCGA treatment timeline CSV and validates required columns."""
+    if not timeline_path.exists():
+        return None
+    print("  Found treatment timeline data. Aggregating treatment features...")
+    df_treatment = pd.read_csv(timeline_path, sep="\t", comment="#", low_memory=False)
+    if "THERAPEUTIC_AGENT" in df_treatment.columns and _COL_AGENT not in df_treatment.columns:
+        df_treatment = df_treatment.rename(columns={"THERAPEUTIC_AGENT": _COL_AGENT})
+    required_cols = {_COL_PATIENT_ID, _COL_TREATMENT_TYPE, _COL_AGENT}
+    if not required_cols.issubset(df_treatment.columns):
+        return None
+    for col in (_COL_START_DATE, _COL_STOP_DATE):
+        if col in df_treatment.columns:
+            df_treatment[col] = pd.to_numeric(df_treatment[col], errors="coerce")
+    n_rows = len(df_treatment)
+    n_pts = df_treatment[_COL_PATIENT_ID].nunique()
+    n_types = df_treatment[_COL_TREATMENT_TYPE].nunique()
+    print(f"    Loaded {n_rows:,} treatment events for {n_pts:,} patients ({n_types} treatment types).")
+    return df_treatment
+
+
 def _add_tcga_treatment_features(
     clinical_df: pd.DataFrame,
     raw_dir: Path,
     dataset: DatasetConfig,
 ) -> pd.DataFrame:
     """Add aggregated treatment features from the TCGA treatment timeline."""
-    timeline_path = raw_dir / _TCGA_TIMELINE_FILENAME
-    if not timeline_path.exists():
+    df_treatment = _load_and_validate_tcga_timeline(raw_dir / _TCGA_TIMELINE_FILENAME)
+    if df_treatment is None:
         return clinical_df
-
-    print("  Found treatment timeline data. Aggregating treatment features...")
-    df_treatment = pd.read_csv(timeline_path, sep="\t", comment="#", low_memory=False)
-
-    if "THERAPEUTIC_AGENT" in df_treatment.columns and _COL_AGENT not in df_treatment.columns:
-        df_treatment = df_treatment.rename(columns={"THERAPEUTIC_AGENT": _COL_AGENT})
-
-    required_cols = {_COL_PATIENT_ID, _COL_TREATMENT_TYPE, _COL_AGENT}
-    if not required_cols.issubset(df_treatment.columns):
-        return clinical_df
-
-    for col in (_COL_START_DATE, _COL_STOP_DATE):
-        if col in df_treatment.columns:
-            df_treatment[col] = pd.to_numeric(df_treatment[col], errors="coerce")
-
-    n_rows = len(df_treatment)
-    n_patients = df_treatment[_COL_PATIENT_ID].nunique()
-    n_types = df_treatment[_COL_TREATMENT_TYPE].nunique()
-    print(f"    Loaded {n_rows:,} treatment events for {n_patients:,} patients "
-          f"({n_types} treatment types).")
+    tx_features = _build_treatment_summary_features(df_treatment)
+    tx_features = _build_treatment_type_indicators(df_treatment, tx_features)
+    tx_features = _build_key_agent_indicators(df_treatment, tx_features)
+    tx_features.index = tx_features.index.map(standardise_sample_id)
+    return _merge_treatment_features_into_clinical(clinical_df, tx_features, dataset)
 
     # Apply the same patient prefix used on the clinical DataFrame so that the
     # merge key matches (e.g. TCGA GDC prefixes IDs with "TCGA_GDC_").
@@ -1333,51 +1333,37 @@ def _run_cleaning_pipeline(
     return success_count
 
 
+def _update_data_dictionary() -> None:
+    """Invokes generate_data_dictionary module to update data_dictionary.json."""
+    try:
+        print("\n  Updating config/data_dictionary.json...")
+        try:
+            from generate_data_dictionary import OUTPUT_JSON, build_full_data_dictionary
+        except ImportError:
+            if str(SCRIPT_DIR) not in sys.path:
+                sys.path.insert(0, str(SCRIPT_DIR))
+            from generate_data_dictionary import OUTPUT_JSON, build_full_data_dictionary
+        dictionary = build_full_data_dictionary(PROCESSED_DIR)
+        with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
+            import json
+            json.dump(dictionary, f, indent=2)
+        print(f"  Data dictionary updated ({len(dictionary['columns']):,} features mapped).")
+    except Exception as err:
+        print(f"  [WARNING] Could not update data dictionary: {err}")
+
+
 def main() -> None:
-    """
-    Run the configured data-cleaning workflow.
-    """
+    """Run the configured data-cleaning workflow."""
     print(_BANNER_LINE)
     print("Data Cleaning Pipeline: Transforming Raw Data")
     print(f"{_BANNER_LINE}\n")
-
     datasets = load_dataset_config(CONFIG_PATH)
-
-    print(
-        f"Loaded {len(datasets)} dataset configuration(s) "
-        f"from {display_path(CONFIG_PATH)}.\n"
-    )
-
+    print(f"Loaded {len(datasets)} dataset configuration(s) from {display_path(CONFIG_PATH)}.\n")
     success_count = _run_cleaning_pipeline(datasets)
-
     if success_count > 0:
-        try:
-            print("\n  Updating config/data_dictionary.json...")
-            try:
-                from generate_data_dictionary import (
-                    OUTPUT_JSON,
-                    build_full_data_dictionary,
-                )
-            except ImportError:
-                if str(SCRIPT_DIR) not in sys.path:
-                    sys.path.insert(0, str(SCRIPT_DIR))
-                from generate_data_dictionary import (
-                    OUTPUT_JSON,
-                    build_full_data_dictionary,
-                )
-            dictionary = build_full_data_dictionary(PROCESSED_DIR)
-            with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
-                import json
-                json.dump(dictionary, f, indent=2)
-            print(f"  Data dictionary updated ({len(dictionary['columns']):,} features mapped).")
-        except Exception as err:
-            print(f"  [WARNING] Could not update data dictionary: {err}")
-
+        _update_data_dictionary()
     print(f"\n{_BANNER_LINE}")
-    print(
-        f"Workflow completed: "
-        f"{success_count}/{len(datasets)} datasets succeeded."
-    )
+    print(f"Workflow completed: {success_count}/{len(datasets)} datasets succeeded.")
     print(_BANNER_LINE)
 
 

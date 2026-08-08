@@ -13,7 +13,6 @@ cohort-independent Z-score scaling, and updates batch_correction_report.md.
 
 import contextlib
 from pathlib import Path
-import subprocess
 import sys
 from typing import Any, Dict, List, Tuple
 
@@ -57,9 +56,8 @@ if str(PROJECT_ROOT) not in sys.path:
 # Project Imports
 # ---------------------------------------------------------------------------
 
-from src.config.datasets import DatasetConfig, load_dataset_config
 from src.data_loaders import load_merged_immunotherapy
-from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, resolve_cohort_palette, set_presentation_style
+from src.styles import RESPONSE_PALETTE, resolve_cohort_palette, set_presentation_style
 from src.utils.execution import run_companion_scripts
 from src.utils.formatting import (
     generate_obsidian_frontmatter,
@@ -68,7 +66,6 @@ from src.utils.formatting import (
 from src.utils.logging import TeeStream
 from src.utils.paths import (
     DATA_DIR,
-    PROCESSED_DIR,
     get_subproject_log_dir,
     rel_path,
 )
@@ -85,9 +82,6 @@ _COL_SAMPLE_ID: str = "SAMPLE_ID"
 _COL_COHORT: str = "Cohort"
 _COL_RESPONSE: str = "Response"
 _COL_RAW_RESPONSE: str = "response"
-
-# Config Path
-CONFIG_PATH: Path = SUBPROJECT_ROOT / "config" / "datasets.yaml"
 
 # Dimension Reduction Hyperparameters
 N_TOP_VARIABLE_GENES: int = 1000
@@ -137,23 +131,9 @@ def zscore_df(df: pd.DataFrame) -> pd.DataFrame:
     return (df - means) / stds
 
 
-def _align_expr_clin(
-    expr: pd.DataFrame, clin: pd.DataFrame
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Aligns expression and clinical DataFrames by matching patient indices.
-
-    Args:
-        expr: Expression DataFrame.
-        clin: Clinical DataFrame.
-
-    Returns:
-        Tuple of aligned (expression, clinical) DataFrames.
-    """
-    common = expr.index.intersection(clin.index)
-    return expr.loc[common], clin.loc[common]
-
-
-def load_all_cohorts() -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], List[str], List[str]]:
+def load_all_cohorts() -> Tuple[
+    Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], List[str], List[str]
+]:
     """Loads and aligns the pre-merged immunotherapy dataset.
 
     Delegates to load_merged_immunotherapy() which reads from
@@ -505,7 +485,9 @@ def _report_section_2(
 ) -> str:
     """Returns Markdown text for Section 2: Immunotherapy Trial Reduction."""
     trial_names_str = ", ".join(trial_counts.keys())
-    trial_bullets_str = ", ".join(f"`{name}` ($N = {count}$)" for name, count in trial_counts.items())
+    trial_bullets_str = ", ".join(
+        f"`{name}` ($N = {count}$)" for name, count in trial_counts.items()
+    )
     return (
         f"## 2. Immunotherapy Trial Dimensionality Reduction (N = {n_trials})\n\n"
         "> [!INFO] Why We Are Doing This\n"
@@ -533,10 +515,11 @@ def _report_section_3(n_trials: int) -> str:
         f"## 3. Gene-Level Expression Heatmaps (Top {N_TOP_HEATMAP_GENES} Genes)\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        f"> - **What**: Inspect heatmaps for top {N_TOP_HEATMAP_GENES} genes by average within-cohort variance "
-        f"across trial patients ($N = {n_trials}$). Samples are sorted by cohort, then by responder "
-        "status (CR/PR before PD) within each cohort, with no hierarchical column clustering, "
-        "to make cohort-level baseline differences and response group separation directly readable.\n"
+        f"> - **What**: Inspect heatmaps for top {N_TOP_HEATMAP_GENES} genes by average "
+        f"within-cohort variance across trial patients ($N = {n_trials}$). Samples are "
+        "sorted by cohort, then by responder status (CR/PR before PD) within each cohort, "
+        "with no hierarchical column clustering, to make cohort-level baseline "
+        "differences and response group separation directly readable.\n"
         "> - **Why**: Validate batch effects at individual gene resolution and assess whether "
         "per-cohort Z-score correction removes study-level baseline shifts while preserving "
         "responder vs. non-responder biological contrast.\n"
@@ -547,21 +530,23 @@ def _report_section_3(n_trials: int) -> str:
         "![[heatmap_top_variance_genes_raw.png]]\n"
         "![[heatmap_top_variance_genes_standardized.png]]\n\n"
         "### Key Observations\n"
-        "- **Raw** (`log2(TPM+1)`, robust 2nd–98th percentile scaling): Cohort blocks are visible "
-        "in the Cohort colour bar. Van Allen 2015 shows a notably elevated baseline due to its "
-        "different normalisation pipeline. The four iAtlas cohorts (Liu 2019, Hugo 2016, Riaz 2017, "
-        "Gide 2019) share similar expression scales, reflecting their common preprocessing.\n"
-        "- **Corrected** (per-cohort Z-score, $\\mu=0$, $\\sigma=1$): Study-level baseline offsets "
-        "are removed. Gene expression patterns now reflect within-cohort biological variation rather "
-        "than technical platform differences, with the responder/non-responder contrast "
-        "becoming more consistent across cohorts.\n\n"
+        "- **Raw** (`log2(TPM+1)`, robust 2nd–98th percentile scaling): Cohort blocks are "
+        "visible in the Cohort colour bar. Van Allen 2015 shows a notably elevated baseline "
+        "due to its different normalisation pipeline. The four iAtlas cohorts (Liu 2019, "
+        "Hugo 2016, Riaz 2017, Gide 2019) share similar expression scales, reflecting "
+        "their common preprocessing.\n"
+        "- **Corrected** (per-cohort Z-score, $\\mu=0$, $\\sigma=1$): Study-level baseline "
+        "offsets are removed. Gene expression patterns now reflect within-cohort biological "
+        "variation rather than technical platform differences, with the responder/non-responder "
+        "contrast becoming more consistent across cohorts.\n\n"
     )
-
 
 
 def _report_section_4(trial_counts: Dict[str, int]) -> str:
     """Returns Markdown text for Section 4: Cross-Validation Rigour."""
-    trial_bullets = ", ".join(f"`{name}` ($N = {count}$)" for name, count in trial_counts.items())
+    trial_bullets = ", ".join(
+        f"`{name}` ($N = {count}$)" for name, count in trial_counts.items()
+    )
     return (
         "## 4. Cross-Validation Rigour & Data Leakage Prevention\n\n"
         "> [!INFO] Why We Are Doing This\n"
@@ -583,30 +568,54 @@ def _report_section_4(trial_counts: Dict[str, int]) -> str:
     )
 
 
-def _report_section_5() -> str:
-    """Returns Markdown text for Script Reference callout box."""
-    entries = [
+def _script_entries_p1() -> List[Tuple[str, Path, str]]:
+    """Builds Pillar 1 script reference entry tuples."""
+    p1_dir = SUBPROJECT_ROOT / "scripts" / "pillar-1-cohort-preprocessing"
+    return [
         (
             "run_dimensionality_reduction.py",
-            SUBPROJECT_ROOT / "scripts" / "pillar-1-cohort-preprocessing" / "run_dimensionality_reduction.py",
-            "Performs PCA and UMAP dimensionality reduction across all active ICI trial cohorts, evaluates cohort-independent Z-score standardisation against raw expression profiles, and produces `batch_correction_report.md`.",
+            p1_dir / "run_dimensionality_reduction.py",
+            (
+                "Performs PCA and UMAP dimensionality reduction across active ICI trial cohorts, "
+                "evaluates cohort-independent Z-score standardisation against raw expression "
+                "profiles, and produces `batch_correction_report.md`."
+            ),
         ),
         (
             "run_expression_heatmap.py",
-            SUBPROJECT_ROOT / "scripts" / "pillar-1-cohort-preprocessing" / "run_expression_heatmap.py",
-            "Generates raw log2(TPM+1) and per-cohort Z-score heatmap visualisations for top high-variance genes across trial cohorts (`heatmap_top_variance_genes_raw.png`, `heatmap_top_variance_genes_standardized.png`).",
+            p1_dir / "run_expression_heatmap.py",
+            (
+                "Generates raw log2(TPM+1) and per-cohort Z-score heatmap visualisations "
+                "for top high-variance genes across trial cohorts "
+                "(`heatmap_top_variance_genes_raw.png`, "
+                "`heatmap_top_variance_genes_standardized.png`)."
+            ),
         ),
+    ]
+
+
+def _script_entries_src() -> List[Tuple[str, Path, str]]:
+    """Builds shared source module reference entry tuples."""
+    return [
         (
             "data_loaders.py",
             SUBPROJECT_ROOT / "src" / "data_loaders.py",
-            "Provides `load_merged_immunotherapy()` to retrieve aligned raw and standardised expression matrices and clinical metadata across ICI trial cohorts.",
+            (
+                "Provides `load_merged_immunotherapy()` to retrieve aligned raw and standardised "
+                "expression matrices and clinical metadata across ICI trial cohorts."
+            ),
         ),
         (
             "styles.py",
             PROJECT_ROOT / "src" / "styles.py",
-            "Central definition of Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`).",
+            "Central definition of Okabe-Ito colour palettes.",
         ),
     ]
+
+
+def _report_section_5() -> str:
+    """Returns Markdown text for Script Reference callout box."""
+    entries = _script_entries_p1() + _script_entries_src()
     return generate_script_reference_callout(
         entries,
         base_dir=REPORT_DIR,
@@ -615,16 +624,8 @@ def _report_section_5() -> str:
     )
 
 
-def generate_report_content(
-    n_full: int,
-    cohort_counts: Dict[str, int],
-    n_trials: int,
-    trial_counts: Dict[str, int],
-    n_top: int,
-    n_g_all: int,
-    var_full: Tuple[float, float, float, float],
-) -> str:
-    """Assembles full Markdown content for batch_correction_report.md."""
+def _build_report_intro(cohort_counts: Dict[str, int]) -> str:
+    """Builds YAML frontmatter and introduction text for the report."""
     fm = generate_obsidian_frontmatter(
         title="Batch Effect Assessment & Dimensionality Reduction Analysis",
         aliases=["Q1 Batch Correction Report", "Batch Effect Assessment"],
@@ -638,15 +639,28 @@ def generate_report_content(
         f"across {len(cohort_counts)} melanoma cohorts ({cohorts_str}) and tests if "
         "global profiles separate therapeutic responses.\n\n"
     )
-    return (
-        f"{fm}\n\n"
-        + intro
-        + _report_section_1(n_full, cohort_counts, n_top, n_g_all, var_full)
+    return f"{fm}\n\n{intro}"
+
+
+def generate_report_content(
+    n_full: int,
+    cohort_counts: Dict[str, int],
+    n_trials: int,
+    trial_counts: Dict[str, int],
+    n_top: int,
+    n_g_all: int,
+    var_full: Tuple[float, float, float, float],
+) -> str:
+    """Assembles full Markdown content for batch_correction_report.md."""
+    intro_block = _build_report_intro(cohort_counts)
+    body_block = (
+        _report_section_1(n_full, cohort_counts, n_top, n_g_all, var_full)
         + _report_section_2(n_trials, n_top, trial_counts)
         + _report_section_3(n_trials)
         + _report_section_4(trial_counts)
         + _report_section_5()
     )
+    return f"{intro_block}{body_block}"
 
 
 def write_batch_correction_report(report_path: Path, content: str) -> None:
@@ -722,6 +736,14 @@ _COMPANION_SCRIPTS: List[Tuple[str, Path]] = [
 ]
 
 
+def _write_reports(report_md: str) -> None:
+    """Writes batch_correction_report.md to subproject and root report directories."""
+    write_batch_correction_report(REPORT_DIR / "batch_correction_report.md", report_md)
+    root_report_dir = PROJECT_ROOT / "reports" / "pillar-1-cohorts-and-preprocessing"
+    if root_report_dir != REPORT_DIR:
+        write_batch_correction_report(root_report_dir / "batch_correction_report.md", report_md)
+
+
 def main() -> None:
     """Executes dimensionality reduction workflow."""
     print("==================================================")
@@ -740,16 +762,11 @@ def main() -> None:
 
     cohort_counts = {c: len(expr_dict[c]) for c in cohort_order}
     trial_counts = {c: len(expr_dict[c]) for c in trial_names}
-    n_tr_all = sum(trial_counts.values())
-
     report_md = generate_report_content(
-        n_full, cohort_counts, n_tr_all, trial_counts,
+        n_full, cohort_counts, sum(trial_counts.values()), trial_counts,
         len(top_genes), len(g_all), var_full,
     )
-    write_batch_correction_report(REPORT_DIR / "batch_correction_report.md", report_md)
-    root_report_dir = PROJECT_ROOT / "reports" / "pillar-1-cohorts-and-preprocessing"
-    if root_report_dir != REPORT_DIR:
-        write_batch_correction_report(root_report_dir / "batch_correction_report.md", report_md)
+    _write_reports(report_md)
     print("==================================================")
     print("Done!")
     print("==================================================")
