@@ -59,7 +59,10 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.config.datasets import DatasetConfig, load_dataset_config
 from src.data_loaders import load_merged_immunotherapy
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, resolve_cohort_palette, set_presentation_style
-from src.utils.formatting import generate_obsidian_frontmatter
+from src.utils.formatting import (
+    generate_obsidian_frontmatter,
+    generate_script_reference_callout,
+)
 from src.utils.logging import TeeStream
 from src.utils.paths import (
     DATA_DIR,
@@ -615,18 +618,29 @@ def _report_section_4(trial_counts: Dict[str, int]) -> str:
 
 def _report_section_5() -> str:
     """Returns Markdown text for Script Reference callout box."""
-    return (
-        "> [!NOTE] Script Reference\n"
-        ">\n"
-        "> - [`run_dimensionality_reduction.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_dimensionality_reduction.py): "
-        "Performs PCA and UMAP dimensionality reduction across all active ICI trial cohorts, evaluates cohort-independent Z-score standardisation against raw expression profiles, and produces `batch_correction_report.md`.\n"
-        "> - [`run_expression_heatmap.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/exploratory_plots/run_expression_heatmap.py): "
-        "Generates raw log2(TPM+1) and per-cohort Z-score heatmap visualisations for top high-variance genes across trial cohorts (`heatmap_top_variance_genes_raw.png`, `heatmap_top_variance_genes_standardized.png`).\n"
-        "> - [`data_loaders.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/data_loaders.py): "
-        "Provides `load_merged_immunotherapy()` to retrieve aligned raw and standardised expression matrices and clinical metadata across ICI trial cohorts.\n"
-        "> - [`styles.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/styles.py): "
-        "Central definition of Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`).\n"
-    )
+    entries = [
+        (
+            "run_dimensionality_reduction.py",
+            SUBPROJECT_ROOT / "scripts" / "pillar-1-cohort-preprocessing" / "run_dimensionality_reduction.py",
+            "Performs PCA and UMAP dimensionality reduction across all active ICI trial cohorts, evaluates cohort-independent Z-score standardisation against raw expression profiles, and produces `batch_correction_report.md`.",
+        ),
+        (
+            "run_expression_heatmap.py",
+            SUBPROJECT_ROOT / "scripts" / "exploratory_plots" / "run_expression_heatmap.py",
+            "Generates raw log2(TPM+1) and per-cohort Z-score heatmap visualisations for top high-variance genes across trial cohorts (`heatmap_top_variance_genes_raw.png`, `heatmap_top_variance_genes_standardized.png`).",
+        ),
+        (
+            "data_loaders.py",
+            SUBPROJECT_ROOT / "src" / "data_loaders.py",
+            "Provides `load_merged_immunotherapy()` to retrieve aligned raw and standardised expression matrices and clinical metadata across ICI trial cohorts.",
+        ),
+        (
+            "styles.py",
+            PROJECT_ROOT / "src" / "styles.py",
+            "Central definition of Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`).",
+        ),
+    ]
+    return generate_script_reference_callout(entries)
 
 
 def generate_report_content(

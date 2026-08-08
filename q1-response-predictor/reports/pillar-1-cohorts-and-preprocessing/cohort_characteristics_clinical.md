@@ -9,12 +9,12 @@ tags:
   - survival-analysis
   - kaplan-meier
   - immunotherapy
-created: 2026-08-08 15:46
+created: 2026-08-08 18:19
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-08 15:46
+updated: 2026-08-08 18:19
 ---
 
 # Clinical Characteristics of Immunotherapy Data Cohorts
@@ -22,8 +22,7 @@ updated: 2026-08-08 15:46
 ## 1. Baseline Patient and Disease Characteristics
 
 > [!INFO] Why We Are Doing This
-> **What**: We compare patient demographics, treatment histories, and survival outcomes across the 6 active immunotherapy trial cohorts: 
->  - **Liu 2019** ($N = 122$), **Hugo 2016** ($N = 27$), **Riaz 2017** ($N = 107$), **TCGA GDC 2025** ($N = 473$), **Gide 2019** ($N = 91$), **Van Allen 2015** ($N = 110$).
+> **What**: We compare patient demographics, treatment histories, and survival outcomes across the 6 active immunotherapy trial cohorts.
 > **Why**: Before building predictive models or analysing transcriptomic signatures, we must understand the clinical composition of each dataset. Cohort-level differences in prior treatment, disease stage, and patient demographics can confound downstream survival and response analyses.
 > **Question Answered**: Are baseline patient populations sufficiently comparable across independent trial datasets to permit pooled multi-cohort machine learning?
 

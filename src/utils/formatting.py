@@ -108,3 +108,36 @@ def generate_obsidian_frontmatter(
     lines.insert(css_start, created_line)
 
     return "\n".join(lines)
+
+
+def generate_script_reference_callout(
+    script_entries: List[Dict[str, str]] | List[Tuple[str, str, str]],
+) -> str:
+    """Generates a standard Obsidian Script Reference callout box for reports.
+
+    Args:
+        script_entries: List of dictionaries (with keys ``name``, ``path``, ``description``)
+            or tuples of ``(name, path, description)`` describing each script.
+
+    Returns:
+        Formatted Markdown callout block string starting with ``> [!NOTE] Script Reference``.
+    """
+    lines = ["> [!NOTE] Script Reference", ">"]
+    for entry in script_entries:
+        if isinstance(entry, tuple):
+            name, path, desc = entry
+        elif isinstance(entry, dict):
+            name = entry["name"]
+            path = entry["path"]
+            desc = entry["description"]
+        else:
+            continue
+
+        path_str = str(path).replace("\\", "/")
+        if not path_str.startswith("file:///"):
+            path_str = f"file:///{path_str}"
+
+        lines.append(f"> - [`{name}`]({path_str}): {desc}")
+
+    return "\n".join(lines) + "\n"
+

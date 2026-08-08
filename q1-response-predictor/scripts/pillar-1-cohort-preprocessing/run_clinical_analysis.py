@@ -838,14 +838,12 @@ def generate_clinical_report(
     d = overall_demographics
     ici = ici_breakdown
     ctla4 = ctla4_breakdown
-
     largest_cohort = max(cohort_order, key=lambda c: survival_results[c]["n_total"])
     longest_fu_cohort = max(cohort_order, key=lambda c: survival_results[c]["median_follow_up"])
 
     initial_total, final_total, total_removed, attrition_text = _compute_attrition_summaries(attrition_data, cohort_order)
     retention_pct = final_total / initial_total * 100 if initial_total > 0 else 0.0
 
-    cohort_n_str = ", ".join([f"**{c}** ($N = {n_values[c]}$)" for c in cohort_order])
     cohort_bullets = "\n".join([f"- **{c}**: Immunotherapy trial cohort ($N = {n_values[c]}$)." for c in cohort_order])
     annotated_ages = [
         f"`{c}`: median {_format_cohort_age_str(age_results, c)}"
@@ -880,8 +878,7 @@ def generate_clinical_report(
 ## 1. Baseline Patient and Disease Characteristics
 
 > [!INFO] Why We Are Doing This
-> **What**: We compare patient demographics, treatment histories, and survival outcomes across the {n_cohorts} active immunotherapy trial cohorts: 
->  - {cohort_n_str}.
+> **What**: We compare patient demographics, treatment histories, and survival outcomes across the {n_cohorts} active immunotherapy trial cohorts.
 > **Why**: Before building predictive models or analysing transcriptomic signatures, we must understand the clinical composition of each dataset. Cohort-level differences in prior treatment, disease stage, and patient demographics can confound downstream survival and response analyses.
 > **Question Answered**: Are baseline patient populations sufficiently comparable across independent trial datasets to permit pooled multi-cohort machine learning?
 
