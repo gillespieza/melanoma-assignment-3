@@ -10,12 +10,12 @@ tags:
   - umap
   - tme
   - transcriptomics
-created: 2026-08-08 18:18
+created: 2026-08-08 19:10
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-08 18:18
+updated: 2026-08-08 19:10
 ---
 
 # Batch Effect Assessment & Dimensionality Reduction Analysis
@@ -37,20 +37,6 @@ This report documents how technical batch effects were evaluated and harmonised 
 ### Key Observations
 - **Raw**: Separation between reference and trial cohorts. Uncorrected PC1 (66.3%) and PC2 (16.4%) reflect platform shifts.
 - **Corrected**: Standardisation ($\mu=0, \sigma=1$ per study) aligns datasets. Post-correction PC1 (13.9%) and PC2 (8.8%) show homogeneous spread.
-
-### 1.2 ICI Trial Cohort Batch Assessment (N = 478)
-
-> [!INFO] Why We Are Doing This
->
-> **What**: Technical effects between 6 training cohorts (**Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], **Riaz 2017** [$N = 107$], **TCGA GDC 2025** [$N = 91$], **Gide 2019** [$N = 91$], **Van Allen 2015** [$N = 40$]; $N = 478$) across 20,918 trial genes.
-> **Why**: Trials vary by platform, tissue state, and treatment. Verify baseline offsets are eliminated before LOCO cross-validation.
-> **Question Answered**: Are inter-trial offsets harmonised without leaking test data?
-
-![[batch_effect_ici_pca.png]]
-
-### Key Observations
-- **Raw**: In $\log_2(\text{TPM})$, study-level offsets along PC1 (42.4%) and PC2 (14.3%) confirm sequencing depth and platform dominate raw signals.
-- **Corrected**: Standardisation removes study-level separation. Distributions overlap smoothly across PC1 (9.7%) and PC2 (6.6%).
 
 ## 2. Immunotherapy Trial Dimensionality Reduction (N = 478)
 
@@ -104,9 +90,11 @@ Standardising independently per cohort (using internal $\mu, \sigma$) guarantees
 > - **Constraints**: Sample sizes vary across trial cohorts (`Liu 2019` ($N = 122$), `Hugo 2016` ($N = 27$), `Riaz 2017` ($N = 107$), `TCGA GDC 2025` ($N = 91$), `Gide 2019` ($N = 91$), `Van Allen 2015` ($N = 40$)).
 > - **Scope**: Projections confirm single-gene thresholds are insufficient, motivating a multimodal ensemble feature approach.
 
-> [!NOTE] Script Reference
+---
+
+> [!formula]+ Script Reference
 >
-> - [`run_dimensionality_reduction.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_dimensionality_reduction.py): Performs PCA and UMAP dimensionality reduction across all active ICI trial cohorts, evaluates cohort-independent Z-score standardisation against raw expression profiles, and produces `batch_correction_report.md`.
-> - [`run_expression_heatmap.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/exploratory_plots/run_expression_heatmap.py): Generates raw log2(TPM+1) and per-cohort Z-score heatmap visualisations for top high-variance genes across trial cohorts (`heatmap_top_variance_genes_raw.png`, `heatmap_top_variance_genes_standardized.png`).
-> - [`data_loaders.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/data_loaders.py): Provides `load_merged_immunotherapy()` to retrieve aligned raw and standardised expression matrices and clinical metadata across ICI trial cohorts.
-> - [`styles.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/styles.py): Central definition of Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`).
+> - [`run_dimensionality_reduction.py`](q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_dimensionality_reduction.py): Performs PCA and UMAP dimensionality reduction across all active ICI trial cohorts, evaluates cohort-independent Z-score standardisation against raw expression profiles, and produces `batch_correction_report.md`.
+> - [`run_expression_heatmap.py`](q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_expression_heatmap.py): Generates raw log2(TPM+1) and per-cohort Z-score heatmap visualisations for top high-variance genes across trial cohorts (`heatmap_top_variance_genes_raw.png`, `heatmap_top_variance_genes_standardized.png`).
+> - [`data_loaders.py`](q1-response-predictor/src/data_loaders.py): Provides `load_merged_immunotherapy()` to retrieve aligned raw and standardised expression matrices and clinical metadata across ICI trial cohorts.
+> - [`styles.py`](src/styles.py): Central definition of Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`).

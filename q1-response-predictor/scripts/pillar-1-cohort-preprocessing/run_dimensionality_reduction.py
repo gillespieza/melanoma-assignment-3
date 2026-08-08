@@ -484,51 +484,16 @@ def _report_section_1a(
     )
 
 
-def _report_section_1b(
-    n_trials: int,
-    trial_counts: Dict[str, int],
-    n_g_trials: int,
-    var_trials: Tuple[float, float, float, float],
-) -> str:
-    """Returns Markdown text for Section 1.2: ICI Trial Cohort Batch Assessment."""
-    p1_rt, p2_rt, p1_st, p2_st = var_trials
-    n_trial_cohorts = len(trial_counts)
-    trial_breakdown = ", ".join(
-        f"**{name}** [$N = {count}$]" for name, count in trial_counts.items()
-    )
-    return (
-        f"### 1.2 ICI Trial Cohort Batch Assessment (N = {n_trials})\n\n"
-        "> [!INFO] Why We Are Doing This\n"
-        ">\n"
-        f"> **What**: Technical effects between {n_trial_cohorts} training cohorts ({trial_breakdown}; "
-        f"$N = {n_trials}$) across {n_g_trials:,} trial genes.\n"
-        "> **Why**: Trials vary by platform, tissue state, and treatment. Verify baseline "
-        "offsets are eliminated before LOCO cross-validation.\n"
-        "> **Question Answered**: Are inter-trial offsets harmonised without leaking test data?\n\n"
-        "![[batch_effect_ici_pca.png]]\n\n"
-        "### Key Observations\n"
-        f"- **Raw**: In $\\log_2(\\text{{TPM}})$, study-level offsets along PC1 ({p1_rt:.1f}%) "
-        f"and PC2 ({p2_rt:.1f}%) confirm sequencing depth and platform dominate raw signals.\n"
-        f"- **Corrected**: Standardisation removes study-level separation. Distributions "
-        f"overlap smoothly across PC1 ({p1_st:.1f}%) and PC2 ({p2_st:.1f}%).\n\n"
-    )
-
-
 def _report_section_1(
     n_full: int,
     cohort_counts: Dict[str, int],
-    n_trials: int,
-    trial_counts: Dict[str, int],
     n_top: int,
     n_g_all: int,
-    n_g_trials: int,
     var_full: Tuple[float, float, float, float],
-    var_trials: Tuple[float, float, float, float],
 ) -> str:
     """Returns Markdown text for Section 1: Cohort Batch Assessment."""
     sec1a = _report_section_1a(n_full, cohort_counts, n_top, n_g_all, var_full)
-    sec1b = _report_section_1b(n_trials, trial_counts, n_g_trials, var_trials)
-    return f"## 1. Cohort Batch Assessment\n\n{sec1a}{sec1b}"
+    return f"## 1. Cohort Batch Assessment\n\n{sec1a}"
 
 
 def _report_section_2(
@@ -626,7 +591,7 @@ def _report_section_5() -> str:
         ),
         (
             "run_expression_heatmap.py",
-            SUBPROJECT_ROOT / "scripts" / "exploratory_plots" / "run_expression_heatmap.py",
+            SUBPROJECT_ROOT / "scripts" / "pillar-1-cohort-preprocessing" / "run_expression_heatmap.py",
             "Generates raw log2(TPM+1) and per-cohort Z-score heatmap visualisations for top high-variance genes across trial cohorts (`heatmap_top_variance_genes_raw.png`, `heatmap_top_variance_genes_standardized.png`).",
         ),
         (
@@ -650,9 +615,7 @@ def generate_report_content(
     trial_counts: Dict[str, int],
     n_top: int,
     n_g_all: int,
-    n_g_trials: int,
     var_full: Tuple[float, float, float, float],
-    var_trials_all: Tuple[float, float, float, float],
 ) -> str:
     """Assembles full Markdown content for batch_correction_report.md."""
     fm = generate_obsidian_frontmatter(
@@ -671,10 +634,7 @@ def generate_report_content(
     return (
         f"{fm}\n\n"
         + intro
-        + _report_section_1(
-            n_full, cohort_counts, n_trials, trial_counts, n_top, n_g_all, n_g_trials,
-            var_full, var_trials_all,
-        )
+        + _report_section_1(n_full, cohort_counts, n_top, n_g_all, var_full)
         + _report_section_2(n_trials, n_top, trial_counts)
         + _report_section_3(n_trials)
         + _report_section_4(trial_counts)
@@ -702,11 +662,9 @@ def _run_pca_batch_projections(
     expr_dict: Dict[str, pd.DataFrame],
     clin_dict: Dict[str, pd.DataFrame],
     top_genes: List[str],
-    g_trials: List[str],
     cohort_order: List[str],
-    trial_names: List[str],
-) -> Tuple[Tuple[float, float, float, float], Tuple[float, float, float, float], int]:
-    """Runs full and trial cohort PCA projections."""
+) -> Tuple[Tuple[float, float, float, float], int]:
+    """Runs ICI cohort PCA batch assessment using top high-variance genes."""
     expr_full_raw, expr_full_scaled, clin_full = _build_concat(
         expr_dict, clin_dict, cohort_order, top_genes, with_response=False
     )
@@ -714,20 +672,9 @@ def _run_pca_batch_projections(
     _assign_pca_coords(clin_full, pcs_r, pcs_s)
     plot_cohort_batch_pca(
         clin_full, (p1_rf, p2_rf, p1_sf, p2_sf), cohort_order,
-        "Full Cohort", EXPLORATORY_PLOT_DIR / "batch_effect_pca.png",
+        "ICI Trial Cohorts", EXPLORATORY_PLOT_DIR / "batch_effect_pca.png",
     )
-    expr_tr_all_raw, expr_tr_all_scaled, clin_tr_all = _build_concat(
-        expr_dict, clin_dict, trial_names, g_trials, with_response=False
-    )
-    pcs_tr_r, pcs_tr_s, p1_rt, p2_rt, p1_st, p2_st = fit_pca_projection(
-        expr_tr_all_raw, expr_tr_all_scaled
-    )
-    _assign_pca_coords(clin_tr_all, pcs_tr_r, pcs_tr_s)
-    plot_cohort_batch_pca(
-        clin_tr_all, (p1_rt, p2_rt, p1_st, p2_st), trial_names,
-        "ICI Trial Cohorts", EXPLORATORY_PLOT_DIR / "batch_effect_ici_pca.png",
-    )
-    return (p1_rf, p2_rf, p1_sf, p2_sf), (p1_rt, p2_rt, p1_st, p2_st), len(expr_full_raw)
+    return (p1_rf, p2_rf, p1_sf, p2_sf), len(expr_full_raw)
 
 
 def _run_trial_reduction_grids(
@@ -767,8 +714,8 @@ def main() -> None:
     expr_dict, clin_dict, cohort_order, trial_names = load_all_cohorts()
     g_all, g_trials, top_genes = select_top_variable_genes(expr_dict, trial_names)
 
-    var_full, var_trials, n_full = _run_pca_batch_projections(
-        expr_dict, clin_dict, top_genes, g_trials, cohort_order, trial_names
+    var_full, n_full = _run_pca_batch_projections(
+        expr_dict, clin_dict, top_genes, cohort_order,
     )
     _run_trial_reduction_grids(expr_dict, clin_dict, top_genes, trial_names)
 
@@ -778,7 +725,7 @@ def main() -> None:
 
     report_md = generate_report_content(
         n_full, cohort_counts, n_tr_all, trial_counts,
-        len(top_genes), len(g_all), len(g_trials), var_full, var_trials,
+        len(top_genes), len(g_all), var_full,
     )
     write_batch_correction_report(REPORT_DIR / "batch_correction_report.md", report_md)
     root_report_dir = PROJECT_ROOT / "reports" / "pillar-1-cohorts-and-preprocessing"

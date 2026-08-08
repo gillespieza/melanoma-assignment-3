@@ -55,6 +55,7 @@ from src.utils.formatting import (
     format_median,
     format_median_iqr,
     generate_obsidian_frontmatter,
+    generate_script_reference_callout,
 )
 from src.utils.logging import TeeStream
 from src.utils.paths import (
@@ -864,6 +865,46 @@ def generate_clinical_report(
     )
     attrition_table = generate_attrition_table(attrition_data, cohort_order)
 
+    _scripts = _SUBPROJECT_ROOT / "scripts" / "pillar-1-cohort-preprocessing"
+    _src = _SUBPROJECT_ROOT / "src"
+    _root_src = PROJECT_ROOT / "src"
+    script_callout = generate_script_reference_callout(
+        [
+            (
+                "run_clinical_analysis.py",
+                _scripts / "run_clinical_analysis.py",
+                "Generates baseline demographic grids, attrition metrics, cohort characteristics "
+                "tables, Kaplan-Meier OS curves, and writes `cohort_characteristics_clinical.md`.",
+            ),
+            (
+                "clean_data.py",
+                _scripts / "clean_data.py",
+                "Preprocesses raw cohort clinical metadata and RNA-seq expression profiles into "
+                "cleaned CSV matrices.",
+            ),
+            (
+                "merge_datasets.py",
+                _scripts / "merge_datasets.py",
+                "Merges processed expression matrices across cohorts into harmonised pooled matrices "
+                "(`expr_merged.csv`, `clin_merged.csv`).",
+            ),
+            (
+                "data_loaders.py",
+                _src / "data_loaders.py",
+                "Provides helper loader functions (`load_liu_2019`, `load_hugo_2016`, "
+                "`load_riaz_2017`) for retrieving expression and clinical data.",
+            ),
+            (
+                "styles.py",
+                _root_src / "styles.py",
+                "Single source of truth for Okabe-Ito colour palettes (`COHORT_PALETTE`, "
+                "`RESPONSE_PALETTE`) and visualisation presentation style.",
+            ),
+        ],
+        callout_type="![formula]+",
+        title="Clinical Analysis Script Execution & Software Module Architecture",
+    )
+
     frontmatter = generate_obsidian_frontmatter(
         title="Clinical Characteristics of Immunotherapy Data Cohorts",
         aliases=["Clinical Cohort Characteristics"],
@@ -894,7 +935,7 @@ _**Figure 1: 2×2 Grid of Clinical Demographics and Treatment Histories across I
 #### Key Demographics & Treatment Insights
 
 - **Panel A: Sex Distribution ($N = {d['n_sex_total']}$)**: The overall trial cohort shows a {'male' if d['n_male'] > d['n_female'] else 'female'} predominance (**{d['pct_male']:.1f}% Male** [$N = {d['n_male']}$] vs. **{d['pct_female']:.1f}% Female** [$N = {d['n_female']}$]), reflecting real-world cutaneous melanoma incidence patterns where male patients account for the majority of advanced presentations.
-- **Panel B: Age Distribution across Studies**: Evaluated patient ages span from {d['age_min']:.0f} to {d['age_max']:.0f} years with a **median age of {d['age_median']:.1f} years** ($\text{{IQR}} = {d['age_q1']:.1f}\text{{--}}{d['age_q3']:.1f}\text{{ years}}$). Trial cohorts ({age_annotation_str}) display consistent age distributions centred around late middle age. *Note: Across annotated trial cohorts, ages range from 19 to 89 years (adult trial eligibility $\ge 18$ years), with values top-coded/clipped at 89–90 years under HIPAA de-identification standards.*
+- **Panel B: Age Distribution across Studies**: Evaluated patient ages span from {d['age_min']:.0f} to {d['age_max']:.0f} years with a **median age of {d['age_median']:.1f} years** (IQR: {d['age_q1']:.1f}–{d['age_q3']:.1f} years). Trial cohorts ({age_annotation_str}) display consistent age distributions centred around late middle age. *Note: Across annotated trial cohorts, ages range from 19 to 89 years (adult trial eligibility ≥ 18 years), with values top-coded/clipped at 89–90 years under HIPAA de-identification standards.*
 - **Panel C: Treatment Agents Administered ($N = {ici['n_total']}$)**: Across all treatment administrations, the most frequent agents are {top_agents_str}.
 - **Panel D: Prior Anti-CTLA-4 Therapy Status ($N = {ctla4['n_total']}$)**: Across all trial patients, **{ctla4['pct_prior_ctla4']:.1f}%** [$N = {ctla4['n_prior_ctla4']}$] received prior anti-CTLA-4 therapy (Ipilimumab), while **{ctla4['pct_naive']:.1f}%** [$N = {ctla4['n_naive']}$] were anti-CTLA-4 naïve prior to anti-PD-1 initiation.
 
@@ -950,45 +991,7 @@ _**Figure 3: Overall Survival Stratified by RECIST Response Status across Immuno
 > 2. **Durable Long-Term Survival**: Durable separation is consistently observed between responders and non-responders across {cohorts_list_str}.
 > 3. **Conclusion**: Objective RECIST response is a highly robust surrogate endpoint for overall survival in metastatic melanoma, justifying its use as the primary outcome for predictive model training.
 
-## 5. Univariate Associations with Response (Forest Plots)
-
-> [!INFO] Why We Are Doing This
-> **What**: We run univariate statistical tests (Odds Ratios and 95% Confidence Intervals) to measure the isolated predictive strength of individual baseline features — clinical demographics, stage, driver mutations (`BRAF`, `BRAF V600`, `BRAF V600E`, `NRAS`, `NF1`), TMB, and predicted neoantigen burden — against immunotherapy response across individual and pooled trial cohorts.
-> **Why**: Before building complex multivariate models, univariate screening identifies whether any single clinical or genomic feature alone is sufficient to predict response.
-> **Question Answered**: Does any single baseline clinical, mutational, or genomic feature reliably predict anti-PD-1 immunotherapy response across independent cohorts?
-
-### 5.1 Clinical Demographics & Anatomical Stage
-
-![Forest Plot of Clinical Demographics & Stage](../../plots/clinical/univariate_associations_clinical.png)
-
-_**Figure 4A: Forest Plot of Clinical Demographics and Stage against Immunotherapy Response.**_
-
-### 5.2 Driver Mutations & Subtypes
-
-![Forest Plot of Driver Mutations](../../plots/clinical/univariate_associations_mutations.png)
-
-_**Figure 4B: Forest Plot of Somatic Driver Mutations (BRAF Any, BRAF V600, BRAF V600E, NRAS, NF1) against Immunotherapy Response.**_
-
-### 5.3 Tumour Mutation Burden & Neoantigen Load
-
-![Forest Plot of TMB & Neoantigen Load](../../plots/clinical/univariate_associations_genomics.png)
-
-_**Figure 4C: Forest Plot of TMB and Predicted Neoantigen Burden (Total, SNV, Indel) against Immunotherapy Response.**_
-
-### 5.4 Composite Multi-Domain Forest Plot
-
-![Master Composite Forest Plot](../../plots/clinical/univariate_associations.png)
-
-_**Figure 4D: Master Composite Forest Plot of All Clinical and Genomic Features.**_
-
-> [!INSIGHT] Key Takeaways: Univariate Associations
-> 1. **Lack of Robust Single-Feature Predictors**: Across pooled trial analyses and after multiple testing adjustments, **no single baseline clinical or genomic feature achieves robust statistical significance**. All 95% CIs for pooled odds ratios cross 1.0.
-> 2. **BRAF Subtype Resolution (`V600` vs `V600E`)**: Neither generic `BRAF` mutation (OR = 1.21, p = 0.401), specific `BRAF V600` (OR = 1.18, p = 0.512), nor `BRAF V600E` (OR = 0.92, p = 0.875) demonstrates significant association with anti-PD-1 response.
-> 3. **Anatomical Staging**: Stage IV vs Stage III disease shows no overall pooled association (OR = 0.99, p = 1.000).
-> 4. **Demographic & Genomic Trends**: Age, sex, TMB (OR = 1.25, p = 0.091), and total neoantigen load (OR = 1.05, p = 0.857) exhibit minor unadjusted trends but do not achieve statistical significance independently.
-> 5. **Core Scientific Implication**: The failure of individual clinical variables and driver mutations to predict outcome explains why single-variable biomarker tests fail in clinical practice, highlighting the necessity of multi-gene transcriptomic signatures and integrated multivariate machine learning.
-
-## 6. Technical Analysis Notes
+## 5. Technical Analysis Notes
 
 > [!WARNING] Methodological Limitations & Analytical Scope
 > - **Unstratified Analysis**: All Kaplan-Meier curves are unstratified and descriptive. They do not adjust for demographic, clinical, molecular, treatment, or study-specific confounding factors.
@@ -997,17 +1000,7 @@ _**Figure 4D: Master Composite Forest Plot of All Clinical and Genomic Features.
 > - **Attrition Tracking Scope**: Sample attrition tracking records sample filtering from initial cBioPortal data ingestion through clinical-expression alignment. Downstream feature engineering steps may impose additional filters not captured here.
 > - **Median OS Reporting**: Where the estimated survival probability did not fall below 50% during follow-up, median OS is reported as **NR (not reached)**.
 
-> [!formula]+ Clinical Analysis Script Execution & Software Module Architecture
-> - **Primary Pipeline Execution Scripts**:
->   - [`run_clinical_analysis.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_clinical_analysis.py): Generates baseline demographic grids, attrition metrics, cohort characteristics tables, Kaplan-Meier OS curves, and writes `cohort_characteristics_clinical.md`.
->   - [`run_univariate_associations.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-2-clinical-subtyping/run_univariate_associations.py): Computes univariate odds ratios and confidence intervals across clinical/genomic features and generates the forest plot (`univariate_associations.png`).
-> - **Data Preprocessing & Loading Modules**:
->   - [`clean_data.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/clean_data.py): Preprocesses raw cohort clinical metadata and RNA-seq expression profiles into cleaned CSV matrices.
->   - [`merge_datasets.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/merge_datasets.py): Merges processed expression matrices across cohorts into harmonised pooled matrices (`expr_merged.csv`, `clin_merged.csv`).
->   - [`data_loaders.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/data_loaders.py): Provides helper loader functions (`load_liu_2019`, `load_hugo_2016`, `load_riaz_2017`) for retrieving expression and clinical data.
-> - **Shared Cross-Question & Pipeline Modules**:
->   - [`styles.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/styles.py): Single source of truth for Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`) and visualisation presentation style.
-"""
+{script_callout}"""
 
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(report, encoding="utf-8")
@@ -1040,7 +1033,18 @@ def _load_cohort_and_attrition_data(
             )
 
         print(f"  Loading cleaned clinical data for {label}...")
-        cohort_data[label] = pd.read_csv(clin_path, index_col="SAMPLE_ID")
+        df_clin = pd.read_csv(clin_path, index_col="SAMPLE_ID")
+
+        # For TCGA GDC, restrict to the immunotherapy subcohort only.
+        # The full clin_cleaned.csv contains the entire TCGA-SKCM cohort (N=473);
+        # only patients with TX_TYPE_IMMUNOTHERAPY=1 received ICI treatment (N≈91).
+        ici_col = "TX_TYPE_IMMUNOTHERAPY_(INCLUDING_VACCINES)"
+        if ici_col in df_clin.columns:
+            n_before = len(df_clin)
+            df_clin = df_clin[df_clin[ici_col] == 1.0].copy()
+            print(f"    Filtered to immunotherapy subcohort: {n_before} -> {len(df_clin)} patients")
+
+        cohort_data[label] = df_clin
 
         if attrition_path.exists():
             attrition_data[label] = pd.read_csv(attrition_path)
