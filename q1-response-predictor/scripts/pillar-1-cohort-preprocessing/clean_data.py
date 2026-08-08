@@ -163,6 +163,22 @@ _KEY_TREATMENT_AGENTS: dict[str, list[str]] = {
     ],
 }
 
+_OUTCOME_CANONICAL_MAP: dict[str, str] = {
+    "COMPLETE RESPONSE": "Complete Response",
+    "PARTIAL RESPONSE": "Partial Response",
+    "STABLE DISEASE": "Stable Disease",
+    "PROGRESSIVE DISEASE": "Progressive Disease",
+    "CLINICAL PROGRESSIVE DISEASE": "Progressive Disease",
+    "RADIOGRAPHIC PROGRESSIVE DISEASE": "Progressive Disease",
+}
+
+_RESPONSE_RANK: dict[str, int] = {
+    "Complete Response": 4,
+    "Partial Response": 3,
+    "Stable Disease": 2,
+    "Progressive Disease": 1,
+}
+
 
 # ============================================================================
 # Attrition data
@@ -516,11 +532,18 @@ def _sample_to_patient_id(
     return sample_id
 
 
+def _extract_best_outcome(series: pd.Series) -> str | float:
+    valid = [x for x in series.dropna() if x in _RESPONSE_RANK]
+    if not valid:
+        return np.nan
+    return max(valid, key=lambda x: _RESPONSE_RANK[x])
+
+
 def _build_treatment_summary_features(
     df_treatment: pd.DataFrame,
 ) -> pd.DataFrame:
     """Aggregate treatment timeline to patient-level summary features."""
-    return df_treatment.groupby(_COL_PATIENT_ID).agg(
+    df_sum = df_treatment.groupby(_COL_PATIENT_ID).agg(
         TREATMENT_TYPES=(
             _COL_TREATMENT_TYPE,
             lambda values: ", ".join(
@@ -534,6 +557,29 @@ def _build_treatment_summary_features(
             ),
         ),
     )
+
+    outcome_col = next(
+        (c for c in ("TREATMENT_OUTCOME", "MEASURE_OF_RESPONSE") if c in df_treatment.columns),
+        None,
+    )
+    if outcome_col:
+        df_tx = df_treatment.copy()
+        df_tx["_canon_outcome"] = (
+            df_tx[outcome_col]
+            .astype(str)
+            .str.strip()
+            .str.upper()
+            .map(_OUTCOME_CANONICAL_MAP)
+        )
+        overall = df_tx.groupby(_COL_PATIENT_ID)["_canon_outcome"].apply(_extract_best_outcome)
+        df_sum["TREATMENT_OUTCOME"] = overall
+
+        immuno_mask = df_tx[_COL_TREATMENT_TYPE].astype(str).str.upper().str.contains("IMMUNO", na=False)
+        if immuno_mask.any():
+            immuno = df_tx[immuno_mask].groupby(_COL_PATIENT_ID)["_canon_outcome"].apply(_extract_best_outcome)
+            df_sum["TX_IMMUNOTHERAPY_OUTCOME"] = immuno
+
+    return df_sum
 
 
 def _build_treatment_type_indicators(
@@ -623,7 +669,15 @@ def _add_tcga_treatment_features(
     tx_features = tx_features.reset_index()
     print(f"    Merging {tx_features.shape[1] - 1} treatment features onto clinical data...")
 
-    return clinical_df.merge(tx_features, on=_COL_PATIENT_ID, how="left")
+    merged = clinical_df.merge(tx_features, on=_COL_PATIENT_ID, how="left")
+    if _COL_RESPONSE not in merged.columns:
+        if "TX_IMMUNOTHERAPY_OUTCOME" in merged.columns and "TREATMENT_OUTCOME" in merged.columns:
+            merged[_COL_RESPONSE] = merged["TX_IMMUNOTHERAPY_OUTCOME"].fillna(merged["TREATMENT_OUTCOME"])
+        elif "TX_IMMUNOTHERAPY_OUTCOME" in merged.columns:
+            merged[_COL_RESPONSE] = merged["TX_IMMUNOTHERAPY_OUTCOME"]
+        elif "TREATMENT_OUTCOME" in merged.columns:
+            merged[_COL_RESPONSE] = merged["TREATMENT_OUTCOME"]
+    return merged
 
 
 def _add_tcga_hypoxia_features(
