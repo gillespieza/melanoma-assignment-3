@@ -171,83 +171,81 @@ def calculate_sex_statistics(df_clin: pd.DataFrame) -> dict[str, int]:
 # ===========================================================================
 
 
-def _normalise_text_series(series: pd.Series) -> pd.Series:
-    """Converts a pandas Series to normalised uppercase text values."""
-    return series.astype("string").str.strip().str.upper()
-
-
-def _parse_liu_treatment_stats(df_clin: pd.DataFrame) -> dict[str, Any]:
-    """Extracts treatment statistics for Liu 2019 cohort."""
-    stats: dict[str, Any] = {}
-    if "ICI_RX" in df_clin.columns:
-        ici_rx = _normalise_text_series(df_clin["ICI_RX"])
-        stats["pembrolizumab"] = int((ici_rx == "PEMBROLIZUMAB").sum())
-        stats["nivolumab"] = int((ici_rx == "NIVOLUMAB").sum())
-        stats["treatment_n"] = int(ici_rx.notna().sum())
-    else:
-        stats["pembrolizumab"], stats["nivolumab"], stats["treatment_n"] = None, None, 0
-
-    if "PRIOR_ICI_RX" in df_clin.columns:
-        prior_ici = _normalise_text_series(df_clin["PRIOR_ICI_RX"])
-        stats["prior_ctla4"] = int(prior_ici.str.contains("ACTLA4|IPILIMUMAB", na=False).sum())
-        stats["prior_ctla4_n"] = int(prior_ici.notna().sum())
-    else:
-        stats["prior_ctla4"], stats["prior_ctla4_n"] = None, 0
-    return stats
-
-
-def _parse_hugo_treatment_stats(df_clin: pd.DataFrame) -> dict[str, Any]:
-    """Extracts treatment statistics for Hugo 2016 cohort."""
-    stats: dict[str, Any] = {}
-    if "ICI_RX" in df_clin.columns:
-        treatment = _normalise_text_series(df_clin["ICI_RX"])
-        stats["pembrolizumab"] = int(treatment.str.contains("PEMBROLIZUMAB", na=False).sum())
-        stats["nivolumab"] = int(treatment.str.contains("NIVOLUMAB", na=False).sum())
-        stats["treatment_n"] = int(treatment.notna().sum())
-    elif "SAMPLE_TREATMENT" in df_clin.columns:
-        treatment = _normalise_text_series(df_clin["SAMPLE_TREATMENT"])
-        stats["pembrolizumab"] = len(df_clin)
-        stats["nivolumab"] = 0
-        stats["treatment_n"] = len(df_clin)
-    else:
-        stats["pembrolizumab"], stats["nivolumab"], stats["treatment_n"] = None, None, 0
-    stats["prior_ctla4"], stats["prior_ctla4_n"] = 0, len(df_clin)
-    return stats
-
-
-def _parse_riaz_treatment_stats(df_clin: pd.DataFrame) -> dict[str, Any]:
-    """Extracts treatment statistics for Riaz 2017 cohort."""
-    stats: dict[str, Any] = {}
-    if "ICI_RX" in df_clin.columns:
-        treatment = _normalise_text_series(df_clin["ICI_RX"])
-        stats["nivolumab"] = int(treatment.str.contains("NIVOLUMAB", na=False).sum())
-        stats["treatment_n"] = int(treatment.notna().sum())
-    else:
-        stats["nivolumab"] = len(df_clin)
-        stats["treatment_n"] = len(df_clin)
-
-    stats["pembrolizumab"] = 0
-    if "PRIOR_ICI_RX" in df_clin.columns:
-        prior_ici = _normalise_text_series(df_clin["PRIOR_ICI_RX"])
-        stats["prior_ctla4"] = int(prior_ici.str.contains("IPILIMUMAB", na=False).sum())
-        stats["prior_ctla4_n"] = int(prior_ici.notna().sum())
-    else:
-        stats["prior_ctla4"], stats["prior_ctla4_n"] = 0, len(df_clin)
-    return stats
-
-
 def calculate_treatment_statistics(
     df_clin: pd.DataFrame,
     cohort_label: str,
 ) -> dict[str, Any]:
-    """Calculates cohort-specific treatment statistics."""
-    if cohort_label == "Liu 2019":
-        return _parse_liu_treatment_stats(df_clin)
-    if cohort_label == "Hugo 2016":
-        return _parse_hugo_treatment_stats(df_clin)
-    if cohort_label == "Riaz 2017":
-        return _parse_riaz_treatment_stats(df_clin)
-    return {}
+    """Calculates treatment agent statistics universally across any cohort DataFrame."""
+    n_total = len(df_clin)
+    agents_found: dict[str, int] = {}
+
+    agent_specs = {
+        "Pembrolizumab": ["PEMBRO", "PEMBROLIZUMAB", "TX_AGENT_PEMBROLIZUMAB"],
+        "Nivolumab": ["NIVO", "NIVOLUMAB", "TX_AGENT_NIVOLUMAB"],
+        "Ipilimumab": ["IPILIMUMAB", "ACTLA4", "IPI", "TX_AGENT_IPILIMUMAB"],
+        "Vemurafenib": ["VEMURAFENIB", "TX_AGENT_VEMURAFENIB"],
+        "Dabrafenib": ["DABRAFENIB", "TX_AGENT_DABRAFENIB"],
+        "Trametinib": ["TRAMETINIB", "TX_AGENT_TRAMETINIB"],
+        "Dacarbazine": ["DACARBAZINE", "TX_AGENT_DACARBAZINE"],
+        "Temozolomide": ["TEMOZOLOMIDE", "TX_AGENT_TEMOZOLOMIDE"],
+        "Interferon": ["INTERFERON", "TX_AGENT_INTERFERON"],
+    }
+
+    # Text series combining all text/categorical columns
+    text_cols = [c for c in df_clin.columns if df_clin[c].dtype == "object" or isinstance(df_clin[c].dtype, pd.StringDtype)]
+    combined_text = pd.Series("", index=df_clin.index)
+    for c in text_cols:
+        combined_text = combined_text + " " + df_clin[c].astype(str).str.upper()
+
+    # Cohort-specific defaults if explicit agent text missing in raw metadata
+    if cohort_label == "Hugo 2016" and "PEMBROLIZUMAB" not in combined_text.to_string():
+        combined_text = combined_text + " PEMBROLIZUMAB"
+    elif cohort_label == "Riaz 2017" and "NIVOLUMAB" not in combined_text.to_string():
+        combined_text = combined_text + " NIVOLUMAB IPILIMUMAB"
+    elif cohort_label == "Van Allen 2015" and "IPILIMUMAB" not in combined_text.to_string():
+        combined_text = combined_text + " IPILIMUMAB"
+
+    for agent_name, patterns in agent_specs.items():
+        # Check binary numeric indicator columns first
+        num_cols = [
+            c for c in df_clin.columns
+            if any(p in c.upper() for p in patterns) and pd.api.types.is_numeric_dtype(df_clin[c])
+        ]
+        if num_cols:
+            cnt = int(df_clin[num_cols].max(axis=1).sum())
+        else:
+            text_patterns = [p for p in patterns if not p.startswith("TX_")]
+            pattern_regex = r"\b(?:" + "|".join(text_patterns) + r")\b" if text_patterns else ""
+            cnt = int(combined_text.str.contains(pattern_regex, na=False, regex=True).sum()) if pattern_regex else 0
+
+        if cnt > 0:
+            agents_found[agent_name] = cnt
+
+    pembrolizumab = agents_found.get("Pembrolizumab", 0)
+    nivolumab = agents_found.get("Nivolumab", 0)
+    ipilimumab = agents_found.get("Ipilimumab", 0)
+
+    # Calculate prior anti-CTLA-4 exposure
+    prior_ctla4_cnt = 0
+    if "PRIOR_ICI_RX" in df_clin.columns:
+        prior_s = df_clin["PRIOR_ICI_RX"].astype(str).str.upper()
+        prior_ctla4_cnt = int(prior_s.str.contains("IPILIMUMAB|ACTLA4|CTLA4", na=False).sum())
+    elif cohort_label == "Riaz 2017":
+        prior_ctla4_cnt = n_total
+    elif ipilimumab > 0 and cohort_label in ["Liu 2019", "Riaz 2017", "Van Allen 2015"]:
+        prior_ctla4_cnt = ipilimumab
+    else:
+        prior_ctla4_cnt = ipilimumab
+
+    return {
+        "agents": agents_found,
+        "pembrolizumab": pembrolizumab,
+        "nivolumab": nivolumab,
+        "ipilimumab": ipilimumab,
+        "prior_ctla4": prior_ctla4_cnt,
+        "prior_ctla4_n": n_total,
+        "treatment_n": n_total,
+    }
 
 
 def _safe_pct(n: int, total: int) -> float:
@@ -319,21 +317,27 @@ def compute_overall_demographics(
 def compute_ici_agent_breakdown(
     treatment_results: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
-    """Computes the breakdown of anti-PD-1 agents administered across ICI trial cohorts."""
-    liu = treatment_results.get("Liu 2019", {})
-    hugo = treatment_results.get("Hugo 2016", {})
-    riaz = treatment_results.get("Riaz 2017", {})
+    """Computes the breakdown of all treatment agents administered across all trial cohorts."""
+    agent_totals: dict[str, int] = {}
+    for c_res in treatment_results.values():
+        agents = c_res.get("agents", {})
+        for agent_name, count in agents.items():
+            agent_totals[agent_name] = agent_totals.get(agent_name, 0) + count
 
-    n_pemb = (liu.get("pembrolizumab") or 0) + (hugo.get("pembrolizumab") or 0)
-    n_nivo = (liu.get("nivolumab") or 0) + (riaz.get("nivolumab") or 0)
-    n_total = n_pemb + n_nivo
+    total_administrations = sum(agent_totals.values())
+    n_pemb = agent_totals.get("Pembrolizumab", 0)
+    n_nivo = agent_totals.get("Nivolumab", 0)
+    n_ipi = agent_totals.get("Ipilimumab", 0)
 
     return {
-        "n_total": n_total,
+        "n_total": total_administrations,
         "n_pembrolizumab": n_pemb,
         "n_nivolumab": n_nivo,
-        "pct_pembrolizumab": _safe_pct(n_pemb, n_total),
-        "pct_nivolumab": _safe_pct(n_nivo, n_total),
+        "n_ipilimumab": n_ipi,
+        "agent_totals": agent_totals,
+        "pct_pembrolizumab": _safe_pct(n_pemb, total_administrations),
+        "pct_nivolumab": _safe_pct(n_nivo, total_administrations),
+        "pct_ipilimumab": _safe_pct(n_ipi, total_administrations),
     }
 
 
@@ -341,13 +345,9 @@ def compute_prior_ctla4_breakdown(
     treatment_results: dict[str, dict[str, Any]],
     survival_results: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
-    """Computes prior anti-CTLA-4 (Ipilimumab) exposure breakdown across ICI cohorts."""
-    liu_prior = treatment_results.get("Liu 2019", {}).get("prior_ctla4") or 0
-    riaz_prior = treatment_results.get("Riaz 2017", {}).get("prior_ctla4") or 0
-    hugo_prior = treatment_results.get("Hugo 2016", {}).get("prior_ctla4") or 0
-
+    """Computes anti-CTLA-4 / prior anti-CTLA-4 exposure breakdown across all cohorts."""
     n_total_patients = sum(s["n_total"] for s in survival_results.values())
-    n_prior_ctla4 = liu_prior + riaz_prior + hugo_prior
+    n_prior_ctla4 = sum(c_res.get("prior_ctla4", 0) for c_res in treatment_results.values())
     n_naive = max(0, n_total_patients - n_prior_ctla4)
 
     return {
@@ -442,26 +442,40 @@ def _plot_age_panel(
 
 
 def _plot_ici_agent_panel(ax: plt.Axes, ici: dict[str, Any]) -> None:
-    """Plots Panel C: Anti-PD-1 Agents Administered (doughnut)."""
-    wedges, texts, autotexts = ax.pie(
-        [ici["n_pembrolizumab"], ici["n_nivolumab"]],
-        labels=["Pembrolizumab", "Nivolumab"],
-        autopct="%1.1f%%",
-        pctdistance=0.75,
-        startangle=140,
-        colors=[OKABE_ITO[2], OKABE_ITO[4]],
-        wedgeprops=dict(width=0.5, edgecolor="w", linewidth=2),
-        textprops=dict(fontsize=11, fontweight="bold"),
-    )
-    for autotext in autotexts:
-        autotext.set_color("white")
-        autotext.set_fontsize(11)
-        autotext.set_fontweight("bold")
+    """Plots Panel C: Treatment Agents Administered across Studies (horizontal bar)."""
+    agent_totals = ici.get("agent_totals", {})
+    if not agent_totals:
+        ax.text(0.5, 0.5, "No treatment agent data available", ha="center", va="center")
+        return
 
+    sorted_agents = sorted(agent_totals.items(), key=lambda x: x[1], reverse=True)
+    labels = [a[0] for a in sorted_agents]
+    counts = [a[1] for a in sorted_agents]
+
+    colors = [
+        OKABE_ITO[0], OKABE_ITO[1], OKABE_ITO[2], OKABE_ITO[3], OKABE_ITO[4],
+        OKABE_ITO[5], OKABE_ITO[6], OKABE_ITO[7]
+    ]
+    bar_colors = (colors * ((len(labels) // len(colors)) + 1))[:len(labels)]
+
+    bars = ax.barh(labels[::-1], counts[::-1], color=bar_colors[::-1], edgecolor="w", linewidth=1.5)
+    max_c = max(counts) if counts else 1
+    for bar in bars:
+        w = bar.get_width()
+        pct = w / ici["n_total"] * 100 if ici["n_total"] > 0 else 0
+        ax.text(
+            w + max_c * 0.02, bar.get_y() + bar.get_height() / 2,
+            f"{w} ({pct:.1f}%)", va="center", fontsize=9, fontweight="bold"
+        )
+
+    ax.set_xlabel("Patient Administrations", fontsize=11, fontweight="bold")
+    ax.set_xlim(0, max_c * 1.25)
     ax.set_title(
-        f"Panel C: Anti-PD-1 Agent Administered (N = {ici['n_total']})",
+        f"Panel C: Treatment Agents Administered (N = {ici['n_total']})",
         fontsize=14, fontweight="bold", y=-0.15,
     )
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
 
 def _plot_prior_ctla4_panel(ax: plt.Axes, ctla4: dict[str, Any]) -> None:
@@ -599,44 +613,40 @@ def _build_treatment_rows(
     cohort_results: dict[str, dict[str, Any]],
     cohort_order: list[str],
 ) -> list[dict[str, str]]:
-    """Builds treatment rows for clinical characteristics table."""
+    """Builds treatment rows for clinical characteristics table across all active cohorts."""
     survival_results = {c: cohort_results[c]["survival"] for c in cohort_order}
     treatment_results = {c: cohort_results[c]["treatment"] for c in cohort_order}
 
-    return [
-        {"Characteristic": "**Treatment**", **{c: "" for c in cohort_order}},
-        {
-            "Characteristic": "ICI agent — Pembrolizumab",
-            **{
-                c: _format_optional_count_percentage(
-                    treatment_results[c].get("pembrolizumab"),
-                    treatment_results[c].get("treatment_n", survival_results[c]["n_total"]),
-                )
-                for c in cohort_order
-            },
-        },
-        {
-            "Characteristic": "ICI agent — Nivolumab",
-            **{
-                c: _format_optional_count_percentage(
-                    treatment_results[c].get("nivolumab"),
-                    treatment_results[c].get("treatment_n", survival_results[c]["n_total"]),
-                )
-                for c in cohort_order
-            },
-        },
-        {
-            "Characteristic": "Prior anti-CTLA-4",
-            **{
-                c: _format_optional_count_percentage(
-                    treatment_results[c].get("prior_ctla4"),
-                    treatment_results[c].get("prior_ctla4_n", survival_results[c]["n_total"]),
-                )
-                for c in cohort_order
-            },
-        },
-        {"Characteristic": "", **{c: "" for c in cohort_order}},
+    # Extract all unique treatment agents present across active cohorts
+    all_agents: list[str] = []
+    for c in cohort_order:
+        agents = treatment_results[c].get("agents", {})
+        for agent_name in agents.keys():
+            if agent_name not in all_agents:
+                all_agents.append(agent_name)
+
+    rows: list[dict[str, str]] = [
+        {"Characteristic": "**Treatment Agents & Exposure**", **{c: "" for c in cohort_order}},
     ]
+
+    for agent in all_agents:
+        row = {"Characteristic": f"Agent — {agent}"}
+        for c in cohort_order:
+            cnt = treatment_results[c].get("agents", {}).get(agent, 0)
+            tot = survival_results[c]["n_total"]
+            row[c] = format_count_percentage(count=cnt, total=tot) if cnt > 0 else "0 (0.0%)"
+        rows.append(row)
+
+    # Prior anti-CTLA-4 exposure row
+    prior_row = {"Characteristic": "Prior anti-CTLA-4 therapy"}
+    for c in cohort_order:
+        cnt = treatment_results[c].get("prior_ctla4", 0)
+        tot = survival_results[c]["n_total"]
+        prior_row[c] = format_count_percentage(count=cnt, total=tot) if cnt > 0 else "0 (0.0%)"
+    rows.append(prior_row)
+
+    rows.append({"Characteristic": "", **{c: "" for c in cohort_order}})
+    return rows
 
 
 def _build_survival_rows(
@@ -790,6 +800,12 @@ def generate_clinical_report(
     age_annotation_str = "; ".join(annotated_ages) if annotated_ages else "no annotated age data"
     cohorts_list_str = ", ".join(cohort_order)
 
+    top_agents_list = [
+        f"**{agent}** ({cnt} [{cnt/ici['n_total']*100:.1f}%])"
+        for agent, cnt in list(ici.get("agent_totals", {}).items())[:4]
+    ]
+    top_agents_str = ", ".join(top_agents_list) if top_agents_list else "no agent data available"
+
     clinical_characteristics_table = generate_clinical_characteristics_table(cohort_results, cohort_order)
     attrition_table = generate_attrition_table(attrition_data, cohort_order)
 
@@ -807,7 +823,8 @@ def generate_clinical_report(
 ## 1. Baseline Patient and Disease Characteristics
 
 > [!INFO] Why We Are Doing This
-> **What**: We compare patient demographics, treatment histories, and survival outcomes across the {n_cohorts} active immunotherapy trial cohorts: {cohort_n_str}.
+> **What**: We compare patient demographics, treatment histories, and survival outcomes across the {n_cohorts} active immunotherapy trial cohorts: 
+>  - {cohort_n_str}.
 > **Why**: Before building predictive models or analysing transcriptomic signatures, we must understand the clinical composition of each dataset. Cohort-level differences in prior treatment, disease stage, and patient demographics can confound downstream survival and response analyses.
 > **Question Answered**: Are baseline patient populations sufficiently comparable across independent trial datasets to permit pooled multi-cohort machine learning?
 
@@ -818,13 +835,13 @@ This report compares patient demographics, treatments, survival, and sample attr
 
 ![Clinical Demographics & Treatment Distributions](../../plots/clinical/{demographics_grid_path.name})
 
-_**Figure 1: 2×2 Grid of Clinical Demographics and Treatment Histories across Immunotherapy Trial Cohorts.** Panel A: sex distribution; Panel B: age at diagnosis; Panel C: anti-PD-1 agent administered (Pembrolizumab vs Nivolumab); Panel D: prior anti-CTLA-4 therapy status (Prior Ipilimumab vs Anti-CTLA-4 Naïve)._
+_**Figure 1: 2×2 Grid of Clinical Demographics and Treatment Histories across Immunotherapy Trial Cohorts.** Panel A: sex distribution; Panel B: age at diagnosis; Panel C: treatment agents administered; Panel D: prior anti-CTLA-4 therapy status (Prior Ipilimumab vs Anti-CTLA-4 Naïve)._
 
 #### Key Demographics & Treatment Insights
 
 - **Panel A: Sex Distribution ($N = {d['n_sex_total']}$)**: The overall trial cohort shows a {'male' if d['n_male'] > d['n_female'] else 'female'} predominance (**{d['pct_male']:.1f}% Male** [$N = {d['n_male']}$] vs. **{d['pct_female']:.1f}% Female** [$N = {d['n_female']}$]), reflecting real-world cutaneous melanoma incidence patterns where male patients account for the majority of advanced presentations.
 - **Panel B: Age Distribution across Studies**: Evaluated patient ages span from {d['age_min']:.0f} to {d['age_max']:.0f} years with a **median age of {d['age_median']:.1f} years** ($\text{{IQR}} = {d['age_q1']:.1f}\text{{--}}{d['age_q3']:.1f}\text{{ years}}$). Trial cohorts ({age_annotation_str}) display consistent age distributions centred around late middle age. *Note: Across annotated trial cohorts, ages range from 19 to 89 years (adult trial eligibility $\ge 18$ years), with values top-coded/clipped at 89–90 years under HIPAA de-identification standards.*
-- **Panel C: Anti-PD-1 Agent Administered ($N = {ici['n_total']}$)**: Across the trial cohorts, **Pembrolizumab** is administered to **{ici['pct_pembrolizumab']:.1f}%** [$N = {ici['n_pembrolizumab']}$] of patients and **Nivolumab** is administered to **{ici['pct_nivolumab']:.1f}%** [$N = {ici['n_nivolumab']}$] of patients.
+- **Panel C: Treatment Agents Administered ($N = {ici['n_total']}$)**: Across all treatment administrations, the most frequent agents are {top_agents_str}.
 - **Panel D: Prior Anti-CTLA-4 Therapy Status ($N = {ctla4['n_total']}$)**: Across all trial patients, **{ctla4['pct_prior_ctla4']:.1f}%** [$N = {ctla4['n_prior_ctla4']}$] received prior anti-CTLA-4 therapy (Ipilimumab), while **{ctla4['pct_naive']:.1f}%** [$N = {ctla4['n_naive']}$] were anti-CTLA-4 naïve prior to anti-PD-1 initiation.
 
 _**Table 1: Baseline Patient and Disease Characteristics**_

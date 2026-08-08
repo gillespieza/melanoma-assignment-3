@@ -9,12 +9,12 @@ tags:
   - survival-analysis
   - kaplan-meier
   - immunotherapy
-created: 2026-08-08 15:14
+created: 2026-08-08 15:20
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-08 15:14
+updated: 2026-08-08 15:20
 ---
 
 # Clinical Characteristics of Immunotherapy Data Cohorts
@@ -22,7 +22,8 @@ updated: 2026-08-08 15:14
 ## 1. Baseline Patient and Disease Characteristics
 
 > [!INFO] Why We Are Doing This
-> **What**: We compare patient demographics, treatment histories, and survival outcomes across the 6 active immunotherapy trial cohorts: **Liu 2019** ($N = 122$), **Hugo 2016** ($N = 27$), **Riaz 2017** ($N = 107$), **TCGA GDC 2025** ($N = 473$), **Gide 2019** ($N = 91$), **Van Allen 2015** ($N = 110$).
+> **What**: We compare patient demographics, treatment histories, and survival outcomes across the 6 active immunotherapy trial cohorts: 
+>  - **Liu 2019** ($N = 122$), **Hugo 2016** ($N = 27$), **Riaz 2017** ($N = 107$), **TCGA GDC 2025** ($N = 473$), **Gide 2019** ($N = 91$), **Van Allen 2015** ($N = 110$).
 > **Why**: Before building predictive models or analysing transcriptomic signatures, we must understand the clinical composition of each dataset. Cohort-level differences in prior treatment, disease stage, and patient demographics can confound downstream survival and response analyses.
 > **Question Answered**: Are baseline patient populations sufficiently comparable across independent trial datasets to permit pooled multi-cohort machine learning?
 
@@ -34,38 +35,45 @@ This report compares patient demographics, treatments, survival, and sample attr
 - **Gide 2019**: Immunotherapy trial cohort ($N = 91$).
 - **Van Allen 2015**: Immunotherapy trial cohort ($N = 110$).
 
-### 1.1 Clinical Demographics & Treatment Distributions (2×2 Grid)
+### 1.1 Clinical Demographics & Treatment Distributions
 
 ![Clinical Demographics & Treatment Distributions](../../plots/clinical/clinical_demographics_2x2_grid.png)
 
-_**Figure 1: 2×2 Grid of Clinical Demographics and Treatment Histories across Immunotherapy Trial Cohorts.** Panel A: sex distribution; Panel B: age at diagnosis; Panel C: anti-PD-1 agent administered (Pembrolizumab vs Nivolumab); Panel D: prior anti-CTLA-4 therapy status (Prior Ipilimumab vs Anti-CTLA-4 Naïve)._
+_**Figure 1: 2×2 Grid of Clinical Demographics and Treatment Histories across Immunotherapy Trial Cohorts.** Panel A: sex distribution; Panel B: age at diagnosis; Panel C: treatment agents administered; Panel D: prior anti-CTLA-4 therapy status (Prior Ipilimumab vs Anti-CTLA-4 Naïve)._
 
 #### Key Demographics & Treatment Insights
 
 - **Panel A: Sex Distribution ($N = 915$)**: The overall trial cohort shows a male predominance (**61.9% Male** [$N = 566$] vs. **38.1% Female** [$N = 349$]), reflecting real-world cutaneous melanoma incidence patterns where male patients account for the majority of advanced presentations.
 - **Panel B: Age Distribution across Studies**: Evaluated patient ages span from 18 to 90 years with a **median age of 59.0 years** ($	ext{IQR} = 48.0	ext{--}70.0	ext{ years}$). Trial cohorts (`Hugo 2016`: median 61.0; `Riaz 2017`: median 56.0; `TCGA GDC 2025`: median 58.0; `Gide 2019`: median 61.0; `Van Allen 2015`: median 61.5) display consistent age distributions centred around late middle age. *Note: Across annotated trial cohorts, ages range from 19 to 89 years (adult trial eligibility $\ge 18$ years), with values top-coded/clipped at 89–90 years under HIPAA de-identification standards.*
-- **Panel C: Anti-PD-1 Agent Administered ($N = 256$)**: Across the trial cohorts, **Pembrolizumab** is administered to **38.3%** [$N = 98$] of patients and **Nivolumab** is administered to **61.7%** [$N = 158$] of patients.
-- **Panel D: Prior Anti-CTLA-4 Therapy Status ($N = 930$)**: Across all trial patients, **11.1%** [$N = 103$] received prior anti-CTLA-4 therapy (Ipilimumab), while **88.9%** [$N = 827$] were anti-CTLA-4 naïve prior to anti-PD-1 initiation.
+- **Panel C: Treatment Agents Administered ($N = 781$)**: Across all treatment administrations, the most frequent agents are **Pembrolizumab** (173 [22.2%]), **Nivolumab** (179 [22.9%]), **Ipilimumab** (337 [43.1%]), **Vemurafenib** (11 [1.4%]).
+- **Panel D: Prior Anti-CTLA-4 Therapy Status ($N = 930$)**: Across all trial patients, **29.8%** [$N = 277$] received prior anti-CTLA-4 therapy (Ipilimumab), while **70.2%** [$N = 653$] were anti-CTLA-4 naïve prior to anti-PD-1 initiation.
 
 _**Table 1: Baseline Patient and Disease Characteristics**_
 
-| Characteristic             | Liu 2019    | Hugo 2016        | Riaz 2017        | TCGA GDC 2025    | Gide 2019        | Van Allen 2015   |
-|:---------------------------|:------------|:-----------------|:-----------------|:-----------------|:-----------------|:-----------------|
-| **N**                      | 122         | 27               | 107              | 473              | 91               | 110              |
-|                            |             |                  |                  |                  |                  |                  |
-| **Demographics**           |             |                  |                  |                  |                  |                  |
-| Age, median (IQR)          | N/A         | 61.0 (54.0-68.5) | 56.0 (48.8-63.0) | 58.0 (48.0-71.0) | 61.0 (51.5-71.5) | 61.5 (46.2-71.0) |
-| Female sex, n (%)          | 51 (41.8%)  | 8 (29.6%)        | 47 (51.1%)       | 180 (38.1%)      | 31 (34.1%)       | 32 (29.1%)       |
-|                            |             |                  |                  |                  |                  |                  |
-| **Treatment**              |             |                  |                  |                  |                  |                  |
-| ICI agent — Pembrolizumab  | 71 (58.2%)  | 27 (100.0%)      | 0 (0.0%)         | —                | —                | —                |
-| ICI agent — Nivolumab      | 51 (41.8%)  | 0 (0.0%)         | 107 (100.0%)     | —                | —                | —                |
-| Prior anti-CTLA-4          | 48 (100.0%) | 0 (0.0%)         | 55 (100.0%)      | —                | —                | —                |
-|                            |             |                  |                  |                  |                  |                  |
-| **Survival Outcomes**      |             |                  |                  |                  |                  |                  |
-| Median OS, months (95% CI) | 22.6        | 32.2             | 21.2             | 74.7             | 32.6             | 9.0              |
-| OS events, n (%)           | 62 (50.8%)  | 12 (46.2%)       | 63 (62.4%)       | 222 (48.4%)      | 36 (39.6%)       | 83 (75.5%)       |
-| Median follow-up, months   | 17.5        | 14.4             | 17.8             | 36.9             | 20.5             | 9.1              |
+| Characteristic                  | Liu 2019   | Hugo 2016        | Riaz 2017        | TCGA GDC 2025    | Gide 2019        | Van Allen 2015   |
+|:--------------------------------|:-----------|:-----------------|:-----------------|:-----------------|:-----------------|:-----------------|
+| **N**                           | 122        | 27               | 107              | 473              | 91               | 110              |
+|                                 |            |                  |                  |                  |                  |                  |
+| **Demographics**                |            |                  |                  |                  |                  |                  |
+| Age, median (IQR)               | N/A        | 61.0 (54.0-68.5) | 56.0 (48.8-63.0) | 58.0 (48.0-71.0) | 61.0 (51.5-71.5) | 61.5 (46.2-71.0) |
+| Female sex, n (%)               | 51 (41.8%) | 8 (29.6%)        | 47 (51.1%)       | 180 (38.1%)      | 31 (34.1%)       | 32 (29.1%)       |
+|                                 |            |                  |                  |                  |                  |                  |
+| **Treatment Agents & Exposure** |            |                  |                  |                  |                  |                  |
+| Agent — Pembrolizumab           | 71 (58.2%) | 27 (100.0%)      | 0 (0.0%)         | 4 (0.8%)         | 71 (78.0%)       | 0 (0.0%)         |
+| Agent — Nivolumab               | 51 (41.8%) | 0 (0.0%)         | 107 (100.0%)     | 1 (0.2%)         | 20 (22.0%)       | 0 (0.0%)         |
+| Agent — Ipilimumab              | 56 (45.9%) | 0 (0.0%)         | 107 (100.0%)     | 23 (4.9%)        | 41 (45.1%)       | 110 (100.0%)     |
+| Agent — Vemurafenib             | 0 (0.0%)   | 0 (0.0%)         | 0 (0.0%)         | 11 (2.3%)        | 0 (0.0%)         | 0 (0.0%)         |
+| Agent — Dabrafenib              | 0 (0.0%)   | 0 (0.0%)         | 0 (0.0%)         | 5 (1.1%)         | 0 (0.0%)         | 0 (0.0%)         |
+| Agent — Trametinib              | 0 (0.0%)   | 0 (0.0%)         | 0 (0.0%)         | 2 (0.4%)         | 0 (0.0%)         | 0 (0.0%)         |
+| Agent — Dacarbazine             | 0 (0.0%)   | 0 (0.0%)         | 0 (0.0%)         | 33 (7.0%)        | 0 (0.0%)         | 0 (0.0%)         |
+| Agent — Temozolomide            | 0 (0.0%)   | 0 (0.0%)         | 0 (0.0%)         | 6 (1.3%)         | 0 (0.0%)         | 0 (0.0%)         |
+| Agent — Interferon              | 0 (0.0%)   | 0 (0.0%)         | 0 (0.0%)         | 35 (7.4%)        | 0 (0.0%)         | 0 (0.0%)         |
+| Prior anti-CTLA-4 therapy       | 48 (39.3%) | 0 (0.0%)         | 55 (51.4%)       | 23 (4.9%)        | 41 (45.1%)       | 110 (100.0%)     |
+|                                 |            |                  |                  |                  |                  |                  |
+| **Survival Outcomes**           |            |                  |                  |                  |                  |                  |
+| Median OS, months (95% CI)      | 22.6       | 32.2             | 21.2             | 74.7             | 32.6             | 9.0              |
+| OS events, n (%)                | 62 (50.8%) | 12 (46.2%)       | 63 (62.4%)       | 222 (48.4%)      | 36 (39.6%)       | 83 (75.5%)       |
+| Median follow-up, months        | 17.5       | 14.4             | 17.8             | 36.9             | 20.5             | 9.1              |
 
 ## 2. Sample Preprocessing Attrition
 
