@@ -69,6 +69,12 @@ class DatasetConfig:
             data. iAtlas cohorts set this implicitly; non-iAtlas cohorts
             that are pure immunotherapy trials (e.g. Van Allen 2015) must
             set this explicitly to True in datasets.yaml.
+
+        treatment_label:
+            Short human-readable description of the treatment regimen used
+            in this cohort (e.g. "Anti-PD-1 (pembrolizumab/nivolumab)").
+            Used in report text to accurately describe cohort treatment context.
+            Defaults to an empty string when not specified.
     """
 
     cohort_name: str
@@ -85,6 +91,7 @@ class DatasetConfig:
     mutations_by_patient: bool = False
     merge_enabled: bool = True
     cohort_immunotherapy: bool = False
+    treatment_label: str = ""
     patient_prefix: str = ""
     sample_prefix: str = ""
 
@@ -179,6 +186,7 @@ def load_dataset_config(
         "mutations_by_patient",
         "merge_enabled",
         "cohort_immunotherapy",
+        "treatment_label",
         "patient_prefix",
         "sample_prefix",
     }
@@ -239,6 +247,7 @@ def _validate_field_types(
         "patient_prefix",
         "sample_prefix",
         "processing_strategy",
+        "treatment_label",
     }
 
     boolean_fields = {

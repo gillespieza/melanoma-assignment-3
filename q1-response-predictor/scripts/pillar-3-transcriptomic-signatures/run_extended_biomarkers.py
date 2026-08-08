@@ -53,6 +53,7 @@ from src.biology_constants import (
     PATHWAY_GENES,
     RECIST_RESPONSE_MAP,
 )
+from src.config.datasets import DatasetConfig, load_dataset_config
 from src.signatures import extract_all_signatures
 from src.styles import RESPONSE_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream
@@ -67,6 +68,11 @@ set_presentation_style()
 DATA_DIR = PROJECT_ROOT / "data"
 PLOT_DIR = BASE_DIR / "plots" / "biomarkers"
 PLOT_DIR.mkdir(exist_ok=True, parents=True)
+
+CONFIG_PATH: Path = BASE_DIR / "config" / "datasets.yaml"
+
+# TCGA Pan-Can Atlas used for survival analysis (has aneuploidy scores)
+_TCGA_PROCESSED_DIR: str = "skcm_tcga_pan_can_atlas_2018"
 
 LOG_DIR = get_subproject_log_dir(_THIS_FILE)
 LOG_PATH = LOG_DIR / "run_extended_biomarkers.log"
@@ -138,42 +144,28 @@ def load_processed_mutations(
 # ---------------------------------------------------------------------------
 # Data Loading & Processing Modular Subroutines
 # ---------------------------------------------------------------------------
-def _get_raw_cohort_paths() -> List[Path]:
-    """Return mandatory input file paths for raw clinical and expression data."""
-    return [
-        DATA_DIR / "processed/liu_2019/clin_cleaned.csv",
-        DATA_DIR / "processed/liu_2019/expr_cleaned.csv",
-        DATA_DIR / "processed/hugo_2016/clin_cleaned.csv",
-        DATA_DIR / "processed/hugo_2016/expr_cleaned.csv",
-        DATA_DIR / "processed/riaz_2017/clin_cleaned.csv",
-        DATA_DIR / "processed/riaz_2017/expr_cleaned.csv",
-        DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/clin_cleaned.csv",
-        DATA_DIR / "processed/skcm_tcga_pan_can_atlas_2018/expr_cleaned.csv",
-    ]
+def _load_trial_cohort_data(
+    configs: List[DatasetConfig],
+) -> Dict[str, Tuple[pd.DataFrame, pd.DataFrame]]:
+    """Load clin and expr DataFrames for all non-TCGA trial cohorts from datasets.yaml.
 
-
-def _load_raw_cohort_files() -> Tuple[
-    pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame,
-    pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
-] | None:
-    """Load raw clinical and expression DataFrames for trial cohorts and TCGA."""
-    paths = _get_raw_cohort_paths()
-    if not all(p.exists() for p in paths):
-        print("Error: Cleansed processed files not found. Run clean_data.py first.")
-        for p in paths:
-            print(f"  {p.name}: {'FOUND' if p.exists() else 'MISSING'} ({rel_path(p)})")
-        return None
-
-    return (
-        pd.read_csv(paths[0], index_col=_COL_SAMPLE_ID),
-        pd.read_csv(paths[1], index_col=0),
-        pd.read_csv(paths[2], index_col=_COL_SAMPLE_ID),
-        pd.read_csv(paths[3], index_col=0),
-        pd.read_csv(paths[4], index_col=_COL_SAMPLE_ID),
-        pd.read_csv(paths[5], index_col=0),
-        pd.read_csv(paths[6], index_col=_COL_SAMPLE_ID),
-        pd.read_csv(paths[7]),
-    )
+    Skips cohorts whose processed_directory contains 'tcga' or where required files
+    are missing. Returns a mapping of cohort_name -> (df_clin, df_expr).
+    """
+    result: Dict[str, Tuple[pd.DataFrame, pd.DataFrame]] = {}
+    for cfg in configs:
+        if "tcga" in cfg.processed_directory.lower():
+            continue
+        clin_path = DATA_DIR / "processed" / cfg.processed_directory / "clin_cleaned.csv"
+        expr_path = DATA_DIR / "processed" / cfg.processed_directory / "expr_cleaned.csv"
+        if not (clin_path.exists() and expr_path.exists()):
+            print(f"  Skipping {cfg.cohort_name}: missing clin or expr in {cfg.processed_directory}.")
+            continue
+        df_clin = pd.read_csv(clin_path, index_col=_COL_SAMPLE_ID)
+        df_expr = pd.read_csv(expr_path, index_col=0)
+        result[cfg.cohort_name] = (df_clin, df_expr)
+        print(f"  Loaded {cfg.cohort_name} (N={len(df_clin)})")
+    return result
 
 
 def _align_clinical_column_aliases(df_list: List[pd.DataFrame]) -> None:
@@ -235,91 +227,129 @@ def _attach_cohort_mutations(
 
 
 def _attach_pathway_mutations(
-    df_liu_clin: pd.DataFrame, df_hugo_clin: pd.DataFrame, df_riaz_clin: pd.DataFrame
+    cohort_data: Dict[str, Tuple[pd.DataFrame, pd.DataFrame]],
+    configs: List[DatasetConfig],
 ) -> None:
-    """Load somatic pathway mutations across all 3 trial cohorts."""
+    """Load somatic pathway mutations for all trial cohorts and attach to clin DataFrames.
+
+    Modifies each df_clin in cohort_data in-place.
+    """
     pathway_genes_flat = [g for genes in PATHWAY_GENES.values() for g in genes]
     all_genes = sorted(list(set(pathway_genes_flat + DRIVER_GENES)))
-    
-    _attach_cohort_mutations(df_liu_clin, "liu_2019", all_genes)
-    _attach_cohort_mutations(df_hugo_clin, "hugo_2016", all_genes)
-    _attach_cohort_mutations(df_riaz_clin, "riaz_2017", all_genes)
+    config_by_name = {cfg.cohort_name: cfg for cfg in configs}
 
-    for df in [df_liu_clin, df_hugo_clin, df_riaz_clin]:
-        antigen_cols = [f"{_PREFIX_MUT}{g}" for g in PATHWAY_GENES["Antigen Presentation"]]
-        ifn_cols = [f"{_PREFIX_MUT}{g}" for g in PATHWAY_GENES["IFN-gamma Signature"]]
-        surv_cols = [f"{_PREFIX_MUT}{g}" for g in PATHWAY_GENES["Survival & Proliferation Drivers"]]
-        df['mut_Antigen_Presentation'] = (df[antigen_cols].sum(axis=1) > 0).astype(int)
-        df['mut_IFN_gamma_Signaling'] = (df[ifn_cols].sum(axis=1) > 0).astype(int)
-        df['mut_Survival_Pathways'] = (df[surv_cols].sum(axis=1) > 0).astype(int)
+    antigen_genes = PATHWAY_GENES["Antigen Presentation"]
+    ifn_genes = PATHWAY_GENES["IFN-gamma Signature"]
+    surv_genes = PATHWAY_GENES["Survival & Proliferation Drivers"]
+
+    for name, (df_clin, _) in cohort_data.items():
+        cfg = config_by_name.get(name)
+        if cfg is None:
+            continue
+        _attach_cohort_mutations(df_clin, cfg.processed_directory, all_genes)
+        antigen_cols = [f"{_PREFIX_MUT}{g}" for g in antigen_genes]
+        ifn_cols = [f"{_PREFIX_MUT}{g}" for g in ifn_genes]
+        surv_cols = [f"{_PREFIX_MUT}{g}" for g in surv_genes]
+        df_clin["mut_Antigen_Presentation"] = (
+            df_clin[[c for c in antigen_cols if c in df_clin.columns]].sum(axis=1) > 0
+        ).astype(int)
+        df_clin["mut_IFN_gamma_Signaling"] = (
+            df_clin[[c for c in ifn_cols if c in df_clin.columns]].sum(axis=1) > 0
+        ).astype(int)
+        df_clin["mut_Survival_Pathways"] = (
+            df_clin[[c for c in surv_cols if c in df_clin.columns]].sum(axis=1) > 0
+        ).astype(int)
 
 
 def _merge_clinical_and_signatures(
-    df_liu_clin: pd.DataFrame, df_hugo_clin: pd.DataFrame, df_riaz_clin: pd.DataFrame
+    cohort_data: Dict[str, Tuple[pd.DataFrame, pd.DataFrame]],
 ) -> pd.DataFrame:
-    """Concatenate cleaned trial cohort clinical DataFrames."""
-    clin_cols = [
+    """Concatenate trial cohort clinical DataFrames into a pooled DataFrame.
+
+    Only includes columns that exist in each cohort, filling missing ones with NaN.
+    """
+    desired_cols = [
         _COL_COHORT, _COL_RESPONSE, _COL_TMB, _COL_AGE, _COL_TOTAL_NEOANTIGEN, _COL_CNA,
         f"{_PREFIX_MUT}BRAF", f"{_PREFIX_MUT}NRAS", f"{_PREFIX_MUT}NF1",
-        'mut_Antigen_Presentation', 'mut_IFN_gamma_Signaling', 'mut_Survival_Pathways'
+        "mut_Antigen_Presentation", "mut_IFN_gamma_Signaling", "mut_Survival_Pathways",
     ]
-    for df in [df_liu_clin, df_hugo_clin, df_riaz_clin]:
-        if _COL_CNA not in df.columns:
-            df[_COL_CNA] = np.nan
-        if _COL_AGE not in df.columns:
-            df[_COL_AGE] = np.nan
-
-    return pd.concat([df_liu_clin[clin_cols], df_hugo_clin[clin_cols], df_riaz_clin[clin_cols]])
+    frames = []
+    for name, (df_clin, _) in cohort_data.items():
+        if _COL_CNA not in df_clin.columns:
+            df_clin[_COL_CNA] = np.nan
+        if _COL_AGE not in df_clin.columns:
+            df_clin[_COL_AGE] = np.nan
+        avail = [c for c in desired_cols if c in df_clin.columns]
+        frames.append(df_clin[avail])
+    return pd.concat(frames)
 
 
 def _prepare_cohort_labels_and_sigs(
-    df_liu_clin: pd.DataFrame, df_liu_expr: pd.DataFrame,
-    df_hugo_clin: pd.DataFrame, df_hugo_expr: pd.DataFrame,
-    df_riaz_clin: pd.DataFrame, df_riaz_expr: pd.DataFrame
+    cohort_data: Dict[str, Tuple[pd.DataFrame, pd.DataFrame]],
 ) -> pd.DataFrame:
-    """Annotate cohort names and extract concatenated z-scored expression signatures."""
-    df_liu_clin[_COL_COHORT] = 'Liu 2019'
-    df_hugo_clin[_COL_COHORT] = 'Hugo 2016'
-    df_riaz_clin[_COL_COHORT] = 'Riaz 2017'
+    """Annotate cohort names and extract concatenated z-scored expression signatures.
 
+    Args:
+        cohort_data: Mapping of cohort_name -> (df_clin, df_expr). Annotates df_clin in-place.
+
+    Returns:
+        Concatenated z-scored immune signature DataFrame across all cohorts.
+    """
     print("\nComputing expression signatures for all cohorts...")
-    return pd.concat([
-        zscore_df(extract_all_signatures(df_liu_expr.loc[df_liu_clin.index])),
-        zscore_df(extract_all_signatures(df_hugo_expr.loc[df_hugo_clin.index])),
-        zscore_df(extract_all_signatures(df_riaz_expr.loc[df_riaz_clin.index]))
-    ])
+    sig_frames = []
+    for name, (df_clin, df_expr) in cohort_data.items():
+        df_clin[_COL_COHORT] = name
+        common_idx = df_clin.index.intersection(df_expr.index)
+        sig_frames.append(zscore_df(extract_all_signatures(df_expr.reindex(common_idx))))
+    return pd.concat(sig_frames)
 
 
 def _load_and_prepare_data() -> Tuple[
     pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame,
-    pd.DataFrame, pd.DataFrame, pd.DataFrame
+    Dict[str, Tuple[pd.DataFrame, pd.DataFrame]]
 ] | None:
-    """Load and preprocess clinical, expression, and mutation data for trial cohorts and TCGA."""
-    raw_data = _load_raw_cohort_files()
-    if raw_data is None:
-        return None
-        
-    (
-        df_liu_clin, df_liu_expr, df_hugo_clin, df_hugo_expr,
-        df_riaz_clin, df_riaz_expr, df_tcga_clin, df_tcga_expr_raw
-    ) = raw_data
-    
-    _align_clinical_column_aliases([df_liu_clin, df_hugo_clin, df_riaz_clin, df_tcga_clin])
-    for df in [df_liu_clin, df_hugo_clin, df_riaz_clin]:
-        _filter_and_calculate_neoantigens(df)
-    
-    df_sigs_merged = _prepare_cohort_labels_and_sigs(
-        df_liu_clin, df_liu_expr, df_hugo_clin, df_hugo_expr, df_riaz_clin, df_riaz_expr
-    )
+    """Load and preprocess clinical, expression, and mutation data for all active cohorts.
 
+    Dynamically loads all non-TCGA trial cohorts from datasets.yaml, and the TCGA
+    Pan-Can Atlas cohort for survival analysis.
+
+    Returns:
+        Tuple of (df_clin_merged, df_sigs_merged, df_tcga_clin, df_tcga_sigs, cohort_data)
+        where cohort_data maps cohort_name -> (df_clin, df_expr).
+    """
+    if not CONFIG_PATH.exists():
+        print(f"Error: datasets.yaml not found at {rel_path(CONFIG_PATH)}.")
+        return None
+    configs = load_dataset_config(CONFIG_PATH)
+
+    # Load TCGA reference cohort separately for survival analysis
+    tcga_clin_path = DATA_DIR / "processed" / _TCGA_PROCESSED_DIR / "clin_cleaned.csv"
+    tcga_expr_path = DATA_DIR / "processed" / _TCGA_PROCESSED_DIR / "expr_cleaned.csv"
+    if not (tcga_clin_path.exists() and tcga_expr_path.exists()):
+        print(f"Error: TCGA files not found at {_TCGA_PROCESSED_DIR}. Run clean_data.py first.")
+        return None
+    df_tcga_clin = pd.read_csv(tcga_clin_path, index_col=_COL_SAMPLE_ID)
+    df_tcga_expr_raw = pd.read_csv(tcga_expr_path)
+
+    # Load all active trial cohorts dynamically
+    print("Loading clinical and expression data for all active trial cohorts...")
+    cohort_data = _load_trial_cohort_data(configs)
+    if not cohort_data:
+        print("Error: No trial cohort data found. Run clean_data.py first.")
+        return None
+
+    all_clin_dfs = [df_clin for df_clin, _ in cohort_data.values()]
+    _align_clinical_column_aliases([df_tcga_clin] + all_clin_dfs)
+    for name, (df_clin, df_expr) in cohort_data.items():
+        _filter_and_calculate_neoantigens(df_clin)
+        cohort_data[name] = (df_clin, df_expr)
+
+    df_sigs_merged = _prepare_cohort_labels_and_sigs(cohort_data)
     df_tcga_clin, df_tcga_sigs = _process_tcga_signatures(df_tcga_clin, df_tcga_expr_raw)
-    _attach_pathway_mutations(df_liu_clin, df_hugo_clin, df_riaz_clin)
-    df_clin_merged = _merge_clinical_and_signatures(df_liu_clin, df_hugo_clin, df_riaz_clin)
-    
-    return (
-        df_clin_merged, df_sigs_merged, df_tcga_clin, df_tcga_sigs,
-        df_liu_clin, df_hugo_clin, df_riaz_clin
-    )
+    _attach_pathway_mutations(cohort_data, list(configs))
+    df_clin_merged = _merge_clinical_and_signatures(cohort_data)
+
+    return (df_clin_merged, df_sigs_merged, df_tcga_clin, df_tcga_sigs, cohort_data)
 
 
 # ---------------------------------------------------------------------------
@@ -328,11 +358,17 @@ def _load_and_prepare_data() -> Tuple[
 def _compute_neoantigen_roc_metrics(
     df_clin_merged: pd.DataFrame
 ) -> Tuple[pd.Index, float, float, float, float]:
-    """Compute ROC-AUC and Mann-Whitney U test metrics for Neoantigen Load and TMB."""
+    """Compute ROC-AUC and Mann-Whitney U test metrics for Neoantigen Load and TMB.
+
+    Intersects rows with valid response, neoantigen load, AND TMB so that cohorts
+    lacking one of these features (e.g. Gide 2019, Van Allen 2015 without TMB) are
+    excluded from the AUC computation without causing NaN errors.
+    """
     y_true_trials = df_clin_merged[_COL_RESPONSE].dropna()
     neo_valid = df_clin_merged[_COL_TOTAL_NEOANTIGEN].dropna().index
-    common_idx = y_true_trials.index.intersection(neo_valid)
-    
+    tmb_valid = df_clin_merged[_COL_TMB].dropna().index
+    common_idx = y_true_trials.index.intersection(neo_valid).intersection(tmb_valid)
+
     auc_neo = roc_auc_score(
         df_clin_merged.loc[common_idx, _COL_RESPONSE],
         df_clin_merged.loc[common_idx, _COL_TOTAL_NEOANTIGEN]
@@ -341,7 +377,7 @@ def _compute_neoantigen_roc_metrics(
         df_clin_merged.loc[common_idx, _COL_RESPONSE],
         df_clin_merged.loc[common_idx, _COL_TMB]
     )
-    
+
     resp_mask = df_clin_merged[_COL_RESPONSE] == 1
     nonresp_mask = df_clin_merged[_COL_RESPONSE] == 0
     _, p_neo_mw = mannwhitneyu(
@@ -353,6 +389,7 @@ def _compute_neoantigen_roc_metrics(
         df_clin_merged[nonresp_mask][_COL_TMB].dropna()
     )
     return common_idx, float(auc_neo), float(auc_tmb), float(p_neo_mw), float(p_tmb_mw)
+
 
 
 def _evaluate_neoantigen_load(df_clin_merged: pd.DataFrame) -> None:
@@ -386,41 +423,28 @@ def _evaluate_neoantigen_load(df_clin_merged: pd.DataFrame) -> None:
 # ---------------------------------------------------------------------------
 # Section 2: Somatic Pathway Mutations
 # ---------------------------------------------------------------------------
-def _format_pathway_mutation_row(
-    label: str, col: str,
-    df_liu_clin: pd.DataFrame, df_hugo_clin: pd.DataFrame,
-    df_riaz_clin: pd.DataFrame, df_clin_merged: pd.DataFrame
-) -> str:
-    """Format single pathway mutation frequency table row across cohorts."""
-    p_liu = df_liu_clin[col].mean()
-    p_hugo = df_hugo_clin[col].mean()
-    p_riaz = df_riaz_clin[col].mean()
-    p_pool = df_clin_merged[col].mean()
-    return (
-        f"  {label:<32} | Liu: {p_liu:.1%} | Hugo: {p_hugo:.1%} | "
-        f"Riaz: {p_riaz:.1%} | Pooled: {p_pool:.1%}"
-    )
-
-
 def _evaluate_pathway_mutations(
-    df_liu_clin: pd.DataFrame, df_hugo_clin: pd.DataFrame,
-    df_riaz_clin: pd.DataFrame, df_clin_merged: pd.DataFrame
+    cohort_data: Dict[str, Tuple[pd.DataFrame, pd.DataFrame]],
+    df_clin_merged: pd.DataFrame,
 ) -> None:
-    """Calculate and tabulate pathway mutation frequencies across trial cohorts."""
+    """Calculate and tabulate pathway mutation frequencies across all trial cohorts."""
     print("\nCalculating pathway mutation frequencies in trial cohorts...")
     mutation_labels = [
-        ('BRAF mutation', f"{_PREFIX_MUT}BRAF"),
-        ('NRAS mutation', f"{_PREFIX_MUT}NRAS"),
-        ('NF1 mutation', f"{_PREFIX_MUT}NF1"),
-        ('Antigen Presentation (MHC)', 'mut_Antigen_Presentation'),
-        ('IFN-gamma Signalling', 'mut_IFN_gamma_Signaling'),
-        ('Survival & Proliferation Drivers', 'mut_Survival_Pathways'),
+        ("BRAF mutation", f"{_PREFIX_MUT}BRAF"),
+        ("NRAS mutation", f"{_PREFIX_MUT}NRAS"),
+        ("NF1 mutation", f"{_PREFIX_MUT}NF1"),
+        ("Antigen Presentation (MHC)", "mut_Antigen_Presentation"),
+        ("IFN-gamma Signalling", "mut_IFN_gamma_Signaling"),
+        ("Survival & Proliferation Drivers", "mut_Survival_Pathways"),
     ]
     for label, col in mutation_labels:
-        row_str = _format_pathway_mutation_row(
-            label, col, df_liu_clin, df_hugo_clin, df_riaz_clin, df_clin_merged
-        )
-        print(row_str)
+        parts = []
+        for name, (df_clin, _) in cohort_data.items():
+            if col in df_clin.columns:
+                parts.append(f"{name}: {df_clin[col].mean():.1%}")
+        if col in df_clin_merged.columns:
+            parts.append(f"Pooled: {df_clin_merged[col].mean():.1%}")
+        print(f"  {label:<32} | {' | '.join(parts)}")
 
 
 # ---------------------------------------------------------------------------
@@ -473,11 +497,15 @@ def _plot_correlation_heatmap(
 def _prepare_survival_df(
     df_tcga_clin: pd.DataFrame, column: str
 ) -> Tuple[pd.DataFrame, float]:
-    """Clean survival status, filter missing values, and calculate column median."""
-    df_surv = df_tcga_clin.dropna(subset=[_COL_OS_MONTHS, _COL_OS_STATUS, column]).copy()
+    """Clean survival status, filter missing values, and calculate column median.
+
+    Coerces OS_MONTHS to numeric before dropna so TCGA-style non-numeric sentinels
+    (e.g. '[Not Available]') are eliminated rather than silently passing through.
+    """
+    df_surv = df_tcga_clin.copy()
     df_surv[_COL_OS_MONTHS] = pd.to_numeric(df_surv[_COL_OS_MONTHS], errors='coerce')
     df_surv[_COL_OS_STATUS_CLEAN] = df_surv[_COL_OS_STATUS].apply(clean_os_status)
-    df_surv = df_surv.dropna(subset=[_COL_OS_MONTHS, _COL_OS_STATUS_CLEAN])
+    df_surv = df_surv.dropna(subset=[_COL_OS_MONTHS, _COL_OS_STATUS_CLEAN, column])
     median_val = float(df_surv[column].median())
     return df_surv, median_val
 
@@ -486,23 +514,34 @@ def _render_km_curves(
     ax: plt.Axes, df_surv: pd.DataFrame, column: str, median_val: float,
     color_low: str, color_high: str
 ) -> float:
-    """Fit Kaplan-Meier survival curves and return log-rank p-value."""
+    """Fit Kaplan-Meier survival curves and return log-rank p-value.
+
+    Raises:
+        ValueError: If either the low or high stratum has fewer than 5 patients.
+    """
     kmf = KaplanMeierFitter()
     low_mask = df_surv[column] < median_val
     high_mask = df_surv[column] >= median_val
-    
+
+    _MIN_KM_SAMPLES = 5
+    if low_mask.sum() < _MIN_KM_SAMPLES or high_mask.sum() < _MIN_KM_SAMPLES:
+        raise ValueError(
+            f"KM stratification on '{column}' yielded groups of size "
+            f"low={low_mask.sum()}, high={high_mask.sum()} (minimum {_MIN_KM_SAMPLES})."
+        )
+
     kmf.fit(
         df_surv.loc[low_mask, _COL_OS_MONTHS], df_surv.loc[low_mask, _COL_OS_STATUS_CLEAN],
         label=f"Low (N={low_mask.sum()})"
     )
     kmf.plot_survival_function(ax=ax, color=color_low, ci_show=False, linewidth=2.5)
-    
+
     kmf.fit(
         df_surv.loc[high_mask, _COL_OS_MONTHS], df_surv.loc[high_mask, _COL_OS_STATUS_CLEAN],
         label=f"High (N={high_mask.sum()})"
     )
     kmf.plot_survival_function(ax=ax, color=color_high, ci_show=False, linewidth=2.5)
-    
+
     lr_res = logrank_test(
         df_surv.loc[high_mask, _COL_OS_MONTHS], df_surv.loc[low_mask, _COL_OS_MONTHS],
         df_surv.loc[high_mask, _COL_OS_STATUS_CLEAN], df_surv.loc[low_mask, _COL_OS_STATUS_CLEAN]
@@ -572,8 +611,14 @@ def _evaluate_aneuploidy_and_tmb(
     _plot_correlation_heatmap(
         trial_corrs, _CURATED_IMMUNE_SIGNATURES, n_samples=len(df_clin_merged)
     )
-    _plot_survival_by_aneuploidy(df_tcga_clin)
-    _plot_survival_by_tmb(df_tcga_clin)
+    for label, fn in [
+        ("Aneuploidy", _plot_survival_by_aneuploidy),
+        ("TMB", _plot_survival_by_tmb),
+    ]:
+        try:
+            fn(df_tcga_clin)
+        except (ValueError, RuntimeError) as exc:
+            print(f"  [WARNING] TCGA survival plot by {label} skipped: {exc}")
 
 
 # ---------------------------------------------------------------------------
@@ -588,18 +633,15 @@ def main() -> None:
     data = _load_and_prepare_data()
     if data is None:
         return
-    (
-        df_clin_merged, df_sigs_merged, df_tcga_clin, _,
-        df_liu_clin, df_hugo_clin, df_riaz_clin
-    ) = data
+    df_clin_merged, df_sigs_merged, df_tcga_clin, _, cohort_data = data
 
     _evaluate_neoantigen_load(df_clin_merged)
-    _evaluate_pathway_mutations(df_liu_clin, df_hugo_clin, df_riaz_clin, df_clin_merged)
+    _evaluate_pathway_mutations(cohort_data, df_clin_merged)
     _evaluate_aneuploidy_and_tmb(df_tcga_clin, df_clin_merged, df_sigs_merged)
 
     print("\n==================================================")
     print("Biomarker evaluation completed successfully!")
-    print("==================================================")
+    print("=================================================")
 
 
 if __name__ == "__main__":

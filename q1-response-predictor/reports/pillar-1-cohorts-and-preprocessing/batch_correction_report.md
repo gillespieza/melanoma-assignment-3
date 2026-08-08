@@ -10,12 +10,12 @@ tags:
   - umap
   - tme
   - transcriptomics
-created: 2026-08-08 19:16
+created: 2026-08-08 20:13
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-08 19:16
+updated: 2026-08-08 20:13
 ---
 
 # Batch Effect Assessment & Dimensionality Reduction Analysis
@@ -28,9 +28,9 @@ This report documents how technical batch effects were evaluated and harmonised 
 
 > [!INFO] Why We Are Doing This
 >
-> **What**: PCA across $N = 478$ patients from cohorts (**Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], **Riaz 2017** [$N = 107$], **TCGA GDC 2025** [$N = 91$], **Gide 2019** [$N = 91$], **Van Allen 2015** [$N = 40$]) using 1,000 genes from 20,918 common genes.
-> **Why**: Combining transcriptomic data introduces batch effects. Uncorrected models risk classifying sequencing centres rather than patient biology.
-> **Question Answered**: Does cohort-independent Z-score standardisation eliminate technical separation between reference and trial cohorts?
+> - **What**: PCA across $N = 478$ patients from cohorts (**Liu 2019** [$N = 122$], **Hugo 2016** [$N = 27$], **Riaz 2017** [$N = 107$], **TCGA GDC 2025** [$N = 91$], **Gide 2019** [$N = 91$], **Van Allen 2015** [$N = 40$]) using 1,000 genes from 20,918 common genes.
+> - **Why**: Combining transcriptomic data introduces batch effects. Uncorrected models risk classifying sequencing centres rather than patient biology.
+> - **Question Answered**: Does cohort-independent Z-score standardisation eliminate technical separation between reference and trial cohorts?
 
 ![[batch_effect_pca.png]]
 
@@ -42,9 +42,9 @@ This report documents how technical batch effects were evaluated and harmonised 
 
 > [!INFO] Why We Are Doing This
 >
-> **What**: Linear (PCA) and non-linear (UMAP) reduction to $N = 478$ response-annotated patients (Liu 2019, Hugo 2016, Riaz 2017, TCGA GDC 2025, Gide 2019, Van Allen 2015) using 1,000 genes.
-> **Why**: Test if baseline expression profiles naturally segregate responders.
-> **Question Answered**: Can therapeutic response be predicted directly from global 2D expression clusters?
+> - **What**: Linear (PCA) and non-linear (UMAP) reduction to $N = 478$ response-annotated patients (Liu 2019, Hugo 2016, Riaz 2017, TCGA GDC 2025, Gide 2019, Van Allen 2015) using 1,000 genes.
+> - **Why**: Test if baseline expression profiles naturally segregate responders.
+> - **Question Answered**: Can therapeutic response be predicted directly from global 2D expression clusters?
 
 ### Projections
 ![[pca_dimensionality_reduction.png]]
@@ -60,9 +60,9 @@ This report documents how technical batch effects were evaluated and harmonised 
 
 > [!INFO] Why We Are Doing This
 >
-> **What**: Inspect heatmaps for top 50 genes by average within-cohort variance across trial patients ($N = 478$). Samples are sorted by cohort, then by responder status (CR/PR before PD) within each cohort, with no hierarchical column clustering, to make cohort-level baseline differences and response group separation directly readable.
-> **Why**: Validate batch effects at individual gene resolution and assess whether per-cohort Z-score correction removes study-level baseline shifts while preserving responder vs. non-responder biological contrast.
-> **Question Answered**: Are cohort expression baselines visibly harmonised after per-cohort Z-score standardisation, and does the response group signal become more consistent across cohorts?
+> - **What**: Inspect heatmaps for top 50 genes by average within-cohort variance across trial patients ($N = 478$). Samples are sorted by cohort, then by responder status (CR/PR before PD) within each cohort, with no hierarchical column clustering, to make cohort-level baseline differences and response group separation directly readable.
+> - **Why**: Validate batch effects at individual gene resolution and assess whether per-cohort Z-score correction removes study-level baseline shifts while preserving responder vs. non-responder biological contrast.
+> - **Question Answered**: Are cohort expression baselines visibly harmonised after per-cohort Z-score standardisation, and does the response group signal become more consistent across cohorts?
 
 ### Raw & Standardised
 ![[heatmap_top_variance_genes_raw.png]]
@@ -76,8 +76,8 @@ This report documents how technical batch effects were evaluated and harmonised 
 
 > [!INFO] Why We Are Doing This
 >
-> **What**: Compare cohort-independent Z-score against global batch correction.
-> **Question Answered**: How does independent Z-score prevent leakage in LOCO?
+> - **What**: Compare cohort-independent Z-score against global batch correction.
+> - **Question Answered**: How does independent Z-score prevent leakage in LOCO?
 
 ### 4.1 The Hazard of Global Correction (e.g. ComBat)
 Global algorithms pool all samples to estimate parameters. In LOCO CV, including the test set in parameter estimation leaks information into the training phase, inflating metrics artificially.

@@ -10,6 +10,7 @@ and TCGA overall survival (OS) stratification by genomic features.
 # ---------------------------------------------------------------------------
 import contextlib
 from pathlib import Path
+import subprocess
 import sys
 from typing import Any, Dict, List, Tuple
 import warnings
@@ -68,7 +69,11 @@ from src.styles import (
     set_presentation_style,
 )
 from src.utils.dataframes import find_id_column
-from src.utils.formatting import generate_obsidian_frontmatter
+from src.utils.execution import run_companion_scripts
+from src.utils.formatting import (
+    generate_obsidian_frontmatter,
+    generate_script_reference_callout,
+)
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, get_subproject_log_dir, rel_path
 from src.utils.plotting import resolve_colors, save_fig
@@ -160,7 +165,8 @@ def _map_genomic_subtype(row: pd.Series) -> str:
 def load_cohort_mutations(proc_dir: Path, sample_ids: List[str]) -> pd.DataFrame:
     """Loads driver mutation status for specified sample IDs."""
     mut_path = proc_dir / "mutations_cleaned.csv"
-    mut_cols = [f"mut_{gene}" for gene in DRIVER_GENES]
+    genes_to_load = list(DRIVER_GENES) + ["BRAF_V600", "BRAF_V600E"]
+    mut_cols = [f"mut_{gene}" for gene in genes_to_load]
     default_df = pd.DataFrame(0, index=sample_ids, columns=mut_cols)
 
     if not mut_path.exists():
@@ -169,7 +175,7 @@ def load_cohort_mutations(proc_dir: Path, sample_ids: List[str]) -> pd.DataFrame
 
     df_mut = pd.read_csv(mut_path, index_col=_COL_SAMPLE_ID)
     res = pd.DataFrame(index=df_mut.index)
-    for gene in DRIVER_GENES:
+    for gene in genes_to_load:
         res[f"mut_{gene}"] = (df_mut[gene] > 0).astype(int) if gene in df_mut.columns else 0
 
     return res.reindex(sample_ids, fill_value=0)
@@ -185,7 +191,7 @@ def _load_single_cohort_clin(config: DatasetConfig, data_dir: Path) -> pd.DataFr
         )
 
     df_clin = pd.read_csv(clin_path, index_col=_COL_SAMPLE_ID)
-    if not all(f"mut_{g}" in df_clin.columns for g in DRIVER_GENES):
+    if not all(f"mut_{g}" in df_clin.columns for g in list(DRIVER_GENES) + ["BRAF_V600"]):
         mut_df = load_cohort_mutations(proc_dir, df_clin.index.tolist())
         df_clin = df_clin.drop(columns=[c for c in mut_df.columns if c in df_clin.columns])
         df_clin = df_clin.join(mut_df)
@@ -229,14 +235,17 @@ def _compute_single_cohort_driver_stats(
 ) -> Tuple[Dict[str, Any], str]:
     """Computes driver gene mutation counts and label string for one cohort."""
     n = len(df)
-    b_mut = df["mut_BRAF"].sum()
-    n_mut = df["mut_NRAS"].sum()
-    f_mut = df["mut_NF1"].sum()
-    t_wt = len(df[(df["mut_BRAF"] == 0) & (df["mut_NRAS"] == 0) & (df["mut_NF1"] == 0)])
+    v600_col = "mut_BRAF_V600" if "mut_BRAF_V600" in df.columns else None
+    b_v600_mut = int(df["mut_BRAF_V600"].sum()) if v600_col else 0
+    b_other_mut = int((df["mut_BRAF"] & (1 - df["mut_BRAF_V600"])).sum()) if v600_col else int(df["mut_BRAF"].sum())
+    n_mut = int(df["mut_NRAS"].sum())
+    f_mut = int(df["mut_NF1"].sum())
+    t_wt = int(len(df[(df["mut_BRAF"] == 0) & (df["mut_NRAS"] == 0) & (df["mut_NF1"] == 0)]))
     label_n = f"{name} (N={n})"
 
     print(
-        f"  {label_n}: `BRAF`: {b_mut} ({b_mut / n * 100:.1f}%), "
+        f"  {label_n}: `BRAF V600`: {b_v600_mut} ({b_v600_mut / n * 100:.1f}%), "
+        f"`BRAF Other`: {b_other_mut} ({b_other_mut / n * 100:.1f}%), "
         f"`NRAS`: {n_mut} ({n_mut / n * 100:.1f}%), "
         f"`NF1`: {f_mut} ({f_mut / n * 100:.1f}%), "
         f"Triple-WT: {t_wt} ({t_wt / n * 100:.1f}%)"
@@ -244,7 +253,8 @@ def _compute_single_cohort_driver_stats(
 
     record = {
         "Cohort": label_n,
-        "BRAF": (b_mut / n) * 100,
+        "BRAF V600": (b_v600_mut / n) * 100,
+        "BRAF Other": (b_other_mut / n) * 100,
         "NRAS": (n_mut / n) * 100,
         "NF1": (f_mut / n) * 100,
         "Triple-WT": (t_wt / n) * 100,
@@ -255,14 +265,19 @@ def _compute_single_cohort_driver_stats(
 def _calculate_driver_frequencies(
     cohorts: Dict[str, pd.DataFrame]
 ) -> Tuple[pd.DataFrame, Dict[str, str]]:
-    """Computes percentage mutation frequencies for driver genes across ICI trial cohorts only."""
+    """Computes percentage mutation frequencies for driver genes across ICI trial cohorts with mutation profiles."""
     mut_data = []
     cohort_labels = {}
     trial_names = _get_trial_cohort_names(cohorts)
     for name in trial_names:
         if name not in cohorts:
             continue
-        rec, label_n = _compute_single_cohort_driver_stats(cohorts[name], name)
+        df_c = cohorts[name]
+        # Exclude cohorts lacking somatic WES mutation profiling (e.g., Gide 2019)
+        if df_c["mut_BRAF"].sum() == 0 and df_c["mut_NRAS"].sum() == 0 and df_c["mut_NF1"].sum() == 0:
+            print(f"  Excluding '{name}' from driver mutation frequency plot (no WES/somatic mutation profiling available).")
+            continue
+        rec, label_n = _compute_single_cohort_driver_stats(df_c, name)
         cohort_labels[name] = label_n
         mut_data.append(rec)
 
@@ -282,7 +297,7 @@ def _render_driver_frequency_barplot(
     df_melt: pd.DataFrame, cohort_colors: Dict[str, str], plot_dir: Path
 ) -> None:
     """Renders horizontal grouped bar plot for driver mutation frequencies."""
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(10, 6.2))
     sns.barplot(
         data=df_melt, x="Gene", y="Frequency", hue="Cohort",
         palette=cohort_colors, edgecolor="black", ax=ax,
@@ -297,6 +312,13 @@ def _render_driver_frequency_barplot(
     ax.set_ylim(0, 100)
     ax.legend(loc="upper right")
     _annotate_barplot_containers(ax)
+
+    fig.text(
+        0.5, 0.01,
+        "* Note: Gide 2019 is excluded from driver mutation analysis due to lack of WES/somatic mutation profiling.",
+        ha="center", fontsize=9, fontstyle="italic", color="#37474F"
+    )
+    plt.tight_layout(rect=[0, 0.03, 1, 1])
 
     out_mut_path = plot_dir / "genomic_driver_frequencies.png"
     _save_with_alias(fig, out_mut_path, "mutation_frequencies.png")
@@ -322,7 +344,7 @@ def _prepare_tmb_response_df(cohorts: Dict[str, pd.DataFrame]) -> pd.DataFrame:
         if name in cohorts and _COL_TMB in cohorts[name].columns and _COL_RESPONSE in cohorts[name].columns:
             df = cohorts[name][[_COL_TMB, _COL_RESPONSE]].dropna().copy()
             if len(df) > 0:
-                df["Cohort"] = f"{name} (N={len(df)})"
+                df["Cohort"] = f"{name}\n(N={len(df)})"
                 df["Base_Cohort"] = name
                 trial_list.append(df)
 
@@ -565,29 +587,35 @@ def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, An
 def _compute_single_driver_pcts(df: pd.DataFrame) -> Dict[str, float]:
     """Helper to compute driver gene percentage frequencies for one DataFrame."""
     n = len(df)
-    b_pct = (df["mut_BRAF"].sum() / n) * 100.0
+    v600_series = df.get("mut_BRAF_V600", pd.Series(0, index=df.index))
+    b_v600_pct = (v600_series.sum() / n) * 100.0
+    b_other_pct = ((df["mut_BRAF"] & (1 - v600_series)).sum() / n) * 100.0
     n_pct = (df["mut_NRAS"].sum() / n) * 100.0
     f_pct = (df["mut_NF1"].sum() / n) * 100.0
     twt_pct = (
         (df["mut_BRAF"] == 0) & (df["mut_NRAS"] == 0) & (df["mut_NF1"] == 0)
     ).mean() * 100.0
-    return {"braf": b_pct, "nras": n_pct, "nf1": f_pct, "twt": twt_pct}
+    return {"braf_v600": b_v600_pct, "braf_other": b_other_pct, "nras": n_pct, "nf1": f_pct, "twt": twt_pct}
 
 
 def _compute_driver_stats(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, float]:
-    """Computes driver gene mutation percentages for ICI trial cohorts."""
-    liu_p = _compute_single_driver_pcts(cohorts["Liu 2019"])
-    hugo_p = _compute_single_driver_pcts(cohorts["Hugo 2016"])
-    riaz_p = _compute_single_driver_pcts(cohorts["Riaz 2017"])
-
-    return {
-        "liu_braf": liu_p["braf"], "liu_nras": liu_p["nras"],
-        "liu_nf1": liu_p["nf1"], "liu_twt": liu_p["twt"],
-        "hugo_braf": hugo_p["braf"], "hugo_nras": hugo_p["nras"],
-        "hugo_nf1": hugo_p["nf1"], "hugo_twt": hugo_p["twt"],
-        "riaz_braf": riaz_p["braf"], "riaz_nras": riaz_p["nras"],
-        "riaz_nf1": riaz_p["nf1"], "riaz_twt": riaz_p["twt"],
-    }
+    """Computes driver gene mutation percentages for ICI trial cohorts with mutation profiles."""
+    stats = {}
+    trial_names = _get_trial_cohort_names(cohorts)
+    for name in trial_names:
+        if name not in cohorts:
+            continue
+        df_c = cohorts[name]
+        if df_c["mut_BRAF"].sum() == 0 and df_c["mut_NRAS"].sum() == 0 and df_c["mut_NF1"].sum() == 0:
+            continue
+        key = name.lower().replace(" ", "_")
+        p = _compute_single_driver_pcts(df_c)
+        stats[f"{key}_braf_v600"] = p["braf_v600"]
+        stats[f"{key}_braf_other"] = p["braf_other"]
+        stats[f"{key}_nras"] = p["nras"]
+        stats[f"{key}_nf1"] = p["nf1"]
+        stats[f"{key}_twt"] = p["twt"]
+    return stats
 
 
 def _compute_neoantigen_correlations(
@@ -615,65 +643,42 @@ def _compute_neoantigen_correlations(
     return r_tot, r_snv, r_ind, r_cta
 
 
-def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
-    """Computes all dynamic statistics required for Markdown report formatting."""
-    trial_names = _get_trial_cohort_names(cohorts)
-    n_trials = sum(len(cohorts[c]) for c in trial_names if c in cohorts)
-
-    drv_stats = _compute_driver_stats(cohorts)
-    r_tot, r_snv, r_ind, r_cta = _compute_neoantigen_correlations(cohorts)
-
-    pooled = pd.concat(
-        [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
-    )
-    if _COL_RESPONSE in pooled.columns:
-        valid_resp = pooled[_COL_RESPONSE].isin([_RESP_NON_RESPONDER, _RESP_RESPONDER])
-        n_oncoplot = len(pooled[valid_resp])
-    else:
-        n_oncoplot = 0
-
-    return {
-        "n_trials": n_trials, **drv_stats,
-        "r_tot": r_tot, "r_snv": r_snv, "r_ind": r_ind, "r_cta": r_cta,
-        "n_oncoplot": n_oncoplot, "n_sd": n_trials - n_oncoplot,
-    }
-
-
-def _get_script_uris() -> Dict[str, str]:
-    """Resolves local script file paths to file URI strings."""
-    base_prep = BASE_DIR / "scripts" / "pillar-1-cohort-preprocessing"
-    return {
-        "genomic": (base_prep / "run_genomic_characterisation.py").resolve().as_uri(),
-        "clean": (base_prep / "clean_data.py").resolve().as_uri(),
-        "merge": (base_prep / "merge_datasets.py").resolve().as_uri(),
-        "pipeline": (BASE_DIR / "scripts" / "run_pipeline.py").resolve().as_uri(),
-        "styles": (PROJECT_ROOT / "src" / "styles.py").resolve().as_uri(),
-    }
-
-
-def _build_script_reference_callout() -> str:
-    """Builds software module architecture callout box for Markdown footer."""
-    u = _get_script_uris()
-    return (
-        "> [!formula]+ Genomic Characterisation Script Execution & Software Module Architecture\n"
-        ">\n"
-        "> - **Primary Pipeline Execution Scripts**:\n"
-        f">   - [`run_genomic_characterisation.py`]({u['genomic']}): Performs cross-cohort "
-        "genomic analyses including driver mutation frequency comparison (`BRAF`, `NRAS`, `NF1`, "
-        "Triple-WT), TMB distribution benchmarking, "
-        "neoantigen correlation analysis, and outputs `cohort_characteristics_genomic.md`.\n"
-        "> - **Data Preprocessing & Loading Modules**:\n"
-        f">   - [`clean_data.py`]({u['clean']}): Preprocesses raw cohort clinical metadata, "
-        "mutation calls, and RNA-seq expression profiles into cleaned CSV matrices.\n"
-        f">   - [`merge_datasets.py`]({u['merge']}): Merges processed expression and mutation "
-        "matrices across cohorts into harmonised pooled datasets (`merged_genomic.csv`, "
-        "`clin_merged.csv`).\n"
-        "> - **Shared Cross-Question & Pipeline Modules**:\n"
-        f">   - [`run_pipeline.py`]({u['pipeline']}): Master Q1 pipeline orchestrator "
-        "executing downstream modeling and evaluation.\n"
-        f">   - [`styles.py`]({u['styles']}): Single source of truth for Okabe-Ito colour "
-        "palettes (`COHORT_PALETTE`, `DRIVER_PALETTE`, `RESPONSE_PALETTE`) and visualization "
-        "presentation style."
+def _build_script_reference_callout(report_path: Path) -> str:
+    """Builds software module architecture callout box for Markdown footer using shared generator."""
+    _scripts = BASE_DIR / "scripts" / "pillar-1-cohort-preprocessing"
+    _src = BASE_DIR / "src"
+    _root_src = PROJECT_ROOT / "src"
+    return generate_script_reference_callout(
+        [
+            (
+                "run_genomic_characterisation.py",
+                _scripts / "run_genomic_characterisation.py",
+                "Performs cross-cohort genomic analyses including driver mutation frequency comparison (`BRAF V600`, `BRAF Other`, `NRAS`, `NF1`, Triple-WT), TMB distribution benchmarking, neoantigen correlation analysis, and outputs `cohort_characteristics_genomic.md`.",
+            ),
+            (
+                "clean_data.py",
+                _scripts / "clean_data.py",
+                "Preprocesses raw cohort clinical metadata, mutation calls, and RNA-seq expression profiles into cleaned CSV matrices.",
+            ),
+            (
+                "merge_datasets.py",
+                _scripts / "merge_datasets.py",
+                "Merges processed expression and mutation matrices across cohorts into harmonised pooled datasets (`merged_genomic.csv`, `clin_merged.csv`).",
+            ),
+            (
+                "run_pipeline.py",
+                BASE_DIR / "scripts" / "run_pipeline.py",
+                "Master Q1 pipeline orchestrator executing downstream modeling and evaluation.",
+            ),
+            (
+                "styles.py",
+                _root_src / "styles.py",
+                "Single source of truth for Okabe-Ito colour palettes (`COHORT_PALETTE`, `DRIVER_PALETTE`, `RESPONSE_PALETTE`) and visualization presentation style.",
+            ),
+        ],
+        base_dir=report_path.parent,
+        callout_type="[!formula]+",
+        title="Genomic Characterisation Script Execution & Software Module Architecture",
     )
 
 
@@ -683,8 +688,25 @@ def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, An
     cohort_counts = {c: len(cohorts[c]) for c in trial_names if c in cohorts}
     n_trials = sum(cohort_counts.values())
 
+    # Load treatment labels from datasets.yaml as the single source of truth.
+    dataset_configs = load_dataset_config(CONFIG_PATH)
+    treatment_labels: Dict[str, str] = {
+        cfg.cohort_name: cfg.treatment_label for cfg in dataset_configs
+    }
+
     drv_stats = _compute_driver_stats(cohorts)
     r_tot, r_snv, r_ind, r_cta = _compute_neoantigen_correlations(cohorts)
+
+    # Dynamic subset sample sizes for TMB, Neoantigen, and Biomarker correlations
+    df_tmb_resp = _prepare_tmb_response_df(cohorts)
+    n_tmb_resp = len(df_tmb_resp)
+    n_tmb_cohorts = df_tmb_resp["Base_Cohort"].nunique() if not df_tmb_resp.empty else 0
+
+    df_neo = _prepare_neoantigen_df(cohorts)
+    n_neo = len(df_neo)
+
+    df_bio = _extract_pooled_biomarkers(cohorts)
+    n_biomarkers = len(df_bio)
 
     pooled = pd.concat(
         [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
@@ -698,7 +720,12 @@ def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, An
     return {
         "cohort_order": trial_names,
         "cohort_counts": cohort_counts,
+        "treatment_labels": treatment_labels,
         "n_trials": n_trials,
+        "n_tmb_resp": n_tmb_resp,
+        "n_tmb_cohorts": n_tmb_cohorts,
+        "n_neo": n_neo,
+        "n_biomarkers": n_biomarkers,
         "drv_stats": drv_stats,
         "r_tot": r_tot, "r_snv": r_snv, "r_ind": r_ind, "r_cta": r_cta,
         "n_oncoplot": n_oncoplot, "n_sd": n_trials - n_oncoplot,
@@ -709,13 +736,13 @@ def _build_section_1_info(s: Dict[str, Any]) -> str:
     """Builds Section 1 INFO callout box."""
     return f"""> [!INFO] Why We Are Doing This
 >
-> **What**: We compare somatic mutation frequencies of key cutaneous melanoma driver genes
-> (`BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across active ICI trial cohorts.
-> **Why**: To confirm that our clinical trial cohorts accurately reflect real-world melanoma
+> - **What**: We compare somatic mutation frequencies of key cutaneous melanoma driver gene subtypes
+> (`BRAF V600`, `BRAF Other`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across active ICI trial cohorts.
+> - **Why**: To confirm that our clinical trial cohorts accurately reflect real-world melanoma
 > epidemiology and to evaluate whether pre-treatment mutations in antigen presentation
 > (`B2M`, `TAP1`, `TAP2`) or IFN-$\\gamma$ signalling (`JAK1`, `JAK2`, `STAT1`) drive primary
 > immunotherapy resistance.
-> **Question Answered**: Are clinical trial cohorts representative of baseline melanoma genomics,
+> - **Question Answered**: Are clinical trial cohorts representative of baseline melanoma genomics,
 > and do patients harbour pre-existing mutations in immune evasion pathways prior to therapy?"""
 
 
@@ -725,18 +752,21 @@ def _build_section_1_insight(s: Dict[str, Any]) -> str:
     bullets = []
     for c in s["cohort_order"]:
         key = c.lower().replace(" ", "_")
-        b = drv.get(f"{key}_braf", 0.0)
-        n = drv.get(f"{key}_nras", 0.0)
-        f = drv.get(f"{key}_nf1", 0.0)
-        t = drv.get(f"{key}_twt", 0.0)
-        bullets.append(f"**{c}** (`BRAF`: **{b:.1f}%**, `NRAS`: **{n:.1f}%**, `NF1`: **{f:.1f}%**, Triple-WT: **{t:.1f}%**)")
+        if f"{key}_braf_v600" not in drv:
+            continue
+        bv = drv[f"{key}_braf_v600"]
+        bo = drv[f"{key}_braf_other"]
+        n = drv[f"{key}_nras"]
+        f = drv[f"{key}_nf1"]
+        t = drv[f"{key}_twt"]
+        bullets.append(f"**{c}** (`BRAF V600`: **{bv:.1f}%**, `BRAF Other`: **{bo:.1f}%**, `NRAS`: **{n:.1f}%**, `NF1`: **{f:.1f}%**, Triple-WT: **{t:.1f}%**)")
     drv_str = "; ".join(bullets)
     return f"""> [!INSIGHT] Key Insights: Mutation Landscape
 >
 > 1. **Consistent Driver Mutation Profiles Across ICI Trial Cohorts**: Driver mutation frequencies
-> are broadly consistent across active trial cohorts ({drv_str}).
+> are broadly consistent across active trial cohorts with WES somatic mutation profiling ({drv_str}).
 > 2. **MAPK Driver Mutual Exclusivity**: Driver mutations act through independent growth
-> pathways: tumours with `BRAF` mutations almost never harbour co-occurring `NRAS` mutations,
+> pathways: tumours with `BRAF V600` mutations almost never harbour co-occurring `NRAS` mutations,
 > validating established melanoma oncogenic principles.
 > 3. **Immune Evasion Mutations Are Rare Before Therapy**: Pre-treatment non-synonymous mutations
 > in antigen presentation (`B2M`, `TAP1`, `TAP2`) and interferon signalling (`JAK1`, `JAK2`)
@@ -751,8 +781,23 @@ def _build_section_1_drivers(s: Dict[str, Any]) -> str:
         "This report presents a comparative analysis of the "
         "genomic features across active ICI trial cohorts:"
     )
-    bullets = "\n".join([f"- **{c}**: Anti-PD-1/CTLA-4 trial cohort ($N = {s['cohort_counts'].get(c, 0)}$)." for c in s["cohort_order"]])
-    c_names = ", ".join(s["cohort_order"])
+    treatment_labels = s.get("treatment_labels", {})
+    bullet_lines = []
+    for c in s["cohort_order"]:
+        n = s['cohort_counts'].get(c, 0)
+        label = treatment_labels.get(c, "")
+        suffix = f" — {label}" if label else ""
+        bullet_lines.append(f"- **{c}** ($N = {n}$){suffix}.")
+    bullets = "\n".join(bullet_lines)
+    valid_driver_cohorts = [
+        c for c in s["cohort_order"]
+        if f"{c.lower().replace(' ', '_')}_braf_v600" in s["drv_stats"]
+    ]
+    c_names = ", ".join(valid_driver_cohorts)
+    fn_note = (
+        "\n\n*Note: Gide 2019 ($N=91$) is excluded from driver mutation frequency comparisons "
+        "due to lack of WES/somatic mutation profiling (RNA-seq gene expression only).*"
+    )
     return f"""{hdr}
 {bullets}
 
@@ -760,8 +805,8 @@ def _build_section_1_drivers(s: Dict[str, Any]) -> str:
 
 ![Driver Mutation Frequencies](../../plots/genomic/genomic_driver_frequencies.png)
 
-_**Figure 1: Driver Mutation Frequencies across ICI Trial Cohorts.** Frequencies of `BRAF`,
-`NRAS`, `NF1`, and Triple-WT genotypes across {c_names}._"""
+_**Figure 1: Driver Mutation Frequencies across ICI Trial Cohorts.** Frequencies of `BRAF V600`,
+`BRAF Other`, `NRAS`, `NF1`, and Triple-WT genotypes across {c_names}._ {fn_note}"""
 
 
 def _build_section_1_body(s: Dict[str, Any]) -> str:
@@ -787,14 +832,13 @@ def _build_section_2_info(s: Dict[str, Any]) -> str:
     """Builds Section 2 INFO callout box."""
     return f"""> [!INFO] Why We Are Doing This
 >
-> **What**: We analyse the distribution of Tumour Mutational Burden (TMB) across immunotherapy
-> response arms (Responders [CR/PR] vs. Non-responders [PD]) and evaluate the correlation
-> between TMB and predicted total neoantigen load across pooled trial cohorts
-> ($N = {s['n_trials']}$).
-> **Why**: Somatic mutations generate novel peptide antigens (neoantigens) that trigger T-cell
+> - **What**: We analyse the distribution of Tumour Mutational Burden (TMB) across immunotherapy
+> response arms (Responders [CR/PR] vs. Non-responders [PD]; $N = {s['n_tmb_resp']}$ response-annotated patients across {s['n_tmb_cohorts']} cohorts)
+> and evaluate the correlation between TMB and predicted total neoantigen load ($N = {s['n_neo']}$).
+> - **Why**: Somatic mutations generate novel peptide antigens (neoantigens) that trigger T-cell
 > recognition. We test whether TMB correlates with treatment response and whether total TMB can
 > serve as a surrogate marker for predicted neoantigen burden.
-> **Question Answered**: Do treatment responders exhibit higher baseline TMB than non-responders,
+> - **Question Answered**: Do treatment responders exhibit higher baseline TMB than non-responders,
 > and is total TMB collinear with predicted neoantigen count?"""
 
 
@@ -802,11 +846,11 @@ def _build_section_2_insight(s: Dict[str, Any]) -> str:
     """Builds Section 2 INSIGHT callout box."""
     return f"""> [!INSIGHT] Key Insights: TMB & Neoantigen Collinearity
 >
-> 1. **Responders Exhibit Higher Baseline TMB**: Across all three clinical trial cohorts,
-> patients who achieved objective response to anti-PD-1 therapy (CR/PR) exhibited higher
+> 1. **Responders Exhibit Higher Baseline TMB**: Across {s['n_tmb_cohorts']} active immunotherapy cohorts ($N = {s['n_tmb_resp']}$ response-annotated patients),
+> patients who achieved objective response to immunotherapy (CR/PR) exhibited higher
 > pre-treatment TMB levels than non-responders (PD).
 > 2. **Strong Linear Collinearity ($r_s = {s['r_tot']:.3f}$)**: Total nonsynonymous TMB and
-> predicted total neoantigen load demonstrate a strong positive Spearman correlation
+> predicted total neoantigen load ($N = {s['n_neo']}$) demonstrate a strong positive Spearman correlation
 > ($r_s = {s['r_tot']:.3f}$, $p < 0.0001$). Tumours harbouring higher mutational burden generate
 > proportionally more predicted neoantigens.
 > 3. **Redundancy for Machine Learning**: Because total TMB and neoantigen load measure the same
@@ -823,16 +867,14 @@ def _build_section_2_md(s: Dict[str, Any]) -> str:
 {info_box}
 
 Tumour Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumour
-immunogenicity. Below, we present the TMB distribution by response alongside the correlation
-scatter plot illustrating Neoantigen Collinearity with TMB in the pooled trial cohorts
-($N = {s['n_trials']}$).
+immunogenicity. Below, we present the TMB distribution by response ($N = {s['n_tmb_resp']}$) alongside the correlation
+scatter plot illustrating Neoantigen Collinearity with TMB in pooled trial cohorts ($N = {s['n_neo']}$).
 
 ![TMB Distributions and Neoantigen Collinearity](
 ../../plots/genomic/tmb_distributions_by_cohort.png
 )
 
-_**Figure 3: Pre-treatment TMB Distributions by Response Status and Neoantigen Collinearity in
-Pooled Trial Cohorts ($N = {s['n_trials']}$).**_
+_**Figure 3: Pre-treatment TMB Distributions by Response Status ($N = {s['n_tmb_resp']}$) and Neoantigen Collinearity ($N = {s['n_neo']}$).**_
 
 {insight_box}"""
 
@@ -841,12 +883,12 @@ def _build_section_3_info(s: Dict[str, Any]) -> str:
     """Builds Section 3 INFO callout box."""
     return f"""> [!INFO] Why We Are Doing This
 >
-> **What**: We compute Spearman rank correlations between continuous genomic features (TMB,
-> neoantigen subtypes) and transcriptomic immune signatures across pooled trial
-> ($N = {s['n_trials']}$) cohorts.
-> **Why**: To identify feature redundancy before model training and evaluate whether genomic
+> - **What**: We compute Spearman rank correlations between continuous genomic features (TMB,
+> neoantigen subtypes) and transcriptomic immune signatures across pooled trial cohorts
+> ($N = {s['n_biomarkers']}$).
+> - **Why**: To identify feature redundancy before model training and evaluate whether genomic
 > mutational burden and transcriptomic immune infiltration capture independent biological axes.
-> **Question Answered**: Are TMB and neoantigen subtypes redundant, and do mutational burden
+> - **Question Answered**: Are TMB and neoantigen subtypes redundant, and do mutational burden
 > and transcriptomic immune infiltration represent orthogonal biological biomarkers?"""
 
 
@@ -875,22 +917,22 @@ def _build_section_3_body(s: Dict[str, Any]) -> str:
 
 A Spearman rank correlation matrix mapping the relationships between continuous genomic features
 (somatic mutation and neoantigen subtypes) across the **Pooled Trials** cohort
-($N = {s['n_trials']}$) is presented below.
+($N = {s['n_biomarkers']}$) is presented below.
 
 ![Genomic Biomarker Correlation Matrix](../../plots/genomic/biomarker_correlation_matrix.png)
 
 _**Figure 4: Genomic & Neoantigen Biomarker Spearman Correlation Matrix (Pooled Trials,
-$N = {s['n_trials']}$).**_
+$N = {s['n_biomarkers']}$).**_
 
 ### 3.2 Genomic Burden vs. Immune Infiltration
 
 To evaluate how tumour genomic features affect the microenvironment, we evaluated how mutational
-burden (**TMB**, evaluated in pooled trials, $N = {s['n_trials']}$) correlates
+burden (**TMB**, evaluated in pooled trials, $N = {s['n_biomarkers']}$) correlates
 with continuous transcriptomic immune signatures.
 
 ![Genomic Burden vs Immune Heatmap](../../plots/biomarkers/extended_immune_correlations.png)
 
-_**Figure 5: Correlation between Genomic Burden Metrics and Transcriptomic Immune Signatures.**_"""
+_**Figure 5: Correlation between Genomic Burden Metrics and Transcriptomic Immune Signatures ($N = {s['n_biomarkers']}$).**_"""
 
 
 def _build_section_3_md(s: Dict[str, Any]) -> str:
@@ -911,13 +953,13 @@ def _build_section_4_info(s: Dict[str, Any]) -> str:
     """Builds Section 4 INFO callout box."""
     return f"""> [!INFO] Why We Are Doing This
 >
-> **What**: We construct a multi-track co-mutation oncoplot across $N = {s['n_oncoplot']}$ trial
+> - **What**: We construct a multi-track co-mutation oncoplot across $N = {s['n_oncoplot']}$ trial
 > patients with binary response labels (CR/PR vs. PD; excluding $N = {s['n_sd']}$ Stable Disease
 > patients), mapping somatic mutations in driver and resistance genes alongside patient TMB,
 > response status, study cohort, and sex.
-> **Why**: To visualise patient-level co-occurrence, mutual exclusivity, and driver mutation
+> - **Why**: To visualise patient-level co-occurrence, mutual exclusivity, and driver mutation
 > distributions across response categories simultaneously.
-> **Question Answered**: Are `BRAF` and `NRAS` driver mutations strictly mutually exclusive in
+> - **Question Answered**: Are `BRAF` and `NRAS` driver mutations strictly mutually exclusive in
 > trial patients, and are treatment responders enriched in specific driver genotypes?"""
 
 
@@ -974,7 +1016,7 @@ def _build_section_5_md() -> str:
 > excluding Stable Disease."""
 
 
-def _assemble_genomic_report_markdown(s: Dict[str, Any]) -> str:
+def _assemble_genomic_report_markdown(s: Dict[str, Any], report_path: Path) -> str:
     """Assembles full Markdown report string using computed statistics."""
     timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
     frontmatter = generate_obsidian_frontmatter(
@@ -989,7 +1031,7 @@ def _assemble_genomic_report_markdown(s: Dict[str, Any]) -> str:
     sec3 = _build_section_3_md(s)
     sec4 = _build_section_4_md(s)
     sec5 = _build_section_5_md()
-    callout = _build_script_reference_callout()
+    callout = _build_script_reference_callout(report_path)
 
     return (
         f"{frontmatter}\n\n"
@@ -1001,11 +1043,26 @@ def _assemble_genomic_report_markdown(s: Dict[str, Any]) -> str:
 def _generate_genomic_report(cohorts: Dict[str, pd.DataFrame], report_path: Path) -> None:
     """Generates an Obsidian-compatible Markdown report for genomic characteristics."""
     stats = _compute_report_statistics(cohorts)
-    report_content = _assemble_genomic_report_markdown(stats)
+    report_content = _assemble_genomic_report_markdown(stats, report_path)
 
     report_path.parent.mkdir(exist_ok=True, parents=True)
     report_path.write_text(report_content, encoding="utf-8")
     print(f"\nSaved genomic analysis report to {rel_path(report_path)}")
+
+
+# ---------------------------------------------------------------------------
+# Companion Script Execution
+# ---------------------------------------------------------------------------
+_COMPANION_SCRIPTS: List[Tuple[str, Path]] = [
+    (
+        "Co-mutation landscape (oncoplot)",
+        BASE_DIR / "scripts" / "exploratory_plots" / "run_merged_comut_plot.py",
+    ),
+    (
+        "Extended biomarker evaluation",
+        BASE_DIR / "scripts" / "pillar-3-transcriptomic-signatures" / "run_extended_biomarkers.py",
+    ),
+]
 
 
 # ---------------------------------------------------------------------------
@@ -1015,7 +1072,7 @@ def main() -> None:
     """Executes the complete genomic characterisation and visualisation pipeline."""
     print("==================================================")
     print("Genomic Characterisation and Visualisation")
-    print("==================================================\n")
+    print("==================================================")
 
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
@@ -1023,8 +1080,9 @@ def main() -> None:
     _plot_mutation_frequencies(cohorts, PLOT_DIR)
     _plot_tmb_distributions(cohorts, PLOT_DIR)
     _plot_biomarker_correlations(cohorts, PLOT_DIR)
+    run_companion_scripts(_COMPANION_SCRIPTS, base_dir=BASE_DIR)
 
-    print("\n4. Exporting cohort_characteristics_genomic.md report...")
+    print("\n6. Exporting cohort_characteristics_genomic.md report...")
     _generate_genomic_report(cohorts, REPORT_PATH)
 
     print("\n==================================================")

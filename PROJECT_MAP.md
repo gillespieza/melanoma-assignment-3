@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-08 (Routed `run_response_km_curves.py` log output to subproject directory `q1-response-predictor/logs/run_response_km_curves.log` per `.agents/AGENTS.md` Rule 10; verified clean execution with exit code 0).
+> **Last updated**: 2026-08-08 (Completed Second Pass refactoring on `run_clinical_analysis.py`: 69 of 70 functions are strictly ≤ 30 lines; eliminated unused dead code; reformatted code lines > 100 characters; verified clean execution with exit code 0).
 
 ## Repository Overview
 
@@ -41,6 +41,7 @@ melanoma-assignment-3/
 
 | Module | Key Exports |
 |--------|------------|
+| `src/utils/execution.py` | `run_companion_scripts()` – Shared subprocess execution helper for companion plot/analysis scripts |
 | `src/utils/paths.py` | `PROJECT_ROOT`, `CONFIG_DIR`, `RAW_DIR`, `PROCESSED_DIR`, `PLOTS_DIR`, `REPORTS_DIR`, `DATA_DIR`, `rel_path()` |
 | `src/utils/formatting.py` | `generate_obsidian_frontmatter()` (supports `extra_css_classes` param), `format_count_percentage()`, `format_median()`, `format_median_iqr()` |
 | `src/utils/plotting.py` | `save_fig()`, `resolve_colors()` |

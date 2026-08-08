@@ -595,8 +595,8 @@ def _generate_feature_selection_report(
     report_content.append("\n## 4. Part 3: Synthesis & Pipeline Recommendation")
     report_content.append(
         "\n> [!summary] What, Why & Key Questions\n"
-        "> **What**: We evaluated whether a custom 20-gene overall survival score built from TCGA-SKCM data should be added to our final prediction model alongside our 6 established immune signatures.\n"
-        "> **Why**: We must ensure every feature added to our machine learning model provides unique, genuine predictive value rather than repeating information or adding random noise.\n"
+        "> - **What**: We evaluated whether a custom 20-gene overall survival score built from TCGA-SKCM data should be added to our final prediction model alongside our 6 established immune signatures.\n"
+        "> - **Why**: We must ensure every feature added to our machine learning model provides unique, genuine predictive value rather than repeating information or adding random noise.\n"
         "> **Key Finding**: We decided **not** to include the TCGA survival score in our final model because it measures the exact same underlying immune signal as our existing signatures and fails to predict treatment response in real-world patient trials."
     )
     report_content.append(

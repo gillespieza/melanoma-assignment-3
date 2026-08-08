@@ -269,9 +269,9 @@ def _build_report_overview() -> list[str]:
         frontmatter + "\n\n",
         "# Model Evaluation Report: Leave-One-Cohort-Out (LOCO) Cross-Validation\n\n",
         "> [!summary] What, Why & Key Questions\n",
-        "> **What**: Tested 5 machine learning models (LR, RF, XGBoost, SVM, ElasticNet) "
+        "> - **What**: Tested 5 machine learning models (LR, RF, XGBoost, SVM, ElasticNet) "
         "predicting anti-PD-1 response.\n",
-        "> **Why**: Testing on held-out hospital trial cohorts (LOCO) evaluates real-world "
+        "> - **Why**: Testing on held-out hospital trial cohorts (LOCO) evaluates real-world "
         "generalisability.\n",
         "> **Key Questions**: Which model generalises best? Does multimodal integration improve "
         "accuracy?\n\n",

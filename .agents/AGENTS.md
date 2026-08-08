@@ -109,6 +109,7 @@ When fixing code smells or refactoring code in this repository, follow these gui
         _SCRIPT_DIR = Path(__file__).resolve().parent
         CONFIG_PATH = _SCRIPT_DIR.parent / "config" / "datasets.yaml"
         ```
+      - `src/utils/execution.py` -- Use `run_companion_scripts()` for executing companion plot/analysis scripts in isolated subprocesses.
       - `src/utils/formatting.py` -- Use `generate_obsidian_frontmatter()`, `format_count_percentage()`, `format_median()`, `format_median_iqr()` for report and string formatting.
       - `src/utils/plotting.py` -- Use `save_fig()`, `resolve_colors()`.
       - `src/utils/logging.py` -- Use `TeeStream`.

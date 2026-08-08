@@ -929,7 +929,7 @@ def _build_report_tier1_preamble(
         "and **Logistic Regression** (univariate then multivariate).",
         "> **Why We Are Doing It**: These features directly reflect the tumour "
         "immune microenvironment hypothesised to drive anti-PD-1 response.",
-        "> **Questions**:",
+        "> - **Questions**:",
         ">   1. *Which transcriptomic immune features are individually associated "
         "with anti-PD-1 response?*",
         ">   2. *After mutual adjustment, which features retain independent "
@@ -1150,7 +1150,7 @@ def _build_report_tier2_preamble(
         "**anti-PD-1 binary response** using the same RF + Logistic Regression framework.",
         "> **Why We Are Doing It**: Granular clinical covariates may independently predict "
         "ICI response beyond immune expression signatures.",
-        "> **Questions**:",
+        "> - **Questions**:",
         ">   1. *Which clinical staging or treatment covariates "
         "carry independent response signal?*",
         ">   2. *Does prior ICI therapy confound response classification?*",

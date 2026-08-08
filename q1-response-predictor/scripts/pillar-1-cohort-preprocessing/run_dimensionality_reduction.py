@@ -13,6 +13,7 @@ cohort-independent Z-score scaling, and updates batch_correction_report.md.
 
 import contextlib
 from pathlib import Path
+import subprocess
 import sys
 from typing import Any, Dict, List, Tuple
 
@@ -59,6 +60,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.config.datasets import DatasetConfig, load_dataset_config
 from src.data_loaders import load_merged_immunotherapy
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, resolve_cohort_palette, set_presentation_style
+from src.utils.execution import run_companion_scripts
 from src.utils.formatting import (
     generate_obsidian_frontmatter,
     generate_script_reference_callout,
@@ -469,11 +471,11 @@ def _report_section_1a(
         f"### 1.1 Full Cohort Batch Assessment (N = {n_full})\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        f"> **What**: PCA across $N = {n_full}$ patients from cohorts ({cohort_breakdown}) "
+        f"> - **What**: PCA across $N = {n_full}$ patients from cohorts ({cohort_breakdown}) "
         f"using {n_top:,} genes from {n_g_all:,} common genes.\n"
-        "> **Why**: Combining transcriptomic data introduces batch effects. Uncorrected "
+        "> - **Why**: Combining transcriptomic data introduces batch effects. Uncorrected "
         "models risk classifying sequencing centres rather than patient biology.\n"
-        "> **Question Answered**: Does cohort-independent Z-score standardisation eliminate "
+        "> - **Question Answered**: Does cohort-independent Z-score standardisation eliminate "
         "technical separation between reference and trial cohorts?\n\n"
         "![[batch_effect_pca.png]]\n\n"
         "### Key Observations\n"
@@ -508,10 +510,10 @@ def _report_section_2(
         f"## 2. Immunotherapy Trial Dimensionality Reduction (N = {n_trials})\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        f"> **What**: Linear (PCA) and non-linear (UMAP) reduction to $N = {n_trials}$ "
+        f"> - **What**: Linear (PCA) and non-linear (UMAP) reduction to $N = {n_trials}$ "
         f"response-annotated patients ({trial_names_str}) using {n_top:,} genes.\n"
-        "> **Why**: Test if baseline expression profiles naturally segregate responders.\n"
-        "> **Question Answered**: Can therapeutic response be predicted directly from global "
+        "> - **Why**: Test if baseline expression profiles naturally segregate responders.\n"
+        "> - **Question Answered**: Can therapeutic response be predicted directly from global "
         "2D expression clusters?\n\n"
         "### Projections\n"
         "![[pca_dimensionality_reduction.png]]\n"
@@ -531,14 +533,14 @@ def _report_section_3(n_trials: int) -> str:
         f"## 3. Gene-Level Expression Heatmaps (Top {N_TOP_HEATMAP_GENES} Genes)\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        f"> **What**: Inspect heatmaps for top {N_TOP_HEATMAP_GENES} genes by average within-cohort variance "
+        f"> - **What**: Inspect heatmaps for top {N_TOP_HEATMAP_GENES} genes by average within-cohort variance "
         f"across trial patients ($N = {n_trials}$). Samples are sorted by cohort, then by responder "
         "status (CR/PR before PD) within each cohort, with no hierarchical column clustering, "
         "to make cohort-level baseline differences and response group separation directly readable.\n"
-        "> **Why**: Validate batch effects at individual gene resolution and assess whether "
+        "> - **Why**: Validate batch effects at individual gene resolution and assess whether "
         "per-cohort Z-score correction removes study-level baseline shifts while preserving "
         "responder vs. non-responder biological contrast.\n"
-        "> **Question Answered**: Are cohort expression baselines visibly harmonised after "
+        "> - **Question Answered**: Are cohort expression baselines visibly harmonised after "
         "per-cohort Z-score standardisation, and does the response group signal become "
         "more consistent across cohorts?\n\n"
         "### Raw & Standardised\n"
@@ -564,8 +566,8 @@ def _report_section_4(trial_counts: Dict[str, int]) -> str:
         "## 4. Cross-Validation Rigour & Data Leakage Prevention\n\n"
         "> [!INFO] Why We Are Doing This\n"
         ">\n"
-        "> **What**: Compare cohort-independent Z-score against global batch correction.\n"
-        "> **Question Answered**: How does independent Z-score prevent leakage in LOCO?\n\n"
+        "> - **What**: Compare cohort-independent Z-score against global batch correction.\n"
+        "> - **Question Answered**: How does independent Z-score prevent leakage in LOCO?\n\n"
         "### 4.1 The Hazard of Global Correction (e.g. ComBat)\n"
         "Global algorithms pool all samples to estimate parameters. In LOCO CV, including "
         "the test set in parameter estimation leaks information into the training phase, "
@@ -709,11 +711,22 @@ def _run_trial_reduction_grids(
     )
 
 
+# ---------------------------------------------------------------------------
+# Companion Script Execution
+# ---------------------------------------------------------------------------
+_COMPANION_SCRIPTS: List[Tuple[str, Path]] = [
+    (
+        "Expression heatmaps (top variance genes)",
+        SUBPROJECT_ROOT / "scripts" / "pillar-1-cohort-preprocessing" / "run_expression_heatmap.py",
+    ),
+]
+
+
 def main() -> None:
     """Executes dimensionality reduction workflow."""
     print("==================================================")
     print("Dimensionality Reduction: Full & Trial Cohorts")
-    print("==================================================\n")
+    print("==================================================")
     for directory in [EXPLORATORY_PLOT_DIR, REPORT_DIR]:
         directory.mkdir(exist_ok=True, parents=True)
     expr_dict, clin_dict, cohort_order, trial_names = load_all_cohorts()
@@ -723,6 +736,7 @@ def main() -> None:
         expr_dict, clin_dict, top_genes, cohort_order,
     )
     _run_trial_reduction_grids(expr_dict, clin_dict, top_genes, trial_names)
+    run_companion_scripts(_COMPANION_SCRIPTS, base_dir=SUBPROJECT_ROOT)
 
     cohort_counts = {c: len(expr_dict[c]) for c in cohort_order}
     trial_counts = {c: len(expr_dict[c]) for c in trial_names}
