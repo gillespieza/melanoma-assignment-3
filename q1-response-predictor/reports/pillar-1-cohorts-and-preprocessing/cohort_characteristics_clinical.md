@@ -9,12 +9,12 @@ tags:
   - survival-analysis
   - kaplan-meier
   - immunotherapy
-created: 2026-08-08 15:37
+created: 2026-08-08 15:46
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-08 15:37
+updated: 2026-08-08 15:46
 ---
 
 # Clinical Characteristics of Immunotherapy Data Cohorts
@@ -142,22 +142,42 @@ _**Figure 3: Overall Survival Stratified by RECIST Response Status across Immuno
 > 2. **Durable Long-Term Survival**: Durable separation is consistently observed between responders and non-responders across Liu 2019, Hugo 2016, Riaz 2017, TCGA GDC 2025, Gide 2019, Van Allen 2015.
 > 3. **Conclusion**: Objective RECIST response is a highly robust surrogate endpoint for overall survival in metastatic melanoma, justifying its use as the primary outcome for predictive model training.
 
-## 5. Univariate Associations with Response (Forest Plot)
+## 5. Univariate Associations with Response (Forest Plots)
 
 > [!INFO] Why We Are Doing This
-> **What**: We run univariate statistical tests (Odds Ratios and 95% Confidence Intervals) to measure the isolated predictive strength of individual baseline features — age, sex, tumour mutation burden (TMB), and driver mutations (`BRAF`, `NRAS`, `NF1`) — against immunotherapy response across individual and pooled trial cohorts.
+> **What**: We run univariate statistical tests (Odds Ratios and 95% Confidence Intervals) to measure the isolated predictive strength of individual baseline features — clinical demographics, stage, driver mutations (`BRAF`, `BRAF V600`, `BRAF V600E`, `NRAS`, `NF1`), TMB, and predicted neoantigen burden — against immunotherapy response across individual and pooled trial cohorts.
 > **Why**: Before building complex multivariate models, univariate screening identifies whether any single clinical or genomic feature alone is sufficient to predict response.
-> **Question Answered**: Does any single baseline clinical or genomic feature reliably predict anti-PD-1 immunotherapy response across independent cohorts?
+> **Question Answered**: Does any single baseline clinical, mutational, or genomic feature reliably predict anti-PD-1 immunotherapy response across independent cohorts?
 
-![Forest Plot of Univariate Odds Ratios](../../plots/clinical/univariate_associations.png)
+### 5.1 Clinical Demographics & Anatomical Stage
 
-_**Figure 4: Forest Plot of Univariate Odds Ratios for Clinical and Genomic Features against Immunotherapy Response.**_
+![Forest Plot of Clinical Demographics & Stage](../../plots/clinical/univariate_associations_clinical.png)
+
+_**Figure 4A: Forest Plot of Clinical Demographics and Stage against Immunotherapy Response.**_
+
+### 5.2 Driver Mutations & Subtypes
+
+![Forest Plot of Driver Mutations](../../plots/clinical/univariate_associations_mutations.png)
+
+_**Figure 4B: Forest Plot of Somatic Driver Mutations (BRAF Any, BRAF V600, BRAF V600E, NRAS, NF1) against Immunotherapy Response.**_
+
+### 5.3 Tumour Mutation Burden & Neoantigen Load
+
+![Forest Plot of TMB & Neoantigen Load](../../plots/clinical/univariate_associations_genomics.png)
+
+_**Figure 4C: Forest Plot of TMB and Predicted Neoantigen Burden (Total, SNV, Indel) against Immunotherapy Response.**_
+
+### 5.4 Composite Multi-Domain Forest Plot
+
+![Master Composite Forest Plot](../../plots/clinical/univariate_associations.png)
+
+_**Figure 4D: Master Composite Forest Plot of All Clinical and Genomic Features.**_
 
 > [!INSIGHT] Key Takeaways: Univariate Associations
-> 1. **Lack of Robust Univariate Predictors**: Across pooled trial analyses and after multiple testing adjustments, **no single baseline clinical or genomic feature achieves robust statistical significance**. All 95% CIs for pooled odds ratios cross 1.0.
-> 2. **Anatomical Staging Artefact (Liu 2019 $p = 0.029$)**: Stage IV disease shows a nominal unadjusted association in the isolated Liu 2019 cohort. This is an artefact of extreme trial enrolment imbalance; in the pooled multi-cohort analysis, the association attenuates to $p = 0.083$.
-> 3. **Subtle Feature Trends**: `NRAS` mutations and higher Tumour Mutation Burden (TMB; OR = 1.37 per SD increase, $p = 0.160$) trend towards elevated response odds. `BRAF` driver mutations show no univariate association (OR ≈ 1.0).
-> 4. **Demographic Balance**: Age and sex show no association with treatment response (OR ≈ 0.98–1.26, $p > 0.50$), confirming demographic balance between responder and non-responder arms.
+> 1. **Lack of Robust Single-Feature Predictors**: Across pooled trial analyses and after multiple testing adjustments, **no single baseline clinical or genomic feature achieves robust statistical significance**. All 95% CIs for pooled odds ratios cross 1.0.
+> 2. **BRAF Subtype Resolution (`V600` vs `V600E`)**: Neither generic `BRAF` mutation (OR = 1.21, p = 0.401), specific `BRAF V600` (OR = 1.18, p = 0.512), nor `BRAF V600E` (OR = 0.92, p = 0.875) demonstrates significant association with anti-PD-1 response.
+> 3. **Anatomical Staging**: Stage IV vs Stage III disease shows no overall pooled association (OR = 0.99, p = 1.000).
+> 4. **Demographic & Genomic Trends**: Age, sex, TMB (OR = 1.25, p = 0.091), and total neoantigen load (OR = 1.05, p = 0.857) exhibit minor unadjusted trends but do not achieve statistical significance independently.
 > 5. **Core Scientific Implication**: The failure of individual clinical variables and driver mutations to predict outcome explains why single-variable biomarker tests fail in clinical practice, highlighting the necessity of multi-gene transcriptomic signatures and integrated multivariate machine learning.
 
 ## 6. Technical Analysis Notes
