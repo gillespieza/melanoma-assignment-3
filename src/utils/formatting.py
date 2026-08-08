@@ -114,7 +114,7 @@ def generate_obsidian_frontmatter(
 def generate_script_reference_callout(
     script_entries: List[Dict[str, Any]] | List[Tuple[str, Any, str]],
     base_dir: Optional[Any] = None,
-    callout_type: str = "[!formula]+",
+    callout_type: str = "[!NOTE]",
     title: str = "Script Reference",
 ) -> str:
     """Generates a standard Obsidian Script Reference callout box for reports.
@@ -125,7 +125,7 @@ def generate_script_reference_callout(
         base_dir: Optional base directory to resolve relative paths against.
             If omitted, attempts to find the top-level project root.
         callout_type: Obsidian callout type string, e.g. ``"[!NOTE]"``,
-            ``"![formula]+"`` or ``"[!formula]"``. Defaults to ``"[!NOTE]"``.
+            ``"[!formula]+"`` or ``"[!formula]"``. Defaults to ``"[!NOTE]"``.
         title: Title text appended after the callout type. Defaults to
             ``"Script Reference"``.
 
@@ -133,16 +133,19 @@ def generate_script_reference_callout(
         Formatted Markdown callout block string starting with a horizontal rule ``---``
         followed by the specified callout header line.
     """
-    from src.utils.paths import find_project_root, format_relative_path
+    import os
+    from src.utils.paths import find_project_root
 
     if base_dir is not None:
         root_path = Path(base_dir).resolve()
     else:
         root_path = find_project_root(Path(__file__).resolve()).resolve()
 
-    root_str = str(root_path).replace("\\", "/").rstrip("/")
+    clean_callout = callout_type.strip()
+    if clean_callout.startswith("!["):
+        clean_callout = "[!" + clean_callout[2:]
 
-    lines = ["---", "", f"> {callout_type} {title}", ">"]
+    lines = ["---", "", f"> {clean_callout} {title}", ">"]
     for entry in script_entries:
         if isinstance(entry, tuple):
             name, path, desc = entry
@@ -153,12 +156,7 @@ def generate_script_reference_callout(
         else:
             continue
 
-        p_str = str(Path(path).resolve()).replace("\\", "/")
-        if p_str.lower().startswith(root_str.lower()):
-            rel_str = p_str[len(root_str):].lstrip("/")
-        else:
-            rel_str = format_relative_path(Path(path))
-
+        rel_str = os.path.relpath(Path(path).resolve(), root_path).replace("\\", "/")
         lines.append(f"> - [`{name}`]({rel_str}): {desc}")
 
     return "\n".join(lines) + "\n"

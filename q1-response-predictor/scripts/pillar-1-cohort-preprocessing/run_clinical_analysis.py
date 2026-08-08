@@ -901,7 +901,8 @@ def generate_clinical_report(
                 "`RESPONSE_PALETTE`) and visualisation presentation style.",
             ),
         ],
-        callout_type="![formula]+",
+        base_dir=report_path.parent,
+        callout_type="[!formula]+",
         title="Clinical Analysis Script Execution & Software Module Architecture",
     )
 

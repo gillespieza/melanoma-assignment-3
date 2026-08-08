@@ -94,7 +94,7 @@ _**Figure 1D: Master Composite Forest Plot of All Clinical and Genomic Features.
 
 ---
 
-> ![formula]+ Response Association Scripts & Modules
+> [!formula]+ Response Association Scripts & Modules
 > - **Primary Scripts**:
 >   - [`run_univariate_associations.py`](../../scripts/pillar-2-clinical-subtyping/run_univariate_associations.py): Computes univariate ORs and 95% CIs across clinical/genomic features; generates forest plots.
 > - **Shared Modules**:

@@ -605,7 +605,12 @@ def _report_section_5() -> str:
             "Central definition of Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`).",
         ),
     ]
-    return generate_script_reference_callout(entries)
+    return generate_script_reference_callout(
+        entries,
+        base_dir=REPORT_DIR,
+        callout_type="[!formula]+",
+        title="Dimensionality Reduction Script Execution & Software Module Architecture",
+    )
 
 
 def generate_report_content(

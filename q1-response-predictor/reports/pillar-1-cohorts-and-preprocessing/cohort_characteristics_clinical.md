@@ -9,12 +9,12 @@ tags:
   - survival-analysis
   - kaplan-meier
   - immunotherapy
-created: 2026-08-08 19:12
+created: 2026-08-08 19:15
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-08 19:12
+updated: 2026-08-08 19:15
 ---
 
 # Clinical Characteristics of Immunotherapy Data Cohorts
@@ -152,10 +152,10 @@ _**Figure 3: Overall Survival Stratified by RECIST Response Status across Immuno
 
 ---
 
-> ![formula]+ Clinical Analysis Script Execution & Software Module Architecture
+> [!formula]+ Clinical Analysis Script Execution & Software Module Architecture
 >
-> - [`run_clinical_analysis.py`](q1-response-predictor/scripts/pillar-1-cohort-preprocessing/run_clinical_analysis.py): Generates baseline demographic grids, attrition metrics, cohort characteristics tables, Kaplan-Meier OS curves, and writes `cohort_characteristics_clinical.md`.
-> - [`clean_data.py`](q1-response-predictor/scripts/pillar-1-cohort-preprocessing/clean_data.py): Preprocesses raw cohort clinical metadata and RNA-seq expression profiles into cleaned CSV matrices.
-> - [`merge_datasets.py`](q1-response-predictor/scripts/pillar-1-cohort-preprocessing/merge_datasets.py): Merges processed expression matrices across cohorts into harmonised pooled matrices (`expr_merged.csv`, `clin_merged.csv`).
-> - [`data_loaders.py`](q1-response-predictor/src/data_loaders.py): Provides helper loader functions (`load_liu_2019`, `load_hugo_2016`, `load_riaz_2017`) for retrieving expression and clinical data.
-> - [`styles.py`](src/styles.py): Single source of truth for Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`) and visualisation presentation style.
+> - [`run_clinical_analysis.py`](../../scripts/pillar-1-cohort-preprocessing/run_clinical_analysis.py): Generates baseline demographic grids, attrition metrics, cohort characteristics tables, Kaplan-Meier OS curves, and writes `cohort_characteristics_clinical.md`.
+> - [`clean_data.py`](../../scripts/pillar-1-cohort-preprocessing/clean_data.py): Preprocesses raw cohort clinical metadata and RNA-seq expression profiles into cleaned CSV matrices.
+> - [`merge_datasets.py`](../../scripts/pillar-1-cohort-preprocessing/merge_datasets.py): Merges processed expression matrices across cohorts into harmonised pooled matrices (`expr_merged.csv`, `clin_merged.csv`).
+> - [`data_loaders.py`](../../src/data_loaders.py): Provides helper loader functions (`load_liu_2019`, `load_hugo_2016`, `load_riaz_2017`) for retrieving expression and clinical data.
+> - [`styles.py`](../../../src/styles.py): Single source of truth for Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`) and visualisation presentation style.
