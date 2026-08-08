@@ -767,10 +767,8 @@ def generate_clinical_report(
     age_results = {c: cohort_results[c]["age"] for c in cohort_order}
 
     n_values = {c: survival_results[c]["n_total"] for c in cohort_order}
-    n_liu = n_values.get("Liu 2019", 0)
-    n_hugo = n_values.get("Hugo 2016", 0)
-    n_riaz = n_values.get("Riaz 2017", 0)
     n_total = sum(n_values.values())
+    n_cohorts = len(cohort_order)
 
     d = overall_demographics
     ici = ici_breakdown
@@ -781,6 +779,16 @@ def generate_clinical_report(
 
     initial_total, final_total, total_removed, attrition_text = _compute_attrition_summaries(attrition_data, cohort_order)
     retention_pct = final_total / initial_total * 100 if initial_total > 0 else 0.0
+
+    cohort_n_str = ", ".join([f"**{c}** ($N = {n_values[c]}$)" for c in cohort_order])
+    cohort_bullets = "\n".join([f"- **{c}**: Immunotherapy trial cohort ($N = {n_values[c]}$)." for c in cohort_order])
+    annotated_ages = [
+        f"`{c}`: median {_format_cohort_age_str(age_results, c)}"
+        for c in cohort_order
+        if not pd.isna(age_results.get(c, {}).get("median_age", float("nan")))
+    ]
+    age_annotation_str = "; ".join(annotated_ages) if annotated_ages else "no annotated age data"
+    cohorts_list_str = ", ".join(cohort_order)
 
     clinical_characteristics_table = generate_clinical_characteristics_table(cohort_results, cohort_order)
     attrition_table = generate_attrition_table(attrition_data, cohort_order)
@@ -799,16 +807,14 @@ def generate_clinical_report(
 ## 1. Baseline Patient and Disease Characteristics
 
 > [!INFO] Why We Are Doing This
-> **What**: We compare patient demographics, treatment histories, and survival outcomes across the three active immunotherapy trial cohorts: **Liu 2019** ($N = {n_liu}$), **Hugo 2016** ($N = {n_hugo}$), and **Riaz 2017** ($N = {n_riaz}$).
+> **What**: We compare patient demographics, treatment histories, and survival outcomes across the {n_cohorts} active immunotherapy trial cohorts: {cohort_n_str}.
 > **Why**: Before building predictive models or analysing transcriptomic signatures, we must understand the clinical composition of each dataset. Cohort-level differences in prior treatment, disease stage, and patient demographics can confound downstream survival and response analyses.
 > **Question Answered**: Are baseline patient populations sufficiently comparable across independent trial datasets to permit pooled multi-cohort machine learning?
 
-This report compares patient demographics, treatments, survival, and sample attrition across the three active immunotherapy trial cohorts:
-- **Liu 2019**: Immunotherapy trial ($N = {n_liu}$) treated with anti-PD-1 monotherapy (Pembrolizumab or Nivolumab).
-- **Hugo 2016**: Anti-PD-1 clinical trial cohort ($N = {n_hugo}$) treated with Pembrolizumab.
-- **Riaz 2017**: Anti-PD-1 clinical trial cohort ($N = {n_riaz}$) treated with Nivolumab; 100% of patients had previously received anti-CTLA-4 (Ipilimumab).
+This report compares patient demographics, treatments, survival, and sample attrition across the {n_cohorts} active immunotherapy trial cohorts:
+{cohort_bullets}
 
-### 1.1 Clinical Demographics & Treatment Distributions (2×2 Grid)
+### 1.1 Clinical Demographics & Treatment Distributions
 
 ![Clinical Demographics & Treatment Distributions](../../plots/clinical/{demographics_grid_path.name})
 
@@ -817,8 +823,8 @@ _**Figure 1: 2×2 Grid of Clinical Demographics and Treatment Histories across I
 #### Key Demographics & Treatment Insights
 
 - **Panel A: Sex Distribution ($N = {d['n_sex_total']}$)**: The overall trial cohort shows a {'male' if d['n_male'] > d['n_female'] else 'female'} predominance (**{d['pct_male']:.1f}% Male** [$N = {d['n_male']}$] vs. **{d['pct_female']:.1f}% Female** [$N = {d['n_female']}$]), reflecting real-world cutaneous melanoma incidence patterns where male patients account for the majority of advanced presentations.
-- **Panel B: Age Distribution across Studies**: Evaluated patient ages span from {d['age_min']:.0f} to {d['age_max']:.0f} years with a **median age of {d['age_median']:.1f} years** ($\text{{IQR}} = {d['age_q1']:.1f}\text{{--}}{d['age_q3']:.1f}\text{{ years}}$). Trial cohorts (`Hugo 2016`: median {_format_cohort_age_str(age_results, 'Hugo 2016')}; `Riaz 2017`: median {_format_cohort_age_str(age_results, 'Riaz 2017')}) display consistent age distributions centred around late middle age. *Note: Baseline age annotations were omitted for Liu 2019 ($N = {n_liu}$) in cBioPortal. Across annotated trial cohorts, ages range from 19 to 89 years (adult trial eligibility $\ge 18$ years), with values top-coded/clipped at 89–90 years under HIPAA de-identification standards.*
-- **Panel C: Anti-PD-1 Agent Administered ($N = {ici['n_total']}$)**: Across the trial cohorts, **Pembrolizumab** is administered to **{ici['pct_pembrolizumab']:.1f}%** [$N = {ici['n_pembrolizumab']}$] of patients (all Hugo 2016 and a subset of Liu 2019) and **Nivolumab** is administered to **{ici['pct_nivolumab']:.1f}%** [$N = {ici['n_nivolumab']}$] of patients (all Riaz 2017 and a subset of Liu 2019).
+- **Panel B: Age Distribution across Studies**: Evaluated patient ages span from {d['age_min']:.0f} to {d['age_max']:.0f} years with a **median age of {d['age_median']:.1f} years** ($\text{{IQR}} = {d['age_q1']:.1f}\text{{--}}{d['age_q3']:.1f}\text{{ years}}$). Trial cohorts ({age_annotation_str}) display consistent age distributions centred around late middle age. *Note: Across annotated trial cohorts, ages range from 19 to 89 years (adult trial eligibility $\ge 18$ years), with values top-coded/clipped at 89–90 years under HIPAA de-identification standards.*
+- **Panel C: Anti-PD-1 Agent Administered ($N = {ici['n_total']}$)**: Across the trial cohorts, **Pembrolizumab** is administered to **{ici['pct_pembrolizumab']:.1f}%** [$N = {ici['n_pembrolizumab']}$] of patients and **Nivolumab** is administered to **{ici['pct_nivolumab']:.1f}%** [$N = {ici['n_nivolumab']}$] of patients.
 - **Panel D: Prior Anti-CTLA-4 Therapy Status ($N = {ctla4['n_total']}$)**: Across all trial patients, **{ctla4['pct_prior_ctla4']:.1f}%** [$N = {ctla4['n_prior_ctla4']}$] received prior anti-CTLA-4 therapy (Ipilimumab), while **{ctla4['pct_naive']:.1f}%** [$N = {ctla4['n_naive']}$] were anti-CTLA-4 naïve prior to anti-PD-1 initiation.
 
 _**Table 1: Baseline Patient and Disease Characteristics**_
@@ -839,15 +845,15 @@ _**Table 2: Sample Attrition Across Preprocessing Steps**_
 {attrition_table}
 
 ### Key Observations
-1. **Overall Cohort Size ($N = {n_total}$)**: The largest individual dataset is **{largest_cohort}** ($N = {n_values[largest_cohort]}$). Combined across all three trial cohorts, **$N = {final_total}$** cleaned patient records were harmonised for downstream analysis.
-2. **Sample Attrition ({retention_pct:.1f}% Retention)**: Across all {initial_total} initial records, **{attrition_text}**. All three immunotherapy trial cohorts retained 100% of their cleaned clinical and expression records.
+1. **Overall Cohort Size ($N = {n_total}$)**: The largest individual dataset is **{largest_cohort}** ($N = {n_values[largest_cohort]}$). Combined across all {n_cohorts} trial cohorts, **$N = {final_total}$** cleaned patient records were harmonised for downstream analysis.
+2. **Sample Attrition ({retention_pct:.1f}% Retention)**: Across all {initial_total} initial records, **{attrition_text}**. All {n_cohorts} immunotherapy trial cohorts retained 100% of their cleaned clinical and expression records.
 3. **Follow-up Duration**: **{longest_fu_cohort}** shows the longest median follow-up duration (**{format_median(survival_results[longest_fu_cohort]['median_follow_up'])} months**).
-4. **Treatment History & Clinical Context**: All $N = {n_riaz}$ patients in **Riaz 2017** were previously treated with anti-CTLA-4 (Ipilimumab), representing an Ipilimumab-refractory population relative to the anti-CTLA-4 naïve patients in **Liu 2019** ($N = {n_liu}$) and **Hugo 2016** ($N = {n_hugo}$).
+4. **Treatment History & Clinical Context**: Enrolled cohorts represent diverse treatment contexts including both treatment-naïve and pre-treated patient populations across {cohorts_list_str}.
 
 ## 3. Overall Survival Curves (KM Plots)
 
 > [!INFO] Why We Are Doing This
-> **What**: We plot unstratified Kaplan-Meier overall survival curves for each of the three active immunotherapy trial cohorts.
+> **What**: We plot unstratified Kaplan-Meier overall survival curves for each of the {n_cohorts} active immunotherapy trial cohorts.
 > **Why**: Visualising baseline mortality rates establishes the clinical context for each dataset and confirms that follow-up duration is sufficient to evaluate treatment outcomes.
 > **Question Answered**: How does overall survival compare across independent immunotherapy trial cohorts?
 
@@ -855,22 +861,22 @@ The unstratified Kaplan-Meier overall survival curves for each trial cohort are 
 
 ![Overall Survival KM Curves (Trial Cohorts)](../../plots/clinical/{plot_path.name})
 
-_**Figure 2: Unstratified Overall Survival KM Curves across All Three Immunotherapy Trial Cohorts.**_
+_**Figure 2: Unstratified Overall Survival KM Curves across All {n_cohorts} Immunotherapy Trial Cohorts.**_
 
 ## 4. Overall Survival Stratified by Immunotherapy Response
 
 > [!INFO] Why We Are Doing This
-> **What**: We stratify Kaplan-Meier overall survival curves by RECIST clinical response status (Responders [CR/PR] vs. Non-responders [PD]) across the three immunotherapy trial cohorts ($N = {n_total}$).
+> **What**: We stratify Kaplan-Meier overall survival curves by RECIST clinical response status (Responders [CR/PR] vs. Non-responders [PD]) across the {n_cohorts} immunotherapy trial cohorts ($N = {n_total}$).
 > **Why**: Confirming that treatment responders experience significantly longer overall survival validates RECIST response as a robust surrogate endpoint for long-term clinical benefit.
 > **Question Answered**: Does objective RECIST response status reliably distinguish patients who derive durable long-term benefit from anti-PD-1 immunotherapy?
 
 ![Overall Survival by Immunotherapy Response (RECIST)](../../plots/clinical/km_os_by_response.png)
 
-_**Figure 3: Overall Survival Stratified by RECIST Response Status across Immunotherapy Trial Cohorts.** Treatment responders (CR/PR) exhibit significantly superior overall survival compared to non-responders (PD) across all three trial cohorts (Log-rank $p < 0.0001$)._
+_**Figure 3: Overall Survival Stratified by RECIST Response Status across Immunotherapy Trial Cohorts.** Treatment responders (CR/PR) exhibit significantly superior overall survival compared to non-responders (PD) across trial cohorts (Log-rank $p < 0.0001$)._
 
 > [!INSIGHT] Key Insights: Survival Stratification by Response
-> 1. **Profound Survival Benefit**: Treatment responders (CR/PR) achieve significantly longer overall survival compared to non-responders (PD) across all three independent trial cohorts (Liu 2019, Hugo 2016, and Riaz 2017; all Log-rank $p < 0.0001$).
-> 2. **Durable Long-Term Survival**: In **Liu 2019**, non-responders experience rapid mortality whereas the majority of responders survive well beyond 50 months. Similar durable separation is observed in Hugo 2016 and Riaz 2017.
+> 1. **Profound Survival Benefit**: Treatment responders (CR/PR) achieve significantly longer overall survival compared to non-responders (PD) across independent trial cohorts ({cohorts_list_str}; Log-rank $p < 0.0001$).
+> 2. **Durable Long-Term Survival**: Durable separation is consistently observed between responders and non-responders across {cohorts_list_str}.
 > 3. **Conclusion**: Objective RECIST response is a highly robust surrogate endpoint for overall survival in metastatic melanoma, justifying its use as the primary outcome for predictive model training.
 
 ## 5. Univariate Associations with Response (Forest Plot)
