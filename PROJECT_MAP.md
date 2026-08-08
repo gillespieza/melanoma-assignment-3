@@ -3,7 +3,7 @@
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before
 > exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-08 (Added explicit dynamic dataset loading directive to `.agents/AGENTS.md` Rule 9; updated `cohort_characteristics_clinical.md` report generator `run_clinical_analysis.py` to embed split Forest Plots [Clinical, Mutational, Genomic, and Master Composite]).
+> **Last updated**: 2026-08-08 (Routed `run_response_km_curves.py` log output to subproject directory `q1-response-predictor/logs/run_response_km_curves.log` per `.agents/AGENTS.md` Rule 10; verified clean execution with exit code 0).
 
 ## Repository Overview
 
