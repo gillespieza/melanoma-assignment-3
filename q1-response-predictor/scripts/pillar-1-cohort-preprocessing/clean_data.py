@@ -642,14 +642,7 @@ def _add_tcga_treatment_features(
     df_treatment = _load_and_validate_tcga_timeline(raw_dir / _TCGA_TIMELINE_FILENAME)
     if df_treatment is None:
         return clinical_df
-    tx_features = _build_treatment_summary_features(df_treatment)
-    tx_features = _build_treatment_type_indicators(df_treatment, tx_features)
-    tx_features = _build_key_agent_indicators(df_treatment, tx_features)
-    tx_features.index = tx_features.index.map(standardise_sample_id)
-    return _merge_treatment_features_into_clinical(clinical_df, tx_features, dataset)
 
-    # Apply the same patient prefix used on the clinical DataFrame so that the
-    # merge key matches (e.g. TCGA GDC prefixes IDs with "TCGA_GDC_").
     if dataset.patient_prefix:
         df_treatment[_COL_PATIENT_ID] = (
             dataset.patient_prefix + df_treatment[_COL_PATIENT_ID].astype(str)
@@ -661,13 +654,9 @@ def _add_tcga_treatment_features(
 
     print("    Building patient-level treatment summary...")
     tx_features = _build_treatment_summary_features(df_treatment)
-    print(f"    Building treatment type indicator columns ({n_types} types)...")
     tx_features = _build_treatment_type_indicators(df_treatment, tx_features)
-    n_agents = len(_KEY_TREATMENT_AGENTS)
-    print(f"    Building key agent indicator columns ({n_agents} agents)...")
     tx_features = _build_key_agent_indicators(df_treatment, tx_features)
     tx_features = tx_features.reset_index()
-    print(f"    Merging {tx_features.shape[1] - 1} treatment features onto clinical data...")
 
     merged = clinical_df.merge(tx_features, on=_COL_PATIENT_ID, how="left")
     if _COL_RESPONSE not in merged.columns:
