@@ -590,34 +590,49 @@ def plot_km_os(
 def _build_demographic_rows(
     cohort_results: dict[str, dict[str, Any]],
     cohort_order: list[str],
+    overall_demographics: dict[str, Any] | None = None,
 ) -> list[dict[str, str]]:
-    """Builds demographic rows for clinical characteristics table."""
+    """Builds demographic rows for clinical characteristics table with Total column."""
     age_results = {c: cohort_results[c]["age"] for c in cohort_order}
     sex_results = {c: cohort_results[c]["sex"] for c in cohort_order}
 
+    tot_female = sum(sex_results[c]["n_female"] for c in cohort_order)
+    tot_sex_avail = sum(sex_results[c]["n_sex_available"] for c in cohort_order)
+
+    total_age_str = (
+        f"{overall_demographics['age_median']:.1f} ({overall_demographics['age_q1']:.1f}-{overall_demographics['age_q3']:.1f})"
+        if overall_demographics and "age_median" in overall_demographics and not pd.isna(overall_demographics["age_median"])
+        else "N/A"
+    )
+
     return [
-        {"Characteristic": "**Demographics**", **{c: "" for c in cohort_order}},
-        {"Characteristic": "Age, median (IQR)", **{c: format_median_iqr(age_results[c]) for c in cohort_order}},
+        {"Characteristic": "**Demographics**", **{c: "" for c in cohort_order}, "Total": ""},
+        {
+            "Characteristic": "Age, median (IQR)",
+            **{c: format_median_iqr(age_results[c]) for c in cohort_order},
+            "Total": total_age_str,
+        },
         {
             "Characteristic": "Female sex, n (%)",
             **{
                 c: format_count_percentage(count=sex_results[c]["n_female"], total=sex_results[c]["n_sex_available"])
                 for c in cohort_order
             },
+            "Total": format_count_percentage(count=tot_female, total=tot_sex_avail),
         },
-        {"Characteristic": "", **{c: "" for c in cohort_order}},
+        {"Characteristic": "", **{c: "" for c in cohort_order}, "Total": ""},
     ]
 
 
 def _build_treatment_rows(
     cohort_results: dict[str, dict[str, Any]],
     cohort_order: list[str],
+    total_n: int,
 ) -> list[dict[str, str]]:
-    """Builds treatment rows for clinical characteristics table across all active cohorts."""
+    """Builds treatment rows for clinical characteristics table across all active cohorts with Total column."""
     survival_results = {c: cohort_results[c]["survival"] for c in cohort_order}
     treatment_results = {c: cohort_results[c]["treatment"] for c in cohort_order}
 
-    # Extract all unique treatment agents present across active cohorts
     all_agents: list[str] = []
     for c in cohort_order:
         agents = treatment_results[c].get("agents", {})
@@ -626,41 +641,51 @@ def _build_treatment_rows(
                 all_agents.append(agent_name)
 
     rows: list[dict[str, str]] = [
-        {"Characteristic": "**Treatment Agents & Exposure**", **{c: "" for c in cohort_order}},
+        {"Characteristic": "**Treatment Agents & Exposure**", **{c: "" for c in cohort_order}, "Total": ""},
     ]
 
     for agent in all_agents:
+        tot_cnt = sum(treatment_results[c].get("agents", {}).get(agent, 0) for c in cohort_order)
         row = {"Characteristic": f"Agent — {agent}"}
         for c in cohort_order:
             cnt = treatment_results[c].get("agents", {}).get(agent, 0)
             tot = survival_results[c]["n_total"]
             row[c] = format_count_percentage(count=cnt, total=tot) if cnt > 0 else "0 (0.0%)"
+        row["Total"] = format_count_percentage(count=tot_cnt, total=total_n)
         rows.append(row)
 
     # Prior anti-CTLA-4 exposure row
+    tot_prior = sum(treatment_results[c].get("prior_ctla4", 0) for c in cohort_order)
     prior_row = {"Characteristic": "Prior anti-CTLA-4 therapy"}
     for c in cohort_order:
         cnt = treatment_results[c].get("prior_ctla4", 0)
         tot = survival_results[c]["n_total"]
         prior_row[c] = format_count_percentage(count=cnt, total=tot) if cnt > 0 else "0 (0.0%)"
+    prior_row["Total"] = format_count_percentage(count=tot_prior, total=total_n)
     rows.append(prior_row)
 
-    rows.append({"Characteristic": "", **{c: "" for c in cohort_order}})
+    rows.append({"Characteristic": "", **{c: "" for c in cohort_order}, "Total": ""})
     return rows
 
 
 def _build_survival_rows(
     cohort_results: dict[str, dict[str, Any]],
     cohort_order: list[str],
+    pooled_median_os: float = float("nan"),
+    pooled_median_fu: float = float("nan"),
 ) -> list[dict[str, str]]:
-    """Builds survival outcome rows for clinical characteristics table."""
+    """Builds survival outcome rows for clinical characteristics table with Total column."""
     survival_results = {c: cohort_results[c]["survival"] for c in cohort_order}
 
+    tot_events = sum(survival_results[c]["n_events"] for c in cohort_order)
+    tot_valid_os = sum(survival_results[c]["n_valid_os"] for c in cohort_order)
+
     return [
-        {"Characteristic": "**Survival Outcomes**", **{c: "" for c in cohort_order}},
+        {"Characteristic": "**Survival Outcomes**", **{c: "" for c in cohort_order}, "Total": ""},
         {
             "Characteristic": "Median OS, months (95% CI)",
             **{c: format_median(survival_results[c]["median_os"]) for c in cohort_order},
+            "Total": format_median(pooled_median_os),
         },
         {
             "Characteristic": "OS events, n (%)",
@@ -671,10 +696,12 @@ def _build_survival_rows(
                 )
                 for c in cohort_order
             },
+            "Total": format_count_percentage(count=tot_events, total=tot_valid_os),
         },
         {
             "Characteristic": "Median follow-up, months",
             **{c: format_median(survival_results[c]["median_follow_up"]) for c in cohort_order},
+            "Total": format_median(pooled_median_fu),
         },
     ]
 
@@ -682,17 +709,44 @@ def _build_survival_rows(
 def generate_clinical_characteristics_table(
     cohort_results: dict[str, dict[str, Any]],
     cohort_order: list[str],
+    overall_demographics: dict[str, Any] | None = None,
+    cohort_data: dict[str, pd.DataFrame] | None = None,
 ) -> str:
-    """Generates the comparative clinical characteristics Markdown table."""
+    """Generates the comparative clinical characteristics Markdown table with a Total column."""
     survival_results = {c: cohort_results[c]["survival"] for c in cohort_order}
+    total_n = sum(survival_results[c]["n_total"] for c in cohort_order)
+
+    # Compute pooled survival stats if cohort_data provided
+    pooled_median_os = float("nan")
+    pooled_median_fu = float("nan")
+    if cohort_data is not None:
+        times, events = [], []
+        for df in cohort_data.values():
+            time_col, event_col = _resolve_os_columns(df)
+            if time_col and event_col:
+                sub = df[[time_col, event_col]].dropna()
+                valid_mask = (sub[time_col] > 0)
+                sub_valid = sub[valid_mask]
+                times.extend(sub_valid[time_col].tolist())
+                events.extend(sub_valid[event_col].tolist())
+        if times:
+            kmf = KaplanMeierFitter()
+            kmf.fit(times, events)
+            pooled_median_os = float(kmf.median_survival_time_)
+            pooled_median_fu = float(pd.Series(times).median())
+
     rows: list[dict[str, str]] = [
-        {"Characteristic": "**N**", **{c: str(survival_results[c]["n_total"]) for c in cohort_order}},
-        {"Characteristic": "", **{c: "" for c in cohort_order}},
+        {
+            "Characteristic": "**N**",
+            **{c: str(survival_results[c]["n_total"]) for c in cohort_order},
+            "Total": str(total_n),
+        },
+        {"Characteristic": "", **{c: "" for c in cohort_order}, "Total": ""},
     ]
 
-    rows.extend(_build_demographic_rows(cohort_results, cohort_order))
-    rows.extend(_build_treatment_rows(cohort_results, cohort_order))
-    rows.extend(_build_survival_rows(cohort_results, cohort_order))
+    rows.extend(_build_demographic_rows(cohort_results, cohort_order, overall_demographics))
+    rows.extend(_build_treatment_rows(cohort_results, cohort_order, total_n))
+    rows.extend(_build_survival_rows(cohort_results, cohort_order, pooled_median_os, pooled_median_fu))
 
     return pd.DataFrame(rows).to_markdown(index=False)
 
@@ -770,6 +824,7 @@ def generate_clinical_report(
     ici_breakdown: dict[str, Any],
     ctla4_breakdown: dict[str, Any],
     demographics_grid_path: Path,
+    cohort_data: dict[str, pd.DataFrame] | None = None,
 ) -> None:
     """Generates an Obsidian-compatible Markdown clinical characteristics report."""
     timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
@@ -806,7 +861,9 @@ def generate_clinical_report(
     ]
     top_agents_str = ", ".join(top_agents_list) if top_agents_list else "no agent data available"
 
-    clinical_characteristics_table = generate_clinical_characteristics_table(cohort_results, cohort_order)
+    clinical_characteristics_table = generate_clinical_characteristics_table(
+        cohort_results, cohort_order, overall_demographics, cohort_data
+    )
     attrition_table = generate_attrition_table(attrition_data, cohort_order)
 
     frontmatter = generate_obsidian_frontmatter(
@@ -1076,6 +1133,7 @@ def main() -> None:
         ici_breakdown=ici_breakdown,
         ctla4_breakdown=ctla4_breakdown,
         demographics_grid_path=DEMO_GRID_PATH,
+        cohort_data=cohort_data,
     )
 
     print("\n==================================================")
