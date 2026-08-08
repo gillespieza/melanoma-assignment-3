@@ -61,6 +61,14 @@ class DatasetConfig:
             Whether this dataset should be included in merged cohort outputs.
             Set to False to include in cleaning/QC but exclude from merges
             (e.g. superseded datasets kept for archival reference).
+
+        cohort_immunotherapy:
+            Whether all samples in this cohort received immunotherapy.
+            Used as the authoritative fallback when no IMMUNOTHERAPY or
+            TX_TYPE_IMMUNOTHERAPY column is present in the cleaned clinical
+            data. iAtlas cohorts set this implicitly; non-iAtlas cohorts
+            that are pure immunotherapy trials (e.g. Van Allen 2015) must
+            set this explicitly to True in datasets.yaml.
     """
 
     cohort_name: str
@@ -76,6 +84,7 @@ class DatasetConfig:
     baseline_only: bool = False
     mutations_by_patient: bool = False
     merge_enabled: bool = True
+    cohort_immunotherapy: bool = False
     patient_prefix: str = ""
     sample_prefix: str = ""
 
@@ -169,6 +178,7 @@ def load_dataset_config(
         "baseline_only",
         "mutations_by_patient",
         "merge_enabled",
+        "cohort_immunotherapy",
         "patient_prefix",
         "sample_prefix",
     }
@@ -235,6 +245,7 @@ def _validate_field_types(
         "baseline_only",
         "mutations_by_patient",
         "merge_enabled",
+        "cohort_immunotherapy",
     }
 
     for field in string_fields:

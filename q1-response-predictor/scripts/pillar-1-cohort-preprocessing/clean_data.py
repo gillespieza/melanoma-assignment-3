@@ -575,6 +575,7 @@ def _build_key_agent_indicators(
 def _add_tcga_treatment_features(
     clinical_df: pd.DataFrame,
     raw_dir: Path,
+    dataset: DatasetConfig,
 ) -> pd.DataFrame:
     """Add aggregated treatment features from the TCGA treatment timeline."""
     timeline_path = raw_dir / _TCGA_TIMELINE_FILENAME
@@ -595,10 +596,32 @@ def _add_tcga_treatment_features(
         if col in df_treatment.columns:
             df_treatment[col] = pd.to_numeric(df_treatment[col], errors="coerce")
 
+    n_rows = len(df_treatment)
+    n_patients = df_treatment[_COL_PATIENT_ID].nunique()
+    n_types = df_treatment[_COL_TREATMENT_TYPE].nunique()
+    print(f"    Loaded {n_rows:,} treatment events for {n_patients:,} patients "
+          f"({n_types} treatment types).")
+
+    # Apply the same patient prefix used on the clinical DataFrame so that the
+    # merge key matches (e.g. TCGA GDC prefixes IDs with "TCGA_GDC_").
+    if dataset.patient_prefix:
+        df_treatment[_COL_PATIENT_ID] = (
+            dataset.patient_prefix + df_treatment[_COL_PATIENT_ID].astype(str)
+        ).str.upper()
+    else:
+        df_treatment[_COL_PATIENT_ID] = (
+            df_treatment[_COL_PATIENT_ID].astype(str).str.upper()
+        )
+
+    print("    Building patient-level treatment summary...")
     tx_features = _build_treatment_summary_features(df_treatment)
+    print(f"    Building treatment type indicator columns ({n_types} types)...")
     tx_features = _build_treatment_type_indicators(df_treatment, tx_features)
+    n_agents = len(_KEY_TREATMENT_AGENTS)
+    print(f"    Building key agent indicator columns ({n_agents} agents)...")
     tx_features = _build_key_agent_indicators(df_treatment, tx_features)
     tx_features = tx_features.reset_index()
+    print(f"    Merging {tx_features.shape[1] - 1} treatment features onto clinical data...")
 
     return clinical_df.merge(tx_features, on=_COL_PATIENT_ID, how="left")
 
@@ -606,6 +629,7 @@ def _add_tcga_treatment_features(
 def _add_tcga_hypoxia_features(
     clinical_df: pd.DataFrame,
     raw_dir: Path,
+    dataset: DatasetConfig,
 ) -> pd.DataFrame:
     """Add supplementary TCGA hypoxia data when available."""
     hypoxia_path = raw_dir / _TCGA_HYPOXIA_FILENAME
@@ -620,9 +644,16 @@ def _add_tcga_hypoxia_features(
         print("  [WARNING] Hypoxia file missing required columns. Skipping.")
         return clinical_df
 
-    df_hypoxia[_COL_PATIENT_ID] = (
-        df_hypoxia[_COL_PATIENT_ID].astype(str).str.strip().str.upper()
-    )
+    # Apply the same patient prefix used on the clinical DataFrame so that
+    # the join key matches (mirrors fix applied to treatment timeline join).
+    if dataset.patient_prefix:
+        df_hypoxia[_COL_PATIENT_ID] = (
+            dataset.patient_prefix + df_hypoxia[_COL_PATIENT_ID].astype(str).str.strip()
+        ).str.upper()
+    else:
+        df_hypoxia[_COL_PATIENT_ID] = (
+            df_hypoxia[_COL_PATIENT_ID].astype(str).str.strip().str.upper()
+        )
 
     return clinical_df.merge(
         df_hypoxia[[_COL_PATIENT_ID, _COL_HYPOXIA_SCORE]],
@@ -704,8 +735,8 @@ def _process_tcga_clinical_stage(
         n_before=n_raw, n_after=len(df_clean),
         reason="Applied identifier standardisation and clinical data cleaning.",
     )
-    df_clean = _add_tcga_treatment_features(df_clean, raw_dir)
-    df_clean = _add_tcga_hypoxia_features(df_clean, raw_dir)
+    df_clean = _add_tcga_treatment_features(df_clean, raw_dir, dataset)
+    df_clean = _add_tcga_hypoxia_features(df_clean, raw_dir, dataset)
     df_clean = _map_durable_benefit_to_response(df_clean)
     return df_clean.set_index(_COL_SAMPLE_ID)
 

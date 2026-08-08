@@ -52,8 +52,8 @@ datasets:
     baseline_only: false
     mutations_by_patient: false
     merge_enabled: false  # Superseded by skcm_tcga_gdc; retained for archival QC only
-    patient_prefix: ""
-    sample_prefix: ""
+    patient_prefix: "tcga_pancan_"
+    sample_prefix: "tcga_pancan_"
     processing_strategy: "tcga"
 
   - cohort_name: "TCGA GDC 2025"
@@ -94,6 +94,7 @@ datasets:
     mutation_file: "data_mutations.txt"
     baseline_only: false
     mutations_by_patient: false
+    cohort_immunotherapy: true   # Pure ipilimumab (CTLA-4) trial — all patients on immunotherapy
     patient_prefix: "van_allen_"
     sample_prefix: "van_allen_"
     processing_strategy: "tcga"  # Expression file uses Entrez_Gene_Id, not Hugo_Symbol

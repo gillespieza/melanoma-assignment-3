@@ -336,15 +336,27 @@ def _copy_clinical_specimen_and_tx(
     spec_col = next((c for c in spec_cols if c in df_clin.columns), None)
     df[_COL_SPECIMEN_TYPE] = _normalise_specimen_type(df_clin[spec_col]) if spec_col else _VAL_NA
 
-    tx_cols = (_COL_IMMUNOTHERAPY, "TX_TYPE_IMMUNOTHERAPY")
-    tx_col = next((c for c in tx_cols if c in df_clin.columns), None)
+    # Check explicit column first, then fall back to prefix match — the GDC
+    # dataset uses "TX_TYPE_IMMUNOTHERAPY_(INCLUDING_VACCINES)" while PanCan
+    # uses the bare "TX_TYPE_IMMUNOTHERAPY".
+    exact_tx_cols = (_COL_IMMUNOTHERAPY, "TX_TYPE_IMMUNOTHERAPY")
+    tx_col = next((c for c in exact_tx_cols if c in df_clin.columns), None)
+    if tx_col is None:
+        tx_col = next(
+            (c for c in df_clin.columns if c.startswith("TX_TYPE_IMMUNOTHERAPY")),
+            None,
+        )
     if tx_col:
         df[_COL_IMMUNOTHERAPY] = (
             pd.to_numeric(df_clin[tx_col], errors="coerce")
             .fillna(0).astype(int)
         )
     else:
-        df[_COL_IMMUNOTHERAPY] = 1 if dataset.processing_strategy == _STRATEGY_IATLAS else 0
+        # No per-sample immunotherapy column: use the cohort-level config flag.
+        # iAtlas cohorts are implicitly all-immunotherapy; others must declare
+        # cohort_immunotherapy: true explicitly in datasets.yaml.
+        is_immuno = dataset.cohort_immunotherapy or dataset.processing_strategy == _STRATEGY_IATLAS
+        df[_COL_IMMUNOTHERAPY] = 1 if is_immuno else 0
 
 
 def _copy_clinical_genomic_burdens(df_clin: pd.DataFrame, df: pd.DataFrame) -> None:
@@ -479,7 +491,7 @@ def _collect_cohort_genomic_rows(
     df_mut = mutation_data.get(cohort_name, pd.DataFrame())
     df_driver_mut = (
         _load_driver_mutation_features(df_mut) if not df_mut.empty
-        else pd.DataFrame(index=df_clin.index, columns=mutation_features).fillna(0)
+        else pd.DataFrame(index=df_clin.index, columns=mutation_features).fillna(0).infer_objects(copy=False)
     )
     return [
         _build_sample_genomic_row(
