@@ -822,12 +822,23 @@ def process_iatlas_dataset(
     """Process an iAtlas/cBioPortal immunotherapy cohort."""
     print(f"Cleaning {dataset.cohort_name} ({dataset.study_id})...")
     attrition: list[AttritionRecord] = []
+    print("  Loading and harmonising clinical data...")
     clinical_df = _process_iatlas_clinical_stage(raw_dir, dataset, attrition)
+    print(f"    Clinical data harmonised ({len(clinical_df):,} samples).")
+
+    print(f"  Loading gene expression matrix ({dataset.expression_file})...")
     expression_df = _load_iatlas_expression(raw_dir / dataset.expression_file, dataset)
+    print(f"    Expression matrix loaded ({expression_df.shape[0]:,} samples × {expression_df.shape[1]:,} genes).")
+
     expression_df, clinical_df = _align_and_record_expression(
         expression_df, clinical_df, dataset, attrition
     )
+
+    print(f"  Parsing somatic mutations ({dataset.mutation_file})...")
     mutation_df = _process_mutations(raw_dir, clinical_df, dataset)
+    if not mutation_df.empty and mutation_df.shape[1] > 0:
+        print(f"    Mutation matrix parsed ({mutation_df.shape[0]:,} samples × {mutation_df.shape[1]:,} genes).")
+
     bundle = CleanedDataBundle(clinical_df, expression_df, mutation_df, attrition)
     return _finalise_dataset(dataset, bundle, raw_dir, processed_dir)
 
@@ -848,15 +859,26 @@ def process_tcga_dataset(
     """Process the TCGA-SKCM dataset."""
     print(f"Cleaning {dataset.cohort_name} ({dataset.study_id})...")
     attrition: list[AttritionRecord] = []
+    print("  Loading and harmonising clinical data...")
     clinical_df = _process_tcga_clinical_stage(raw_dir, dataset, attrition)
+    print(f"    Clinical data harmonised ({len(clinical_df):,} samples).")
+
     cache_path = _resolve_entrez_cache_path(processed_dir)
+    print(f"  Loading TCGA gene expression matrix ({dataset.expression_file})...")
     expression_df = _load_tcga_expression(
         raw_dir / dataset.expression_file, dataset, cache_path
     )
+    print(f"    Expression matrix loaded ({expression_df.shape[0]:,} samples × {expression_df.shape[1]:,} genes).")
+
     expression_df, clinical_df = _align_and_record_expression(
         expression_df, clinical_df, dataset, attrition
     )
+
+    print(f"  Parsing somatic mutations ({dataset.mutation_file})...")
     mutation_df = _process_mutations(raw_dir, clinical_df, dataset)
+    if not mutation_df.empty and mutation_df.shape[1] > 0:
+        print(f"    Mutation matrix parsed ({mutation_df.shape[0]:,} samples × {mutation_df.shape[1]:,} genes).")
+
     bundle = CleanedDataBundle(clinical_df, expression_df, mutation_df, attrition)
     return _finalise_dataset(dataset, bundle, raw_dir, processed_dir)
 
@@ -1331,10 +1353,18 @@ def main() -> None:
     if success_count > 0:
         try:
             print("\n  Updating config/data_dictionary.json...")
-            from scripts.pillar_1_cohort_preprocessing.generate_data_dictionary import (
-                OUTPUT_JSON,
-                build_full_data_dictionary,
-            )
+            try:
+                from generate_data_dictionary import (
+                    OUTPUT_JSON,
+                    build_full_data_dictionary,
+                )
+            except ImportError:
+                if str(SCRIPT_DIR) not in sys.path:
+                    sys.path.insert(0, str(SCRIPT_DIR))
+                from generate_data_dictionary import (
+                    OUTPUT_JSON,
+                    build_full_data_dictionary,
+                )
             dictionary = build_full_data_dictionary(PROCESSED_DIR)
             with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
                 import json
