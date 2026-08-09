@@ -31,6 +31,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+from src.data_loaders import load_all_active_cohorts, load_cohort_by_name
 from src.evaluation import calculate_extended_metrics
 from src.models import run_loco_cv
 from src.signatures import extract_all_signatures, zscore_df
@@ -73,15 +74,16 @@ LOG_PATH: Path = LOG_DIR / "generate_loco_heatmap.log"
 # Helper Functions
 # ---------------------------------------------------------------------------
 def _load_and_prep_cohort(
-    loader_func: Any,
+    cohort_name: str,
     data_dir: Path,
 ) -> Tuple[pd.DataFrame, pd.Series]:
-    """Loads a cohort dataset, filters non-null responder targets, and computes z-scored signatures."""
-    expr, clin = loader_func(data_dir)
-    mask = clin["RESPONDER"].notna()
+    """Loads a cohort by name, filters non-null responder targets, and computes z-scored signatures."""
+    expr, clin = load_cohort_by_name(cohort_name, data_dir)
+    resp_col = "response" if "response" in clin.columns else "RESPONDER"
+    mask = clin[resp_col].notna()
     expr_clean, clin_clean = expr[mask], clin[mask]
     sigs = zscore_df(extract_all_signatures(expr_clean))
-    y = clin_clean["RESPONDER"].astype(int)
+    y = clin_clean[resp_col].astype(int)
     return sigs, y
 
 
@@ -206,14 +208,12 @@ def plot_loco_heatmap_from_results(
 
 def generate_loco_heatmap_standalone() -> Path:
     """Standalone runner that computes LOCO cross-validation on live datasets and plots heatmap."""
-    sigs_liu, y_liu = _load_and_prep_cohort(load_liu_2019, DATA_DIR)
-    sigs_hugo, y_hugo = _load_and_prep_cohort(load_hugo_2016, DATA_DIR)
-    sigs_riaz, y_riaz = _load_and_prep_cohort(load_riaz_2017, DATA_DIR)
+    config_path = _SUBPROJECT_ROOT.parent / "config" / "datasets.yaml"
+    _, _, _, trial_names = load_all_active_cohorts(config_path, DATA_DIR, merge_only=True)
 
     cohort_dfs = {
-        "Liu 2019": (sigs_liu, y_liu),
-        "Hugo 2016": (sigs_hugo, y_hugo),
-        "Riaz 2017": (sigs_riaz, y_riaz),
+        name: _load_and_prep_cohort(name, DATA_DIR)
+        for name in trial_names
     }
 
     all_loco_results = {

@@ -56,6 +56,7 @@ from sklearn.preprocessing import StandardScaler
 # ---------------------------------------------------------------------------
 # Project Imports
 # ---------------------------------------------------------------------------
+from src.data_loaders import load_all_active_cohorts
 from src.models import get_model
 from src.signatures import extract_all_signatures, zscore_df
 from src.styles import set_presentation_style
@@ -84,7 +85,8 @@ MODEL_LABELS_WRAPPED: Dict[str, str] = {
     "lr": "Logistic\nRegression",
 }
 
-COHORT_ORDER: List[str] = ["Hugo 2016", "Liu 2019", "Riaz 2017"]
+# Populated at runtime from datasets.yaml by _load_all_cohort_data()
+COHORT_ORDER: List[str] = []
 
 FEATURE_COLS_SIGS: List[str] = ["IFN_gamma", "TIS", "CYT", "CD8_Tcell", "IMPRES", "PD_L1"]
 K_VALUES: List[int] = [20, 100, 200]
@@ -116,37 +118,38 @@ def _load_all_cohort_data(data_dir: Path) -> Tuple[
 ]:
     """Loads per-cohort signature and expression DataFrames.
 
-    Signatures are computed as in run_loco_cv to ensure AUC match (0.685 for Riaz SVM).
+    Signatures are computed as in run_loco_cv to ensure AUC match.
     Expression datasets intersect common genes across cohorts for SelectKBest.
+    Sets the module-level COHORT_ORDER from datasets.yaml trial names.
     """
-    loaders = {
-        "Hugo 2016": load_hugo_2016,
-        "Liu 2019": load_liu_2019,
-        "Riaz 2017": load_riaz_2017,
-    }
+    global COHORT_ORDER
+    config_path = SUBPROJECT_ROOT.parent / "config" / "datasets.yaml"
+    expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(
+        config_path, data_dir, merge_only=True
+    )
+    COHORT_ORDER = trial_names
 
     cohort_sigs, cohort_expr, cohort_n = {}, {}, {}
     raw_expr = {}
 
-    for name, loader in loaders.items():
-        expr, clin = loader(data_dir)
+    for name in trial_names:
+        expr, clin = expr_dict[name], clin_dict[name]
         resp_col = "response" if "response" in clin.columns else "RESPONDER"
         y = clin[resp_col].dropna().astype(int)
         expr_m = expr.loc[y.index]
-        
+
         sigs = zscore_df(extract_all_signatures(expr_m))
         cohort_sigs[name] = (sigs.reset_index(drop=True), y.reset_index(drop=True))
         cohort_n[name] = len(y)
         raw_expr[name] = (expr_m, y)
 
-    common_genes = list(
-        set(raw_expr["Hugo 2016"][0].columns)
-        & set(raw_expr["Liu 2019"][0].columns)
-        & set(raw_expr["Riaz 2017"][0].columns)
-    )
+    common_genes = raw_expr[trial_names[0]][0].columns
+    for name in trial_names[1:]:
+        common_genes = common_genes.intersection(raw_expr[name][0].columns)
+    common_genes = list(common_genes)
     print(f"  Common genes across all cohorts: {len(common_genes)}")
 
-    for name in loaders.keys():
+    for name in trial_names:
         expr_c = raw_expr[name][0][common_genes].reset_index(drop=True)
         y_r = raw_expr[name][1].reset_index(drop=True)
         cohort_expr[name] = (expr_c, y_r)

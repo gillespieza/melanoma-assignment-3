@@ -43,11 +43,12 @@ from sklearn.preprocessing import StandardScaler
 # ---------------------------------------------------------------------------
 # Project Imports
 # ---------------------------------------------------------------------------
+from src.data_loaders import load_all_active_cohorts, load_cohort_by_name
 from src.models import get_model
 from src.signatures import extract_all_signatures, zscore_df
 from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import DATA_DIR, PLOTS_DIR, SUBPROJECT_ROOT, rel_path
+from src.utils.paths import DATA_DIR, PLOTS_DIR, rel_path
 from src.utils.plotting import save_fig
 
 set_presentation_style()
@@ -90,25 +91,26 @@ LOG_PATH: Path = LOG_DIR / "generate_5f_cv_heatmap.log"
 # ---------------------------------------------------------------------------
 # Data Loading Helpers
 # ---------------------------------------------------------------------------
-def _load_and_prep_cohort(loader_func, data_dir: Path) -> Tuple[pd.DataFrame, pd.Series]:
-    """Loads one cohort, drops NaN responders, and returns z-scored signatures and labels.
+def _load_and_prep_cohort(cohort_name: str, data_dir: Path) -> Tuple[pd.DataFrame, pd.Series]:
+    """Loads one cohort by name, drops NaN responders, and returns z-scored signatures and labels.
 
     Args:
-        loader_func: Cohort-specific loader (e.g. load_liu_2019).
+        cohort_name: Cohort name as in datasets.yaml (e.g. 'Liu 2019').
         data_dir: Root data directory.
 
     Returns:
         Tuple of (signatures DataFrame, binary response Series).
     """
-    expr, clin = loader_func(data_dir)
-    mask = clin["RESPONDER"].notna()
+    expr, clin = load_cohort_by_name(cohort_name, data_dir)
+    resp_col = "response" if "response" in clin.columns else "RESPONDER"
+    mask = clin[resp_col].notna()
     sigs = zscore_df(extract_all_signatures(expr[mask]))
-    y = clin[mask]["RESPONDER"].astype(int)
+    y = clin[mask][resp_col].astype(int)
     return sigs, y
 
 
 def _pool_cohorts(data_dir: Path) -> Tuple[pd.DataFrame, pd.Series]:
-    """Pools Liu 2019, Hugo 2016, and Riaz 2017 into one feature matrix and label vector.
+    """Pools all active trial cohorts into one feature matrix and label vector.
 
     Args:
         data_dir: Root data directory.
@@ -116,10 +118,11 @@ def _pool_cohorts(data_dir: Path) -> Tuple[pd.DataFrame, pd.Series]:
     Returns:
         Tuple of (pooled signatures DataFrame, pooled response Series) with reset indices.
     """
-    loaders = [load_liu_2019, load_hugo_2016, load_riaz_2017]
+    config_path = SUBPROJECT_ROOT.parent / "config" / "datasets.yaml"
+    _, _, _, trial_names = load_all_active_cohorts(config_path, data_dir, merge_only=True)
     sigs_list, y_list = [], []
-    for loader in loaders:
-        sigs, y = _load_and_prep_cohort(loader, data_dir)
+    for name in trial_names:
+        sigs, y = _load_and_prep_cohort(name, data_dir)
         sigs_list.append(sigs)
         y_list.append(y)
     X_pooled = pd.concat(sigs_list, axis=0).reset_index(drop=True)

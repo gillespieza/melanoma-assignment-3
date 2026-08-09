@@ -47,6 +47,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from xgboost import XGBClassifier
 
+from src.data_loaders import load_all_active_cohorts
 from src.evaluation import calculate_extended_metrics
 from src.models import get_model, run_loco_cv
 from src.signatures import extract_all_signatures, zscore_df
@@ -101,50 +102,51 @@ LOG_PATH: Path = LOG_DIR / "generate_1x2_cv_loco_heatmap.log"
 # Data Loading
 # ---------------------------------------------------------------------------
 def _load_pooled_data(data_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
-    """Loads and pools all three cohorts, intersecting genes to avoid NaNs."""
-    expr_liu, clin_liu = load_liu_2019(data_dir)
-    expr_hugo, clin_hugo = load_hugo_2016(data_dir)
-    expr_riaz, clin_riaz = load_riaz_2017(data_dir)
-
-    common_genes = list(
-        set(expr_liu.columns) & set(expr_hugo.columns) & set(expr_riaz.columns)
+    """Loads and pools all active trial cohorts, intersecting genes to avoid NaNs."""
+    config_path = SUBPROJECT_ROOT.parent / "config" / "datasets.yaml"
+    expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(
+        config_path, data_dir, merge_only=True
     )
+
+    common_genes = expr_dict[trial_names[0]].columns
+    for name in trial_names[1:]:
+        common_genes = common_genes.intersection(expr_dict[name].columns)
+    common_genes = list(common_genes)
     print(f"  Common genes across all cohorts: {len(common_genes)}")
 
-    sig_liu = extract_all_signatures(expr_liu[common_genes])
-    sig_hugo = extract_all_signatures(expr_hugo[common_genes])
-    sig_riaz = extract_all_signatures(expr_riaz[common_genes])
-
-    def _align(sig, clin):
+    def _align(expr, clin):
         resp_col = "response" if "response" in clin.columns else "RESPONDER"
+        sig = extract_all_signatures(expr[common_genes])
         y = clin.loc[sig.index, resp_col].dropna()
         return sig.loc[y.index], y.astype(int)
 
-    sig_liu, y_liu = _align(sig_liu, clin_liu)
-    sig_hugo, y_hugo = _align(sig_hugo, clin_hugo)
-    sig_riaz, y_riaz = _align(sig_riaz, clin_riaz)
+    sig_parts, expr_parts, y_parts = [], [], []
+    for name in trial_names:
+        sig, y = _align(expr_dict[name], clin_dict[name])
+        sig_parts.append(sig)
+        expr_parts.append(expr_dict[name].loc[y.index, common_genes])
+        y_parts.append(y)
 
-    expr_liu_c = expr_liu.loc[y_liu.index, common_genes]
-    expr_hugo_c = expr_hugo.loc[y_hugo.index, common_genes]
-    expr_riaz_c = expr_riaz.loc[y_riaz.index, common_genes]
-
-    X_expr = pd.concat([expr_liu_c, expr_hugo_c, expr_riaz_c]).reset_index(drop=True)
-    X_sigs = pd.concat([sig_liu, sig_hugo, sig_riaz]).reset_index(drop=True)
-    y_pooled = pd.concat([y_liu, y_hugo, y_riaz]).reset_index(drop=True)
-
+    X_expr = pd.concat(expr_parts).reset_index(drop=True)
+    X_sigs = pd.concat(sig_parts).reset_index(drop=True)
+    y_pooled = pd.concat(y_parts).reset_index(drop=True)
     return X_expr, X_sigs, y_pooled
 
 
 def _load_cohort_dfs(data_dir: Path) -> Dict[str, Tuple[pd.DataFrame, pd.Series]]:
     """Loads individual cohort DataFrames for LOCO evaluation."""
     from src.signatures import zscore_df as _zscore
-    loaders = {"Liu 2019": load_liu_2019, "Hugo 2016": load_hugo_2016, "Riaz 2017": load_riaz_2017}
+    config_path = SUBPROJECT_ROOT.parent / "config" / "datasets.yaml"
+    expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(
+        config_path, data_dir, merge_only=True
+    )
     cohort_dfs = {}
-    for name, loader in loaders.items():
-        expr, clin = loader(data_dir)
-        mask = clin["RESPONDER"].notna()
+    for name in trial_names:
+        expr, clin = expr_dict[name], clin_dict[name]
+        resp_col = "response" if "response" in clin.columns else "RESPONDER"
+        mask = clin[resp_col].notna()
         sigs = _zscore(extract_all_signatures(expr[mask]))
-        y = clin[mask]["RESPONDER"].astype(int)
+        y = clin[mask][resp_col].astype(int)
         cohort_dfs[name] = (sigs, y)
     return cohort_dfs
 
