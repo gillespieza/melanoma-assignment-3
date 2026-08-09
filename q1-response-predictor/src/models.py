@@ -181,7 +181,12 @@ def get_baseline_model(model_type: str, random_state: int = 42) -> Any:
             n_jobs=-1,
         )
     elif model_type == "svm":
-        return SVC(probability=True, kernel="rbf", C=1.0, random_state=random_state)
+        # sklearn 1.9 deprecation: probability=True on SVC is deprecated — wrap SVC in
+        # CalibratedClassifierCV(ensemble=False) for Platt scaling instead.
+        return CalibratedClassifierCV(
+            SVC(kernel="rbf", C=1.0, random_state=random_state),
+            ensemble=False,
+        )
     elif model_type == "elasticnet":
         # sklearn 1.8: penalty='elasticnet' deprecated — l1_ratio=0.5 with
         # solver='saga' implicitly selects ElasticNet (50% L1 / 50% L2 mix).
