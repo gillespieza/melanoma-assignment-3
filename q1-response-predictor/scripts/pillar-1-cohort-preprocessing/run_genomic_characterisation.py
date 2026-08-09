@@ -734,7 +734,7 @@ def _build_section_1_info(s: Dict[str, Any]) -> str:
 > epidemiology and to evaluate whether pre-treatment mutations in antigen presentation
 > (`B2M`, `TAP1`, `TAP2`) or IFN-$\\gamma$ signalling (`JAK1`, `JAK2`, `STAT1`) drive primary
 > immunotherapy resistance.
-> - **Question Answered**: Are clinical trial cohorts representative of baseline melanoma genomics,
+> - **Questions**: Are clinical trial cohorts representative of baseline melanoma genomics,
 > and do patients harbour pre-existing mutations in immune evasion pathways prior to therapy?"""
 
 
@@ -830,7 +830,7 @@ def _build_section_2_info(s: Dict[str, Any]) -> str:
 > - **Why**: Somatic mutations generate novel peptide antigens (neoantigens) that trigger T-cell
 > recognition. We test whether TMB correlates with treatment response and whether total TMB can
 > serve as a surrogate marker for predicted neoantigen burden.
-> - **Question Answered**: Do treatment responders exhibit higher baseline TMB than non-responders,
+> - **Questions**: Do treatment responders exhibit higher baseline TMB than non-responders,
 > and is total TMB collinear with predicted neoantigen count?"""
 
 
@@ -880,7 +880,7 @@ def _build_section_3_info(s: Dict[str, Any]) -> str:
 > ($N = {s['n_biomarkers']}$).
 > - **Why**: To identify feature redundancy before model training and evaluate whether genomic
 > mutational burden and transcriptomic immune infiltration capture independent biological axes.
-> - **Question Answered**: Are TMB and neoantigen subtypes redundant, and do mutational burden
+> - **Questions**: Are TMB and neoantigen subtypes redundant, and do mutational burden
 > and transcriptomic immune infiltration represent orthogonal biological biomarkers?"""
 
 
@@ -951,7 +951,7 @@ def _build_section_4_info(s: Dict[str, Any]) -> str:
 > response status, study cohort, and sex.
 > - **Why**: To visualise patient-level co-occurrence, mutual exclusivity, and driver mutation
 > distributions across response categories simultaneously.
-> - **Question Answered**: Are `BRAF` and `NRAS` driver mutations strictly mutually exclusive in
+> - **Questions**: Are `BRAF` and `NRAS` driver mutations strictly mutually exclusive in
 > trial patients, and are treatment responders enriched in specific driver genotypes?"""
 
 

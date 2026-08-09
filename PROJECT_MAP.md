@@ -9,7 +9,7 @@ cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-09 11:13
+updated: 2026-08-09 11:53
 ---
 
 > [!summary]- Contents
@@ -24,13 +24,13 @@ updated: 2026-08-09 11:13
 
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-08 (Completed 3rd Pass audit across all Pillar 1 preprocessing scripts: `merge_datasets.py`, `download_data.py`, `clean_data.py`, `run_dimensionality_reduction.py`, `run_genomic_characterisation.py`; verified 100% logic functions ≤ 30 lines and clean end-to-end pipeline execution with exit code 0).
+> **Last updated**: 2026-08-09 (Updated `PROJECT_MAP.md`: patient stratification renamed from Q5 to Q1.1, Dashboard designated as Q5; removed raw numerical cluster IDs in favour of named biological phenotypes).
 
 ## Repository Overview
 
 **Domain**: Melanoma immunotherapy – predicting anti-PD-1/CTLA-4 response, targeted therapy drug sensitivity, tumour dynamics, and patient stratification across multi-cohort clinical trial data (Liu 2019, Hugo 2016, Riaz 2017, TCGA-SKCM).
 
-**Structure**: 5 research questions (Q1–Q5), each in its own subproject directory, plus shared infrastructure in the root `src/` and `data/` directories. Q5 is the master synthesis engine that integrates Q1–Q4 outputs.
+**Structure**: 5 research questions (Q1–Q5 plus Q1.1), each in its own subproject directory, plus shared infrastructure in the root `src/` and `data/` directories. Q1.1 handles patient stratification, and Q5 is the master synthesis engine (React clinical decision-support dashboard / OncoTwin) that integrates Q1–Q4 & Q1.1 outputs.
 
 ```
 melanoma-assignment-3/
@@ -42,11 +42,11 @@ melanoma-assignment-3/
 ├── plots/                  <- Top-level cross-cohort visualisations
 ├── logs/                   <- Top-level pipeline logs
 ├── q1-response-predictor/  <- Q1: Immunotherapy response prediction
-├── q1.1-patient-stratification/ <- Q5: Patient clustering, clinical utility, treatability
+├── q1.1-patient-stratification/ <- Q1.1: Patient clustering, clinical utility, treatability
 ├── q2-viability-predictor/ <- Q2: Cell-line drug sensitivity modelling
 ├── q3-ode-model/           <- Q3: ODE tumour-immune dynamics
 ├── Q4_dep_map/             <- Q4: DepMap CRISPR + LINCS L1000 target discovery
-└── dashboard/                 <- React clinical decision-support dashboard (OncoTwin)
+└── dashboard/                 <- Q5: React clinical decision-support dashboard (OncoTwin)
 ```
 
 ## Shared Infrastructure (`src/`)
@@ -173,7 +173,7 @@ _Note_: Dataset metadata is stored in `data/config/datasets.yaml`. Q1-specific d
 
 **Question**: Can we predict cell-line drug sensitivity and translate to patient tumours?
 
-> **Note**: Q2 uses an **R-based pipeline** (`Question2.R`), unlike Q1/Q3/Q5 which use Python scripts.
+> **Note**: Q2 uses an **R-based pipeline** (`Question2.R`), unlike Q1/Q3/Q1.1 which use Python scripts.
 
 ### Script
 
@@ -241,7 +241,7 @@ All four modules operate on **per-patient inputs only** – kinetic rate constan
 
 ### Key Data Dependencies
 
-- **Reads**: `q1-response-predictor/data/raw/skcm_tcga_pan_can_atlas_2018/` (clinical, expression, mutation, RPPA data), `data/processed/q5/patient_clusters.csv` (Q5 phenotype integration)
+- **Reads**: `q1-response-predictor/data/raw/skcm_tcga_pan_can_atlas_2018/` (clinical, expression, mutation, RPPA data), `data/processed/q5/patient_clusters.csv` (Q1.1 phenotype integration)
 - **Outputs**: `q3-ode-model/data/melanoma_params_full.csv`, `outputs/results/pERK_simulations.csv`, `outputs/results/tumour_burden_simulations.csv`, `outputs/results/checkpoint_tumour_simulations.csv`, `outputs/plots/` (KM, Cox dose-scan, RPPA validation, ML comparison figures)
 
 ## Q4: DepMap & LINCS (`Q4_dep_map/`)
@@ -258,11 +258,11 @@ All four modules operate on **per-patient inputs only** – kinetic rate constan
 | `figures/dependency_selectivity/` | Dependency selectivity visualisations |
 | `figures/proxy/` | SOX10 proxy analysis figures |
 
-## Q5: Patient Stratification (`q5-patient-stratification/`)
+## Q1.1: Patient Stratification (`q1.1-patient-stratification/`)
 
 **Question**: Can we identify clinically distinct patient subgroups requiring different treatments?
 
-**Role**: Master synthesis engine integrating Q1–Q4 outputs into a clinical decision framework.
+**Role**: Patient clustering and stratification engine integrating multi-modal biological signatures.
 
 ### Phase → Script Mapping
 
@@ -277,10 +277,10 @@ All four modules operate on **per-patient inputs only** – kinetic rate constan
 | 7 | `07_treatability_scoring.py` | Treatability Index, Q2 drug integration, Q4 DepMap/LINCS target nominations |
 | – | `08_compare_clustering_algorithms.py` | Algorithmic comparison: K-Means vs Ward vs GMM vs DBSCAN |
 | – | `09_run_consensus_clustering.py` | 1,000-bootstrap Consensus Clustering ensemble across patients & features ($K \in [2, 8]$) |
-| – | `generate_q5_report.py` | Comprehensive Q5 markdown report generator |
+| – | `generate_q5_report.py` | Comprehensive Q1.1 markdown report generator |
 | – | `run_q5_pipeline.py` | Master pipeline orchestrator (runs Phases 1–7) |
 
-### Source Modules (`q5-patient-stratification/src/`)
+### Source Modules (`q1.1-patient-stratification/src/`)
 
 | Module | Purpose |
 |--------|---------|
@@ -293,24 +293,28 @@ All four modules operate on **per-patient inputs only** – kinetic rate constan
 
 ### Four Discovered Phenotypes (Two-Stage Stratification, N=699)
 
-| Phenotype | Cluster ID | N (%) | Key Signatures & Driver Composition | Primary Therapeutic Routing |
-|-----------|------------|-------|------------------------------------|----------------------------|
-| **Immunosuppressive M2-High** | Cluster 0 | 256 (36.6%) | High M2 macrophages, CAF stromal exclusion, low TIS; 44.1% `BRAF`+, 29.3% `NRAS`+, 0% `NF1` | Targeted `BRAF`/MEK inhibition (for `BRAF`+) or stromal remodeling |
-| **Immune Cold** | Cluster 1 | 45 (6.4%) | Low TIS, low CYT, T-cell desert; 53.3% `BRAF`+, 17.8% `NRAS`+, 13.3% `NF1`+ | Dual M2-depleting agent + checkpoint combination |
-| **Immune Hot** | Cluster 2 | 341 (48.8%) | High TIS, high CYT, inflamed microenvironment; 49.6% `BRAF`+, 25.2% `NRAS`+, 12.6% `NF1`+ | Primary immune checkpoint blockade (ICI monotherapy) |
-| **Mutant-Driven** | Cluster 3 | 57 (8.2%) | 100% `NF1` loss-of-function, RAS hyperactivation, high TMB (Med = 41 mut/Mb) | Immune checkpoint blockade + MEK adjunct for RAS suppression |
+> **Note**: Patient stratification relies exclusively on named biological phenotypes (**Immunosuppressive M2-High**, **Immune Cold**, **Immune Hot**, **Mutant-Driven**) rather than raw numerical cluster IDs.
 
-## Dashboard Subproject (`dashboard/`)
+| Phenotype | N (%) | Key Signatures & Driver Composition | Primary Therapeutic Routing |
+|-----------|-------|------------------------------------|----------------------------|
+| **Immunosuppressive M2-High** | 256 (36.6%) | High M2 macrophages, CAF stromal exclusion, low TIS; 44.1% `BRAF`+, 29.3% `NRAS`+, 0% `NF1` | Targeted `BRAF`/MEK inhibition (for `BRAF`+) or stromal remodeling |
+| **Immune Cold** | 45 (6.4%) | Low TIS, low CYT, T-cell desert; 53.3% `BRAF`+, 17.8% `NRAS`+, 13.3% `NF1`+ | Dual M2-depleting agent + checkpoint combination |
+| **Immune Hot** | 341 (48.8%) | High TIS, high CYT, inflamed microenvironment; 49.6% `BRAF`+, 25.2% `NRAS`+, 12.6% `NF1`+ | Primary immune checkpoint blockade (ICI monotherapy) |
+| **Mutant-Driven** | 57 (8.2%) | 100% `NF1` loss-of-function, RAS hyperactivation, high TMB (Med = 41 mut/Mb) | Immune checkpoint blockade + MEK adjunct for RAS suppression |
+
+## Q5: Dashboard (`dashboard/`)
 
 **Technology**: React 18 + Vite + TypeScript + TailwindCSS. Static SPA – no server required.
 
-**Purpose**: Clinical decision-support demonstrator. Loads `public/cohort.json` (built from Q3–Q5 outputs) and renders TCGA-SKCM patient digital twin, Q1 ML predictor, Q2 validation, Q3 ODE simulation, Q4 resistance, and integrated treatment recommendations.
+**Question**: How can we operationalise integrated outputs across Q1, Q1.1, Q2, Q3, and Q4 into a unified clinical decision-support platform?
+
+**Purpose**: Master synthesis engine and clinical decision-support demonstrator (OncoTwin). Loads `public/cohort.json` (built from Q1–Q4 & Q1.1 outputs) and renders TCGA-SKCM patient digital twin, Q1 ML predictor, Q2 validation, Q3 ODE simulation, Q4 resistance, Q1.1 patient stratification, and integrated treatment recommendations.
 
 ### Key Files
 
 | File / Directory | Purpose |
 |------------------|---------|
-| `scripts/build_cohort.mjs` | Ingests Q3 ODE CSVs + TCGA clinical + Q1 predictions + Q5 scores → `public/cohort.json`. |
+| `scripts/build_cohort.mjs` | Ingests Q3 ODE CSVs + TCGA clinical + Q1 predictions + Q1.1 scores → `public/cohort.json`. |
 | `src/data/cohort.ts` | TypeScript interfaces for the cohort JSON (`CohortPatient`, `Q5Phenotype`, `CohortMeta`). |
 | `src/data/model.ts` | Clinical decision rules, drug target metadata, and model definitions. |
 | `src/data/types.ts` | Core UI and patient data type definitions. |
@@ -324,9 +328,9 @@ All four modules operate on **per-patient inputs only** – kinetic rate constan
 | `src/components/Q4Resistance.tsx` | Q4 DepMap essentiality & LINCS perturbagen resistance panel. |
 | `src/components/RecommendationPanel.tsx` | Integrated multi-modal treatment recommendation panel. |
 | `src/components/PatientView.tsx` | Patient workbench with 5 tabs (`Q1 · ML predictor`, `Q2 · Validation`, `Q3 · Digital twin`, `Q4 · Resistance`, `Decision path`). |
-| `src/components/CohortTable.tsx` | Searchable/filterable patient table with Q5 Phenotype, TI, and Confidence Band columns. |
+| `src/components/CohortTable.tsx` | Searchable/filterable patient table with Q1.1 Phenotype, TI, and Confidence Band columns. |
 | `src/components/FeaturedCards.tsx` | Landing page archetype selection cards. |
-| `src/components/PatientPassport.tsx` | Patient header pills (`BRAF`, `PD-L1`, `TMB`, `Q5`). |
+| `src/components/PatientPassport.tsx` | Patient header pills (`BRAF`, `PD-L1`, `TMB`, `Q1.1 Phenotype`). |
 | `src/components/TumourForecastChart.tsx` | ODE tumour burden forecast chart. |
 | `src/components/DoseResponseChart.tsx` | ODE drug dose response chart. |
 | `src/components/DecisionTree.tsx` | Interactive clinical decision logic visualiser. |
@@ -367,6 +371,13 @@ npm run build
 | `run_dimensionality_reduction.py` 2nd pass audit | Deeper AST pass: removed dead `_COL_SAMPLE_ID` constant; extracted 9 scatter/typography magic numbers into named module-level constants (`_SCATTER_LINEWIDTH`, `_SCATTER_LINEWIDTH_LARGE`, `_EDGE_COLOR`, `_FONT_PANEL_TITLE`, `_FONT_PANEL_TITLE_LARGE`, `_FONT_SUPTITLE_MD`, `_FONT_SUPTITLE_LG`, `_TITLE_PAD`, `_SUPTITLE_Y`); extracted `_make_reduction_model()` factory to eliminate duplicated UMAP/t-SNE constructor DRY violation in `fit_umap_or_tsne()`; 0 magic numbers, 0 unused constants, 0 violations on all metrics; verified clean execution with exit code 0. | **Resolved** (2026-08-08) |
 | `run_dimensionality_reduction.py` 3rd pass audit | Comprehensive semantic audit: extracted 4 repeated string literals into named constants (`_RESP_LABEL_RESPONDER`, `_RESP_LABEL_NONRESPONDER`, `_HEATMAP_SCRIPT_NAME`, `_BANNER`) eliminating 3–4× string duplication across `RESPONSE_ORDER`, `RESPONSE_LABEL_MAP`, `resp_colors` dict, `_COMPANION_SCRIPTS`, `_script_entries_p1`, and `main()`; suppressed unused `g_trials` return value with `_` idiom in `main()`; expanded 5 single-line docstrings (`plot_cohort_batch_pca`, `_axis_label`, `_render_2x2_scatter_grid`, `plot_trial_reduction_grid`, `write_batch_correction_report`) to full Google-style with Args/Returns; confirmed 0 bare excepts, 0 mutable defaults, 0 bool-trap positional args, 100% type hint coverage; verified clean execution with exit code 0. | **Resolved** (2026-08-09) |
 | `run_clinical_feature_selection.py` code smell & DRY refactoring pass | Audited and refactored `run_clinical_feature_selection.py` per `AGENTS.md` guidelines: removed duplicate function definition `_format_feature_name`, removed unused import `REPORTS_DIR`, imported and aliased `KEY_DRIVER_MUTATIONS` from `src.biology_constants`, imported `DARK_SLATE_CHARCOAL` from `src.styles`, updated log routing to use `get_subproject_log_dir(Path(__file__))`, refined broad exception handlers to catch specific numerical errors (`LinAlgError`, `ValueError`, `RuntimeError`), ensured 0 lines > 100 characters, 100% functions ≤ 30 lines in AST, 0 unused imports, 0 duplicate functions, and verified clean execution with exit code 0. | **Resolved** (2026-08-09) |
+| `run_clinical_feature_selection.py` 2nd pass audit | Comprehensive 2nd pass audit: extracted 12 private `_COL_*` column constants (`_COL_RESPONSE_BINARY`, `_COL_FEATURE`, `_COL_IMPORTANCE`, `_COL_ODDS_RATIO`, `_COL_P_VALUE`, `_COL_FDR_ADJ_P`, etc.) to eliminate string literal repetition; extracted plot typography and geometry constants (`_FONT_TITLE_MAIN`, `_FONT_LABEL`, `_FONT_ANNOTATION`, `_POINT_SIZE_FOREST`, `_LINEWIDTH_FOREST`); expanded docstrings to full Google-style with `Args:` and `Returns:`; confirmed 100% functions ≤ 30 lines in AST, 0 lines > 100 chars, 0 bare excepts, 0 duplicate functions, and verified clean execution with exit code 0. | **Resolved** (2026-08-09) |
+| `run_clinical_feature_selection.py` report introduction futureproofing | Futureproofed report generation in `run_clinical_feature_selection.py` per `AGENTS.md` Futureproofing Mandate: added `_format_ici_cohort_names()` helper to dynamically format active ICI trial cohort lists and counts from `config/datasets.yaml` (`DatasetConfig`); eliminated hardcoded cohort name strings (`"Liu 2019", "Hugo 2016", "Riaz 2017"`) across report header (`_build_report_frontmatter_header`), section preambles (`_build_report_tier1_preamble`, `_build_report_tier2_preamble`), limitations callout (`_build_limitations_callout`), and CLI console logs; verified 100% functions $\le 30$ lines in AST, 0 lines $> 100$ chars, and clean execution with exit code 0. | **Resolved** (2026-08-09) |
+| Subproject mapping & patient stratification terminology in `PROJECT_MAP.md` | Renamed Patient Stratification subproject to Q1.1 (`q1.1-patient-stratification/`) and designated Dashboard as Q5 (`dashboard/`). Removed raw cluster IDs (`Cluster 0`, `Cluster 1`, etc.) from patient stratification in favour of named biological phenotypes (**Immunosuppressive M2-High**, **Immune Cold**, **Immune Hot**, **Mutant-Driven**). | **Resolved** (2026-08-09) |
+| Tier 1 Feature Selection Rationale reporting in `run_clinical_feature_selection.py` | Added section `1.1. Biological & Clinical Rationale for Tier 1 Feature Selection` to `clinical_feature_selection_report.md` generator in `run_clinical_feature_selection.py`. Includes a structured markdown table mapping 5 biological feature domains (T-cell inflammation/exhaustion, innate myeloid polarization, somatic antigenicity & neoantigen burden, oncogenic driver secretomes, and host immunosenescence/dimorphism) to their mechanistic roles in anti-PD-1 response. Re-ordered `TIER1_CONT_COLS` to enforce canonical signature ordering (`IFN_gamma`, `TIS`, `CYT`, `CD8_Tcell`, `IMPRES`, `PD_L1`) per `AGENTS.md` Rule 3; verified 100% functions $\le 30$ lines in AST, 0 lines $> 100$ chars, and clean execution with exit code 0. | **Resolved** (2026-08-09) |
+| Report Renaming (`feature_selection_report.md`) | Renamed output report from `clinical_feature_selection_report.md` to `feature_selection_report.md` in `run_clinical_feature_selection.py` and `q1-response-predictor/reports/README.md`. Accurately reflects the two-tiered multi-modal architecture spanning Tier 1 (transcriptomic immune & genomic signatures) and Tier 2 (baseline clinical covariates). Deleted obsolete `clinical_feature_selection_report.md` file. Verified clean pipeline execution with exit code 0. | **Resolved** (2026-08-09) |
+| Script Reference Callout Box Integration | Integrated `generate_script_reference_callout()` utility in `run_clinical_feature_selection.py` to append an Obsidian `[!formula]+` Software Module Architecture callout box at the end of `feature_selection_report.md`, modeled directly on `batch_correction_report.md`. Lists `run_clinical_feature_selection.py`, `run_univariate_associations.py`, `clean_data.py`, `signatures.py`, and `styles.py`. Verified 100% functions $\le 30$ lines in AST, 0 lines $> 100$ chars, and clean execution with exit code 0. | **Resolved** (2026-08-09) |
+| Multi-Cohort Expansion & Tier 3 Unified Multimodal Leaderboard | Expanded `run_clinical_feature_selection.py` across all 6 active datasets in `config/datasets.yaml` ($N = 473$ response-labelled subcohort: Liu 2019, Hugo 2016, Riaz 2017, Gide 2019, Van Allen 2015, TCGA GDC 2025). Introduced **Tier 3: Unified Multimodal Feature Selection Leaderboard ($N = 473$)** combining all molecular immune signatures and clinical attributes head-to-head. Produced `unified_tier3_rf_importance.png` and `unified_tier3_multivariate_or_forest.png`. Verified 100% functions $\le 30$ lines in AST, 0 lines $> 100$ chars, and clean pipeline execution with exit code 0. | **Resolved** (2026-08-09) |
 
 ## Conventions Quick Reference
 

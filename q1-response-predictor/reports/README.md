@@ -26,7 +26,7 @@ reports/
 │   └── batch_correction_report.md
 │
 ├── pillar-2-clinical-subtyping/
-│   ├── clinical_feature_selection_report.md
+│   ├── feature_selection_report.md
 │   └── clinical_phenotyping_and_feature_selection.md
 │
 ├── pillar-3-transcriptomic-signatures/
@@ -51,7 +51,7 @@ reports/
 | [cohort_characteristics_genomic.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-1-cohorts-and-preprocessing/cohort_characteristics_genomic.md) | Baseline Genomic | Genomic landscape analysis: driver mutations (`BRAF`, `NRAS`, `NF1`), TMB distributions, predicted neoantigens, Aneuploidy survival curves, and CoMut landscape. |
 | [batch_correction_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-1-cohorts-and-preprocessing/batch_correction_report.md) | Preprocessing | Technical evaluation of batch effects: uncorrected PCA vs. Z-score scaling vs. pyCombat empirical Bayes, heatmaps of top variance genes, and CV leakage prevention. |
 | **Pillar 2: Clinical Subtyping & Feature Selection** | | |
-| [clinical_feature_selection_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-2-clinical-subtyping/clinical_feature_selection_report.md) | Feature Importance | Multimodal Random Forest Gini importance rankings, Cox PH univariate hazard screening, and clinical feature prioritization. |
+| [feature_selection_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-2-clinical-subtyping/feature_selection_report.md) | Feature Importance | Multimodal Random Forest Gini importance rankings, Cox PH univariate hazard screening, and clinical feature prioritization. |
 | [clinical_phenotyping_and_feature_selection.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-2-clinical-subtyping/clinical_phenotyping_and_feature_selection.md) | Clinical Subtyping | Unsupervised patient subtyping (Ward's hierarchical clustering into Clusters 0, 1, 2) and baseline clinical characterisation. |
 | **Pillar 3: Transcriptomic Signatures & Multimodal ML** | | |
 | [curated_signatures_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar-3-transcriptomic-signatures/curated_signatures_report.md) | Feature Engineering & Model Evaluation | Consolidated report covering implemented gene signatures (IFN-$\gamma$, TIS, CYT, IMPRES, CD8, TCGA OS), signature scaling, biomarker orthogonality (TMB vs. Signatures), odds ratios, pooled 5-fold multimodal ML performance, and LOCO model validation. |
