@@ -1,12 +1,45 @@
-"""Dataset loading utilities for Melanoma Cohorts."""
+"""Dataset loading utilities for Melanoma Cohorts.
+
+The canonical entry points are:
+
+- ``load_cohort_by_name`` — load any cohort by its human-readable name, resolved
+  dynamically from ``config/datasets.yaml``.  New datasets added to the YAML are
+  immediately available without touching this file.
+
+- ``load_dataset_by_config`` — load a single cohort from an already-resolved
+  ``DatasetConfig`` object.
+
+- ``load_all_active_cohorts`` — batch-load every enabled cohort from the YAML.
+
+- ``load_merged_immunotherapy`` — load the pre-merged immunotherapy file, resolving
+  per-cohort expression paths through the YAML config rather than a hardcoded map.
+
+Legacy per-cohort convenience functions (``load_liu_2019``, ``load_hugo_2016``, …)
+are thin wrappers around ``load_cohort_by_name`` kept for backwards compatibility.
+"""
+
+from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
 from src.config.datasets import DatasetConfig, load_dataset_config
 from src.utils.paths import DATA_DIR
+
+# ---------------------------------------------------------------------------
+# Default config path — resolved relative to this file so imports work
+# regardless of the calling script's CWD.
+# ---------------------------------------------------------------------------
+_DEFAULT_CONFIG_PATH: Path = (
+    Path(__file__).resolve().parents[1] / "config" / "datasets.yaml"
+)
+
+
+# ---------------------------------------------------------------------------
+# Private helpers
+# ---------------------------------------------------------------------------
 
 
 def _add_aliases(df: pd.DataFrame) -> pd.DataFrame:
@@ -22,6 +55,48 @@ def _add_aliases(df: pd.DataFrame) -> pd.DataFrame:
         if orig in df.columns and target not in df.columns:
             df[target] = df[orig]
     return df
+
+
+def _find_config_by_name(
+    cohort_name: str,
+    config_path: Path = _DEFAULT_CONFIG_PATH,
+) -> DatasetConfig:
+    """Returns the DatasetConfig matching *cohort_name* from the YAML file.
+
+    Args:
+        cohort_name: Human-readable cohort name (e.g. ``"Gide 2019"``).
+        config_path: Path to ``datasets.yaml``.
+
+    Raises:
+        KeyError: If no config entry matches *cohort_name*.
+    """
+    all_configs = load_dataset_config(config_path)
+    for cfg in all_configs:
+        if cfg.cohort_name == cohort_name:
+            return cfg
+    available = ", ".join(f"'{c.cohort_name}'" for c in all_configs)
+    raise KeyError(
+        f"No dataset configuration found for cohort '{cohort_name}'. "
+        f"Available cohorts: {available}. "
+        "Add the cohort to config/datasets.yaml to enable loading."
+    )
+
+
+def _build_cohort_dir_map(config_path: Path = _DEFAULT_CONFIG_PATH) -> Dict[str, str]:
+    """Builds a mapping of cohort_name -> processed_directory from the YAML config.
+
+    This replaces any hardcoded ``cohort_dir_map`` dict and automatically picks
+    up new cohorts added to ``datasets.yaml`` without code changes.
+    """
+    return {
+        cfg.cohort_name: cfg.processed_directory
+        for cfg in load_dataset_config(config_path)
+    }
+
+
+# ---------------------------------------------------------------------------
+# Public core loaders
+# ---------------------------------------------------------------------------
 
 
 def load_dataset_by_config(
@@ -43,7 +118,8 @@ def load_dataset_by_config(
 
     if not expr_path.exists() or not clin_path.exists():
         raise FileNotFoundError(
-            f"Cleaned dataset files not found for cohort '{config.cohort_name}' in {proc_dir}"
+            f"Cleaned dataset files not found for cohort '{config.cohort_name}' "
+            f"in {proc_dir}. Run preprocessing script (clean_data.py) first."
         )
 
     df_expr = pd.read_csv(expr_path, index_col="SAMPLE_ID")
@@ -57,6 +133,32 @@ def load_dataset_by_config(
     df_clin = _add_aliases(df_clin)
 
     return df_expr, df_clin
+
+
+def load_cohort_by_name(
+    cohort_name: str,
+    data_dir: Path = DATA_DIR,
+    config_path: Path = _DEFAULT_CONFIG_PATH,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Loads any cohort by its human-readable name, resolved from ``datasets.yaml``.
+
+    This is the futureproof entry point: adding a new dataset to the YAML makes
+    it immediately loadable here without touching this file.
+
+    Args:
+        cohort_name: Human-readable cohort name, e.g. ``"Gide 2019"``.
+        data_dir: Base data directory path.
+        config_path: Path to ``datasets.yaml``.
+
+    Returns:
+        Tuple of (expression DataFrame, clinical DataFrame).
+
+    Raises:
+        KeyError: If *cohort_name* is not found in the YAML configuration.
+        FileNotFoundError: If the processed CSV files do not yet exist on disk.
+    """
+    config = _find_config_by_name(cohort_name, config_path)
+    return load_dataset_by_config(config, data_dir)
 
 
 def load_all_active_cohorts(
@@ -111,18 +213,21 @@ def load_all_active_cohorts(
 def load_merged_immunotherapy(
     data_dir: Path = DATA_DIR,
     use_raw: bool = True,
+    config_path: Path = _DEFAULT_CONFIG_PATH,
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], List[str], List[str]]:
     """Loads the pre-merged immunotherapy cohort dataset.
 
     Reads clinical metadata from data/processed/merged/immunotherapy/clin_merged.csv.
     If use_raw=True (default), loads true raw log2 expression matrices from each
-    cohort's processed directory (liu_2019, hugo_2016, riaz_2017, gide_2019,
-    van_allen_2015, skcm_tcga_gdc) matched to the immunotherapy subset sample IDs.
+    cohort's processed directory (resolved from datasets.yaml) matched to the
+    immunotherapy subset sample IDs.
     If use_raw=False, reads from expr_merged.csv (pre-Z-score standardised).
 
     Args:
         data_dir: Base data directory path.
         use_raw: If True, load un-standardised raw expression data for each cohort.
+        config_path: Path to datasets.yaml (used to resolve processed_directory
+            for each cohort dynamically — no hardcoded cohort_dir_map required).
 
     Returns:
         Tuple of (expr_dict, clin_dict, cohort_order, trial_names) keyed by cohort name.
@@ -132,20 +237,16 @@ def load_merged_immunotherapy(
 
     if not clin_path.exists():
         raise FileNotFoundError(
-            f"Pre-merged immunotherapy clinical file not found in {merged_dir}."
+            f"Pre-merged immunotherapy clinical file not found in {merged_dir}. "
+            "Run merge_datasets.py first."
         )
 
     df_clin = pd.read_csv(clin_path, index_col="SAMPLE_ID")
     df_clin = _add_aliases(df_clin)
 
-    cohort_dir_map = {
-        "Liu 2019": "liu_2019",
-        "Hugo 2016": "hugo_2016",
-        "Riaz 2017": "riaz_2017",
-        "Gide 2019": "gide_2019",
-        "Van Allen 2015": "van_allen_2015",
-        "TCGA GDC 2025": "skcm_tcga_gdc",
-    }
+    # Resolve cohort -> processed_directory dynamically from YAML so that adding
+    # a new cohort to datasets.yaml is sufficient — no code change needed here.
+    cohort_dir_map = _build_cohort_dir_map(config_path)
 
     cohort_col = "COHORT" if "COHORT" in df_clin.columns else "Cohort"
     seen: set = set()
@@ -199,36 +300,60 @@ def load_merged_immunotherapy(
     return expr_dict, clin_dict, cohort_order, trial_names
 
 
+# ---------------------------------------------------------------------------
+# Backwards-compatible per-cohort shim functions
+#
+# These are thin wrappers around load_cohort_by_name().  Do NOT add
+# per-cohort shims for future datasets — use load_cohort_by_name() directly.
+# ---------------------------------------------------------------------------
 
 
-def load_liu_2019(data_dir: Path = DATA_DIR) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Loads Liu 2019 dataset."""
-    expr_file = Path(data_dir) / "processed/liu_2019/expr_cleaned.csv"
-    clin_file = Path(data_dir) / "processed/liu_2019/clin_cleaned.csv"
-
-    df_expr = pd.read_csv(expr_file, index_col="SAMPLE_ID")
-    df_clin = pd.read_csv(clin_file, index_col="SAMPLE_ID")
-    df_clin = _add_aliases(df_clin)
-    return df_expr, df_clin
+def load_liu_2019(
+    data_dir: Path = DATA_DIR,
+    config_path: Path = _DEFAULT_CONFIG_PATH,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Backwards-compatible loader for Liu 2019. Delegates to load_cohort_by_name."""
+    return load_cohort_by_name("Liu 2019", data_dir, config_path)
 
 
-def load_hugo_2016(data_dir: Path = DATA_DIR) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Loads Hugo 2016 dataset."""
-    expr_file = Path(data_dir) / "processed/hugo_2016/expr_cleaned.csv"
-    clin_file = Path(data_dir) / "processed/hugo_2016/clin_cleaned.csv"
-
-    df_expr = pd.read_csv(expr_file, index_col="SAMPLE_ID")
-    df_clin = pd.read_csv(clin_file, index_col="SAMPLE_ID")
-    df_clin = _add_aliases(df_clin)
-    return df_expr, df_clin
+def load_hugo_2016(
+    data_dir: Path = DATA_DIR,
+    config_path: Path = _DEFAULT_CONFIG_PATH,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Backwards-compatible loader for Hugo 2016. Delegates to load_cohort_by_name."""
+    return load_cohort_by_name("Hugo 2016", data_dir, config_path)
 
 
-def load_riaz_2017(data_dir: Path = DATA_DIR) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Loads Riaz 2017 dataset."""
-    expr_file = Path(data_dir) / "processed/riaz_2017/expr_cleaned.csv"
-    clin_file = Path(data_dir) / "processed/riaz_2017/clin_cleaned.csv"
+def load_riaz_2017(
+    data_dir: Path = DATA_DIR,
+    config_path: Path = _DEFAULT_CONFIG_PATH,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Backwards-compatible loader for Riaz 2017. Delegates to load_cohort_by_name."""
+    return load_cohort_by_name("Riaz 2017", data_dir, config_path)
 
-    df_expr = pd.read_csv(expr_file, index_col="SAMPLE_ID")
-    df_clin = pd.read_csv(clin_file, index_col="SAMPLE_ID")
-    df_clin = _add_aliases(df_clin)
-    return df_expr, df_clin
+
+def load_gide_2019(
+    data_dir: Path = DATA_DIR,
+    config_path: Path = _DEFAULT_CONFIG_PATH,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Backwards-compatible loader for Gide 2019. Delegates to load_cohort_by_name."""
+    return load_cohort_by_name("Gide 2019", data_dir, config_path)
+
+
+def load_van_allen_2015(
+    data_dir: Path = DATA_DIR,
+    config_path: Path = _DEFAULT_CONFIG_PATH,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Backwards-compatible loader for Van Allen 2015. Delegates to load_cohort_by_name."""
+    return load_cohort_by_name("Van Allen 2015", data_dir, config_path)
+
+
+def load_skcm_tcga_gdc(
+    data_dir: Path = DATA_DIR,
+    config_path: Path = _DEFAULT_CONFIG_PATH,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Backwards-compatible loader for TCGA GDC 2025. Delegates to load_cohort_by_name."""
+    return load_cohort_by_name("TCGA GDC 2025", data_dir, config_path)
+
+
+

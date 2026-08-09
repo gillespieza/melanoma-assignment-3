@@ -9,12 +9,12 @@ tags:
   - survival-analysis
   - kaplan-meier
   - immunotherapy
-created: 2026-08-09 14:53
+created: 2026-08-09 15:15
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-09 14:53
+updated: 2026-08-09 15:15
 ---
 
 # Clinical Characteristics of Immunotherapy Data Cohorts
@@ -44,35 +44,35 @@ _**Figure 1: 2×2 Grid of Clinical Demographics and Treatment Histories.**_
 
 - **Panel A: Sex Distribution ($N = 533$)**: The overall trial cohort shows a male predominance (**62.7% Male** [$N = 334$] vs. **37.3% Female** [$N = 199$]), reflecting real-world melanoma incidence.
 - **Panel B: Age Distribution across Studies**: Evaluated patient ages span from 18 to 90 years with a **median age of 57.0 years** (IQR: 48.0–68.0 years). Trial cohorts (`Hugo 2016`: median 61.0; `Riaz 2017`: median 56.0; `TCGA GDC 2025`: median 55.0; `Gide 2019`: median 61.0; `Van Allen 2015`: median 61.5) display consistent age distributions.
-- **Panel C: Treatment Agents Administered ($N = 746$)**: Most frequent agents are **Pembrolizumab** (173 [23.2%]), **Nivolumab** (178 [23.9%]), **Ipilimumab** (335 [44.9%]), **Vemurafenib** (5 [0.7%]).
-- **Panel D: Prior Anti-CTLA-4 Therapy Status ($N = 548$)**: Across all patients, **50.2%** [$N = 275$] received prior ipilimumab, while **49.8%** [$N = 273$] were anti-CTLA-4 naïve.
+- **Panel C: Treatment Agents Administered ($N = 957$)**: Most frequent agents are **Pembrolizumab** (244 [25.5%]), **Nivolumab** (320 [33.4%]), **Ipilimumab** (333 [34.8%]), **Vemurafenib** (5 [0.5%]).
+- **Panel D: Prior Anti-CTLA-4 Therapy Status ($N = 548$)**: Across all patients, **59.3%** [$N = 325$] received prior ipilimumab, while **40.7%** [$N = 223$] were anti-CTLA-4 naïve.
 
 _**Table 1: Baseline Patient Characteristics**_
 
-| Characteristic                  | Liu 2019   | Hugo 2016        | Riaz 2017        | TCGA GDC 2025    | Gide 2019        | Van Allen 2015   | Total            |
-|:--------------------------------|:-----------|:-----------------|:-----------------|:-----------------|:-----------------|:-----------------|:-----------------|
-| **N**                           | 122        | 27               | 107              | 91               | 91               | 110              | 548              |
-|                                 |            |                  |                  |                  |                  |                  |                  |
-| **Demographics**                |            |                  |                  |                  |                  |                  |                  |
-| Age, median (IQR)               | N/A        | 61.0 (54.0-68.5) | 56.0 (48.8-63.0) | 55.0 (44.5-62.5) | 61.0 (51.5-71.5) | 61.5 (46.2-71.0) | 57.0 (48.0-68.0) |
-| Female sex, n (%)               | 51 (41.8%) | 8 (29.6%)        | 47 (51.1%)       | 30 (33.0%)       | 31 (34.1%)       | 32 (29.1%)       | 199 (37.3%)      |
-|                                 |            |                  |                  |                  |                  |                  |                  |
-| **Treatment Agents & Exposure** |            |                  |                  |                  |                  |                  |                  |
-| Agent — Pembrolizumab           | 71 (58.2%) | 27 (100.0%)      | 0 (0.0%)         | 4 (4.4%)         | 71 (78.0%)       | 0 (0.0%)         | 173 (31.6%)      |
-| Agent — Nivolumab               | 51 (41.8%) | 0 (0.0%)         | 107 (100.0%)     | 0 (0.0%)         | 20 (22.0%)       | 0 (0.0%)         | 178 (32.5%)      |
-| Agent — Ipilimumab              | 56 (45.9%) | 0 (0.0%)         | 107 (100.0%)     | 21 (23.1%)       | 41 (45.1%)       | 110 (100.0%)     | 335 (61.1%)      |
-| Agent — Vemurafenib             | 0 (0.0%)   | 0 (0.0%)         | 0 (0.0%)         | 5 (5.5%)         | 0 (0.0%)         | 0 (0.0%)         | 5 (0.9%)         |
-| Agent — Dabrafenib              | 0 (0.0%)   | 0 (0.0%)         | 0 (0.0%)         | 3 (3.3%)         | 0 (0.0%)         | 0 (0.0%)         | 3 (0.5%)         |
-| Agent — Trametinib              | 0 (0.0%)   | 0 (0.0%)         | 0 (0.0%)         | 1 (1.1%)         | 0 (0.0%)         | 0 (0.0%)         | 1 (0.2%)         |
-| Agent — Dacarbazine             | 0 (0.0%)   | 0 (0.0%)         | 0 (0.0%)         | 13 (14.3%)       | 0 (0.0%)         | 0 (0.0%)         | 13 (2.4%)        |
-| Agent — Temozolomide            | 0 (0.0%)   | 0 (0.0%)         | 0 (0.0%)         | 3 (3.3%)         | 0 (0.0%)         | 0 (0.0%)         | 3 (0.5%)         |
-| Agent — Interferon              | 0 (0.0%)   | 0 (0.0%)         | 0 (0.0%)         | 35 (38.5%)       | 0 (0.0%)         | 0 (0.0%)         | 35 (6.4%)        |
-| Prior anti-CTLA-4 therapy       | 48 (39.3%) | 0 (0.0%)         | 55 (51.4%)       | 21 (23.1%)       | 41 (45.1%)       | 110 (100.0%)     | 275 (50.2%)      |
-|                                 |            |                  |                  |                  |                  |                  |                  |
-| **Survival Outcomes**           |            |                  |                  |                  |                  |                  |                  |
-| Median OS, months (95% CI)      | 22.6       | 32.2             | 21.2             | 117.8            | 32.6             | 9.0              | 28.8             |
-| OS events, n (%)                | 62 (50.8%) | 12 (46.2%)       | 63 (62.4%)       | 37 (41.1%)       | 36 (39.6%)       | 83 (75.5%)       | 293 (54.3%)      |
-| Median follow-up, months        | 17.5       | 14.4             | 17.8             | 54.2             | 20.5             | 9.1              | 20.6             |
+| Characteristic                  | Liu 2019     | Hugo 2016        | Riaz 2017        | TCGA GDC 2025    | Gide 2019        | Van Allen 2015   | Total            |
+|:--------------------------------|:-------------|:-----------------|:-----------------|:-----------------|:-----------------|:-----------------|:-----------------|
+| **N**                           | 122          | 27               | 107              | 91               | 91               | 110              | 548              |
+|                                 |              |                  |                  |                  |                  |                  |                  |
+| **Demographics**                |              |                  |                  |                  |                  |                  |                  |
+| Age, median (IQR)               | N/A          | 61.0 (54.0-68.5) | 56.0 (48.8-63.0) | 55.0 (44.5-62.5) | 61.0 (51.5-71.5) | 61.5 (46.2-71.0) | 57.0 (48.0-68.0) |
+| Female sex, n (%)               | 51 (41.8%)   | 8 (29.6%)        | 47 (51.1%)       | 30 (33.0%)       | 31 (34.1%)       | 32 (29.1%)       | 199 (37.3%)      |
+|                                 |              |                  |                  |                  |                  |                  |                  |
+| **Treatment Agents & Exposure** |              |                  |                  |                  |                  |                  |                  |
+| Agent — Pembrolizumab           | 122 (100.0%) | 27 (100.0%)      | 0 (0.0%)         | 4 (4.4%)         | 91 (100.0%)      | 0 (0.0%)         | 244 (44.5%)      |
+| Agent — Nivolumab               | 122 (100.0%) | 0 (0.0%)         | 107 (100.0%)     | 0 (0.0%)         | 91 (100.0%)      | 0 (0.0%)         | 320 (58.4%)      |
+| Agent — Ipilimumab              | 56 (45.9%)   | 0 (0.0%)         | 55 (51.4%)       | 21 (23.1%)       | 91 (100.0%)      | 110 (100.0%)     | 333 (60.8%)      |
+| Agent — Vemurafenib             | 0 (0.0%)     | 0 (0.0%)         | 0 (0.0%)         | 5 (5.5%)         | 0 (0.0%)         | 0 (0.0%)         | 5 (0.9%)         |
+| Agent — Dabrafenib              | 0 (0.0%)     | 0 (0.0%)         | 0 (0.0%)         | 3 (3.3%)         | 0 (0.0%)         | 0 (0.0%)         | 3 (0.5%)         |
+| Agent — Trametinib              | 0 (0.0%)     | 0 (0.0%)         | 0 (0.0%)         | 1 (1.1%)         | 0 (0.0%)         | 0 (0.0%)         | 1 (0.2%)         |
+| Agent — Dacarbazine             | 0 (0.0%)     | 0 (0.0%)         | 0 (0.0%)         | 13 (14.3%)       | 0 (0.0%)         | 0 (0.0%)         | 13 (2.4%)        |
+| Agent — Temozolomide            | 0 (0.0%)     | 0 (0.0%)         | 0 (0.0%)         | 3 (3.3%)         | 0 (0.0%)         | 0 (0.0%)         | 3 (0.5%)         |
+| Agent — Interferon              | 0 (0.0%)     | 0 (0.0%)         | 0 (0.0%)         | 35 (38.5%)       | 0 (0.0%)         | 0 (0.0%)         | 35 (6.4%)        |
+| Prior anti-CTLA-4 therapy       | 48 (39.3%)   | 0 (0.0%)         | 55 (51.4%)       | 21 (23.1%)       | 91 (100.0%)      | 110 (100.0%)     | 325 (59.3%)      |
+|                                 |              |                  |                  |                  |                  |                  |                  |
+| **Survival Outcomes**           |              |                  |                  |                  |                  |                  |                  |
+| Median OS, months (95% CI)      | 22.6         | 32.2             | 21.2             | 117.8            | 32.6             | 9.0              | 28.8             |
+| OS events, n (%)                | 62 (50.8%)   | 12 (46.2%)       | 63 (62.4%)       | 37 (41.1%)       | 36 (39.6%)       | 83 (75.5%)       | 293 (54.3%)      |
+| Median follow-up, months        | 17.5         | 14.4             | 17.8             | 54.2             | 20.5             | 9.1              | 20.6             |
 
 ## 2. Sample Preprocessing Attrition
 
@@ -150,5 +150,5 @@ _**Figure 3: Overall Survival Stratified by RECIST Response Status.**_
 > - [`run_clinical_analysis.py`](../../scripts/pillar-1-cohort-preprocessing/run_clinical_analysis.py): Generates baseline demographic grids, attrition metrics, cohort characteristics tables, Kaplan-Meier OS curves, and writes `cohort_characteristics_clinical.md`.
 > - [`clean_data.py`](../../scripts/pillar-1-cohort-preprocessing/clean_data.py): Preprocesses raw cohort clinical metadata and RNA-seq expression profiles into cleaned CSV matrices.
 > - [`merge_datasets.py`](../../scripts/pillar-1-cohort-preprocessing/merge_datasets.py): Merges processed expression matrices across cohorts into harmonised pooled matrices (`expr_merged.csv`, `clin_merged.csv`).
-> - [`data_loaders.py`](../../src/data_loaders.py): Provides helper loader functions (`load_liu_2019`, `load_hugo_2016`, `load_riaz_2017`) for retrieving expression and clinical data.
+> - [`data_loaders.py`](../../src/data_loaders.py): Provides `load_cohort_by_name` (canonical dynamic entry point — resolves any cohort from `datasets.yaml` without code changes), `load_dataset_by_config`, `load_all_active_cohorts`, and `load_merged_immunotherapy`. Legacy per-cohort shims are retained for backwards compatibility.
 > - [`styles.py`](../../../src/styles.py): Single source of truth for Okabe-Ito colour palettes (`COHORT_PALETTE`, `RESPONSE_PALETTE`) and visualisation presentation style.

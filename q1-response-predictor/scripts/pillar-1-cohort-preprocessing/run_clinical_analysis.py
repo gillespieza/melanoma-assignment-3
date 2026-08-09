@@ -91,10 +91,11 @@ _COL_OS_STATUS = "os_status"
 _COL_PRIOR_ICI_RX = "PRIOR_ICI_RX"
 _COL_ICI_TX = "TX_TYPE_IMMUNOTHERAPY_(INCLUDING_VACCINES)"
 
-_COHORT_HUGO_2016 = "Hugo 2016"
+# Riaz 2017 is the only cohort requiring a hard-coded specific override
+# (all patients had prior ipilimumab by trial design — this cannot be inferred
+# from the clinical CSV alone).  All other cohort-specific logic is driven by
+# DatasetConfig.treatment_label at runtime.
 _COHORT_RIAZ_2017 = "Riaz 2017"
-_COHORT_VAN_ALLEN_2015 = "Van Allen 2015"
-_COHORT_LIU_2019 = "Liu 2019"
 
 _COLOR_BORDER_GRAY = "#CCCCCC"
 
@@ -200,11 +201,47 @@ def calculate_sex_statistics(df_clin: pd.DataFrame) -> dict[str, int]:
 # ===========================================================================
 
 
+# Agent keywords inferred from DatasetConfig.treatment_label for the fallback
+# injection in _build_combined_treatment_text.  Extend this map only for agents
+# whose names in the label differ from the token we want to inject.
+_TREATMENT_LABEL_AGENT_TOKENS: dict[str, str] = {
+    "pembrolizumab": "PEMBROLIZUMAB",
+    "nivolumab": "NIVOLUMAB",
+    "ipilimumab": "IPILIMUMAB",
+    "vemurafenib": "VEMURAFENIB",
+    "dabrafenib": "DABRAFENIB",
+    "trametinib": "TRAMETINIB",
+    "interferon": "INTERFERON",
+    "dacarbazine": "DACARBAZINE",
+}
+
+
+def _infer_agent_tokens_from_label(treatment_label: str) -> list[str]:
+    """Returns uppercase agent tokens present in a DatasetConfig treatment_label string.
+
+    This drives the fallback injection in _build_combined_treatment_text without
+    hardcoding cohort names — any cohort whose treatment_label mentions an agent
+    will automatically get the right fallback token.
+    """
+    label_lower = treatment_label.lower()
+    return [
+        token
+        for keyword, token in _TREATMENT_LABEL_AGENT_TOKENS.items()
+        if keyword in label_lower
+    ]
+
+
 def _build_combined_treatment_text(
     df_clin: pd.DataFrame,
     cohort_label: str,
+    treatment_label: str = "",
 ) -> pd.Series:
-    """Combines text columns and adds cohort-specific treatment fallback defaults."""
+    """Combines text columns and injects agent fallback tokens from treatment_label.
+
+    The fallback is config-driven: agent tokens are inferred from
+    DatasetConfig.treatment_label, so new cohorts are covered automatically
+    without adding hardcoded cohort-name branches here.
+    """
     text_cols = [
         c for c in df_clin.columns
         if df_clin[c].dtype == "object" or isinstance(df_clin[c].dtype, pd.StringDtype)
@@ -213,12 +250,11 @@ def _build_combined_treatment_text(
     for c in text_cols:
         combined_text = combined_text + " " + df_clin[c].astype(str).str.upper()
 
-    if cohort_label == _COHORT_HUGO_2016 and "PEMBROLIZUMAB" not in combined_text.to_string():
-        combined_text = combined_text + " PEMBROLIZUMAB"
-    elif cohort_label == _COHORT_RIAZ_2017 and "NIVOLUMAB" not in combined_text.to_string():
-        combined_text = combined_text + " NIVOLUMAB IPILIMUMAB"
-    elif cohort_label == _COHORT_VAN_ALLEN_2015 and "IPILIMUMAB" not in combined_text.to_string():
-        combined_text = combined_text + " IPILIMUMAB"
+    combined_str = combined_text.to_string()
+    for token in _infer_agent_tokens_from_label(treatment_label):
+        if token not in combined_str:
+            combined_text = combined_text + " " + token
+
     return combined_text
 
 
@@ -245,6 +281,7 @@ def _match_agent_pattern(
 def _search_treatment_agents(
     df_clin: pd.DataFrame,
     cohort_label: str,
+    treatment_label: str = "",
 ) -> dict[str, int]:
     """Identifies and counts treatment agent exposures from clinical metadata."""
     agents_found: dict[str, int] = {}
@@ -259,7 +296,7 @@ def _search_treatment_agents(
         "Temozolomide": ["TEMOZOLOMIDE", "TX_AGENT_TEMOZOLOMIDE"],
         "Interferon": ["INTERFERON", "TX_AGENT_INTERFERON"],
     }
-    combined_text = _build_combined_treatment_text(df_clin, cohort_label)
+    combined_text = _build_combined_treatment_text(df_clin, cohort_label, treatment_label)
 
     for agent_name, patterns in agent_specs.items():
         cnt = _match_agent_pattern(combined_text, df_clin, patterns)
@@ -275,26 +312,34 @@ def _determine_prior_ctla4(
     ipilimumab_cnt: int,
     n_total: int,
 ) -> int:
-    """Calculates patient count with prior anti-CTLA-4 exposure."""
+    """Calculates patient count with prior anti-CTLA-4 exposure.
+
+    Priority order:
+    1. Use PRIOR_ICI_RX column if present (most accurate — explicit clinical record).
+    2. Riaz 2017 hard-override: all patients had prior ipilimumab by trial design;
+       this cannot be inferred from the CSV alone.
+    3. Fall back to the detected ipilimumab count for any other cohort.
+       This is correct for pure ipilimumab trials (Van Allen 2015) and gives a
+       conservative lower-bound estimate for mixed cohorts — no cohort list needed.
+    """
     if _COL_PRIOR_ICI_RX in df_clin.columns:
         prior_s = df_clin[_COL_PRIOR_ICI_RX].astype(str).str.upper()
         return int(prior_s.str.contains("IPILIMUMAB|ACTLA4|CTLA4", na=False).sum())
     if cohort_label == _COHORT_RIAZ_2017:
         return n_total
-    if ipilimumab_cnt > 0 and cohort_label in [
-        _COHORT_LIU_2019, _COHORT_RIAZ_2017, _COHORT_VAN_ALLEN_2015
-    ]:
-        return ipilimumab_cnt
+    # For all other cohorts, the detected ipilimumab administration count is the
+    # best available proxy for prior anti-CTLA-4 exposure.
     return ipilimumab_cnt
 
 
 def calculate_treatment_statistics(
     df_clin: pd.DataFrame,
     cohort_label: str,
+    treatment_label: str = "",
 ) -> dict[str, Any]:
     """Calculates treatment agent statistics universally across any cohort DataFrame."""
     n_total = len(df_clin)
-    agents_found = _search_treatment_agents(df_clin, cohort_label)
+    agents_found = _search_treatment_agents(df_clin, cohort_label, treatment_label)
 
     pembrolizumab = agents_found.get("Pembrolizumab", 0)
     nivolumab = agents_found.get("Nivolumab", 0)
@@ -1076,8 +1121,10 @@ _SCRIPT_REFERENCE_SPECS: list[tuple[str, Path, str]] = [
     (
         "data_loaders.py",
         _SUBPROJECT_ROOT / "src" / "data_loaders.py",
-        "Provides helper loader functions (`load_liu_2019`, `load_hugo_2016`, "
-        "`load_riaz_2017`) for retrieving expression and clinical data.",
+        "Provides `load_cohort_by_name` (canonical dynamic entry point — resolves any cohort "
+        "from `datasets.yaml` without code changes), `load_dataset_by_config`, "
+        "`load_all_active_cohorts`, and `load_merged_immunotherapy`. "
+        "Legacy per-cohort shims are retained for backwards compatibility.",
     ),
     (
         "styles.py",
@@ -1450,6 +1497,7 @@ def _plot_single_km_subplot(
     ax: plt.Axes,
     label: str,
     df_clin: pd.DataFrame,
+    treatment_label: str = "",
 ) -> dict[str, Any]:
     """Plots KM curve and computes demographic statistics for one cohort subplot."""
     print(f"  Plotting KM curve for {label} ({len(df_clin)} samples)...")
@@ -1457,7 +1505,7 @@ def _plot_single_km_subplot(
         "survival": plot_km_os(ax, df_clin, label),
         "age": calculate_age_statistics(df_clin),
         "sex": calculate_sex_statistics(df_clin),
-        "treatment": calculate_treatment_statistics(df_clin, label),
+        "treatment": calculate_treatment_statistics(df_clin, label, treatment_label),
     }
 
 
@@ -1475,15 +1523,23 @@ def _setup_km_grid_figure(n_cohorts: int) -> tuple[plt.Figure, list[plt.Axes]]:
 def _run_km_plotting_stage(
     cohort_order: list[str],
     cohort_data: dict[str, pd.DataFrame],
+    dataset_configs: tuple["DatasetConfig", ...] = (),
 ) -> tuple[dict[str, dict[str, Any]], Path]:
     """Generates Kaplan-Meier OS curves across cohorts and saves figure."""
+    # Build a label lookup so treatment hints flow config-driven into the
+    # treatment statistics without hardcoded cohort-name branches.
+    treatment_label_map: dict[str, str] = {
+        cfg.cohort_name: cfg.treatment_label for cfg in dataset_configs
+    }
+
     n_cohorts = len(cohort_order)
     fig, axes_flat = _setup_km_grid_figure(n_cohorts)
     cohort_results: dict[str, dict[str, Any]] = {}
 
     for i, label in enumerate(cohort_order):
         cohort_results[label] = _plot_single_km_subplot(
-            axes_flat[i], label, cohort_data[label]
+            axes_flat[i], label, cohort_data[label],
+            treatment_label=treatment_label_map.get(label, ""),
         )
 
     for j in range(n_cohorts, len(axes_flat)):
@@ -1580,7 +1636,9 @@ def main() -> None:
     cohort_order = list(cohort_order_tuple)
 
     print("\nGenerating Kaplan-Meier curves...")
-    cohort_results, km_plot_path = _run_km_plotting_stage(cohort_order, cohort_data)
+    cohort_results, km_plot_path = _run_km_plotting_stage(
+        cohort_order, cohort_data, dataset_configs
+    )
 
     _generate_demographics_and_reports(
         cohort_order, cohort_data, attrition_data, cohort_results, km_plot_path, dataset_configs
