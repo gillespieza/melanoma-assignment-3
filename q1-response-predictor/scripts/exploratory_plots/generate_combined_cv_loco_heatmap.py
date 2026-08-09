@@ -103,7 +103,7 @@ LOG_PATH: Path = LOG_DIR / "generate_1x2_cv_loco_heatmap.log"
 # ---------------------------------------------------------------------------
 def _load_pooled_data(data_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
     """Loads and pools all active trial cohorts, intersecting genes to avoid NaNs."""
-    config_path = SUBPROJECT_ROOT.parent / "config" / "datasets.yaml"
+    config_path = SUBPROJECT_ROOT / "config" / "datasets.yaml"
     expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(
         config_path, data_dir, merge_only=True
     )
@@ -136,7 +136,7 @@ def _load_pooled_data(data_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Se
 def _load_cohort_dfs(data_dir: Path) -> Dict[str, Tuple[pd.DataFrame, pd.Series]]:
     """Loads individual cohort DataFrames for LOCO evaluation."""
     from src.signatures import zscore_df as _zscore
-    config_path = SUBPROJECT_ROOT.parent / "config" / "datasets.yaml"
+    config_path = SUBPROJECT_ROOT / "config" / "datasets.yaml"
     expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(
         config_path, data_dir, merge_only=True
     )
@@ -450,7 +450,7 @@ def generate_1x2_grid_heatmap() -> None:
         best_col_idx = row_data.values.argmax()
         ax1.add_patch(plt.Rectangle(
             (best_col_idx, row_idx), 1, 1,
-            fill=False, edgecolor="black", linewidth=2.2,
+            fill=False, edgecolor="red", linewidth=2.2,
         ))
     # Thick white vertical separator between Curated Signatures and SelectKBest
     ax1.axvline(1, color="white", linewidth=7.0, zorder=6)
@@ -488,7 +488,7 @@ def generate_1x2_grid_heatmap() -> None:
         best_r = col_data.values.argmax()
         ax2.add_patch(plt.Rectangle(
             (c_idx, best_r), 1, 1,
-            fill=False, edgecolor="black", linewidth=2.2,
+            fill=False, edgecolor="red", linewidth=2.2,
         ))
     ax2.axvline(n_cols_loco - 1, color="white", linewidth=7.0, zorder=6)
     ax2.axhline(n_data_loco, color="white", linewidth=7.0, zorder=6)

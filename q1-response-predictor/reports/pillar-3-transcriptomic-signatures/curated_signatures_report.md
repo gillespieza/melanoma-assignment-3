@@ -1,5 +1,5 @@
 ---
-title: "Curated Gene Expression Signatures, Extended Biomarkers & Model Evaluation Report"
+title: "Curated Gene Expression Signatures & Extended Biomarkers"
 aliases:
   - curated-signatures-report
   - q1-signatures-report
@@ -16,7 +16,7 @@ cssclasses:
 created: 2026-07-23 17:21
 updated: 2026-08-07 15:26
 ---
-# Curated Gene Expression Signatures, Extended Biomarkers & Model Evaluation Report
+# Curated Gene Expression Signatures & Extended Biomarkers
 
 ### Executive Summary
 This report outlines the transcriptomic feature engineering strategy for the Melanoma Immunotherapy Response Predictor. By transforming raw gene expression profiles into curated gene signatures, we capture critical tumour-immune microenvironment signals while providing clean, low-dimensional inputs for machine learning models.
@@ -132,7 +132,7 @@ Spearman rank correlation between nonsynonymous TMB and the six curated immune s
 ![Nonsynonymous TMB vs. Curated Immune Signatures — ICI Trial Cohort (N=418)](../../plots/biomarkers/extended_immune_correlations.png)
 
 > [!INSIGHT] The Multimodal Pitch
-> **Genomic burden (TMB) and transcriptomic immune signatures are orthogonal, independent axes of variation** within the ICI-treated melanoma population. No meaningful linear or rank-order relationship exists between the number of nonsynonymous somatic mutations a tumour carries and its inflammatory transcriptomic state ($|r_s| \leq 0.088$, all $p > 0.16$). A tumour can be hypermutated but immunologically cold, or nearly diploid yet profoundly inflamed. This orthogonality is precisely what makes a multimodal model (Signatures + TMB + Drivers) theoretically justified and, as shown in Section 4, empirically superior to any single modality alone.
+> **Genomic burden (TMB) and transcriptomic immune signatures are orthogonal, independent axes of variation** within the ICI-treated melanoma population. No meaningful linear or rank-order relationship exists between the number of nonsynonymous somatic mutations a tumour carries and its inflammatory transcriptomic state ($|r_s| \leq 0.088$, all $p > 0.16$). A tumour can be hypermutated but immunologically cold, or nearly diploid yet profoundly inflamed. This orthogonality is precisely what makes a multimodal model (Signatures + TMB + Drivers) theoretically justified and empirically superior to any single modality alone.
 
 ### 3.3. Inter-Signature Correlations & Multivariate Drivers
 * **High Collinearity**: Signature modalities (TIS, IFN-γ, CYT, CD8 T-cell) are strongly co-expressed ($r_s \approx 0.85\text{--}0.90$), reflecting their shared biological basis in cytotoxic lymphocyte infiltration.
@@ -146,70 +146,14 @@ Spearman rank correlation between nonsynonymous TMB and the six curated immune s
 > 3. **Practical consequence for feature selection**: Rather than entering all six signatures as raw features (which would introduce severe multicollinearity), the 12-feature multimodal model uses them as a structured block. Tree-based models (RF, XGBoost) handle this gracefully through implicit feature selection; linear models (LR, Elastic-Net) benefit from the L1/L2 penalty forcing coefficient shrinkage on redundant predictors.
 > 4. **Interaction with genomic features**: Because TMB is orthogonal to all six signatures (Section 3.2), adding it to the model introduces genuinely new information on the genomic axis — explaining why XGBoost AUROC jumps from 0.618 (signatures only) to 0.692 when TMB is included, without requiring any adjustment for correlated input features.
 
-## 4. Multimodal Response Prediction Models
+## 4. Conclusions
 
-> [!summary] What, Why & Key Questions
-> - **What**: Training five classifiers on pooled trials ($N = 195$) using 5-fold stratified CV across six feature permutation tiers of the 12 final features.
-> - **Why**: Evaluating whether adding TMB, driver mutations, M1/M2 ratio, Macrophage STV, or age/pathways improves upon signatures alone and identifying the best model architecture.
-> - **Questions**: Does adding drivers/TMB/macrophage features improve AUROC? Which model family performs best?
+> [!NOTE] Conclusions Rationale
+> - Given the signature biology and orthogonality evidence above, what is the best practical feature engineering approach for predicting immunotherapy response in melanoma from baseline tumour profiling?
 
-![Multimodal AUROC Heatmap](../../plots/biomarkers/multimodal_auc_heatmap.png)
-
-### Analysis of Predictor Performance
-1. **Linear models degrade with features**: LR and Elastic-Net perform best with signatures alone (AUROC ≈ 0.60) and show lower performance as features increase ($N = 195$).
-2. **Tree-based models benefit from feature permutations**: RF peaks at AUROC = 0.695 on the 12-Feature Final Model, while XGBoost reaches AUROC = 0.699 on the 12-Feature Final Model (and 0.692 on Sigs + TMB).
-3. **Clinical interpretation**: AUROC of ~0.70–0.72 correctly ranks responder above non-responder ~71% of time, competitive with published IO response predictors.
-
-## 5. Leave-One-Cohort-Out Model Evaluation
-
-> [!NOTE] Section Context
-> - **What**: Evaluating the same trained models using **Leave-One-Cohort-Out (LOCO)** cross-validation — training on two immunotherapy trial cohorts and testing on the third held-out cohort. This is repeated for each of the three cohorts (Liu 2019, Hugo 2016, Riaz 2017).
-> - **Why**: Pooled 5-fold CV mixes patients from all cohorts in every fold, so a model can exploit cohort-specific expression patterns (even after Z-score standardisation). LOCO is a strictly harder test: the held-out cohort's patients were never seen during training, simulating deployment to a genuinely new clinical site with a different sequencing platform, patient demographics, and response distribution. If a model generalises across LOCO folds, the learned signal is robust enough to transfer to new studies.
-> - **Questions**:
->   1. *Do models trained on two cohorts generalise to a third unseen cohort?*
->   2. *Which cohort is hardest to predict when held out — and why?*
->   3. *How does LOCO AUC compare to the pooled 5-fold AUC reported in Section 4?*
-
-**Evaluation framework**
-* **Training design**: Train on two cohorts, test on one held-out cohort.
-* **Test cohorts**: Liu 2019 ($N = 122$ total clinical, $N = 104$ evaluated), Hugo 2016 ($N = 27$), and Riaz 2017 ($N = 107$ total clinical, $N = 64$ pre-treatment evaluated).
-* **Feature set**: 11 immune response signatures, including IFN-γ, TIS, CD8 T-cell, CYT, IMPRES, PD-L1, and related immune axes.
-* **Decision threshold**: 0.5 for binary responder/non-responder classification.
-* **Metrics**: ROC-AUC, accuracy, sensitivity, specificity, precision, F1-score, and survival concordance index.
-
-### LOCO ROC-AUC Performance Across Models & Held-Out Cohorts
-
-![LOCO ROC-AUC Performance Heatmap](../../plots/models/loco_performance_heatmap.png)
-
-### LOCO Interpretation & Key Metric Diagnostics
-
-> [!INSIGHT] Key Metric Insights (Sensitivity, Precision & Survival C-Index)
-> 1. **Extreme Specificity vs. Sensitivity Polarisation**: At the standard $0.5$ decision threshold, models exhibit extreme polar behaviour depending on held-out cohort characteristics:
->    - **Liu 2019**: Random Forest achieves **94.6% Specificity** and **75.0% Precision**, but only **18.8% Sensitivity**. The model acts as a strict "rule-in" classifier: when it predicts a patient will respond, it is almost always correct, but it misses over 80% of true responders.
->    - **Riaz 2017**: Logistic Regression achieves **100.0% Sensitivity**, but **0.0% Specificity**. The linear model predicts nearly all patients as responders, capturing every true positive at the cost of high false positive rates.
-> 2. **Prognostic Survival Ranking ($C$-Index) Persists When Classification Fails**: On Hugo 2016 ($N=27$), binary response classification metrics perform poorly ($\text{AUC} \approx 0.32\text{--}0.43$). However, the **Survival Concordance Index ($C$-Index)** remains strong — reaching **$0.663$ (SVM)** and **$0.612$ (LR)**. This proves that continuous predicted probabilities maintain genuine prognostic risk-ranking for overall survival even when discrete binary labels fail to separate.
-> 3. **Threshold Tuning Impact (Youden's J Optimisation)**: Default $0.5$ decision cutoffs suffer under cross-cohort batch shifts. Optimising decision thresholds post-hoc using Youden's $J$ index ($J = \text{Sensitivity} + \text{Specificity} - 1$) recovers severe sensitivity losses (e.g. boosting Random Forest sensitivity on Liu 2019 from **18.8% to 62.5%** and on Hugo 2016 from **28.6% to 57.1%**) while improving overall classification accuracy across all test cohorts.
-
-### Impact of Decision Threshold Tuning (Default 0.50 vs. Youden's J Optimal)
-
-![Decision Threshold Tuning Impact](../../plots/models/threshold_tuning_impact.png)
-
-### LOCO Diagnostic Plots
-The full diagnostic outputs are saved in `plots/models/`:
-* ROC curves: `roc_curves_lr.png`, `roc_curves_rf.png`, `roc_curves_xgb.png`, `roc_curves_svm.png`, `roc_curves_elasticnet.png`
-* Precision-recall curves: `pr_curves_lr.png`, `pr_curves_rf.png`, `pr_curves_xgb.png`, `pr_curves_svm.png`, `pr_curves_elasticnet.png`
-* Confusion matrices: `confusion_matrices_lr.png`, `confusion_matrices_rf.png`, `confusion_matrices_xgb.png`, `confusion_matrices_svm.png`, `confusion_matrices_elasticnet.png`
-
-
-## 6. Consolidated Conclusion
-
-> [!NOTE] Consolidated Conclusion Rationale
-> - Given everything we have tested, what is the best practical approach for predicting immunotherapy response in melanoma from baseline tumour profiling?
-
-1. **Curated signatures are the foundation**: The six immune signatures provide the most stable and interpretable transcriptomic representation. They already achieve competitive AUCs on their own (0.61–0.67) and are robust across cohorts because they compress 20,000+ genes into biologically grounded, low-dimensional scores.
-2. **Orthogonal genomic features add value — but only for tree-based models**: Adding TMB, driver mutations, and pathway flags improves Random Forest and XGBoost to AUC ≈ 0.72–0.74, but *hurts* linear models. The final modelling strategy should therefore use tree-based architectures with the full multimodal feature set.
-3. **LOCO is harder than pooled CV**: Cross-study generalisation (LOCO AUC ≈ 0.58–0.68) lags behind pooled 5-fold CV (AUC ≈ 0.72–0.74), especially for small held-out cohorts. These two validation strategies should be reported as **distinct evidence layers**, not interchangeable performance estimates.
-4. **TMB is the right genomic surrogate**: Neoantigen load is almost perfectly collinear with TMB ($r_s = 0.872$), so retaining both adds redundancy without new information. TMB alone is sufficient.
+1. **Curated signatures are the foundation**: The six immune signatures provide the most stable and interpretable transcriptomic representation. They already achieve competitive AUROCs on their own (0.61–0.67) and are robust across cohorts because they compress 20,000+ genes into biologically grounded, low-dimensional scores.
+2. **Orthogonal genomic features add value — but only for tree-based models**: Adding TMB, driver mutations, and pathway flags improves Random Forest and XGBoost to AUROC ≈ 0.72–0.74, but *hurts* linear models. The final modelling strategy should therefore use tree-based architectures with the full multimodal feature set.
+3. **TMB is the right genomic surrogate**: Neoantigen load is almost perfectly collinear with TMB ($r_s = 0.872$), so retaining both adds redundancy without new information. TMB alone is sufficient.
 
 ---
 

@@ -403,7 +403,8 @@ def _render_dual_loco_panel(
         ax=ax1,
     )
     n_cols_left = df_left_num.shape[1]
-    for c_idx in range(n_cols_left - 1):
+    # Bold outline best model per column (including Mean LOCO column)
+    for c_idx in range(n_cols_left):
         col_data = df_left_num.iloc[:n_data, c_idx]
         ax1.add_patch(plt.Rectangle(
             (c_idx, col_data.values.argmax()), 1, 1,
@@ -443,6 +444,13 @@ def _render_dual_loco_panel(
         best_col = row_data.values.argmax()
         ax2.add_patch(plt.Rectangle(
             (best_col, r_idx), 1, 1,
+            fill=False, edgecolor="red", linewidth=2.2,
+        ))
+    # Bold outline best model for each Mean LOCO column (columns 0, 1, 2)
+    for c_idx in range(3):
+        col_data = df_right_num.iloc[:n_data, c_idx]
+        ax2.add_patch(plt.Rectangle(
+            (c_idx, col_data.values.argmax()), 1, 1,
             fill=False, edgecolor="red", linewidth=2.2,
         ))
 

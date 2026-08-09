@@ -2,13 +2,152 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, StratifiedKFold
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import (
+    roc_auc_score,
+    roc_curve,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+)
+
+
+def find_optimal_threshold(y_true: np.ndarray, y_pred_prob: np.ndarray) -> float:
+    """Finds decision threshold maximizing Youden's J statistic (Sensitivity + Specificity - 1).
+
+    Fits strictly on training set predictions to prevent test-set data leakage.
+    Clips threshold bounds to [0.1, 0.9] to prevent extreme boundary collapses.
+
+    Args:
+        y_true: Ground truth binary labels (0/1).
+        y_pred_prob: Predicted probability array.
+
+    Returns:
+        Optimal float threshold in range [0.1, 0.9].
+    """
+    if len(np.unique(y_true)) < 2:
+        return 0.5
+
+    fpr, tpr, thresholds = roc_curve(y_true, y_pred_prob)
+    j_scores = tpr - fpr
+    best_idx = int(np.argmax(j_scores))
+    raw_thresh = float(thresholds[best_idx])
+    return float(np.clip(raw_thresh, 0.1, 0.9))
+
+
+def evaluate_predictions(y_true, y_pred_prob, threshold=0.5):
+    """Computes classification performance metrics at a given decision threshold.
+
+    Args:
+        y_true: Array of ground-truth binary labels.
+        y_pred_prob: Array of predicted response probabilities.
+        threshold: Decision threshold for positive classification (default 0.5).
+
+    Returns:
+        Dict of metrics: auc, accuracy, precision, recall, f1, threshold.
+    """
+    y_pred_class = (y_pred_prob >= threshold).astype(int)
+
+    metrics = {
+        "auc": (
+            roc_auc_score(y_true, y_pred_prob)
+            if len(np.unique(y_true)) > 1
+            else np.nan
+        ),
+        "accuracy": accuracy_score(y_true, y_pred_class),
+        "precision": precision_score(y_true, y_pred_class, zero_division=0),
+        "recall": recall_score(y_true, y_pred_class, zero_division=0),
+        "f1": f1_score(y_true, y_pred_class, zero_division=0),
+        "threshold": float(threshold),
+    }
+    return metrics
+
+
+def run_loco_cv(
+    cohort_dfs: dict,
+    feature_cols: list,
+    model_type: str = "lr",
+    optimize_threshold: bool = True,
+):
+    """Runs Leave-One-Cohort-Out (LOCO) Cross-Validation.
+
+    Args:
+        cohort_dfs: Dict mapping cohort_name -> (X, y).
+        feature_cols: List of feature column names to use.
+        model_type: Classifier architecture key ('lr', 'rf', 'xgb', 'svm', 'elasticnet').
+        optimize_threshold: If True, calculates decision threshold on training predictions
+            via Youden's J to prevent zero-sensitivity prediction collapses without test leakage.
+
+    Returns:
+        Dict of results per test cohort containing y_true, y_pred_prob, metrics, threshold,
+        model, and scaler.
+    """
+    results = {}
+    cohort_names = list(cohort_dfs.keys())
+
+    for test_cohort in cohort_names:
+        # Prepare training data (combine all cohorts except the test cohort)
+        train_cohorts = [c for c in cohort_names if c != test_cohort]
+
+        X_train_list = []
+        y_train_list = []
+
+        for c in train_cohorts:
+            X_c, y_c = cohort_dfs[c]
+            X_train_list.append(X_c[feature_cols])
+            y_train_list.append(y_c)
+
+        X_train = pd.concat(X_train_list, axis=0)
+        y_train = pd.concat(y_train_list, axis=0)
+
+        # Prepare test data
+        X_test, y_test = cohort_dfs[test_cohort]
+        X_test = X_test[feature_cols]
+
+        # Scale features
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_train_scaled = pd.DataFrame(
+            X_train_scaled, columns=feature_cols, index=X_train.index
+        )
+        X_test_scaled = scaler.transform(X_test)
+        X_test_scaled = pd.DataFrame(
+            X_test_scaled, columns=feature_cols, index=X_test.index
+        )
+
+        # Tune and train model on scaled training data
+        model = get_model(model_type, X_train_scaled, y_train)
+
+        # Determine threshold on training fold predictions to prevent test leakage
+        if optimize_threshold:
+            y_train_prob = model.predict_proba(X_train_scaled)[:, 1]
+            opt_thresh = find_optimal_threshold(y_train.values, y_train_prob)
+        else:
+            opt_thresh = 0.5
+
+        # Predict on scaled test cohort
+        y_pred_prob = model.predict_proba(X_test_scaled)[:, 1]
+
+        # Evaluate
+        metrics = evaluate_predictions(y_test, y_pred_prob, threshold=opt_thresh)
+
+        results[test_cohort] = {
+            "y_true": y_test.values,
+            "y_pred_prob": y_pred_prob,
+            "threshold": opt_thresh,
+            "metrics": metrics,
+            "model": model,
+            "scaler": scaler,
+        }
+
+    return results
+
 import xgboost as xgb
 
 
@@ -107,23 +246,53 @@ def tune_random_forest(X_train, y_train, calibrate=True):
     return best_est
 
 def tune_xgboost(X_train, y_train, calibrate=True):
+    """Tune XGBoost Classifier via Randomised Search, optionally calibrated via Platt Scaling.
+
+    Uses RandomizedSearchCV (n_iter=60) rather than exhaustive GridSearchCV because
+    the expanded parameter space — including the four key regularisation axes
+    (subsample, colsample_bytree, min_child_weight, gamma) — yields ~3,900+ grid
+    combinations, which is computationally prohibitive. Randomised search samples
+    the space efficiently and consistently finds near-optimal configurations.
+
+    Key regularisation parameters added:
+      - subsample: row sampling fraction per tree (reduces overfitting to training cohort).
+      - colsample_bytree: feature sampling per tree (important with 6–12 features).
+      - min_child_weight: minimum sum of instance weight in a child leaf (guards against
+        spurious splits on small-N cohort training data).
+      - gamma: minimum loss reduction required to make a further partition (explicit
+        tree-complexity penalty).
     """
-    Tuning XGBoost Classifier, optionally calibrated via Platt Scaling.
-    """
-    param_grid = {
-        'n_estimators': [50, 100, 150],
-        'max_depth': [3, 5, 7],
-        'learning_rate': [0.01, 0.05, 0.1, 0.2]
+    param_dist = {
+        'n_estimators':      [50, 100, 150, 200],
+        'max_depth':         [3, 5, 7],
+        'learning_rate':     [0.01, 0.05, 0.1, 0.2],
+        'subsample':         [0.6, 0.7, 0.8, 1.0],
+        'colsample_bytree':  [0.6, 0.7, 0.8, 1.0],
+        'min_child_weight':  [1, 3, 5],
+        'gamma':             [0, 0.1, 0.3, 0.5],
     }
     pos_count = sum(y_train == 1)
     neg_count = sum(y_train == 0)
     scale_weight = neg_count / pos_count if pos_count > 0 else 1.0
-    
-    xgb_clf = xgb.XGBClassifier(eval_metric='logloss', scale_pos_weight=scale_weight, random_state=42, n_jobs=-1)
+
+    xgb_clf = xgb.XGBClassifier(
+        eval_metric='logloss',
+        scale_pos_weight=scale_weight,
+        random_state=42,
+        n_jobs=-1,
+    )
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    grid = GridSearchCV(xgb_clf, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
-    grid.fit(X_train, y_train)
-    best_est = grid.best_estimator_
+    search = RandomizedSearchCV(
+        xgb_clf,
+        param_dist,
+        n_iter=60,
+        cv=cv,
+        scoring='roc_auc',
+        random_state=42,
+        n_jobs=-1,
+    )
+    search.fit(X_train, y_train)
+    best_est = search.best_estimator_
     if calibrate:
         return calibrate_estimator(best_est, X_train, y_train)
     return best_est
@@ -195,72 +364,4 @@ def get_model(model_type, X_train, y_train, calibrate=True):
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
-def evaluate_predictions(y_true, y_pred_prob):
-    """
-    Computes performance metrics.
-    """
-    # Threshold at 0.5 for class labels
-    y_pred_class = (y_pred_prob >= 0.5).astype(int)
-    
-    metrics = {
-        'auc': roc_auc_score(y_true, y_pred_prob) if len(np.unique(y_true)) > 1 else np.nan,
-        'accuracy': accuracy_score(y_true, y_pred_class),
-        'precision': precision_score(y_true, y_pred_class, zero_division=0),
-        'recall': recall_score(y_true, y_pred_class, zero_division=0),
-        'f1': f1_score(y_true, y_pred_class, zero_division=0)
-    }
-    return metrics
 
-def run_loco_cv(cohort_dfs, feature_cols, model_type="lr"):
-    """
-    Runs Leave-One-Cohort-Out (LOCO) Cross-Validation.
-    cohort_dfs: dict mapping cohort_name -> (X, y)
-    feature_cols: list of feature column names to use
-    """
-    results = {}
-    cohort_names = list(cohort_dfs.keys())
-    
-    for test_cohort in cohort_names:
-        # Prepare training data (combine all cohorts except the test cohort)
-        train_cohorts = [c for c in cohort_names if c != test_cohort]
-        
-        X_train_list = []
-        y_train_list = []
-        
-        for c in train_cohorts:
-            X_c, y_c = cohort_dfs[c]
-            X_train_list.append(X_c[feature_cols])
-            y_train_list.append(y_c)
-            
-        X_train = pd.concat(X_train_list, axis=0)
-        y_train = pd.concat(y_train_list, axis=0)
-        
-        # Prepare test data
-        X_test, y_test = cohort_dfs[test_cohort]
-        X_test = X_test[feature_cols]
-        
-        # Scale features
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
-        X_train_scaled = pd.DataFrame(X_train_scaled, columns=feature_cols, index=X_train.index)
-        X_test_scaled = scaler.transform(X_test)
-        X_test_scaled = pd.DataFrame(X_test_scaled, columns=feature_cols, index=X_test.index)
-        
-        # Tune and train model on scaled training data
-        model = get_model(model_type, X_train_scaled, y_train)
-        
-        # Predict on scaled test cohort
-        y_pred_prob = model.predict_proba(X_test_scaled)[:, 1]
-        
-        # Evaluate
-        metrics = evaluate_predictions(y_test, y_pred_prob)
-        
-        results[test_cohort] = {
-            'y_true': y_test.values,
-            'y_pred_prob': y_pred_prob,
-            'metrics': metrics,
-            'model': model,
-            'scaler': scaler
-        }
-        
-    return results

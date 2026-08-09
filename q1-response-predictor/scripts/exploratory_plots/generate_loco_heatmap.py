@@ -64,7 +64,7 @@ HEATMAP_FIGSIZE: Tuple[int, int] = (14, 7.875)  # 16:9 aspect ratio
 HEATMAP_ANNOT_SIZE: int = 13
 HEATMAP_LABEL_SIZE: int = 11
 
-OUTPUT_PLOT_DIR: Path = PLOTS_DIR / "feature_selection"
+OUTPUT_PLOT_DIR: Path = PLOTS_DIR / "models"
 DEFAULT_OUTPUT_PATH: Path = OUTPUT_PLOT_DIR / "loco_performance_heatmap.png"
 LOG_DIR: Path = _SUBPROJECT_ROOT / "logs"
 LOG_PATH: Path = LOG_DIR / "generate_loco_heatmap.log"
@@ -87,6 +87,13 @@ def _load_and_prep_cohort(
     return sigs, y
 
 
+def _format_cohort_col_name(cohort_name: str, n_samples: int) -> str:
+    """Formats cohort column header with multi-line word wrapping over 2-3 lines."""
+    parts = cohort_name.split()
+    wrapped_cohort = "\n".join(parts)
+    return f"{wrapped_cohort}\n(N={n_samples})"
+
+
 def _build_loco_summary_dataframe(
     all_loco_results: Dict[str, Dict[str, Any]],
 ) -> pd.DataFrame:
@@ -106,7 +113,7 @@ def _build_loco_summary_dataframe(
         for c in all_cohorts:
             res = loco.get(c, {})
             n_samples = len(res["y_true"]) if "y_true" in res else 0
-            col_name = f"{c} (N={n_samples})"
+            col_name = _format_cohort_col_name(c, n_samples)
             metrics = res.get("metrics_extended") or (
                 calculate_extended_metrics(res["y_true"], res["y_pred_prob"]) if res else None
             )
@@ -114,7 +121,7 @@ def _build_loco_summary_dataframe(
         rows.append(row_dict)
 
     df = pd.DataFrame(rows).set_index("Model")
-    df["Mean LOCO"] = df.mean(axis=1)
+    df["Mean\nLOCO"] = df.mean(axis=1)
 
     # Append cross-model mean row — model-agnostic AUC per cohort
     cross_model_mean = df.mean(axis=0)
@@ -164,6 +171,13 @@ def plot_loco_heatmap_from_results(
             fill=False, edgecolor="red", linewidth=2.5,
         ))
 
+    # Bold outline around the best model in the Mean LOCO summary column
+    best_mean_model_idx = df_heatmap.iloc[:n_data_rows, -1].values.argmax()
+    ax_heatmap.add_patch(plt.Rectangle(
+        (n_cols - 1, best_mean_model_idx), 1, 1,
+        fill=False, edgecolor="red", linewidth=2.5,
+    ))
+
     # Thick white vertical line separating the Mean LOCO summary column
     ax_heatmap.axvline(n_cols - 1, color="white", linewidth=4.0, zorder=6)
 
@@ -176,12 +190,12 @@ def plot_loco_heatmap_from_results(
     )
     ax_heatmap.set_xlabel("Held-Out Test Cohort", fontsize=HEATMAP_LABEL_SIZE, fontweight="bold", labelpad=10)
     ax_heatmap.set_ylabel("Model Architecture", fontsize=HEATMAP_LABEL_SIZE, fontweight="bold", labelpad=10)
-    plt.xticks(fontsize=HEATMAP_LABEL_SIZE)
+    plt.xticks(fontsize=HEATMAP_LABEL_SIZE, rotation=0, ha="center")
     plt.yticks(fontsize=HEATMAP_LABEL_SIZE, rotation=0)
 
     # Explicit margins force the heatmap to fill the 16:9 canvas rather than
     # shrinking to fit cell aspect ratios (which tight_layout would do).
-    fig.subplots_adjust(left=0.22, right=0.86, top=0.88, bottom=0.14)
+    fig.subplots_adjust(left=0.22, right=0.86, top=0.88, bottom=0.18)
     target_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Save at exact figsize (16:9) — no bbox_inches="tight" so canvas ratio is preserved
@@ -208,7 +222,7 @@ def plot_loco_heatmap_from_results(
 
 def generate_loco_heatmap_standalone() -> Path:
     """Standalone runner that computes LOCO cross-validation on live datasets and plots heatmap."""
-    config_path = _SUBPROJECT_ROOT.parent / "config" / "datasets.yaml"
+    config_path = _SUBPROJECT_ROOT / "config" / "datasets.yaml"
     _, _, _, trial_names = load_all_active_cohorts(config_path, DATA_DIR, merge_only=True)
 
     cohort_dfs = {
