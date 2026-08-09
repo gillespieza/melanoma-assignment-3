@@ -37,9 +37,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
+from src.data_loaders import load_all_active_cohorts
 from src.styles import COHORT_PALETTE, GENE_CATEGORY_PALETTE, RESPONSE_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, REPORTS_DIR
+from src.utils.paths import DATA_DIR, PLOTS_DIR, REPORTS_DIR
 from src.utils.plotting import add_km_risk_table, save_fig
 
 set_presentation_style()
@@ -47,6 +48,7 @@ set_presentation_style()
 # Module-level Constants
 PLOT_DIR = PLOTS_DIR / "feature_selection"
 REPORTS_DIR = REPORTS_DIR / "pillar-4-out-of-cohort-benchmarks"
+LOG_DIR = BASE_DIR / "logs"
 LOG_PATH = LOG_DIR / "run_transcriptomic_feature_selection.log"
 
 
@@ -302,22 +304,22 @@ def _validate_on_trial_cohorts(
     print("Cross-Dataset Validation on Immunotherapy Trials")
     print("==================================================")
 
-    expr_liu, clin_liu = load_liu_2019(data_dir)
-    expr_hugo, clin_hugo = load_hugo_2016(data_dir)
-    expr_riaz, clin_riaz = load_riaz_2017(data_dir)
-
+    config_path = BASE_DIR.parent / "config" / "datasets.yaml"
+    expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(
+        config_path, data_dir, merge_only=True
+    )
     trial_cohorts = {
-        "Liu 2019": (expr_liu, clin_liu),
-        "Hugo 2016": (expr_hugo, clin_hugo),
-        "Riaz 2017": (expr_riaz, clin_riaz),
+        name: (expr_dict[name], clin_dict[name])
+        for name in trial_names
     }
 
     validation_results = {}
+    n_cohorts = len(trial_names)
 
     fig_roc, ax_roc = plt.subplots(figsize=(8, 7))
     ax_roc.plot([0, 1], [0, 1], "k--", alpha=0.5)
 
-    fig_viol, axes_viol = plt.subplots(1, 3, figsize=(16, 5))
+    fig_viol, axes_viol = plt.subplots(1, n_cohorts, figsize=(6 * n_cohorts, 5))
 
     for idx, (name, (df_trial_expr, df_trial_clin)) in enumerate(trial_cohorts.items()):
         df_valid_clin = df_trial_clin.dropna(subset=["response"]).copy()
