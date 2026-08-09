@@ -45,6 +45,9 @@ Whenever generating plots, figures, web artifacts, or presentation reports for t
 - **Labels & Annotations**: On presentation slides, prefer direct data labels on bars/markers over forcing audience grid tracing.
 - **Gridlines**: Set gridlines to thin, light gray (`grid.color: '#E5E7EB'`, `grid.linewidth: 0.5`, `grid.alpha: 0.6`) in `set_presentation_style()` so gridlines never distract from data visualisations.
 - **Image Preference over Tables**: For presentation and reporting purposes, always prefer generating and embedding high-resolution (300 DPI) visual plots and figures over static tabular data.
+- **Kaplan-Meier Plotting Standards**: All Kaplan-Meier (KM) survival plots generated across the codebase MUST:
+  1. Always include a **numbers-at-risk table** beneath the plot axis via `add_km_risk_table(kmf_list, ax)` (from `src.utils.plotting`), providing clinical transparency on sample size attrition over time.
+  2. Always display **confidence interval shading** (`ci_show=True`, `ci_alpha=0.12` or `alpha=0.15`) on survival curves, unless explicitly instructed otherwise by the user.
 - **Python Imports**: Import central color palettes from `src.styles` (`from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style`).
 
 ---

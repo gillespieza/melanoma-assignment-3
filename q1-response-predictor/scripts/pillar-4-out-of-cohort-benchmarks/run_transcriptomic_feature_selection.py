@@ -249,11 +249,11 @@ def _plot_tcga_km_curve(df_clin_survival: pd.DataFrame, plot_dir: Path) -> None:
 
     kmf_low = KaplanMeierFitter()
     kmf_low.fit(df_clin_survival.loc[low_mask, "OS_MONTHS"], df_clin_survival.loc[low_mask, "OS_STATUS"], label=f"Low-Risk (N={low_mask.sum()})")
-    kmf_low.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["CR/PR"], ci_show=False, linewidth=2.5)
+    kmf_low.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["CR/PR"], ci_show=True, ci_alpha=0.12, linewidth=2.5)
 
     kmf_high = KaplanMeierFitter()
     kmf_high.fit(df_clin_survival.loc[high_mask, "OS_MONTHS"], df_clin_survival.loc[high_mask, "OS_STATUS"], label=f"High-Risk (N={high_mask.sum()})")
-    kmf_high.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["PD"], ci_show=False, linewidth=2.5)
+    kmf_high.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["PD"], ci_show=True, ci_alpha=0.12, linewidth=2.5)
 
     add_km_risk_table([kmf_low, kmf_high], ax)
 

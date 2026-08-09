@@ -534,14 +534,14 @@ def _render_km_curves(
         df_surv.loc[low_mask, _COL_OS_MONTHS], df_surv.loc[low_mask, _COL_OS_STATUS_CLEAN],
         label=f"Low (N={low_mask.sum()})"
     )
-    kmf_low.plot_survival_function(ax=ax, color=color_low, ci_show=False, linewidth=2.5)
+    kmf_low.plot_survival_function(ax=ax, color=color_low, ci_show=True, ci_alpha=0.12, linewidth=2.5)
 
     kmf_high = KaplanMeierFitter()
     kmf_high.fit(
         df_surv.loc[high_mask, _COL_OS_MONTHS], df_surv.loc[high_mask, _COL_OS_STATUS_CLEAN],
         label=f"High (N={high_mask.sum()})"
     )
-    kmf_high.plot_survival_function(ax=ax, color=color_high, ci_show=False, linewidth=2.5)
+    kmf_high.plot_survival_function(ax=ax, color=color_high, ci_show=True, ci_alpha=0.12, linewidth=2.5)
 
     add_km_risk_table([kmf_low, kmf_high], ax)
 

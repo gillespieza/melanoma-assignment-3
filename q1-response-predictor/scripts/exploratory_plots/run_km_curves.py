@@ -90,7 +90,7 @@ def _plot_km(
         label = f"{label} (N={mask.sum()})"
         kmf = KaplanMeierFitter()
         kmf.fit(df_sub.loc[mask, "OS_MONTHS"], df_sub.loc[mask, "OS_STATUS"], label=label)
-        kmf.plot_survival_function(ax=ax, color=palette[i % len(palette)], ci_show=False, linewidth=2.5)
+        kmf.plot_survival_function(ax=ax, color=palette[i % len(palette)], ci_show=True, ci_alpha=0.12, linewidth=2.5)
         kmf_list.append(kmf)
 
     add_km_risk_table(kmf_list, ax)
