@@ -24,10 +24,16 @@ if str(SUBPROJECT_ROOT) not in sys.path:
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-# ---------------------------------------------------------------------------
-# Standard Library & Third-Party Imports
-# ---------------------------------------------------------------------------
+# Set single-threading for OpenMP / BLAS inside workers to prevent Windows process join deadlocks
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 import contextlib
+import multiprocessing
 from typing import Dict, List, Tuple
 
 import matplotlib
@@ -120,74 +126,78 @@ def _pool_cohorts(data_dir: Path) -> Tuple[pd.DataFrame, pd.Series, List[str]]:
     """
     config_path = SUBPROJECT_ROOT / "config" / "datasets.yaml"
     _, _, _, trial_names = load_all_active_cohorts(config_path, data_dir, merge_only=True)
+
+    print(f"\n--- Loading {len(trial_names)} Active Trial Cohorts ---")
+    sys.stdout.flush()
+
     sigs_list, y_list = [], []
-    for name in trial_names:
+    for idx, name in enumerate(trial_names, start=1):
+        print(f"  [{idx}/{len(trial_names)}] Loading cohort '{name}'...")
+        sys.stdout.flush()
         sigs, y = _load_and_prep_cohort(name, data_dir)
         sigs_list.append(sigs)
         y_list.append(y)
+        n_pats = len(y)
+        n_resp = int(y.sum())
+        resp_pct = 100.0 * n_resp / n_pats if n_pats > 0 else 0.0
+        print(f"      -> {name}: N={n_pats} patients, {n_resp} responders ({resp_pct:.1f}%)")
+        sys.stdout.flush()
+
     X_pooled = pd.concat(sigs_list, axis=0).reset_index(drop=True)
     y_pooled = pd.concat(y_list, axis=0).reset_index(drop=True)
+
+    n_null = X_pooled[FEATURE_COLS].isna().sum().sum()
+    print(f"\n--- Pooled Feature Matrix Summary ---")
+    print(f"  Combined dataset size : N={len(y_pooled)} patients across {len(trial_names)} cohorts")
+    print(f"  Overall response rate : {y_pooled.sum()}/{len(y_pooled)} responders ({100.0 * y_pooled.mean():.1f}%)")
+    print(f"  Curated feature panel : {', '.join(FEATURE_COLS)} ({len(FEATURE_COLS)} signatures)")
+    print(f"  Feature matrix shape  : {X_pooled[FEATURE_COLS].shape[0]} rows x {X_pooled[FEATURE_COLS].shape[1]} columns")
+    print(f"  Missing values check  : {n_null} NaNs in pooled feature panel")
+    sys.stdout.flush()
+
     return X_pooled, y_pooled, trial_names
 
 
 # ---------------------------------------------------------------------------
 # 5-Fold CV Evaluation
 # ---------------------------------------------------------------------------
-def _run_5f_cv_for_model(
-    X: pd.DataFrame,
-    y: pd.Series,
-    model_type: str,
-) -> Dict:
-    """Runs 5-fold stratified CV for a single model family and returns per-fold AUC scores.
-
-    Features are scaled independently per fold (fit on train split, transform on val
-    split) to prevent data leakage. Model tuning uses the same get_model() pipeline
-    as LOCO evaluation for consistency.
+def _eval_fold_worker(args: Tuple[str, int, np.ndarray, np.ndarray, np.ndarray, np.ndarray]) -> Tuple[str, int, float]:
+    """Evaluates a single fold for a model family in a worker process.
 
     Args:
-        X: Full pooled feature DataFrame (signature columns only).
-        y: Full pooled binary response labels.
-        model_type: One of 'lr', 'rf', 'xgb', 'svm', 'elasticnet'.
+        args: Tuple of (model_type, fold_idx, X_train_raw, X_val_raw, y_train, y_val).
 
     Returns:
-        Dict with keys 'fold_aucs' (list[float]), 'mean_auc' (float), 'std_auc' (float).
+        Tuple of (model_type, fold_idx, auc_score).
     """
-    skf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=RANDOM_STATE)
-    X_feat = X[FEATURE_COLS].values
-    y_arr = y.values
-    fold_aucs: List[float] = []
+    model_type, fold_idx, X_train_raw, X_val_raw, y_train, y_val = args
 
-    for fold_idx, (train_idx, val_idx) in enumerate(skf.split(X_feat, y_arr), start=1):
-        X_train_raw, X_val_raw = X_feat[train_idx], X_feat[val_idx]
-        y_train, y_val = y_arr[train_idx], y_arr[val_idx]
+    # Per-fold standardisation to prevent leakage across splits
+    scaler = StandardScaler()
+    X_train_scaled = pd.DataFrame(
+        scaler.fit_transform(X_train_raw), columns=FEATURE_COLS
+    )
+    X_val_scaled = pd.DataFrame(
+        scaler.transform(X_val_raw), columns=FEATURE_COLS
+    )
 
-        # Per-fold standardisation to prevent leakage across splits
-        scaler = StandardScaler()
-        X_train_scaled = pd.DataFrame(
-            scaler.fit_transform(X_train_raw), columns=FEATURE_COLS
-        )
-        X_val_scaled = pd.DataFrame(
-            scaler.transform(X_val_raw), columns=FEATURE_COLS
-        )
+    model = get_model(model_type, X_train_scaled, pd.Series(y_train), calibrate=True, n_jobs=1)
+    y_prob = model.predict_proba(X_val_scaled)[:, 1]
 
-        model = get_model(model_type, X_train_scaled, pd.Series(y_train), calibrate=True)
-        y_prob = model.predict_proba(X_val_scaled)[:, 1]
+    try:
+        auc = float(roc_auc_score(y_val, y_prob))
+    except ValueError:
+        auc = float(np.nan)
 
-        try:
-            auc = roc_auc_score(y_val, y_prob)
-        except ValueError:
-            auc = np.nan
-
-        fold_aucs.append(auc)
-        print(f"    Fold {fold_idx}/{N_FOLDS}: AUC = {auc:.3f}")
-
-    mean_auc = float(np.nanmean(fold_aucs))
-    std_auc = float(np.nanstd(fold_aucs))
-    return {"fold_aucs": fold_aucs, "mean_auc": mean_auc, "std_auc": std_auc}
+    return model_type, fold_idx, auc
 
 
 def _run_all_models(X: pd.DataFrame, y: pd.Series) -> Dict[str, Dict]:
-    """Runs 5-fold CV for all five model families and returns a results dictionary.
+    """Runs 5-fold CV for all five model families in parallel and returns a results dictionary.
+
+    Uses ProcessPoolExecutor to dispatch fold-level evaluations concurrently across
+    separate processes. Progress is logged from the main process as folds complete,
+    ensuring console and log file remain synchronized without output latency.
 
     Args:
         X: Pooled feature DataFrame.
@@ -196,12 +206,60 @@ def _run_all_models(X: pd.DataFrame, y: pd.Series) -> Dict[str, Dict]:
     Returns:
         Dict mapping model key to cv result dict (fold_aucs, mean_auc, std_auc).
     """
-    results: Dict[str, Dict] = {}
+    skf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=RANDOM_STATE)
+    X_feat = X[FEATURE_COLS].values
+    y_arr = y.values
+
+    # Build fold tasks for all models: 5 models x N_FOLDS tasks
+    fold_tasks = []
+    splits = list(skf.split(X_feat, y_arr))
+
+    print(f"\n--- 5-Fold Stratified Split Composition ---")
+    for f_idx, (tr_idx, va_idx) in enumerate(splits, start=1):
+        tr_resp = int(y_arr[tr_idx].sum())
+        va_resp = int(y_arr[va_idx].sum())
+        print(f"  Fold {f_idx}: Train N={len(tr_idx)} ({tr_resp} responders) | Val N={len(va_idx)} ({va_resp} responders)")
+    sys.stdout.flush()
+
     for mtype in MODEL_ORDER:
-        print(f"\n--- Running 5-Fold CV for Model: {MODEL_LABELS[mtype]} ---")
-        results[mtype] = _run_5f_cv_for_model(X, y, mtype)
-        r = results[mtype]
-        print(f"  Mean AUC = {r['mean_auc']:.3f} +/- {r['std_auc']:.3f}")
+        for fold_idx, (train_idx, val_idx) in enumerate(splits, start=1):
+            fold_tasks.append((
+                mtype,
+                fold_idx,
+                X_feat[train_idx],
+                X_feat[val_idx],
+                y_arr[train_idx],
+                y_arr[val_idx],
+            ))
+
+    n_workers = min(len(fold_tasks), os.cpu_count() or 1)
+    print(f"\nDispatching {len(fold_tasks)} fold evaluations across {n_workers} worker processes...")
+    sys.stdout.flush()
+
+    # Data structures to aggregate per-model fold results
+    model_folds: Dict[str, Dict[int, float]] = {mtype: {} for mtype in MODEL_ORDER}
+
+    with multiprocessing.Pool(processes=n_workers) as pool:
+        for mtype, fold_idx, auc in pool.imap_unordered(_eval_fold_worker, fold_tasks):
+            model_folds[mtype][fold_idx] = auc
+            print(f"  [{MODEL_LABELS[mtype]}] Fold {fold_idx}/{N_FOLDS}: AUC = {auc:.3f}")
+            sys.stdout.flush()
+
+    # Compile final results dictionary in canonical MODEL_ORDER
+    results: Dict[str, Dict] = {}
+    print("\n--- Summary 5-Fold CV Performance ---")
+    for mtype in MODEL_ORDER:
+        fold_dict = model_folds[mtype]
+        fold_aucs = [fold_dict[i] for i in range(1, N_FOLDS + 1)]
+        mean_auc = float(np.nanmean(fold_aucs))
+        std_auc = float(np.nanstd(fold_aucs))
+        results[mtype] = {
+            "fold_aucs": fold_aucs,
+            "mean_auc": mean_auc,
+            "std_auc": std_auc,
+        }
+        print(f"  {MODEL_LABELS[mtype]:<25}: Mean AUC = {mean_auc:.3f} +/- {std_auc:.3f} | Folds: {[round(a, 3) for a in fold_aucs]}")
+
     return results
 
 
@@ -312,20 +370,16 @@ def main() -> None:
     print("=" * 56)
     print("5-Fold Stratified CV: Curated Signatures Feature Panel")
     print("=" * 56)
+    sys.stdout.flush()
 
     X_pooled, y_pooled, trial_names = _pool_cohorts(DATA_DIR)
-    print(f"\nLoading and pooling active trial cohorts ({' + '.join(trial_names)})...")
-    n_pooled = len(y_pooled)
-    n_resp = int(y_pooled.sum())
-    print(f"  Pooled dataset: N={n_pooled} patients, {n_resp} responders "
-          f"({100 * y_pooled.mean():.1f}%)")
-
     cv_results = _run_all_models(X_pooled, y_pooled)
-    _plot_heatmap(cv_results, n_pooled, OUTPUT_PATH)
+    _plot_heatmap(cv_results, len(y_pooled), OUTPUT_PATH)
 
     print("\n" + "=" * 56)
     print("Done!")
     print("=" * 56)
+    sys.stdout.flush()
 
 
 if __name__ == "__main__":

@@ -86,7 +86,7 @@ def setup_logging(
     start_perf = time.perf_counter()
     start_str = start_time.strftime("%Y-%m-%d %H:%M:%S")
 
-    with log_path.open("w", encoding="utf-8") as log_file:
+    with log_path.open("w", encoding="utf-8", buffering=1) as log_file:
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
 
