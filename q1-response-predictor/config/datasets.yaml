@@ -69,6 +69,7 @@ datasets:
     mutation_file: "data_mutations.txt"
     baseline_only: false
     mutations_by_patient: false
+    cohort_immunotherapy: true   # IT-treated subcohort (ipilimumab, vaccines, interferon +/- chemotherapy)
     patient_prefix: "tcga_gdc_"
     sample_prefix: "tcga_gdc_"
     processing_strategy: "tcga"

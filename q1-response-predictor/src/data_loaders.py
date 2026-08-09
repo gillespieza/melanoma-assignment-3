@@ -132,6 +132,17 @@ def load_dataset_by_config(
     df_clin["Cohort"] = config.cohort_name
     df_clin = _add_aliases(df_clin)
 
+    if config.cohort_immunotherapy:
+        immuno_col = next(
+            (c for c in df_clin.columns if c.startswith("TX_TYPE_IMMUNOTHERAPY") or c == "immunotherapy"),
+            None,
+        )
+        if immuno_col:
+            mask = pd.to_numeric(df_clin[immuno_col], errors="coerce") == 1.0
+            if 0 < mask.sum() < len(df_clin):
+                df_clin = df_clin.loc[mask]
+                df_expr = df_expr.loc[df_clin.index]
+
     return df_expr, df_clin
 
 
