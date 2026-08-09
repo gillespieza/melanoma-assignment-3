@@ -47,7 +47,7 @@ from src.data_loaders import load_all_active_cohorts, load_cohort_by_name
 from src.models import get_model
 from src.signatures import extract_all_signatures, zscore_df
 from src.styles import set_presentation_style
-from src.utils.logging import TeeStream
+from src.utils.logging import setup_logging
 from src.utils.paths import DATA_DIR, PLOTS_DIR, rel_path
 from src.utils.plotting import save_fig
 
@@ -329,10 +329,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    with open(LOG_PATH, "w", encoding="utf-8") as log_file:
-        stdout_tee = TeeStream(sys.stdout, log_file)
-        stderr_tee = TeeStream(sys.stderr, log_file)
-        with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {rel_path(LOG_PATH)}")
-            main()
+    with setup_logging(LOG_PATH, relative_to=SUBPROJECT_ROOT):
+        main()

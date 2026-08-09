@@ -199,16 +199,6 @@ def calibrate_estimator(estimator, X_train, y_train, method='sigmoid', cv=3):
     """
     Fits a CalibratedClassifierCV wrapper around a base estimator using internal cross-validation.
     """
-    # sklearn 1.8 compatibility: CalibratedClassifierCV internally refits the base
-    # estimator on each CV fold. When the base estimator was originally trained on a
-    # pd.DataFrame (which carries feature names), the internal refit receives a numpy
-    # array slice and emits:
-    #   UserWarning: X does not have valid feature names, but <Estimator> was fitted
-    #   with feature names.
-    # Converting to ndarray before fitting ensures consistent dtype through all
-    # CalibratedClassifierCV folds and suppresses the warning.
-    X_arr = np.asarray(X_train)
-    y_arr = np.asarray(y_train)
     calibrated = CalibratedClassifierCV(
         estimator=estimator,
         method=method,
@@ -216,7 +206,7 @@ def calibrate_estimator(estimator, X_train, y_train, method='sigmoid', cv=3):
         ensemble=False,
         n_jobs=-1
     )
-    calibrated.fit(X_arr, y_arr)
+    calibrated.fit(X_train, y_train)
     return calibrated
 
 def tune_logistic_regression(X_train, y_train, calibrate=True):

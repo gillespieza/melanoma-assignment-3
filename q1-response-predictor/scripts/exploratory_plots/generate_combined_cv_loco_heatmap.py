@@ -52,7 +52,7 @@ from src.evaluation import calculate_extended_metrics
 from src.models import get_model, run_loco_cv
 from src.signatures import extract_all_signatures, zscore_df
 from src.styles import set_presentation_style
-from src.utils.logging import TeeStream
+from src.utils.logging import setup_logging
 from src.utils.paths import DATA_DIR, PLOTS_DIR, get_subproject_log_dir, rel_path
 from src.utils.plotting import save_fig
 
@@ -520,10 +520,5 @@ def generate_1x2_grid_heatmap() -> None:
 
 
 if __name__ == "__main__":
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    with open(LOG_PATH, "w", encoding="utf-8") as log_file:
-        stdout_tee = TeeStream(sys.stdout, log_file)
-        stderr_tee = TeeStream(sys.stderr, log_file)
-        with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {rel_path(LOG_PATH)}")
-            generate_1x2_grid_heatmap()
+    with setup_logging(LOG_PATH, relative_to=SUBPROJECT_ROOT):
+        generate_1x2_grid_heatmap()
