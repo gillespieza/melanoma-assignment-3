@@ -140,15 +140,16 @@ def _annotate_bars(ax: plt.Axes) -> None:
     """
     for patch in ax.patches:
         height = patch.get_height()
-        if height > 0:
+        if not np.isnan(height):
+            y_pos = max(height, 0.01)
             ax.annotate(
                 f"{height:.1%}",
-                (patch.get_x() + patch.get_width() / 2.0, height),
+                (patch.get_x() + patch.get_width() / 2.0, y_pos),
                 ha="center",
                 va="bottom",
-                fontsize=10,
+                fontsize=9.5,
                 fontweight="bold",
-                xytext=(0, 3),
+                xytext=(0, 2),
                 textcoords="offset points",
             )
 
@@ -179,7 +180,7 @@ def plot_threshold_comparison(df: pd.DataFrame, output_path: Path) -> Path:
         The resolved output path.
     """
     palette = _build_palette()
-    fig, axes = plt.subplots(1, 2, figsize=(12, 6.5))
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6.5))
 
     # Panel 1: Accuracy
     sns.barplot(
@@ -189,6 +190,7 @@ def plot_threshold_comparison(df: pd.DataFrame, output_path: Path) -> Path:
         hue="Strategy",
         palette=palette,
         ax=axes[0],
+        width=0.75,
         edgecolor="white",
         linewidth=1.2,
     )
@@ -212,6 +214,7 @@ def plot_threshold_comparison(df: pd.DataFrame, output_path: Path) -> Path:
         hue="Strategy",
         palette=palette,
         ax=axes[1],
+        width=0.75,
         edgecolor="white",
         linewidth=1.2,
     )

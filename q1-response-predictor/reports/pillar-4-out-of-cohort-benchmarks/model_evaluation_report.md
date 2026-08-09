@@ -4,24 +4,26 @@ aliases:
   - LOCO Model Evaluation Report
   - Q1 Response Predictor Evaluation
 tags:
-  - q1
-  - model-evaluation
-  - loco-cv
-  - immunotherapy-response
   - calibration
+  - immunotherapy-response
+  - loco-cv
+  - model-evaluation
+  - q1
 created: 2026-08-09 17:06
 cssclasses:
-  - table-small
-  - table-center
   - row-alt
-updated: 2026-08-09 17:06
+  - table-center
+  - table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-08-09 19:22
 ---
 
 # Model Evaluation Report: Leave-One-Cohort-Out (LOCO) Cross-Validation
 
 > [!summary] What, Why & Key Questions
 > - **What**: Tested 5 machine learning models (LR, RF, XGBoost, SVM, ElasticNet) predicting anti-PD-1 / immunotherapy response.
-> - **Why**: Testing on held-out hospital trial cohorts (LOCO) evaluates real-world generalisability.
+> - **Why**: Testing on held-out hospital trial cohorts (LOCO) evaluates real-world generalisability.  
 > **Key Questions**: Which model generalises best? Does multimodal integration improve accuracy?
 
 ## Overview & Methodology
@@ -32,15 +34,15 @@ updated: 2026-08-09 17:06
 
 ## Cross-Model AUC Summary
 
-| Model | Gide 2019 | Hugo 2016 | Liu 2019 | Riaz 2017 | TCGA GDC 2025 | Van Allen 2015 | **Mean AUC** |
-|:---|---::---::---::---::---::---:---:|
-| **LR** | 0.522 | 0.511 | 0.512 | 0.743 | 0.422 | 0.599 | **0.551** |
-| **RF** | 0.374 | 0.489 | 0.555 | 0.657 | 0.414 | 0.527 | **0.503** |
-| **XGB** | 0.498 | 0.412 | 0.570 | 0.591 | 0.482 | 0.489 | **0.507** |
-| **SVM** | 0.626 | 0.308 | 0.571 | 0.343 | 0.420 | 0.566 | **0.472** |
-| **ElasticNet** | 0.728 | 0.451 | 0.539 | 0.740 | 0.401 | 0.643 | **0.584** |
+| Model          | Gide 2019                         | Hugo 2016 | Liu 2019 | Riaz 2017 | TCGA GDC 2025 | Van Allen 2015 | **Mean AUC** |
+| -------------- | --------------------------------- | --------- | -------- | --------- | ------------- | -------------- | ------------ |
+| **LR**         | 0.522                             | 0.511     | 0.512    | 0.743     | 0.422         | 0.599          | **0.551**    |
+| **RF**         | 0.374                             | 0.489     | 0.555    | 0.657     | 0.414         | 0.527          | **0.503**    |
+| **XGB**        | 0.498                             | 0.412     | 0.570    | 0.591     | 0.482         | 0.489          | **0.507**    |
+| **SVM**        | 0.626                             | 0.308     | 0.571    | 0.343     | 0.420         | 0.566          | **0.472**    |
+| **ElasticNet** | 0.728                             | 0.451     | 0.539    | 0.740     | 0.401         | 0.643          | **0.584**    |
 
-> [!INSIGHT] Best Generalising Model: ElasticNet
+> [!INSIGHT] Best Generalising Model: ElasticNet  
 > **ElasticNet Logistic Regression** achieves the highest mean cross-cohort AUC of **0.584** across held-out test cohorts.
 
 ## Logistic Regression (L1-Penalised)
