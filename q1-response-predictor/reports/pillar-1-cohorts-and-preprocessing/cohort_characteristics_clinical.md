@@ -9,12 +9,12 @@ tags:
   - survival-analysis
   - kaplan-meier
   - immunotherapy
-created: 2026-08-09 12:29
+created: 2026-08-09 13:00
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-09 12:29
+updated: 2026-08-09 13:00
 ---
 
 # Clinical Characteristics of Immunotherapy Data Cohorts
@@ -27,12 +27,12 @@ updated: 2026-08-09 12:29
 > - **Questions**: Are patient populations comparable across cohorts?
 
 This report compares patient demographics across active trial cohorts:
-- **Liu 2019**: Immunotherapy trial cohort ($N = 122$).
-- **Hugo 2016**: Immunotherapy trial cohort ($N = 27$).
-- **Riaz 2017**: Immunotherapy trial cohort ($N = 107$).
-- **TCGA GDC 2025**: Immunotherapy trial cohort ($N = 91$).
-- **Gide 2019**: Immunotherapy trial cohort ($N = 91$).
-- **Van Allen 2015**: Immunotherapy trial cohort ($N = 110$).
+- **Liu 2019**: Anti-PD-1 (pembrolizumab / nivolumab) ($N = 122$).
+- **Hugo 2016**: Anti-PD-1 (pembrolizumab) ($N = 27$).
+- **Riaz 2017**: Anti-PD-1 (nivolumab) ($N = 107$).
+- **TCGA GDC 2025**: Heterogeneous IT-treated cohort (ipilimumab, vaccines, interferon +/- chemotherapy) ($N = 91$).
+- **Gide 2019**: Anti-PD-1 +/- anti-CTLA-4 (pembrolizumab / nivolumab +/- ipilimumab) ($N = 91$).
+- **Van Allen 2015**: Anti-CTLA-4 (ipilimumab) ($N = 110$).
 
 ### 1.1 Clinical Demographics & Treatment Distributions
 

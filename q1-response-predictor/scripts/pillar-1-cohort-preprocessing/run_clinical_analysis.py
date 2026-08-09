@@ -1271,13 +1271,16 @@ def _prepare_report_metadata(
     cohort_results: dict[str, dict[str, Any]],
     cohort_order: list[str],
     ici_breakdown: dict[str, Any],
+    dataset_configs: tuple["DatasetConfig", ...] = (),
 ) -> tuple[dict[str, int], str, str, str]:
     """Extracts summary strings and cohort statistics for report generation."""
     survival_results = {c: cohort_results[c]["survival"] for c in cohort_order}
     age_results = {c: cohort_results[c]["age"] for c in cohort_order}
     n_values = {c: survival_results[c]["n_total"] for c in cohort_order}
+    treatment_map = {cfg.cohort_name: cfg.treatment_label for cfg in dataset_configs}
     cohort_bullets = "\n".join([
-        f"- **{c}**: Immunotherapy trial cohort ($N = {n_values[c]}$)." for c in cohort_order
+        f"- **{c}**: {treatment_map.get(c, 'Immunotherapy trial cohort')} ($N = {n_values[c]}$)."
+        for c in cohort_order
     ])
     annotated_ages = [
         f"`{c}`: median {_format_cohort_age_str(age_results, c)}"
@@ -1299,11 +1302,12 @@ def _compute_report_context(
     attrition_data: dict[str, pd.DataFrame],
     cohort_order: list[str],
     ici_breakdown: dict[str, Any],
+    dataset_configs: tuple["DatasetConfig", ...] = (),
 ) -> dict[str, Any]:
     """Computes all derived context variables needed by generate_clinical_report."""
     survival_results = {c: cohort_results[c]["survival"] for c in cohort_order}
     n_values, cohort_bullets, age_annotation_str, top_agents_str = (
-        _prepare_report_metadata(cohort_results, cohort_order, ici_breakdown)
+        _prepare_report_metadata(cohort_results, cohort_order, ici_breakdown, dataset_configs)
     )
     initial_total, final_total, _removed, attrition_text = (
         _compute_attrition_summaries(attrition_data, cohort_order)
@@ -1350,9 +1354,12 @@ def generate_clinical_report(
     ctla4_breakdown: dict[str, Any],
     demographics_grid_path: Path,
     cohort_data: dict[str, pd.DataFrame] | None = None,
+    dataset_configs: tuple["DatasetConfig", ...] = (),
 ) -> None:
     """Generates an Obsidian-compatible Markdown clinical characteristics report."""
-    ctx = _compute_report_context(cohort_results, attrition_data, cohort_order, ici_breakdown)
+    ctx = _compute_report_context(
+        cohort_results, attrition_data, cohort_order, ici_breakdown, dataset_configs
+    )
     timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
 
     sec1 = _build_report_section1(
@@ -1495,7 +1502,7 @@ def _run_km_plotting_stage(
 
 
 def _load_analysis_datasets() -> tuple[
-    tuple[str, ...], dict[str, pd.DataFrame], dict[str, pd.DataFrame]
+    tuple[str, ...], dict[str, pd.DataFrame], dict[str, pd.DataFrame], tuple["DatasetConfig", ...]
 ]:
     """Loads configured active trial cohort dataset configs and clinical DataFrames."""
     print("Loading dataset configurations...")
@@ -1511,7 +1518,7 @@ def _load_analysis_datasets() -> tuple[
     print(f"Configured ICI cohorts: {', '.join(cohort_order)}")
 
     cohort_data, attrition_data = _load_cohort_and_attrition_data(dataset_configs)
-    return cohort_order, cohort_data, attrition_data
+    return cohort_order, cohort_data, attrition_data, dataset_configs
 
 
 def _compute_treatment_breakdowns(
@@ -1535,6 +1542,7 @@ def _generate_demographics_and_reports(
     attrition_data: dict[str, pd.DataFrame],
     cohort_results: dict[str, dict[str, Any]],
     km_plot_path: Path,
+    dataset_configs: tuple["DatasetConfig", ...] = (),
 ) -> None:
     """Computes demographics, generates 2x2 grid, runs companion scripts, and writes report."""
     print("\nComputing overall patient demographics...")
@@ -1554,7 +1562,7 @@ def _generate_demographics_and_reports(
         plot_path=km_plot_path, report_path=REPORT_PATH, cohort_order=cohort_order,
         overall_demographics=overall_demographics, ici_breakdown=ici_breakdown,
         ctla4_breakdown=ctla4_breakdown, demographics_grid_path=DEMO_GRID_PATH,
-        cohort_data=cohort_data,
+        cohort_data=cohort_data, dataset_configs=dataset_configs,
     )
 
 
@@ -1567,14 +1575,14 @@ def main() -> None:
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
     REPORT_DIR.mkdir(exist_ok=True, parents=True)
 
-    cohort_order_tuple, cohort_data, attrition_data = _load_analysis_datasets()
+    cohort_order_tuple, cohort_data, attrition_data, dataset_configs = _load_analysis_datasets()
     cohort_order = list(cohort_order_tuple)
 
     print("\nGenerating Kaplan-Meier curves...")
     cohort_results, km_plot_path = _run_km_plotting_stage(cohort_order, cohort_data)
 
     _generate_demographics_and_reports(
-        cohort_order, cohort_data, attrition_data, cohort_results, km_plot_path
+        cohort_order, cohort_data, attrition_data, cohort_results, km_plot_path, dataset_configs
     )
 
     print("\n===========================================================")

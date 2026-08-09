@@ -9,12 +9,12 @@ tags:
   - tmb
   - neoantigens
   - comut
-created: 2026-08-08 21:17
+created: 2026-08-09 12:37
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-08 21:17
+updated: 2026-08-09 12:37
 ---
 
 # Genomic Characteristics of Data Cohorts
@@ -29,7 +29,7 @@ updated: 2026-08-08 21:17
 > epidemiology and to evaluate whether pre-treatment mutations in antigen presentation
 > (`B2M`, `TAP1`, `TAP2`) or IFN-$\gamma$ signalling (`JAK1`, `JAK2`, `STAT1`) drive primary
 > immunotherapy resistance.
-> - **Question Answered**: Are clinical trial cohorts representative of baseline melanoma genomics,
+> - **Questions**: Are clinical trial cohorts representative of baseline melanoma genomics,
 > and do patients harbour pre-existing mutations in immune evasion pathways prior to therapy?
 
 This report presents a comparative analysis of the genomic features across active ICI trial cohorts:
@@ -72,7 +72,7 @@ _**Figure 1: Driver Mutation Frequencies across ICI Trial Cohorts.** Frequencies
 > - **Why**: Somatic mutations generate novel peptide antigens (neoantigens) that trigger T-cell
 > recognition. We test whether TMB correlates with treatment response and whether total TMB can
 > serve as a surrogate marker for predicted neoantigen burden.
-> - **Question Answered**: Do treatment responders exhibit higher baseline TMB than non-responders,
+> - **Questions**: Do treatment responders exhibit higher baseline TMB than non-responders,
 > and is total TMB collinear with predicted neoantigen count?
 
 Tumour Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumour
@@ -107,7 +107,7 @@ _**Figure 3: Pre-treatment TMB Distributions by Response Status ($N = 377$) and 
 > ($N = 312$).
 > - **Why**: To identify feature redundancy before model training and evaluate whether genomic
 > mutational burden and transcriptomic immune infiltration capture independent biological axes.
-> - **Question Answered**: Are TMB and neoantigen subtypes redundant, and do mutational burden
+> - **Questions**: Are TMB and neoantigen subtypes redundant, and do mutational burden
 > and transcriptomic immune infiltration represent orthogonal biological biomarkers?
 
 ### 3.1 Biomarker Correlation in Pooled Trials
@@ -157,7 +157,7 @@ _**Figure 5: Correlation between Genomic Burden Metrics and Transcriptomic Immun
 > response status, study cohort, and sex.
 > - **Why**: To visualise patient-level co-occurrence, mutual exclusivity, and driver mutation
 > distributions across response categories simultaneously.
-> - **Question Answered**: Are `BRAF` and `NRAS` driver mutations strictly mutually exclusive in
+> - **Questions**: Are `BRAF` and `NRAS` driver mutations strictly mutually exclusive in
 > trial patients, and are treatment responders enriched in specific driver genotypes?
 
 The complete co-mutation (oncoplot) landscape for patients with binary response labels across all

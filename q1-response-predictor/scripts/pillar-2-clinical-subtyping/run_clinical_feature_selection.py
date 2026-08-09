@@ -21,7 +21,7 @@ and an Obsidian-compatible Markdown report.
 import contextlib
 from pathlib import Path
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 import warnings
 
 import matplotlib
@@ -100,7 +100,20 @@ TIER1_CONT_COLS: List[str] = [
     "TMB_NONSYNONYMOUS", "AGE",
 ]
 
-TIER1_BIN_COLS: List[str] = KEY_DRIVER_MUTATIONS
+TIER1_BIN_COLS: List[str] = [
+    "mut_BRAF_V600", "mut_BRAF_nonV600", "mut_NRAS", "mut_NF1"
+]
+
+# Canonical display order for Tier 1 uni vs multivariate forest plot.
+# Immune signatures follow the project-mandated order (AGENTS.md), then myeloid,
+# genomic burden, driver mutations, and host demographics.
+TIER1_PLOT_ORDER: List[str] = [
+    "Z_IFN_gamma", "Z_TIS", "Z_CYT", "Z_CD8_Tcell", "Z_IMPRES", "Z_PD_L1",
+    "Z_M1_M2_Ratio", "Z_Macrophage_STV_Score",
+    "Z_TMB_NONSYNONYMOUS", "Z_SNV_NEOANTIGEN", "Z_INDEL_NEOANTIGEN",
+    "mut_BRAF_V600", "mut_BRAF_nonV600", "mut_NRAS", "mut_NF1",
+    "SEX_Male", "SEX_Female", "Z_AGE",
+]
 
 TIER2_CANDIDATE_COLS: List[str] = [
     "CLINICAL_STAGE", "BIOPSY_SITE", "TISSUE_SUBTYPE", "PRIOR_ICI_RX",
@@ -155,7 +168,8 @@ _FEATURE_CLEAN_MAP: Dict[str, str] = {
     "AGE": "Patient Age",
     "SEX_Male": "Sex: Male",
     "SEX_Female": "Sex: Female",
-    "mut_BRAF": "BRAF Mutation",
+    "mut_BRAF_V600": "BRAF V600 Mutation (V600E/K)",
+    "mut_BRAF_nonV600": "BRAF Non-V600 Mutation",
     "mut_NRAS": "NRAS Mutation",
     "mut_NF1": "NF1 Mutation",
     "SAMPLE_TYPE_Primary": "Sample Type: Primary Tumour",
@@ -261,7 +275,16 @@ def _attach_tier1_binary_mutations(df_comb: pd.DataFrame, mut_path: Path) -> pd.
     """
     if mut_path.exists():
         df_mut = pd.read_csv(mut_path, index_col=0)
-        for gene, col in [("BRAF", "mut_BRAF"), ("NRAS", "mut_NRAS"), ("NF1", "mut_NF1")]:
+        v600_s = df_mut["BRAF_V600"] if "BRAF_V600" in df_mut.columns else pd.Series(dtype=float)
+        df_comb["mut_BRAF_V600"] = df_comb.index.map(v600_s).fillna(0.0).astype(float)
+
+        if "BRAF" in df_mut.columns and "BRAF_V600" in df_mut.columns:
+            non_v600_s = ((df_mut["BRAF"] == 1) & (df_mut["BRAF_V600"] == 0)).astype(float)
+        else:
+            non_v600_s = pd.Series(dtype=float)
+        df_comb["mut_BRAF_nonV600"] = df_comb.index.map(non_v600_s).fillna(0.0).astype(float)
+
+        for gene, col in [("NRAS", "mut_NRAS"), ("NF1", "mut_NF1")]:
             df_comb[col] = df_comb.index.map(
                 df_mut[gene] if gene in df_mut.columns else pd.Series(dtype=float)
             ).fillna(0.0).astype(float)
@@ -340,16 +363,17 @@ def _process_single_cohort_tier1(config: DatasetConfig) -> pd.DataFrame:
 
 
 def _load_tier1_dataset(dataset_configs: Tuple[DatasetConfig, ...]) -> pd.DataFrame:
-    """Loads clinical and expression data across all active ICI cohorts.
+    """Loads clinical and expression data across all active ICI response cohorts (N=473).
 
     Args:
         dataset_configs: Tuple of active DatasetConfig instances.
 
     Returns:
-        Concatenated DataFrame across all active ICI trial cohorts.
+        Concatenated DataFrame filtered strictly for response-labelled patients (N=473).
     """
     ici_configs = [c for c in dataset_configs if getattr(c, "merge_enabled", True)]
     full_df = pd.concat([_process_single_cohort_tier1(c) for c in ici_configs], axis=0)
+    full_df = full_df.loc[full_df["RESPONSE_BINARY"].notna()].copy()
     cat_cols = [c for c in ["SEX", "SAMPLE_TYPE"] if c in full_df.columns]
     if cat_cols:
         dummies = pd.get_dummies(full_df[cat_cols], drop_first=False, dtype=float)
@@ -600,9 +624,10 @@ def _encode_tier2_features(df_full: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Seri
 def _load_ici_tier2_features(
     dataset_configs: Tuple[DatasetConfig, ...]
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
-    """Loads ICI cohort clinical data and encodes features for Tier 2."""
+    """Loads ICI cohort clinical data and encodes features for Tier 2 (N=473)."""
     ici_configs = [c for c in dataset_configs if getattr(c, "merge_enabled", True)]
     df_full = pd.concat([_process_single_cohort_tier2(c) for c in ici_configs], axis=0)
+    df_full = df_full.loc[df_full["RESPONSE_BINARY"].notna()].copy()
     X_enc, y_resp = _encode_tier2_features(df_full)
     return df_full, X_enc, y_resp
 
@@ -1012,13 +1037,38 @@ def _add_comparison_legend(ax: plt.Axes) -> None:
     )
 
 
+def _apply_canonical_feature_order(
+    merged: pd.DataFrame, canonical_order: List[str]
+) -> pd.DataFrame:
+    """Reindexes merged OR DataFrame by canonical feature order.
+
+    Features present in canonical_order appear first in the specified sequence;
+    any remaining features (not in the order list) are appended at the end.
+    """
+    present_ordered = [f for f in canonical_order if f in merged["Feature"].values]
+    remainder = [f for f in merged["Feature"].values if f not in canonical_order]
+    final_order = present_ordered + remainder
+    order_map = {feat: idx for idx, feat in enumerate(final_order)}
+    merged = merged.copy()
+    merged["_sort_key"] = merged["Feature"].map(order_map)
+    return merged.sort_values("_sort_key").drop(columns=["_sort_key"]).reset_index(drop=True)
+
+
 def _plot_univariate_vs_multivariate_comparison(
-    df_uni: pd.DataFrame, df_multi: pd.DataFrame, title: str, xlabel: str, out_path: Path
+    df_uni: pd.DataFrame, df_multi: pd.DataFrame, title: str, xlabel: str, out_path: Path,
+    canonical_order: Optional[List[str]] = None,
 ) -> None:
-    """Renders a paired side-by-side forest plot."""
+    """Renders a paired side-by-side forest plot.
+
+    If canonical_order is provided, features are sorted by that order before
+    the y-axis reversal so the plot reads top-to-bottom in canonical sequence.
+    """
     merged = pd.merge(
         df_uni, df_multi, on="Feature", suffixes=("_uni", "_multi")
-    ).iloc[::-1].reset_index(drop=True)
+    )
+    if canonical_order is not None:
+        merged = _apply_canonical_feature_order(merged, canonical_order)
+    merged = merged.iloc[::-1].reset_index(drop=True)
     merged["Formatted_Feature"] = merged["Feature"].apply(_format_feature_name)
 
     fig, ax = plt.subplots(figsize=(13, max(7.0, len(merged) * 0.65)))
@@ -1036,7 +1086,7 @@ def _format_ici_cohort_names(
     dataset_configs: Tuple[DatasetConfig, ...]
 ) -> Tuple[str, str, int]:
     """Generates dynamic string representations of active ICI trial cohorts."""
-    names = [c.cohort_name for c in dataset_configs if c.cohort_name in ICI_COHORT_NAMES]
+    names = [c.cohort_name for c in dataset_configs if getattr(c, "merge_enabled", True)]
     n = len(names)
     if n == 0:
         return "N/A", "N/A", 0
@@ -1049,12 +1099,40 @@ def _format_ici_cohort_names(
     return plain, formatted, n
 
 
+def _build_report_intro_paragraph(ici_count: int, ici_plain_str: str) -> str:
+    """Builds introductory paragraph for feature selection report."""
+    return (
+        "This report presents a **two-tiered feature selection architecture** evaluating "
+        "clinical and transcriptomic predictors of **immunotherapy binary response (RECIST)** across "
+        f"the {ici_count} active immunotherapy datasets ({ici_plain_str}). "
+        "The dataset pool utilizes the updated NCI Genomic Data Commons TCGA-SKCM cohort "
+        "(`skcm_tcga_gdc`), which supersedes the legacy 2018 TCGA Pan-Cancer Atlas dataset due "
+        "to updated GDC data harmonization. Feature selection is conducted strictly on "
+        "the immunotherapy-treated (IT-treated) subcohort with RECIST response labels "
+        "(anti-PD-1, anti-CTLA-4, and vaccine arms where applicable), excluding non-IT-treated "
+        "patients such as surgery-only or chemotherapy-only cases."
+    )
+
+
+def _build_tier1_summary_bullet(t1_n: int, ici_fmt_str: str) -> str:
+    """Builds Tier 1 summary bullet detailing all 18 features across 5 domains."""
+    return (
+        f"- **Tier 1 (ICI Multi-Cohort Immune & Genomic Signatures, $N = {t1_n}$)**: "
+        "Evaluates 18 features across 5 biological domains — 6 transcriptomic immune "
+        "signatures (`IFN_gamma`, `TIS`, `CYT`, `CD8_Tcell`, `IMPRES`, `PD_L1`), 2 myeloid "
+        "signatures (`M1_M2_Ratio`, `Macrophage_STV`), 3 genomic burden metrics (`TMB`, "
+        "`SNV_NEOANTIGEN`, `INDEL_NEOANTIGEN`), 4 driver mutation subtypes (`mut_BRAF_V600`, "
+        "`mut_BRAF_nonV600`, `mut_NRAS`, `mut_NF1`), and 3 host demographics (`AGE`, `SEX_Male`, "
+        f"`SEX_Female`) — pooled across {ici_fmt_str}."
+    )
+
+
 def _build_report_frontmatter_header(
     tier1_total_n: int, ici2_n: int, ici2_feat_count: int,
     ici_plain_str: str, ici_fmt_str: str, ici_count: int
 ) -> List[str]:
     """Generates YAML frontmatter and title header for report."""
-    frontmatter = generate_obsidian_frontmatter(
+    fm = generate_obsidian_frontmatter(
         title="Two-Tiered Clinical & Transcriptomic Feature Selection Report",
         aliases=["Feature Selection Report", "Clinical Feature Selection", "ICI Feature Selection"],
         tags=[
@@ -1063,21 +1141,33 @@ def _build_report_frontmatter_header(
         ],
         extra_css_classes=["table-center", "row-alt"],
     )
-    n_word = {1: "single", 2: "two", 3: "three", 4: "four"}.get(ici_count, str(ici_count))
-    return [
-        frontmatter, "", "# Two-Tiered Clinical & Transcriptomic Feature Selection Report", "",
-        "This report presents a **two-tiered feature selection architecture** evaluating "
-        "clinical and transcriptomic predictors of **anti-PD-1 binary response** across "
-        f"the {n_word} ICI clinical trial cohorts ({ici_plain_str}). Feature selection is "
-        "performed exclusively on ICI cohorts — TCGA-SKCM is excluded because downstream "
-        "response prediction models are trained solely on immunotherapy trial data.", "",
-        f"- **Tier 1 (ICI Multi-Cohort Immune Signatures, $N = {tier1_total_n}$)**: Evaluates "
-        f"6 transcriptomic immune signatures, $\\text{{TMB}}$, age, and sex — pooled across "
-        f"{ici_fmt_str}.",
+    intro_text = _build_report_intro_paragraph(ici_count, ici_plain_str)
+    t1_bullet = _build_tier1_summary_bullet(tier1_total_n, ici_fmt_str)
+    t2_bullet = (
         f"- **Tier 2 (ICI Granular Clinical Features, $N = {ici2_n}$)**: "
         f"Evaluates {ici2_feat_count} granular categorical baseline clinical "
-        "covariates available within the ICI trial cohorts.", "",
+        "covariates available within the ICI trial cohorts."
+    )
+    return [
+        fm, "", "# Two-Tiered Clinical & Transcriptomic Feature Selection Report", "",
+        intro_text, "",
+        t1_bullet,
+        t2_bullet, "",
     ]
+
+
+def _build_tier1_preamble_what_text(
+    t1_n_resp: int, t1_n_nonresp: int, ici_count: int, t1_resp_n: int
+) -> str:
+    """Builds What text for Tier 1 info callout box."""
+    return (
+        f"> - **What**: Evaluating 18 features across 5 biological domains (6 transcriptomic "
+        "immune signatures, 2 myeloid signatures, 3 genomic burden metrics, 4 driver mutation "
+        f"subtypes, and 3 host demographics) against **immunotherapy binary response** "
+        f"($N_{{\\text{{resp}}}} = {t1_n_resp}$ / $N_{{\\text{{non-resp}}}} = {t1_n_nonresp}$) "
+        f"across all {ici_count} ICI cohorts pooled ($N = {t1_resp_n}$). Two complementary "
+        "models are applied: **Random Forest** importance and **Logistic Regression**."
+    )
 
 
 def _build_report_tier1_preamble(
@@ -1089,14 +1179,11 @@ def _build_report_tier1_preamble(
     s_tot += f"({ici_plain_str})"
     s_eval = f"- **Response Evaluation Cohort**: {t1_resp_n} patients "
     s_eval += f"({t1_n_resp} responders / {t1_n_nonresp} non-responders)"
+    w_text = _build_tier1_preamble_what_text(t1_n_resp, t1_n_nonresp, ici_count, t1_resp_n)
     return [
         fr"## 1. Tier 1: ICI Multi-Cohort _Immune_ Feature Selection ($N = {t1_total_n}$)", "",
         "> [!INFO] What, Why & Questions — Tier 1",
-        f"> - **What**: Evaluating 6 transcriptomic immune gene expression signatures, "
-        fr"`TMB`, age, and sex against **anti-PD-1 binary response** "
-        fr"($N_{{\text{{resp}}}} = {t1_n_resp}$ / $N_{{\text{{non-resp}}}} = {t1_n_nonresp}$) "
-        fr"across all {ici_count} ICI cohorts pooled ($N = {t1_resp_n}$). Two complementary "
-        "models are applied: **Random Forest** importance and **Logistic Regression**.",
+        w_text,
         "> - **Why**: These features directly reflect the tumour "
         "immune microenvironment hypothesised to drive anti-PD-1 response.",
         "> - **Questions**:",
@@ -1178,9 +1265,11 @@ def _build_tier1_rationale_rows_genomic() -> Tuple[str, str, str]:
         "immunogenicity. |"
     )
     c4 = (
-        "| **Genomic Driver Subtypes** | `mut_BRAF`, `mut_NRAS`, `mut_NF1` | "
-        "**Tumour Secretome**: `BRAF` V600 activates MAPK to secrete IL-6/IL-10 and "
-        "downregulate MHC-I. `NRAS`/`NF1` mutations associate with high UV mutational burden. |"
+        "| **Genomic Driver Subtypes** | `mut_BRAF_V600`, `mut_BRAF_nonV600`, `mut_NRAS`, "
+        "`mut_NF1` | **Oncogenic Secretome & Kinase Activation**: `BRAF V600` (Class 1 "
+        "hotspots V600E/K) drives monomeric MAPK hyperactivation and MHC-I downregulation; "
+        "`BRAF Non-V600` (Class 2/3) relies on RAS dimerization. `NRAS`/`NF1` mutations "
+        "associate with high UV mutational burden. |"
     )
     c5 = (
         "| **Host Baseline Demographics** | `AGE`, `SEX_Male`, `SEX_Female` | "
@@ -1378,7 +1467,7 @@ def _build_report_tier2_preamble(
         "anatomical biopsy site (`BIOPSY_SITE`), histological subtype (`TISSUE_SUBTYPE`), "
         "prior ICI therapy (`PRIOR_ICI_RX`), prior non-ICI therapy (`PRIOR_RX`), "
         "biopsy timing (`SAMPLE_TREATMENT`), and metastasis status (`METASTASIZED`) — against "
-        "**anti-PD-1 binary response** using the same RF + Logistic Regression framework.",
+        "**immunotherapy binary response** using the same RF + Logistic Regression framework.",
         "> **Why We Are Doing It**: Granular clinical covariates may independently predict "
         "ICI response beyond immune expression signatures.",
         "> - **Questions**:",
@@ -1906,8 +1995,11 @@ def _run_tier1_pipeline(
     """Executes Tier 1 immune feature selection pipeline."""
     print("\n--- Tier 1: ICI Multi-Cohort Immune Feature Selection ---")
     tier1_df = _load_tier1_dataset(dataset_configs)
-    n_resp_lbl = int(tier1_df['RESPONSE_BINARY'].notna().sum())
-    print(f"Loaded {len(tier1_df)} ICI patients; {n_resp_lbl} with response labels.")
+    ici_n = len([c for c in dataset_configs if getattr(c, "merge_enabled", True)])
+    print(
+        f"Loaded {len(tier1_df)} response-labelled ICI patients "
+        f"across {ici_n} active trial cohorts."
+    )
 
     tier1_rf = _evaluate_tier1_rf_response(tier1_df, PLOT_DIR)
     tier1_uni_or = _evaluate_tier1_logistic(tier1_df, PLOT_DIR)
@@ -1917,7 +2009,8 @@ def _run_tier1_pipeline(
     xlabel = "Odds Ratio (Log Scale — 95% CI per +1 SD)"
     out_path = PLOT_DIR / "tier1_uni_vs_multi_or_forest.png"
     _plot_univariate_vs_multivariate_comparison(
-        tier1_uni_or, tier1_multi_or, title, xlabel, out_path
+        tier1_uni_or, tier1_multi_or, title, xlabel, out_path,
+        canonical_order=TIER1_PLOT_ORDER,
     )
     return tier1_df, tier1_rf, tier1_uni_or, tier1_multi_or, tier1_multi_metrics
 
@@ -1932,11 +2025,10 @@ def _run_tier2_pipeline(
     """Executes Tier 2 granular clinical feature selection pipeline."""
     print("\n--- Tier 2: ICI Granular Clinical Feature Selection ---")
     ici2_df, ici2_encoded, ici2_y = _load_ici_tier2_features(dataset_configs)
-    n_resp_lbl = int(ici2_y.notna().sum())
     n_feats = len(ici2_encoded.columns)
     print(
-        f"Loaded {len(ici2_df)} ICI patients; {n_resp_lbl} with response labels; "
-        f"{n_feats} encoded features."
+        f"Loaded {len(ici2_df)} response-labelled ICI patients; "
+        f"{n_feats} encoded dummy features."
     )
 
     ici2_rf = _evaluate_ici_tier2_rf(ici2_encoded, ici2_y, PLOT_DIR)
@@ -2046,7 +2138,7 @@ def _print_header_and_prep_dirs(dataset_configs: Tuple[DatasetConfig, ...]) -> N
     ici_plain, _, _ = _format_ici_cohort_names(dataset_configs)
     print("==================================================")
     print("Two-Tiered ICI Clinical & Transcriptomic Feature Selection")
-    print(f"(Evaluating anti-PD-1 Binary Response — {ici_plain})")
+    print(f"(Evaluating immunotherapy Binary Response — {ici_plain})")
     print("==================================================")
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
     REPORT_DIR.mkdir(exist_ok=True, parents=True)
