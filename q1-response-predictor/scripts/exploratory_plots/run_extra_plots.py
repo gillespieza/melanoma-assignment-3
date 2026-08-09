@@ -32,6 +32,7 @@ _SUBPROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(_SUBPROJECT_ROOT) not in sys.path:
     sys.path.append(str(_SUBPROJECT_ROOT))
 
+from src.data_loaders import load_all_active_cohorts
 from src.signatures import extract_all_signatures
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream
@@ -49,7 +50,7 @@ LOG_PATH = _LOG_DIR / "run_extra_plots.log"
 def _prepare_signatures(
     data_dir: Path,
 ) -> Tuple[pd.DataFrame, pd.Series, list]:
-    """Loads cohorts, extracts signatures, batch corrects via PyComBat, and returns clean data.
+    """Loads active cohorts, extracts signatures, batch corrects via PyComBat, and returns clean data.
 
     Args:
         data_dir: Path to project data directory.
@@ -60,43 +61,38 @@ def _prepare_signatures(
           - combined response series
           - list of (cohort_name, sig_df, y_series) per-cohort raw tuples for LOCO
     """
-    expr_liu, clin_liu = load_liu_2019(data_dir)
-    expr_hugo, clin_hugo = load_hugo_2016(data_dir)
-    expr_riaz, clin_riaz = load_riaz_2017(data_dir)
+    config_path = _SUBPROJECT_ROOT / "config" / "datasets.yaml"
+    expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(config_path, data_dir, merge_only=True)
 
-    common_genes = expr_liu.columns.intersection(expr_hugo.columns).intersection(expr_riaz.columns)
+    if not trial_names:
+        raise ValueError("No active trial cohorts loaded from configuration.")
 
-    sig_liu = extract_all_signatures(expr_liu[common_genes])
-    sig_hugo = extract_all_signatures(expr_hugo[common_genes])
-    sig_riaz = extract_all_signatures(expr_riaz[common_genes])
+    # Find common genes across all active trial expression matrices
+    common_genes = expr_dict[trial_names[0]].columns
+    for name in trial_names[1:]:
+        common_genes = common_genes.intersection(expr_dict[name].columns)
 
-    y_liu = clin_liu.loc[sig_liu.index, "response"]
-    y_hugo = clin_hugo.loc[sig_hugo.index, "response"]
-    y_riaz = clin_riaz.loc[sig_riaz.index, "response"]
+    cohort_data = []
+    sig_list = []
+    y_list = []
+    batches = []
 
-    non_nan_liu = y_liu.dropna().index
-    non_nan_hugo = y_hugo.dropna().index
-    non_nan_riaz = y_riaz.dropna().index
+    for name in trial_names:
+        expr = expr_dict[name]
+        clin = clin_dict[name]
 
-    sig_liu = sig_liu.loc[non_nan_liu]
-    y_liu = y_liu.loc[non_nan_liu]
+        sig = extract_all_signatures(expr[common_genes])
+        y = clin.loc[sig.index, "response"].dropna()
+        sig = sig.loc[y.index]
 
-    sig_hugo = sig_hugo.loc[non_nan_hugo]
-    y_hugo = y_hugo.loc[non_nan_hugo]
+        cohort_data.append((name, sig, y))
+        sig_list.append(sig)
+        y_list.append(y)
+        batch_label = name.lower().replace(" ", "_")
+        batches.extend([batch_label] * len(sig))
 
-    sig_riaz = sig_riaz.loc[non_nan_riaz]
-    y_riaz = y_riaz.loc[non_nan_riaz]
-
-    # Per-cohort tuples used for LOCO AUC computation (raw, uncorrected)
-    cohort_data = [
-        ("Liu 2019", sig_liu, y_liu),
-        ("Hugo 2016", sig_hugo, y_hugo),
-        ("Riaz 2017", sig_riaz, y_riaz),
-    ]
-
-    sig_all = pd.concat([sig_liu, sig_hugo, sig_riaz], axis=0)
-    y_all = pd.concat([y_liu, y_hugo, y_riaz], axis=0)
-    batches = (["liu"] * len(sig_liu)) + (["hugo"] * len(sig_hugo)) + (["riaz"] * len(sig_riaz))
+    sig_all = pd.concat(sig_list, axis=0)
+    y_all = pd.concat(y_list, axis=0)
 
     sig_corrected_arr = Combat().fit_transform(sig_all.values, batches)
     sig_corrected = pd.DataFrame(sig_corrected_arr, index=sig_all.index, columns=sig_all.columns)
@@ -328,7 +324,7 @@ def _plot_signature_raincloud(
     plt.tight_layout()
     out_path = plot_dir / "signature_raincloud_by_response.png"
     save_fig(fig, out_path)
-    print(f"Saved raincloud plot to {out_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved raincloud plot to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
 
 
 def _plot_univariate_forest(
@@ -428,7 +424,7 @@ def _plot_univariate_forest(
     plt.tight_layout()
     out_path = plot_dir / "signature_univariate_forest.png"
     save_fig(fig, out_path)
-    print(f"Saved univariate forest plot to {out_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved univariate forest plot to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
 
 
 def _plot_correlation_heatmap(sig_corrected: pd.DataFrame, plot_dir: Path) -> None:
@@ -448,7 +444,7 @@ def _plot_correlation_heatmap(sig_corrected: pd.DataFrame, plot_dir: Path) -> No
 
     out_path = plot_dir / "signature_correlation_heatmap.png"
     save_fig(fig, out_path)
-    print(f"Saved correlation heatmap to {out_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved correlation heatmap to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
 
 
 def _plot_multivariate_forest(sig_corrected: pd.DataFrame, y_all: pd.Series, plot_dir: Path) -> None:
@@ -546,7 +542,7 @@ def _plot_multivariate_forest(sig_corrected: pd.DataFrame, y_all: pd.Series, plo
 
     out_path = plot_dir / "forest_plot_odds_ratios.png"
     save_fig(fig, out_path)
-    print(f"Saved forest plot to {out_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved forest plot to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
 
 
 def _compute_loco_auc(
@@ -680,8 +676,10 @@ def _plot_combined_forest(
     ax1.legend(handles=leg1, loc="upper left", bbox_to_anchor=(0.02, 0.96), framealpha=0.9, fontsize=8.5)
 
     # --- RIGHT PANEL: Per-signature LOCO AUC dots + mean diamond ---
-    # Jitter offsets so 3 cohort dots don't stack on the same row
-    _JITTER_Y = {name: offset for name, offset in zip(cohort_names, [-0.22, 0.0, 0.22])}
+    # Dynamically space jitter offsets so cohort dots don't stack on the same row
+    n_cohorts = len(cohort_names)
+    offsets = np.linspace(-0.25, 0.25, n_cohorts) if n_cohorts > 1 else [0.0]
+    _JITTER_Y = {name: float(offset) for name, offset in zip(cohort_names, offsets)}
 
     for i, sig in enumerate(available_sigs):
         sig_loco = df_loco[df_loco["Signature"] == sig]
@@ -737,7 +735,7 @@ def _plot_combined_forest(
     plt.tight_layout()
     out_path = plot_dir / "combined_forest_plots.png"
     save_fig(fig, out_path)
-    print(f"Saved combined forest plot to {out_path.relative_to(BASE_DIR).as_posix()}")
+    print(f"Saved combined forest plot to {out_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")
 
 
 def main() -> None:
@@ -791,5 +789,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(LOG_DIR.parent).as_posix()}")
+            print(f"Logging console output to {LOG_PATH.relative_to(_SUBPROJECT_ROOT).as_posix()}")
             main()
