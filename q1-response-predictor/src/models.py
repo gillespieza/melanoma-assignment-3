@@ -168,7 +168,8 @@ def get_baseline_model(model_type: str, random_state: int = 42) -> Any:
         return LogisticRegression(max_iter=1000, C=1.0, random_state=random_state)
     elif model_type == "rf":
         return RandomForestClassifier(
-            n_estimators=100, max_depth=5, random_state=random_state, n_jobs=-1
+            n_estimators=100, max_depth=5, class_weight='balanced',
+            random_state=random_state, n_jobs=-1
         )
     elif model_type == "xgb":
         return xgb.XGBClassifier(
@@ -227,20 +228,48 @@ def tune_logistic_regression(X_train, y_train, calibrate=True):
     grid.fit(X_train, y_train)
     return grid.best_estimator_
 
-def tune_random_forest(X_train, y_train, calibrate=True):
+def tune_random_forest(X_train: pd.DataFrame, y_train: pd.Series, calibrate: bool = True):
+    """Tune Random Forest via Randomised Search, optionally calibrated via Platt Scaling.
+
+    Uses RandomizedSearchCV (n_iter=80) over an expanded parameter space rather than
+    exhaustive GridSearchCV. The expanded grid covers ~576 combinations, making random
+    sampling significantly more efficient.
+
+    Key improvements over the previous grid:
+      - class_weight: 'balanced' or 'balanced_subsample' corrects the responder/non-responder
+        imbalance without requiring synthetic oversampling. 'balanced_subsample' recomputes
+        weights per bootstrap sample, which is the preferred mode for RF.
+      - max_features: controls how many features each split considers. With only 6 input
+        features, the sklearn default ('sqrt' ≈ 2.4) is very restrictive; searching
+        'log2' and 0.5 gives trees access to more signal per split.
+      - min_samples_split: controls when a node is eligible for further splitting.
+        Higher values regularise the trees against the small LOCO training splits.
+      - Wider n_estimators range (up to 300): more trees reduce variance without
+        introducing bias; plateau is typically reached by 200–300 for 6 features.
+      - Wider min_samples_leaf range (up to 8): prevents tiny terminal nodes that
+        overfit to cohort-specific outliers.
     """
-    Tuning Random Forest, optionally calibrated via Platt Scaling / Sigmoid calibration.
-    """
-    param_grid = {
-        'n_estimators': [50, 100, 200],
-        'max_depth': [3, 5, 10, None],
-        'min_samples_leaf': [1, 2, 4]
+    param_dist = {
+        'n_estimators':      [100, 200, 300],
+        'max_depth':         [3, 5, 10, None],
+        'min_samples_leaf':  [1, 2, 4, 8],
+        'min_samples_split': [2, 5, 10],
+        'max_features':      ['sqrt', 'log2', 0.5],
+        'class_weight':      ['balanced', 'balanced_subsample'],
     }
     rf = RandomForestClassifier(random_state=42, n_jobs=-1)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    grid = GridSearchCV(rf, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
-    grid.fit(X_train, y_train)
-    best_est = grid.best_estimator_
+    search = RandomizedSearchCV(
+        rf,
+        param_dist,
+        n_iter=80,
+        cv=cv,
+        scoring='roc_auc',
+        random_state=42,
+        n_jobs=-1,
+    )
+    search.fit(X_train, y_train)
+    best_est = search.best_estimator_
     if calibrate:
         return calibrate_estimator(best_est, X_train, y_train)
     return best_est
