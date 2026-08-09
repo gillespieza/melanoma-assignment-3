@@ -78,7 +78,6 @@ set_presentation_style()
 # ---------------------------------------------------------------------------
 
 # Column Identifiers
-_COL_SAMPLE_ID: str = "SAMPLE_ID"
 _COL_COHORT: str = "Cohort"
 _COL_RESPONSE: str = "Response"
 _COL_RAW_RESPONSE: str = "response"
@@ -99,6 +98,19 @@ SCATTER_SIZE: int = 80
 SCATTER_SIZE_LARGE: int = 100
 N_TOP_HEATMAP_GENES: int = 50
 
+# Scatter plot edge / line styling
+_SCATTER_LINEWIDTH: float = 0.5
+_SCATTER_LINEWIDTH_LARGE: float = 0.8
+_EDGE_COLOR: str = "w"
+
+# Typography — font sizes used in suptitle / ax.set_title
+_FONT_PANEL_TITLE: int = 12
+_FONT_PANEL_TITLE_LARGE: int = 13
+_FONT_SUPTITLE_MD: int = 14
+_FONT_SUPTITLE_LG: int = 16
+_TITLE_PAD: int = 10
+_SUPTITLE_Y: float = 0.98
+
 # Target Directories & Logging Paths
 EXPLORATORY_PLOT_DIR: Path = SUBPROJECT_ROOT / "plots" / "exploratory"
 REPORT_DIR: Path = SUBPROJECT_ROOT / "reports" / "pillar-1-cohorts-and-preprocessing"
@@ -106,11 +118,19 @@ LOG_DIR: Path = get_subproject_log_dir(SCRIPT_DIR)
 LOG_PATH: Path = LOG_DIR / "run_dimensionality_reduction.log"
 
 # Domain Category Labels & Orders
-RESPONSE_ORDER: List[str] = ["Responder (CR/PR)", "Non-responder (PD)"]
+_RESP_LABEL_RESPONDER: str = "Responder (CR/PR)"
+_RESP_LABEL_NONRESPONDER: str = "Non-responder (PD)"
+RESPONSE_ORDER: List[str] = [_RESP_LABEL_RESPONDER, _RESP_LABEL_NONRESPONDER]
 RESPONSE_LABEL_MAP: Dict[float, str] = {
-    1.0: "Responder (CR/PR)",
-    0.0: "Non-responder (PD)",
+    1.0: _RESP_LABEL_RESPONDER,
+    0.0: _RESP_LABEL_NONRESPONDER,
 }
+
+# Companion script filename (referenced in both _COMPANION_SCRIPTS and _script_entries_p1)
+_HEATMAP_SCRIPT_NAME: str = "run_expression_heatmap.py"
+
+# Console section banner (used in main())
+_BANNER: str = "=================================================="
 
 
 # ---------------------------------------------------------------------------
@@ -231,6 +251,23 @@ def fit_pca_projection(
     return pcs_raw, pcs_scaled, pc1_r, pc2_r, pc1_s, pc2_s
 
 
+def _make_reduction_model() -> Any:
+    """Constructs a UMAP model if available, otherwise a t-SNE model.
+
+    Returns:
+        Fitted-ready UMAP or TSNE estimator instance.
+    """
+    if HAS_UMAP:
+        return umap.UMAP(
+            n_components=N_PCA_COMPONENTS, random_state=RANDOM_SEED, n_jobs=1,
+            n_neighbors=UMAP_NEIGHBORS, min_dist=UMAP_MIN_DIST,
+        )
+    return TSNE(
+        n_components=N_PCA_COMPONENTS, random_state=RANDOM_SEED,
+        perplexity=TSNE_PERPLEXITY,
+    )
+
+
 def fit_umap_or_tsne(
     expr_raw: pd.DataFrame, expr_scaled: pd.DataFrame
 ) -> Tuple[np.ndarray, np.ndarray]:
@@ -243,24 +280,10 @@ def fit_umap_or_tsne(
     Returns:
         Tuple of (projections_raw, projections_scaled).
     """
-    if HAS_UMAP:
-        model_raw = umap.UMAP(
-            n_components=N_PCA_COMPONENTS, random_state=RANDOM_SEED, n_jobs=1,
-            n_neighbors=UMAP_NEIGHBORS, min_dist=UMAP_MIN_DIST,
-        )
-        model_scaled = umap.UMAP(
-            n_components=N_PCA_COMPONENTS, random_state=RANDOM_SEED, n_jobs=1,
-            n_neighbors=UMAP_NEIGHBORS, min_dist=UMAP_MIN_DIST,
-        )
-    else:
-        model_raw = TSNE(
-            n_components=N_PCA_COMPONENTS, random_state=RANDOM_SEED, perplexity=TSNE_PERPLEXITY
-        )
-        model_scaled = TSNE(
-            n_components=N_PCA_COMPONENTS, random_state=RANDOM_SEED, perplexity=TSNE_PERPLEXITY
-        )
-
-    return model_raw.fit_transform(expr_raw), model_scaled.fit_transform(expr_scaled)
+    return (
+        _make_reduction_model().fit_transform(expr_raw),
+        _make_reduction_model().fit_transform(expr_scaled),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -322,9 +345,9 @@ def _render_pca_panel_axes(
         sns.scatterplot(
             data=df, x=xcol, y=ycol, hue=_COL_COHORT, hue_order=cohort_list,
             palette=resolve_cohort_palette(cohort_list), alpha=SCATTER_ALPHA, s=SCATTER_SIZE,
-            edgecolor="w", linewidth=0.5, ax=ax,
+            edgecolor=_EDGE_COLOR, linewidth=_SCATTER_LINEWIDTH, ax=ax,
         )
-        ax.set_title(title, fontsize=12, fontweight="bold")
+        ax.set_title(title, fontsize=_FONT_PANEL_TITLE, fontweight="bold")
         ax.set_xlabel("PC1")
         ax.set_ylabel("PC2")
 
@@ -336,7 +359,15 @@ def plot_cohort_batch_pca(
     title_suffix: str,
     output_path: Path,
 ) -> None:
-    """Renders 1x2 panel PCA scatter plot for batch effect evaluation across cohorts."""
+    """Renders 1x2 panel PCA scatter plot for batch effect evaluation across cohorts.
+
+    Args:
+        df: Clinical DataFrame with PCA coordinate columns assigned.
+        var_tuple: Tuple of (pc1_raw_pct, pc2_raw_pct, pc1_scaled_pct, pc2_scaled_pct).
+        cohort_list: Ordered list of cohort names for hue ordering.
+        title_suffix: Descriptive suffix for the figure suptitle.
+        output_path: Destination path for the saved PNG file.
+    """
     pc1_r, pc2_r, pc1_s, pc2_s = var_tuple
     fig, axes = plt.subplots(1, 2, figsize=FIG_SIZE_1X2)
     panels = [
@@ -349,7 +380,7 @@ def plot_cohort_batch_pca(
     _render_pca_panel_axes(axes, df, panels, cohort_list)
     plt.suptitle(
         f"PCA Batch Effect Assessment Across {title_suffix} (N = {len(df)})",
-        fontsize=14, fontweight="bold", y=0.98,
+        fontsize=_FONT_SUPTITLE_MD, fontweight="bold", y=_SUPTITLE_Y,
     )
     plt.tight_layout()
     save_fig(fig, output_path)
@@ -359,7 +390,18 @@ def plot_cohort_batch_pca(
 def _axis_label(
     dim_prefix: str, axis: str, is_uncorrected: bool, val_r: float, val_s: float
 ) -> str:
-    """Returns the axis label string for a PCA or UMAP panel."""
+    """Returns the axis label string for a PCA or UMAP panel.
+
+    Args:
+        dim_prefix: 'PCA' or 'UMAP' — determines label format.
+        axis: 'x' or 'y' — selects the component number.
+        is_uncorrected: True for raw (before correction) panels.
+        val_r: Explained variance % for the raw PCA component.
+        val_s: Explained variance % for the scaled PCA component.
+
+    Returns:
+        Formatted axis label string.
+    """
     component = "PC1" if axis == "x" else "PC2"
     dim_num = "1" if axis == "x" else "2"
     if dim_prefix != "PCA":
@@ -372,14 +414,25 @@ def _render_2x2_scatter_grid(
     axes: Any, df: pd.DataFrame, configs: List[Any], dim_prefix: str,
     pc1_r: float, pc1_s: float, pc2_r: float, pc2_s: float
 ) -> None:
-    """Helper to render 2x2 scatter grid panels."""
+    """Renders scatter plots onto all four panels of a 2x2 axes grid.
+
+    Args:
+        axes: 2x2 matplotlib Axes array.
+        df: DataFrame with projection coordinates and metadata columns.
+        configs: List of (xcol, ycol, hue_col, order, palette, title) tuples.
+        dim_prefix: 'PCA' or 'UMAP' — controls axis label formatting.
+        pc1_r: PC1 variance % for raw projection.
+        pc1_s: PC1 variance % for scaled projection.
+        pc2_r: PC2 variance % for raw projection.
+        pc2_s: PC2 variance % for scaled projection.
+    """
     for ax, (xcol, ycol, hue_col, order, palette, title) in zip(axes.flat, configs):
         sns.scatterplot(
             data=df, x=xcol, y=ycol, hue=hue_col, hue_order=order, palette=palette,
             style=hue_col, alpha=SCATTER_ALPHA, s=SCATTER_SIZE_LARGE,
-            edgecolor="w", linewidth=0.8, ax=ax,
+            edgecolor=_EDGE_COLOR, linewidth=_SCATTER_LINEWIDTH_LARGE, ax=ax,
         )
-        ax.set_title(title, fontsize=13, fontweight="bold", pad=10)
+        ax.set_title(title, fontsize=_FONT_PANEL_TITLE_LARGE, fontweight="bold", pad=_TITLE_PAD)
         ax.set_xlabel(_axis_label(dim_prefix, "x", "Before" in title, pc1_r, pc1_s))
         ax.set_ylabel(_axis_label(dim_prefix, "y", "Before" in title, pc2_r, pc2_s))
 
@@ -412,11 +465,20 @@ def plot_trial_reduction_grid(
     trial_names: List[str],
     output_path: Path,
 ) -> None:
-    """Renders 2x2 grid of scatter plots coloured by Cohort and Response."""
+    """Renders 2x2 grid of scatter plots coloured by Cohort and Response.
+
+    Args:
+        df: Clinical DataFrame with projection coordinate columns assigned.
+        dim_prefix: 'PCA' or 'UMAP' — selects coordinate columns and label format.
+        pc_vars: Tuple of (pc1_raw_pct, pc2_raw_pct, pc1_scaled_pct, pc2_scaled_pct).
+        method_name: Display name for the reduction method (e.g. 'PCA', 'UMAP').
+        trial_names: Ordered list of ICI trial cohort names for hue ordering.
+        output_path: Destination path for the saved PNG file.
+    """
     fig, axes = plt.subplots(2, 2, figsize=FIG_SIZE_2X2)
     resp_colors = {
-        "Responder (CR/PR)": RESPONSE_PALETTE["CR/PR"],
-        "Non-responder (PD)": RESPONSE_PALETTE["PD"],
+        _RESP_LABEL_RESPONDER: RESPONSE_PALETTE["CR/PR"],
+        _RESP_LABEL_NONRESPONDER: RESPONSE_PALETTE["PD"],
     }
     pc1_r, pc2_r, pc1_s, pc2_s = pc_vars
     configs = _get_grid_configs(dim_prefix, method_name, trial_names, resp_colors)
@@ -424,7 +486,7 @@ def plot_trial_reduction_grid(
     _render_2x2_scatter_grid(axes, df, configs, dim_prefix, pc1_r, pc1_s, pc2_r, pc2_s)
     plt.suptitle(
         f"{method_name} Reduction of Trial Expression (N = {len(df)})",
-        fontsize=16, fontweight="bold", y=0.98,
+        fontsize=_FONT_SUPTITLE_LG, fontweight="bold", y=_SUPTITLE_Y,
     )
     plt.tight_layout()
     save_fig(fig, output_path)
@@ -582,8 +644,8 @@ def _script_entries_p1() -> List[Tuple[str, Path, str]]:
             ),
         ),
         (
-            "run_expression_heatmap.py",
-            p1_dir / "run_expression_heatmap.py",
+            _HEATMAP_SCRIPT_NAME,
+            p1_dir / _HEATMAP_SCRIPT_NAME,
             (
                 "Generates raw log2(TPM+1) and per-cohort Z-score heatmap visualisations "
                 "for top high-variance genes across trial cohorts "
@@ -664,7 +726,15 @@ def generate_report_content(
 
 
 def write_batch_correction_report(report_path: Path, content: str) -> None:
-    """Writes the batch correction report Markdown file."""
+    """Writes the batch correction report Markdown file to disk.
+
+    Also removes any legacy ``dimensionality_reduction_report.md`` file
+    from the same directory if it still exists.
+
+    Args:
+        report_path: Full path to the output Markdown file.
+        content: Full Markdown string content to write.
+    """
     report_path.parent.mkdir(parents=True, exist_ok=True)
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(content)
@@ -685,7 +755,17 @@ def _run_pca_batch_projections(
     top_genes: List[str],
     cohort_order: List[str],
 ) -> Tuple[Tuple[float, float, float, float], int]:
-    """Runs ICI cohort PCA batch assessment using top high-variance genes."""
+    """Runs ICI cohort PCA batch assessment using top high-variance genes.
+
+    Args:
+        expr_dict: Mapping of cohort names to expression DataFrames.
+        clin_dict: Mapping of cohort names to clinical DataFrames.
+        top_genes: Selected top-variance gene identifiers.
+        cohort_order: Ordered list of all cohort names to include.
+
+    Returns:
+        Tuple of (pc_variance_tuple, n_full_samples).
+    """
     expr_full_raw, expr_full_scaled, clin_full = _build_concat(
         expr_dict, clin_dict, cohort_order, top_genes, with_response=False
     )
@@ -704,7 +784,14 @@ def _run_trial_reduction_grids(
     top_genes: List[str],
     trial_names: List[str],
 ) -> None:
-    """Runs 2x2 PCA and UMAP grid plots for trial cohorts."""
+    """Runs 2x2 PCA and UMAP grid plots for trial cohorts.
+
+    Args:
+        expr_dict: Mapping of cohort names to expression DataFrames.
+        clin_dict: Mapping of cohort names to clinical DataFrames.
+        top_genes: Selected top-variance gene identifiers.
+        trial_names: Ordered list of ICI trial cohort names.
+    """
     expr_tr_top_raw, expr_tr_top_scaled, clin_tr_resp = _build_concat(
         expr_dict, clin_dict, trial_names, top_genes, with_response=True
     )
@@ -731,13 +818,17 @@ def _run_trial_reduction_grids(
 _COMPANION_SCRIPTS: List[Tuple[str, Path]] = [
     (
         "Expression heatmaps (top variance genes)",
-        SUBPROJECT_ROOT / "scripts" / "pillar-1-cohort-preprocessing" / "run_expression_heatmap.py",
+        SUBPROJECT_ROOT / "scripts" / "pillar-1-cohort-preprocessing" / _HEATMAP_SCRIPT_NAME,
     ),
 ]
 
 
 def _write_reports(report_md: str) -> None:
-    """Writes batch_correction_report.md to subproject and root report directories."""
+    """Writes batch_correction_report.md to subproject and root report directories.
+
+    Args:
+        report_md: Full Markdown string content of the report.
+    """
     write_batch_correction_report(REPORT_DIR / "batch_correction_report.md", report_md)
     root_report_dir = PROJECT_ROOT / "reports" / "pillar-1-cohorts-and-preprocessing"
     if root_report_dir != REPORT_DIR:
@@ -745,14 +836,23 @@ def _write_reports(report_md: str) -> None:
 
 
 def main() -> None:
-    """Executes dimensionality reduction workflow."""
-    print("==================================================")
+    """Executes the end-to-end dimensionality reduction workflow.
+
+    Steps:
+        1. Load the pre-merged immunotherapy dataset (all cohorts).
+        2. Select top N high-variance genes common across cohorts.
+        3. Run full-cohort PCA batch effect assessment.
+        4. Run trial-cohort PCA and UMAP/t-SNE 2x2 grid plots.
+        5. Execute companion heatmap script.
+        6. Assemble and write the batch correction Markdown report.
+    """
+    print(_BANNER)
     print("Dimensionality Reduction: Full & Trial Cohorts")
-    print("==================================================")
+    print(_BANNER)
     for directory in [EXPLORATORY_PLOT_DIR, REPORT_DIR]:
         directory.mkdir(exist_ok=True, parents=True)
     expr_dict, clin_dict, cohort_order, trial_names = load_all_cohorts()
-    g_all, g_trials, top_genes = select_top_variable_genes(expr_dict, trial_names)
+    g_all, _, top_genes = select_top_variable_genes(expr_dict, trial_names)
 
     var_full, n_full = _run_pca_batch_projections(
         expr_dict, clin_dict, top_genes, cohort_order,
@@ -767,9 +867,9 @@ def main() -> None:
         len(top_genes), len(g_all), var_full,
     )
     _write_reports(report_md)
-    print("==================================================")
+    print(_BANNER)
     print("Done!")
-    print("==================================================")
+    print(_BANNER)
 
 
 if __name__ == "__main__":

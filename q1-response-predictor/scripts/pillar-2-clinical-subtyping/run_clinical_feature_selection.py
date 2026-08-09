@@ -47,14 +47,23 @@ _SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(_SUBPROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_SUBPROJECT_ROOT))
 
+from src.biology_constants import KEY_DRIVER_MUTATIONS
 from src.config.constants import IMMUNE_SIGNATURE_LABELS
 from src.config.datasets import DatasetConfig, load_dataset_config
 from src.models import get_model
 from src.signatures import extract_all_signatures
-from src.styles import MODEL_TYPE_PALETTE, RESPONSE_PALETTE, set_presentation_style
-from src.utils.formatting import generate_obsidian_frontmatter
+from src.styles import (
+    DARK_SLATE_CHARCOAL,
+    MODEL_TYPE_PALETTE,
+    RESPONSE_PALETTE,
+    set_presentation_style,
+)
+from src.utils.formatting import (
+    generate_obsidian_frontmatter,
+    generate_script_reference_callout,
+)
 from src.utils.logging import TeeStream
-from src.utils.paths import DATA_DIR, PLOTS_DIR, REPORTS_DIR, rel_path
+from src.utils.paths import DATA_DIR, PLOTS_DIR, get_subproject_log_dir, rel_path
 from src.utils.plotting import save_fig
 
 set_presentation_style()
@@ -68,7 +77,7 @@ PLOT_DIR = PLOTS_DIR / "clinical"
 REPORT_DIR = _SUBPROJECT_ROOT / "reports" / "pillar-2-clinical-subtyping"
 REPORT_PATH = REPORT_DIR / "clinical_feature_selection_report.md"
 
-_LOG_DIR = _SUBPROJECT_ROOT / "logs"
+_LOG_DIR = get_subproject_log_dir(Path(__file__))
 LOG_PATH = _LOG_DIR / "run_clinical_feature_selection.log"
 
 ICI_COHORT_NAMES: frozenset = frozenset({"Liu 2019", "Hugo 2016", "Riaz 2017"})
@@ -80,7 +89,7 @@ TIER1_CONT_COLS: List[str] = [
     "TMB_NONSYNONYMOUS", "AGE",
 ]
 
-TIER1_BIN_COLS: List[str] = ["mut_BRAF", "mut_NRAS", "mut_NF1"]
+TIER1_BIN_COLS: List[str] = KEY_DRIVER_MUTATIONS
 
 TIER2_CANDIDATE_COLS: List[str] = [
     "CLINICAL_STAGE", "BIOPSY_SITE", "TISSUE_SUBTYPE", "PRIOR_ICI_RX",
@@ -94,7 +103,7 @@ _MAX_COEF_THRESHOLD: float = 10.0
 _MAX_MULTI_FEATURES: int = 8
 _LOGIT_MAX_ITER: int = 300
 
-_COLOR_NULL_LINE: str = "#37474F"
+_COLOR_NULL_LINE: str = DARK_SLATE_CHARCOAL
 _COLOR_GRID: str = "#E0E0E0"
 _COLOR_TEXT_SIG: str = "#222222"
 _COLOR_TEXT_INSIG: str = "#666666"
@@ -197,24 +206,6 @@ def _format_feature_name(name: str) -> str:
     return _format_feature_words(name)
 
 
-def _format_feature_name(name: str) -> str:
-    """Formats feature column names into clean display titles."""
-    if name in _FEATURE_CLEAN_MAP:
-        return _FEATURE_CLEAN_MAP[name]
-    replacements = [
-        ("CLINICAL_STAGE_", "Clinical Stage: "),
-        ("BIOPSY_SITE_", "Biopsy Site: "),
-        ("TISSUE_SUBTYPE_", "Tissue Subtype: "),
-        ("PRIOR_ICI_RX_", "Prior ICI Therapy: "),
-        ("PRIOR_RX_", "Prior Non-ICI Therapy: "),
-        ("SAMPLE_TREATMENT_", "Biopsy Timing: "),
-        ("METASTASIZED_", "Metastasised: "),
-        ("SAMPLE_TYPE_", "Sample Type: "),
-        ("_", " ")
-    ]
-    for old, new in replacements:
-        name = name.replace(old, new)
-    return _format_feature_words(name)
 
 
 # ---------------------------------------------------------------------------
@@ -336,7 +327,7 @@ def _fit_single_logit(X_col: pd.Series, y: pd.Series) -> Dict[str, float]:
             X_const = sm.add_constant(X_col.fillna(0.0), has_constant="add")
             model = sm.Logit(y, X_const).fit(disp=0, maxiter=_LOGIT_MAX_ITER)
             return _compute_logit_stats(X_col.name, model)
-    except Exception:
+    except (np.linalg.LinAlgError, ValueError, RuntimeError):
         return {}
 
 
@@ -474,7 +465,7 @@ def _evaluate_tier1_multivariate_logistic(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ConvergenceWarning)
             model = sm.Logit(y, X).fit(disp=0, maxiter=_LOGIT_MAX_ITER)
-    except Exception as exc:
+    except (np.linalg.LinAlgError, ValueError, RuntimeError) as exc:
         raise RuntimeError(f"Tier 1 multivariate logit failed: {exc}") from exc
 
     df_multi = _extract_multi_logit_results(model, feats)
@@ -609,13 +600,13 @@ def _fit_tier2_multivariate_model(X: pd.DataFrame, y: pd.Series) -> object:
         warnings.simplefilter("ignore", ConvergenceWarning)
         try:
             return sm.Logit(y, X).fit(disp=0, maxiter=_LOGIT_MAX_ITER)
-        except Exception as exc:
+        except (np.linalg.LinAlgError, ValueError, RuntimeError) as exc:
             print(f"Warning: Logit fit failed ({exc}); trying regularized fit.")
             try:
                 return sm.Logit(y, X).fit_regularized(
                     alpha=0.01, disp=0, maxiter=_LOGIT_MAX_ITER
                 )
-            except Exception as exc2:
+            except (np.linalg.LinAlgError, ValueError, RuntimeError) as exc2:
                 print(f"Warning: Regularized fit also failed ({exc2}).")
                 return None
 
@@ -1376,29 +1367,45 @@ def _build_limitations_callout(t1_resp_n: int, t1_n_resp: int, ici2_feat_count: 
     ]
 
 
-def _build_architecture_callout() -> List[str]:
-    """Builds software architecture callout box."""
-    p_base = (
-        "file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/"
-        "091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3"
-    )
+def _build_architecture_entries() -> List[Tuple[str, Path, str]]:
+    """Builds entry list for software architecture callout box."""
+    p2 = _SUBPROJECT_ROOT / "scripts" / "pillar-2-clinical-subtyping"
+    p1 = _SUBPROJECT_ROOT / "scripts" / "pillar-1-cohort-preprocessing"
+    q1_src = _SUBPROJECT_ROOT / "src"
+    root_src = _SUBPROJECT_ROOT.parent / "src"
     return [
-        "> [!formula]+ Clinical Feature Selection Script Execution & Software Module Architecture",
-        ">   - **Primary Pipeline Execution Scripts**:",
-        f">     - [`run_clinical_feature_selection.py`]({p_base}/q1-response-predictor/"
-        "scripts/pillar-2-clinical-subtyping/run_clinical_feature_selection.py): "
-        "Two-tiered ICI feature selection (N=256 across 3 cohorts) using RF Gini importance "
-        "and Logistic Regression against anti-PD-1 binary response.",
-        ">   - **Data Preprocessing & Loading Modules**:",
-        f">     - [`clean_data.py`]({p_base}/q1-response-predictor/"
-        "scripts/pillar-1-cohort-preprocessing/clean_data.py): "
-        "Preprocesses raw cohort clinical metadata and RNA-seq expression profiles.",
-        f">     - [`signatures.py`]({p_base}/q1-response-predictor/src/signatures.py): "
-        "Computes transcriptomic immune signatures across cohort expression matrices.",
-        ">   - **Shared Cross-Question & Pipeline Modules**:",
-        f">     - [`styles.py`]({p_base}/src/styles.py): "
-        "Single source of truth for Okabe-Ito colour palettes and presentation style.", "",
+        (
+            "run_clinical_feature_selection.py",
+            p2 / "run_clinical_feature_selection.py",
+            "Evaluates immune signatures (Tier 1) & clinical covariates (Tier 2) via RF/Logit.",
+        ),
+        (
+            "clean_data.py",
+            p1 / "clean_data.py",
+            "Preprocesses raw clinical metadata and expression into cleaned CSV matrices.",
+        ),
+        (
+            "signatures.py",
+            q1_src / "signatures.py",
+            "Computes transcriptomic immune signatures across cohort expression matrices.",
+        ),
+        (
+            "styles.py",
+            root_src / "styles.py",
+            "Single source of truth for Okabe-Ito colour palettes and Matplotlib styling.",
+        ),
     ]
+
+
+def _build_architecture_callout() -> List[str]:
+    """Builds software architecture callout box for report footer using shared generator."""
+    callout_str = generate_script_reference_callout(
+        _build_architecture_entries(),
+        base_dir=REPORT_DIR,
+        callout_type="[!formula]+",
+        title="Clinical Feature Selection Script Execution & Software Module Architecture",
+    )
+    return callout_str.splitlines()
 
 
 def _build_report_limitations_section(

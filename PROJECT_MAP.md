@@ -1,7 +1,28 @@
+---
+title:
+aliases: 
+tags: 
+created: 2026-08-03 22:36
+cssclasses:
+  - row-alt
+  - table-center
+  - table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-08-09 11:13
+---
+
+> [!summary]- Contents
+> ```table-of-contents
+> style: nestedList  # nestedList, nestedOrderedList, inlineFirstLevel
+> hideWhenEmpty: true # Hide TOC if no headings are found
+> ```
+
+---
+
 # Project Architecture Map
 
-> **Purpose**: Living reference document for agent orientation. Read this FIRST before
-> exploring the codebase. Eliminates redundant file-discovery across conversations.
+> **Purpose**: Living reference document for agent orientation. Read this FIRST before exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
 > **Last updated**: 2026-08-08 (Completed 3rd Pass audit across all Pillar 1 preprocessing scripts: `merge_datasets.py`, `download_data.py`, `clean_data.py`, `run_dimensionality_reduction.py`, `run_genomic_characterisation.py`; verified 100% logic functions ≤ 30 lines and clean end-to-end pipeline execution with exit code 0).
 
@@ -48,7 +69,7 @@ melanoma-assignment-3/
 | `src/utils/logging.py` | `TeeStream` (dual stdout/log-file stream) |
 | `src/utils/io.py` | `safe_save_csv()` – Windows/Dropbox-safe atomic CSV write with `.tmp.csv` fallback |
 
-*Note*: Dataset metadata is stored in `data/config/datasets.yaml`. Q1-specific dataset configuration and feature definitions are located in `q1-response-predictor/src/config/` (`datasets.py`, `constants.py`).
+_Note_: Dataset metadata is stored in `data/config/datasets.yaml`. Q1-specific dataset configuration and feature definitions are located in `q1-response-predictor/src/config/` (`datasets.py`, `constants.py`).
 
 ## Data Directory (`data/`)
 
@@ -56,10 +77,14 @@ melanoma-assignment-3/
 
 | Subdirectory | Contents |
 |-------------|----------|
-| `iatlas/` | iAtlas harmonised RNA-seq and clinical data (Liu, Hugo, Riaz) |
-| `tcga/` | TCGA-SKCM expression and clinical |
-| `gdsc/` | Genomics of Drug Sensitivity in Cancer (cell-line viability) |
-| `ccle/` | Cancer Cell Line Encyclopedia expression |
+| `liu_2019/` | Liu 2019 (iAtlas) harmonised RNA-seq and clinical data |
+| `hugo_2016/` | Hugo 2016 (iAtlas) harmonised RNA-seq and clinical data |
+| `riaz_2017/` | Riaz 2017 (iAtlas) harmonised RNA-seq and clinical data |
+| `gide_2019/` | Gide 2019 RNA-seq and clinical data |
+| `van_allen_2015/` | Van Allen 2015 RNA-seq and clinical data |
+| `skcm_tcga_gdc/` | TCGA-SKCM GDC 2025 expression and clinical |
+| `skcm_tcga_pan_can_atlas_2018/` | TCGA-SKCM Pan-Cancer Atlas 2018 data |
+| `_extracted/` | Intermediate extraction working directory |
 
 ### Configuration (`data/config/`)
 
@@ -75,13 +100,15 @@ melanoma-assignment-3/
 
 | Subdirectory | Contents |
 |-------------|----------|
-| `liu_2019/`, `hugo_2016/`, `riaz_2017/` | Per-cohort cleaned CSVs (`clin_cleaned.csv`, `expr_cleaned.csv`, `mutations_cleaned.csv`) |
-| `tcga_skcm/` | TCGA-SKCM processed data |
-| `merged/immunotherapy/` | **Key merged files**: `clin_merged.csv`, `expr_merged.csv`, `merged_genomic.csv` |
-| `merged/full/` | All cohorts merged (including TCGA-SKCM reference) |
-| `q1/` | Q1 feature matrices, model predictions (`pResponse`, `pResponsePct`) |
-| `q2/` | Q2 cleaned viability matrices, patient drug-sensitivity predictions |
-| `q5/` | Q5 outputs: `feature_matrix.csv` (ICI-only, N≈326), `feature_matrix_full.csv` (all cohorts, N≈699), `patient_clusters.csv`, `kmeans_model.pkl`, `clustering_feature_cols.json` |
+| `liu_2019/`, `hugo_2016/`, `riaz_2017/`, `gide_2019/` | Per-cohort cleaned CSVs: `clin_cleaned.csv`, `expr_cleaned.csv`, `mutations_cleaned.csv`, `attrition.csv` |
+| `van_allen_2015/` | Cleaned CSVs: `clin_cleaned.csv`, `expr_cleaned.csv`, `mutations_cleaned.csv`, `attrition.csv`, `entrez_to_symbol_cache.json` |
+| `skcm_tcga_gdc/` | TCGA-SKCM GDC 2025: `clin_cleaned.csv`, `expr_cleaned.csv`, `mutations_cleaned.csv`, `attrition.csv`, `entrez_to_symbol_cache.json` |
+| `skcm_tcga_pan_can_atlas_2018/` | TCGA-SKCM Pan-Cancer Atlas 2018: `clin_cleaned.csv`, `expr_cleaned.csv`, `mutations_cleaned.csv`, `attrition.csv`, `entrez_to_symbol_cache.json` |
+| `tcga_immune/` | TCGA immunotherapy-treated subset: `clin_cleaned.csv`, `expr_cleaned.csv` |
+| `merged/immunotherapy/` | ICI trial cohorts merged: `clin_merged.csv`, `expr_merged.csv`, `merged_genomic.csv` |
+| `merged/full/` | All cohorts merged (including TCGA-SKCM reference): `clin_merged.csv`, `expr_merged.csv`, `merged_genomic.csv` |
+| `merged/clinical_clusters.csv` | Clinical cluster assignments for merged cohort |
+| `q5/` | Q5 outputs: `feature_matrix.csv`, `feature_matrix_full.csv`, `patient_clusters.csv`, `kmeans_model.pkl`, `gmm_model.pkl`, `clustering_feature_cols.json`, plus evaluation/metrics CSVs |
 
 ## Q1: Response Predictor (`q1-response-predictor/`)
 
@@ -337,6 +364,9 @@ npm run build
 | `run_clinical_feature_selection.py` two-tiered redesign & code smell remediation | Redesigned feature selection to evaluate anti-PD-1 binary response exclusively on ICI cohorts ($N=256$, excluding TCGA-SKCM); cleaned Tier 2 features to baseline pre-treatment clinical covariates; removed non-baseline variables (`CLINICAL_BENEFIT`, `PROGRESSION`, `RACE`, etc.); integrated `get_model("rf", X, y)` factory; added standard error bounds ($\text{SE} > 10.0$) and rank deficiency safeguards (`np.linalg.matrix_rank`) for logistic regression; decomposed 100% of 49 functions to $\le 30$ lines in AST; zero lines $>100$ characters; 100% type hint and docstring coverage; verified clean execution with exit code 0. | **Resolved** (2026-08-07) |
 | `run_dimensionality_reduction.py` dynamic cohort loading refactoring | Refactored `run_dimensionality_reduction.py` per `AGENTS.md` Futureproofing Mandate: replaced hardcoded dataset lists (`COHORT_ORDER`) and hardcoded data loaders (`load_liu_2019`, `load_hugo_2016`, `load_riaz_2017`) with dynamic dataset configuration loading via `load_dataset_config(CONFIG_PATH)` from `config/datasets.yaml`. Updated `load_all_cohorts`, `select_top_variable_genes`, plotters, grid configs, and report generator (`generate_report_content`) to handle cohort lists and sample counts dynamically. Verified clean execution with exit code 0. | **Resolved** (2026-08-08) |
 | `run_dimensionality_reduction.py` code smell & DRY refactoring | Audited and refactored `run_dimensionality_reduction.py` per `AGENTS.md` guidelines: 100% of functions (30/30) decomposed to $\le 30$ lines in AST, 0 lines > 100 characters, removed 5 unused imports (`subprocess`, `DatasetConfig`, `load_dataset_config`, `COHORT_PALETTE`, `PROCESSED_DIR`), removed dead `CONFIG_PATH` constant and dead helper `_align_expr_clin()`, maintained DRY compliance with `src/` utilities and palettes, and verified clean execution with exit code 0. | **Resolved** (2026-08-08) |
+| `run_dimensionality_reduction.py` 2nd pass audit | Deeper AST pass: removed dead `_COL_SAMPLE_ID` constant; extracted 9 scatter/typography magic numbers into named module-level constants (`_SCATTER_LINEWIDTH`, `_SCATTER_LINEWIDTH_LARGE`, `_EDGE_COLOR`, `_FONT_PANEL_TITLE`, `_FONT_PANEL_TITLE_LARGE`, `_FONT_SUPTITLE_MD`, `_FONT_SUPTITLE_LG`, `_TITLE_PAD`, `_SUPTITLE_Y`); extracted `_make_reduction_model()` factory to eliminate duplicated UMAP/t-SNE constructor DRY violation in `fit_umap_or_tsne()`; 0 magic numbers, 0 unused constants, 0 violations on all metrics; verified clean execution with exit code 0. | **Resolved** (2026-08-08) |
+| `run_dimensionality_reduction.py` 3rd pass audit | Comprehensive semantic audit: extracted 4 repeated string literals into named constants (`_RESP_LABEL_RESPONDER`, `_RESP_LABEL_NONRESPONDER`, `_HEATMAP_SCRIPT_NAME`, `_BANNER`) eliminating 3–4× string duplication across `RESPONSE_ORDER`, `RESPONSE_LABEL_MAP`, `resp_colors` dict, `_COMPANION_SCRIPTS`, `_script_entries_p1`, and `main()`; suppressed unused `g_trials` return value with `_` idiom in `main()`; expanded 5 single-line docstrings (`plot_cohort_batch_pca`, `_axis_label`, `_render_2x2_scatter_grid`, `plot_trial_reduction_grid`, `write_batch_correction_report`) to full Google-style with Args/Returns; confirmed 0 bare excepts, 0 mutable defaults, 0 bool-trap positional args, 100% type hint coverage; verified clean execution with exit code 0. | **Resolved** (2026-08-09) |
+| `run_clinical_feature_selection.py` code smell & DRY refactoring pass | Audited and refactored `run_clinical_feature_selection.py` per `AGENTS.md` guidelines: removed duplicate function definition `_format_feature_name`, removed unused import `REPORTS_DIR`, imported and aliased `KEY_DRIVER_MUTATIONS` from `src.biology_constants`, imported `DARK_SLATE_CHARCOAL` from `src.styles`, updated log routing to use `get_subproject_log_dir(Path(__file__))`, refined broad exception handlers to catch specific numerical errors (`LinAlgError`, `ValueError`, `RuntimeError`), ensured 0 lines > 100 characters, 100% functions ≤ 30 lines in AST, 0 unused imports, 0 duplicate functions, and verified clean execution with exit code 0. | **Resolved** (2026-08-09) |
 
 ## Conventions Quick Reference
 

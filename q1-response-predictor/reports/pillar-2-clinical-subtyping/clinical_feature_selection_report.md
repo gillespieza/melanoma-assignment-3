@@ -14,12 +14,12 @@ tags:
   - ici-cohorts
   - anti-pd1
   - binary-response
-created: 2026-08-07 12:32
+created: 2026-08-09 11:36
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-07 12:32
+updated: 2026-08-09 11:36
 ---
 
 # Two-Tiered Clinical & Transcriptomic Feature Selection Report
@@ -34,7 +34,7 @@ This report presents a **two-tiered feature selection architecture** evaluating 
 > [!INFO] What, Why & Questions — Tier 1
 > **What We Are Doing**: Evaluating 6 transcriptomic immune gene expression signatures, `TMB`, age, and sex against **anti-PD-1 binary response** ($N_{\text{resp}} = 82$ / $N_{\text{non-resp}} = 113$) across all three ICI cohorts pooled ($N = 195$). Two complementary models are applied: **Random Forest** importance and **Logistic Regression** (univariate then multivariate).
 > **Why We Are Doing It**: These features directly reflect the tumour immune microenvironment hypothesised to drive anti-PD-1 response.
-> **Questions**:
+> - **Questions**:
 >   1. *Which transcriptomic immune features are individually associated with anti-PD-1 response?*
 >   2. *After mutual adjustment, which features retain independent predictive significance?*
 >   3. *Do the 6 immune expression signatures exhibit collinearity?*
@@ -50,13 +50,13 @@ Random Forest feature importance trained on 195 ICI patients:
 ![Tier 1 RF Response Importance](../../plots/clinical/tier1_rf_response_importance.png)
 
 > [!INSIGHT] Key Takeaways: Tier 1 RF Importance
-> - **Top Predictor**: **`Immune Predictive Score (IMPRES) (Z-Score)`** accounts for 10.5% of total RF Gini importance across all features.
+> - **Top Predictor**: **`Cytolytic Activity (CYT) Score (Z-Score)`** accounts for 11.1% of total RF Gini importance across all features.
 > - **Top 5 Features by Gini Importance**:
->   - `Immune Predictive Score (IMPRES) (Z-Score)` — 10.5%
->   - `Cytolytic Activity (CYT) Score (Z-Score)` — 10.1%
->   - `Tumour Mutational Burden (TMB) (Z-Score)` — 9.7%
->   - `SNV Neoantigen Burden (Z-Score)` — 9.2%
->   - `Macrophage STV Score (Z-Score)` — 8.2%
+>   - `Cytolytic Activity (CYT) Score (Z-Score)` — 11.1%
+>   - `Immune Predictive Score (IMPRES) (Z-Score)` — 11.0%
+>   - `Tumour Mutational Burden (TMB) (Z-Score)` — 10.6%
+>   - `CD8 T-Cell Abundance Signature (Z-Score)` — 8.4%
+>   - `PD-L1 Transcript Proxy (Z-Score)` — 7.9%
 
 ### 1.2. Univariate vs. Multivariate Odds Ratio Comparison for ICI Immune Signatures ($N = 195$)
 Contrasting unadjusted Univariate $\text{OR}$ (blue circles) against multivariable-adjusted $\text{aOR}$ (orange squares) across $N = 195$ ICI patients (Model AUC-ROC = **0.726**, McFadden $R^2 = 0.109$):
@@ -73,7 +73,7 @@ Contrasting unadjusted Univariate $\text{OR}$ (blue circles) against multivariab
 > [!INFO] What, Why & Questions — Tier 2
 > **What We Are Doing**: Evaluating 23 encoded dummy variables derived from granular baseline categorical clinical covariates available in the ICI trial cohorts ($N = 256$) — including clinical staging (`CLINICAL_STAGE`), anatomical biopsy site (`BIOPSY_SITE`), histological subtype (`TISSUE_SUBTYPE`), prior ICI therapy (`PRIOR_ICI_RX`), prior non-ICI therapy (`PRIOR_RX`), biopsy timing (`SAMPLE_TREATMENT`), and metastasis status (`METASTASIZED`) — against **anti-PD-1 binary response** using the same RF + Logistic Regression framework.
 > **Why We Are Doing It**: Granular clinical covariates may independently predict ICI response beyond immune expression signatures.
-> **Questions**:
+> - **Questions**:
 >   1. *Which clinical staging or treatment covariates carry independent response signal?*
 >   2. *Does prior ICI therapy confound response classification?*
 >   3. *Do anatomical biopsy sites carry differential response rates?*
@@ -90,13 +90,13 @@ Top-20 RF clinical predictors of anti-PD-1 response trained on $N = 195$ ICI pat
 ![Tier 2 ICI RF Importance](../../plots/clinical/ici_tier2_rf_importance.png)
 
 > [!INSIGHT] Key Takeaways: Tier 2 Clinical RF Importance
-> - **Top Clinical Predictor**: **`Tissue Subtype: Other`** accounts for 13.0% of total RF Gini importance among granular clinical attributes.
+> - **Top Clinical Predictor**: **`Tissue Subtype: Other`** accounts for 11.7% of total RF Gini importance among granular clinical attributes.
 > - **Top 5 Clinical Features by Gini Importance**:
->   - `Tissue Subtype: Other` — 13.0%
->   - `Biopsy Site: Endocrine` — 11.0%
->   - `Prior ICI Therapy: Ipilimumab` — 9.2%
->   - `Biopsy Site: Brain` — 8.2%
->   - `Tissue Subtype: Mucosal` — 5.8%
+>   - `Tissue Subtype: Other` — 11.7%
+>   - `Biopsy Site: Endocrine` — 9.8%
+>   - `Prior ICI Therapy: Ipilimumab` — 8.8%
+>   - `Biopsy Site: Brain` — 8.1%
+>   - `Tissue Subtype: Mucosal` — 6.2%
 
 ### 2.2. Univariate vs. Multivariate Odds Ratio Comparison for ICI Clinical Attributes ($N = 195$)
 Contrasting unadjusted Univariate $\text{OR}$ (blue circles) against multivariable-adjusted $\text{aOR}$ (orange squares) across $N = 195$ ICI patients (Model AUC-ROC = **0.636**, McFadden $R^2 = 0.058$):
@@ -129,10 +129,8 @@ Contrasting unadjusted Univariate $\text{OR}$ (blue circles) against multivariab
 ---
 
 > [!formula]+ Clinical Feature Selection Script Execution & Software Module Architecture
->   - **Primary Pipeline Execution Scripts**:
->     - [`run_clinical_feature_selection.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-2-clinical-subtyping/run_clinical_feature_selection.py): Two-tiered ICI feature selection (N=256 across 3 cohorts) using RF Gini importance and Logistic Regression against anti-PD-1 binary response.
->   - **Data Preprocessing & Loading Modules**:
->     - [`clean_data.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-1-cohort-preprocessing/clean_data.py): Preprocesses raw cohort clinical metadata and RNA-seq expression profiles.
->     - [`signatures.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py): Computes transcriptomic immune signatures across cohort expression matrices.
->   - **Shared Cross-Question & Pipeline Modules**:
->     - [`styles.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/styles.py): Single source of truth for Okabe-Ito colour palettes and presentation style.
+>
+> - [`run_clinical_feature_selection.py`](../../scripts/pillar-2-clinical-subtyping/run_clinical_feature_selection.py): Evaluates immune signatures (Tier 1) & clinical covariates (Tier 2) via RF/Logit.
+> - [`clean_data.py`](../../scripts/pillar-1-cohort-preprocessing/clean_data.py): Preprocesses raw clinical metadata and expression into cleaned CSV matrices.
+> - [`signatures.py`](../../src/signatures.py): Computes transcriptomic immune signatures across cohort expression matrices.
+> - [`styles.py`](../../../src/styles.py): Single source of truth for Okabe-Ito colour palettes and Matplotlib styling.
