@@ -9,12 +9,12 @@ tags:
   - survival-analysis
   - kaplan-meier
   - immunotherapy
-created: 2026-08-08 21:15
+created: 2026-08-09 12:29
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-08 21:15
+updated: 2026-08-09 12:29
 ---
 
 # Clinical Characteristics of Immunotherapy Data Cohorts
@@ -24,7 +24,7 @@ updated: 2026-08-08 21:15
 > [!INFO] Why We Are Doing This
 > - **What**: Compare patient demographics and survival across 6 trial cohorts.
 > - **Why**: Identify potential demographic confounders before predictive modeling.
-> - **Question Answered**: Are patient populations comparable across cohorts?
+> - **Questions**: Are patient populations comparable across cohorts?
 
 This report compares patient demographics across active trial cohorts:
 - **Liu 2019**: Immunotherapy trial cohort ($N = 122$).
@@ -79,7 +79,7 @@ _**Table 1: Baseline Patient Characteristics**_
 > [!INFO] Why We Are Doing This
 > - **What**: We track sample retention through quality control across $N = 930$ initial records.
 > - **Why**: Documenting attrition at each step verifies data integrity.
-> - **Question Answered**: How many patients are retained for downstream analysis?
+> - **Questions**: How many patients are retained for downstream analysis?
 
 _**Table 2: Sample Attrition Across Preprocessing Steps**_
 
@@ -115,7 +115,7 @@ _**Table 2: Sample Attrition Across Preprocessing Steps**_
 > [!INFO] Why We Are Doing This
 > - **What**: We plot unstratified Kaplan-Meier OS curves for each of the 6 active trial cohorts.
 > - **Why**: Visualising baseline mortality rates establishes the clinical context for each dataset.
-> - **Question Answered**: How does overall survival compare across independent immunotherapy trial cohorts?
+> - **Questions**: How does overall survival compare across independent immunotherapy trial cohorts?
 
 ![Overall Survival KM Curves](../../plots/clinical/km_os_grid.png)
 
@@ -126,7 +126,7 @@ _**Figure 2: Unstratified Overall Survival KM Curves across All 6 Immunotherapy 
 > [!INFO] Why We Are Doing This
 > - **What**: We stratify KM overall survival curves by RECIST response status ($N = 548$).
 > - **Why**: Confirming that responders experience significantly longer OS validates RECIST response as a surrogate endpoint.
-> - **Question Answered**: Does RECIST response reliably distinguish durable long-term benefit?
+> - **Questions**: Does RECIST response reliably distinguish durable long-term benefit?
 
 ![Overall Survival by Response](../../plots/clinical/km_os_by_response.png)
 

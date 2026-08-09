@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Melanoma Immunotherapy Preprocessing Data Dictionary",
   "version": "1.0.0",
-  "created": "2026-08-08T20:37:17.298049+00:00",
+  "created": "2026-08-09T11:28:30.076725+00:00",
   "project": "HSE ED / Melanoma Response Predictor",
   "description": "Comprehensive data dictionary for harmonised clinical, genomic, transcriptomic, and treatment features across melanoma cohorts.",
   "columns": {
