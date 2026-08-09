@@ -25,6 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
+from src.data_loaders import load_all_active_cohorts
 from src.styles import RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
@@ -32,9 +33,9 @@ from src.utils.plotting import save_fig
 
 set_presentation_style()
 
-# Module-level Constants
 PLOT_DIR = PLOTS_DIR / "clinical"
-LOG_PATH = LOG_DIR / "run_forest_plot.log"
+_LOG_DIR = BASE_DIR / "logs"
+LOG_PATH = _LOG_DIR / "run_forest_plot.log"
 
 
 def calculate_odds_ratio(
@@ -91,18 +92,10 @@ def main() -> None:
 
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
 
-    _, clin_liu = load_liu_2019(DATA_DIR)
-    _, clin_hugo = load_hugo_2016(DATA_DIR)
-    _, clin_riaz = load_riaz_2017(DATA_DIR)
+    config_path = BASE_DIR / "config" / "datasets.yaml"
+    _, clin_dict, _, trial_names = load_all_active_cohorts(config_path, DATA_DIR, merge_only=True)
 
-    for df in [clin_liu, clin_hugo, clin_riaz]:
-        if "SEX" in df.columns:
-            df["SEX"] = df["SEX"].map({"Male": "Male", "Female": "Female", "M": "Male", "F": "Female"})
-        if "CLINICAL_STAGE" in df.columns:
-            df["CLINICAL_STAGE"] = df["CLINICAL_STAGE"].apply(
-                lambda x: "IV" if str(x).startswith("IV") else ("III" if str(x).startswith("III") else np.nan)
-            )
-
+    clin_dfs = []
     common_cols = [
         "response",
         "SEX",
@@ -115,23 +108,40 @@ def main() -> None:
         "AGE",
     ]
 
-    for df in [clin_liu, clin_hugo, clin_riaz]:
+    for name in trial_names:
+        df = clin_dict[name].copy()
+
+        # Enrich with mutation flags if mutations_cleaned.csv exists
+        proc_dir = DATA_DIR / "processed" / name.lower().replace(" ", "_")
+        mut_path = proc_dir / "mutations_cleaned.csv"
+        if mut_path.exists():
+            mut_df = pd.read_csv(mut_path, index_col="SAMPLE_ID")
+            for gene in ["BRAF", "NRAS", "NF1"]:
+                if gene in mut_df.columns:
+                    df[f"mut_{gene}"] = df.index.map(
+                        lambda sid: (1.0 if mut_df.loc[sid, gene] > 0 else 0.0)
+                        if sid in mut_df.index else np.nan
+                    )
+
+        if "SEX" in df.columns:
+            df["SEX"] = df["SEX"].map({"Male": "Male", "Female": "Female", "M": "Male", "F": "Female"})
+        if "CLINICAL_STAGE" in df.columns:
+            df["CLINICAL_STAGE"] = df["CLINICAL_STAGE"].apply(
+                lambda x: "IV" if str(x).startswith("IV") else ("III" if str(x).startswith("III") else np.nan)
+            )
+
         age_col = [
-            c for c in df.columns if c.upper() in ["AGE", "AGE_AT_DIAGNOSIS", "AGE (YRS)", "AGE_AT_DIAGNOSIS"]
+            c for c in df.columns if c.upper() in ["AGE", "AGE_AT_DIAGNOSIS", "AGE (YRS)"]
         ]
         if age_col:
             df["age_standardized"] = pd.to_numeric(df[age_col[0]], errors="coerce")
         else:
             df["age_standardized"] = np.nan
 
-    pooled_df = pd.concat(
-        [
-            clin_liu[[c for c in common_cols + ["age_standardized"] if c in clin_liu.columns]],
-            clin_hugo[[c for c in common_cols + ["age_standardized"] if c in clin_hugo.columns]],
-            clin_riaz[[c for c in common_cols + ["age_standardized"] if c in clin_riaz.columns]],
-        ],
-        ignore_index=True,
-    )
+        sub_cols = [c for c in common_cols + ["age_standardized"] if c in df.columns]
+        clin_dfs.append(df[sub_cols])
+
+    pooled_df = pd.concat(clin_dfs, ignore_index=True)
 
     tmb_median = pooled_df["TMB_NONSYNONYMOUS"].median()
     pooled_df["TMB_High"] = pooled_df["TMB_NONSYNONYMOUS"].apply(lambda x: "High" if x >= tmb_median else "Low")

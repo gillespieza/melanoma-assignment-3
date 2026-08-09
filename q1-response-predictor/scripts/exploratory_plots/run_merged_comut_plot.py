@@ -34,6 +34,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 from src.config.constants import MERGED_COMUT_DRIVER_GENES
+from src.data_loaders import load_all_active_cohorts
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, SEX_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
@@ -73,7 +74,7 @@ def load_processed_mutations(mutations_file: Path, target_genes: List[str], samp
 
 
 def _load_and_align_merged_data(data_dir: Path) -> Optional[Tuple[pd.DataFrame, List[str]]]:
-    """Loads clinical and somatic mutation data across all three trial cohorts and aligns them.
+    """Loads clinical and somatic mutation data dynamically across all active trial cohorts and aligns them.
 
     Args:
         data_dir: Path to project data directory.
@@ -81,31 +82,42 @@ def _load_and_align_merged_data(data_dir: Path) -> Optional[Tuple[pd.DataFrame, 
     Returns:
         Tuple of (sorted merged DataFrame, sorted sample IDs list) or None if error.
     """
-    _, clin_liu = load_liu_2019(data_dir)
-    _, clin_hugo = load_hugo_2016(data_dir)
-    _, clin_riaz = load_riaz_2017(data_dir)
+    config_path = BASE_DIR / "config" / "datasets.yaml"
+    _, clin_dict, cohort_order, trial_names = load_all_active_cohorts(config_path, data_dir, merge_only=True)
 
-    clin_liu['Cohort'] = 'Liu 2019'
-    clin_hugo['Cohort'] = 'Hugo 2016'
-    clin_riaz['Cohort'] = 'Riaz 2017'
+    if not trial_names:
+        print("No active trial cohorts loaded.")
+        return None
 
-    for df in [clin_liu, clin_hugo, clin_riaz]:
+    clin_dfs = []
+    mut_dfs = []
+    clin_cols = ['Cohort', 'RESPONSE_BINARY', 'TMB_NONSYNONYMOUS', 'SEX', 'PATIENT_ID']
+
+    print("Loading somatic mutation data per active trial cohort...")
+    for cohort_name in trial_names:
+        df = clin_dict[cohort_name].copy()
+        df['Cohort'] = cohort_name
+
         if 'SEX' in df.columns:
             df['SEX'] = df['SEX'].map({'Male': 'Male', 'Female': 'Female', 'M': 'Male', 'F': 'Female'})
 
-    print("Loading somatic mutation data per cohort...")
-    mut_liu = load_processed_mutations(data_dir / "processed/liu_2019/mutations_cleaned.csv", MERGED_COMUT_DRIVER_GENES, clin_liu.index.tolist())
-    mut_hugo = load_processed_mutations(data_dir / "processed/hugo_2016/mutations_cleaned.csv", MERGED_COMUT_DRIVER_GENES, clin_hugo.index.tolist())
-    mut_riaz = load_processed_mutations(data_dir / "processed/riaz_2017/mutations_cleaned.csv", MERGED_COMUT_DRIVER_GENES, clin_riaz.index.tolist())
+        avail_cols = [c for c in clin_cols if c in df.columns]
+        clin_dfs.append(df[avail_cols])
 
-    clin_cols = ['Cohort', 'RESPONSE_BINARY', 'TMB_NONSYNONYMOUS', 'SEX', 'PATIENT_ID']
-    df_clin_merged = pd.concat([
-        clin_liu[clin_cols],
-        clin_hugo[clin_cols],
-        clin_riaz[clin_cols],
-    ])
+        # Infer processed directory name from dataset config
+        proc_dir = data_dir / "processed" / cohort_name.lower().replace(" ", "_")
+        mut_file = proc_dir / "mutations_cleaned.csv"
+        if mut_file.exists():
+            mut_df = load_processed_mutations(mut_file, MERGED_COMUT_DRIVER_GENES, df.index.tolist())
+            mut_dfs.append(mut_df)
+        else:
+            # Empty mutation dataframe fallback matching index
+            empty_mut = pd.DataFrame(0, index=df.index, columns=MERGED_COMUT_DRIVER_GENES)
+            mut_dfs.append(empty_mut)
 
-    df_mut_merged = pd.concat([mut_liu, mut_hugo, mut_riaz])
+    df_clin_merged = pd.concat(clin_dfs)
+    df_mut_merged = pd.concat(mut_dfs)
+
     df_merged = df_clin_merged.join(df_mut_merged)
     df_merged = df_merged.dropna(subset=['RESPONSE_BINARY'])
 
