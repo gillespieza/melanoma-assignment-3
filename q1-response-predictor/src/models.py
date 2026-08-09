@@ -209,24 +209,42 @@ def calibrate_estimator(estimator, X_train, y_train, method='sigmoid', cv=3):
     return calibrated
 
 def tune_logistic_regression(X_train, y_train, calibrate=True):
-    """
-    Tuning L1-penalized Logistic Regression using Grid Search.
+    """Tune Logistic Regression (L1/L2 penalty) via exhaustive Grid Search.
+
+    Grid: 6 C values × 2 penalties × 2 class_weight options = 24 combinations.
+    Compact enough for exhaustive GridSearchCV (no need for RandomizedSearchCV).
+
+    Key improvements over the initial single-axis grid:
+      - penalty: searches both 'l1' and 'l2'. L2 often outperforms L1 on small-N
+        LOCO training splits (N ≈ 80–100) where the sparsity assumption underlying
+        L1 is less justified with only 6–12 immune-signature features.
+      - class_weight: 'balanced' corrects the responder/non-responder imbalance
+        without synthetic oversampling; None is retained because 'balanced' can
+        over-penalise when class frequencies are already near-equal on a given split.
+      - Adaptive CV folds: mirrors the SVM tuner — prevents degenerate folds on
+        small LOCO training sets (N < 30) where a fixed 5-fold CV is not viable.
 
     Note: Probability calibration (CalibratedClassifierCV) is intentionally NOT
-    applied. Logistic Regression minimises log-loss directly, so its predicted
-    probabilities are already well-calibrated. Applying a secondary
+    applied by default. Logistic Regression minimises log-loss directly, so its
+    predicted probabilities are already well-calibrated. Applying a secondary
     CalibratedClassifierCV(cv=3) on small training splits (N ≈ 83, 6 features)
     can learn a negative-slope sigmoid that INVERTS rank ordering, collapsing
     AUROC to below chance (observed: 0.595 → 0.383 with calibration enabled).
     """
     param_grid = {
-        'C': [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+        'penalty':      ['l1', 'l2'],
+        'C':            [0.001, 0.01, 0.1, 1.0, 10.0, 100.0],
+        'class_weight': ['balanced', None],
     }
     lr = LogisticRegression(solver='liblinear', random_state=42, max_iter=1000)
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    n_cv = max(2, min(5, len(y_train) // 10))
+    cv = StratifiedKFold(n_splits=n_cv, shuffle=True, random_state=42)
     grid = GridSearchCV(lr, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
     grid.fit(X_train, y_train)
-    return grid.best_estimator_
+    best_est = grid.best_estimator_
+    if calibrate:
+        return calibrate_estimator(best_est, X_train, y_train)
+    return best_est
 
 def tune_random_forest(X_train: pd.DataFrame, y_train: pd.Series, calibrate: bool = True):
     """Tune Random Forest via Randomised Search, optionally calibrated via Platt Scaling.
