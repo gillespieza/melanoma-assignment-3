@@ -388,7 +388,7 @@ def _render_tmb_boxplot(ax: plt.Axes, df_trials: pd.DataFrame) -> None:
     ax.set_yscale("log")
     ax.set_ylabel("TMB (mutations/Mb, log scale)", fontsize=12, fontweight="bold")
     ax.set_xlabel("Immunotherapy Cohort", fontsize=12, fontweight="bold")
-    ax.set_title("Pre-treatment TMB by Immunotherapy Response", fontsize=13, fontweight="bold")
+    ax.set_title(f"Pre-treatment TMB by Immunotherapy Response (N={len(df_trials)})", fontsize=13, fontweight="bold")
     ax.legend(loc="upper left")
     _annotate_tmb_pvalues(ax, df_trials)
 
@@ -439,6 +439,13 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
 
     _render_tmb_boxplot(axes[0], df_trials)
     _render_neoantigen_scatter(axes[1], cohorts)
+
+    n_trials_samples = len(df_trials)
+    fig.suptitle(
+        f"Tumour Mutational Burden (TMB) & Neoantigen Distributions (N={n_trials_samples})",
+        fontsize=14, fontweight="bold", y=0.98,
+    )
+    plt.tight_layout()
 
     out_tmb_path = plot_dir / "tmb_distributions_by_cohort.png"
     _save_with_alias(fig, out_tmb_path, "tmb_distribution.png")

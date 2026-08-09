@@ -54,7 +54,7 @@ def prepare_predictor_features(
     project_root: Path
 ) -> Tuple[pd.DataFrame, np.ndarray, List[str]]:
     """Construct clean feature matrix and target array for predictor training."""
-    df_sigs_aligned = df_sigs_merged.loc[df_clin_merged.index]
+    df_sigs_aligned = df_sigs_merged.reindex(df_clin_merged.index)
     sig_features = ['IFN_gamma', 'TIS', 'CYT', 'CD8_Tcell', 'IMPRES', 'PD_L1']
 
     q5_feat_path = project_root / "data" / "processed" / "q5" / "feature_matrix.csv"
@@ -82,7 +82,9 @@ def prepare_predictor_features(
     df_features['M1_M2_Ratio'] = df_features['M1_M2_Ratio'].fillna(df_features['M1_M2_Ratio'].median())
     df_features['Macrophage_STV'] = df_features['Macrophage_STV'].fillna(df_features['Macrophage_STV'].median())
 
-    clean_idx = df_clin_merged[_COL_RESPONSE].dropna().index
+    valid_sigs_idx = df_sigs_aligned.dropna(how='all').index
+    valid_resp_idx = df_clin_merged[_COL_RESPONSE].dropna().index
+    clean_idx = valid_resp_idx.intersection(valid_sigs_idx)
     df_features_clean = df_features.loc[clean_idx]
     y = df_clin_merged.loc[clean_idx, _COL_RESPONSE].values
 

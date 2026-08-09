@@ -3,7 +3,7 @@
 Evaluates the same five model architectures (Logistic Regression, Random Forest,
 XGBoost, SVM, ElasticNet) and the same six curated transcriptomic signature features
 used in the LOCO heatmap, but using 5-fold stratified CV on the pooled immunotherapy
-cohort (Liu 2019 + Hugo 2016 + Riaz 2017) rather than leave-one-cohort-out splits.
+cohort (pooled across active trial cohorts) rather than leave-one-cohort-out splits.
 
 Each fold reports per-fold AUC; the heatmap cells show mean AUC +/- std across folds,
 rendered in the same YlGnBu colour scheme as loco_performance_heatmap.png for
@@ -109,16 +109,16 @@ def _load_and_prep_cohort(cohort_name: str, data_dir: Path) -> Tuple[pd.DataFram
     return sigs, y
 
 
-def _pool_cohorts(data_dir: Path) -> Tuple[pd.DataFrame, pd.Series]:
+def _pool_cohorts(data_dir: Path) -> Tuple[pd.DataFrame, pd.Series, List[str]]:
     """Pools all active trial cohorts into one feature matrix and label vector.
 
     Args:
         data_dir: Root data directory.
 
     Returns:
-        Tuple of (pooled signatures DataFrame, pooled response Series) with reset indices.
+        Tuple of (pooled signatures DataFrame, pooled response Series, trial_names) with reset indices.
     """
-    config_path = SUBPROJECT_ROOT.parent / "config" / "datasets.yaml"
+    config_path = SUBPROJECT_ROOT / "config" / "datasets.yaml"
     _, _, _, trial_names = load_all_active_cohorts(config_path, data_dir, merge_only=True)
     sigs_list, y_list = [], []
     for name in trial_names:
@@ -127,7 +127,7 @@ def _pool_cohorts(data_dir: Path) -> Tuple[pd.DataFrame, pd.Series]:
         y_list.append(y)
     X_pooled = pd.concat(sigs_list, axis=0).reset_index(drop=True)
     y_pooled = pd.concat(y_list, axis=0).reset_index(drop=True)
-    return X_pooled, y_pooled
+    return X_pooled, y_pooled, trial_names
 
 
 # ---------------------------------------------------------------------------
@@ -311,8 +311,8 @@ def main() -> None:
     print("5-Fold Stratified CV: Curated Signatures Feature Panel")
     print("=" * 56)
 
-    print("\nLoading and pooling cohorts (Liu 2019 + Hugo 2016 + Riaz 2017)...")
-    X_pooled, y_pooled = _pool_cohorts(DATA_DIR)
+    X_pooled, y_pooled, trial_names = _pool_cohorts(DATA_DIR)
+    print(f"\nLoading and pooling active trial cohorts ({' + '.join(trial_names)})...")
     n_pooled = len(y_pooled)
     n_resp = int(y_pooled.sum())
     print(f"  Pooled dataset: N={n_pooled} patients, {n_resp} responders "

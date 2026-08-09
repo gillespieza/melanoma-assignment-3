@@ -24,7 +24,9 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from scipy.stats import spearmanr, ttest_1samp
+from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import StandardScaler
 
 # ---------------------------------------------------------------------------
 # Bootstrap & Path Resolution
@@ -46,8 +48,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
+if str(_THIS_FILE.parent) not in sys.path:
+    sys.path.insert(0, str(_THIS_FILE.parent))
 
-from scripts.pillar_3_transcriptomic_signatures.run_extended_biomarkers import (
+from run_extended_biomarkers import (
     DEFAULT_RANDOM_STATE,
     PLOT_DIR,
     REPORTS_DIR,
@@ -59,6 +63,7 @@ from scripts.pillar_3_transcriptomic_signatures.run_extended_biomarkers import (
     _load_and_prepare_data,
 )
 from src.styles import set_presentation_style
+from src.utils.formatting import generate_script_reference_callout
 from src.utils.logging import TeeStream
 from src.utils.paths import get_subproject_log_dir, rel_path
 from src.utils.plotting import save_fig
@@ -116,6 +121,30 @@ def _prepare_predictor_features(
     df_clin_merged: pd.DataFrame, df_sigs_merged: pd.DataFrame
 ) -> Tuple[pd.DataFrame, np.ndarray, List[str]]:
     return prepare_predictor_features(df_clin_merged, df_sigs_merged, PROJECT_ROOT)
+
+
+def evaluate_auc_cv(
+    model: Any,
+    X: np.ndarray,
+    y: np.ndarray,
+    cv: StratifiedKFold,
+    feature_set_name: str = "",
+) -> np.ndarray:
+    """Evaluates Stratified K-Fold CV ROC-AUC scores for a given model and feature matrix."""
+    scores = []
+    for train_idx, val_idx in cv.split(X, y):
+        X_train, X_val = X[train_idx], X[val_idx]
+        y_train, y_val = y[train_idx], y[val_idx]
+
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_val_scaled = scaler.transform(X_val)
+
+        model.fit(X_train_scaled, y_train)
+        probs = model.predict_proba(X_val_scaled)[:, 1]
+        scores.append(roc_auc_score(y_val, probs))
+
+    return np.array(scores)
 
 
 def _evaluate_multimodal_models(
@@ -488,70 +517,105 @@ def _update_curated_signatures_report(report_path: Path, section_5_lines: List[s
     print(f"\nUpdated Section 5 in {rel_path(report_path)}")
 
 
-def _append_script_reference_callout(report_path: Path) -> None:
-    """Idempotently append a script reference callout box to the end of the report.
-
-    Safe to call on every pipeline run: skips silently if the sentinel line is
-    already present, preventing duplicate callout blocks.
-    """
-    if not report_path.exists():
-        return
-    text = report_path.read_text(encoding="utf-8")
-    if _SCRIPT_CALLOUT_SENTINEL in text:
-        return
-
-    def _uri(rel: str) -> str:
-        return "file:///" + (BASE_DIR / rel).as_posix()
-
-    u_pred = _uri("scripts/pillar-3-transcriptomic-signatures/train_multimodal_predictor.py")
-    u_bio = _uri("scripts/pillar-3-transcriptomic-signatures/run_extended_biomarkers.py")
-    u_sig = _uri("src/signatures.py")
-    u_mod = _uri("src/models.py")
-    u_eval = _uri("src/evaluation.py")
-    u_pipe = _uri("scripts/run_pipeline.py")
-
-    lines = [
-        "",
-        _SCRIPT_CALLOUT_SENTINEL,
-        "> - **Primary Pipeline Execution Scripts**:",
+def _p3_execution_entries() -> List[Tuple[str, Path, str]]:
+    """Returns primary pipeline execution scripts for Pillar 3 callout."""
+    p3_dir = BASE_DIR / "scripts" / "pillar-3-transcriptomic-signatures"
+    return [
         (
-            f">   - [`train_multimodal_predictor.py`]({u_pred}): Trains cross-validated "
-            "classifiers (LR, RF, XGB, SVM, Elastic-Net) across 5 feature-set tiers, "
-            "generates AUROC comparison heatmaps, and updates Section 5 of this report "
-            "with live cross-validation results."
+            "train_multimodal_predictor.py",
+            p3_dir / "train_multimodal_predictor.py",
+            (
+                "Trains cross-validated machine learning classifiers (LR, RF, XGB, SVM, "
+                "Elastic-Net) across feature set permutation tiers, generates AUROC "
+                "comparison heatmaps, and updates Section 5 of `curated_signatures_report.md`."
+            ),
         ),
         (
-            f">   - [`run_extended_biomarkers.py`]({u_bio}): Evaluates neoantigen load, "
-            "TMB\u2013immune signature Spearman correlations, TCGA aneuploidy and TMB "
-            "survival stratification, and pathway mutation frequencies across trial cohorts."
-        ),
-        "> - **Core Supporting Python Modules**:",
-        (
-            f">   - [`signatures.py`]({u_sig}): Computes the six curated immune signatures "
-            "(IFN-\u03b3, TIS, CYT, IMPRES, CD8 T-cell, TCGA 20-gene OS) from "
-            "normalised gene expression matrices."
+            "run_extended_biomarkers.py",
+            p3_dir / "run_extended_biomarkers.py",
+            (
+                "Evaluates neoantigen load vs TMB, TMB-immune signature Spearman "
+                "correlations, TCGA aneuploidy and TMB survival stratification, and "
+                "somatic pathway mutation frequencies."
+            ),
         ),
         (
-            f">   - [`models.py`]({u_mod}): Provides `get_model()` \u2014 the single entry "
-            "point for tuned, calibrated classifier instances \u2014 and `run_loco_cv()` "
-            "for Leave-One-Cohort-Out cross-validation."
-        ),
-        (
-            f">   - [`evaluation.py`]({u_eval}): Implements AUROC, AUC-PR, concordance "
-            "index, and Youden-optimal threshold metrics for model benchmarking."
-        ),
-        "> - **Shared Cross-Question & Pipeline Modules**:",
-        (
-            f">   - [`run_pipeline.py`]({u_pipe}): Master pipeline orchestrator executing "
-            "data preprocessing, biomarker evaluation, and multimodal predictor training "
-            "in sequence."
+            "run_pipeline.py",
+            BASE_DIR / "scripts" / "run_pipeline.py",
+            (
+                "Master pipeline orchestrator executing data preprocessing, biomarker "
+                "evaluation, and multimodal predictor training in sequence."
+            ),
         ),
     ]
-    report_path.write_text(
-        text.rstrip() + "\n" + "\n".join(lines) + "\n",
-        encoding="utf-8",
+
+
+def _p3_module_entries() -> List[Tuple[str, Path, str]]:
+    """Returns supporting core modules for Pillar 3 callout."""
+    src_dir = PROJECT_ROOT / "src"
+    return [
+        (
+            "signatures.py",
+            src_dir / "signatures.py",
+            (
+                "Computes the six curated immune signatures (IFN-γ, TIS, CYT, IMPRES, "
+                "CD8 T-cell, TCGA 20-gene OS) from normalised gene expression matrices."
+            ),
+        ),
+        (
+            "models.py",
+            src_dir / "models.py",
+            (
+                "Provides `get_model()` — the single entry point for tuned, calibrated "
+                "classifier instances — and `run_loco_cv()` for LOCO cross-validation."
+            ),
+        ),
+        (
+            "evaluation.py",
+            src_dir / "evaluation.py",
+            (
+                "Implements AUROC, AUC-PR, concordance index, and Youden-optimal threshold "
+                "metrics for model benchmarking."
+            ),
+        ),
+        (
+            "styles.py",
+            src_dir / "styles.py",
+            "Central definition of Okabe-Ito colour palettes.",
+        ),
+    ]
+
+
+def _append_script_reference_callout(report_path: Path) -> None:
+    """Appends or updates the script reference callout box at the end of the report."""
+    if not report_path.exists():
+        return
+
+    entries = _p3_execution_entries() + _p3_module_entries()
+    callout_str = generate_script_reference_callout(
+        entries,
+        base_dir=report_path.parent,
+        callout_type="[!formula]+",
+        title="Pillar 3 Script Execution & Software Module Architecture",
     )
-    print(f"  Appended script reference callout to {rel_path(report_path)}")
+
+    text = report_path.read_text(encoding="utf-8")
+    footer_markers = [
+        "> [!formula]+ Pillar 3 Script Execution",
+        "> [!NOTE] Software Module Architecture",
+    ]
+    footer_idx = -1
+    for marker in footer_markers:
+        idx = text.find(marker)
+        if idx != -1:
+            rule_idx = text.rfind("---", 0, idx)
+            if rule_idx != -1:
+                footer_idx = rule_idx
+                break
+
+    base_text = text[:footer_idx].rstrip() if footer_idx != -1 else text.rstrip()
+    report_path.write_text(base_text + "\n\n" + callout_str, encoding="utf-8")
+    print(f"  Updated script reference callout box in {rel_path(report_path)}")
 
 
 # ---------------------------------------------------------------------------
@@ -567,8 +631,8 @@ def main() -> None:
     if data is None:
         return
     (
-        df_clin_merged, df_sigs_merged, df_tcga_clin, _,
-        df_liu_clin, df_hugo_clin, df_riaz_clin
+        df_clin_merged, df_sigs_merged, df_tcga_clin,
+        df_tcga_sigs, cohort_data
     ) = data
 
     section_5_lines = _train_multimodal_predictor(df_clin_merged, df_sigs_merged)

@@ -2,13 +2,13 @@
 
 Left Panel (Panel A):
   Leave-One-Cohort-Out (LOCO) AUROC per held-out cohort for Curated Signatures.
-  Columns: Hugo 2016 (N=27), Liu 2019 (N=104), Riaz 2017 (N=64), Mean LOCO.
+  Columns: Active trial cohorts (N per cohort) + Mean LOCO.
   Rows: 5 model architectures + Cross-Model Mean.
   Cells: AUROC ± 1,000-sample bootstrap SD (* p < 0.05, ** p < 0.01 vs. chance).
 
-Right Panel (Panel B - 3x wider than Left Panel):
+Right Panel (Panel B):
   LOCO AUROC for SelectKBest (k=20, 100, 200) broken down per held-out cohort.
-  Columns: 3 cohorts x 3 k-values (9 per-cohort columns) + 3 Mean LOCO columns (k=20, 100, 200) = 12 columns total.
+  Columns: N cohorts x 3 k-values (per-cohort columns) + 3 Mean LOCO columns (k=20, 100, 200).
   Rows: 5 model architectures + Cross-Model Mean.
   Cells: AUROC ± bootstrap SD (* p < 0.05, ** p < 0.01 vs. chance).
 
@@ -123,7 +123,7 @@ def _load_all_cohort_data(data_dir: Path) -> Tuple[
     Sets the module-level COHORT_ORDER from datasets.yaml trial names.
     """
     global COHORT_ORDER
-    config_path = SUBPROJECT_ROOT.parent / "config" / "datasets.yaml"
+    config_path = SUBPROJECT_ROOT / "config" / "datasets.yaml"
     expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(
         config_path, data_dir, merge_only=True
     )
@@ -447,7 +447,7 @@ def _render_dual_loco_panel(
         ))
 
     # Thick vertical lines separating cohort groups (every 3 columns)
-    for v_line in [3, 6, 9, 12]:
+    for v_line in range(3, n_cols_right + 1, 3):
         if v_line <= n_cols_right:
             ax2.axvline(v_line, color="white", linewidth=5.0, zorder=6)
     ax2.axvline(n_cols_right - 3, color="white", linewidth=7.0, zorder=6)

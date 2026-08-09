@@ -439,7 +439,8 @@ def _plot_correlation_heatmap(sig_corrected: pd.DataFrame, plot_dir: Path) -> No
     corr = sig_corrected.corr(method="spearman")
     sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm", vmin=-1, vmax=1, ax=ax, cbar_kws={"label": "Spearman r"})
 
-    ax.set_title("Spearman Correlation between Immune Signatures", fontsize=14, fontweight="bold", pad=15)
+    n_total = len(sig_corrected)
+    ax.set_title(f"Spearman Correlation between Immune Signatures (N={n_total})", fontsize=14, fontweight="bold", pad=15)
     plt.xticks(rotation=45, ha="right")
 
     out_path = plot_dir / "signature_correlation_heatmap.png"
@@ -587,7 +588,7 @@ def _plot_combined_forest(
     """Generates a 1x2 grid: Univariate Cohen's d (Left) vs. per-signature LOCO AUC (Right).
 
     Both panels are single-signature univariate measures, making them directly comparable:
-    - Left: pooled effect size (standardised mean difference, N=195)
+    - Left: pooled effect size (standardised mean difference across pooled cohorts)
     - Right: out-of-cohort discriminative ability (AUC per held-out cohort)
 
     Args:
@@ -600,6 +601,7 @@ def _plot_combined_forest(
     sig_cont = sig_corrected[available_sigs]
     resp_mask = (y_all == 1).values
     rng = np.random.default_rng(42)
+    n_pooled = int(y_all.notna().sum())
 
     # 1. Compute Univariate Stats
     _N_BOOTSTRAP = 2_000
@@ -662,7 +664,7 @@ def _plot_combined_forest(
     ax1.set_yticklabels(df_u["Signature"], fontsize=11, fontweight="bold")
     ax1.set_xlabel("Cohen's d  (Responder − Non-Responder)", fontsize=11, fontweight="bold")
     ax1.set_title(
-        "A. Pooled Effect Size\n(Cohen's d & 95% Bootstrap CI, N=195)",
+        f"A. Pooled Effect Size\n(Cohen's d & 95% Bootstrap CI, N={n_pooled})",
         fontsize=12, fontweight="bold", pad=14,
     )
     ax1.set_ylim(bottom=len(available_sigs) - 0.5, top=-0.75)
@@ -711,7 +713,7 @@ def _plot_combined_forest(
     ax2.set_xlim(0.35, 0.90)
     ax2.set_xlabel("AUROC per Held-Out Cohort", fontsize=11, fontweight="bold")
     ax2.set_title(
-        "B. Out-of-Cohort Discriminative Ability\n(AUROC per Held-Out Cohort — 3 independent studies)",
+        f"B. Out-of-Cohort Discriminative Ability\n(AUROC per Held-Out Cohort — {n_cohorts} independent studies)",
         fontsize=12, fontweight="bold", pad=14,
     )
     ax2.set_ylim(bottom=len(available_sigs) - 0.5, top=-0.75)

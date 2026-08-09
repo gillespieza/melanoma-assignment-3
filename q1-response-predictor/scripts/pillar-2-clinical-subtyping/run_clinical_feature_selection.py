@@ -1355,6 +1355,7 @@ def _build_tier1_or_candidate_bullet(
 
 
 def _build_tier1_or_insight_bullets(
+    t1_resp_n: int,
     t1_n_sig: int,
     t1_m_sig: int,
     feat_title: str,
@@ -1369,8 +1370,8 @@ def _build_tier1_or_insight_bullets(
         bullets.append(
             "> - **Statistical Significance & Power Limitations**: Neither univariate "
             "nor multivariate logistic models yield features passing FDR correction "
-            fr"($q < {_FDR_ALPHA}$). This is driven by modest sample size ($N = 195$), "
-            "multiple testing burden across 18 candidate features, and substantial "
+            fr"($q < {_FDR_ALPHA}$). This is driven by modest sample size ($N = {t1_resp_n}$), "
+            "multiple testing burden across candidate features, and substantial "
             "multicollinearity among transcriptomic signatures."
         )
     else:
@@ -1419,7 +1420,7 @@ def _build_report_tier1_plots_and_insights(
     lines.extend(_build_tier1_or_comparison_block(t1_resp_n, auc_val, r2_val))
     lines.extend(_build_report_tier1_collinearity_text(sig_mask, or_min, or_max, sig_max_p))
     lines.extend(_build_tier1_or_insight_bullets(
-        t1_n_sig, t1_m_sig, feat_title, top_multi_aor, p_top, fdr_top, fdr_met
+        t1_resp_n, t1_n_sig, t1_m_sig, feat_title, top_multi_aor, p_top, fdr_top, fdr_met
     ))
     lines.append("")
     return lines

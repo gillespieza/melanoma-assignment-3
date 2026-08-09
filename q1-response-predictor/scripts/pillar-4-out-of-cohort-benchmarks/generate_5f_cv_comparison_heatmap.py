@@ -143,7 +143,7 @@ def _load_pooled_data(
     Returns:
         Tuple of (pooled_expr_common_genes, pooled_signatures, pooled_response_labels).
     """
-    config_path = SUBPROJECT_ROOT.parent / "config" / "datasets.yaml"
+    config_path = SUBPROJECT_ROOT / "config" / "datasets.yaml"
     expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(
         config_path, data_dir, merge_only=True
     )
@@ -166,7 +166,7 @@ def _load_pooled_data(
     X_expr = pd.concat(expr_parts).reset_index(drop=True)
     X_sigs = pd.concat(sig_parts).reset_index(drop=True)
     y_pooled = pd.concat(y_parts).reset_index(drop=True)
-    return X_expr, X_sigs, y_pooled
+    return X_expr, X_sigs, y_pooled, trial_names
 
 
 # ---------------------------------------------------------------------------
@@ -436,8 +436,8 @@ def main() -> None:
     print("5-Fold CV: Curated Signatures vs. SelectKBest (5 Models)")
     print("=" * 60)
 
-    print("\nLoading and pooling cohorts (Liu 2019 + Hugo 2016 + Riaz 2017)...")
-    X_expr, X_sigs, y = _load_pooled_data(DATA_DIR)
+    X_expr, X_sigs, y, trial_names = _load_pooled_data(DATA_DIR)
+    print(f"\nLoading and pooling active trial cohorts ({' + '.join(trial_names)})...")
     n_pooled = len(y)
     print(f"  Pooled dataset: N={n_pooled} patients, {int(y.sum())} responders "
           f"({100 * y.mean():.1f}%)")
