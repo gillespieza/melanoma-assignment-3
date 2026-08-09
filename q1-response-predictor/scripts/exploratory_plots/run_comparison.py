@@ -36,18 +36,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
+from src.data_loaders import load_all_active_cohorts
 from src.models import get_model
 from src.signatures import extract_all_signatures
-from src.styles import COHORT_PALETTE, FEATURE_SELECTION_PALETTE, RESPONSE_PALETTE, set_presentation_style
+from src.styles import COHORT_PALETTE, FEATURE_SELECTION_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import DATA_DIR, PLOTS_DIR, REPORTS_DIR, SUBPROJECT_ROOT
+from src.utils.paths import DATA_DIR, PLOTS_DIR, REPORTS_DIR
 from src.utils.plotting import save_fig
 
 set_presentation_style()
 
 # Module-level Constants
+_SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
 PLOT_DIR = PLOTS_DIR / "feature_selection"
-LOG_DIR = SUBPROJECT_ROOT / "logs"
+LOG_DIR = _SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "run_comparison.log"
 
 
@@ -171,7 +173,7 @@ def _plot_summary_curated_wins(df_results: pd.DataFrame, out_plot_path: Path) ->
         "SelectKBest (k=200) AUC",
     ]
     method_labels = [c.replace(" AUC", "") for c in value_cols]
-    cohort_order = ["Liu 2019", "Hugo 2016", "Riaz 2017"]
+    cohort_order = df_results["Test Cohort"].unique().tolist()
     skb_cols = ["SelectKBest (k=20) AUC", "SelectKBest (k=100) AUC", "SelectKBest (k=200) AUC"]
 
     fig, (ax_strip, ax_delta) = plt.subplots(
@@ -258,7 +260,7 @@ def _plot_summary_curated_wins(df_results: pd.DataFrame, out_plot_path: Path) ->
     df_delta_cohort = (
         df_delta.groupby("Test Cohort")["Delta AUC"]
         .agg(["mean", "std"])
-        .loc[cohort_order]
+        .reindex(cohort_order)
         .reset_index()
     )
 
@@ -289,8 +291,7 @@ def _plot_summary_curated_wins(df_results: pd.DataFrame, out_plot_path: Path) ->
         )
 
     # Individual model Δ values overlaid as white dots
-    for cohort in cohort_order:
-        cohort_x = cohort_order.index(cohort)
+    for cohort_x, cohort in enumerate(cohort_order):
         model_deltas = df_delta[df_delta["Test Cohort"] == cohort]["Delta AUC"].values
         ax_delta.scatter(
             [cohort_x] * len(model_deltas),
@@ -305,12 +306,13 @@ def _plot_summary_curated_wins(df_results: pd.DataFrame, out_plot_path: Path) ->
     ax_delta.axhline(0.0, color="black", linestyle="-", linewidth=1.0, zorder=2)
 
     # Zone labels: curated wins vs raw genes win
+    x_label_pos = len(cohort_order) - 0.53
     ax_delta.text(
-        2.47, 0.20, "Curated\nwins ↑", ha="right", va="center",
+        x_label_pos, 0.20, "Curated\nwins ↑", ha="right", va="center",
         fontsize=8.5, color="#009E73", fontweight="bold",
     )
     ax_delta.text(
-        2.47, -0.20, "Raw genes\nwin ↓", ha="right", va="center",
+        x_label_pos, -0.20, "Raw genes\nwin ↓", ha="right", va="center",
         fontsize=8.5, color="#D55E00", fontweight="bold",
     )
 
@@ -407,8 +409,10 @@ def _plot_comparison_heatmap(df_results: pd.DataFrame, out_plot_path: Path) -> N
             fill=False, edgecolor="black", linewidth=2.5,
         ))
 
-    # Thick horizontal dividers separating model families (every 3 rows)
-    for divider_y in [3, 6, 9, 12]:
+    # Thick horizontal dividers separating model families (every n_cohorts rows)
+    n_cohorts = df_results["Test Cohort"].nunique()
+    n_models = df_results["Model"].nunique()
+    for divider_y in range(n_cohorts, n_models * n_cohorts, n_cohorts):
         ax.axhline(divider_y, color="#37474F", linewidth=2.5, zorder=6)
 
     # Dashed divider before the cross-model mean summary row
@@ -438,45 +442,28 @@ def main() -> None:
     PLOT_DIR.mkdir(exist_ok=True, parents=True)
     REPORTS_DIR.mkdir(exist_ok=True, parents=True)
 
-    expr_liu, clin_liu = load_liu_2019(DATA_DIR)
-    expr_hugo, clin_hugo = load_hugo_2016(DATA_DIR)
-    expr_riaz, clin_riaz = load_riaz_2017(DATA_DIR)
+    config_path = BASE_DIR / "config" / "datasets.yaml"
+    expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(config_path, DATA_DIR, merge_only=True)
 
-    common_genes = list(set(expr_liu.columns) & set(expr_hugo.columns) & set(expr_riaz.columns))
+    # Intersect common genes across all active trial expression matrices
+    common_genes = expr_dict[trial_names[0]].columns
+    for name in trial_names[1:]:
+        common_genes = common_genes.intersection(expr_dict[name].columns)
+    common_genes = list(common_genes)
 
-    sig_liu = extract_all_signatures(expr_liu[common_genes])
-    sig_hugo = extract_all_signatures(expr_hugo[common_genes])
-    sig_riaz = extract_all_signatures(expr_riaz[common_genes])
+    cohort_sig_dfs: Dict[str, Tuple[pd.DataFrame, pd.Series]] = {}
+    cohort_expr_dfs: Dict[str, pd.DataFrame] = {}
+    cohort_y_dfs: Dict[str, pd.Series] = {}
 
-    y_liu = clin_liu.loc[sig_liu.index, "response"].dropna()
-    y_hugo = clin_hugo.loc[sig_hugo.index, "response"].dropna()
-    y_riaz = clin_riaz.loc[sig_riaz.index, "response"].dropna()
-
-    sig_liu = sig_liu.loc[y_liu.index]
-    sig_hugo = sig_hugo.loc[y_hugo.index]
-    sig_riaz = sig_riaz.loc[y_riaz.index]
-
-    expr_liu_common = expr_liu.loc[y_liu.index, common_genes]
-    expr_hugo_common = expr_hugo.loc[y_hugo.index, common_genes]
-    expr_riaz_common = expr_riaz.loc[y_riaz.index, common_genes]
-
-    cohort_sig_dfs = {
-        "Liu 2019": (sig_liu, y_liu),
-        "Hugo 2016": (sig_hugo, y_hugo),
-        "Riaz 2017": (sig_riaz, y_riaz),
-    }
-
-    cohort_expr_dfs = {
-        "Liu 2019": expr_liu_common,
-        "Hugo 2016": expr_hugo_common,
-        "Riaz 2017": expr_riaz_common,
-    }
-
-    cohort_y_dfs = {
-        "Liu 2019": y_liu,
-        "Hugo 2016": y_hugo,
-        "Riaz 2017": y_riaz,
-    }
+    for name in trial_names:
+        expr = expr_dict[name]
+        clin = clin_dict[name]
+        sig = extract_all_signatures(expr[common_genes])
+        y = clin.loc[sig.index, "response"].dropna()
+        sig = sig.loc[y.index]
+        cohort_sig_dfs[name] = (sig, y)
+        cohort_expr_dfs[name] = expr.loc[y.index, common_genes]
+        cohort_y_dfs[name] = y
 
     models = ["LR", "RF", "XGB", "SVM", "ElasticNet"]
     records = []
@@ -489,14 +476,14 @@ def main() -> None:
         k100_res = _run_loco_feature_selection(cohort_expr_dfs, cohort_y_dfs, k_features=100, model_type=m.lower())
         k200_res = _run_loco_feature_selection(cohort_expr_dfs, cohort_y_dfs, k_features=200, model_type=m.lower())
 
-        for test_cohort in ["Liu 2019", "Hugo 2016", "Riaz 2017"]:
+        for test_cohort in trial_names:
             records.append({
                 "Model": m,
                 "Test Cohort": test_cohort,
-                "Curated Signatures AUC": sig_res[test_cohort],
-                "SelectKBest (k=20) AUC": k20_res[test_cohort][0],
-                "SelectKBest (k=100) AUC": k100_res[test_cohort][0],
-                "SelectKBest (k=200) AUC": k200_res[test_cohort][0],
+                "Curated Signatures AUC": sig_res.get(test_cohort, np.nan),
+                "SelectKBest (k=20) AUC": k20_res.get(test_cohort, (np.nan,))[0],
+                "SelectKBest (k=100) AUC": k100_res.get(test_cohort, (np.nan,))[0],
+                "SelectKBest (k=200) AUC": k200_res.get(test_cohort, (np.nan,))[0],
             })
 
     df_results = pd.DataFrame(records)
