@@ -900,7 +900,7 @@ def _annotate_or_forest_bars(ax: plt.Axes, df_plot: pd.DataFrame, label_prefix: 
 
 def _set_forest_legend(ax: plt.Axes, prefix: str, metrics: Dict[str, float]) -> None:
     """Sets up forest plot legend box."""
-    auc_str = f"AUC-ROC = {metrics['auc']:.3f}" if "auc" in metrics else ""
+    auc_str = f"AUROC = {metrics['auc']:.3f}" if "auc" in metrics else ""
     r2_str = f"McFadden R² = {metrics['pseudo_r2']:.3f}" if "pseudo_r2" in metrics else ""
     lbl = " | ".join([p for p in [auc_str, r2_str] if p])
     handles = [
@@ -920,8 +920,9 @@ def _set_forest_legend(ax: plt.Axes, prefix: str, metrics: Dict[str, float]) -> 
     if lbl:
         handles.append(mlines.Line2D([], [], color="none", label=lbl))
     ax.legend(
-        handles=handles, loc="lower right", frameon=True, facecolor="white",
-        edgecolor=_COLOR_LEGEND_EDGE, fontsize=_FONT_LEGEND
+        handles=handles, loc="upper left", bbox_to_anchor=(1.01, 0.0),
+        frameon=True, facecolor="white", edgecolor=_COLOR_LEGEND_EDGE,
+        fontsize=_FONT_LEGEND, borderaxespad=0.0,
     )
 
 
@@ -1393,7 +1394,7 @@ def _build_tier1_or_comparison_block(
         fr"Contrasting unadjusted Univariate $\text{{OR}}$ (blue circles) against "
         fr"multivariable-adjusted $\text{{aOR}}$ (orange squares) across "
         fr"$N = {t1_resp_n}$ ICI patients "
-        fr"(Model AUC-ROC = **{auc_val:.3f}**, McFadden $R^2 = {r2_val:.3f}$):", "",
+        fr"(Model AUROC = **{auc_val:.3f}**, McFadden $R^2 = {r2_val:.3f}$):", "",
         "![Tier 1 ICI Univariate vs Multivariate OR Comparison]"
         "(../../plots/clinical/tier1_uni_vs_multi_or_forest.png)", "",
         "> [!INSIGHT] Key Insights: ICI Immune Signature Predictors (Tier 1)",
@@ -1598,7 +1599,7 @@ def _build_report_tier2_plots_and_insights(
         fr"Contrasting unadjusted Univariate $\text{{OR}}$ (blue circles) "
         fr"against multivariable-adjusted $\text{{aOR}}$ "
         fr"(orange squares) across $N = {ici2_resp_n}$ ICI patients "
-        fr"(Model AUC-ROC = **{auc_val:.3f}**, "
+        fr"(Model AUROC = **{auc_val:.3f}**, "
         fr"McFadden $R^2 = {r2_val:.3f}$):", "",
         "![Tier 2 ICI Univariate vs Multivariate OR Comparison]"
         "(../../plots/clinical/ici_tier2_uni_vs_multi_or_forest.png)", "",

@@ -420,7 +420,7 @@ def main() -> None:
                     "Youden J": f"{pfx}{row['Youden_J']:.3f}{sfx}",
                     "Sensitivity": f"{pfx}{row['Sensitivity']*100:.1f}%{sfx}",
                     "Specificity": f"{pfx}{row['Specificity']*100:.1f}%{sfx}",
-                    "AUC-ROC": f"{pfx}{row['AUC_ROC']:.3f}{sfx}",
+                    "AUROC": f"{pfx}{row['AUC_ROC']:.3f}{sfx}",
                 })
             doc_sections.append("#### Youden Optimal Decision Threshold Metrics\n")
             doc_sections.append(format_markdown_table(pd.DataFrame(summary_youden)) + "\n")
@@ -1134,7 +1134,7 @@ def main() -> None:
     doc_sections.append(
         build_section_callout(
             what="Conducting Decision Curve Analysis (DCA), calculating Net Benefit across threshold probabilities ($p_t = 0.05 – 0.85$), Positive Predictive Value (PPV), and Number Needed to Treat (NNT).",
-            why="High AUC-ROC does not guarantee clinical usefulness. DCA evaluates whether using a model to make treatment decisions produces greater net clinical benefit than empirical 'Treat All' or 'Treat None' strategies.",
+            why="High AUROC does not guarantee clinical usefulness. DCA evaluates whether using a model to make treatment decisions produces greater net clinical benefit than empirical 'Treat All' or 'Treat None' strategies.",
             question="Does deploying the Q5 phenotype-stratified model in clinical practice yield superior Net Benefit and spare predicted non-responders from unnecessary monotherapy toxicity?",
         )
     )

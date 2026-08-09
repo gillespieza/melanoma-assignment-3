@@ -4,34 +4,36 @@ aliases:
   - Response Association Analysis
   - Univariate & Multivariate Associations
 tags:
+  - forest-plot
+  - immunotherapy
+  - machine-learning
   - melanoma
-  - response-prediction
-  - univariate-analysis
   - multivariate-analysis
   - odds-ratio
-  - forest-plot
-  - machine-learning
-  - immunotherapy
-created: 2026-08-08
+  - response-prediction
+  - univariate-analysis
+created: 2026-08-08 00:00
 cssclasses:
-  - table-small
-  - table-center
   - row-alt
-updated: 2026-08-08
+  - table-center
+  - table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-08-09 13:22
 ---
 
 # Response Association Analysis: Univariate & Multivariate Predictors of Immunotherapy Response
 
-> [!NOTE] Scope of This Report
+> [!NOTE] Scope of This Report  
 > This report covers two complementary levels of analysis for predicting anti-PD-1 immunotherapy response in metastatic melanoma:
 > 1. **Section 1 — Univariate Screening**: Odds Ratios and 95% CIs for individual baseline clinical and genomic features across trial cohorts. Establishes whether any single feature is sufficient to predict response.
 > 2. **Section 2 — Multivariate Modelling**: Cross-validated ML classifiers (XGBoost, Random Forest, SVM, Elastic-Net, Logistic Regression) trained on immune transcriptomic signatures. Evaluates whether integrating multiple features improves response prediction beyond univariate baselines.
 
 ## 1. Univariate Associations with Response (Forest Plots)
 
-> [!INFO] Why We Are Doing This
-> **What**: We run univariate statistical tests (Odds Ratios and 95% Confidence Intervals) to measure the isolated predictive strength of individual baseline features — clinical demographics, stage, driver mutations (`BRAF`, `BRAF V600`, `BRAF V600E`, `NRAS`, `NF1`), TMB, and predicted neoantigen burden — against immunotherapy response across individual and pooled trial cohorts.
-> **Why**: Before building complex multivariate models, univariate screening identifies whether any single clinical or genomic feature alone is sufficient to predict response.
+> [!INFO] Why We Are Doing This  
+> **What**: We run univariate statistical tests (Odds Ratios and 95% Confidence Intervals) to measure the isolated predictive strength of individual baseline features — clinical demographics, stage, driver mutations (`BRAF`, `BRAF V600`, `BRAF V600E`, `NRAS`, `NF1`), TMB, and predicted neoantigen burden — against immunotherapy response across individual and pooled trial cohorts.  
+> **Why**: Before building complex multivariate models, univariate screening identifies whether any single clinical or genomic feature alone is sufficient to predict response.  
 > **Question Answered**: Does any single baseline clinical, mutational, or genomic feature reliably predict anti-PD-1 immunotherapy response across independent cohorts?
 
 ### 1.1 Clinical Demographics & Anatomical Stage
@@ -69,18 +71,10 @@ _**Figure 1D: Master Composite Forest Plot of All Clinical and Genomic Features.
 
 ## 2. Multivariate Response Prediction (ML Classifiers)
 
-> [!INFO] Why We Are Doing This
-> **What**: We train and cross-validate five ML classifiers — XGBoost, Random Forest, SVM, Elastic-Net, and Logistic Regression — on immune transcriptomic signatures (IFN-γ, TIS, CYT, CD8+ T-cell, IMPRES, PD-L1) to predict binary immunotherapy response (Responder vs Non-Responder) across pooled trial cohorts.
-> **Why**: Univariate screening (Section 1) establishes that no single feature is sufficient. Multivariate integration of immune signatures tests whether combining complementary biological signals recovers predictive power.
+> [!INFO] Why We Are Doing This  
+> **What**: We train and cross-validate five ML classifiers — XGBoost, Random Forest, SVM, Elastic-Net, and Logistic Regression — on immune transcriptomic signatures (IFN-γ, TIS, CYT, CD8+ T-cell, IMPRES, PD-L1) to predict binary immunotherapy response (Responder vs Non-Responder) across pooled trial cohorts.  
+> **Why**: Univariate screening (Section 1) establishes that no single feature is sufficient. Multivariate integration of immune signatures tests whether combining complementary biological signals recovers predictive power.  
 > **Question Answered**: Can a combination of immune transcriptomic signatures reliably predict anti-PD-1 response better than any single clinical or genomic variable?
-
-> [!NOTE] Section Pending
-> Multivariate ML results will be populated here once `run_response_predictor.py` is executed. This section will include:
-> - Cross-validated AUC–ROC curves per classifier
-> - Feature importance rankings per model
-> - Bootstrapped 95% CI for AUC
-> - SHAP value summary plots
-> - Cohort-stratified performance breakdown
 
 ---
 

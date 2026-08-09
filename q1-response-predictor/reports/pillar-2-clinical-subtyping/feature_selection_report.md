@@ -14,12 +14,12 @@ tags:
   - ici-cohorts
   - anti-pd1
   - binary-response
-created: 2026-08-09 13:14
+created: 2026-08-09 13:22
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-09 13:14
+updated: 2026-08-09 13:22
 ---
 
 # Two-Tiered Clinical & Transcriptomic Feature Selection Report
@@ -72,7 +72,7 @@ Random Forest feature importance trained on 473 ICI patients:
 >   - `PD-L1 Transcript Proxy (Z-Score)` — 9.0%
 
 ### 1.3. Univariate vs. Multivariate Odds Ratio Comparison for ICI Immune Signatures ($N = 473$)
-Contrasting unadjusted Univariate $\text{OR}$ (blue circles) against multivariable-adjusted $\text{aOR}$ (orange squares) across $N = 473$ ICI patients (Model AUC-ROC = **0.660**, McFadden $R^2 = 0.055$):
+Contrasting unadjusted Univariate $\text{OR}$ (blue circles) against multivariable-adjusted $\text{aOR}$ (orange squares) across $N = 473$ ICI patients (Model AUROC = **0.660**, McFadden $R^2 = 0.055$):
 
 ![Tier 1 ICI Univariate vs Multivariate OR Comparison](../../plots/clinical/tier1_uni_vs_multi_or_forest.png)
 
@@ -112,7 +112,7 @@ Top-20 RF clinical predictors of anti-PD-1 response trained on $N = 473$ ICI pat
 >   - `Biopsy Timing: Pre` — 7.7%
 
 ### 2.2. Univariate vs. Multivariate Odds Ratio Comparison for ICI Clinical Attributes ($N = 473$)
-Contrasting unadjusted Univariate $\text{OR}$ (blue circles) against multivariable-adjusted $\text{aOR}$ (orange squares) across $N = 473$ ICI patients (Model AUC-ROC = **0.646**, McFadden $R^2 = 0.059$):
+Contrasting unadjusted Univariate $\text{OR}$ (blue circles) against multivariable-adjusted $\text{aOR}$ (orange squares) across $N = 473$ ICI patients (Model AUROC = **0.646**, McFadden $R^2 = 0.059$):
 
 ![Tier 2 ICI Univariate vs Multivariate OR Comparison](../../plots/clinical/ici_tier2_uni_vs_multi_or_forest.png)
 
