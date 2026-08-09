@@ -4,13 +4,16 @@ q1_infer.py — Generate genuine per-patient immunotherapy-response predictions
 from trained Q1 models for the OncoTwin dashboard (Q5 integration).
 
 METHODOLOGY:
-- For trial cohorts (Liu 2019, Hugo 2016, Riaz 2017), predictions are generated
-  using strict Leave-One-Cohort-Out (LOCO) Cross-Validation folds. For each trial cohort,
-  models are fit exclusively on the remaining two trial cohorts (and standard scaler fit on
-  the training cohorts only). This guarantees out-of-fold, zero-leakage evaluation metrics
-  for the dashboard validation panel.
-- For unlabelled reference cohorts (e.g., TCGA-SKCM), predictions are generated using models
-  fit on all three trial cohorts pooled together.
+- Active ICI cohorts are loaded dynamically from config/datasets.yaml (all cohorts
+  with processing_strategy='iatlas' or cohort_immunotherapy=True). Currently:
+  Liu 2019, Hugo 2016, Riaz 2017, Gide 2019, TCGA GDC 2025, Van Allen 2015.
+- For each labelled cohort, predictions are generated using strict Leave-One-Cohort-Out
+  (LOCO) Cross-Validation folds. Models are fit exclusively on the remaining cohorts,
+  with the StandardScaler fit on training cohorts only. This guarantees out-of-fold,
+  zero-leakage evaluation metrics for the dashboard validation panel. Patients with
+  missing RESPONSE_BINARY labels are silently dropped via valid_mask before LOCO.
+- The default reference cohort for pooled-model scoring is resolved dynamically
+  (prefers skcm_tcga_gdc; falls back to skcm_tcga_pan_can_atlas_2018 if absent).
 """
 
 from __future__ import annotations
@@ -32,6 +35,9 @@ sys.path.insert(0, str(HERE))
 
 from src.signatures import extract_all_signatures, zscore_df
 from src.models import get_model
+from src.config.datasets import load_dataset_config_or_empty
+
+CONFIG_PATH = HERE / "config" / "datasets.yaml"
 
 def _project_root(start: Path) -> Path:
     for p in [start, *start.parents]:
@@ -56,11 +62,52 @@ FEATURES = [
     "TMB_NONSYNONYMOUS",
 ]
 
-ICI_COHORTS = {
-    "liu_2019": "Liu 2019",
-    "hugo_2016": "Hugo 2016",
-    "riaz_2017": "Riaz 2017",
-}
+def get_active_ici_cohorts() -> dict[str, str]:
+    """Loads active immunotherapy trial cohort folder -> display name mapping from datasets.yaml.
+
+    Includes all cohorts that carry per-patient immunotherapy response labels, i.e.:
+    - iAtlas-sourced cohorts (processing_strategy == 'iatlas'): Liu 2019, Hugo 2016,
+      Riaz 2017, Gide 2019 — always have RESPONSE_BINARY from the iAtlas curation.
+    - Non-iAtlas cohorts flagged cohort_immunotherapy=True: TCGA GDC 2025 IT-subcohort,
+      Van Allen 2015 — have partial RESPONSE_BINARY coverage.
+
+    Patients with NaN RESPONSE_BINARY are already dropped by the valid_mask filter in
+    main(), so partial coverage cohorts contribute only their labelled rows to LOCO CV.
+    """
+    configs = load_dataset_config_or_empty(CONFIG_PATH)
+    if configs:
+        return {
+            cfg.processed_directory: cfg.cohort_name
+            for cfg in configs
+            if cfg.processing_strategy == "iatlas" or cfg.cohort_immunotherapy
+        }
+    return {
+        "liu_2019": "Liu 2019",
+        "hugo_2016": "Hugo 2016",
+        "riaz_2017": "Riaz 2017",
+        "gide_2019": "Gide 2019",
+        "skcm_tcga_gdc": "TCGA GDC 2025",
+        "van_allen_2015": "Van Allen 2015",
+    }
+
+def resolve_reference_tcga_path(custom_path: str | None) -> tuple[Path, str]:
+    """Resolves reference cohort expression path and display name dynamically."""
+    if custom_path:
+        p = Path(custom_path)
+        return p, p.parent.name
+
+    configs = load_dataset_config_or_empty(CONFIG_PATH)
+    for cfg in configs:
+        if cfg.study_id == "skcm_tcga_gdc" or cfg.processed_directory == "skcm_tcga_gdc":
+            p = DATA_DIR / "processed" / cfg.processed_directory / "expr_cleaned.csv"
+            if p.exists():
+                return p, cfg.cohort_name
+
+    fallback = DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018" / "expr_cleaned.csv"
+    if fallback.exists():
+        return fallback, "TCGA-SKCM"
+
+    return DATA_DIR / "processed" / "skcm_tcga_gdc" / "expr_cleaned.csv", "TCGA GDC 2025"
 
 def compat_fix(model):
     try:
@@ -126,9 +173,10 @@ def main() -> int:
     print("Q1 Per-Patient Inference (LOCO CV Out-of-Fold)")
     print("==================================================")
 
-    # 1. Load feature matrices and labels for trial cohorts
+    # 1. Load feature matrices and labels for active trial cohorts (loaded dynamically from datasets.yaml)
+    ici_cohorts = get_active_ici_cohorts()
     trial_data = {}
-    for folder, label in ICI_COHORTS.items():
+    for folder, label in ici_cohorts.items():
         expr = read_expr(DATA_DIR / "processed" / folder / "expr_cleaned.csv")
         clin = read_clin(DATA_DIR / "processed" / folder / "clin_cleaned.csv")
         if expr is None or clin is None:
@@ -202,15 +250,11 @@ def main() -> int:
             blocks.append(block)
             print(f"  [{test_cohort}] Generated out-of-fold predictions for {len(block)} patients.")
 
-    # 3. Reference cohort inference (TCGA-SKCM) using pooled trial model
-    tcga_path = (
-        Path(args.tcga_expr)
-        if args.tcga_expr
-        else DATA_DIR / "processed" / "skcm_tcga_pan_can_atlas_2018" / "expr_cleaned.csv"
-    )
+    # 3. Reference cohort inference (TCGA) using pooled trial model
+    tcga_path, tcga_label = resolve_reference_tcga_path(args.tcga_expr)
     expr_tcga = read_expr(tcga_path)
     if expr_tcga is not None and trial_data:
-        print("\n[Pooled Model Inference] Scoring reference cohort TCGA-SKCM...")
+        print(f"\n[Pooled Model Inference] Scoring reference cohort {tcga_label} ({tcga_path.parent.name})...")
         clin_tcga = read_clin(tcga_path.parent / "clin_cleaned.csv")
         sig_tcga = extract_all_signatures(expr_tcga).reindex(columns=FEATURES)
         sig_tcga = sig_tcga.dropna(how="any")
@@ -234,17 +278,17 @@ def main() -> int:
                     out_tcga["prob_enet"] = p
                 probs_tcga.append(p)
             except Exception as e:
-                print(f"  [TCGA-SKCM] model '{mkey}' failed ({e})")
+                print(f"  [{tcga_label}] model '{mkey}' failed ({e})")
 
         if probs_tcga:
             out_tcga["prob_ensemble"] = np.mean(np.vstack(probs_tcga), axis=0)
             out_tcga["pred_label"] = (out_tcga["prob_ensemble"] >= 0.5).astype(int)
-            out_tcga["cohort"] = "TCGA-SKCM"
+            out_tcga["cohort"] = tcga_label
             out_tcga.index.name = "SAMPLE_ID"
             block_tcga = out_tcga.reset_index()
             block_tcga = attach_clinical(block_tcga, clin_tcga)
             blocks.append(block_tcga)
-            print(f"  [TCGA-SKCM] Scored {len(block_tcga)} reference patients.")
+            print(f"  [{tcga_label}] Scored {len(block_tcga)} reference patients.")
 
     if not blocks:
         print("\nERROR: No cohorts scored.")

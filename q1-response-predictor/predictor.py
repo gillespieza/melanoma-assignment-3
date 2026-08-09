@@ -4,7 +4,7 @@ Provides inference utilities and a command-line interface to predict binary
 anti-PD-1 response (CR/PR vs. PD) for a single melanoma patient given either:
 1. Raw gene expression values (single patient sample dict/Series or DataFrame)
 2. Pre-calculated immune signature scores (IFN-gamma, TIS, CYT, CD8 T-cell, IMPRES, PD-L1)
-3. A patient ID lookup from pre-processed cohort data (Liu 2019, Hugo 2016, Riaz 2017, TCGA-SKCM)
+3. A patient ID lookup from pre-processed cohort data dynamically resolved from config/datasets.yaml
 
 Usage Examples:
     CLI usage:
@@ -36,7 +36,10 @@ if str(SUBPROJECT_ROOT) not in sys.path:
 from src.utils.paths import PROCESSED_DIR
 from src.signatures import extract_all_signatures, zscore_df
 from src.config.constants import IMMUNE_SIGNATURES
+from src.config.datasets import load_dataset_config_or_empty
+
 MODELS_DIR = SUBPROJECT_ROOT / "models"
+CONFIG_PATH = SUBPROJECT_ROOT / "config" / "datasets.yaml"
 
 
 class SinglePatientPredictor:
@@ -148,6 +151,37 @@ class SinglePatientPredictor:
 
         return self.predict_from_signatures(patient_sig, patient_id=patient_id)
 
+    def _resolve_cohort_directory(self, cohort: str) -> Path:
+        """Resolves cohort name or directory key against active datasets in datasets.yaml.
+
+        Args:
+            cohort: Cohort subfolder, cohort name, or study ID (e.g. 'liu_2019', 'Liu 2019', 'gide_2019').
+
+        Returns:
+            Path to the cohort's processed directory under PROCESSED_DIR.
+        """
+        configs = load_dataset_config_or_empty(CONFIG_PATH)
+        for cfg in configs:
+            if cohort.lower() in (
+                cfg.processed_directory.lower(),
+                cfg.cohort_name.lower(),
+                cfg.study_id.lower(),
+                cfg.cohort_name.lower().replace(" ", "_"),
+            ):
+                return PROCESSED_DIR / cfg.processed_directory
+
+        # Direct path fallback if user provides custom/direct directory under PROCESSED_DIR
+        direct_dir = PROCESSED_DIR / cohort
+        if direct_dir.exists():
+            return direct_dir
+
+        available_dirs = [cfg.processed_directory for cfg in configs]
+        available_names = [cfg.cohort_name for cfg in configs]
+        raise KeyError(
+            f"Cohort '{cohort}' not found in active dataset configuration ({CONFIG_PATH}). "
+            f"Available cohort directories: {available_dirs}. Available cohort names: {available_names}."
+        )
+
     def predict_from_saved_patient(
         self,
         patient_id: str,
@@ -157,12 +191,12 @@ class SinglePatientPredictor:
 
         Args:
             patient_id: Patient ID (e.g. 'RIAZ_PT18', 'HUGO_PT38', 'LIU_PATIENT125').
-            cohort: Cohort subfolder name in data/processed ('liu_2019', 'hugo_2016', 'riaz_2017', 'skcm_tcga_pan_can_atlas_2018').
+            cohort: Cohort name or processed directory (e.g. 'liu_2019', 'riaz_2017', 'gide_2019', 'van_allen_2015', 'skcm_tcga_gdc').
 
         Returns:
             Dict containing prediction results along with clinical response label if available.
         """
-        cohort_dir = PROCESSED_DIR / cohort
+        cohort_dir = self._resolve_cohort_directory(cohort)
         expr_file = cohort_dir / "expr_cleaned.csv"
         clin_file = cohort_dir / "clin_cleaned.csv"
 
@@ -199,6 +233,13 @@ class SinglePatientPredictor:
 
 def main():
     """Command-line interface for SinglePatientPredictor."""
+    configs = load_dataset_config_or_empty(CONFIG_PATH)
+    active_cohort_str = (
+        ", ".join(f"'{cfg.processed_directory}'" for cfg in configs)
+        if configs
+        else "'liu_2019', 'riaz_2017', 'hugo_2016', 'gide_2019', 'van_allen_2015', 'skcm_tcga_gdc'"
+    )
+
     parser = argparse.ArgumentParser(
         description="Single-Patient Anti-PD-1 Immunotherapy Response Predictor (SVM Calibrated Model)"
     )
@@ -207,7 +248,7 @@ def main():
         "--cohort",
         type=str,
         default="riaz_2017",
-        help="Cohort name for patient lookup ('riaz_2017', 'liu_2019', 'hugo_2016', 'skcm_tcga_pan_can_atlas_2018')",
+        help=f"Cohort name or processed folder for patient lookup ({active_cohort_str})",
     )
     parser.add_argument(
         "--signatures",

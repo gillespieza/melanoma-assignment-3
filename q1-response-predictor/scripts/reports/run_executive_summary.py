@@ -27,128 +27,175 @@ from src.utils.formatting import generate_obsidian_frontmatter, format_count_per
 from src.utils.logging import TeeStream
 from src.signatures import extract_all_signatures
 from src.models import run_loco_cv, get_model
+from src.config.datasets import load_dataset_config_or_empty
 
 LOG_PATH = LOG_DIR / "run_executive_summary.log"
 REPORT_PATH = REPORTS_DIR / "executive_summary.md"
+CONFIG_PATH = SUBPROJECT_ROOT / "config" / "datasets.yaml"
+
+# Active ICI cohorts: iAtlas strategy OR explicitly flagged cohort_immunotherapy=True
+def _get_ici_configs():
+    """Returns DatasetConfig objects for all active immunotherapy cohorts."""
+    return [
+        cfg for cfg in load_dataset_config_or_empty(CONFIG_PATH)
+        if cfg.processing_strategy == "iatlas" or cfg.cohort_immunotherapy
+    ]
+
+# Reference TCGA cohort: prefer skcm_tcga_gdc, fall back to skcm_tcga_pan_can_atlas_2018
+def _get_reference_config():
+    """Returns DatasetConfig for the canonical reference (non-ICI) TCGA cohort."""
+    all_configs = load_dataset_config_or_empty(CONFIG_PATH)
+    for cfg in all_configs:
+        if cfg.processed_directory == "skcm_tcga_gdc":
+            return cfg
+    for cfg in all_configs:
+        if cfg.processed_directory == "skcm_tcga_pan_can_atlas_2018":
+            return cfg
+    return None
 
 
-def compute_cohort_summary_stats():
-    """Dynamically loads datasets and computes sample sizes, response rates, and chi-sq p-val."""
-    df_liu = pd.read_csv(PROCESSED_DIR / "liu_2019" / "clin_cleaned.csv")
-    df_hugo = pd.read_csv(PROCESSED_DIR / "hugo_2016" / "clin_cleaned.csv")
-    df_riaz = pd.read_csv(PROCESSED_DIR / "riaz_2017" / "clin_cleaned.csv")
-    df_tcga = pd.read_csv(PROCESSED_DIR / "skcm_tcga_pan_can_atlas_2018" / "clin_cleaned.csv")
+def compute_cohort_summary_stats() -> dict:
+    """Dynamically loads all active ICI cohorts and computes sample sizes, response rates,
+    and chi-square p-value across all labelled cohorts."""
+    ici_configs = _get_ici_configs()
+    ref_config = _get_reference_config()
 
-    n_liu = len(df_liu)
-    n_hugo = len(df_hugo)
-    n_riaz = len(df_riaz)
-    n_tcga = len(df_tcga)
+    cohort_stats = {}
+    contingency_rows = []
 
-    # Response rates (CR/PR vs PD)
-    resp_liu = df_liu['RESPONSE_BINARY'].dropna()
-    resp_hugo = df_hugo['RESPONSE_BINARY'].dropna()
-    resp_riaz = df_riaz['RESPONSE_BINARY'].dropna()
+    for cfg in ici_configs:
+        clin_path = PROCESSED_DIR / cfg.processed_directory / "clin_cleaned.csv"
+        if not clin_path.exists():
+            continue
+        df = pd.read_csv(clin_path)
+        resp = df['RESPONSE_BINARY'].dropna() if 'RESPONSE_BINARY' in df.columns else pd.Series([], dtype=float)
+        n_resp = int((resp == 1).sum())
+        n_nonresp = int((resp == 0).sum())
+        cohort_stats[cfg.cohort_name] = {
+            'n': len(df),
+            'rate': (resp == 1).mean() * 100 if len(resp) > 0 else float('nan'),
+            'resp_n': n_resp,
+            'treatment': cfg.treatment_label,
+        }
+        if n_resp + n_nonresp > 0:
+            contingency_rows.append([n_resp, n_nonresp])
 
-    resp_rate_liu = (resp_liu == 1).mean() * 100
-    resp_rate_hugo = (resp_hugo == 1).mean() * 100
-    resp_rate_riaz = (resp_riaz == 1).mean() * 100
+    # Chi-square across all labelled cohorts with nonzero response counts
+    p_val_chisq = float('nan')
+    if len(contingency_rows) >= 2:
+        _, p_val_chisq, _, _ = chi2_contingency(np.array(contingency_rows))
 
-    # Chi-square test on response rates across trial cohorts
-    contingency = np.array([
-        [(resp_liu == 1).sum(), (resp_liu == 0).sum()],
-        [(resp_hugo == 1).sum(), (resp_hugo == 0).sum()],
-        [(resp_riaz == 1).sum(), (resp_riaz == 0).sum()]
-    ])
-    chi2_stat, p_val_chisq, _, _ = chi2_contingency(contingency)
+    ref_n = 0
+    ref_name = "TCGA Reference"
+    if ref_config:
+        ref_path = PROCESSED_DIR / ref_config.processed_directory / "clin_cleaned.csv"
+        if ref_path.exists():
+            ref_n = len(pd.read_csv(ref_path))
+        ref_name = ref_config.cohort_name
 
     return {
-        'liu': {'n': n_liu, 'rate': resp_rate_liu, 'resp_n': int((resp_liu == 1).sum())},
-        'hugo': {'n': n_hugo, 'rate': resp_rate_hugo, 'resp_n': int((resp_hugo == 1).sum())},
-        'riaz': {'n': n_riaz, 'rate': resp_rate_riaz, 'resp_n': int((resp_riaz == 1).sum())},
-        'tcga': {'n': n_tcga},
-        'p_val_chisq': p_val_chisq
+        'cohorts': cohort_stats,
+        'reference': {'name': ref_name, 'n': ref_n},
+        'p_val_chisq': p_val_chisq,
     }
 
 
-def compute_comut_stats():
-    """Computes co-mutation statistics dynamically from paired trial mutation datasets."""
+def compute_comut_stats() -> dict:
+    """Computes co-mutation statistics dynamically across all active ICI cohorts
+    loaded from config/datasets.yaml."""
     dfs = []
-    for cohort in ['liu_2019', 'hugo_2016', 'riaz_2017']:
-        mut_path = PROCESSED_DIR / cohort / "mutations_cleaned.csv"
-        clin_path = PROCESSED_DIR / cohort / "clin_cleaned.csv"
+    for cfg in _get_ici_configs():
+        mut_path = PROCESSED_DIR / cfg.processed_directory / "mutations_cleaned.csv"
+        clin_path = PROCESSED_DIR / cfg.processed_directory / "clin_cleaned.csv"
         if mut_path.exists() and clin_path.exists():
             df_m = pd.read_csv(mut_path)
             df_c = pd.read_csv(clin_path)
             df_m.columns = [c.upper() for c in df_m.columns]
             df_c.columns = [c.upper() for c in df_c.columns]
-            merged = pd.merge(df_c, df_m, on='SAMPLE_ID', how='inner')
+            id_col = "SAMPLE_ID" if "SAMPLE_ID" in df_c.columns else df_c.columns[0]
+            merged = pd.merge(df_c, df_m, on=id_col, how='inner')
             dfs.append(merged)
 
     if not dfs:
-        return {'n_comut': 195, 'braf_pct': 43.1, 'nras_pct': 24.6, 'nf1_pct': 14.4}
+        raise FileNotFoundError(
+            "No mutations_cleaned.csv files found for any active ICI cohort under "
+            f"{PROCESSED_DIR}. Run clean_data.py first."
+        )
 
     df_comut = pd.concat(dfs, ignore_index=True)
     n_comut = len(df_comut)
 
-    braf_pct = (df_comut['mut_BRAF'] == 1).mean() * 100 if 'mut_BRAF' in df_comut else 43.1
-    nras_pct = (df_comut['mut_NRAS'] == 1).mean() * 100 if 'mut_NRAS' in df_comut else 24.6
-    nf1_pct = (df_comut['mut_NF1'] == 1).mean() * 100 if 'mut_NF1' in df_comut else 14.4
+    braf_pct = (df_comut['MUT_BRAF'] == 1).mean() * 100 if 'MUT_BRAF' in df_comut.columns else float('nan')
+    nras_pct = (df_comut['MUT_NRAS'] == 1).mean() * 100 if 'MUT_NRAS' in df_comut.columns else float('nan')
+    nf1_pct = (df_comut['MUT_NF1'] == 1).mean() * 100 if 'MUT_NF1' in df_comut.columns else float('nan')
 
     return {
         'n_comut': n_comut,
         'braf_pct': braf_pct,
         'nras_pct': nras_pct,
-        'nf1_pct': nf1_pct
+        'nf1_pct': nf1_pct,
     }
 
 
-def compute_pca_variance():
-    """Computes PCA variance explained for uncorrected vs batch-corrected expression."""
-    expr_full_path = PROCESSED_DIR / "full" / "expr_merged.csv"
+def compute_pca_variance() -> dict:
+    """Computes PCA variance explained for batch-corrected merged expression matrix."""
+    expr_full_path = PROCESSED_DIR / "merged" / "full" / "expr_merged.csv"
     if not expr_full_path.exists():
-        return {'raw_pc1': 22.9, 'raw_pc2': 13.2, 'bc_pc1': 15.4, 'bc_pc2': 7.2}
+        raise FileNotFoundError(
+            f"Merged expression matrix not found at {expr_full_path}. "
+            "Run merge_datasets.py first."
+        )
 
     df_expr = pd.read_csv(expr_full_path, index_col=0)
-    gene_cols = [c for c in df_expr.columns if c not in ['sample_id', 'study', 'cohort']]
+    meta_cols = {'sample_id', 'study', 'cohort', 'SAMPLE_ID', 'COHORT'}
+    gene_cols = [c for c in df_expr.columns if c not in meta_cols]
 
     pca = PCA(n_components=2)
     pca.fit(df_expr[gene_cols].fillna(0))
     var_exp = pca.explained_variance_ratio_ * 100
 
     return {
-        'bc_pc1': var_exp[0],
-        'bc_pc2': var_exp[1],
-        'raw_pc1': 22.9,
-        'raw_pc2': 13.2
+        'bc_pc1': float(var_exp[0]),
+        'bc_pc2': float(var_exp[1]),
     }
 
 
-def run_model_evaluations():
-    """Runs LOCO CV across models and computes CV / LOCO AUC metrics dynamically."""
-    df_expr_liu, df_liu = load_liu_2019(DATA_DIR)
-    df_expr_hugo, df_hugo = load_hugo_2016(DATA_DIR)
-    df_expr_riaz, df_riaz = load_riaz_2017(DATA_DIR)
+def run_model_evaluations() -> list[dict]:
+    """Runs LOCO CV across models using all active ICI cohorts loaded dynamically
+    from config/datasets.yaml."""
+    sig_frames = []
+    for cfg in _get_ici_configs():
+        expr_path = PROCESSED_DIR / cfg.processed_directory / "expr_cleaned.csv"
+        clin_path = PROCESSED_DIR / cfg.processed_directory / "clin_cleaned.csv"
+        if not expr_path.exists() or not clin_path.exists():
+            print(f"  [{cfg.cohort_name}] skipping — missing expr/clin cleaned files.")
+            continue
+        df_expr = pd.read_csv(expr_path, index_col=0)
+        df_clin = pd.read_csv(clin_path, index_col=0)
+        sig = extract_all_signatures(df_expr)
+        resp_col = 'RESPONSE_BINARY' if 'RESPONSE_BINARY' in df_clin.columns else 'response'
+        if resp_col not in df_clin.columns:
+            print(f"  [{cfg.cohort_name}] skipping — no response column.")
+            continue
+        sig['study'] = cfg.cohort_name
+        sig['response_binom'] = df_clin[resp_col].reindex(sig.index).values
+        sig_frames.append(sig)
 
-    sig_liu = extract_all_signatures(df_expr_liu)
-    sig_hugo = extract_all_signatures(df_expr_hugo)
-    sig_riaz = extract_all_signatures(df_expr_riaz)
+    if not sig_frames:
+        raise RuntimeError(
+            "No scorable cohorts found. Ensure expr_cleaned.csv and clin_cleaned.csv exist "
+            "for at least two active ICI cohorts."
+        )
 
-    sig_liu['study'] = 'Liu 2019'
-    sig_liu['response_binom'] = df_liu['RESPONSE_BINARY'].values if 'RESPONSE_BINARY' in df_liu.columns else df_liu['response_binom'].values
-    sig_hugo['study'] = 'Hugo 2016'
-    sig_hugo['response_binom'] = df_hugo['RESPONSE_BINARY'].values if 'RESPONSE_BINARY' in df_hugo.columns else df_hugo['response_binom'].values
-    sig_riaz['study'] = 'Riaz 2017'
-    sig_riaz['response_binom'] = df_riaz['RESPONSE_BINARY'].values if 'RESPONSE_BINARY' in df_riaz.columns else df_riaz['response_binom'].values
-
-    df_all = pd.concat([sig_liu, sig_hugo, sig_riaz], ignore_index=True).dropna(subset=['response_binom'])
-    feature_cols = [c for c in sig_liu.columns if c not in ['study', 'response_binom']]
+    df_all = pd.concat(sig_frames, ignore_index=True).dropna(subset=['response_binom'])
+    feature_cols = [c for c in sig_frames[0].columns if c not in ['study', 'response_binom']]
 
     models_to_test = {
         'XGBoost': 'xgb',
         'Random Forest': 'rf',
         'SVM': 'svm',
         'Logistic Regression': 'lr',
-        'Elastic Net': 'elasticnet'
+        'Elastic Net': 'elasticnet',
     }
 
     results_table = []
@@ -156,34 +203,18 @@ def run_model_evaluations():
         try:
             loco_res = run_loco_cv(df_all, feature_cols, target_col='response_binom', model_type=m_key)
             aucs = [r['metrics']['auc'] for r in loco_res.values()]
-            mean_auc = np.mean(aucs)
-            std_auc = np.std(aucs)
-
+            mean_auc = float(np.mean(aucs))
+            std_auc = float(np.std(aucs))
             best_cohort = max(loco_res.items(), key=lambda x: x[1]['metrics']['auc'])
             best_auc_str = f"{best_cohort[1]['metrics']['auc']:.3f} ({best_cohort[0]})"
-            cv_str = f"**{mean_auc:.3f} ± {std_auc:.3f}**" if 'Forest' in display_name or 'XGB' in display_name else f"{mean_auc:.3f}"
+            cv_str = f"**{mean_auc:.3f} \u00b1 {std_auc:.3f}**"
             results_table.append({
                 'model': display_name,
                 'cv_auc': cv_str,
-                'best_loco': best_auc_str
+                'best_loco': best_auc_str,
             })
-        except Exception:
-            pass
-    fallbacks = {
-        'Support Vector Machine (SVM)': ('**0.547** (Mean LOCO)', '**0.648** (Riaz 2017) / **0.558** (Liu 2019)'),
-        'Random Forest': ('**0.531** (Mean LOCO)', '**0.618** (Riaz 2017) / **0.569** (Liu 2019)'),
-        'ElasticNet Logistic Regression': ('0.491 (Mean LOCO)', '0.558 (Liu 2019) / 0.500 (Riaz 2017)'),
-        'L1 Logistic Regression': ('0.495 (Mean LOCO)', '0.570 (Liu 2019) / 0.500 (Riaz 2017)'),
-        'XGBoost Gradient Boosting': ('0.490 (Mean LOCO)', '0.606 (Riaz 2017) / 0.595 (Liu 2019)')
-    }
-
-    results_table = []
-    for display_name, (cv_str, best_loco) in fallbacks.items():
-        results_table.append({
-            'model': display_name,
-            'cv_auc': cv_str,
-            'best_loco': best_loco
-        })
+        except Exception as exc:
+            print(f"  [{display_name}] LOCO CV failed: {exc}")
 
     return results_table
 
