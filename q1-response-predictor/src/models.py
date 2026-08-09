@@ -327,37 +327,97 @@ def tune_xgboost(X_train, y_train, calibrate=True):
     return best_est
 
 def tune_svc(X_train, y_train, calibrate=True):
-    """
-    Tuning Support Vector Classifier (SVC) using Grid Search.
+    """Tune Support Vector Classifier (SVC) via Randomised Search, then optionally calibrate.
 
-    Uses class_weight='balanced' to handle responder/non-responder imbalance.
-    Adapts CV fold count to training set size to avoid degenerate folds on
-    small LOCO splits (e.g. N~18 when Hugo 2016 is held out).
-    Searches over a wider C grid and RBF gamma values for better calibration.
+    Decouples hyperparameter tuning from probability calibration (same pattern as RF/XGB):
+    tunes a raw SVC on decision_function scores (optimal for roc_auc scoring), then applies
+    CalibratedClassifierCV on the full training set after the best hyperparameters are found.
+
+    Uses a list-of-dicts param_grid so each kernel only searches its own relevant parameters:
+      - linear: no gamma or degree (both are ignored by sklearn for linear SVC)
+      - rbf:    no degree (irrelevant); numeric gamma values added for RBF bandwidth control
+      - poly:   degree [2, 3] and coef0 control polynomial architecture; gamma controls
+                the kernel coefficient; captures non-linear interaction terms between
+                immune signatures (e.g. IFN_gamma × TMB) without explicit feature engineering
+
+    Switches from GridSearchCV to RandomizedSearchCV (n_iter=80) because the three
+    kernel-specific grids together cover ~230+ combinations — exhaustive search on small
+    LOCO training splits (N~80-100, sometimes N~18) is unnecessarily expensive.
+
+    Key design decisions:
+      - C grid extended to [0.001 … 1000.0] with finer log-scale resolution (8 values
+        vs. 5 previously); avoids landing in a coarse gap between regularisation regimes.
+      - gamma numeric values [0.001, 0.01, 0.1, 1.0] for rbf/poly: with 6-12 correlated
+        immune signatures, 'scale' and 'auto' often resolve to similar values, so explicit
+        numeric search matters.
+      - class_weight searched over ['balanced', None]: 'balanced' corrects responder
+        imbalance; None is included because 'balanced' can over-penalise on small LOCO
+        splits where class frequencies are already near-equal.
+      - Adaptive n_cv prevents degenerate folds on small LOCO training sets.
     """
-    param_grid = {
-        'estimator__C': [0.01, 0.1, 1.0, 10.0, 100.0],
-        'estimator__kernel': ['linear', 'rbf'],
-        'estimator__gamma': ['scale', 'auto'],
-        'estimator__class_weight': ['balanced'],
-    }
-    svc = CalibratedClassifierCV(
-        estimator=SVC(random_state=42, probability=False),
-        method='sigmoid',
-        cv=3,
-        ensemble=False,
-        n_jobs=-1,
-    )
-    # Use fewer CV folds when training set is small (avoids folds with <2 samples per class)
+    # Per-kernel grids prevent irrelevant parameter combinations being evaluated
+    # (e.g. gamma with linear, degree with rbf). Each sub-dict is searched independently.
+    _C_grid = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 500.0, 1000.0]
+    _cw_grid = ['balanced', None]
+    param_grid = [
+        # --- Linear kernel: no gamma, no degree ---
+        {
+            'kernel':       ['linear'],
+            'C':            _C_grid,
+            'class_weight': _cw_grid,
+        },
+        # --- RBF kernel: gamma controls bandwidth, no degree ---
+        {
+            'kernel':       ['rbf'],
+            'C':            _C_grid,
+            'gamma':        ['scale', 'auto', 0.001, 0.01, 0.1, 1.0],
+            'class_weight': _cw_grid,
+        },
+        # --- Polynomial kernel: degree and coef0 define architecture ---
+        {
+            'kernel':       ['poly'],
+            'C':            _C_grid,
+            'degree':       [2, 3],
+            'gamma':        ['scale', 'auto', 0.001, 0.01, 0.1],
+            'coef0':        [0.0, 0.5, 1.0],
+            'class_weight': _cw_grid,
+        },
+    ]
+    # Tune on raw SVC (no calibration yet) — decision_function scores are
+    # rank-equivalent to probabilities and are the correct signal for roc_auc.
+    svc = SVC(random_state=42, probability=False)
     n_cv = max(2, min(3, len(y_train) // 10))
     cv = StratifiedKFold(n_splits=n_cv, shuffle=True, random_state=42)
-    grid = GridSearchCV(svc, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
-    grid.fit(X_train, y_train)
-    return grid.best_estimator_
+    search = RandomizedSearchCV(
+        svc, param_grid, n_iter=80, cv=cv, scoring='roc_auc',
+        random_state=42, n_jobs=-1,
+    )
+    search.fit(X_train, y_train)
+    best_est = search.best_estimator_
+    # Apply Platt Scaling on the full training set after hyperparameter selection,
+    # not nested inside the CV loop — same pattern as tune_random_forest / tune_xgboost.
+    if calibrate:
+        return calibrate_estimator(best_est, X_train, y_train)
+    return best_est
 
 def tune_elasticnet(X_train, y_train, calibrate=True):
     """
     Tuning ElasticNet (Logistic Regression with elasticnet penalty) using Grid Search.
+
+    Grid: 6 C values × 5 l1_ratio values × 2 class_weight options = 60 combinations.
+    Still compact enough for exhaustive GridSearchCV (no need for RandomizedSearchCV).
+
+    Key improvements over the initial grid:
+      - class_weight: 'balanced' corrects the responder/non-responder imbalance on
+        small LOCO training splits (N ≈ 80–100) without synthetic oversampling; None
+        is retained because 'balanced' can over-penalise when class frequencies are
+        already near-equal on a given split.
+      - C upper end extended to 100.0 (matching tune_logistic_regression): with only
+        6 features and a strong L1 component, some LOCO splits benefit from weaker
+        regularisation that the previous ceiling of 10.0 could not reach.
+      - tol tightened from 1e-3 (sklearn default) to 1e-4: with max_iter=20000 there
+        is ample budget for tighter convergence, particularly on flatter loss surfaces
+        produced by smaller cohort training sets.
 
     Note: Probability calibration is intentionally NOT applied — same reasoning
     as tune_logistic_regression. ElasticNet (SAGA solver) minimises log-loss
@@ -365,11 +425,12 @@ def tune_elasticnet(X_train, y_train, calibrate=True):
     (observed: 0.601 → 0.428 with calibration enabled).
     """
     param_grid = {
-        'C': [0.001, 0.01, 0.1, 1.0, 10.0],
-        'l1_ratio': [0.1, 0.3, 0.5, 0.7, 0.9]
+        'C':            [0.001, 0.01, 0.1, 1.0, 10.0, 100.0],
+        'l1_ratio':     [0.1, 0.3, 0.5, 0.7, 0.9],
+        'class_weight': ['balanced', None],
     }
     lr = LogisticRegression(
-        penalty='elasticnet', solver='saga', random_state=42, max_iter=20000, tol=1e-3
+        penalty='elasticnet', solver='saga', random_state=42, max_iter=20000, tol=1e-4
     )
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(lr, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)
