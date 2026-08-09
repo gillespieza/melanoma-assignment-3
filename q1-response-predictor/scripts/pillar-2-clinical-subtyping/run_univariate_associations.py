@@ -2,7 +2,7 @@
 
 Evaluates univariate statistical associations between baseline clinical/genomic features
 (Sex, Clinical Stage, BRAF/NRAS/NF1 mutations, Age, TMB, Neoantigens) and immunotherapy response
-across individual trial cohorts (Liu 2019, Hugo 2016, Riaz 2017) and the pooled trial dataset.
+across configured trial cohorts and the pooled trial dataset.
 Outputs Odds Ratios (OR) with 95% Confidence Intervals (95% CI) presented in a Forest Plot.
 """
 
@@ -31,7 +31,7 @@ _SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(_SUBPROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_SUBPROJECT_ROOT))
 
-from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
+from src.data_loaders import load_cohort_by_name
 from src.styles import COHORT_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, PLOTS_DIR, get_subproject_log_dir, rel_path
@@ -322,16 +322,6 @@ def _enrich_cohort_mutations(
                 if sid in mut_df.index else np.nan
             )
     return df_enriched
-
-
-def _load_single_cohort(
-    data_dir: Path, cohort_folder: str, loader_fn
-) -> pd.DataFrame:
-    """Loads, standardises clinical metadata, and enriches driver mutations."""
-    _, clin_df = loader_fn(data_dir)
-    norm_df = _normalise_cohort_df(clin_df)
-    cohort_dir = data_dir / "processed" / cohort_folder
-    return _enrich_cohort_mutations(norm_df, cohort_dir)
 
 
 def _prepare_clinical_cohorts(data_dir: Path) -> Dict[str, pd.DataFrame]:
