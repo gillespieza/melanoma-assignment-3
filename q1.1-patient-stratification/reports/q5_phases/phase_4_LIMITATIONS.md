@@ -21,7 +21,7 @@ updated: 2026-08-01 17:28
 
 > [!NOTE] Analytical Audit Overview
 > - **What is being done**: Systematic critical evaluation of current Phase 4 code-quality architecture, statistical vulnerabilities, biological model boundaries, and computational/data constraints.
-> - **Why we are doing it**: To establish explicit methodological boundaries, prevent clinical over-interpretation of simplified ODE dynamics, and define actionable engineering priorities for future iterations.
+> - **Why**: To establish explicit methodological boundaries, prevent clinical over-interpretation of simplified ODE dynamics, and define actionable engineering priorities for future iterations.
 > - **What question it answers**: What structural, statistical, and biological limitations restrict the clinical validity of Phase 4 patient stratification, and how can they be mitigated?
 
 Phase 4 couples multi-dimensional patient stratification ($N = 699$ across four biological phenotypes: *Immunosuppressive M2-High* $N=256$, *Immune Cold* $N=45$, *Immune Hot* $N=341$, *Mutant-Driven* $N=57$) with a 4-module literature-parameterised Ordinary Differential Equation (ODE) digital twin system. While this framework connects static microenvironmental signatures to temporal treatment response, several critical system limitations exist in its current state.
@@ -31,7 +31,7 @@ Phase 4 couples multi-dimensional patient stratification ($N = 699$ across four 
 
 > [!WARNING] Code-Quality & System Architecture Audit
 > - **What is being done**: Evaluation of module encapsulation, type safety, constant isolation, and automated test coverage in the current Phase 4 implementation.
-> - **Why we are doing it**: Software design flaws introduce maintainability bottlenecks and elevate the risk of silent numerical divergence across analysis runs.
+> - **Why**: Software design flaws introduce maintainability bottlenecks and elevate the risk of silent numerical divergence across analysis runs.
 > - **What question it answers**: Where are the current software architecture and pipeline modularity most vulnerable to software regression?
 
 ### Unit Testing Coverage Deficit
@@ -48,7 +48,7 @@ The script relies on cross-subproject imports from `q3-ode-model/scripts/phase3_
 
 > [!WARNING] Statistical & Subgroup Power Audit
 > - **What is being done**: Critical assessment of sample size distribution, univariable survival testing, and cross-cohort validation boundaries.
-> - **Why we are doing it**: Statistical asymmetries and unadjusted log-rank tests can generate overconfident prognostic claims for underpowered patient subgroups.
+> - **Why**: Statistical asymmetries and unadjusted log-rank tests can generate overconfident prognostic claims for underpowered patient subgroups.
 > - **What question it answers**: Where are the statistical findings most vulnerable to sampling bias or unmeasured clinical confounding?
 
 ### Subgroup Power Asymmetry across Phenotype Clusters
@@ -74,7 +74,7 @@ While TCGA-SKCM provides long-term overall survival metadata ($N = 421$), extern
 
 > [!WARNING] Biological & Pharmacological Assumptions Audit
 > - **What is being done**: Evaluation of biophysical simplifications, spatial abstractions, and fixed pharmacology parameters in the ODE digital twin.
-> - **Why we are doing it**: Mathematical ODE models abstract complex physiological processes into simplified rate equations; explicit documentation of these assumptions prevents over-interpretation.
+> - **Why**: Mathematical ODE models abstract complex physiological processes into simplified rate equations; explicit documentation of these assumptions prevents over-interpretation.
 > - **What question it answers**: Which physiological mechanisms are omitted or simplified in the current Kuznetsov ODE formulation?
 
 ### 2-State ODE System Abstraction
@@ -100,7 +100,7 @@ The combination rescue arm (*M2 Immunosuppressive* under anti-PD-1 + M2 depletio
 
 > [!WARNING] Computational & Data Flow Constraints Audit
 > - **What is being done**: Audit of numerical integration scalability, multi-cohort data coverage, and cross-module output dependencies.
-> - **Why we are doing it**: Technical data bottlenecks limit real-time pipeline execution and prospective clinical deployment.
+> - **Why**: Technical data bottlenecks limit real-time pipeline execution and prospective clinical deployment.
 > - **What question it answers**: What computational constraints restrict ODE simulation scale and cross-cohort data integration?
 
 ### Serial ODE Numerical Integration Scalability
@@ -120,7 +120,7 @@ While $N = 699$ patients are stratified into biological phenotypes, clinical res
 
 > [!WARNING] Prioritised Engineering & Methodological Roadmap
 > - **What is being done**: Defining an actionable, prioritised engineering roadmap to resolve identified code, statistical, biological, and computational limitations.
-> - **Why we are doing it**: Clear prioritization ensures high-impact methodological improvements are targeted in subsequent pipeline refactoring cycles.
+> - **Why**: Clear prioritization ensures high-impact methodological improvements are targeted in subsequent pipeline refactoring cycles.
 > - **What question it answers**: What concrete technical enhancements should be prioritized in future iterations?
 
 | Priority | Targeted Limitation | Proposed Technical Enhancement | Expected Scientific & System Impact |

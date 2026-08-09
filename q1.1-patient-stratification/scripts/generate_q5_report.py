@@ -134,7 +134,7 @@ def build_section_callout(what: str, why: str, question: str) -> str:
     return (
         f"> [!NOTE] Analytical Methodology & Rationale\n"
         f"> - **What is being done**: {what}\n"
-        f"> - **Why we are doing it**: {why}\n"
+        f"> - **Why**: {why}\n"
         f"> - **What question it answers**: {question}\n"
     )
 
@@ -888,7 +888,7 @@ def main() -> None:
             doc_sections.append(
                 f"> [!INFO] Figure Interpretation: Independent Orthogonal Protein Validation (RPPA)\n"
                 f"> - **What is being done**: Correlating mechanistic ODE-predicted baseline `pERK` levels against independent, experimentally measured `pERK` (`MAPK_pT202_Y204`) and `pMEK` (`MEK1_pS217_S221`) protein levels from TCGA-SKCM Reverse-Phase Protein Array (RPPA) assays ($N = {_rppa_n}$).\n"
-                f"> - **Why we are doing it**: To validate whether the 12-gene transcriptomic ODE digital twin captures physical protein-level signalling dynamics using an orthogonal experimental platform rather than relying solely on self-referential gene expression data.\n"
+                f"> - **Why**: To validate whether the 12-gene transcriptomic ODE digital twin captures physical protein-level signalling dynamics using an orthogonal experimental platform rather than relying solely on self-referential gene expression data.\n"
                 f"> - **What question it answers**: Does the ODE mechanistic model accurately predict physical downstream signalling activation at the protein level? Yes — statistically significant positive correlation with measured `pERK` ($r = {_rppa_r:.3f}$, $p = {_rppa_p_str}$) confirms the kinetic parameters capture true cellular signalling. `NRAS`-mutant tumours exhibit the highest baseline `pERK` activation ($p = {_nras_p_exp}$, Mann-Whitney U).\n\n"
             )
         if Q3_ML_COMPARE_PATH.exists():
@@ -896,7 +896,7 @@ def main() -> None:
             doc_sections.append(
                 f"> [!INFO] Figure Interpretation: Machine Learning vs. Mechanistic ODE Benchmark\n"
                 f"> - **What is being done**: Benchmarking 5-fold cross-validated ROC-AUC performance for predicting clinical response between pure machine learning architectures (Random Forest, Logistic Regression, Neural Network) trained on {_rf_n_feat} raw gene expression features versus a Logistic Regression classifier operating on only {_ode_n_feat} mechanistic ODE digital twin output features (`pERK`, BRAFi tumour burden, anti-PD-1 checkpoint burden).\n"
-                f"> - **Why we are doing it**: To evaluate whether compressing high-dimensional transcriptomics into biologically grounded, differential-equation-based dynamic readouts retains or improves predictive performance while eliminating black-box opacity.\n"
+                f"> - **Why**: To evaluate whether compressing high-dimensional transcriptomics into biologically grounded, differential-equation-based dynamic readouts retains or improves predictive performance while eliminating black-box opacity.\n"
                 f"> - **What question it answers**: Does a mechanistic dynamic ODE digital twin achieve competitive predictive performance compared to black-box machine learning? Yes — achieving an ROC-AUC of **{_ode_auc:.3f}** ($\\pm {_ode_std:.3f}$) with only **{_ode_n_feat} interpretable features**, outperforming {_rf_n_feat}-feature Logistic Regression (**{_lr_auc:.3f}**) and Neural Networks (**{_nn_auc:.3f}**), and performing within ${abs(_rf_auc - _ode_auc):.2f}$ AUC of complex {_rf_n_feat}-feature Random Forests (**{_rf_auc:.3f}**).\n\n"
             )
 

@@ -25,8 +25,8 @@ This report outlines the transcriptomic feature engineering strategy for the Mel
 ## 1. Why Use Gene Signatures Instead of Raw Expression Data?
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Justifying the decision to compress $>20,000$ raw RNA-seq gene measurements into **6 curated pathway-level scores** rather than feeding raw expression vectors directly into machine learning models.
-> - **Why We Are Doing It**: Raw gene expression is high-dimensional ($D \gg N$), multicollinear, and batch-contaminated. Directly training classifiers on 20,000 features across cohorts of $N \approx 100\text{--}500$ guarantees overfitting to study-specific noise rather than generalisable biology. Pathway signatures act as noise-reducing biological filters.
+> - **What**: Justifying the decision to compress $>20,000$ raw RNA-seq gene measurements into **6 curated pathway-level scores** rather than feeding raw expression vectors directly into machine learning models.
+> - **Why**: Raw gene expression is high-dimensional ($D \gg N$), multicollinear, and batch-contaminated. Directly training classifiers on 20,000 features across cohorts of $N \approx 100\text{--}500$ guarantees overfitting to study-specific noise rather than generalisable biology. Pathway signatures act as noise-reducing biological filters.
 > - **Questions**:
 >   1. *Why can't we just use all 20,000 genes as features?*
 >   2. *How does gene-level collinearity undermine model interpretability?*
@@ -45,8 +45,8 @@ High-throughput RNA sequencing measures over $20,000$ genes per patient sample. 
 ## 2. Curated Immunotherapy Signatures (Implemented in `src/signatures.py`)
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Implementing six literature-curated gene expression signatures in [`signatures.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py), each capturing a distinct axis of tumour-immune biology — from IFN-γ cytokine signalling and CD8 T-cell infiltration to checkpoint ligand abundance and effector killing capacity.
-> - **Why We Are Doing It**: Rather than selecting signatures arbitrarily, each was chosen because it has been independently validated in published anti-PD-1 trials. Using established, biologically-grounded scores rather than ad-hoc gene selections reduces the risk of overfitting and makes our model interpretable to a clinical audience.
+> - **What**: Implementing six literature-curated gene expression signatures in [`signatures.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py), each capturing a distinct axis of tumour-immune biology — from IFN-γ cytokine signalling and CD8 T-cell infiltration to checkpoint ligand abundance and effector killing capacity.
+> - **Why**: Rather than selecting signatures arbitrarily, each was chosen because it has been independently validated in published anti-PD-1 trials. Using established, biologically-grounded scores rather than ad-hoc gene selections reduces the risk of overfitting and makes our model interpretable to a clinical audience.
 > - **Questions**:
 >   1. *Which biological axes of the tumour-immune microenvironment are captured by these six signatures?*
 >   2. *Do individual signatures separate responders from non-responders at baseline — before any modelling?*
@@ -71,8 +71,8 @@ We have implemented six distinct curated signature modalities in [signatures.py]
 ### 2.2. Univariate Distribution of Signatures by Response Status
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Evaluating the baseline univariate discriminative capacity of each signature — plotting score distributions split by **Responders (CR/PR)** vs. **Non-Responders (PD)** across the pooled clinical trial cohorts ($N = 195$ response-annotated patients out of $N = 256$ total across three cohorts: Liu 2019 $n = 104/122$, Hugo 2016 $n = 27/27$, Riaz 2017 $n = 64/107$), annotated with two-sided Mann-Whitney U test $p$-values.
-> - **Why We Are Doing It**: Before combining signatures in a multivariate model, we need to know whether each one carries any signal at all on its own. A signature with no univariate separation is unlikely to help even in a joint model. This step validates that our chosen signatures are biologically grounded in the trial data — not just theoretically motivated.
+> - **What**: Evaluating the baseline univariate discriminative capacity of each signature — plotting score distributions split by **Responders (CR/PR)** vs. **Non-Responders (PD)** across the pooled clinical trial cohorts ($N = 195$ response-annotated patients out of $N = 256$ total across three cohorts: Liu 2019 $n = 104/122$, Hugo 2016 $n = 27/27$, Riaz 2017 $n = 64/107$), annotated with two-sided Mann-Whitney U test $p$-values.
+> - **Why**: Before combining signatures in a multivariate model, we need to know whether each one carries any signal at all on its own. A signature with no univariate separation is unlikely to help even in a joint model. This step validates that our chosen signatures are biologically grounded in the trial data — not just theoretically motivated.
 > - **Questions**: *Is elevated expression of individual immune signatures significantly associated with clinical response to anti-PD-1 therapy at baseline?*
 
 
@@ -100,8 +100,8 @@ For a comprehensive view contrasting pooled single-variable effect magnitude aga
 ## 3. Statistical Relationships & Biomarker Orthogonality
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Evaluating pairwise correlations between all biomarker features — TMB vs. neoantigen load, genomic burden vs. immune signatures, and inter-signature correlations — using Spearman rank correlation and multivariate odds ratio modelling.
-> - **Why We Are Doing It**: Before training a multivariate model, we must map which features are redundant (and can be dropped without information loss) and which are genuinely independent (and therefore additive in a joint model). Including highly correlated features inflates apparent model complexity without improving prediction; omitting orthogonal features loses independent signal. This step directly informs feature selection.
+> - **What**: Evaluating pairwise correlations between all biomarker features — TMB vs. neoantigen load, genomic burden vs. immune signatures, and inter-signature correlations — using Spearman rank correlation and multivariate odds ratio modelling.
+> - **Why**: Before training a multivariate model, we must map which features are redundant (and can be dropped without information loss) and which are genuinely independent (and therefore additive in a joint model). Including highly correlated features inflates apparent model complexity without improving prediction; omitting orthogonal features loses independent signal. This step directly informs feature selection.
 > - **Questions**:
 >   1. *Are TMB and neoantigen load measuring the same thing — and should we keep both?*
 >   2. *Are genomic burden metrics (TMB, aneuploidy) independent of immune expression signatures, justifying their combination in a multimodal model?*
@@ -118,7 +118,7 @@ Somatic mutation rate (`TMB`) and predicted neoantigen count capture the exact s
 ### 3.2. Genomic Burden vs. Immune Signatures: Independent (Orthogonal) Modalities
 
 > [!NOTE] Analysis Scope
-> - **What We Are Doing**: Computing Spearman rank correlations between nonsynonymous mutational burden (`TMB_NONSYNONYMOUS`) and all six curated transcriptomic immune signatures.
+> - **What**: Computing Spearman rank correlations between nonsynonymous mutational burden (`TMB_NONSYNONYMOUS`) and all six curated transcriptomic immune signatures.
 > - **Cohort**: Pooled ICI trial cohort ($N = 195$: Liu 2019, Hugo 2016, Riaz 2017).
 > - **Why**: Establishing whether genomic mutational burden and transcriptomic immune activity are independent axes of variation within the ICI-treated population — a prerequisite for justifying a multimodal (genomic + transcriptomic) model.
 
@@ -149,8 +149,8 @@ Spearman rank correlation between nonsynonymous TMB and the six curated immune s
 ## 4. Multimodal Response Prediction Models
 
 > [!summary] What, Why & Key Questions
-> - **What We Are Doing**: Training five classifiers on pooled trials ($N = 195$) using 5-fold stratified CV across six feature permutation tiers of the 12 final features.
-> - **Why We Are Doing It**: Evaluating whether adding TMB, driver mutations, M1/M2 ratio, Macrophage STV, or age/pathways improves upon signatures alone and identifying the best model architecture.
+> - **What**: Training five classifiers on pooled trials ($N = 195$) using 5-fold stratified CV across six feature permutation tiers of the 12 final features.
+> - **Why**: Evaluating whether adding TMB, driver mutations, M1/M2 ratio, Macrophage STV, or age/pathways improves upon signatures alone and identifying the best model architecture.
 > - **Questions**: Does adding drivers/TMB/macrophage features improve AUROC? Which model family performs best?
 
 ![Multimodal AUROC Heatmap](../../plots/biomarkers/multimodal_auc_heatmap.png)
@@ -163,8 +163,8 @@ Spearman rank correlation between nonsynonymous TMB and the six curated immune s
 ## 5. Leave-One-Cohort-Out Model Evaluation
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Evaluating the same trained models using **Leave-One-Cohort-Out (LOCO)** cross-validation — training on two immunotherapy trial cohorts and testing on the third held-out cohort. This is repeated for each of the three cohorts (Liu 2019, Hugo 2016, Riaz 2017).
-> - **Why We Are Doing It**: Pooled 5-fold CV mixes patients from all cohorts in every fold, so a model can exploit cohort-specific expression patterns (even after Z-score standardisation). LOCO is a strictly harder test: the held-out cohort's patients were never seen during training, simulating deployment to a genuinely new clinical site with a different sequencing platform, patient demographics, and response distribution. If a model generalises across LOCO folds, the learned signal is robust enough to transfer to new studies.
+> - **What**: Evaluating the same trained models using **Leave-One-Cohort-Out (LOCO)** cross-validation — training on two immunotherapy trial cohorts and testing on the third held-out cohort. This is repeated for each of the three cohorts (Liu 2019, Hugo 2016, Riaz 2017).
+> - **Why**: Pooled 5-fold CV mixes patients from all cohorts in every fold, so a model can exploit cohort-specific expression patterns (even after Z-score standardisation). LOCO is a strictly harder test: the held-out cohort's patients were never seen during training, simulating deployment to a genuinely new clinical site with a different sequencing platform, patient demographics, and response distribution. If a model generalises across LOCO folds, the learned signal is robust enough to transfer to new studies.
 > - **Questions**:
 >   1. *Do models trained on two cohorts generalise to a third unseen cohort?*
 >   2. *Which cohort is hardest to predict when held out — and why?*

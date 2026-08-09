@@ -383,9 +383,9 @@ def _build_section_header_callout(n_pooled: int) -> List[str]:
         "## 5. Multimodal Response Prediction Models",
         "",
         "> [!summary] What, Why & Key Questions",
-        f"> - **What We Are Doing**: Training five classifiers on pooled trials ($N = {n_pooled}$) "
+        f"> - **What**: Training five classifiers on pooled trials ($N = {n_pooled}$) "
         "using 5-fold stratified CV across six feature permutation tiers of the 12 final features.",
-        "> - **Why We Are Doing It**: Evaluating whether adding TMB, driver mutations, M1/M2 ratio, Macrophage STV, or age/pathways "
+        "> - **Why**: Evaluating whether adding TMB, driver mutations, M1/M2 ratio, Macrophage STV, or age/pathways "
         "improves upon signatures alone and identifying the best model architecture.",
         "> - **Questions**: Does adding drivers/TMB/macrophage features improve AUROC? Which model family performs best?",
         "",

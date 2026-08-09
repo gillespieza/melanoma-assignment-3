@@ -19,7 +19,7 @@ updated: 2026-08-01 21:41
 
 > [!NOTE] Analytical Methodology & Rationale
 > - **What is being done**: Coupling multi-dimensional biomarker signatures with a four-module literature-parameterised ODE system (RAF dimerisation, 8-state MAPK cascade, tumour-immune clearance, and PD-1/PD-L1 checkpoint axis) to simulate 180-day dynamic trajectories, stratify overall survival by phenotype cluster, and validate against RPPA protein measurements.
-> - **Why we are doing it**: Integrating Q3 ODE dynamic models allows dynamic prediction of tumour regression over time, provides mechanistic survival stratification without black-box ML, and identifies which resistant phenotypes require combination rescue therapy.
+> - **Why**: Integrating Q3 ODE dynamic models allows dynamic prediction of tumour regression over time, provides mechanistic survival stratification without black-box ML, and identifies which resistant phenotypes require combination rescue therapy.
 > - **What question it answers**: How do simulated tumour trajectories respond to anti-PD-1 monotherapy vs combination therapy, and how accurately does the 3-feature ODE digital twin stratify survival compared to machine learning?
 
 Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 patient stratification framework. The model parameterises four coupled biological modules per patient using universal kinetic rate constants from published literature (*Rukhlenko et al. 2018*, *de Pillis et al. 2005/2006*, *Lai et al. 2017*, *Rooney et al. 2015*):
@@ -74,7 +74,7 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 
 > [!INFO] Figure Interpretation: Independent Orthogonal Protein Validation (RPPA)
 > - **What is being done**: Correlating mechanistic ODE-predicted baseline `pERK` levels against independent, experimentally measured `pERK` (`MAPK_pT202_Y204`) and `pMEK` (`MEK1_pS217_S221`) protein levels from TCGA-SKCM Reverse-Phase Protein Array (RPPA) assays ($N = 310$).
-> - **Why we are doing it**: To validate whether the 12-gene transcriptomic ODE digital twin captures physical protein-level signalling dynamics using an orthogonal experimental platform rather than relying solely on self-referential gene expression data.
+> - **Why**: To validate whether the 12-gene transcriptomic ODE digital twin captures physical protein-level signalling dynamics using an orthogonal experimental platform rather than relying solely on self-referential gene expression data.
 > - **What question it answers**: Does the ODE mechanistic model accurately predict physical downstream signalling activation at the protein level? Yes — statistically significant positive correlation with measured `pERK` ($r = 0.175$, $p = 2.03 \times 10^{-3}$) confirms the kinetic parameters capture true cellular signalling. `NRAS`-mutant tumours exhibit the highest baseline `pERK` activation ($p = 3.16 \times 10^{-9}$, Mann-Whitney U).
 
 
@@ -82,7 +82,7 @@ Phase 4 integrates the full **Question 3 Mechanistic ODE System** into the Q5 pa
 
 > [!INFO] Figure Interpretation: Machine Learning vs. Mechanistic ODE Benchmark
 > - **What is being done**: Benchmarking 5-fold cross-validated ROC-AUC performance for predicting clinical response between pure machine learning architectures (Random Forest, Logistic Regression, Neural Network) trained on 12 raw gene expression features versus a Logistic Regression classifier operating on only 3 mechanistic ODE digital twin output features (`pERK`, BRAFi tumour burden, anti-PD-1 checkpoint burden).
-> - **Why we are doing it**: To evaluate whether compressing high-dimensional transcriptomics into biologically grounded, differential-equation-based dynamic readouts retains or improves predictive performance while eliminating black-box opacity.
+> - **Why**: To evaluate whether compressing high-dimensional transcriptomics into biologically grounded, differential-equation-based dynamic readouts retains or improves predictive performance while eliminating black-box opacity.
 > - **What question it answers**: Does a mechanistic dynamic ODE digital twin achieve competitive predictive performance compared to black-box machine learning? Yes — achieving an ROC-AUC of **0.666** ($\pm 0.074$) with only **3 interpretable features**, outperforming 12-feature Logistic Regression (**0.646**) and Neural Networks (**0.583**), and performing within $0.02$ AUC of complex 12-feature Random Forests (**0.686**).
 
 

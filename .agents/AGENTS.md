@@ -186,9 +186,9 @@ When fixing code smells or refactoring code in this repository, follow these gui
 15. **Graduate Student Report Style & Structure**: All generated markdown reports must be pitched at a graduate student level (rigorous, educational, explaining statistical and biological concepts). Every generated markdown report MUST:
     - **Include Standard Obsidian YAML Frontmatter**: Every markdown report file MUST begin with a standard Obsidian-compliant YAML frontmatter block (enclosed in `---`) generated via `generate_obsidian_frontmatter()` (from `src.utils.formatting` or local `reporting` module). Required fields include `title`, `aliases`, `tags`, `created`, `cssclasses` (`table-small`, `table-center`, `row-alt`), and `updated`.
     - **Include Standard Obsidian Callouts**: Every major report section MUST contain an Obsidian callout box (`> [!NOTE]` or `> [!INFO]`) explicitly detailing:
-      1. **What is being done**
-      2. **Why we are doing it**
-      3. **What question it answers**
+      1. **What is being done** (Heading MUST use abbreviated: `**What**`, never `**What we are doing**` or `**What We Are Doing**`)
+      2. **Why we are doing it** (Heading MUST use abbreviated: `**Why**`, never `**Why we are doing it**` or `**Why We Are Doing It**`)
+      3. **What question it answers** (Heading MUST use abbreviated: `**Question(s)**`, `**Question**`, or `**Questions**`)
     - **Include Key Takeaways & Key Insights**: Contain a **Key Takeaways** or **Key Insights** subsection summarizing the core scientific/clinical insights. All Key Takeaways / Key Insights sections MUST be placed in `> [!INSIGHT]` callout boxes (never `> [!IMPORTANT]`).
     - **Student Report Limitations Callout Requirement (`phase_x_STUDENT.md`)**: All Limitations & Future Directions sections in `phase_x_STUDENT.md` report files MUST be rendered within `> [!WARNING]` callout boxes.
 16. **Ground-Truth-First Report Verification Protocol**: Before writing or updating any claim in a phase report about what features, methods, or values the pipeline *uses* or *produces*, you MUST verify against live output files — not code, comments, or prior documentation. Violating this rule is what causes "excluded feature" claims to contradict the actual CSV, and count mismatches between reports and runtime logs.

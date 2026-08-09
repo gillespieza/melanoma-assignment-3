@@ -84,8 +84,8 @@ Contrasting unadjusted Univariate $\text{OR}$ (blue circles) against multivariab
 ## 2. Tier 2: ICI Granular Clinical Feature Selection ($N = 473$)
 
 > [!INFO] What, Why & Questions — Tier 2
-> **What We Are Doing**: Evaluating 27 encoded dummy variables derived from granular baseline categorical clinical covariates available in the ICI trial cohorts ($N = 473$) — including clinical staging (`CLINICAL_STAGE`), anatomical biopsy site (`BIOPSY_SITE`), histological subtype (`TISSUE_SUBTYPE`), prior ICI therapy (`PRIOR_ICI_RX`), prior non-ICI therapy (`PRIOR_RX`), biopsy timing (`SAMPLE_TREATMENT`), and metastasis status (`METASTASIZED`) — against **immunotherapy binary response** using the same RF + Logistic Regression framework.
-> **Why We Are Doing It**: Granular clinical covariates may independently predict ICI response beyond immune expression signatures.
+> - **What**: Evaluating 27 encoded dummy variables derived from granular baseline categorical clinical covariates available in the ICI trial cohorts ($N = 473$) — including clinical staging (`CLINICAL_STAGE`), anatomical biopsy site (`BIOPSY_SITE`), histological subtype (`TISSUE_SUBTYPE`), prior ICI therapy (`PRIOR_ICI_RX`), prior non-ICI therapy (`PRIOR_RX`), biopsy timing (`SAMPLE_TREATMENT`), and metastasis status (`METASTASIZED`) — against **immunotherapy binary response** using the same RF + Logistic Regression framework.
+> - **Why**: Granular clinical covariates may independently predict ICI response beyond immune expression signatures.
 > - **Questions**:
 >   1. *Which clinical staging or treatment covariates carry independent response signal?*
 >   2. *Does prior ICI therapy confound response classification?*
@@ -125,8 +125,8 @@ Contrasting unadjusted Univariate $\text{OR}$ (blue circles) against multivariab
 ## 3. Tier 3: Unified Multimodal Feature Selection Leaderboard ($N = 473$)
 
 > [!INFO] What & Why — Tier 3 Unified Multimodal Leaderboard
-> **What We Are Doing**: Evaluating all Tier 1 molecular immune signatures and Tier 2 granular clinical covariates head-to-head in a single unified Random Forest model ($N = 473$).
-> **Why We Are Doing It**: Evaluates whether molecular signatures outrank clinical attributes when competing in the same model space.
+> - **What**: Evaluating all Tier 1 molecular immune signatures and Tier 2 granular clinical covariates head-to-head in a single unified Random Forest model ($N = 473$).
+> - **Why**: Evaluates whether molecular signatures outrank clinical attributes when competing in the same model space.
 
 ### 3.1. Unified Multimodal Random Forest Importance ($N = 473$)
 

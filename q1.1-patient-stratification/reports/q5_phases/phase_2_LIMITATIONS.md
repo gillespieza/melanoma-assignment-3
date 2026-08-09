@@ -21,7 +21,7 @@ updated: 2026-08-01 12:41
 
 > [!NOTE] Analytical Audit Context & Objectives
 > - **What is being evaluated**: Methodological assumptions, statistical power constraints, biological abstractions, and computational limits across Phase 2 (Univariate Associations, Youden Cutoffs, and Genomic Interaction Modelling).
-> - **Why we are doing it**: Critical assessment of standalone biomarker thresholds and interaction models is necessary to establish realistic boundaries for clinical translation and prevent over-interpretation of univariate metrics.
+> - **Why**: Critical assessment of standalone biomarker thresholds and interaction models is necessary to establish realistic boundaries for clinical translation and prevent over-interpretation of univariate metrics.
 > - **What question it answers**: What statistical, biological, and computational constraints limit the standalone utility of Phase 2 cutoffs, and how can future pipeline iterations resolve them?
 
 ## 1. Executive Summary & Audit Overview

@@ -19,7 +19,7 @@ updated: 2026-08-01 21:41
 
 > [!NOTE] Analytical Methodology & Rationale
 > - **What is being done**: Constructing a 3-arm clinical decision framework routing all $N = 699$ patients into: **Arm A** (Immunotherapy Monotherapy, $N = 364$), **Arm B** (Targeted Therapy integrating Q2 Dabrafenib sensitivity model, $N = 234$), and **Arm C** (Combination/Reversal Therapy integrating Q4 DepMap essentiality targets `CSF1R`, `MDM2`, `AXL`, $N = 101$).
-> - **Why we are doing it**: Decision Curve Analysis in Phase 6 demonstrated that withholding immunotherapy from predicted non-responders prevents toxicity, but non-responders require actionable alternative therapies rather than clinical abandonment.
+> - **Why**: Decision Curve Analysis in Phase 6 demonstrated that withholding immunotherapy from predicted non-responders prevents toxicity, but non-responders require actionable alternative therapies rather than clinical abandonment.
 > - **What question it answers**: How can we systematically route 100% of melanoma patients into biologically rational therapeutic arms, and which specific helper drug targets convert resistant non-responders into sensitive states?
 
 Phase 7 operationalises precision patient allocation across $N = 699$ patients. The decision engine routes patients into three structured therapeutic arms:

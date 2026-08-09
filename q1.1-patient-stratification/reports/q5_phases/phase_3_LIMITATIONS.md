@@ -21,7 +21,7 @@ updated: 2026-08-01 16:06
 
 > [!NOTE] Evaluation Scope & Objectives
 > - **What is being evaluated**: Comprehensive methodological audit of Phase 3 Two-Stage Patient Stratification (Stage 1 GMM $K=3$ on 6 continuous immune features + Stage 2 deterministic `NF1` split).
-> - **Why we are doing it**: Rigorous identification of remaining statistical, biological, architectural, and data limitations without relying on outcome labels or discussing past refactoring iterations.
+> - **Why**: Rigorous identification of remaining statistical, biological, architectural, and data limitations without relying on outcome labels or discussing past refactoring iterations.
 > - **What question it answers**: What fundamental statistical uncertainties, biological assumptions, and data constraints bound the generalisability of the four discovered TME phenotypes ($N = 699$), and how should future pipeline iterations refine stratification accuracy?
 
 > [!INSIGHT] Key Takeaways & Evaluation Summary

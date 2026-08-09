@@ -18,7 +18,7 @@ Phenotype labels are assigned via rank-based rules on empirical cluster mean
 profiles — no hardcoded cluster integer IDs are used — making the assignment
 robust to GMM component reordering across runs and datasets.
 
-Cohort Scope: ICI trial cohorts only (Liu 2019, Hugo 2016, Riaz 2017; N = 256).
+Cohort Scope: Dynamically loaded active merge-enabled ICI cohorts from datasets.yaml.
 
 Outputs:
   - data/processed/merged/clinical_clusters.csv  (4-phenotype assignments + posteriors)
@@ -72,6 +72,7 @@ from src.styles import (
 from src.utils.formatting import (
     format_count_percentage,
     generate_obsidian_frontmatter,
+    generate_script_reference_callout,
 )
 from src.utils.io import safe_save_csv
 from src.utils.logging import TeeStream
@@ -122,6 +123,7 @@ _SIG_FEATURES: List[str] = [
 ]
 _DRIVER_MUT_FEATURES: List[str] = [
     "mut_BRAF",
+    "mut_BRAF_V600E",
     "mut_NRAS",
     "mut_NF1",
 ]
@@ -176,6 +178,7 @@ FEATURE_DISPLAY_NAMES: Dict[str, str] = {
     "IMPRES": "IMPRES\nSignature",
     "PD_L1": "PD-L1 Expression\nScore",
     "mut_BRAF": "BRAF Driver\nMutation",
+    "mut_BRAF_V600E": "BRAF V600E\nMutation",
     "mut_NRAS": "NRAS Driver\nMutation",
     "mut_NF1": "NF1 Driver\nMutation",
     "TMB_NONSYNONYMOUS": "Tumour Mutational\nBurden (TMB)",
@@ -191,13 +194,18 @@ FEATURE_DISPLAY_NAMES: Dict[str, str] = {
 def _derive_mutation_features(df_combined: pd.DataFrame, proc_dir: Path, label: str) -> pd.DataFrame:
     """Derives binary driver mutation flags from the cohort mutations_cleaned.csv.
 
+    Extracts mut_BRAF (any BRAF mutation), mut_BRAF_V600E (V600E hotspot specifically),
+    mut_NRAS, and mut_NF1. The V600E split aligns with the clinical distinction between
+    BRAF V600E-targeted therapy eligibility (vemurafenib, dabrafenib+trametinib)
+    and other BRAF variants or wild-type tumours.
+
     Args:
         df_combined: Per-cohort DataFrame to enrich with mutation features.
         proc_dir: Processed data directory for this cohort.
         label: Cohort name (for informative warnings).
 
     Returns:
-        df_combined with mut_BRAF, mut_NRAS, mut_NF1 columns appended
+        df_combined with mut_BRAF, mut_BRAF_V600E, mut_NRAS, mut_NF1 columns appended
         (defaulting to 0 when mutations_cleaned.csv is absent or gene is missing).
     """
     mut_path = proc_dir / "mutations_cleaned.csv"
@@ -214,6 +222,14 @@ def _derive_mutation_features(df_combined: pd.DataFrame, proc_dir: Path, label: 
             df_combined[feat_col] = df_muts[gene].reindex(df_combined.index).fillna(0).astype(float)
         else:
             df_combined[feat_col] = 0.0
+
+    # BRAF V600E hotspot flag — used in Stage 2 phenotype splitting
+    if "BRAF_V600E" in df_muts.columns:
+        df_combined["mut_BRAF_V600E"] = (
+            df_muts["BRAF_V600E"].reindex(df_combined.index).fillna(0).astype(float)
+        )
+    else:
+        df_combined["mut_BRAF_V600E"] = 0.0
 
     return df_combined
 
@@ -251,11 +267,15 @@ def _load_and_extract_cohort_features(
         m1_m2_series = pd.Series(dtype=float)
         mac_stv_series = pd.Series(dtype=float)
 
-    # Restrict to ICI trial cohorts only
+    # Restrict sample loading to the pre-merged IT-treated cohort subset if available
+    it_path = DATA_DIR / "processed" / "merged" / "immunotherapy" / "clin_merged.csv"
+    it_ids = set(pd.read_csv(it_path)["SAMPLE_ID"].values) if it_path.exists() else None
+
+    # Load all active, merge-enabled datasets dynamically from dataset_configs
     trial_configs = [
         config
         for config in dataset_configs
-        if config.processed_directory in ("liu_2019", "hugo_2016", "riaz_2017")
+        if getattr(config, "merge_enabled", True)
     ]
 
     cohort_dfs: List[pd.DataFrame] = []
@@ -273,6 +293,11 @@ def _load_and_extract_cohort_features(
             )
 
         df_clin = pd.read_csv(clin_path, index_col="SAMPLE_ID")
+        if it_ids is not None:
+            valid_ids = df_clin.index.intersection(it_ids)
+            if len(valid_ids) == 0:
+                continue
+            df_clin = df_clin.loc[valid_ids].copy()
 
         if expr_path.exists():
             df_expr = pd.read_csv(expr_path, index_col="SAMPLE_ID")
@@ -416,6 +441,14 @@ def _apply_nf1_split(
     cluster are reassigned to Cluster ID 3 (Mutant-Driven). NF1-negative patients
     retain their Stage 1 immune label.
 
+    BRAF V600E status is intentionally NOT used as a splitting criterion here:
+    BRAF V600E patients can occupy any immune microenvironment cluster (Hot, Cold,
+    or M2-High) depending on their individual tumour biology. Carving them from a
+    single immune cluster would assign identical-mutation patients to different
+    phenotypes based on GMM component assignment — producing inconsistent treatment
+    recommendations in the Q5 dashboard. Instead, mut_BRAF_V600E is retained as
+    a downstream ML feature and as a parallel branching flag in the decision flow.
+
     Args:
         df: Patient DataFrame containing mut_NF1 column.
         stage1_labels: Hard Stage 1 GMM assignments.
@@ -446,7 +479,7 @@ def _apply_nf1_split(
     mutant_mask = in_base & nf1_positive
 
     final_labels = stage1_labels.copy()
-    final_labels[mutant_mask] = 3  # Cluster ID 3 = Mutant-Driven (new ID, no prior meaning)
+    final_labels[mutant_mask] = 3  # Cluster ID 3 = Mutant-Driven
 
     n_split = int(mutant_mask.sum())
     n_retained = int((in_base & ~nf1_positive).sum())
@@ -553,15 +586,19 @@ def _perform_clustering(
     # Assign Stage 1 labels via rank-based rules (ID-agnostic)
     stage1_short_labels = _assign_stage1_phenotype_labels(df, stage1_labels)
 
-    # Stage 2: deterministic NF1 split -> 4th phenotype
-    final_labels, phenotype_names = _apply_nf1_split(df, stage1_labels, stage1_short_labels)
+    # Stage 2: deterministic NF1 split -> 4th phenotype (Mutant-Driven)
+    # BRAF V600E is retained as a feature for the downstream ML model and
+    # as a parallel branching flag in the Q5 dashboard — not as a cluster.
+    final_labels, phenotype_names = _apply_nf1_split(
+        df, stage1_labels, stage1_short_labels
+    )
     df["CLINICAL_CLUSTER"] = final_labels
     df["Phenotype_Label"] = df["CLINICAL_CLUSTER"].map(phenotype_names)
 
     # Export named posterior probability columns (runtime-derived, not hardcoded)
     df = _export_posterior_columns(df, stage1_labels, stage1_short_labels, stage1_probs)
 
-    # PCA on all 12 Z-score features for visualisation (richer than GMM-only view)
+    # PCA on all Z-score features for visualisation (richer than GMM-only view)
     all_z_cols = [f"Z_{col}" for col in FEATURE_COLS]
     pca_coords = PCA(n_components=2, random_state=_GMM_RANDOM_STATE).fit_transform(
         df[all_z_cols].values
@@ -1338,6 +1375,23 @@ def _generate_clustering_report(
         extra_css_classes=["table-center", "row-alt"],
     )
 
+    active_cohorts = list(df["COHORT"].unique())
+    if len(active_cohorts) > 1:
+        cohorts_str = ", ".join(active_cohorts[:-1]) + f", and {active_cohorts[-1]}"
+    elif active_cohorts:
+        cohorts_str = active_cohorts[0]
+    else:
+        cohorts_str = "active trial cohorts"
+
+    n_gmm_feats = len(_GMM_CONTINUOUS_FEATURES)
+    readable_feats = [
+        FEATURE_DISPLAY_NAMES.get(f, f).replace("\n", " ") for f in _GMM_CONTINUOUS_FEATURES
+    ]
+    if len(readable_feats) > 1:
+        gmm_feats_str = ", ".join(readable_feats[:-1]) + f", and {readable_feats[-1]}"
+    else:
+        gmm_feats_str = ", ".join(readable_feats)
+
     lines: List[str] = [frontmatter, ""]
     w = lines.append
 
@@ -1345,17 +1399,17 @@ def _generate_clustering_report(
     w("")
     w("> [!INFO] What, Why & Key Questions — Overview")
     w(
-        f"> - **What We Are Doing**: Applying a two-stage unsupervised Gaussian Mixture Model "
-        f"(GMM) stratification to the **anti-PD-1 ICI trial cohorts** ($N = {total_n}$ patients "
-        f"across Liu 2019, Hugo 2016, and Riaz 2017). Stage 1 fits a GMM (K=3, full covariance) "
-        f"on 8 continuous immune/microenvironment Z-score features (IFN-γ, TIS, CYT, CD8+, IMPRES, "
-        f"PD-L1, M1/M2 ratio, Macrophage STV). Stage 2 applies a deterministic NF1-positive split "
-        f"on the NF1-enriched immune cluster, producing a 4th Mutant-Driven phenotype. "
-        f"Phenotype labels are assigned by rank-based rules on empirical cluster profiles — "
-        f"never by hardcoded cluster integer IDs."
+        f"> - **What**: Applying a two-stage unsupervised Gaussian Mixture Model "
+        f"(GMM) stratification to the **immunotherapy (ICI) trial cohorts** ($N = {total_n}$ "
+        f"patients across {cohorts_str}). Stage 1 fits a GMM ($K = {_GMM_N_COMPONENTS}$, "
+        f"full covariance) on {n_gmm_feats} continuous immune/microenvironment Z-score features "
+        f"({gmm_feats_str}). Stage 2 applies a deterministic NF1-positive split on the "
+        f"NF1-enriched immune cluster, producing a 4th Mutant-Driven phenotype. Phenotype "
+        f"labels are assigned by rank-based rules on empirical cluster profiles — never by "
+        f"hardcoded cluster integer IDs."
     )
     w(
-        "> - **Why We Are Doing It**: GMM provides soft posterior probability assignments rather "
+        "> - **Why**: GMM provides soft posterior probability assignments rather "
         "than hard cluster membership, capturing biological uncertainty at phenotype boundaries. "
         "The two-stage design separates the continuous immune microenvironment axis (Stage 1 GMM) "
         "from the discrete driver mutation axis (Stage 2 NF1 split), mirroring how biological "
@@ -1372,12 +1426,12 @@ def _generate_clustering_report(
     w("")
     w("> [!INFO] What, Why & Key Questions — Subtype Fingerprints")
     w(
-        "> - **What We Are Doing**: Characterising the four discovered patient subtypes using "
+        "> - **What**: Characterising the four discovered patient subtypes using "
         "2D UMAP and PCA projections (for geometric separation) and an annotated Z-score heatmap "
         "(for per-feature biological detail)."
     )
     w(
-        "> - **Why We Are Doing It**: UMAP captures non-linear manifold structure; PCA provides "
+        "> - **Why**: UMAP captures non-linear manifold structure; PCA provides "
         "a linear orthogonal view. The heatmap overlays response rate and survival tracks to "
         "verify that phenotypes are clinically meaningful."
     )
@@ -1409,6 +1463,90 @@ def _generate_clustering_report(
     w(f"The two-stage GMM pipeline isolates {len(phenotype_names)} distinct patient phenotypes:")
     w("")
 
+    w("### 2.1 Stage 1 GMM: How Phenotype Labels Are Assigned")
+    w("")
+    w(
+        f"Stage 1 fits a Gaussian Mixture Model ($K = {_GMM_N_COMPONENTS}$, full covariance) "
+        f"simultaneously on {n_gmm_feats} continuous Z-score features: "
+        f"{gmm_feats_str}. No phenotype label is assumed during fitting — the GMM discovers "
+        "structure from the data. Labels are then assigned post-hoc via a single rank-based rule "
+        "anchored on each cluster's empirical mean TIS (Tumour Inflammation Score), the most "
+        "validated composite immune score in the ICI literature (Ayers et al., 2017 *J Clin Invest*):"
+    )
+    w("")
+    w("| Assignment Rule | Phenotype Label |")
+    w("|---|---|")
+    w("| Cluster with the **highest** mean TIS | **Immune Hot** |")
+    w("| Cluster with the **lowest** mean TIS | **Immune Cold** |")
+    w("| The **remaining** cluster | **Immunosuppressive M2-High** |")
+    w("")
+    w(
+        "This rank-based assignment is reproducible across GMM restarts: the biological phenotype "
+        "label is always tied to the empirical cluster profile, never to a non-deterministic "
+        "integer cluster ID."
+    )
+    w("")
+    w("> [!INFO] What, Why & Key Questions — Stage 1 Phenotype Biology")
+    w(
+        "> - **What**: Characterising the biological meaning of the three "
+        "Stage 1 immune archetypes and explaining how each relates to ICI response mechanisms."
+    )
+    w(
+        "> - **Why**: The phenotype labels must be grounded in the immunotherapy "
+        "literature to be clinically interpretable. Each archetype corresponds to a distinct "
+        "tumour-immune microenvironment (TME) state with a different predicted ICI response "
+        "mechanism and therapeutic implication."
+    )
+    w("")
+    w(
+        "**Immune Hot** — highest TIS cluster. Characterised by high TIS, CYT, and CD8+ T-cell "
+        "scores, and elevated PD-L1 expression. Active T-cell infiltration is present with "
+        "functional cytolytic machinery. PD-L1 is elevated as an adaptive resistance response "
+        "to IFN-γ secreted by tumour-infiltrating lymphocytes (TILs) — precisely the mechanism "
+        "anti-PD-1 agents are designed to reverse. **These patients are the primary ICI "
+        "responders.** BRAF V600E patients in this cluster retain their Immune Hot label: "
+        "their immune microenvironment, not their mutation alone, drives ICI eligibility."
+    )
+    w("")
+    w(
+        "**Immune Cold** — lowest TIS cluster. Characterised by low TIS, CYT, CD8+, and PD-L1. "
+        "Two mechanistic subtypes underlie this phenotype: (a) *immune desert* — T cells were "
+        "never primed against tumour antigens due to low mutational burden or antigen presentation "
+        "defects; or (b) *immune excluded* — T cells are primed but physically barred from the "
+        "tumour parenchyma by stromal or vascular barriers. In either case, PD-1 blockade has "
+        "no infiltrating effector T cells to unleash. **These patients are the poorest ICI "
+        "responders** and may require priming strategies (STING agonists, cancer vaccines, "
+        "anti-VEGF) before ICI is effective."
+    )
+    w("")
+    w(
+        "**Immunosuppressive M2-High** — intermediate TIS cluster (assigned by exclusion after "
+        "Hot and Cold are identified). T cells are present but suppressed by M2-polarised "
+        "tumour-associated macrophages (TAMs) secreting IL-10, TGF-β, and VEGF, producing a "
+        "low M1/M2 ratio and elevated Macrophage STV score. NF1 loss enriches in this cluster "
+        "because RAS/MAPK hyperactivation (from NF1 loss) drives M2 macrophage recruitment. "
+        "NF1-positive patients are subsequently carved out as the Stage 2 Mutant-Driven "
+        "phenotype. **ICI response is intermediate** — present but attenuated by active "
+        "immunosuppression. Macrophage repolarisation strategies (anti-CSF1R, anti-IL-10) "
+        "combined with ICI may improve outcomes in this group."
+    )
+    w("")
+    w(
+        "> [!NOTE] On the M2-High Label\n"
+        "> The Immunosuppressive M2-High phenotype is defined algorithmically as the "
+        "**residual** cluster after Immune Hot and Immune Cold are identified. This is "
+        "biologically motivated — intermediate TIS with elevated macrophage suppression signal "
+        "is the canonical M2 TME signature — but it means the cluster boundary is defined "
+        "partly by what it *is not*. The exported GMM posterior probabilities "
+        "(`P_Immunosuppressive_M2_High`) capture patients near these boundaries with soft "
+        "probability assignments rather than hard binary membership."
+    )
+    w("")
+    w("### 2.2 Per-Phenotype Profile Summary")
+    w("")
+    w(f"Empirical feature profiles across all {len(phenotype_names)} patient phenotypes ($N = {total_n}$):")
+    w("")
+
     for i, cid in enumerate(ordered_ids, start=1):
         name = phenotype_names[cid]
         cnt = int(np.sum(df["CLINICAL_CLUSTER"] == cid))
@@ -1436,13 +1574,13 @@ def _generate_clustering_report(
     w("")
     w("> [!INFO] What, Why & Key Questions — Clinical Outcome Validation")
     w(
-        f"> - **What We Are Doing**: Testing whether the unsupervised GMM phenotype labels — "
+        f"> - **What**: Testing whether the unsupervised GMM phenotype labels — "
         f"derived without any response information — stratify immunotherapy response rates "
         f"(in the $N = {n_trial}$ trial patients with binary labels) and overall survival "
         f"(across all $N = {total_n}$ patients)."
     )
     w(
-        "> - **Why We Are Doing It**: This is the critical validation step. If GMM phenotypes "
+        "> - **Why**: This is the critical validation step. If GMM phenotypes "
         "correlate with clinical outcomes, the biology is real and the subtypes are clinically "
         "actionable. The two-stage design should also reveal whether the Mutant-Driven (NF1 Loss) "
         "subtype has a distinct survival profile from the immune-defined clusters."
@@ -1567,32 +1705,49 @@ def _generate_clustering_report(
         "standardisation; applying this subtyping scheme to a single new patient requires "
         "reference cohort normalisation parameters."
     )
-    w("")
-    w("> [!formula]+ Clinical Subtyping Script Execution & Software Module Architecture")
-    w("> - **Primary Pipeline Execution Scripts**:")
-    w(
-        ">   - [`run_clinical_clustering.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-2-clinical-subtyping/run_clinical_clustering.py): "
-        "Executes two-stage GMM + NF1 deterministic split stratification across ICI trial cohorts "
-        f"($N = {total_n}$) using the 12-feature set; generates UMAP, PCA, heatmap, KM, and "
-        "response-rate plots; exports `clinical_clusters.csv` with posterior probability columns; "
-        "and produces this report."
+    callout_entries = [
+        (
+            "run_clinical_clustering.py",
+            Path(__file__).resolve(),
+            (
+                "Executes two-stage GMM + NF1 deterministic split stratification across "
+                f"ICI trial cohorts ($N = {total_n}$) using the 12-feature set; generates "
+                "UMAP, PCA, heatmap, KM, and response-rate plots; exports `clinical_clusters.csv` "
+                "with posterior probability columns; and produces this report."
+            ),
+        ),
+        (
+            "plot_cluster_profile_visualizations.py",
+            _SUBPROJECT_ROOT / "scripts" / "pillar-2-clinical-subtyping" / "plot_cluster_profile_visualizations.py",
+            (
+                "Generates supplementary cluster profile visualisations from `clinical_clusters.csv`; "
+                "requires `run_clinical_clustering.py` to be executed first."
+            ),
+        ),
+        (
+            "signatures.py",
+            _SUBPROJECT_ROOT / "src" / "signatures.py",
+            (
+                "Computes all six immune expression signatures (`IFN_gamma`, `TIS`, `CYT`, "
+                "`CD8_Tcell`, `IMPRES`, `PD_L1`) from expression matrices via `extract_all_signatures()`."
+            ),
+        ),
+        (
+            "styles.py",
+            _SUBPROJECT_ROOT.parent / "src" / "styles.py",
+            (
+                "Single source of truth for Okabe-Ito colour palettes (`PHENOTYPE_PALETTE`, "
+                "`RESPONSE_PALETTE`) and `get_phenotype_color()` for ID-agnostic colour lookup."
+            ),
+        ),
+    ]
+    callout_str = generate_script_reference_callout(
+        callout_entries,
+        base_dir=REPORT_DIR,
+        callout_type="[!formula]+",
+        title="Clinical Subtyping Script Execution & Software Module Architecture",
     )
-    w(
-        ">   - [`plot_cluster_profile_visualizations.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-2-clinical-subtyping/plot_cluster_profile_visualizations.py): "
-        "Generates supplementary cluster profile visualisations from `clinical_clusters.csv`; "
-        "requires `run_clinical_clustering.py` to be executed first."
-    )
-    w("> - **Shared Cross-Question & Pipeline Modules**:")
-    w(
-        ">   - [`signatures.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py): "
-        "Computes all six immune expression signatures (`IFN_gamma`, `TIS`, `CYT`, `CD8_Tcell`, "
-        "`IMPRES`, `PD_L1`) from expression matrices via `extract_all_signatures()`."
-    )
-    w(
-        ">   - [`styles.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/styles.py): "
-        "Single source of truth for Okabe-Ito colour palettes (`PHENOTYPE_PALETTE`, "
-        "`RESPONSE_PALETTE`) and `get_phenotype_color()` for ID-agnostic colour lookup."
-    )
+    lines.extend(callout_str.splitlines())
 
     report_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"Clustering report written to {report_path.relative_to(_SUBPROJECT_ROOT).as_posix()}")

@@ -19,7 +19,7 @@ updated: 2026-08-01 21:41
 
 > [!NOTE] Analytical Methodology & Rationale
 > - **What is being done**: Performing non-parametric univariate association testing (Mann-Whitney U, Cohen's d), Youden threshold optimisation, and logistic regression interaction modelling.
-> - **Why we are doing it**: Establishing statistical significance and non-linear cutoffs is necessary to identify which individual features differentiate Responders from Non-Responders.
+> - **Why**: Establishing statistical significance and non-linear cutoffs is necessary to identify which individual features differentiate Responders from Non-Responders.
 > - **What question it answers**: Which individual biomarkers significantly correlate with immunotherapy response, and do signatures interact synergistically with genomic driver mutations?
 
 Phase 2 evaluates biomarker discriminative power across $N_{\text{ICI}}$ patients:

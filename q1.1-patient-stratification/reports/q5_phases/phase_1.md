@@ -19,7 +19,7 @@ updated: 2026-08-01 21:41
 
 > [!NOTE] Analytical Methodology & Rationale
 > - **What is being done**: Loading preprocessed clinical, transcriptomic, and genomic data and constructing dual feature matrices: an ICI-treated cohort ($N_{\text{ICI}} = 326$) and a full melanoma cohort ($N_{\text{Full}} = 699$) with engineered immune signatures, Macrophage STV ratios, and cell deconvolution metrics.
-> - **Why we are doing it**: Raw RNA-seq gene expression matrices containing ~19,757 genes suffer from severe dimensionality challenges. Transforming high-dimensional transcriptomics into validated signature scores and cell-type fractions provides interpretable, non-redundant biological features for both response prediction and unsupervised stratification.
+> - **Why**: Raw RNA-seq gene expression matrices containing ~19,757 genes suffer from severe dimensionality challenges. Transforming high-dimensional transcriptomics into validated signature scores and cell-type fractions provides interpretable, non-redundant biological features for both response prediction and unsupervised stratification.
 > - **What question it answers**: How are raw multi-modal datasets harmonised and structured into dual feature matrices to power downstream response-supervised modelling and unsupervised patient stratification?
 
 Phase 1 establishes the foundational dataflow architecture by integrating harmonised multi-modal data across 4 melanoma studies (*Liu 2019*, *Riaz 2017*, *Hugo 2016*, and *TCGA-SKCM*). To support distinct analytical requirements across downstream phases, Phase 1 outputs two standardised feature matrices:

@@ -20,7 +20,7 @@ updated: 2026-08-01 21:44
 
 > [!NOTE] Scope & Purpose of This Appraisal
 > - **What is being appraised**: The current state of Phase 7 (`07_treatability_scoring.py`), which routes $N = 699$ patients into three therapeutic arms and produces Treatability Index scores, Q4 target nominations, and Recommendation Confidence bands.
-> - **Why we are doing it**: No analytical pipeline is free of assumptions and constraints. A rigorous self-appraisal is essential for academic transparency, for calibrating downstream clinical confidence, and for prioritising the highest-impact improvements in future iterations.
+> - **Why**: No analytical pipeline is free of assumptions and constraints. A rigorous self-appraisal is essential for academic transparency, for calibrating downstream clinical confidence, and for prioritising the highest-impact improvements in future iterations.
 > - **What question it answers**: What are the current methodological, statistical, biological, and data constraints of Phase 7, and where should effort be focused next?
 
 ---

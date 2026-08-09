@@ -1462,14 +1462,14 @@ def _build_report_tier2_preamble(
     return [
         f"## 2. Tier 2: ICI Granular Clinical Feature Selection ($N = {ici2_n}$)", "",
         "> [!INFO] What, Why & Questions — Tier 2",
-        f"> **What We Are Doing**: Evaluating {ici2_feat_count} encoded dummy variables "
+        f"> - **What**: Evaluating {ici2_feat_count} encoded dummy variables "
         f"derived from granular baseline categorical clinical covariates available in the "
         f"ICI trial cohorts ($N = {ici2_n}$) — including clinical staging (`CLINICAL_STAGE`), "
         "anatomical biopsy site (`BIOPSY_SITE`), histological subtype (`TISSUE_SUBTYPE`), "
         "prior ICI therapy (`PRIOR_ICI_RX`), prior non-ICI therapy (`PRIOR_RX`), "
         "biopsy timing (`SAMPLE_TREATMENT`), and metastasis status (`METASTASIZED`) — against "
         "**immunotherapy binary response** using the same RF + Logistic Regression framework.",
-        "> **Why We Are Doing It**: Granular clinical covariates may independently predict "
+        "> - **Why**: Granular clinical covariates may independently predict "
         "ICI response beyond immune expression signatures.",
         "> - **Questions**:",
         ">   1. *Which clinical staging or treatment covariates "
@@ -1866,7 +1866,7 @@ def _extract_report_tier2_vars(
 
 
 def _write_report_to_disk(lines: List[str], report_path: Path) -> None:
-    """Writes report text lines to target file and mirrors to root reports."""
+    """Writes report text lines to target file."""
     report_path.parent.mkdir(exist_ok=True, parents=True)
     txt = "\n".join(lines)
     report_path.write_text(txt, encoding="utf-8")
@@ -1874,10 +1874,6 @@ def _write_report_to_disk(lines: List[str], report_path: Path) -> None:
         f"Two-tiered ICI feature selection report successfully written "
         f"to {rel_path(report_path)}"
     )
-    root_dir = _SUBPROJECT_ROOT.parent / "reports" / "pillar-2-clinical-subtyping"
-    root_report = root_dir / report_path.name
-    if root_dir.exists():
-        root_report.write_text(txt, encoding="utf-8")
 
 
 def _unpack_t1_vars(t1_vars: tuple) -> tuple:
@@ -2072,12 +2068,12 @@ def _build_tier3_insights(top_df: pd.DataFrame, n_samp: int) -> List[str]:
 def _build_tier3_head_lines(n_samp: int) -> List[str]:
     """Builds Tier 3 header lines and info callout box."""
     w_line = (
-        f"> **What We Are Doing**: Evaluating all Tier 1 molecular immune signatures and "
+        f"> - **What**: Evaluating all Tier 1 molecular immune signatures and "
         f"Tier 2 granular clinical covariates head-to-head in a single unified Random Forest "
         f"model ($N = {n_samp}$)."
     )
     y_line = (
-        "> **Why We Are Doing It**: Evaluates whether molecular signatures outrank clinical "
+        "> - **Why**: Evaluates whether molecular signatures outrank clinical "
         "attributes when competing in the same model space."
     )
     img1 = (

@@ -27,8 +27,8 @@ This supplementary document provides the full, detailed biological rationale, ge
 ## 0. Mathematical Collapsing Strategies & Preprocessing
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Describing the mathematical collapsing functions and preprocessing steps used to convert raw RNA-seq expression profiles into continuous signature inputs for predictive modeling.
-> - **Why We Are Doing It**: Raw expression profiles ($D > 20,000$) suffer from extreme high-dimensionality, multicollinearity, and technical batch variation. Collapsing genes into validated pathway scores acts as a biological noise filter.
+> - **What**: Describing the mathematical collapsing functions and preprocessing steps used to convert raw RNA-seq expression profiles into continuous signature inputs for predictive modeling.
+> - **Why**: Raw expression profiles ($D > 20,000$) suffer from extreme high-dimensionality, multicollinearity, and technical batch variation. Collapsing genes into validated pathway scores acts as a biological noise filter.
 > - **Questions**:
 >   1. *What mathematical collapsing strategies are implemented in `src/signatures.py`?*
 >   2. *How do non-linear rank-based ratios (e.g. IMPRES) differ from arithmetic log-means?*
@@ -90,8 +90,8 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
 ## 1. Interferon-Gamma (IFN-γ) 6-Gene Signature
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Detailing the biological rationale, gene panel, and formula for the 6-gene IFN-γ cytokine response signature.
-> - **Why We Are Doing It**: IFN-γ signaling is the central axis of adaptive anti-tumour immunity and MHC up-regulation.
+> - **What**: Detailing the biological rationale, gene panel, and formula for the 6-gene IFN-γ cytokine response signature.
+> - **Why**: IFN-γ signaling is the central axis of adaptive anti-tumour immunity and MHC up-regulation.
 > - **Questions**: *How does IFN-γ expression capture baseline immune priming?*
 
 * **Source**: Ayers et al., 2017 (*Journal of Clinical Investigation*)
@@ -111,8 +111,8 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
 ## 2. Tumour Inflammation Signature (TIS)
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Outlining the 21-gene expanded Tumour Inflammation Signature (TIS) implementation.
-> - **Why We Are Doing It**: TIS measures pre-existing suppressed adaptive immune infiltration across antigen presentation, T-cell receptors, and checkpoint axes.
+> - **What**: Outlining the 21-gene expanded Tumour Inflammation Signature (TIS) implementation.
+> - **Why**: TIS measures pre-existing suppressed adaptive immune infiltration across antigen presentation, T-cell receptors, and checkpoint axes.
 > - **Questions**: *How does our expanded 21-gene implementation enhance the standard 18-gene NanoString panel?*
 
 * **Source**: Ayers et al., 2017 (*Journal of Clinical Investigation*)
@@ -128,8 +128,8 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
 ## 3. Cytolytic Activity (CYT) Score
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Describing the 2-gene Cytolytic Activity (CYT) metric (`GZMA`, `PRF1`).
-> - **Why We Are Doing It**: CYT measures active physical cell killing mediated by perforin and granzymes.
+> - **What**: Describing the 2-gene Cytolytic Activity (CYT) metric (`GZMA`, `PRF1`).
+> - **Why**: CYT measures active physical cell killing mediated by perforin and granzymes.
 > - **Questions**: *Does CYT capture effector function independently of total lymphocyte infiltration?*
 
 * **Source**: Rooney et al., 2015 (*Cell*)
@@ -145,8 +145,8 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
 ## 4. CD8 T-Cell Abundance Signature
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Describing the lineage-specific `CD8` T-cell abundance marker (`CD8A`, `CD8B`).
-> - **Why We Are Doing It**: `CD8`+ T-cell infiltration is the primary cellular target of anti-PD-1 therapy.
+> - **What**: Describing the lineage-specific `CD8` T-cell abundance marker (`CD8A`, `CD8B`).
+> - **Why**: `CD8`+ T-cell infiltration is the primary cellular target of anti-PD-1 therapy.
 > - **Questions**: *How accurately do `CD8A` and `CD8B` reflect cytotoxic T-cell density?*
 
 * **Biological Significance**: Serves as a direct lineage-specific marker for the presence of `CD8`+ cytotoxic T-cells within the tumour microenvironment. `CD8`+ infiltration is the primary target and driver of anti-PD-1 clinical efficacy.
@@ -160,8 +160,8 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
 ## 5. Immune Predictive Score (IMPRES)
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Detailing the 15 logical pairwise ratios of checkpoint molecules comprising IMPRES.
-> - **Why We Are Doing It**: IMPRES evaluates the relative balance of stimulatory vs. inhibitory immune checkpoint signals.
+> - **What**: Detailing the 15 logical pairwise ratios of checkpoint molecules comprising IMPRES.
+> - **Why**: IMPRES evaluates the relative balance of stimulatory vs. inhibitory immune checkpoint signals.
 > - **Questions**: *Why is a rank-based ratio score more resistant to batch offsets than absolute expression levels?*
 
 * **Source**: Ausländer et al., 2018 (*Nature Medicine*)
@@ -192,8 +192,8 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
 ## 6. PD-L1 Transcript Proxy
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Describing `CD274` mRNA expression as a continuous proxy for PD-L1 protein ligand expression.
-> - **Why We Are Doing It**: `CD274` transcript level represents the primary molecular target of anti-PD-1/PD-L1 antibody therapy.
+> - **What**: Describing `CD274` mRNA expression as a continuous proxy for PD-L1 protein ligand expression.
+> - **Why**: `CD274` transcript level represents the primary molecular target of anti-PD-1/PD-L1 antibody therapy.
 > - **Questions**: *How reliably does mRNA expression substitute for IHC staining in transcriptomic pipelines?*
 
 * **Biological Significance**: Directly evaluates the transcript level of `CD274` (encoding PD-L1). While PD-L1 is usually measured by immunohistochemistry (IHC), mRNA expression acts as a clean continuous molecular proxy for checkpoint burden.
@@ -204,8 +204,8 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
 ## 7. Macrophage STV Spatial Barrier Score (`Macrophage_STV_Score`)
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Describing the 5-gene M2 Macrophage Signature Transcript Vector (STV) Spatial Barrier Score.
-> - **Why We Are Doing It**: M2-polarized tumor-associated macrophages (TAMs) create a physical and immunosuppressive stromal barrier that restricts cytotoxic T-cell infiltration.
+> - **What**: Describing the 5-gene M2 Macrophage Signature Transcript Vector (STV) Spatial Barrier Score.
+> - **Why**: M2-polarized tumor-associated macrophages (TAMs) create a physical and immunosuppressive stromal barrier that restricts cytotoxic T-cell infiltration.
 > - **Questions**: *How does M2 macrophage infiltration mediate resistance to anti-PD-1 monotherapy?*
 
 * **Source**: Derived from M2 macrophage signature vectors in `data/config/m1_m2_stv.csv`.
@@ -223,8 +223,8 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
 ## 8. M1/M2 Macrophage Polarisation Ratio (`M1_M2_Ratio`)
 
 > [!NOTE] Section Context
-> - **What We Are Doing**: Outlining the 10-gene differential M1/M2 macrophage polarisation ratio (`M1_M2_Ratio`).
-> - **Why We Are Doing It**: Distinguishes pro-inflammatory anti-tumour (M1) macrophages from immunosuppressive pro-tumour (M2) macrophages in the microenvironment.
+> - **What**: Outlining the 10-gene differential M1/M2 macrophage polarisation ratio (`M1_M2_Ratio`).
+> - **Why**: Distinguishes pro-inflammatory anti-tumour (M1) macrophages from immunosuppressive pro-tumour (M2) macrophages in the microenvironment.
 > - **Questions**: *Does the balance of M1 vs. M2 macrophages provide additive predictive value over total macrophage abundance?*
 
 * **Biological Significance**: Captures the functional polarisation balance of tumour-associated macrophages. High M1/M2 ratios indicate a pro-inflammatory microenvironment favorable to adaptive immune activation, whereas low ratios highlight immunosuppressive stromal exclusion.

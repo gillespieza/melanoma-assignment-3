@@ -19,7 +19,7 @@ updated: 2026-08-01 21:41
 
 > [!NOTE] Analytical Methodology & Rationale
 > - **What is being done**: Executing Two-Stage Patient Stratification: Stage 1 GMM ($K=3$, full covariance) on 6 continuous immune/stromal features (`TIS`, `CYT`, `CD8_T_cells`, `M1_Macrophages`, `M2_Macrophages`, `CAFs`), followed by Stage 2 deterministic `NF1` split on the `NF1`-enriched immune cluster to carve out the `Mutant-Driven` phenotype. Exports continuous posterior probabilities and named columns (`P_Immune_Hot`, `P_Immune_Cold`, `P_Immunosuppressive_M2_High`, `P_Mutant_Driven`), generating 2D PCA, t-SNE, and UMAP projection maps.
-> - **Why we are doing it**: Unsupervised clustering discovers natural tumour microenvironment archetypes without outcome bias. Grounding phenotype discovery in the full cohort ($N = 699$, including TCGA-SKCM biological reference) ensures that the resulting phenotypes reflect the complete biological landscape rather than a trial-selected population.
+> - **Why**: Unsupervised clustering discovers natural tumour microenvironment archetypes without outcome bias. Grounding phenotype discovery in the full cohort ($N = 699$, including TCGA-SKCM biological reference) ensures that the resulting phenotypes reflect the complete biological landscape rather than a trial-selected population.
 > - **What question it answers**: What distinct tumour microenvironment phenotypes emerge from two-stage immune and genomic profiling across $N = 699$ patients, and which therapeutic modality — `BRAF`/MEK targeted inhibition, immune checkpoint blockade, or combination strategies — does each phenotype indicate?
 
 ### Unsupervised Phenotype Cluster Summary

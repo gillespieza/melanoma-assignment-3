@@ -19,7 +19,7 @@ updated: 2026-08-01 21:41
 
 > [!NOTE] Analytical Methodology & Rationale
 > - **What is being done**: Training phenotype-specific classifiers within each cluster and evaluating cross-validation performance against the global Q1 response predictor.
-> - **Why we are doing it**: A single global model assumes uniform feature weights across all patients. Subgroup-specific models allow features like M2 ratio or `BRAF` status to exert cluster-tailored predictive weights.
+> - **Why**: A single global model assumes uniform feature weights across all patients. Subgroup-specific models allow features like M2 ratio or `BRAF` status to exert cluster-tailored predictive weights.
 > - **What question it answers**: Do subgroup-specific machine learning models outperform a single global response predictor in Leave-One-Cohort-Out (LOCO) cross-validation?
 
 Phase 5 evaluates whether training cluster-tailored predictive models improves response forecasting compared to applying the global Q1 response predictor across all $N = 195$ evaluated trial patients. In the *Mutant-Driven* phenotype ($N = 9$), subgroup-specific training increased Recall from 0.0% to 20.0% ($\Delta = +20.0$ percentage points) and Positive Predictive Value from 0.0% to 25.0% ($\Delta = +25.0$ percentage points), identifying true responders missed by the global baseline. In the *Immunosuppressive M2-High* subset ($N = 55$), subgroup-specific modelling increased Positive Predictive Value (PPV = 33.3% vs 37.5%, $\Delta = +-4.2$ percentage points) and accuracy (61.8% vs 60.0%), maintaining a recall of 5.0%. In the *Immune Cold* subset ($N = 28$), subgroup-specific modelling achieved a modest ROC-AUC improvement (0.380 vs 0.374, $\Delta = +0.005$).

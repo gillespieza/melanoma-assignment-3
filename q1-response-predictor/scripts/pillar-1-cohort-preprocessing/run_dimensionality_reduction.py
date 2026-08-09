@@ -824,15 +824,12 @@ _COMPANION_SCRIPTS: List[Tuple[str, Path]] = [
 
 
 def _write_reports(report_md: str) -> None:
-    """Writes batch_correction_report.md to subproject and root report directories.
+    """Writes batch_correction_report.md to subproject report directory.
 
     Args:
         report_md: Full Markdown string content of the report.
     """
     write_batch_correction_report(REPORT_DIR / "batch_correction_report.md", report_md)
-    root_report_dir = PROJECT_ROOT / "reports" / "pillar-1-cohorts-and-preprocessing"
-    if root_report_dir != REPORT_DIR:
-        write_batch_correction_report(root_report_dir / "batch_correction_report.md", report_md)
 
 
 def main() -> None:

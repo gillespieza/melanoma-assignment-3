@@ -19,7 +19,7 @@ updated: 2026-08-01 21:41
 
 > [!NOTE] Analytical Methodology & Rationale
 > - **What is being done**: Conducting Decision Curve Analysis (DCA), calculating Net Benefit across threshold probabilities ($p_t = 0.05 – 0.85$), Positive Predictive Value (PPV), and Number Needed to Treat (NNT).
-> - **Why we are doing it**: High AUC-ROC does not guarantee clinical usefulness. DCA evaluates whether using a model to make treatment decisions produces greater net clinical benefit than empirical 'Treat All' or 'Treat None' strategies.
+> - **Why**: High AUC-ROC does not guarantee clinical usefulness. DCA evaluates whether using a model to make treatment decisions produces greater net clinical benefit than empirical 'Treat All' or 'Treat None' strategies.
 > - **What question it answers**: Does deploying the Q5 phenotype-stratified model in clinical practice yield superior Net Benefit and spare predicted non-responders from unnecessary monotherapy toxicity?
 
 Phase 6 quantifies real-world clinical utility across $N = 195$ patients (82 objective responders, 42.1% baseline response rate) using the Net Benefit formula:
