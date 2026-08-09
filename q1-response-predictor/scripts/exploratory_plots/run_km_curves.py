@@ -87,10 +87,21 @@ def _plot_km(
     for i, g in enumerate(groups):
         mask = df_sub[group_col] == g
         label = labels[g] if labels and g in labels else str(g)
-        label = f"{label} (N={mask.sum()})"
+        label_with_n = f"{label} (N={mask.sum()})"
+        
+        # Color resolution: dict mapping (SEX_PALETTE/labels) takes priority over index ordering
+        if isinstance(palette, dict) and g in palette:
+            color = palette[g]
+        elif g in SEX_PALETTE:
+            color = SEX_PALETTE[g]
+        elif isinstance(palette, list):
+            color = palette[i % len(palette)]
+        else:
+            color = "#37474F"
+
         kmf = KaplanMeierFitter()
-        kmf.fit(df_sub.loc[mask, "OS_MONTHS"], df_sub.loc[mask, "OS_STATUS"], label=label)
-        kmf.plot_survival_function(ax=ax, color=palette[i % len(palette)], ci_show=True, ci_alpha=0.12, linewidth=2.5)
+        kmf.fit(df_sub.loc[mask, "OS_MONTHS"], df_sub.loc[mask, "OS_STATUS"], label=label_with_n)
+        kmf.plot_survival_function(ax=ax, color=color, ci_show=True, ci_alpha=0.12, linewidth=2.5)
         kmf_list.append(kmf)
 
     add_km_risk_table(kmf_list, ax)
@@ -154,7 +165,7 @@ def main() -> None:
     palette_stage = OKABE_ITO[:4]
 
     if "SEX" in df.columns:
-        _plot_km(df, "SEX", "TCGA-SKCM Overall Survival by Sex", "km_sex.png", palette_sex)
+        _plot_km(df, "SEX", "TCGA-SKCM Overall Survival by Sex", "km_sex.png", SEX_PALETTE)
 
     if "AGE" in df.columns:
         _plot_km(df, "AGE", "TCGA-SKCM Overall Survival by Age Median Split", "km_age.png", palette_age, split_median=True)
