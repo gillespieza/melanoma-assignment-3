@@ -53,3 +53,34 @@ def build_radar_angles(n_vars: int) -> List[float]:
     angles += angles[:1]
     return angles
 
+
+def add_km_risk_table(
+    kmf_objects: list,
+    ax: "plt.Axes",
+    fontsize: int = 9,
+) -> None:
+    """Adds a numbers-at-risk table beneath a Kaplan-Meier survival plot axis.
+
+    This is the clinical gold standard for communicating declining patient counts
+    at later time points in pooled multi-cohort KM plots, making it immediately
+    visible when late-curve estimates are based on very few patients.
+
+    Must be called BEFORE save_fig() / tight_layout() so the sub-axis is
+    positioned correctly relative to the KM panel.
+
+    Args:
+        kmf_objects: List of fitted KaplanMeierFitter instances, one per group.
+                     Each must already have been fitted (kmf.fit(...) called).
+        ax: The matplotlib Axes object the KM curves were plotted on.
+        fontsize: Font size for the risk table row numbers. Defaults to 9.
+    """
+    from lifelines.plotting import add_at_risk_counts
+
+    if not kmf_objects:
+        return
+    add_at_risk_counts(
+        *kmf_objects,
+        ax=ax,
+        fontsize=fontsize,
+        rows_to_show=["At risk"],
+    )

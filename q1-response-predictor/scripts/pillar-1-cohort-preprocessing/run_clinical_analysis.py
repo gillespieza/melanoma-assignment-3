@@ -69,7 +69,7 @@ from src.utils.paths import (
     PROJECT_ROOT,
     REPORTS_DIR,
 )
-from src.utils.plotting import save_fig
+from src.utils.plotting import add_km_risk_table, save_fig
 
 set_presentation_style()
 
@@ -687,6 +687,7 @@ def _fit_and_plot_km(
     )
     kmf.fit(durations=df[time_col], event_observed=df[event_col], label=os_label)
     kmf.plot_survival_function(ax=ax, ci_show=True, color=cohort_color, linewidth=2)
+    add_km_risk_table([kmf], ax)
     return float(kmf.median_survival_time_)
 
 

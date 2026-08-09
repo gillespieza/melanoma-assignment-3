@@ -12,12 +12,12 @@ tags:
   - clustering
   - immune-hot-cold
   - nf1-split
-created: 2026-08-09 14:08
+created: 2026-08-09 14:52
 cssclasses:
   - table-small
   - table-center
   - row-alt
-updated: 2026-08-09 14:08
+updated: 2026-08-09 14:52
 ---
 
 # Patient Phenotyping via ICI Trial Cohort Two-Stage GMM Clustering
@@ -46,6 +46,11 @@ The 2D UMAP and PCA scatter plots display the geometric separation of four pheno
 ![2D UMAP Projection of Clusters](../../plots/clinical/umap_clinical_clusters.png)
 
 ![2D PCA Projection of Clusters](../../plots/clinical/pca_clinical_clusters.png)
+
+> [!NOTE] Methodological Integrity: Unsupervised Projection Standard
+> - **Unsupervised UMAP (`y=None`)**: The UMAP projection is generated in purely unsupervised mode ($n\_neighbors=30, min\_dist=0.10$) using feature Z-scores alone. No target phenotype labels are passed to the embedding algorithm. This ensures that the 2D representation reflects true high-dimensional feature topology without artificial label-guided compression or visual distortion.
+> - **Multi-Method Projection Validation**: PCA (linear, deterministic) and UMAP (non-linear manifold) are presented together. PCA confirms orthogonal global variance separation, while UMAP illustrates local neighborhood structure.
+> - **Independence of Quantitative Inference**: All GMM cluster fitting, posterior probabilities, survival Log-Rank statistics ($p = 2.18 \times 10^{-6}$), and response Chi-Square tests ($p = 2.71 \times 10^{-4}$) are evaluated strictly in full 6D feature space — never on 2D projection coordinates.
 
 ### 1.2. Annotated Subtype Feature Heatmap & Clinical Tracks
 
@@ -82,47 +87,41 @@ This rank-based assignment is reproducible across GMM restarts: the biological p
 > [!NOTE] On the M2-High Label
 > The Immunosuppressive M2-High phenotype is defined algorithmically as the **residual** cluster after Immune Hot and Immune Cold are identified. This is biologically motivated — intermediate TIS with elevated macrophage suppression signal is the canonical M2 TME signature — but it means the cluster boundary is defined partly by what it *is not*. The exported GMM posterior probabilities (`P_Immunosuppressive_M2_High`) capture patients near these boundaries with soft probability assignments rather than hard binary membership.
 
-### 2.2 Per-Phenotype Profile Summary
+### 2.2 Per-Phenotype Summary Matrix
 
 Empirical feature profiles across all 4 patient phenotypes ($N = 478$):
 
-1. **Immunosuppressive M2-High** ($N = 148$)
-    - *Immune Signatures*: IFN-$\gamma$ = 3.41, TIS = 3.33, CYT = 3.19, CD8+ = 3.15.
-    - *Macrophage Polarisation*: M1/M2 Ratio = 0.42.
-    - *Genomics*: TMB = 10.23 mut/Mb.
-    - *Therapeutic Benefit*: Response rate in trial patients = **43/141 = 30.5%**.
-    - *Prognosis*: Median OS = **23.3 months**.
-
-2. **Immune Cold** ($N = 84$)
-    - *Immune Signatures*: IFN-$\gamma$ = 2.76, TIS = 2.70, CYT = 2.46, CD8+ = 2.19.
-    - *Macrophage Polarisation*: M1/M2 Ratio = 1.20.
-    - *Genomics*: TMB = 12.64 mut/Mb.
-    - *Therapeutic Benefit*: Response rate in trial patients = **25/82 = 30.5%**.
-    - *Prognosis*: Median OS = **21.2 months**.
-
-3. **Immune Hot** ($N = 222$)
-    - *Immune Signatures*: IFN-$\gamma$ = 4.31, TIS = 3.77, CYT = 3.47, CD8+ = 2.84.
-    - *Macrophage Polarisation*: M1/M2 Ratio = 0.00.
-    - *Genomics*: TMB = 0.03 mut/Mb.
-    - *Therapeutic Benefit*: Response rate in trial patients = **49/91 = 53.8%**.
-    - *Prognosis*: Median OS = **66.4 months**.
-
-4. **Mutant-Driven** ($N = 24$)
-    - *Immune Signatures*: IFN-$\gamma$ = 3.37, TIS = 3.28, CYT = 3.12, CD8+ = 3.10.
-    - *Macrophage Polarisation*: M1/M2 Ratio = 0.44.
-    - *Genomics*: TMB = 83.30 mut/Mb.
-    - *Therapeutic Benefit*: Response rate in trial patients = **14/24 = 58.3%**.
-    - *Prognosis*: Median OS = **32.2 months**.
+| Phenotype Subtype | $N$ (% Cohort) | Mean TIS | Mean IFN-$\gamma$ | Mean CYT | Mean CD8+ | M1/M2 Ratio | Mean TMB | ICI Response Rate | Median OS |
+|---|---|---|---|---|---|---|---|---|---|
+| **Immunosuppressive M2-High** | 148 (31.0%) | 3.33 | 3.41 | 3.19 | 3.15 | 0.42 | 10.23 mut/Mb | **43/141 = 30.5%** | **23.3 months** |
+| **Immune Cold** | 84 (17.6%) | 2.70 | 2.76 | 2.46 | 2.19 | 1.20 | 12.64 mut/Mb | **25/82 = 30.5%** | **21.2 months** |
+| **Immune Hot** | 222 (46.4%) | 3.77 | 4.31 | 3.47 | 2.84 | 0.00 | 0.03 mut/Mb | **49/91 = 53.8%** | **66.4 months** |
+| **Mutant-Driven** | 24 (5.0%) | 3.28 | 3.37 | 3.12 | 3.10 | 0.44 | 83.30 mut/Mb | **14/24 = 58.3%** | **32.2 months** |
 
 ## 3. Immunotherapy Response & Overall Survival Validation
 
-> [!INFO] What, Why & Key Questions — Clinical Outcome Validation
-> - **What**: Testing whether the unsupervised GMM phenotype labels — derived without any response information — stratify immunotherapy response rates (in the $N = 338$ trial patients with binary labels) and overall survival (across all $N = 478$ patients).
-> - **Why**: This is the critical validation step. If GMM phenotypes correlate with clinical outcomes, the biology is real and the subtypes are clinically actionable. The two-stage design should also reveal whether the Mutant-Driven (NF1 Loss) subtype has a distinct survival profile from the immune-defined clusters.
+> [!INFO] What & Why — Clinical Outcome Validation
+> - **What**: Testing whether the unsupervised GMM phenotype labels — derived without any response or survival information — stratify immunotherapy response rates (in the $N = 338$ trial patients with binary labels) and overall survival (across all $N = 478$ patients).
+> - **Why**: This is the critical validation step. If GMM phenotypes correlate significantly with clinical outcomes, the biology is real and the subtypes are clinically actionable for the Q5 treatment-decision flow tool.
 >   1. *Do immunotherapy responders concentrate significantly in the Immune Hot cluster?*
 >   2. *Is the survival separation across subtypes statistically significant (Log-Rank)?*
 
-**Therapeutic Response Rate (Trial Cohorts, $N = 338$ with binary labels)**:
+### 3.1 Clinical Outcome Validation Matrix
+
+Comparative clinical outcome metrics across all 4 phenotypes ($N = 478$ survival, $N = 338$ response-evaluated trial patients):
+
+| Phenotype Subtype | Evaluated Trial $N$ | Responders (CR/PR) | Response Rate (%) | Full Survival $N$ | Median OS (Months) | Clinical Care Pathway Rationale |
+|---|---|---|---|---|---|---|
+| **Immunosuppressive M2-High** | 141 | 43 | **43/141 = 30.5%** | 148 | **23.3 months** | Intermediate benefit; candidate for ICI + TAM repolarisation (anti-CSF1R). |
+| **Immune Cold** | 82 | 25 | **25/82 = 30.5%** | 84 | **21.2 months** | Poorest benefit & OS; requires T-cell priming (STING/vaccines) before ICI. |
+| **Immune Hot** | 91 | 49 | **49/91 = 53.8%** | 222 | **66.4 months** | Strongest ICI benefit; primary candidate for anti-PD-1/PD-L1 monotherapy. |
+| **Mutant-Driven** | 24 | 14 | **14/24 = 58.3%** | 24 | **32.2 months** | Highest response rate; driver-mutation pathway consideration (NF1/RAS axis). |
+
+> [!NOTE] Statistical Hypothesis Testing Framework
+> - **Response Rate Independence ($H_0^1$)**: $H_0$: Binary ICI response (CR/PR vs. SD/PD) is independent of GMM phenotype cluster. Tested via 4-way Chi-Square test of independence on $N = 338$ trial patients. Result: $\chi^2$ test $p = 2.71 \times 10^{-4}$ — **statistically significant**.
+> - **Overall Survival Homogeneity ($H_0^2$)**: $H_0$: Survival curves are identical across phenotypes. Tested via 4-way Log-Rank test on $N = 478$ patients. Result: Log-Rank $p = 2.18 \times 10^{-6}$ — **Statistically Significant**.
+
+### 3.2 Therapeutic Response Rate Evaluation (Trial Cohorts, $N = 338$)
 
 > [!INSIGHT] Chi-Square Response Rate Evaluation
 > The Chi-Square test across phenotype response rates yields $p = 2.71 \times 10^{-4}$ — **statistically significant**.
@@ -130,7 +129,7 @@ Empirical feature profiles across all 4 patient phenotypes ($N = 478$):
 
 ![Response Rate by Cluster](../../plots/clinical/response_by_clinical_cluster.png)
 
-**Overall Survival (Full Dataset, $N = 478$)**:
+### 3.3 Overall Survival Evaluation (Full Dataset, $N = 478$)
 
 The survival separation across patient subtypes yields a Log-Rank $p = 2.18 \times 10^{-6}$, confirming that the GMM immune phenotypes capture genuine prognostic biology:
 

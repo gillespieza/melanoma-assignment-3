@@ -36,8 +36,8 @@ from src.styles import (
     set_presentation_style,
 )
 from src.utils.logging import TeeStream
-from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
-from src.utils.plotting import save_fig
+from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, rel_path
+from src.utils.plotting import add_km_risk_table, save_fig
 
 set_presentation_style()
 
@@ -67,7 +67,7 @@ def _plot_km(
         labels: Optional label mapping dictionary.
         split_median: If True, splits group_col into High/Low by median.
     """
-    fig, ax = plt.subplots(figsize=(9, 6.5))
+    fig, ax = plt.subplots(figsize=(10, 7.5))
 
     df_sub = df.copy()
     if split_median:
@@ -81,15 +81,19 @@ def _plot_km(
     groups = [g for g in groups if pd.notna(g) and str(g).lower() not in ["nan", "unknown"]]
     groups = sorted(groups)
 
-    kmf = KaplanMeierFitter()
-
+    # Create a fresh KaplanMeierFitter per group so each fitted object can be
+    # collected and passed to add_km_risk_table (reusing one instance loses state).
+    kmf_list = []
     for i, g in enumerate(groups):
         mask = df_sub[group_col] == g
         label = labels[g] if labels and g in labels else str(g)
         label = f"{label} (N={mask.sum()})"
-
+        kmf = KaplanMeierFitter()
         kmf.fit(df_sub.loc[mask, "OS_MONTHS"], df_sub.loc[mask, "OS_STATUS"], label=label)
         kmf.plot_survival_function(ax=ax, color=palette[i % len(palette)], ci_show=False, linewidth=2.5)
+        kmf_list.append(kmf)
+
+    add_km_risk_table(kmf_list, ax)
 
     if len(groups) == 2:
         g1_mask = df_sub[group_col] == groups[0]
@@ -180,5 +184,5 @@ if __name__ == "__main__":
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {LOG_PATH.relative_to(BASE_DIR).as_posix()}")
+            print(f"Logging console output to {rel_path(LOG_PATH)}")
             main()

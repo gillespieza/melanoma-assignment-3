@@ -9,7 +9,7 @@ from lifelines.statistics import logrank_test
 from lifelines.utils import concordance_index
 
 from src.styles import RESPONSE_PALETTE, set_presentation_style
-from src.utils.plotting import save_fig
+from src.utils.plotting import add_km_risk_table, save_fig
 
 set_presentation_style()
 
@@ -319,10 +319,12 @@ def run_survival_analysis(df_clin, y_pred_prob, time_col='os_months', status_col
     fig, ax = plt.subplots(figsize=(11, 6))
     
     kmf_high.fit(high_prob[time_col], event_observed=high_prob[status_col], label=f'High predicted prob (N={len(high_prob)})')
-    kmf_high.plot_survival_function(ci_show=True)
-    
+    kmf_high.plot_survival_function(ax=ax, ci_show=True)
+
     kmf_low.fit(low_prob[time_col], event_observed=low_prob[status_col], label=f'Low predicted prob (N={len(low_prob)})')
-    kmf_low.plot_survival_function(ci_show=True)
+    kmf_low.plot_survival_function(ax=ax, ci_show=True)
+
+    add_km_risk_table([kmf_high, kmf_low], ax)
     
     # Calculate log-rank test
     results = logrank_test(
@@ -386,6 +388,8 @@ def plot_survival_2x2_grid(cohort_survival_data, save_path=None):
 
             kmf_low.fit(low_prob[time_col], event_observed=low_prob[status_col], label=f'Low Prob (N={len(low_prob)})')
             kmf_low.plot_survival_function(ax=ax, ci_show=True, color=RESPONSE_PALETTE['PD'], lw=2)
+
+            add_km_risk_table([kmf_high, kmf_low], ax)
 
             results = logrank_test(
                 high_prob[time_col], low_prob[time_col],

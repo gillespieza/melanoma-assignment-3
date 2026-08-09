@@ -58,7 +58,7 @@ from src.signatures import extract_all_signatures
 from src.styles import RESPONSE_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import get_subproject_log_dir, rel_path
-from src.utils.plotting import save_fig
+from src.utils.plotting import add_km_risk_table, save_fig
 
 set_presentation_style()
 
@@ -519,7 +519,6 @@ def _render_km_curves(
     Raises:
         ValueError: If either the low or high stratum has fewer than 5 patients.
     """
-    kmf = KaplanMeierFitter()
     low_mask = df_surv[column] < median_val
     high_mask = df_surv[column] >= median_val
 
@@ -530,17 +529,21 @@ def _render_km_curves(
             f"low={low_mask.sum()}, high={high_mask.sum()} (minimum {_MIN_KM_SAMPLES})."
         )
 
-    kmf.fit(
+    kmf_low = KaplanMeierFitter()
+    kmf_low.fit(
         df_surv.loc[low_mask, _COL_OS_MONTHS], df_surv.loc[low_mask, _COL_OS_STATUS_CLEAN],
         label=f"Low (N={low_mask.sum()})"
     )
-    kmf.plot_survival_function(ax=ax, color=color_low, ci_show=False, linewidth=2.5)
+    kmf_low.plot_survival_function(ax=ax, color=color_low, ci_show=False, linewidth=2.5)
 
-    kmf.fit(
+    kmf_high = KaplanMeierFitter()
+    kmf_high.fit(
         df_surv.loc[high_mask, _COL_OS_MONTHS], df_surv.loc[high_mask, _COL_OS_STATUS_CLEAN],
         label=f"High (N={high_mask.sum()})"
     )
-    kmf.plot_survival_function(ax=ax, color=color_high, ci_show=False, linewidth=2.5)
+    kmf_high.plot_survival_function(ax=ax, color=color_high, ci_show=False, linewidth=2.5)
+
+    add_km_risk_table([kmf_low, kmf_high], ax)
 
     lr_res = logrank_test(
         df_surv.loc[high_mask, _COL_OS_MONTHS], df_surv.loc[low_mask, _COL_OS_MONTHS],

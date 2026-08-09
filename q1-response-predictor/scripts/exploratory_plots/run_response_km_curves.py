@@ -31,7 +31,7 @@ from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.styles import RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, rel_path
-from src.utils.plotting import save_fig
+from src.utils.plotting import add_km_risk_table, save_fig
 
 set_presentation_style()
 
@@ -81,6 +81,8 @@ def plot_cohort_km_by_response(ax: plt.Axes, df_clin: pd.DataFrame, cohort_name:
 
     kmf_r.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["CR/PR"], linewidth=2.5, ci_show=True, alpha=0.15, label=f"Responder (N={len(responders)})")
     kmf_nr.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["PD"], linewidth=2.5, ci_show=True, alpha=0.15, label=f"Non-responder (N={len(non_responders)})")
+
+    add_km_risk_table([kmf_r, kmf_nr], ax)
 
     results = logrank_test(
         responders[time_col], non_responders[time_col], responders[event_col], non_responders[event_col]

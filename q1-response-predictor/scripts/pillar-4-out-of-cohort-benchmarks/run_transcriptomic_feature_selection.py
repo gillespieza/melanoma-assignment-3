@@ -41,7 +41,7 @@ from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.styles import COHORT_PALETTE, GENE_CATEGORY_PALETTE, RESPONSE_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, REPORTS_DIR
-from src.utils.plotting import save_fig
+from src.utils.plotting import add_km_risk_table, save_fig
 
 set_presentation_style()
 
@@ -244,16 +244,18 @@ def _plot_tcga_km_curve(df_clin_survival: pd.DataFrame, plot_dir: Path) -> None:
         plot_dir: Path to export plot artifact.
     """
     fig, ax = plt.subplots(figsize=(9, 6.5))
-    kmf = KaplanMeierFitter()
-
     high_mask = df_clin_survival["RISK_GROUP"] == "High-Risk"
     low_mask = df_clin_survival["RISK_GROUP"] == "Low-Risk"
 
-    kmf.fit(df_clin_survival.loc[low_mask, "OS_MONTHS"], df_clin_survival.loc[low_mask, "OS_STATUS"], label=f"Low-Risk (N={low_mask.sum()})")
-    kmf.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["CR/PR"], ci_show=False, linewidth=2.5)
+    kmf_low = KaplanMeierFitter()
+    kmf_low.fit(df_clin_survival.loc[low_mask, "OS_MONTHS"], df_clin_survival.loc[low_mask, "OS_STATUS"], label=f"Low-Risk (N={low_mask.sum()})")
+    kmf_low.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["CR/PR"], ci_show=False, linewidth=2.5)
 
-    kmf.fit(df_clin_survival.loc[high_mask, "OS_MONTHS"], df_clin_survival.loc[high_mask, "OS_STATUS"], label=f"High-Risk (N={high_mask.sum()})")
-    kmf.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["PD"], ci_show=False, linewidth=2.5)
+    kmf_high = KaplanMeierFitter()
+    kmf_high.fit(df_clin_survival.loc[high_mask, "OS_MONTHS"], df_clin_survival.loc[high_mask, "OS_STATUS"], label=f"High-Risk (N={high_mask.sum()})")
+    kmf_high.plot_survival_function(ax=ax, color=RESPONSE_PALETTE["PD"], ci_show=False, linewidth=2.5)
+
+    add_km_risk_table([kmf_low, kmf_high], ax)
 
     lr_res = logrank_test(
         df_clin_survival.loc[high_mask, "OS_MONTHS"],
