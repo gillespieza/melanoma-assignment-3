@@ -322,7 +322,7 @@ def _build_right_panel(
     cohort_expr: Dict[str, Tuple[pd.DataFrame, pd.Series]],
     cohort_n: Dict[str, int],
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Panel B: SelectKBest LOCO per cohort for k=20, 100, 200 (12 columns)."""
+    """Panel B: SelectKBest LOCO grouped by k-value (k=20, 100, 200; 3 blocks of 7 columns)."""
     rows_num, rows_ann = [], []
 
     for mtype in MODEL_ORDER:
@@ -334,23 +334,22 @@ def _build_right_panel(
         # Run LOCO for each k value
         k_results = {k: _run_loco_selectkbest(cohort_expr, k, mtype) for k in K_VALUES}
 
-        # Summary Mean LOCO columns for each k (placed FIRST at start of panel)
+        # Group by k-value: for each k, append Mean LOCO + 6 cohort columns
         for k in K_VALUES:
             k_aucs = [k_results[k][c][0] for c in COHORT_ORDER]
             mean_k = float(np.mean(k_aucs))
             std_k = float(np.std(k_aucs))
-            col = f"Mean LOCO\nk={k}"
-            row_n[col] = mean_k
-            row_a[col] = f"{mean_k:.3f}\n±{std_k:.3f}"
-            print(f"    SelectKBest k={k:>3}: Mean LOCO = {mean_k:.3f} ± {std_k:.3f}")
+            col_mean = f"k={k}\nMean LOCO"
+            row_n[col_mean] = mean_k
+            row_a[col_mean] = f"{mean_k:.3f}\n±{std_k:.3f}"
 
-        # Per-cohort columns for each k
-        for c in COHORT_ORDER:
-            for k in K_VALUES:
+            for c in COHORT_ORDER:
                 auc, sd, ast = k_results[k][c]
-                col = f"{c}\nk={k}"
-                row_n[col] = auc
-                row_a[col] = f"{auc:.3f}\n±{sd:.3f}{ast}"
+                col_c = f"k={k}\n{c}"
+                row_n[col_c] = auc
+                row_a[col_c] = f"{auc:.3f}\n±{sd:.3f}{ast}"
+
+            print(f"    SelectKBest k={k:>3}: Mean LOCO = {mean_k:.3f} ± {std_k:.3f}")
 
         rows_num.append(row_n)
         rows_ann.append(row_a)
@@ -383,7 +382,7 @@ def _render_dual_loco_panel(
 ) -> None:
     """Renders 1x2 dual LOCO heatmap with 1:3 width ratio."""
     fig, (ax1, ax2) = plt.subplots(
-        1, 2, figsize=(22, 5.5), gridspec_kw={"width_ratios": [1, 3]}
+        1, 2, figsize=(24, 5.8), gridspec_kw={"width_ratios": [1, 3]}
     )
 
     n_data = df_left_num.shape[0] - 1  # Excluding Cross-Model Mean row for patch placement
@@ -414,16 +413,16 @@ def _render_dual_loco_panel(
     ax1.axhline(n_data, color="white", linewidth=7.0, zorder=6)
 
     ax1.set_title(
-        "A) Curated Signatures LOCO AUROC per Cohort\n"
+        "A) Curated Multimodal Features LOCO AUROC per Cohort\n"
         "(* p < 0.05, ** p < 0.01 vs. chance; ±SD from 1,000-sample bootstrap)",
         fontsize=11, fontweight="bold", pad=12,
     )
-    ax1.set_xlabel("Held out test cohort and Curated Signatures", fontsize=HEATMAP_LABEL_SIZE, fontweight="bold", labelpad=8)
+    ax1.set_xlabel("Held out test cohort and Curated Features", fontsize=HEATMAP_LABEL_SIZE, fontweight="bold", labelpad=8)
     ax1.set_ylabel("Model Architecture", fontsize=HEATMAP_LABEL_SIZE, fontweight="bold", labelpad=8)
     ax1.tick_params(axis="y", labelrotation=0, labelsize=10)
-    ax1.tick_params(axis="x", labelsize=9)
+    ax1.tick_params(axis="x", labelrotation=0, labelsize=8.5)
 
-    # --- Right Panel: SelectKBest LOCO per Cohort (3x wider) ---
+    # --- Right Panel: SelectKBest LOCO grouped by k-value (3x wider) ---
     sns.heatmap(
         df_right_num,
         annot=df_right_ann,
@@ -432,48 +431,66 @@ def _render_dual_loco_panel(
         cbar_kws={"label": "AUROC Score"},
         linewidths=1.0,
         linecolor="white",
-        annot_kws={"size": 9, "weight": "bold"},
+        annot_kws={"size": 8.5, "weight": "bold"},
         vmin=HEATMAP_VMIN,
         vmax=HEATMAP_VMAX,
         ax=ax2,
     )
     n_cols_right = df_right_num.shape[1]
-    # Bold outline best k per model for each cohort section
-    for r_idx in range(n_data):
-        row_data = df_right_num.iloc[r_idx]
-        best_col = row_data.values.argmax()
-        ax2.add_patch(plt.Rectangle(
-            (best_col, r_idx), 1, 1,
-            fill=False, edgecolor="red", linewidth=2.2,
-        ))
-    # Bold outline best model for each Mean LOCO column (columns 0, 1, 2)
-    for c_idx in range(3):
+
+    # Red border around the best model for each column in Panel B
+    for c_idx in range(n_cols_right):
         col_data = df_right_num.iloc[:n_data, c_idx]
         ax2.add_patch(plt.Rectangle(
             (c_idx, col_data.values.argmax()), 1, 1,
-            fill=False, edgecolor="red", linewidth=2.2,
+            fill=False, edgecolor="red", linewidth=2.0,
         ))
 
-    # Thick vertical lines separating cohort groups (every 3 columns)
-    for v_line in range(3, n_cols_right + 1, 3):
-        if v_line <= n_cols_right:
-            ax2.axvline(v_line, color="white", linewidth=5.0, zorder=6)
-    ax2.axvline(3, color="white", linewidth=7.0, zorder=6)
+    # Thick vertical lines separating k-blocks (every 7 columns: k=20, 100, 200)
+    for v_line in [7, 14]:
+        ax2.axvline(v_line, color="white", linewidth=7.0, zorder=6)
+
+    # Vertical lines separating Mean LOCO from cohort columns within each k-block (columns 1, 8, 15)
+    for m_line in [1, 8, 15]:
+        ax2.axvline(m_line, color="white", linewidth=4.0, zorder=6)
+
     ax2.axhline(n_data, color="white", linewidth=7.0, zorder=6)
 
+    # Bottom x-axis tick labels: matching cohort names across each k-block
+    cohort_labels_block = [
+        "Mean\nLOCO",
+        "Liu 2019\n(N=104)",
+        "Hugo 2016\n(N=27)",
+        "Riaz 2017\n(N=64)",
+        "TCGA GDC\n2025 (N=52)",
+        "Gide 2019\n(N=78)",
+        "Van Allen\n2015 (N=33)",
+    ]
+    ax2.set_xticks(np.arange(n_cols_right) + 0.5)
+    ax2.set_xticklabels(cohort_labels_block * 3, rotation=0, ha="center", fontsize=8.0)
+
+    # Spanning section headers above the x-axis for each k-block
+    k_block_headers = [
+        "SelectKBest (k = 20)",
+        "SelectKBest (k = 100)",
+        "SelectKBest (k = 200)",
+    ]
+    for k_idx, k_title in enumerate(k_block_headers):
+        x_center = k_idx * 7 + 3.5
+        ax2.text(
+            x_center, -0.15, k_title,
+            ha="center", va="top", fontsize=9.5, fontweight="bold",
+            transform=ax2.get_xaxis_transform(),
+        )
+
     ax2.set_title(
-        "B) SelectKBest LOCO AUROC per Cohort (k=20, 100, 200)\n"
+        "B) SelectKBest LOCO AUROC by Feature Budget (k=20, 100, 200)\n"
         "(* p < 0.05, ** p < 0.01 vs. chance; ±SD from 1,000-sample bootstrap)",
         fontsize=11, fontweight="bold", pad=12,
     )
-    ax2.set_xlabel("Held-Out Cohort & SelectKBest Features (k)", fontsize=HEATMAP_LABEL_SIZE, fontweight="bold", labelpad=8)
+    ax2.set_xlabel("SelectKBest Feature Budget (k) and Held-Out Cohorts", fontsize=HEATMAP_LABEL_SIZE, fontweight="bold", labelpad=38)
     ax2.set_ylabel("")
     ax2.tick_params(axis="y", labelrotation=0, labelsize=10)
-    ax2.tick_params(axis="x", labelrotation=0, labelsize=8.5)
-    ax2.set_xticklabels(
-        [textwrap.fill(lbl.get_text(), width=12) for lbl in ax2.get_xticklabels()],
-        ha="center",
-    )
 
     plt.tight_layout(w_pad=2.5)
 
