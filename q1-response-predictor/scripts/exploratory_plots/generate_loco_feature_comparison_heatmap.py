@@ -40,6 +40,7 @@ if str(PROJECT_ROOT) not in sys.path:
 # Standard Library & Third-Party Imports
 # ---------------------------------------------------------------------------
 import contextlib
+import textwrap
 from typing import Dict, List, Tuple
 
 import matplotlib
@@ -333,15 +334,7 @@ def _build_right_panel(
         # Run LOCO for each k value
         k_results = {k: _run_loco_selectkbest(cohort_expr, k, mtype) for k in K_VALUES}
 
-        # Per-cohort columns for each k
-        for c in COHORT_ORDER:
-            for k in K_VALUES:
-                auc, sd, ast = k_results[k][c]
-                col = f"{c}\nk={k}"
-                row_n[col] = auc
-                row_a[col] = f"{auc:.3f}\n±{sd:.3f}{ast}"
-
-        # Summary Mean LOCO columns for each k
+        # Summary Mean LOCO columns for each k (placed FIRST at start of panel)
         for k in K_VALUES:
             k_aucs = [k_results[k][c][0] for c in COHORT_ORDER]
             mean_k = float(np.mean(k_aucs))
@@ -350,6 +343,14 @@ def _build_right_panel(
             row_n[col] = mean_k
             row_a[col] = f"{mean_k:.3f}\n±{std_k:.3f}"
             print(f"    SelectKBest k={k:>3}: Mean LOCO = {mean_k:.3f} ± {std_k:.3f}")
+
+        # Per-cohort columns for each k
+        for c in COHORT_ORDER:
+            for k in K_VALUES:
+                auc, sd, ast = k_results[k][c]
+                col = f"{c}\nk={k}"
+                row_n[col] = auc
+                row_a[col] = f"{auc:.3f}\n±{sd:.3f}{ast}"
 
         rows_num.append(row_n)
         rows_ann.append(row_a)
@@ -381,12 +382,11 @@ def _render_dual_loco_panel(
     df_right_ann: pd.DataFrame,
 ) -> None:
     """Renders 1x2 dual LOCO heatmap with 1:3 width ratio."""
-    n_data = df_left_num.shape[0] - 1
-
-    # 1x2 grid with 1:3 width ratio (Left panel = 4 cols, Right panel = 12 cols)
     fig, (ax1, ax2) = plt.subplots(
-        1, 2, figsize=(28, 8.5), gridspec_kw={"width_ratios": [1, 3]}
+        1, 2, figsize=(22, 5.5), gridspec_kw={"width_ratios": [1, 3]}
     )
+
+    n_data = df_left_num.shape[0] - 1  # Excluding Cross-Model Mean row for patch placement
 
     # --- Left Panel: Curated Signatures LOCO ---
     sns.heatmap(
@@ -407,7 +407,7 @@ def _render_dual_loco_panel(
         col_data = df_left_num.iloc[:n_data, c_idx]
         ax1.add_patch(plt.Rectangle(
             (c_idx, col_data.values.argmax()), 1, 1,
-            fill=False, edgecolor="black", linewidth=2.2,
+            fill=False, edgecolor="red", linewidth=2.2,
         ))
     ax1.axvline(n_cols_left - 1, color="white", linewidth=7.0, zorder=6)
     ax1.axhline(n_data, color="white", linewidth=7.0, zorder=6)
@@ -443,14 +443,14 @@ def _render_dual_loco_panel(
         best_col = row_data.values.argmax()
         ax2.add_patch(plt.Rectangle(
             (best_col, r_idx), 1, 1,
-            fill=False, edgecolor="black", linewidth=2.2,
+            fill=False, edgecolor="red", linewidth=2.2,
         ))
 
     # Thick vertical lines separating cohort groups (every 3 columns)
     for v_line in range(3, n_cols_right + 1, 3):
         if v_line <= n_cols_right:
             ax2.axvline(v_line, color="white", linewidth=5.0, zorder=6)
-    ax2.axvline(n_cols_right - 3, color="white", linewidth=7.0, zorder=6)
+    ax2.axvline(3, color="white", linewidth=7.0, zorder=6)
     ax2.axhline(n_data, color="white", linewidth=7.0, zorder=6)
 
     ax2.set_title(
@@ -461,7 +461,11 @@ def _render_dual_loco_panel(
     ax2.set_xlabel("Held-Out Cohort & SelectKBest Features (k)", fontsize=HEATMAP_LABEL_SIZE, fontweight="bold", labelpad=8)
     ax2.set_ylabel("")
     ax2.tick_params(axis="y", labelrotation=0, labelsize=10)
-    ax2.tick_params(axis="x", labelrotation=45, labelsize=8.5)
+    ax2.tick_params(axis="x", labelrotation=0, labelsize=8.5)
+    ax2.set_xticklabels(
+        [textwrap.fill(lbl.get_text(), width=12) for lbl in ax2.get_xticklabels()],
+        ha="center",
+    )
 
     plt.tight_layout(w_pad=2.5)
 
