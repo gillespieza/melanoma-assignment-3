@@ -183,8 +183,9 @@ def get_baseline_model(model_type: str, random_state: int = 42) -> Any:
     elif model_type == "svm":
         return SVC(probability=True, kernel="rbf", C=1.0, random_state=random_state)
     elif model_type == "elasticnet":
+        # sklearn 1.8: penalty='elasticnet' deprecated — l1_ratio=0.5 with
+        # solver='saga' implicitly selects ElasticNet (50% L1 / 50% L2 mix).
         return LogisticRegression(
-            penalty="elasticnet",
             solver="saga",
             l1_ratio=0.5,
             max_iter=2000,
@@ -198,6 +199,16 @@ def calibrate_estimator(estimator, X_train, y_train, method='sigmoid', cv=3):
     """
     Fits a CalibratedClassifierCV wrapper around a base estimator using internal cross-validation.
     """
+    # sklearn 1.8 compatibility: CalibratedClassifierCV internally refits the base
+    # estimator on each CV fold. When the base estimator was originally trained on a
+    # pd.DataFrame (which carries feature names), the internal refit receives a numpy
+    # array slice and emits:
+    #   UserWarning: X does not have valid feature names, but <Estimator> was fitted
+    #   with feature names.
+    # Converting to ndarray before fitting ensures consistent dtype through all
+    # CalibratedClassifierCV folds and suppresses the warning.
+    X_arr = np.asarray(X_train)
+    y_arr = np.asarray(y_train)
     calibrated = CalibratedClassifierCV(
         estimator=estimator,
         method=method,
@@ -205,7 +216,7 @@ def calibrate_estimator(estimator, X_train, y_train, method='sigmoid', cv=3):
         ensemble=False,
         n_jobs=-1
     )
-    calibrated.fit(X_train, y_train)
+    calibrated.fit(X_arr, y_arr)
     return calibrated
 
 def tune_logistic_regression(X_train, y_train, calibrate=True):
@@ -215,7 +226,7 @@ def tune_logistic_regression(X_train, y_train, calibrate=True):
     Compact enough for exhaustive GridSearchCV (no need for RandomizedSearchCV).
 
     Key improvements over the initial single-axis grid:
-      - penalty: searches both 'l1' and 'l2'. L2 often outperforms L1 on small-N
+      - l1_ratio: searches both 0.0 (L2 penalty) and 1.0 (L1 penalty). L2 often outperforms L1 on small-N
         LOCO training splits (N ≈ 80–100) where the sparsity assumption underlying
         L1 is less justified with only 6–12 immune-signature features.
       - class_weight: 'balanced' corrects the responder/non-responder imbalance
@@ -231,8 +242,16 @@ def tune_logistic_regression(X_train, y_train, calibrate=True):
     can learn a negative-slope sigmoid that INVERTS rank ordering, collapsing
     AUROC to below chance (observed: 0.595 → 0.383 with calibration enabled).
     """
+    # sklearn 1.8 deprecation: the `penalty` parameter on LogisticRegression was
+    # deprecated in version 1.8 and will be removed in version 1.10. The new API
+    # uses `l1_ratio` to control the penalty mix:
+    #   l1_ratio=0.0  →  pure L2 regularisation (equivalent to penalty='l2')
+    #   l1_ratio=1.0  →  pure L1 regularisation (equivalent to penalty='l1')
+    # We search both extremes here; intermediate values are reserved for ElasticNet
+    # (tune_elasticnet). The liblinear solver natively supports both L1 and L2 via
+    # l1_ratio and does not require setting penalty explicitly.
     param_grid = {
-        'penalty':      ['l1', 'l2'],
+        'l1_ratio':     [0.0, 1.0],
         'C':            [0.001, 0.01, 0.1, 1.0, 10.0, 100.0],
         'class_weight': ['balanced', None],
     }
@@ -447,8 +466,13 @@ def tune_elasticnet(X_train, y_train, calibrate=True):
         'l1_ratio':     [0.1, 0.3, 0.5, 0.7, 0.9],
         'class_weight': ['balanced', None],
     }
+    # sklearn 1.8 deprecation: penalty='elasticnet' is no longer required (or
+    # accepted without a FutureWarning). With solver='saga', any l1_ratio value
+    # in (0, 1) produces an ElasticNet objective by default. l1_ratio is already
+    # present in the param_grid above, so the base estimator needs no explicit
+    # penalty argument — the grid search will inject l1_ratio per candidate.
     lr = LogisticRegression(
-        penalty='elasticnet', solver='saga', random_state=42, max_iter=20000, tol=1e-4
+        solver='saga', random_state=42, max_iter=20000, tol=1e-4
     )
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     grid = GridSearchCV(lr, param_grid, cv=cv, scoring='roc_auc', n_jobs=-1)

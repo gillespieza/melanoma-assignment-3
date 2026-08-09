@@ -10,13 +10,13 @@ tags:
   - model-evaluation
   - q1
   - validation
-created: 2026-08-09 20:22
+created: 2026-08-09 20:34
 cssclasses:
   - table-small
   - row-alt
   - table-center
   - table-small
-updated: 2026-08-09 20:22
+updated: 2026-08-09 20:34
 ---
 
 # Cross-Validation vs. LOCO: A Comparative Heatmap Analysis
@@ -69,14 +69,14 @@ The table below summarises the mean AUROC reported by each validation regime for
 
 | Model | CV Mean AUROC (5-Fold) | LOCO Mean AUROC | Generalisation Gap (CV minus LOCO) |
 |:---|:---:|:---:|:---:|
-| **XGBoost** | 0.639 | 0.455 | +0.184 |
-| **Random Forest** | 0.587 | 0.466 | +0.121 |
-| **Support Vector Machine** | 0.635 | 0.562 | +0.073 |
-| **ElasticNet** | 0.606 | 0.557 | +0.049 |
-| **Logistic Regression** | 0.609 | 0.544 | +0.065 |
+| **XGBoost** | 0.644 | 0.531 | +0.113 |
+| **Random Forest** | 0.639 | 0.534 | +0.105 |
+| **Support Vector Machine** | 0.690 | 0.573 | +0.117 |
+| **ElasticNet** | 0.614 | 0.572 | +0.043 |
+| **Logistic Regression** | 0.611 | 0.567 | +0.044 |
 
 > [!INSIGHT] Key Insight — The Generalisation Gap
-> **All five models exhibit a positive generalisation gap**: CV AUROC systematically overestimates real-world performance. The gap ranges from +0.049 to +0.184 AUROC points. This is the expected consequence of CV pooling patients from the same cohorts in both train and test sets — even with Z-score standardisation, residual cohort-specific expression patterns provide an information advantage that vanishes under LOCO.
+> **All five models exhibit a positive generalisation gap**: CV AUROC systematically overestimates real-world performance. The gap ranges from +0.043 to +0.117 AUROC points. This is the expected consequence of CV pooling patients from the same cohorts in both train and test sets — even with Z-score standardisation, residual cohort-specific expression patterns provide an information advantage that vanishes under LOCO.
 
 ---
 
@@ -86,14 +86,16 @@ A critical diagnostic is whether the relative ranking of models is *preserved* a
 
 | Rank | By CV Mean AUROC | By LOCO Mean AUROC |
 |:---:|:---|:---|
-| 1st | XGBoost (0.639) | Support Vector Machine (0.562) |
-| 2nd | Support Vector Machine (0.635) | ElasticNet (0.557) |
-| 3rd | Logistic Regression (0.609) | Logistic Regression (0.544) |
-| 4th | ElasticNet (0.606) | Random Forest (0.466) |
-| 5th | Random Forest (0.587) | XGBoost (0.455) |
+| 1st | Support Vector Machine (0.690) | Support Vector Machine (0.573) |
+| 2nd | XGBoost (0.644) | ElasticNet (0.572) |
+| 3rd | Random Forest (0.639) | Logistic Regression (0.567) |
+| 4th | ElasticNet (0.614) | Random Forest (0.534) |
+| 5th | Logistic Regression (0.611) | XGBoost (0.531) |
 
-> [!INSIGHT] Ranking Inversion: A Critical Warning
-> The model ranking is **substantially inverted** between CV and LOCO. XGBoost ranks **1st by CV** (0.639) but **5th by LOCO** (0.455); Support Vector Machine ranks **1st by LOCO** (0.562) but **2nd by CV** (0.635).
+> [!INSIGHT] Ranking Stability Analysis
+> The **top-ranked model is consistent**: Support Vector Machine ranks **1st by both CV** (0.690) **and LOCO** (0.573), which is a reassuring sign of ranking stability at the top.
+>
+> However, rankings diverge significantly lower down: **XGBoost** ranks **2nd by CV** but **5th by LOCO**, illustrating that CV-based selection can still mislead decisions about runner-up architectures.
 >
 > **Why does this happen?** Linear models benefit most from cohort-level expression patterns shared across training and test folds in CV — once those patterns are removed by cohort-level holdout (LOCO), their advantage collapses. Tree-based models rely on non-linear threshold interactions that are less sensitive to cohort-level distributional shifts, making them comparatively more robust under LOCO.
 >
@@ -116,10 +118,10 @@ Beyond the single-heatmap LOCO comparison, the expanded dual-heatmap below shows
 
 | Observation | Detail |
 |:---|:---|
-| **Van Allen 2015 is the most predictable cohort** | Consistent dark-blue column; all models achieve strong AUROC when Van Allen 2015 is held out. |
-| **Hugo 2016 is the hardest cohort** | Consistently pale across models due to cohort size or treatment mismatch. |
+| **Riaz 2017 is the most predictable cohort** | Consistent dark-blue column; all models achieve strong AUROC when Riaz 2017 is held out. |
+| **TCGA GDC 2025 is the hardest cohort** | Consistently pale across models due to cohort size or treatment mismatch. |
 | **Curated features rival SelectKBest at k=200** | Despite using only 12 features (6 transcriptomic signatures + 3 driver mutations + TMB + Macrophage STV + M1/M2 ratio), curated features achieve mean LOCO AUROC within 0.02–0.04 of the best SelectKBest configurations — with far fewer features and superior biological interpretability. |
-| **Support Vector Machine is the top generalising model** | Achieves the highest mean LOCO AUROC (0.562) across held-out cohorts. |
+| **Support Vector Machine is the top generalising model** | Achieves the highest mean LOCO AUROC (0.573) across held-out cohorts. |
 
 ---
 
@@ -129,12 +131,12 @@ This section examines performance variation at the cohort level across active tr
 
 | Held-Out Cohort | N | Mean LOCO AUROC (Curated Sigs) | Difficulty Explanation |
 |:---|:---:|:---:|:---|
-| **Gide 2019** | 78 | 0.546 | Below chance for XGB/RF; IPILIMUMAB+NIVO combination therapy creates a different response landscape from single-agent PD-1 blockade used in training cohorts. |
-| **Hugo 2016** | 27 | 0.420 | Smallest cohort; high response rate (~44%) combined with limited N makes AUROC estimates unstable (wide bootstrap CI). |
-| **Liu 2019** | 104 | 0.563 | Near-chance performance; low response rate (~38%) and strong class imbalance at default threshold. |
-| **Riaz 2017** | 64 | 0.568 | Highest AUROC; pre-treatment patient stratification with cleaner response labels and biological signal aligned with training signatures. |
-| **TCGA GDC 2025** | 52 | 0.423 | Pan-cancer TCGA cohort includes melanoma patients not on structured IO trial protocols; response labels may not directly correspond to CR/PR/PD definition. |
-| **Van Allen 2015** | 33 | 0.581 | Moderate; older WES-based cohort with survival-derived pseudo-response labels introduces labelling noise. |
+| **Gide 2019** | 78 | 0.580 | Below chance for XGB/RF; IPILIMUMAB+NIVO combination therapy creates a different response landscape from single-agent PD-1 blockade used in training cohorts. |
+| **Hugo 2016** | 27 | 0.464 | Smallest cohort; high response rate (~44%) combined with limited N makes AUROC estimates unstable (wide bootstrap CI). |
+| **Liu 2019** | 104 | 0.575 | Near-chance performance; low response rate (~38%) and strong class imbalance at default threshold. |
+| **Riaz 2017** | 64 | 0.714 | Highest AUROC; pre-treatment patient stratification with cleaner response labels and biological signal aligned with training signatures. |
+| **TCGA GDC 2025** | 52 | 0.406 | Pan-cancer TCGA cohort includes melanoma patients not on structured IO trial protocols; response labels may not directly correspond to CR/PR/PD definition. |
+| **Van Allen 2015** | 33 | 0.593 | Moderate; older WES-based cohort with survival-derived pseudo-response labels introduces labelling noise. |
 
 > [!WARNING] Gide 2019 Generalisation Failure
 > Multiple models score **below chance** (AUROC < 0.50) when Gide 2019 is held out. This is not random noise — it reflects a systematic **treatment regime mismatch**: Gide 2019 patients received combination ipilimumab + nivolumab (dual checkpoint blockade), whereas training cohorts were primarily single-agent anti-PD-1. The immune biology of dual blockade response is qualitatively different from PD-1 monotherapy response. This signals that a deployment system would require treatment-stratified models.
@@ -144,11 +146,11 @@ This section examines performance variation at the cohort level across active tr
 ## 8. Key Findings & Methodological Recommendations
 
 > [!INSIGHT] Summary Takeaways
-> 1. **5-fold CV is optimistic** relative to LOCO by **+0.049 to +0.184 AUROC points** across model architectures.
+> 1. **5-fold CV is optimistic** relative to LOCO by **+0.043 to +0.117 AUROC points** across model architectures.
 >
-> 2. **Support Vector Machine** is the best generalising model architecture overall under LOCO (mean AUROC = **0.562** across held-out trials).
+> 2. **Support Vector Machine** is the best generalising model architecture overall under LOCO (mean AUROC = **0.573** across held-out trials).
 >
-> 3. **Van Allen 2015 is the most learnable cohort** (mean LOCO AUROC = **0.581**); **Hugo 2016 is the hardest** (mean LOCO AUROC = **0.420**).
+> 3. **Riaz 2017 is the most learnable cohort** (mean LOCO AUROC = **0.714**); **TCGA GDC 2025 is the hardest** (mean LOCO AUROC = **0.406**).
 >
 > 4. **Curated multimodal features are parameter-efficient:** The 12 biologically grounded features achieve LOCO AUROCs within 0.02–0.04 of data-driven SelectKBest features using k = 200 — with dramatically better interpretability and no risk of fold-leakage from data-driven feature selection.
 >
@@ -159,5 +161,5 @@ This section examines performance variation at the cohort level across active tr
 > [!formula]+ Related Heatmap Source Plots & Execution Architecture
 >
 > - [`generate_combined_cv_loco_heatmap.py`](q1-response-predictor/scripts/exploratory_plots/generate_combined_cv_loco_heatmap.py): Generates the 1x2 side-by-side CV vs LOCO comparison heatmap plot.
-> - [`generate_cv_vs_loco_report.py`](q1-response-predictor/scripts/pillar-4-out-of-cohort-benchmarks/generate_cv_vs_loco_report.py): Executes live evaluation and dynamically generates this comparative analysis report.
+> - [`generate_cv_vs_loco_report.py`](q1-response-predictor/scripts/pillar-4-out-of-cohort-benchmarks/generate_cv_vs_loco_report.py): Executes evaluation and dynamically generates this comparative analysis report from benchmark CSVs.
 > - [`train_multimodal_predictor.py`](q1-response-predictor/scripts/pillar-3-transcriptomic-signatures/train_multimodal_predictor.py): Trains multimodal response predictors across feature permutation tiers.

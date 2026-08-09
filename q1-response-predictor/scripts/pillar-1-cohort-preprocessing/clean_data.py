@@ -64,6 +64,7 @@ from src.config.datasets import (
 from src.utils.logging import (
     TeeStream,
     display_path,
+    setup_logging,
 )
 from src.utils.paths import (
     PROCESSED_DIR,
@@ -1357,35 +1358,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    sys.stdout.reconfigure(encoding="utf-8")
-
-    LOG_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    with LOG_PATH.open(
-        "w",
-        encoding="utf-8",
-    ) as log_file:
-
-        stdout_tee = TeeStream(
-            sys.stdout,
-            log_file,
-        )
-
-        stderr_tee = TeeStream(
-            sys.stderr,
-            log_file,
-        )
-
-        with (
-            contextlib.redirect_stdout(stdout_tee),
-            contextlib.redirect_stderr(stderr_tee),
-        ):
-            print(
-                "Logging console output to "
-                f"{display_path(LOG_PATH)}"
-            )
-
-            main()
+    with setup_logging(LOG_PATH, relative_to=_SUBPROJECT_ROOT):
+        main()

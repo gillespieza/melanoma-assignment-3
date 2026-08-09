@@ -4,9 +4,14 @@ All metrics, patient sample sizes (N), fold performance, LOCO cohort AUROCs,
 generalisability gaps, and model ranking orders are computed on the fly from
 live DataFrames / evaluation CSV objects at runtime to comply with AGENTS.md guidelines.
 
-If `plots/models/cv_loco_metrics.csv` exists, it reads from this evaluation CSV
-and computes all report statistics dynamically in <0.05 seconds. Otherwise, it
-computes them live and saves the CSV for future instant rendering.
+Two-tier execution strategy:
+  - **Fast path** (< 0.05 s): If `plots/models/cv_loco_metrics.csv` exists, reads metrics
+    *and* cohort sample sizes directly from CSV — no dataset loading required.
+  - **Full path** (3–5 min): If the CSV is absent, runs full 5-fold CV + LOCO evaluation,
+    persists results (including cohort Ns) to CSV, then renders the report.
+
+To force a full recompute (e.g. after adding cohorts or retuning models), delete the CSV:
+    plots/models/cv_loco_metrics.csv
 """
 
 import warnings
@@ -30,6 +35,7 @@ if str(PROJECT_ROOT) not in sys.path:
 # Imports
 # ---------------------------------------------------------------------------
 import contextlib
+import time
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -78,15 +84,21 @@ LOG_PATH: Path = LOG_DIR / "generate_cv_vs_loco_report.log"
 # ---------------------------------------------------------------------------
 def _load_data_and_cohorts() -> Tuple[pd.DataFrame, pd.Series, Dict[str, Tuple[pd.DataFrame, pd.Series]], Dict[str, int]]:
     """Loads active trial cohorts and returns pooled signatures, pooled y, and per-cohort data."""
+    t0 = time.time()
+    print("[1/3] Loading active cohort datasets from config...")
     config_path = SUBPROJECT_ROOT / "config" / "datasets.yaml"
     expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(
         config_path, DATA_DIR, merge_only=True
     )
+    print(f"      Loaded {len(trial_names)} cohorts: {', '.join(trial_names)}  "
+          f"({time.time() - t0:.1f}s)")
 
+    print("[2/3] Computing gene intersection across all cohorts...")
     common_genes = expr_dict[trial_names[0]].columns
     for name in trial_names[1:]:
         common_genes = common_genes.intersection(expr_dict[name].columns)
     common_genes = list(common_genes)
+    print(f"      {len(common_genes):,} common genes retained  ({time.time() - t0:.1f}s)")
 
     def _align(expr, clin):
         resp_col = "response" if "response" in clin.columns else "RESPONDER"
@@ -94,11 +106,12 @@ def _load_data_and_cohorts() -> Tuple[pd.DataFrame, pd.Series, Dict[str, Tuple[p
         y = clin.loc[sig.index, resp_col].dropna()
         return sig.loc[y.index], y.astype(int)
 
+    print(f"[3/3] Extracting immune signatures for {len(trial_names)} cohorts...")
     sig_parts, y_parts = [], []
     cohort_dfs = {}
     cohort_ns = {}
 
-    for name in trial_names:
+    for i, name in enumerate(trial_names, 1):
         expr, clin = expr_dict[name], clin_dict[name]
         resp_col = "response" if "response" in clin.columns else "RESPONDER"
         mask = clin[resp_col].notna()
@@ -110,28 +123,47 @@ def _load_data_and_cohorts() -> Tuple[pd.DataFrame, pd.Series, Dict[str, Tuple[p
         sig, y_pooled = _align(expr, clin)
         sig_parts.append(sig)
         y_parts.append(y_pooled)
+        print(f"      [{i}/{len(trial_names)}] {name}: N={len(y)}  ({time.time() - t0:.1f}s)")
 
     X_sigs_pooled = pd.concat(sig_parts).reset_index(drop=True)
     y_pooled = pd.concat(y_parts).reset_index(drop=True)
+    n_total = len(y_pooled)
+    n_pos = int(y_pooled.sum())
+    print(f"      Pooled dataset: N={n_total} patients  ({n_pos} responders, "
+          f"{n_total - n_pos} non-responders)  ({time.time() - t0:.1f}s)")
 
     return X_sigs_pooled, y_pooled, cohort_dfs, cohort_ns
 
 
 def _compute_metrics_from_scratch() -> Tuple[pd.DataFrame, Dict[str, int]]:
     """Runs evaluations directly and returns a combined metrics DataFrame."""
+    t_start = time.time()
     X_sigs_pooled, y_pooled, cohort_dfs, cohort_ns = _load_data_and_cohorts()
     cohort_names = sorted(cohort_dfs.keys())
+    n_models = len(MODEL_ORDER)
+    n_cohorts = len(cohort_names)
+
+    # Total work units: N_FOLDS CV folds + N_COHORTS LOCO runs, per model
+    total_jobs = n_models * (N_FOLDS + n_cohorts)
+    jobs_done = 0
 
     skf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=RANDOM_STATE)
     X_arr, y_arr = X_sigs_pooled.values, y_pooled.values
 
-    records = []
-    for mtype in MODEL_ORDER:
-        mname = MODEL_DISPLAY_NAMES[mtype]
+    print(f"\nStarting evaluation: {n_models} models × "
+          f"({N_FOLDS} CV folds + {n_cohorts} LOCO runs) = {total_jobs} total jobs")
+    print("-" * 60)
 
-        # 1. 5-Fold CV
+    records = []
+    for m_idx, mtype in enumerate(MODEL_ORDER, 1):
+        mname = MODEL_DISPLAY_NAMES[mtype]
+        t_model = time.time()
+        print(f"\nModel {m_idx}/{n_models}: {mname}")
+
+        # --- 5-Fold CV ---
+        print(f"  5-Fold CV  ", end="", flush=True)
         fold_aucs = []
-        for train_idx, val_idx in skf.split(X_arr, y_arr):
+        for fold_i, (train_idx, val_idx) in enumerate(skf.split(X_arr, y_arr), 1):
             scaler = StandardScaler()
             X_tr = pd.DataFrame(scaler.fit_transform(X_arr[train_idx]), columns=X_sigs_pooled.columns)
             X_val = pd.DataFrame(scaler.transform(X_arr[val_idx]), columns=X_sigs_pooled.columns)
@@ -144,19 +176,31 @@ def _compute_metrics_from_scratch() -> Tuple[pd.DataFrame, Dict[str, int]]:
                 fold_aucs.append(roc_auc_score(y_arr[val_idx], y_prob))
             except ValueError:
                 pass
-        cv_auc = float(np.mean(fold_aucs))
 
-        # 2. LOCO per cohort
+            jobs_done += 1
+            elapsed = time.time() - t_start
+            pct = 100 * jobs_done / total_jobs
+            print(f"fold {fold_i}/{N_FOLDS} ", end="", flush=True)
+
+        cv_auc = float(np.mean(fold_aucs))
+        print(f"→ mean AUROC = {cv_auc:.3f}  ({time.time() - t_model:.1f}s)")
+
+        # --- LOCO ---
+        print(f"  LOCO       ", end="", flush=True)
         loco_dict = {}
-        for test_cohort in cohort_names:
+        for c_idx, test_cohort in enumerate(cohort_names, 1):
             train_cohorts = [c for c in cohort_names if c != test_cohort]
             X_train = pd.concat([cohort_dfs[c][0][FEATURE_COLS_SIGS] for c in train_cohorts], axis=0)
             y_train = pd.concat([cohort_dfs[c][1] for c in train_cohorts], axis=0)
             X_test, y_test = cohort_dfs[test_cohort][0][FEATURE_COLS_SIGS], cohort_dfs[test_cohort][1]
 
             scaler = StandardScaler()
-            X_train_scaled = pd.DataFrame(scaler.fit_transform(X_train), columns=FEATURE_COLS_SIGS, index=X_train.index)
-            X_test_scaled = pd.DataFrame(scaler.transform(X_test), columns=FEATURE_COLS_SIGS, index=X_test.index)
+            X_train_scaled = pd.DataFrame(
+                scaler.fit_transform(X_train), columns=FEATURE_COLS_SIGS, index=X_train.index
+            )
+            X_test_scaled = pd.DataFrame(
+                scaler.transform(X_test), columns=FEATURE_COLS_SIGS, index=X_test.index
+            )
 
             model = get_baseline_model(mtype)
             model.fit(X_train_scaled, y_train)
@@ -165,15 +209,40 @@ def _compute_metrics_from_scratch() -> Tuple[pd.DataFrame, Dict[str, int]]:
             auc = float(roc_auc_score(y_test.values, y_pred_prob)) if len(np.unique(y_test)) > 1 else np.nan
             loco_dict[test_cohort] = auc
 
+            jobs_done += 1
+            elapsed = time.time() - t_start
+            pct = 100 * jobs_done / total_jobs
+            # Estimate remaining time from current pace
+            rate = jobs_done / elapsed if elapsed > 0 else 1
+            eta_s = (total_jobs - jobs_done) / rate
+            print(f"{test_cohort} ({auc:.3f}) ", end="", flush=True)
+
+        loco_mean = float(np.nanmean(list(loco_dict.values())))
+        elapsed_total = time.time() - t_start
+        eta_s = ((total_jobs - jobs_done) / (jobs_done / elapsed_total)) if elapsed_total > 0 else 0
+        print(f"→ mean AUROC = {loco_mean:.3f}")
+        print(f"  Progress: {jobs_done}/{total_jobs} jobs done  "
+              f"({100 * jobs_done / total_jobs:.0f}%)  "
+              f"elapsed {elapsed_total:.0f}s  ETA ~{eta_s:.0f}s")
+
         rec = {"model_key": mtype, "model_name": mname, "cv_auc": cv_auc}
         for cname, cauc in loco_dict.items():
             rec[f"loco_{cname}"] = cauc
-        rec["loco_mean"] = float(np.nanmean(list(loco_dict.values())))
+        rec["loco_mean"] = loco_mean
         records.append(rec)
 
     df_metrics = pd.DataFrame(records)
+
+    # Append cohort_ns as a dedicated metadata row (model_key = "__cohort_n__").
+    # This allows the fast path to reconstruct N values without reloading datasets.
+    ns_rec = {"model_key": "__cohort_n__", "model_name": "CohortN", "cv_auc": np.nan}
+    for cname, n in cohort_ns.items():
+        ns_rec[f"loco_{cname}"] = float(n)
+    ns_rec["loco_mean"] = np.nan
+    df_with_ns = pd.concat([df_metrics, pd.DataFrame([ns_rec])], ignore_index=True)
+
     METRICS_CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
-    df_metrics.to_csv(METRICS_CSV_PATH, index=False)
+    df_with_ns.to_csv(METRICS_CSV_PATH, index=False)
     print(f"Exported benchmark metrics CSV to {rel_path(METRICS_CSV_PATH)}")
     return df_metrics, cohort_ns
 
@@ -184,12 +253,27 @@ def _compute_metrics_from_scratch() -> Tuple[pd.DataFrame, Dict[str, int]]:
 def generate_report() -> None:
     """Generates cv_vs_loco_heatmap_comparison.md from dynamic DataFrame metrics."""
     if METRICS_CSV_PATH.exists():
-        print(f"Loading metrics DataFrame from CSV: {rel_path(METRICS_CSV_PATH)}")
-        df_metrics = pd.read_csv(METRICS_CSV_PATH)
-        # Load sample sizes dynamically from dataset config
-        _, _, _, cohort_ns = _load_data_and_cohorts()
+        print(f"Loading metrics from cached CSV: {rel_path(METRICS_CSV_PATH)}")
+        df_all = pd.read_csv(METRICS_CSV_PATH)
+
+        # Extract the cohort_ns metadata row (stored as model_key == "__cohort_n__")
+        ns_row = df_all[df_all["model_key"] == "__cohort_n__"]
+        loco_cols_ns = [c for c in df_all.columns if c.startswith("loco_") and c != "loco_mean"]
+        if not ns_row.empty:
+            cohort_ns = {
+                col.replace("loco_", ""): int(ns_row.iloc[0][col])
+                for col in loco_cols_ns
+                if not pd.isna(ns_row.iloc[0][col])
+            }
+        else:
+            # Fallback: cohort_ns row absent (old CSV format) — load from datasets
+            print("  cohort_ns row absent in CSV — loading dataset config for N values.")
+            _, _, _, cohort_ns = _load_data_and_cohorts()
+
+        # Drop the metadata row; keep only model metric rows
+        df_metrics = df_all[df_all["model_key"] != "__cohort_n__"].reset_index(drop=True)
     else:
-        print("CSV not found. Running evaluations live...")
+        print("CSV not found. Running full evaluation pipeline (this will take several minutes)...")
         df_metrics, cohort_ns = _compute_metrics_from_scratch()
 
     n_pooled = sum(cohort_ns.values())
@@ -266,6 +350,41 @@ def generate_report() -> None:
             f"| {ordinal_suffixes[idx]} | {row_cv['model_name']} ({row_cv['cv_auc']:.3f}) | {row_loco['model_name']} ({row_loco['loco_mean']:.3f}) |"
         )
     rank_table_str = "\n".join(rank_rows)
+
+    # Determine whether the top CV and LOCO models agree or diverge
+    top_cv_model_key = cv_ranked[0]
+    top_cv_model_name = df_cv_sorted.iloc[0]["model_name"]
+    top_cv_auc = df_cv_sorted.iloc[0]["cv_auc"]
+    top_loco_model_key = loco_ranked[0]
+
+    if top_cv_model_key == top_loco_model_key:
+        # Rankings converge at the top — describe second-most divergent pair instead
+        # Find the model whose LOCO rank differs most from its CV rank
+        cv_rank_map = {k: i for i, k in enumerate(cv_ranked)}
+        loco_rank_map = {k: i for i, k in enumerate(loco_ranked)}
+        max_diverge_key = max(MODEL_ORDER, key=lambda k: abs(cv_rank_map[k] - loco_rank_map[k]))
+        max_diverge_name = MODEL_DISPLAY_NAMES[max_diverge_key]
+        cv_rank_str = ordinal_suffixes[cv_rank_map[max_diverge_key]]
+        loco_rank_str = ordinal_suffixes[loco_rank_map[max_diverge_key]]
+        ranking_callout = (
+            f"> The **top-ranked model is consistent**: {top_cv_model_name} ranks **1st by both CV** ({top_cv_auc:.3f}) "
+            f"**and LOCO** ({top_loco_auc:.3f}), which is a reassuring sign of ranking stability at the top.\n"
+            f">\n"
+            f"> However, rankings diverge significantly lower down: **{max_diverge_name}** ranks "
+            f"**{cv_rank_str} by CV** but **{loco_rank_str} by LOCO**, illustrating that CV-based selection "
+            f"can still mislead decisions about runner-up architectures."
+        )
+    else:
+        # Classic inversion: top CV model ≠ top LOCO model
+        cv_rank_of_top_loco = ordinal_suffixes[cv_ranked.index(top_loco_model_key)]
+        loco_rank_of_top_cv = ordinal_suffixes[loco_ranked.index(top_cv_model_key)]
+        ranking_callout = (
+            f"> The model ranking is **substantially inverted** between CV and LOCO. "
+            f"{top_cv_model_name} ranks **1st by CV** ({top_cv_auc:.3f}) but "
+            f"**{loco_rank_of_top_cv} by LOCO** ({cv_means[top_cv_model_key]:.3f}); "
+            f"{top_loco_model} ranks **1st by LOCO** ({top_loco_auc:.3f}) but "
+            f"**{cv_rank_of_top_loco} by CV** ({cv_means[top_loco_model_key]:.3f})."
+        )
 
     # Cohort breakdown descriptions
     cohort_descriptions = {
@@ -355,8 +474,8 @@ A critical diagnostic is whether the relative ranking of models is *preserved* a
 |:---:|:---|:---|
 {rank_table_str}
 
-> [!INSIGHT] Ranking Inversion: A Critical Warning
-> The model ranking is **substantially inverted** between CV and LOCO. {df_cv_sorted.iloc[0]['model_name']} ranks **1st by CV** ({df_cv_sorted.iloc[0]['cv_auc']:.3f}) but **{ordinal_suffixes[loco_ranked.index(cv_ranked[0])]} by LOCO** ({cv_means[cv_ranked[0]]:.3f}); {df_loco_sorted.iloc[0]['model_name']} ranks **1st by LOCO** ({df_loco_sorted.iloc[0]['loco_mean']:.3f}) but **{ordinal_suffixes[cv_ranked.index(loco_ranked[0])]} by CV** ({cv_means[loco_ranked[0]]:.3f}).
+> [!INSIGHT] Ranking Stability Analysis
+{ranking_callout}
 >
 > **Why does this happen?** Linear models benefit most from cohort-level expression patterns shared across training and test folds in CV — once those patterns are removed by cohort-level holdout (LOCO), their advantage collapses. Tree-based models rely on non-linear threshold interactions that are less sensitive to cohort-level distributional shifts, making them comparatively more robust under LOCO.
 >

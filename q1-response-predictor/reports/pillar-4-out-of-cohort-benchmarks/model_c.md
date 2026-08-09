@@ -1,27 +1,18 @@
 ---
-title:
-aliases: 
-tags: 
-created: 2026-08-04 10:40
-updated: 2026-08-04 10:41
----
-
----
-
 title: "Model C-Index Evaluation Table"  
-aliases:
-  - Model C-Index Summary  
+aliases: Model C-Index Summary
 tags:
-  - q1
   - c-index
-  - model-evaluation  
+  - model-evaluation
+  - q1
 created: 2026-08-04 10:41  
 cssclasses:
-  - table-small
+  - row-alt
   - table-center
-  - row-alt  
-updated: 2026-08-04 10:41
-
+  - table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-08-09 20:33
 ---
 
  **C-Index (Concordance Index)** breakdown for each model architecture evaluated under Leave-One-Cohort-Out (LOCO) cross-validation in `q1-response-predictor`:

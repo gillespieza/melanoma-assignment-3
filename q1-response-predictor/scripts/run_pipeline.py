@@ -64,7 +64,7 @@ from src.models import get_model, run_loco_cv
 from src.signatures import extract_all_signatures, zscore_df
 from src.styles import set_presentation_style
 from src.utils.formatting import generate_obsidian_frontmatter
-from src.utils.logging import TeeStream, display_path
+from src.utils.logging import TeeStream, display_path, setup_logging
 from src.utils.paths import (
     DATA_DIR,
     PLOTS_DIR,
@@ -945,13 +945,5 @@ def main(args: list[str] | None = None) -> None:
 
 
 if __name__ == "__main__":
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
-
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    with open(LOG_PATH, "w", encoding="utf-8") as log_file:
-        stdout_tee = TeeStream(sys.stdout, log_file)
-        stderr_tee = TeeStream(sys.stderr, log_file)
-        with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {display_path(LOG_PATH)}")
-            main()
+    with setup_logging(LOG_PATH, relative_to=SUBPROJECT_ROOT):
+        main()

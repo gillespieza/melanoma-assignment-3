@@ -166,7 +166,9 @@ def _run_5f_cv_for_model(
         X_train_scaled = pd.DataFrame(
             scaler.fit_transform(X_train_raw), columns=FEATURE_COLS
         )
-        X_val_scaled = scaler.transform(X_val_raw)
+        X_val_scaled = pd.DataFrame(
+            scaler.transform(X_val_raw), columns=FEATURE_COLS
+        )
 
         model = get_model(model_type, X_train_scaled, pd.Series(y_train), calibrate=True)
         y_prob = model.predict_proba(X_val_scaled)[:, 1]
