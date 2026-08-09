@@ -67,13 +67,14 @@ updated: 2026-08-03 13:30
 > [!info] How to Read This Table
 > Each cell shows the AUC-ROC for a model trained on the other two cohorts and tested on the column cohort (LOCO). **Mean AUC** is the unweighted average across all three held-out cohorts and is the primary generalisation metric. Higher AUC = better cross-cohort discrimination. 0.5 = random guessing.
 
-| Model | Hugo 2016 | Liu 2019 | Riaz 2017 | **Mean AUC** |
-|:---|---::---::---:---:|
-| LR | 0.415 | 0.570 | 0.500 | **0.495** |
-| **RF** | 0.407 | 0.569 | 0.618 | **0.531** |
-| XGB | 0.269 | 0.595 | 0.606 | **0.490** |
-| SVM | 0.516 | 0.554 | 0.458 | **0.509** |
-| ElasticNet | 0.415 | 0.558 | 0.500 | **0.491** |
+| Model      | Hugo 2016          | Liu 2019 | Riaz 2017 | **Mean AUC** |
+| ---------- | ------------------ | -------- | --------- | ------------ |
+| :---       | ---::---::---:---: |          |           |              |
+| LR         | 0.415              | 0.570    | 0.500     | **0.495**    |
+| **RF**     | 0.407              | 0.569    | 0.618     | **0.531**    |
+| XGB        | 0.269              | 0.595    | 0.606     | **0.490**    |
+| SVM        | 0.516              | 0.554    | 0.458     | **0.509**    |
+| ElasticNet | 0.415              | 0.558    | 0.500     | **0.491**    |
 
 > [!INSIGHT] Best Generalising Model: RF
 > **Random Forest Classifier** achieves the highest mean cross-cohort AUC of **0.531** across all three held-out LOCO test cohorts, making it the strongest generaliser in this evaluation. See the individual model sections below for full confusion matrices, ROC curves, and calibration diagnostics.
