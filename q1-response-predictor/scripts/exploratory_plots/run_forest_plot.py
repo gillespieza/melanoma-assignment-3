@@ -25,7 +25,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
-from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.styles import RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR

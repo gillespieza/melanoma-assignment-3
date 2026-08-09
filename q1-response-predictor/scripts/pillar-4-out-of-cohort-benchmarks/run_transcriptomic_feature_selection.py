@@ -37,7 +37,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
-from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.styles import COHORT_PALETTE, GENE_CATEGORY_PALETTE, RESPONSE_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, REPORTS_DIR

@@ -44,11 +44,6 @@ from scripts.exploratory_plots.generate_loco_heatmap import (
     plot_loco_heatmap_from_results,
 )
 
-from src.data_loaders import (
-    load_hugo_2016,
-    load_liu_2019,
-    load_riaz_2017,
-)
 from src.evaluation import (
     calculate_cindex,
     calculate_extended_metrics,

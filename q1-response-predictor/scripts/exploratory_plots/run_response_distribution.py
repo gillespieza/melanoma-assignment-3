@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
-from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
+from src.data_loaders import load_cohort_by_name
 from src.styles import RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR
@@ -48,9 +48,9 @@ def _prepare_response_summary(data_dir: Path) -> Tuple[pd.DataFrame, float]:
     Returns:
         Tuple of (response summary DataFrame, Chi-square p-value).
     """
-    _, clin_liu = load_liu_2019(data_dir)
-    _, clin_hugo = load_hugo_2016(data_dir)
-    _, clin_riaz = load_riaz_2017(data_dir)
+    _, clin_liu = load_cohort_by_name("Liu 2019", data_dir)
+    _, clin_hugo = load_cohort_by_name("Hugo 2016", data_dir)
+    _, clin_riaz = load_cohort_by_name("Riaz 2017", data_dir)
 
     cohorts = {
         "Liu 2019": clin_liu,

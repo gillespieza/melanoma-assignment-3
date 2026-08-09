@@ -30,7 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
-from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
+from src.data_loaders import load_cohort_by_name
 from src.signatures import extract_all_signatures
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
 from src.utils.logging import TeeStream
@@ -53,9 +53,9 @@ def _prepare_batch_corrected_signatures(data_dir: Path) -> Tuple[pd.DataFrame, p
     Returns:
         Tuple of (batch-corrected signatures DataFrame, combined response series, batch labels list).
     """
-    expr_liu, clin_liu = load_liu_2019(data_dir)
-    expr_hugo, clin_hugo = load_hugo_2016(data_dir)
-    expr_riaz, clin_riaz = load_riaz_2017(data_dir)
+    expr_liu, clin_liu = load_cohort_by_name("Liu 2019", data_dir)
+    expr_hugo, clin_hugo = load_cohort_by_name("Hugo 2016", data_dir)
+    expr_riaz, clin_riaz = load_cohort_by_name("Riaz 2017", data_dir)
 
     common_genes = expr_liu.columns.intersection(expr_hugo.columns).intersection(expr_riaz.columns)
 

@@ -32,7 +32,6 @@ _SUBPROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(_SUBPROJECT_ROOT) not in sys.path:
     sys.path.append(str(_SUBPROJECT_ROOT))
 
-from src.data_loaders import load_hugo_2016, load_liu_2019, load_riaz_2017
 from src.signatures import extract_all_signatures
 from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, get_cohort_color, set_presentation_style
 from src.utils.logging import TeeStream

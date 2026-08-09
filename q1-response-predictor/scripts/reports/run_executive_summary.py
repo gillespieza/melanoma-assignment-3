@@ -25,7 +25,6 @@ if str(SUBPROJECT_ROOT) not in sys.path:
 from src.utils.paths import PROCESSED_DIR, REPORTS_DIR, LOG_DIR, SUBPROJECT_ROOT, DATA_DIR
 from src.utils.formatting import generate_obsidian_frontmatter, format_count_percentage
 from src.utils.logging import TeeStream
-from src.data_loaders import load_liu_2019, load_hugo_2016, load_riaz_2017
 from src.signatures import extract_all_signatures
 from src.models import run_loco_cv, get_model
 
