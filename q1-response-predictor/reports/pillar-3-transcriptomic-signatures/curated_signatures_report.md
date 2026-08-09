@@ -119,20 +119,20 @@ Somatic mutation rate (`TMB`) and predicted neoantigen count capture the exact s
 
 > [!NOTE] Analysis Scope
 > - **What**: Computing Spearman rank correlations between nonsynonymous mutational burden (`TMB_NONSYNONYMOUS`) and all six curated transcriptomic immune signatures.
-> - **Cohort**: Pooled ICI trial cohort ($N = 195$: Liu 2019, Hugo 2016, Riaz 2017).
+> - **Cohort**: Pooled ICI trial cohort ($N = 418$: Liu 2019, Hugo 2016, Riaz 2017, TCGA GDC 2025, Gide 2019, Van Allen 2015).
 > - **Why**: Establishing whether genomic mutational burden and transcriptomic immune activity are independent axes of variation within the ICI-treated population — a prerequisite for justifying a multimodal (genomic + transcriptomic) model.
 
-Spearman rank correlation between nonsynonymous TMB and the six curated immune signatures in the pooled ICI trial cohort ($N = 195$) reveals near-complete biological orthogonality across all signature axes ($|r_s| \leq 0.091$, all $p > 0.20$):
+Spearman rank correlation between nonsynonymous TMB and the six curated immune signatures in the pooled ICI trial cohort ($N = 418$) reveals near-complete biological orthogonality across all signature axes ($|r_s| \leq 0.088$, all $p > 0.16$):
 
 | Feature | IFN-γ | TIS | CD8 T-Cell | CYT | IMPRES | PD-L1 |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Trial TMB** ($r_s$) | 0.034 | −0.035 | −0.052 | −0.091 | 0.010 | 0.046 |
-| *p*-value | 0.650 | 0.642 | 0.492 | 0.228 | 0.891 | 0.544 |
+| **Trial TMB** ($r_s$) | 0.088 | 0.031 | 0.013 | −0.002 | 0.039 | 0.081 |
+| *p*-value | 0.155 | 0.612 | 0.837 | 0.978 | 0.525 | 0.194 |
 
-![Nonsynonymous TMB vs. Curated Immune Signatures — ICI Trial Cohort (N=195)](../../plots/biomarkers/extended_immune_correlations.png)
+![Nonsynonymous TMB vs. Curated Immune Signatures — ICI Trial Cohort (N=418)](../../plots/biomarkers/extended_immune_correlations.png)
 
 > [!INSIGHT] The Multimodal Pitch
-> **Genomic burden (TMB) and transcriptomic immune signatures are orthogonal, independent axes of variation** within the ICI-treated melanoma population. No meaningful linear or rank-order relationship exists between the number of nonsynonymous somatic mutations a tumour carries and its inflammatory transcriptomic state ($|r_s| \leq 0.091$, all $p > 0.20$). A tumour can be hypermutated but immunologically cold, or nearly diploid yet profoundly inflamed. This orthogonality is precisely what makes a multimodal model (Signatures + TMB + Drivers) theoretically justified and, as shown in Section 4, empirically superior to any single modality alone.
+> **Genomic burden (TMB) and transcriptomic immune signatures are orthogonal, independent axes of variation** within the ICI-treated melanoma population. No meaningful linear or rank-order relationship exists between the number of nonsynonymous somatic mutations a tumour carries and its inflammatory transcriptomic state ($|r_s| \leq 0.088$, all $p > 0.16$). A tumour can be hypermutated but immunologically cold, or nearly diploid yet profoundly inflamed. This orthogonality is precisely what makes a multimodal model (Signatures + TMB + Drivers) theoretically justified and, as shown in Section 4, empirically superior to any single modality alone.
 
 ### 3.3. Inter-Signature Correlations & Multivariate Drivers
 * **High Collinearity**: Signature modalities (TIS, IFN-γ, CYT, CD8 T-cell) are strongly co-expressed ($r_s \approx 0.85\text{--}0.90$), reflecting their shared biological basis in cytotoxic lymphocyte infiltration.
@@ -214,12 +214,11 @@ The full diagnostic outputs are saved in `plots/models/`:
 ---
 
 > [!formula]+ Pillar 3 Script Execution & Software Module Architecture
-> - **Primary Pipeline Execution Scripts**:
->   - [`train_multimodal_predictor.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-3-transcriptomic-signatures/train_multimodal_predictor.py): Trains cross-validated classifiers (LR, RF, XGB, SVM, Elastic-Net) across 5 feature-set tiers, generates AUROC comparison heatmaps, and updates Section 4 of this report with live cross-validation results.
->   - [`run_extended_biomarkers.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar-3-transcriptomic-signatures/run_extended_biomarkers.py): Evaluates neoantigen load, TMB–immune signature Spearman correlations, TCGA aneuploidy and TMB survival stratification, and pathway mutation frequencies across trial cohorts.
-> - **Core Supporting Python Modules**:
->   - [`signatures.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py): Computes the six curated immune signatures (IFN-γ, TIS, CYT, IMPRES, CD8 T-cell, TCGA 20-gene OS) from normalised gene expression matrices.
->   - [`models.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/models.py): Provides `get_model()` — the single entry point for tuned, calibrated classifier instances — and `run_loco_cv()` for Leave-One-Cohort-Out cross-validation.
->   - [`evaluation.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/evaluation.py): Implements AUROC, AUC-PR, concordance index, and Youden-optimal threshold metrics for model benchmarking.
-> - **Shared Cross-Question & Pipeline Modules**:
->   - [`run_pipeline.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/run_pipeline.py): Master pipeline orchestrator executing data preprocessing, biomarker evaluation, and multimodal predictor training in sequence.
+>
+> - [`train_multimodal_predictor.py`](../../scripts/pillar-3-transcriptomic-signatures/train_multimodal_predictor.py): Trains cross-validated machine learning classifiers (LR, RF, XGB, SVM, Elastic-Net) across feature set permutation tiers, generates AUROC comparison heatmaps, and updates Section 5 of `curated_signatures_report.md`.
+> - [`run_extended_biomarkers.py`](../../scripts/pillar-3-transcriptomic-signatures/run_extended_biomarkers.py): Evaluates neoantigen load vs TMB, TMB-immune signature Spearman correlations, TCGA aneuploidy and TMB survival stratification, and somatic pathway mutation frequencies.
+> - [`run_pipeline.py`](../../scripts/run_pipeline.py): Master pipeline orchestrator executing data preprocessing, biomarker evaluation, and multimodal predictor training in sequence.
+> - [`signatures.py`](../../../src/signatures.py): Computes the six curated immune signatures (IFN-γ, TIS, CYT, IMPRES, CD8 T-cell, TCGA 20-gene OS) from normalised gene expression matrices.
+> - [`models.py`](../../../src/models.py): Provides `get_model()` — the single entry point for tuned, calibrated classifier instances — and `run_loco_cv()` for LOCO cross-validation.
+> - [`evaluation.py`](../../../src/evaluation.py): Implements AUROC, AUC-PR, concordance index, and Youden-optimal threshold metrics for model benchmarking.
+> - [`styles.py`](../../../src/styles.py): Central definition of Okabe-Ito colour palettes.
