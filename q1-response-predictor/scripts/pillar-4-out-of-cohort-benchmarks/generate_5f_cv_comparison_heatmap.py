@@ -56,6 +56,7 @@ from sklearn.preprocessing import StandardScaler
 # ---------------------------------------------------------------------------
 # Project Imports
 # ---------------------------------------------------------------------------
+from src.data_loaders import load_all_active_cohorts
 from src.models import get_baseline_model
 from src.signatures import extract_all_signatures
 from src.styles import set_presentation_style
@@ -134,7 +135,7 @@ def _align_signatures_and_labels(
 def _load_pooled_data(
     data_dir: Path,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
-    """Loads and pools all three immunotherapy cohorts, intersecting genes to avoid NaNs.
+    """Loads and pools all active trial cohorts, intersecting genes to avoid NaNs.
 
     Args:
         data_dir: Root data directory.
@@ -142,31 +143,29 @@ def _load_pooled_data(
     Returns:
         Tuple of (pooled_expr_common_genes, pooled_signatures, pooled_response_labels).
     """
-    expr_liu, clin_liu = load_liu_2019(data_dir)
-    expr_hugo, clin_hugo = load_hugo_2016(data_dir)
-    expr_riaz, clin_riaz = load_riaz_2017(data_dir)
-
-    common_genes = list(
-        set(expr_liu.columns) & set(expr_hugo.columns) & set(expr_riaz.columns)
+    config_path = SUBPROJECT_ROOT.parent / "config" / "datasets.yaml"
+    expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(
+        config_path, data_dir, merge_only=True
     )
+
+    # Intersect common genes across all active trial expression matrices
+    common_genes = expr_dict[trial_names[0]].columns
+    for name in trial_names[1:]:
+        common_genes = common_genes.intersection(expr_dict[name].columns)
+    common_genes = list(common_genes)
     print(f"  Common genes across all cohorts: {len(common_genes)}")
 
-    sig_liu = extract_all_signatures(expr_liu[common_genes])
-    sig_hugo = extract_all_signatures(expr_hugo[common_genes])
-    sig_riaz = extract_all_signatures(expr_riaz[common_genes])
+    expr_parts, sig_parts, y_parts = [], [], []
+    for name in trial_names:
+        sig = extract_all_signatures(expr_dict[name][common_genes])
+        sig_aligned, y = _align_signatures_and_labels(sig, clin_dict[name])
+        expr_parts.append(expr_dict[name].loc[y.index, common_genes])
+        sig_parts.append(sig_aligned)
+        y_parts.append(y)
 
-    sig_liu, y_liu = _align_signatures_and_labels(sig_liu, clin_liu)
-    sig_hugo, y_hugo = _align_signatures_and_labels(sig_hugo, clin_hugo)
-    sig_riaz, y_riaz = _align_signatures_and_labels(sig_riaz, clin_riaz)
-
-    expr_liu_c = expr_liu.loc[y_liu.index, common_genes]
-    expr_hugo_c = expr_hugo.loc[y_hugo.index, common_genes]
-    expr_riaz_c = expr_riaz.loc[y_riaz.index, common_genes]
-
-    X_expr = pd.concat([expr_liu_c, expr_hugo_c, expr_riaz_c]).reset_index(drop=True)
-    X_sigs = pd.concat([sig_liu, sig_hugo, sig_riaz]).reset_index(drop=True)
-    y_pooled = pd.concat([y_liu, y_hugo, y_riaz]).reset_index(drop=True)
-
+    X_expr = pd.concat(expr_parts).reset_index(drop=True)
+    X_sigs = pd.concat(sig_parts).reset_index(drop=True)
+    y_pooled = pd.concat(y_parts).reset_index(drop=True)
     return X_expr, X_sigs, y_pooled
 
 
