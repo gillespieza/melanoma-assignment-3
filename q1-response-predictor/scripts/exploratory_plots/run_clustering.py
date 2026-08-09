@@ -1,93 +1,160 @@
 """
 Unsupervised Hierarchical Clustering Analysis of Immune Signatures.
 
-Performs batch correction on transcriptomic signatures across immunotherapy trial cohorts
-(Liu 2019, Hugo 2016, Riaz 2017) using PyComBat, fits Ward hierarchical clustering,
-generates a metadata-annotated clustermap, and tests cluster association with response via Chi-Square test.
+Performs batch correction on transcriptomic signatures across all active
+immunotherapy trial cohorts (loaded dynamically from config/datasets.yaml)
+using PyComBat, fits Ward hierarchical clustering, and tests cluster
+association with response via Chi-Square test.
 """
 
 import contextlib
 from pathlib import Path
 import sys
-from typing import Tuple
+from typing import List, Tuple
 
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
-import numpy as np
 import pandas as pd
 from pycombat import Combat
 from scipy.stats import chi2_contingency
 from sklearn.cluster import AgglomerativeClustering
-import seaborn as sns
 
 # ---------------------------------------------------------------------------
 # Bootstrap project root resolution for top-level imports
 # ---------------------------------------------------------------------------
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-if str(BASE_DIR) not in sys.path:
-    sys.path.append(str(BASE_DIR))
+_SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(_SUBPROJECT_ROOT) not in sys.path:
+    sys.path.append(str(_SUBPROJECT_ROOT))
 
-from src.data_loaders import load_cohort_by_name
+from src.data_loaders import load_all_active_cohorts
 from src.signatures import extract_all_signatures
-from src.styles import COHORT_PALETTE, RESPONSE_PALETTE, set_presentation_style
+from src.styles import set_presentation_style
 from src.utils.logging import TeeStream
-from src.utils.paths import DATA_DIR, LOG_DIR, PLOTS_DIR, rel_path
-from src.utils.plotting import save_fig
+from src.utils.paths import DATA_DIR
 
 set_presentation_style()
 
-# Module-level Constants
-PLOT_DIR = PLOTS_DIR / "biomarkers"
-LOG_PATH = LOG_DIR / "run_clustering.log"
+# ---------------------------------------------------------------------------
+# Module-level Constants & Definitions
+# ---------------------------------------------------------------------------
+
+_CONFIG_PATH = _SUBPROJECT_ROOT / "config" / "datasets.yaml"
+
+# Response column names accepted from cleaned clinical data, in priority order.
+_RESP_COLS = ("RESPONSE_BINARY", "response")
+
+_LOG_DIR = _SUBPROJECT_ROOT / "logs"
+LOG_PATH = _LOG_DIR / "run_clustering.log"
 
 
-def _prepare_batch_corrected_signatures(data_dir: Path) -> Tuple[pd.DataFrame, pd.Series, list]:
-    """Loads cohort data, extracts signatures, and applies PyComBat batch correction.
+def _prepare_batch_corrected_signatures(
+    data_dir: Path,
+    config_path: Path,
+) -> Tuple[pd.DataFrame, pd.Series, List[str]]:
+    """Loads all active trial cohorts dynamically, extracts immune signatures,
+    and applies PyComBat batch correction.
+
+    Cohorts are discovered from config/datasets.yaml via load_all_active_cohorts.
+    Cohorts lacking a valid response label (RESPONSE_BINARY or response) are
+    skipped with a warning rather than raising an error.
 
     Args:
         data_dir: Path to project data directory.
+        config_path: Path to datasets.yaml configuration file.
 
     Returns:
-        Tuple of (batch-corrected signatures DataFrame, combined response series, batch labels list).
+        Tuple of (batch-corrected signatures DataFrame, combined response series,
+        batch label list).
+
+    Raises:
+        RuntimeError: If fewer than two cohorts have valid response data (batch
+            correction is undefined with a single batch).
     """
-    expr_liu, clin_liu = load_cohort_by_name("Liu 2019", data_dir)
-    expr_hugo, clin_hugo = load_cohort_by_name("Hugo 2016", data_dir)
-    expr_riaz, clin_riaz = load_cohort_by_name("Riaz 2017", data_dir)
+    expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(
+        config_path=config_path,
+        data_dir=data_dir,
+        merge_only=True,
+    )
 
-    common_genes = expr_liu.columns.intersection(expr_hugo.columns).intersection(expr_riaz.columns)
+    # Restrict to trial cohorts that have expression data loaded.
+    trial_expr = {name: expr_dict[name] for name in trial_names if name in expr_dict}
+    if not trial_expr:
+        raise RuntimeError(
+            "No active trial cohorts found with expression data. "
+            "Check datasets.yaml and that processed CSVs exist on disk."
+        )
 
-    sig_liu = extract_all_signatures(expr_liu[common_genes])
-    sig_hugo = extract_all_signatures(expr_hugo[common_genes])
-    sig_riaz = extract_all_signatures(expr_riaz[common_genes])
+    # Compute intersection of genes across all trial cohorts.
+    common_genes = None
+    for expr in trial_expr.values():
+        common_genes = (
+            expr.columns if common_genes is None
+            else common_genes.intersection(expr.columns)
+        )
 
-    resp_col_l = "RESPONSE_BINARY" if "RESPONSE_BINARY" in clin_liu.columns else "response"
-    resp_col_h = "RESPONSE_BINARY" if "RESPONSE_BINARY" in clin_hugo.columns else "response"
-    resp_col_r = "RESPONSE_BINARY" if "RESPONSE_BINARY" in clin_riaz.columns else "response"
+    print(f"Common genes across {len(trial_expr)} trial cohort(s): {len(common_genes)}")
 
-    y_liu = clin_liu.loc[sig_liu.index, resp_col_l]
-    y_hugo = clin_hugo.loc[sig_hugo.index, resp_col_h]
-    y_riaz = clin_riaz.loc[sig_riaz.index, resp_col_r]
+    sig_parts: List[pd.DataFrame] = []
+    resp_parts: List[pd.Series] = []
+    batch_labels: List[str] = []
 
-    sig_all = pd.concat([sig_liu, sig_hugo, sig_riaz], axis=0)
-    y_all = pd.concat([y_liu, y_hugo, y_riaz], axis=0)
-    batches = (["liu"] * len(sig_liu)) + (["hugo"] * len(sig_hugo)) + (["riaz"] * len(sig_riaz))
+    for name in trial_names:
+        if name not in trial_expr:
+            continue
 
-    sig_corrected_arr = Combat().fit_transform(sig_all.values, batches)
-    sig_corrected = pd.DataFrame(sig_corrected_arr, index=sig_all.index, columns=sig_all.columns)
+        clin = clin_dict[name]
+        expr = trial_expr[name]
+
+        resp_col = next((c for c in _RESP_COLS if c in clin.columns), None)
+        if resp_col is None:
+            print(
+                f"  [SKIP] {name}: no response column found "
+                f"({', '.join(_RESP_COLS)})."
+            )
+            continue
+
+        y = clin.loc[expr.index, resp_col].dropna()
+        if y.empty:
+            print(f"  [SKIP] {name}: response column is all-NaN after dropping missing values.")
+            continue
+
+        expr_aligned = expr.loc[y.index, common_genes]
+        sig = extract_all_signatures(expr_aligned)
+
+        sig_parts.append(sig)
+        resp_parts.append(y.loc[sig.index])
+        batch_labels.extend([name] * len(sig))
+        print(f"  Loaded {name}: {len(sig)} samples")
+
+    if len(sig_parts) < 2:
+        raise RuntimeError(
+            f"Batch correction requires at least 2 cohorts with valid response data; "
+            f"only {len(sig_parts)} qualified. Ensure RESPONSE_BINARY is present in "
+            "cleaned clinical files for the relevant trial cohorts."
+        )
+
+    sig_all = pd.concat(sig_parts, axis=0)
+    y_all = pd.concat(resp_parts, axis=0)
+
+    sig_corrected_arr = Combat().fit_transform(sig_all.values, batch_labels)
+    sig_corrected = pd.DataFrame(
+        sig_corrected_arr, index=sig_all.index, columns=sig_all.columns
+    )
 
     print(f"Corrected signatures matrix shape: {sig_corrected.shape}")
-    return sig_corrected, y_all, batches
+    return sig_corrected, y_all, batch_labels
 
 
-def _evaluate_cluster_associations(sig_corrected: pd.DataFrame, y_all: pd.Series) -> None:
+def _evaluate_cluster_associations(
+    sig_corrected: pd.DataFrame,
+    y_all: pd.Series,
+) -> None:
     """Performs agglomerative clustering into 2 groups and tests response association.
 
     Args:
         sig_corrected: Batch-corrected signature matrix.
-        y_all: Response label series.
+        y_all: Response label series aligned to sig_corrected index.
     """
     cluster_model = AgglomerativeClustering(n_clusters=2, metric="euclidean", linkage="ward")
     patient_clusters = cluster_model.fit_predict(sig_corrected)
@@ -115,9 +182,7 @@ def main() -> None:
     print("Phase 1: Loading & Batch-Correcting Cohort Signatures...")
     print("==================================================")
 
-    PLOT_DIR.mkdir(exist_ok=True, parents=True)
-
-    sig_corrected, y_all, batches = _prepare_batch_corrected_signatures(DATA_DIR)
+    sig_corrected, y_all, _ = _prepare_batch_corrected_signatures(DATA_DIR, _CONFIG_PATH)
 
     print("\n==================================================")
     print("Phase 2: Association of Clusters with Response...")
@@ -131,10 +196,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    _LOG_DIR.mkdir(parents=True, exist_ok=True)
     with open(LOG_PATH, "w", encoding="utf-8") as log_file:
         stdout_tee = TeeStream(sys.stdout, log_file)
         stderr_tee = TeeStream(sys.stderr, log_file)
         with contextlib.redirect_stdout(stdout_tee), contextlib.redirect_stderr(stderr_tee):
-            print(f"Logging console output to {rel_path(LOG_PATH)}")
+            print(f"Logging console output to {LOG_PATH.relative_to(_SUBPROJECT_ROOT).as_posix()}")
             main()
