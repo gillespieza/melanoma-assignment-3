@@ -37,7 +37,12 @@ _DOWNLOAD_CHUNK_BYTES = 8_192
 # ---------------------------------------------------------------------------
 
 
-def safe_save_csv(df: pd.DataFrame, out_file: Path) -> None:
+def safe_save_csv(
+    df: pd.DataFrame,
+    out_file: Path,
+    *,
+    index: bool = False,
+) -> None:
     """Safely save a DataFrame to CSV, handling potential Windows/Dropbox file locking.
 
     Attempts to unlink then write the file directly.  Falls back to writing a
@@ -54,10 +59,10 @@ def safe_save_csv(df: pd.DataFrame, out_file: Path) -> None:
         except (PermissionError, OSError):
             pass
     try:
-        df.to_csv(out_file, index=False)
+        df.to_csv(out_file, index=index)
     except (PermissionError, OSError):
         tmp_file = out_file.with_suffix(".tmp.csv")
-        df.to_csv(tmp_file, index=False)
+        df.to_csv(tmp_file, index=index)
         try:
             tmp_file.replace(out_file)
         except (PermissionError, OSError):
@@ -175,5 +180,4 @@ def extract_tar_gz(tar_path: Path, extract_to: Path) -> None:
             archive.extractall(path=extract_to)
 
     print("  Extraction complete.")
-
 

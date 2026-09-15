@@ -27,12 +27,12 @@ selection belong to downstream analysis stages.
 
 from __future__ import annotations
 
-import contextlib
+import json
 import sys
-import time
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -55,7 +55,7 @@ if str(SUBPROJECT_ROOT) not in sys.path:
 
 from src.config.constants import (
     RECIST_RESPONSE_MAP,
-    NON_SILENT_VARIANT_CLASSIFICATIONS
+    NON_SILENT_VARIANT_CLASSIFICATIONS,
 )
 
 from src.config.datasets import (
@@ -63,10 +63,10 @@ from src.config.datasets import (
     load_dataset_config,
 )
 from src.utils.logging import (
-    TeeStream,
     display_path,
     setup_logging,
 )
+from src.utils.io import safe_save_csv
 from src.utils.paths import (
     PROCESSED_DIR,
     RAW_DIR,
@@ -79,7 +79,12 @@ from src.utils.preprocessing import (
     parse_maf_mutations,
     read_cbioportal_table,
     standardise_sample_id,
+    standardise_patient_id,
     drop_empty_columns,
+)
+from scripts.pillar_1_cohort_preprocessing.generate_data_dictionary import (
+    OUTPUT_JSON,
+    build_full_data_dictionary,
 )
 
 
@@ -297,15 +302,13 @@ def _apply_identifier_prefixes(
 
     if _COL_PATIENT_ID in df.columns:
         df[_COL_PATIENT_ID] = (
-            dataset.patient_prefix
-            + df[_COL_PATIENT_ID].astype(str)
-        ).str.upper()
+            dataset.patient_prefix + df[_COL_PATIENT_ID].astype(str)
+        ).map(standardise_patient_id)
 
     if _COL_SAMPLE_ID in df.columns:
         df[_COL_SAMPLE_ID] = (
-            dataset.sample_prefix
-            + df[_COL_SAMPLE_ID].astype(str)
-        ).str.upper()
+            dataset.sample_prefix + df[_COL_SAMPLE_ID].astype(str)
+        ).map(standardise_sample_id)
 
     return df
 
@@ -427,7 +430,22 @@ def _load_iatlas_expression(
     if not expression_path.exists():
         raise FileNotFoundError(f"Expression file not found: {display_path(expression_path)}")
 
-    df_expr = pd.read_csv(expression_path, sep="\t")
+    try:
+        df_expr = read_cbioportal_table(
+            expression_path,
+            required_column=_COL_HUGO_SYMBOL,
+        )
+    except ValueError:
+        try:
+            df_expr = read_cbioportal_table(
+                expression_path,
+                required_column=_COL_ENTREZ_ID,
+            )
+        except ValueError as entrez_error:
+            raise ValueError(
+                f"Expression file {display_path(expression_path)} does not contain "
+                f"{_COL_HUGO_SYMBOL} or {_COL_ENTREZ_ID}."
+            ) from entrez_error
     return _process_raw_expression_matrix(df_expr, dataset)
 
 
@@ -470,7 +488,10 @@ def _load_tcga_expression(
             f"{display_path(expression_path)}"
         )
 
-    df_expr = pd.read_csv(expression_path, sep="\t")
+    df_expr = read_cbioportal_table(
+        expression_path,
+        required_column=_COL_ENTREZ_ID,
+    )
     df_expr = _map_tcga_entrez_identifiers(df_expr, cache_path)
 
     # Duplicate mapped gene symbols are averaged.
@@ -835,15 +856,16 @@ def _align_and_record_expression(
     attrition: list[AttritionRecord],
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Filter expression matrix to clinical samples and record expression availability."""
-    common_samples = expression_df.index.intersection(clinical_df.index)
-    aligned_expr = expression_df.loc[common_samples].copy()
-    aligned_expr.index.name = _COL_SAMPLE_ID
+    aligned_expr, aligned_clinical = align_expression_and_clinical(
+        expression_df,
+        clinical_df,
+    )
     _record_attrition(
         attrition, dataset, step="Expression data availability",
-        n_before=len(clinical_df), n_after=len(common_samples),
+        n_before=len(clinical_df), n_after=len(aligned_clinical),
         reason="Identified samples with matching RNA-seq gene expression data.",
     )
-    return aligned_expr, clinical_df
+    return aligned_expr, aligned_clinical
 
 
 
@@ -853,14 +875,33 @@ def process_iatlas_dataset(
     processed_dir: Path,
 ) -> list[AttritionRecord]:
     """Process an iAtlas/cBioPortal immunotherapy cohort."""
+    return _process_dataset_with_expression_loader(
+        dataset,
+        raw_dir,
+        processed_dir,
+        lambda attrition: _process_iatlas_clinical_stage(
+            raw_dir, dataset, attrition
+        ),
+        lambda: _load_iatlas_expression(raw_dir / dataset.expression_file, dataset),
+    )
+
+
+def _process_dataset_with_expression_loader(
+    dataset: DatasetConfig,
+    raw_dir: Path,
+    processed_dir: Path,
+    clinical_loader: Callable[[list[AttritionRecord]], pd.DataFrame],
+    expression_loader: Callable[[], pd.DataFrame],
+) -> list[AttritionRecord]:
+    """Run shared clinical, expression, mutation, and output processing."""
     print(f"Cleaning {dataset.cohort_name} ({dataset.study_id})...")
     attrition: list[AttritionRecord] = []
     print("  Loading and harmonising clinical data...")
-    clinical_df = _process_iatlas_clinical_stage(raw_dir, dataset, attrition)
+    clinical_df = clinical_loader(attrition)
     print(f"    Clinical data harmonised ({len(clinical_df):,} samples).")
 
     print(f"  Loading gene expression matrix ({dataset.expression_file})...")
-    expression_df = _load_iatlas_expression(raw_dir / dataset.expression_file, dataset)
+    expression_df = expression_loader()
     print(f"    Expression matrix loaded ({expression_df.shape[0]:,} samples × {expression_df.shape[1]:,} genes).")
 
     expression_df, clinical_df = _align_and_record_expression(
@@ -890,30 +931,18 @@ def process_tcga_dataset(
     processed_dir: Path,
 ) -> list[AttritionRecord]:
     """Process the TCGA-SKCM dataset."""
-    print(f"Cleaning {dataset.cohort_name} ({dataset.study_id})...")
-    attrition: list[AttritionRecord] = []
-    print("  Loading and harmonising clinical data...")
-    clinical_df = _process_tcga_clinical_stage(raw_dir, dataset, attrition)
-    print(f"    Clinical data harmonised ({len(clinical_df):,} samples).")
-
     cache_path = _resolve_entrez_cache_path(processed_dir)
-    print(f"  Loading TCGA gene expression matrix ({dataset.expression_file})...")
-    expression_df = _load_tcga_expression(
-        raw_dir / dataset.expression_file, dataset, cache_path
+    return _process_dataset_with_expression_loader(
+        dataset,
+        raw_dir,
+        processed_dir,
+        lambda attrition: _process_tcga_clinical_stage(
+            raw_dir, dataset, attrition
+        ),
+        lambda: _load_tcga_expression(
+            raw_dir / dataset.expression_file, dataset, cache_path
+        ),
     )
-    print(f"    Expression matrix loaded ({expression_df.shape[0]:,} samples × {expression_df.shape[1]:,} genes).")
-
-    expression_df, clinical_df = _align_and_record_expression(
-        expression_df, clinical_df, dataset, attrition
-    )
-
-    print(f"  Parsing somatic mutations ({dataset.mutation_file})...")
-    mutation_df = _process_mutations(raw_dir, clinical_df, dataset)
-    if not mutation_df.empty and mutation_df.shape[1] > 0:
-        print(f"    Mutation matrix parsed ({mutation_df.shape[0]:,} samples × {mutation_df.shape[1]:,} genes).")
-
-    bundle = CleanedDataBundle(clinical_df, expression_df, mutation_df, attrition)
-    return _finalise_dataset(dataset, bundle, raw_dir, processed_dir)
 
 
 
@@ -961,29 +990,6 @@ def _finalise_dataset(
     return bundle.attrition_records
 
 
-def _safe_write_csv(
-    df: pd.DataFrame,
-    dest: Path,
-    *,
-    index: bool = True,
-) -> None:
-    """Safely write DataFrame to CSV, handling transient Windows/Dropbox locks."""
-    for attempt in range(3):
-        try:
-            df.to_csv(dest, index=index)
-            return
-        except OSError:
-            if attempt < 2:
-                time.sleep(0.5)
-            else:
-                tmp_dest = dest.with_suffix(".tmp.csv")
-                df.to_csv(tmp_dest, index=index)
-                try:
-                    tmp_dest.replace(dest)
-                except OSError:
-                    pass
-
-
 def _write_processed_outputs(
     processed_dir: Path,
     clinical_df: pd.DataFrame,
@@ -996,9 +1002,9 @@ def _write_processed_outputs(
     expression_output = processed_dir / _EXPRESSION_OUTPUT_FILENAME
     mutation_output = processed_dir / _MUTATIONS_OUTPUT_FILENAME
 
-    _safe_write_csv(clinical_df.reset_index(), clinical_output, index=False)
-    _safe_write_csv(expression_df, expression_output, index=True)
-    _safe_write_csv(mutation_df, mutation_output, index=True)
+    safe_save_csv(clinical_df.reset_index(), clinical_output)
+    safe_save_csv(expression_df, expression_output, index=True)
+    safe_save_csv(mutation_df, mutation_output, index=True)
 
     print("  Wrote processed outputs:")
     print(f"    {display_path(clinical_output)}")
@@ -1015,7 +1021,7 @@ def _write_attrition_output(
     attrition_output = processed_dir / _ATTRITION_OUTPUT_FILENAME
 
     attrition_df = pd.DataFrame([r.to_dict() for r in attrition_records])
-    attrition_df.to_csv(attrition_output, index=False)
+    safe_save_csv(attrition_df, attrition_output)
 
     print("  Wrote attrition output:")
     print(f"    {display_path(attrition_output)}")
@@ -1379,6 +1385,7 @@ def _run_cleaning_pipeline(
         Number of successfully cleaned datasets.
     """
     success_count = 0
+    failed_cohorts: list[str] = []
 
     for dataset in datasets:
         try:
@@ -1390,27 +1397,22 @@ def _run_cleaning_pipeline(
         except Exception as error:
             print(f"\n[ERROR] Dataset '{dataset.cohort_name}' failed: {error}")
             print(traceback.format_exc())
+            failed_cohorts.append(dataset.cohort_name)
+
+    if failed_cohorts:
+        failed = ", ".join(failed_cohorts)
+        raise RuntimeError(f"Cleaning failed for cohort(s): {failed}")
 
     return success_count
 
 
 def _update_data_dictionary() -> None:
     """Invokes generate_data_dictionary module to update data_dictionary.json."""
-    try:
-        print("\n  Updating config/data_dictionary.json...")
-        try:
-            from generate_data_dictionary import OUTPUT_JSON, build_full_data_dictionary
-        except ImportError:
-            if str(SCRIPT_DIR) not in sys.path:
-                sys.path.insert(0, str(SCRIPT_DIR))
-            from generate_data_dictionary import OUTPUT_JSON, build_full_data_dictionary
-        dictionary = build_full_data_dictionary(PROCESSED_DIR)
-        with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
-            import json
-            json.dump(dictionary, f, indent=2)
-        print(f"  Data dictionary updated ({len(dictionary['columns']):,} features mapped).")
-    except Exception as err:
-        print(f"  [WARNING] Could not update data dictionary: {err}")
+    print("\n  Updating config/data_dictionary.json...")
+    dictionary = build_full_data_dictionary(PROCESSED_DIR)
+    with OUTPUT_JSON.open("w", encoding="utf-8") as file:
+        json.dump(dictionary, file, indent=2)
+    print(f"  Data dictionary updated ({len(dictionary['columns']):,} features mapped).")
 
 
 def main() -> None:

@@ -516,6 +516,86 @@ def test_download_and_extract_dataset_preserves_existing_data_when_candidate_inc
     assert existing_file.read_text(encoding="utf-8") == "existing\n"
 
 
+def test_download_and_extract_dataset_rejects_empty_required_file(
+    dummy_dataset_config: DatasetConfig,
+    mock_raw_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Ensure zero-byte required files cannot replace an existing dataset."""
+    monkeypatch.setattr(dd, "RAW_DIR", mock_raw_dir)
+    target = mock_raw_dir / dummy_dataset_config.raw_directory
+    target.mkdir()
+    existing_file = target / "existing.txt"
+    existing_file.write_text("preserved\n", encoding="utf-8")
+
+    monkeypatch.setattr(dd, "is_dataset_present", lambda _d: False)
+    monkeypatch.setattr(dd, "download_file", MagicMock())
+    monkeypatch.setattr(dd, "extract_tar_gz", MagicMock())
+
+    def mock_reorganise(*, extracted_dir: Path, target_dir: Path) -> None:
+        target_dir.mkdir(parents=True)
+        for filename in (
+            dummy_dataset_config.expression_file,
+            dummy_dataset_config.clinical_file,
+            dummy_dataset_config.clinical_sample_file,
+        ):
+            (target_dir / filename).touch()
+
+    monkeypatch.setattr(dd, "reorganise_extracted_dataset", mock_reorganise)
+
+    with pytest.raises(ValueError, match="dataset .* incomplete"):
+        dd.download_and_extract_dataset(dummy_dataset_config)
+
+    assert existing_file.read_text(encoding="utf-8") == "preserved\n"
+
+
+def test_replace_dataset_directory_rolls_back_when_install_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Ensure failed candidate installation restores the original directory."""
+    target = tmp_path / "dataset"
+    target.mkdir()
+    (target / "original.txt").write_text("original\n", encoding="utf-8")
+    candidate = tmp_path / "candidate"
+    candidate.mkdir()
+    (candidate / "replacement.txt").write_text("replacement\n", encoding="utf-8")
+
+    original_move = dd.move_with_retry
+    calls = {"count": 0}
+
+    def fail_candidate_install(source: Path, destination: Path, **kwargs: object) -> None:
+        calls["count"] += 1
+        if calls["count"] == 2:
+            raise OSError("candidate install failed")
+        original_move(source, destination, **kwargs)
+
+    monkeypatch.setattr(dd, "move_with_retry", fail_candidate_install)
+
+    with pytest.raises(OSError, match="candidate install failed"):
+        dd._replace_dataset_directory(candidate, target)
+
+    assert (target / "original.txt").read_text(encoding="utf-8") == "original\n"
+    assert not (target / "replacement.txt").exists()
+    assert not target.with_name("dataset.backup").exists()
+
+
+def test_replace_dataset_directory_removes_backup_after_success(tmp_path: Path) -> None:
+    """Ensure successful replacement leaves only the new dataset."""
+    target = tmp_path / "dataset"
+    target.mkdir()
+    (target / "old.txt").write_text("old\n", encoding="utf-8")
+    candidate = tmp_path / "candidate"
+    candidate.mkdir()
+    (candidate / "new.txt").write_text("new\n", encoding="utf-8")
+
+    dd._replace_dataset_directory(candidate, target)
+
+    assert (target / "new.txt").read_text(encoding="utf-8") == "new\n"
+    assert not (target / "old.txt").exists()
+    assert not target.with_name("dataset.backup").exists()
+
+
 def test_download_and_extract_dataset_cleans_up_on_failure(
     dummy_dataset_config: DatasetConfig,
     mock_raw_dir: Path,
