@@ -192,6 +192,7 @@ def load_dataset_config(
     }
 
     configs: list[DatasetConfig] = []
+    cohort_names: set[str] = set()
 
     for index, dataset in enumerate(datasets):
         if not isinstance(dataset, dict):
@@ -219,12 +220,20 @@ def load_dataset_config(
         _validate_field_types(dataset, index)
 
         try:
-            configs.append(DatasetConfig(**dataset))
+            config = DatasetConfig(**dataset)
 
         except TypeError as error:
             raise DatasetConfigError(
                 f"Dataset at index {index} has invalid fields: {error}"
             ) from error
+
+        if config.cohort_name in cohort_names:
+            raise DatasetConfigError(
+                f"Duplicate cohort_name in dataset configuration: "
+                f"{config.cohort_name!r}."
+            )
+        cohort_names.add(config.cohort_name)
+        configs.append(config)
 
     return tuple(configs)
 

@@ -227,10 +227,18 @@ def _normalise_os_status(
     Convert common survival-status representations to binary values.
     """
     if pd.api.types.is_numeric_dtype(series):
-        return pd.to_numeric(
+        result = pd.to_numeric(
             series,
             errors="coerce",
         )
+        invalid = result.notna() & ~result.isin((0, 1))
+        if invalid.any():
+            raise ValueError(
+                "Invalid overall-survival status values: "
+                f"{sorted(result.loc[invalid].unique().tolist())}. "
+                "Expected only 0, 1, or missing values."
+            )
+        return result
 
     status_map = {
         "1:DECEASED": 1.0,
@@ -320,13 +328,6 @@ def _copy_clinical_demographics(df_clin: pd.DataFrame, df: pd.DataFrame) -> None
     df[_COL_SEX] = _normalise_sex(df_clin[_COL_SEX]) if _COL_SEX in df_clin.columns else _VAL_NA
 
 
-def _copy_clinical_specimen_and_tx(
-    df_clin: pd.DataFrame,
-    df: pd.DataFrame,
-    dataset: DatasetConfig,
-) -> None:
-    """Copy and normalise specimen type, response, and immunotherapy flags."""
-    df[_COL_RESPONSE] = df_clin[_COL_RESPONSE] if _COL_RESPONSE in df_clin.columns else np.nan
 def _resolve_immunotherapy_column(
     df_clin: pd.DataFrame,
     dataset: DatasetConfig,
@@ -340,10 +341,21 @@ def _resolve_immunotherapy_column(
             None,
         )
     if tx_col:
-        return (
-            pd.to_numeric(df_clin[tx_col], errors="coerce")
-            .fillna(0).astype(int)
+        values = df_clin[tx_col]
+        numeric_values = pd.to_numeric(values, errors="coerce")
+        invalid = values.notna() & (
+            numeric_values.isna() | ~numeric_values.isin((0, 1))
         )
+        if invalid.any():
+            invalid_values = sorted(
+                values.loc[invalid].astype(str).unique().tolist()
+            )
+            raise ValueError(
+                f"Invalid immunotherapy flag values in {tx_col!r} for "
+                f"{dataset.cohort_name}: {invalid_values}. "
+                "Expected only 0, 1, or missing values."
+            )
+        return numeric_values
     is_immuno = dataset.cohort_immunotherapy or dataset.processing_strategy == _STRATEGY_IATLAS
     return pd.Series(1 if is_immuno else 0, index=df_clin.index)
 
@@ -353,7 +365,12 @@ def _copy_clinical_specimen_and_tx(
     df: pd.DataFrame,
     dataset: DatasetConfig,
 ) -> None:
-    """Copy specimen type and immunotherapy treatment indicators to harmonised DataFrame."""
+    """Copy and normalise response, specimen, and treatment indicators."""
+    df[_COL_RESPONSE] = (
+        df_clin[_COL_RESPONSE]
+        if _COL_RESPONSE in df_clin.columns
+        else np.nan
+    )
     df[_COL_RESPONSE_BINARY] = (
         pd.to_numeric(df_clin[_COL_RESPONSE_BINARY], errors="coerce")
         if _COL_RESPONSE_BINARY in df_clin.columns else np.nan
@@ -369,6 +386,8 @@ def _copy_clinical_genomic_burdens(df_clin: pd.DataFrame, df: pd.DataFrame) -> N
     for col in _GENOMIC_BURDEN_COLS:
         if col in df_clin.columns:
             df[col] = pd.to_numeric(df_clin[col], errors="coerce")
+        else:
+            df[col] = np.nan
 
 
 def _harmonise_clinical(
@@ -397,12 +416,12 @@ def _harmonise_clinical(
 def zscore_expression(df_expr: pd.DataFrame) -> pd.DataFrame:
     """Z-score standardise each gene independently within one cohort.
 
-    Constant or missing genes receive std=1 to avoid division by zero.
+    Constant genes receive std=1 to avoid division by zero. Genes with no
+    observed values remain missing.
     """
-    df = df_expr.copy()
-    means = df.mean(axis=0, skipna=True)
-    stds = df.std(axis=0, skipna=True).replace(0, 1.0).fillna(1.0)
-    return (df - means) / stds
+    means = df_expr.mean(axis=0, skipna=True)
+    stds = df_expr.std(axis=0, skipna=True).replace(0, 1.0).fillna(1.0)
+    return (df_expr - means) / stds
 
 
 def find_common_genes(
@@ -416,7 +435,7 @@ def find_common_genes(
         for df in expression_data.values()
     ]
 
-    if not gene_sets:
+    if not gene_sets or any(df.empty for df in expression_data.values()):
         return []
 
     common_genes = set.intersection(
@@ -474,7 +493,7 @@ def _build_sample_genomic_row(
     for feature in GENOMIC_FEATURES:
         if feature in clinical_row.index:
             row[feature] = clinical_row[feature]
-        elif feature in df_mut.columns:
+        elif feature in df_mut.columns and sample_id in df_mut.index:
             row[feature] = df_mut.loc[sample_id, feature]
         else:
             row[feature] = np.nan
@@ -514,6 +533,8 @@ def _build_genomic_features(
     """Build a unified genomic feature matrix for all merged samples."""
     mutation_features = _mutation_feature_columns()
     all_cols = [_COL_PATIENT_ID, _COL_SAMPLE_ID, _COL_COHORT] + GENOMIC_FEATURES + mutation_features
+    if len(all_cols) != len(set(all_cols)):
+        raise ValueError("Duplicate genomic output columns detected.")
     genomic_rows: list[dict[str, object]] = []
 
     for dataset in datasets:
@@ -569,6 +590,16 @@ def _align_single_cohort_data(
 ) -> DatasetFrames:
     """Load and align expression, clinical, and mutation data for one cohort."""
     df_expr, df_clin_raw, df_mut = load_dataset(dataset)
+    for label, frame in (
+        ("expression", df_expr),
+        ("clinical", df_clin_raw),
+        ("mutation", df_mut),
+    ):
+        if frame.index.has_duplicates:
+            raise ValueError(
+                f"Duplicate sample IDs found in {label} data for "
+                f"{dataset.cohort_name}."
+            )
     common_ids = df_expr.index.intersection(df_clin_raw.index)
     if len(common_ids) == 0:
         raise ValueError(f"No overlapping samples for {dataset.cohort_name}.")
@@ -638,6 +669,11 @@ def _scale_and_concat_expression(
         df_scaled = zscore_expression(df_expr[common_genes]).loc[df_clin.index]
         scaled_expr.append(df_scaled)
         clinical_frames.append(df_clin)
+
+    if not scaled_expr:
+        raise ValueError(
+            "Cannot merge expression data: no selected cohorts contain samples."
+        )
 
     df_expr_merged = pd.concat(scaled_expr, axis=0)
     df_clin_merged = pd.concat(clinical_frames, axis=0)
@@ -727,7 +763,7 @@ def main() -> None:
         mutation_data=mutation_data, output_dir=FULL_DIR, label="Full", immunotherapy_only=False,
     )
 
-    df_expr_immuno, df_clin_immuno = build_merged_cohort(
+    _, df_clin_immuno = build_merged_cohort(
         datasets=datasets, expression_data=expression_data, clinical_data=clinical_data,
         mutation_data=mutation_data, output_dir=IMMUNOTHERAPY_DIR, label="Immunotherapy",
         immunotherapy_only=True,
