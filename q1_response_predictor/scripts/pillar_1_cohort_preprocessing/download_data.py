@@ -131,32 +131,43 @@ _IGNORED_DATASET_FILES = frozenset({
     ".dropbox.cache",
 })
 
+_REQUIRED_DATASET_ATTRIBUTES = (
+    "expression_file",
+    "clinical_file",
+    "clinical_sample_file",
+)
+
 
 def is_dataset_present(dataset: DatasetConfig) -> bool:
     """Return whether the configured dataset already contains data.
 
-    A dataset is considered present when its target directory exists and
-    contains at least one valid non-hidden data file (ignoring OS metadata
-    files and cloud sync locks such as desktop.ini, .DS_Store, or Dropbox attributes).
+    A dataset is considered present when all files required by the cleaning
+    pipeline exist and are non-empty. Mutation data is intentionally not part
+    of this check because some configured cohorts do not provide it.
     """
     target_dir = RAW_DIR / dataset.raw_directory
 
     if not target_dir.exists() or not target_dir.is_dir():
         return False
 
-    for item in target_dir.iterdir():
-        if item.name.startswith(".") and item.name != "_extracted":
-            continue
-        lower_name = item.name.lower()
-        if lower_name in _IGNORED_DATASET_FILES:
-            continue
-        if lower_name.startswith("~$") or lower_name.endswith((".tmp", ".dropbox.attr")):
-            continue
-        if not item.is_file():
-            continue
-        return True
+    return _has_required_dataset_files(target_dir, dataset)
 
-    return False
+
+def _has_required_dataset_files(
+    dataset_dir: Path,
+    dataset: DatasetConfig,
+) -> bool:
+    """Return whether a staged or installed dataset has required files."""
+    for attribute in _REQUIRED_DATASET_ATTRIBUTES:
+        filename = getattr(dataset, attribute)
+        path = dataset_dir / filename
+        if (
+            not path.is_file()
+            or path.stat().st_size == 0
+            or path.name.lower() in _IGNORED_DATASET_FILES
+        ):
+            return False
+    return True
 
 
 def _handle_remove_readonly(func: object, path: object, exc_info: object) -> None:
@@ -309,6 +320,30 @@ def reorganise_extracted_dataset(
     print(f"Reorganisation of {extracted_dir.name} complete.")
 
 
+def _replace_dataset_directory(
+    candidate_dir: Path,
+    target_dir: Path,
+) -> None:
+    """Install a validated candidate while preserving rollback capability."""
+    backup_dir = target_dir.with_name(f"{target_dir.name}.backup")
+    if backup_dir.exists():
+        remove_path_with_retry(backup_dir)
+
+    target_was_moved = False
+    try:
+        if target_dir.exists():
+            move_with_retry(target_dir, backup_dir)
+            target_was_moved = True
+        move_with_retry(candidate_dir, target_dir)
+    except OSError:
+        if target_was_moved and not target_dir.exists():
+            move_with_retry(backup_dir, target_dir)
+        raise
+    else:
+        if backup_dir.exists():
+            remove_path_with_retry(backup_dir)
+
+
 def _validate_dataset_paths(dataset: DatasetConfig) -> None:
     """Validate dataset fields for path traversal characters."""
     for field_name, value in [
@@ -332,7 +367,6 @@ def _download_and_extract_flow(
     extracted_dir: Path,
 ) -> None:
     """Execute sequence of download, extract, and reorganisation."""
-    remove_existing_dataset_directory(target_dir)
     if extracted_dir.exists():
         print(f"Removing previous incomplete extraction: {rel_path(extracted_dir)}")
         remove_directory_with_retry(extracted_dir)
@@ -341,7 +375,14 @@ def _download_and_extract_flow(
     download_file(url, tar_path)
     extraction_root.mkdir(parents=True, exist_ok=True)
     extract_tar_gz(tar_path=tar_path, extract_to=extraction_root)
-    reorganise_extracted_dataset(extracted_dir=extracted_dir, target_dir=target_dir)
+    candidate_dir = extraction_root / f"{dataset.study_id}_ready"
+    reorganise_extracted_dataset(extracted_dir=extracted_dir, target_dir=candidate_dir)
+    if not _has_required_dataset_files(candidate_dir, dataset):
+        raise ValueError(
+            f"Extracted dataset for {dataset.cohort_name} is incomplete; "
+            "required expression and clinical files are missing or empty."
+        )
+    _replace_dataset_directory(candidate_dir, target_dir)
     print(f"Successfully downloaded and prepared {dataset.cohort_name}.")
 
 

@@ -92,11 +92,16 @@ def test_is_dataset_present_true_when_valid_data_file_exists(
     mock_raw_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Ensure returns True when at least one legitimate data file is found."""
+    """Ensure all pipeline-required files make a dataset present."""
     monkeypatch.setattr(dd, "RAW_DIR", mock_raw_dir)
     target = mock_raw_dir / dummy_dataset_config.raw_directory
     target.mkdir(parents=True)
-    (target / "data_clinical_patient.txt").write_text("PATIENT_ID\n1\n", encoding="utf-8")
+    for filename in (
+        dummy_dataset_config.expression_file,
+        dummy_dataset_config.clinical_file,
+        dummy_dataset_config.clinical_sample_file,
+    ):
+        (target / filename).write_text("header\nvalue\n", encoding="utf-8")
     assert dd.is_dataset_present(dummy_dataset_config) is True
 
 
@@ -458,6 +463,16 @@ def test_download_and_extract_dataset_orchestrates_flow(
     mock_extract = MagicMock()
     mock_reorganise = MagicMock()
 
+    def populate_candidate(*, extracted_dir: Path, target_dir: Path) -> None:
+        target_dir.mkdir(parents=True)
+        for filename in (
+            dummy_dataset_config.expression_file,
+            dummy_dataset_config.clinical_file,
+            dummy_dataset_config.clinical_sample_file,
+        ):
+            (target_dir / filename).write_text("header\nvalue\n", encoding="utf-8")
+
+    mock_reorganise.side_effect = populate_candidate
     monkeypatch.setattr(dd, "download_file", mock_download)
     monkeypatch.setattr(dd, "extract_tar_gz", mock_extract)
     monkeypatch.setattr(dd, "reorganise_extracted_dataset", mock_reorganise)
@@ -474,10 +489,40 @@ def test_download_and_extract_dataset_orchestrates_flow(
     mock_extract.assert_called_once_with(tar_path=expected_tar, extract_to=expected_staging)
     mock_reorganise.assert_called_once_with(
         extracted_dir=expected_extracted_dir,
-        target_dir=expected_target,
+        target_dir=expected_staging / f"{dummy_dataset_config.study_id}_ready",
     )
     # Staging directory must be cleaned up in finally block
     assert not expected_staging.exists()
+
+
+def test_download_and_extract_dataset_preserves_existing_data_when_candidate_incomplete(
+    dummy_dataset_config: DatasetConfig,
+    mock_raw_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Ensure an incomplete replacement cannot remove usable existing data."""
+    monkeypatch.setattr(dd, "RAW_DIR", mock_raw_dir)
+    target = mock_raw_dir / dummy_dataset_config.raw_directory
+    target.mkdir()
+    existing_file = target / dummy_dataset_config.clinical_file
+    existing_file.write_text("existing\n", encoding="utf-8")
+
+    monkeypatch.setattr(dd, "is_dataset_present", lambda _d: False)
+    monkeypatch.setattr(dd, "download_file", MagicMock())
+    monkeypatch.setattr(dd, "extract_tar_gz", MagicMock())
+
+    def mock_reorganise(*, extracted_dir: Path, target_dir: Path) -> None:
+        target_dir.mkdir(parents=True)
+        (target_dir / dummy_dataset_config.clinical_file).write_text(
+            "partial\n", encoding="utf-8"
+        )
+
+    monkeypatch.setattr(dd, "reorganise_extracted_dataset", mock_reorganise)
+
+    with pytest.raises(ValueError, match="dataset .* incomplete"):
+        dd.download_and_extract_dataset(dummy_dataset_config)
+
+    assert existing_file.read_text(encoding="utf-8") == "existing\n"
 
 
 def test_download_and_extract_dataset_cleans_up_on_failure(
