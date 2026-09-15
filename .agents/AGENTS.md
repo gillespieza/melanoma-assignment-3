@@ -245,3 +245,34 @@ When fixing code smells or refactoring code in this repository, follow these gui
     - **Reason**: Van Allen 2015 is a pure ipilimumab (aCTLA-4) cohort — all 110 patients received ipilimumab as their primary treatment. It is a fundamentally different drug class from the anti-PD-1 trials (Liu 2019, Hugo 2016, Riaz 2017, Gide 2019). Including it conflates CTLA-4 response biology with PD-1 response biology, introducing a qualitatively different confounder that cannot be corrected by covariate adjustment. The scientific decision is documented as **ASD-03** in `q1_response_predictor/docs/DECISIONS.md`.
     - **Practical enforcement**: In `config/datasets.yaml`, Van Allen 2015 must be either removed or marked `active: false`. In `merge_datasets.py` and all downstream scripts, do NOT load or reference `van_allen_2015` data. Do NOT add it back or re-enable it without an explicit instruction from Amanda.
     - **Scope**: This exclusion applies to Q1 (response predictor), Q1.1 (patient stratification), and all merged dataset operations. Van Allen 2015 data files may remain on disk in `data/raw/van_allen_2015/` and `data/processed/van_allen_2015/` for archival purposes but must not be loaded into any active pipeline.
+22. **No Hard Line Breaks Inside Markdown Paragraphs**:
+    - **Never insert manual line breaks mid-sentence** (e.g. at column 80 or 100) inside markdown paragraph body text. Each prose paragraph must be written as a single continuous line of text, terminated only by a blank line that opens the next paragraph or block element.
+    - **Applies to**: all generated markdown files — reports (`phase_x_STUDENT.md`, `DECISIONS.md`, `PROJECT_MAP.md`), docstrings embedded in markdown, callout body text, and any other `.md` artefact produced or edited by the agent.
+    - **Does NOT apply to**: code blocks (fenced with triple backticks), table rows, list item text that naturally wraps, or YAML frontmatter values. Those retain their own formatting rules.
+    - **Rationale**: Hard-wrapped lines render identically to continuous text in Obsidian's preview and on GitHub, but they create jarring mid-sentence line breaks when the file is viewed in any editor without word-wrap, and they make diffs noisy. A single long line per paragraph is always preferable to artificial wrapping at an arbitrary column boundary.
+23. **RTK — Rust Token Killer (Mandatory CLI Proxy)**:
+    - **RTK is a token-optimised CLI proxy** that cuts up to 90% of bash output noise. It must be used for every CLI and Git invocation in this project.
+    - **ALWAYS explicitly prefix commands with `rtk`** — e.g. `rtk git status`, `rtk git log -n 5 --oneline`, `rtk git diff`. NEVER run bare `git` or other CLI commands directly.
+    - **NEVER assume automatic rewriting or hook-based execution.** The `rtk` prefix must be written out explicitly every time.
+    - **Violation examples** (forbidden):
+      - `git status` → must be `rtk git status`
+      - `git log` → must be `rtk git log -n 5 --oneline`
+      - `git diff` → must be `rtk git diff`
+    - **Meta commands** (run directly via rtk, not proxied):
+
+      ```bash
+      rtk gain              # Show token savings analytics
+      rtk gain --history    # Show command usage history with savings
+      rtk discover          # Analyse command history for missed opportunities
+      rtk proxy <cmd>       # Execute raw command without filtering (for debugging)
+      ```
+
+    - **Installation verification** (run if behaviour seems wrong):
+
+      ```bash
+      rtk --version         # Should show: rtk X.Y.Z
+      rtk gain              # Should work (not "command not found")
+      which rtk             # Verify correct binary
+      ```
+
+    - **Name collision warning**: If `rtk gain` fails, you may have `reachingforthejack/rtk` (Rust Type Kit) installed instead of the correct token-killer binary. Refer to `CLAUDE.md` for the full command reference.
