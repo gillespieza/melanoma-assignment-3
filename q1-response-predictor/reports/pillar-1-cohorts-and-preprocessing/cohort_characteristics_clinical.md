@@ -1,20 +1,29 @@
 ---
 title: "Clinical Characteristics of Immunotherapy Data Cohorts"
-aliases:
-  - Clinical Cohort Characteristics
+aliases: Clinical Cohort Characteristics
 tags:
-  - melanoma
   - clinical-analysis
   - cohort-characteristics
-  - survival-analysis
-  - kaplan-meier
   - immunotherapy
+  - kaplan-meier
+  - melanoma
+  - survival-analysis
 created: 2026-09-15 11:50
 cssclasses:
-  - table-small
-  - table-center
   - row-alt
-updated: 2026-09-15 11:50
+  - table-center
+  - table-small
+obsidianEditingMode: preview
+obsidianUIMode: source
+updated: 2026-09-15 13:02
+---
+
+> [!summary]- Contents
+> ```table-of-contents
+> style: nestedList  # nestedList, nestedOrderedList, inlineFirstLevel
+> hideWhenEmpty: true # Hide TOC if no headings are found
+> ```
+
 ---
 
 # Clinical Characteristics of Immunotherapy Data Cohorts

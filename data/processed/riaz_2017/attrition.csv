@@ -1,4 +1,4 @@
 cohort,step,n_before,n_after,n_removed,reason
 Riaz 2017,Clinical data loaded,107,107,0,Merged patient-level and sample-level clinical records.
-Riaz 2017,Clinical data harmonised,107,107,0,"Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation."
-Riaz 2017,Expression data availability,107,107,0,Identified samples with matching RNA-seq gene expression data.
+Riaz 2017,Clinical data harmonised,107,51,56,"Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation."
+Riaz 2017,Expression data availability,51,51,0,Identified samples with matching RNA-seq gene expression data.

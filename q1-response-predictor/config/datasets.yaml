@@ -7,7 +7,7 @@ datasets:
     clinical_file: "data_clinical_patient.txt"
     clinical_sample_file: "data_clinical_sample.txt"
     mutation_file: "data_mutations.txt"
-    baseline_only: false
+    baseline_only: true
     mutations_by_patient: false
     patient_prefix: "liu_"
     sample_prefix: ""
@@ -22,7 +22,7 @@ datasets:
     clinical_file: "data_clinical_patient.txt"
     clinical_sample_file: "data_clinical_sample.txt"
     mutation_file: "data_mutations.txt"
-    baseline_only: false
+    baseline_only: true
     mutations_by_patient: false
     patient_prefix: "hugo_"
     sample_prefix: "hugo_"
@@ -37,7 +37,7 @@ datasets:
     clinical_file: "data_clinical_patient.txt"
     clinical_sample_file: "data_clinical_sample.txt"
     mutation_file: "data_mutations.txt"
-    baseline_only: false
+    baseline_only: true
     mutations_by_patient: false
     patient_prefix: "riaz_"
     sample_prefix: "riaz_"
@@ -52,7 +52,7 @@ datasets:
   #   clinical_file: "data_clinical_patient.txt"
   #   clinical_sample_file: "data_clinical_sample.txt"
   #   mutation_file: "data_mutations.txt"
-  #   baseline_only: false
+  #   baseline_only: true
   #   mutations_by_patient: false
   #   merge_enabled: false  # Superseded by skcm_tcga_gdc; retained for archival QC only
   #   patient_prefix: "tcga_pancan_"
@@ -67,7 +67,7 @@ datasets:
     clinical_file: "data_clinical_patient.txt"
     clinical_sample_file: "data_clinical_sample.txt"
     mutation_file: "data_mutations.txt"
-    baseline_only: false
+    baseline_only: true
     mutations_by_patient: false
     merge_enabled: false  # Excluded from training; used as independent validation/reference only
     cohort_immunotherapy: true   # IT-treated subcohort (ipilimumab, vaccines, interferon +/- chemotherapy)
@@ -84,7 +84,7 @@ datasets:
     clinical_file: "data_clinical_patient.txt"
     clinical_sample_file: "data_clinical_sample.txt"
     mutation_file: "data_mutations.txt"
-    baseline_only: false
+    baseline_only: true
     mutations_by_patient: false
     patient_prefix: "gide_"
     sample_prefix: "gide_"

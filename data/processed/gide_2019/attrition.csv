@@ -1,4 +1,4 @@
 cohort,step,n_before,n_after,n_removed,reason
 Gide 2019,Clinical data loaded,91,91,0,Merged patient-level and sample-level clinical records.
-Gide 2019,Clinical data harmonised,91,91,0,"Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation."
-Gide 2019,Expression data availability,91,91,0,Identified samples with matching RNA-seq gene expression data.
+Gide 2019,Clinical data harmonised,91,73,18,"Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation."
+Gide 2019,Expression data availability,73,73,0,Identified samples with matching RNA-seq gene expression data.

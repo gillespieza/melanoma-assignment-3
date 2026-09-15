@@ -9,7 +9,7 @@ cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-08-09 20:55
+updated: 2026-09-15 14:10
 ---
 
 > [!summary]- Contents
@@ -24,7 +24,7 @@ updated: 2026-08-09 20:55
 
 > **Purpose**: Living reference document for agent orientation. Read this FIRST before exploring the codebase. Eliminates redundant file-discovery across conversations.
 >
-> **Last updated**: 2026-08-09 (scikit-learn 1.8 `penalty` deprecation fix in `q1-response-predictor/src/models.py`: replaced `penalty=['l1','l2']` grid with `l1_ratio=[0.0, 1.0]` in `tune_logistic_regression`, removed `penalty='elasticnet'` from `tune_elasticnet` and `get_uncalibrated_model`, added `np.asarray()` conversion in `calibrate_estimator` to suppress feature-name mismatch `UserWarning` in `CalibratedClassifierCV`; also `generate_5f_cv_heatmap.py` fixed to wrap `X_val_scaled` in `pd.DataFrame` with feature names).
+> **Last updated**: 2026-09-15 (ASD-02 pre-treatment baseline restriction: fixed `clean_data.py` baseline filtering to use `SAMPLE_TREATMENT == "Pre"` metadata column before falling back to `_PRE` suffix matching; prevents on-treatment biopsies from Riaz 2017 and Gide 2019 leaking into training data; documented as ASD-02 in `q1-response-predictor/docs/DECISIONS.md`).
 
 ## Repository Overview
 
@@ -166,6 +166,7 @@ _Note_: Dataset metadata is stored in `data/config/datasets.yaml`. Q1-specific d
 ### Key Outputs
 
 - `models/final_rf_model.pkl` (trained 12-feature Random Forest model)
+- `docs/DECISIONS.md` (Analytical & Scientific Decisions Log; e.g. ASD-01 response harmonisation)
 - `plots/` subdirs: `biomarkers/`, `feature_selection/`, `models/`
 - `reports/` subdirs: `pillar-1-cohorts-and-preprocessing/`, `pillar-2-genomic-landscape/`, `pillar-3-transcriptomic-signatures/`, `pillar-4-out-of-cohort-benchmarks/`, `executive_summary.md`
 
@@ -384,6 +385,8 @@ npm run build
 | Report Architecture Callout & IT-Treated Subcohort Clustering | Integrated `generate_script_reference_callout()` in `run_clinical_clustering.py` to append `[!formula]+` callout at the end of `clinical_phenotyping_and_feature_selection.md`. Future-proofed Overview callout boxes against new datasets with dynamic cohort names and GMM feature counts. Restricted cohort loading in `run_clinical_clustering.py` against `data/processed/merged/immunotherapy/clin_merged.csv` so TCGA GDC 2025 (and all active cohorts) filter strictly to the IT-treated subcohort ($N = 478$ patients across 6 cohorts, OS Log-Rank $p = 2.18 \times 10^{-6}$). Removed root-level report mirroring from pipeline scripts and cleaned project-root `reports/` folder to enforce subproject report isolation. | **Resolved** (2026-08-09) |
 | Single-Patient & Batch Inference Dynamic Dataset Loading (`predictor.py`, `q1_infer.py`) | Refactored `q1-response-predictor/predictor.py` and `q1-response-predictor/q1_infer.py` per `AGENTS.md` Futureproofing Mandate: replaced stale hardcoded dataset lists (`['liu_2019', 'hugo_2016', 'riaz_2017', 'skcm_tcga_pan_can_atlas_2018']`) with dynamic active dataset loading from `config/datasets.yaml` via `load_dataset_config_or_empty()`. Added dynamic cohort lookup resolution in `predictor.py` (`_resolve_cohort_directory()`) supporting cohort names and processed folder keys across all active datasets (`liu_2019`, `hugo_2016`, `riaz_2017`, `gide_2019`, `van_allen_2015`, `skcm_tcga_gdc`). Resolved default reference TCGA path in `q1_infer.py` (`resolve_reference_tcga_path()`) to dynamically target active TCGA GDC 2025 cohort (`skcm_tcga_gdc`). Verified CLI `--help` and inference execution with exit code 0. | **Resolved** (2026-08-09) |
 | `q1-response-predictor/src/models.py` sklearn 1.8/1.9 `penalty`, `SVC(probability=True)`, & calibration warnings | scikit-learn 1.8/1.9 deprecated `penalty='l1'`, `penalty='l2'`, `penalty='elasticnet'` on `LogisticRegression` and `probability=True` on `SVC`. Fixes: (1) `tune_logistic_regression` param grid changed from `penalty: ['l1', 'l2']` to `l1_ratio: [0.0, 1.0]` (0.0 = L2, 1.0 = L1); (2) `tune_elasticnet` and `get_uncalibrated_model("elasticnet")` had `penalty='elasticnet'` removed — `solver='saga'` with `l1_ratio` in `(0, 1)` implicitly selects ElasticNet; (3) `calibrate_estimator` passes DataFrame/ndarray inputs directly to `CalibratedClassifierCV.fit()` to preserve `feature_names_in_` consistency between training and prediction; (4) `generate_5f_cv_heatmap.py` wraps `X_val_scaled` in `pd.DataFrame(..., columns=FEATURE_COLS)` matching `X_train_scaled`; (5) `get_baseline_model("svm")` wraps `SVC()` in `CalibratedClassifierCV(ensemble=False)` instead of deprecated `SVC(probability=True)`. | **Resolved** (2026-08-09) |
+| Analytical & Scientific Decision ASD-01 (`docs/DECISIONS.md`) | Established `q1-response-predictor/docs/DECISIONS.md` as the living record for analytical and scientific decisions. Documented ASD-01: clinical response consolidation across heterogeneous RECIST 1.1 (Liu, Riaz, Gide) and irRC (Hugo) trial criteria into binary classification target (`CR/PR = 1.0`, `PD = 0.0`, `SD = NaN` censored from binary ML training but preserved in survival/clustering). | **Resolved** (2026-09-15) |
+| Analytical & Scientific Decision ASD-02 — Pre-Treatment Baseline Restriction (`clean_data.py`, `docs/DECISIONS.md`) | Riaz 2017 and Gide 2019 include paired pre- and on-treatment biopsies from the same patients (41 pairs; 27 Riaz + 14 Gide), causing pharmacodynamic feature leakage and i.i.d. violations in the merged training set (347 samples, 288 unique patients). Fixed `_harmonise_clinical_data()` to check `SAMPLE_TREATMENT == "Pre"` first (robust for all cohorts with metadata), falling back to `_PRE` suffix matching. Fixed `_process_raw_expression_matrix()` to guard against accidentally zeroing out cohorts without `_PRE`-suffixed sample IDs (Liu 2019, Hugo 2016). Added `_COL_SAMPLE_TREATMENT` and `_VAL_PRE_TREATMENT` constants. Documented as ASD-02 in `q1-response-predictor/docs/DECISIONS.md`. Enabled `baseline_only: true` across all active cohorts in `datasets.yaml`. | **Resolved** (2026-09-15) |
 
 - **Pipeline pattern**: Each Q has `run_qN_pipeline.py` or `run_pipeline.py` → sequential scripts
 - **Logging**: All scripts use `TeeStream` to dual-write stdout to `logs/` directory

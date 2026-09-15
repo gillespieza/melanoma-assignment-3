@@ -102,6 +102,8 @@ _COL_SAMPLE_ID: str = "SAMPLE_ID"
 _COL_HUGO_SYMBOL: str = "Hugo_Symbol"
 _COL_ENTREZ_ID: str = "Entrez_Gene_Id"
 _BASELINE_SUFFIX: str = "_PRE"
+_COL_SAMPLE_TREATMENT: str = "SAMPLE_TREATMENT"
+_VAL_PRE_TREATMENT: str = "PRE"
 
 # Output filenames for processed datasets.
 _CLINICAL_OUTPUT_FILENAME: str = "clin_cleaned.csv"
@@ -316,7 +318,27 @@ def _harmonise_clinical_data(
     df = drop_empty_columns(clean_clinical_df(df))
 
     if dataset.baseline_only:
-        df = df[df[_COL_SAMPLE_ID].str.endswith(_BASELINE_SUFFIX)]
+        if _COL_SAMPLE_TREATMENT in df.columns:
+            pre_mask = (
+                df[_COL_SAMPLE_TREATMENT]
+                .astype(str).str.strip().str.upper()
+                == _VAL_PRE_TREATMENT
+            )
+            n_before = len(df)
+            df = df[pre_mask]
+            print(
+                f"    Baseline filter (SAMPLE_TREATMENT == 'Pre'): "
+                f"{n_before:,} → {len(df):,} samples "
+                f"({n_before - len(df):,} on-treatment removed)."
+            )
+        else:
+            n_before = len(df)
+            df = df[df[_COL_SAMPLE_ID].str.endswith(_BASELINE_SUFFIX)]
+            print(
+                f"    Baseline filter (_PRE suffix): "
+                f"{n_before:,} → {len(df):,} samples "
+                f"({n_before - len(df):,} on-treatment removed)."
+            )
 
     if _COL_RESPONSE not in df.columns and "DURABLE_CLINICAL_BENEFIT" in df.columns:
         recist_map = {
@@ -371,7 +393,21 @@ def _process_raw_expression_matrix(
     df_expr.columns = (dataset.sample_prefix + df_expr.columns.astype(str)).str.upper()
 
     if dataset.baseline_only:
-        df_expr = df_expr[[col for col in df_expr.columns if col.endswith(_BASELINE_SUFFIX)]]
+        pre_cols = [
+            col for col in df_expr.columns
+            if col.endswith(_BASELINE_SUFFIX)
+        ]
+        # Only filter if _PRE-suffixed columns exist; cohorts without
+        # longitudinal sampling (e.g. Liu 2019) have no _PRE/_ON naming
+        # and should retain all columns.
+        if pre_cols:
+            n_before = len(df_expr.columns)
+            df_expr = df_expr[pre_cols]
+            print(
+                f"    Baseline expression filter: "
+                f"{n_before:,} → {len(pre_cols):,} sample columns "
+                f"({n_before - len(pre_cols):,} on-treatment removed)."
+            )
 
     df_expr = df_expr.T
     df_expr.index.name = _COL_SAMPLE_ID

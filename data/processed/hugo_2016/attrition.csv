@@ -1,4 +1,4 @@
 cohort,step,n_before,n_after,n_removed,reason
 Hugo 2016,Clinical data loaded,27,27,0,Merged patient-level and sample-level clinical records.
-Hugo 2016,Clinical data harmonised,27,27,0,"Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation."
-Hugo 2016,Expression data availability,27,27,0,Identified samples with matching RNA-seq gene expression data.
+Hugo 2016,Clinical data harmonised,27,26,1,"Applied identifier standardisation, clinical cleaning, baseline filtering, and variable harmonisation."
+Hugo 2016,Expression data availability,26,26,0,Identified samples with matching RNA-seq gene expression data.
