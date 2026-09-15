@@ -70,7 +70,6 @@ from typing import Callable
 # src.* modules.
 # ---------------------------------------------------------------------------
 
-SCRIPT_DIR = Path(__file__).resolve().parent
 SUBPROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 if str(SUBPROJECT_ROOT) not in sys.path:
@@ -102,8 +101,7 @@ from src.utils.paths import (
 # Resolve config relative to script location.
 CONFIG_PATH = SUBPROJECT_ROOT / "config" / "datasets.yaml"
 
-LOG_DIR = get_subproject_log_dir(Path(__file__))
-LOG_PATH = LOG_DIR / "download_data.log"
+LOG_PATH = get_subproject_log_dir(Path(__file__)) / "download_data.log"
 
 
 # ---------------------------------------------------------------------------
@@ -120,16 +118,6 @@ REORGANISATION_RETRY_DELAY_SECONDS = 2
 # Temporary staging directory created inside data/raw/ during archive extraction.
 # Prefixed with underscore so it cannot be confused with a real dataset directory.
 _EXTRACTION_STAGING_DIR = "_extracted"
-
-# OS metadata and temporary files ignored when checking dataset presence.
-_IGNORED_DATASET_FILES = frozenset({
-    "desktop.ini",
-    "thumbs.db",
-    ".ds_store",
-    ".dropbox",
-    ".dropbox.attr",
-    ".dropbox.cache",
-})
 
 _REQUIRED_DATASET_ATTRIBUTES = (
     "expression_file",
@@ -164,7 +152,6 @@ def _has_required_dataset_files(
         if (
             not path.is_file()
             or path.stat().st_size == 0
-            or path.name.lower() in _IGNORED_DATASET_FILES
         ):
             return False
     return True
@@ -194,7 +181,7 @@ def _attempt_remove_path(target_path: Path) -> None:
 
 
 def _run_with_retry(
-    operation: Callable[[], object],
+    operation: Callable[[], None],
     operation_name: str,
     failure_description: str,
     retries: int = MAX_REORGANISATION_RETRIES,
@@ -240,20 +227,6 @@ def remove_path_with_retry(
     )
 
 
-def remove_existing_dataset_directory(target_dir: Path) -> None:
-    """Remove an existing dataset directory before clean extraction."""
-    if not target_dir.exists():
-        return
-
-    print(
-        f"Removing existing directory "
-        f"{rel_path(target_dir)} "
-        "to ensure a clean extraction..."
-    )
-
-    remove_path_with_retry(target_dir)
-
-
 def move_with_retry(
     source: Path,
     destination: Path,
@@ -261,8 +234,12 @@ def move_with_retry(
     delay_seconds: float = REORGANISATION_RETRY_DELAY_SECONDS,
 ) -> None:
     """Move a file or directory with retry handling."""
+
+    def move() -> None:
+        shutil.move(source, destination)
+
     _run_with_retry(
-        operation=lambda: shutil.move(source, destination),
+        operation=move,
         operation_name=f"Move {source.name}",
         failure_description=f"destination {destination}",
         retries=retries,

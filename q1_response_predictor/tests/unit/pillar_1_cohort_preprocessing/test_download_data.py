@@ -201,15 +201,6 @@ def test_remove_path_with_retry_exhausted_raises_oserror(
         dd.remove_path_with_retry(target_file, retries=2, delay_seconds=0.01)
 
 
-def test_remove_existing_dataset_directory(tmp_path: Path) -> None:
-    """Ensure remove_existing_dataset_directory removes target directory if it exists."""
-    target_dir = tmp_path / "cohort_dir"
-    target_dir.mkdir()
-    (target_dir / "file.txt").write_text("data", encoding="utf-8")
-    dd.remove_existing_dataset_directory(target_dir)
-    assert not target_dir.exists()
-
-
 def test_attempt_remove_path_raises_when_directory_still_exists_due_to_cloud_lock(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
