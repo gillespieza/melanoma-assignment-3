@@ -17,10 +17,10 @@ cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-09-15 14:08
+updated: 2026-09-15 16:30
 ---
 
-> [!summary]- Contents
+> [!summary]+ Contents
 > ```table-of-contents
 > style: nestedList  # nestedList, nestedOrderedList, inlineFirstLevel
 > hideWhenEmpty: true # Hide TOC if no headings are found
@@ -37,6 +37,9 @@ updated: 2026-09-15 14:08
 |:---------- |:----------------------------------------------------------- |:----------:|:----------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **ASD-01** | Clinical Response Harmonisation (CR/PR vs PD; SD Censored)  | **Locked** | 2026-09-15 | Resolves irRC vs RECIST 1.1 discrepancies, ensures clean phenotypic contrast for ML, and prevents biomarker signal dilution from heterogeneous Stable Disease. |
 | **ASD-02** | Pre-Treatment Baseline Restriction (No On-Treatment Samples) | **Locked** | 2026-09-15 | Prevents pharmacodynamic leakage from on-treatment biopsies; ensures models predict response from pre-infusion biology only, matching prospective clinical use. |
+| **ASD-03** | Complete Exclusion of Van Allen 2015 (Pure CTLA-4 Blockade)  | **Locked** | 2026-09-15 | Removes pure ipilimumab (aCTLA-4) cohort from anti-PD-1 ML pipelines; prevents drug-class confounding and mechanism-specific biomarker signal distortion. |
+
+---
 
 ## ASD-01: Clinical Response Harmonisation & Consolidation
 
@@ -156,7 +159,7 @@ The `datasets.yaml` flag is set to `true` across all cohorts (Liu 2019, Hugo 201
 ### Scientific & Analytical Rationale
 
 > [!INSIGHT]  
-> **Key Takeaway**: Restricting training data to pre-treatment baseline biopsies ensures that the Q1 pipeline models what a clinician actually needs — a decision-support prediction made *before* therapy begins, from biology that is measurable at the point of treatment selection.
+> **Key Takeaway**: Restricting training data to pre-treatment baseline biopsies ensures that the Q1 pipeline models what a clinician actually needs — a decision-support prediction made _before_ therapy begins, from biology that is measurable at the point of treatment selection.
 
 1. **Preventing Pharmacodynamic Feature Leakage**:  
    On-treatment biopsies are mechanistically downstream of the intervention. Within 2–4 weeks of anti-PD-1 initiation, responding tumours undergo extensive immune microenvironmental remodelling: CD8+ T-cell infiltration increases, IFN-γ signalling is upregulated, M1/M2 macrophage ratios shift, and neoantigen-bearing clones are depleted. Signatures computed from on-treatment samples reflect the pharmacological effect of the drug, not baseline patient biology. A model trained on mixed pre/on-treatment data would learn to detect treatment response rather than predict it prospectively, and would fail catastrophically in deployment where only pre-treatment tissue is available.
@@ -168,7 +171,7 @@ The `datasets.yaml` flag is set to `true` across all cohorts (Liu 2019, Hugo 201
    Cohort-level Z-score normalisation computes $\mu$ and $\sigma$ per gene across all samples in a cohort. On-treatment samples typically exhibit elevated IFN-γ, TIS, CYT, and CD8 T-cell signature scores relative to pre-treatment baselines in responding patients. Their inclusion inflates the cohort mean and variance, suppressing the normalised scores of pre-treatment responders and compressing the separation boundary that the classifier must learn. Restricting to pre-treatment samples ensures the reference distribution reflects true baseline biology.
 
 4. **Alignment with Prospective Clinical Utility**:  
-   The clinical question posed by the Q1 predictor is: *"Given a patient's pre-treatment tumour biopsy, will they respond to anti-PD-1 therapy?"* This mirrors the actual clinical decision context — treatment selection occurs before infusion, using baseline tumour profiling. A predictor trained on on-treatment data cannot be deployed prospectively, as the on-treatment biopsy would not yet exist at the point of decision.
+   The clinical question posed by the Q1 predictor is: _"Given a patient's pre-treatment tumour biopsy, will they respond to anti-PD-1 therapy?"_ This mirrors the actual clinical decision context — treatment selection occurs before infusion, using baseline tumour profiling. A predictor trained on on-treatment data cannot be deployed prospectively, as the on-treatment biopsy would not yet exist at the point of decision.
 
 ### Implementation Details
 
@@ -186,3 +189,48 @@ The fix was applied in two locations within [`clean_data.py`](file:///c:/Users/A
 | **Riaz 2017** | `true` | 107 | 51 | 56 | 64 → **33** |
 | **Gide 2019** | `true` | 91 | 73 | 18 | 78 → **62** |
 | **Merged Immunotherapy** | — | **347** | **272** | **75** | 273 → **225** |
+
+## ASD-03: Complete Exclusion of Van Allen 2015 from Active Pipelines
+
+### Context & Problem Statement
+
+Van Allen et al. (2015) published whole-exome and transcriptomic profiles from $N = 110$ metastatic melanoma patients treated with **ipilimumab** (monoclonal antibody targeting CTLA-4). The cohort was initially retrieved into `data/raw/van_allen_2015/` as part of cross-cohort immune landscape comparisons.
+
+However, the primary therapeutic target of the Q1 response predictor is **anti-PD-1 / anti-PD-L1 checkpoint blockade** (nivolumab, pembrolizumab), evaluated across Liu 2019, Hugo 2016, Riaz 2017, and Gide 2019. Prior CTLA-4 exposure in patients receiving subsequent anti-PD-1 represents an important clinical confounder (as observed in Liu 2019 where $40/104$ evaluable patients had prior anti-CTLA-4 therapy, and Riaz 2017 where $15/33$ had prior ipilimumab). In contrast, Van Allen 2015 represents an entirely different pharmacological class: **100% of patients received ipilimumab as primary therapy**, not anti-PD-1.
+
+### Options Considered
+
+1. **Include Van Allen 2015 in Merged Immunotherapy ML Training**:
+   - _Description_: Pool Van Allen 2015 with anti-PD-1 cohorts to expand training sample size ($+110$ patients).
+   - _Drawbacks_: Conflates CTLA-4 response biology with PD-1 response biology. CTLA-4 blockade acts primarily during T-cell priming in lymphoid tissues and promotes regulatory T-cell (Treg) depletion via ADCC, whereas PD-1 blockade acts in peripheral tumour tissue to restore exhausted effector T-cells. Predictive transcriptomic signatures diverge significantly: signatures predictive of anti-PD-1 benefit (e.g. `TIS`, `CYT`, `CD8_Tcell`) demonstrate weaker or distinct association patterns under CTLA-4 blockade. Training an anti-PD-1 classifier on ipilimumab response labels introduces drug-class confounding that cannot be resolved through statistical adjustment.
+
+2. **Retain as an Active Secondary / Validation Cohort in `datasets.yaml`**:
+   - _Description_: Keep Van Allen 2015 active with `merge_enabled: false` for exploratory comparisons.
+   - _Drawbacks_: Increases maintenance overhead, risks unintended inclusion by scripts scanning `config/datasets.yaml`, and provides questionable validation utility for models specifically calibrated for anti-PD-1 clinical decision support.
+
+3. **Complete Exclusion from Active Pipelines on This Branch**:
+   - _Description_: Remove or keep omitted from `config/datasets.yaml`, ensure no pipeline scripts load or merge the cohort, and document permanent exclusion as a binding project rule.
+   - _Consequence_: Raw and processed data files remain preserved in `data/raw/van_allen_2015/` and `data/processed/van_allen_2015/` for archival reference, but zero active pipeline code loads the cohort.
+
+### Decision
+
+**Adopt Option 3 (Complete Exclusion from Active Pipelines on This Branch)**.
+
+- **`config/datasets.yaml`**: Confirmed omitted from active entries. Only anti-PD-1 trial cohorts (Liu 2019, Hugo 2016, Riaz 2017, Gide 2019) and reference TCGA GDC 2025 are listed.
+- **`merge_datasets.py`**: Confirmed no references or ingestion paths for `van_allen_2015`.
+- **Project Governance**: Codified as **Rule 21** in `.agents/AGENTS.md`, ensuring all future agent sessions enforce the exclusion.
+
+### Scientific & Analytical Rationale
+
+> [!INSIGHT]  
+> **Key Takeaway**: Anti-PD-1 and anti-CTLA-4 therapies target fundamentally distinct phases of the cancer-immunity cycle. Pooling a pure ipilimumab cohort with anti-PD-1 cohorts conflates the biological mechanisms of response, undermining model interpretability and prospective clinical utility.
+
+1. **Divergent Pharmacological Mechanisms**:  
+   CTLA-4 is an early-checkpoint receptor expressed on naive and memory T-cells that dampens initial priming by antigen-presenting cells in draining lymph nodes. PD-1 is an inhibitory receptor induced on antigen-experienced, exhausted effector T-cells within the peripheral tumour microenvironment. Response to ipilimumab is strongly driven by baseline neoantigen load and host immune repertoire diversity, whereas anti-PD-1 response depends critically on pre-existing intratumoural cytotoxic infiltration (`CD8A`, `CYT`) and IFN-$\gamma$-mediated PD-L1 expression.
+
+2. **Target Phenotype Purity for Machine Learning**:  
+   The Q1 prediction task is defined as: _"Predict clinical response (CR/PR vs PD) to anti-PD-1/anti-PD-L1 checkpoint blockade from pre-treatment tumour profiling."_ Admitting a cohort where response was governed by anti-CTLA-4 pharmacology contaminates the target label `RESPONSE_BINARY`, diluting the feature importance of true PD-1 predictive biomarkers.
+
+3. **Distinction Between Confounder Adjustment and Drug-Class Conflation**:  
+   Prior ipilimumab exposure in anti-PD-1-treated patients (e.g. Liu 2019, Riaz 2017) represents an **effect modifier / clinical covariate** of PD-1 response, properly addressed via feature annotation or stratified reporting. In contrast, evaluating primary response to ipilimumab is an entirely different clinical question that belongs to a separate investigational arm.
+
