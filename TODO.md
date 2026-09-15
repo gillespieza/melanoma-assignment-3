@@ -14,7 +14,7 @@ cssclasses:
   - table-small
 obsidianEditingMode: preview
 obsidianUIMode: source
-updated: 2026-09-14 15:15
+updated: 2026-09-15 16:32
 ---
 
 # 📋 Project Task List & Backlog
@@ -55,6 +55,8 @@ updated: 2026-09-14 15:15
 - [x] Resolution of scikit-learn 1.8/1.9 deprecations (`penalty`, `CalibratedClassifierCV`, feature name tracking).
 - [x] Pillar directory reorganisation and AST code smell refactoring ($\le 30$ line functions, $\le 100$ char line width).
 - [x] Parallelisation of 5-fold CV and LOCO heatmaps (`generate_combined_cv_loco_heatmap.py`).
+- [ ] Audit TMB comparability across cohorts: calculate TMB from mutation data where feasible, and document included mutation types, germline filtering, synonymous-variant filtering, mutation-count denominator, minimum coverage, and variant-level filtering criteria.
+- [ ] Retain all eligible patients while deriving a patient-level CTLA-4 exposure flag; preserve unknown treatment history explicitly, keep current regimen separate from prior exposure, and report overall plus CTLA-4-stratified model performance.
 - [ ] Verify `reports/pillar_4_out_of_cohort_benchmarks/` Markdown reports against the parallelised LOCO heatmap metrics.
 - [ ] Investigate suitability of adding **Campbell / MORRISON-1** and **GEM / Spanish Melanoma Group** datasets.
 

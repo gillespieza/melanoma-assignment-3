@@ -39,8 +39,6 @@ updated: 2026-09-15 16:30
 | **ASD-02** | Pre-Treatment Baseline Restriction (No On-Treatment Samples) | **Locked** | 2026-09-15 | Prevents pharmacodynamic leakage from on-treatment biopsies; ensures models predict response from pre-infusion biology only, matching prospective clinical use. |
 | **ASD-03** | Complete Exclusion of Van Allen 2015 (Pure CTLA-4 Blockade)  | **Locked** | 2026-09-15 | Removes pure ipilimumab (aCTLA-4) cohort from anti-PD-1 ML pipelines; prevents drug-class confounding and mechanism-specific biomarker signal distortion. |
 
----
-
 ## ASD-01: Clinical Response Harmonisation & Consolidation
 
 ### Context & Problem Statement
@@ -86,6 +84,26 @@ Downstream machine learning pipelines ([`q1_infer.py`](file:///c:/Users/Amanda/D
 df_evaluable = df.loc[df["RESPONSE_BINARY"].notna()].copy()
 ```
 
+### Hugo 2016 Application and Prediction Semantics
+
+Hugo et al. (2016) evaluated anti-PD-1 treatment response using immune-related response criteria (irRC) / modified RECIST (mRECIST), rather than standard RECIST 1.1. The retained pre-treatment RNA-seq cohort contains 26 evaluable patients: 4 Complete Responses, 10 Partial Responses, and 12 Progressive Disease cases. There are no Stable Disease cases in this modelling subset; one of the 27 pre-treatment RNA samples was excluded because it lacked an evaluable binary endpoint.
+
+Accordingly, the Hugo labels are applied as follows:
+
+| Hugo `RESPONSE` | `RESPONSE_BINARY` | Classification meaning |
+| :--- | :---: | :--- |
+| `Complete Response` | `1.0` | Responder |
+| `Partial Response` | `1.0` | Responder |
+| `Progressive Disease` | `0.0` | Non-responder |
+
+This is an **objective response versus progression** endpoint, not a durable clinical-benefit endpoint. Stable Disease and Mixed Response remain `NaN` wherever present in other cohorts and are excluded only from binary classification; their raw clinical labels remain available for survival and phenotype analyses.
+
+The binary ground truth is exported as `actual_response` in `dashboard/public/q1_predictions.csv` and is sourced from `RESPONSE_BINARY`. Model predictions are separate: `prob_ensemble` is the mean ensemble probability of response, and `pred_label` is assigned as `1` when `prob_ensemble >= 0.5`, otherwise `0`:
+
+```python
+df_pred["pred_label"] = (df_pred["prob_ensemble"] >= 0.5).astype(int)
+```
+
 ### Scientific & Analytical Rationale
 
 > [!INSIGHT]  
@@ -108,7 +126,7 @@ Live sample counts derived from `data/processed/*/clin_cleaned.csv`:
 
 | Cohort | Response Criteria | Complete Response (CR) | Partial Response (PR) | Progressive Disease (PD) | Stable Disease (SD; Excluded) | Binary Evaluable Cohort ($N$) |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Hugo 2016** | irRC / mRECIST | 4 | 10 | 13 | 0 | **27** |
+| **Hugo 2016** | irRC / mRECIST | 4 | 10 | 12 | 0 | **26** |
 | **Liu 2019** | RECIST 1.1 | 16 | 32 | 56 | 18 | **104** |
 | **Riaz 2017** | RECIST 1.1 | 6 | 14 | 44 | 34 (+9 unannotated) | **64** |
 | **Gide 2019** | RECIST 1.1 | 17 | 32 | 29 | 13 | **78** |
@@ -233,4 +251,3 @@ However, the primary therapeutic target of the Q1 response predictor is **anti-P
 
 3. **Distinction Between Confounder Adjustment and Drug-Class Conflation**:  
    Prior ipilimumab exposure in anti-PD-1-treated patients (e.g. Liu 2019, Riaz 2017) represents an **effect modifier / clinical covariate** of PD-1 response, properly addressed via feature annotation or stratified reporting. In contrast, evaluating primary response to ipilimumab is an entirely different clinical question that belongs to a separate investigational arm.
-
