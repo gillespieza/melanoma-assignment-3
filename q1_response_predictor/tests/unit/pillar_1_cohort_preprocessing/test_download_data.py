@@ -124,11 +124,11 @@ def test_validate_dataset_paths_rejects_path_traversal(
 ) -> None:
     """Ensure directory traversal characters raise ValueError."""
     bad_study = DatasetConfig(**{**dummy_dataset_config.__dict__, "study_id": invalid_value})
-    with pytest.raises(ValueError, match="Invalid path characters in dataset study_id"):
+    with pytest.raises(ValueError, match="Invalid path component in dataset study_id"):
         dd._validate_dataset_paths(bad_study)
 
     bad_dir = DatasetConfig(**{**dummy_dataset_config.__dict__, "raw_directory": invalid_value})
-    with pytest.raises(ValueError, match="Invalid path characters in dataset raw_directory"):
+    with pytest.raises(ValueError, match="Invalid path component in dataset raw_directory"):
         dd._validate_dataset_paths(bad_dir)
 
 
@@ -138,10 +138,10 @@ def test_validate_dataset_paths_rejects_empty_values(
     empty_value: str,
 ) -> None:
     """Ensure empty path components cannot resolve to a broader raw-data path."""
-    with pytest.raises(ValueError, match="Invalid path characters in dataset study_id"):
+    with pytest.raises(ValueError, match="Invalid path component in dataset study_id"):
         dd._validate_dataset_paths(replace(dummy_dataset_config, study_id=empty_value))
 
-    with pytest.raises(ValueError, match="Invalid path characters in dataset raw_directory"):
+    with pytest.raises(ValueError, match="Invalid path component in dataset raw_directory"):
         dd._validate_dataset_paths(replace(dummy_dataset_config, raw_directory=empty_value))
 
 
@@ -171,7 +171,7 @@ def test_remove_path_with_retry_directory(tmp_path: Path) -> None:
     dir_path.mkdir()
     (dir_path / "sub.txt").write_text("child", encoding="utf-8")
     assert dir_path.exists()
-    dd.remove_directory_with_retry(dir_path)
+    dd.remove_path_with_retry(dir_path)
     assert not dir_path.exists()
 
 

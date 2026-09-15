@@ -47,7 +47,6 @@ No changes to this script should be required when adding a standard
 cBioPortal DataHub dataset.
 """
 
-import contextlib
 import os
 import shutil
 import stat
@@ -89,7 +88,7 @@ from src.utils.io import (
     download_file,
     extract_tar_gz,
 )
-from src.utils.logging import TeeStream
+from src.utils.logging import setup_logging
 from src.utils.paths import (
     RAW_DIR,
     get_subproject_log_dir,
@@ -241,15 +240,6 @@ def remove_path_with_retry(
     )
 
 
-def remove_directory_with_retry(
-    target_dir: Path,
-    retries: int = MAX_REORGANISATION_RETRIES,
-    delay_seconds: float = REORGANISATION_RETRY_DELAY_SECONDS,
-) -> None:
-    """Remove a directory using remove_path_with_retry."""
-    remove_path_with_retry(target_dir, retries=retries, delay_seconds=delay_seconds)
-
-
 def remove_existing_dataset_directory(target_dir: Path) -> None:
     """Remove an existing dataset directory before clean extraction."""
     if not target_dir.exists():
@@ -337,18 +327,26 @@ def _replace_dataset_directory(
 
 
 def _validate_dataset_paths(dataset: DatasetConfig) -> None:
-    """Validate dataset fields for path traversal characters."""
+    """Validate identifiers remain single path components under raw-data root."""
     for field_name, value in [
         ("study_id", dataset.study_id),
         ("raw_directory", dataset.raw_directory),
     ]:
+        component = Path(value)
         if (
             not value.strip()
-            or "/" in value
-            or "\\" in value
-            or ".." in value
+            or component.name != value
+            or component in (Path("."), Path(".."))
         ):
-            raise ValueError(f"Invalid path characters in dataset {field_name}: {value!r}")
+            raise ValueError(f"Invalid path component in dataset {field_name}: {value!r}")
+
+    raw_root = RAW_DIR.resolve()
+    target_dir = (raw_root / dataset.raw_directory).resolve()
+    if target_dir.parent != raw_root:
+        raise ValueError(
+            f"Dataset raw_directory must remain under {raw_root}: "
+            f"{dataset.raw_directory!r}"
+        )
 
 
 def _download_and_extract_flow(
@@ -361,7 +359,7 @@ def _download_and_extract_flow(
     """Execute sequence of download, extract, and reorganisation."""
     if extracted_dir.exists():
         print(f"Removing previous incomplete extraction: {rel_path(extracted_dir)}")
-        remove_directory_with_retry(extracted_dir)
+        remove_path_with_retry(extracted_dir)
 
     url = f"{CBIOPORTAL_DATAHUB_URL}/{dataset.study_id}.tar.gz"
     download_file(url, tar_path)
@@ -455,21 +453,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
-
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-
-    with open(LOG_PATH, "w", encoding="utf-8") as log_file:
-        stdout_tee = TeeStream(sys.stdout, log_file)
-        stderr_tee = TeeStream(sys.stderr, log_file)
-
-        with (
-            contextlib.redirect_stdout(stdout_tee),
-            contextlib.redirect_stderr(stderr_tee),
-        ):
-            print(
-                f"Logging console output to "
-                f"{rel_path(LOG_PATH)}"
-            )
-            main()
+    with setup_logging(LOG_PATH):
+        main()
