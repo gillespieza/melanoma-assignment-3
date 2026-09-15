@@ -1358,5 +1358,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    with setup_logging(LOG_PATH, relative_to=_SUBPROJECT_ROOT):
+    with setup_logging(LOG_PATH, relative_to=SUBPROJECT_ROOT):
         main()

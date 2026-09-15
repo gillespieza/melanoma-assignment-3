@@ -25,6 +25,14 @@ picklable and will raise ``AttributeError`` at runtime.  ``_cv_worker`` and
 ``_loco_worker`` satisfy this requirement.
 """
 
+# Set single-threading for OpenMP / BLAS inside workers to prevent Windows process join deadlocks
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -45,7 +53,6 @@ if str(PROJECT_ROOT) not in sys.path:
 # ---------------------------------------------------------------------------
 # Imports
 # ---------------------------------------------------------------------------
-import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Any, Dict, List, Tuple
 
@@ -125,11 +132,15 @@ def _load_pooled_data(data_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Se
         config_path, data_dir, merge_only=True
     )
 
+    print(f"\n--- Loading {len(trial_names)} Active Trial Cohorts for 5-Fold CV ---")
+    sys.stdout.flush()
+
     common_genes = expr_dict[trial_names[0]].columns
     for name in trial_names[1:]:
         common_genes = common_genes.intersection(expr_dict[name].columns)
     common_genes = list(common_genes)
-    print(f"  Common genes across all cohorts: {len(common_genes)}")
+    print(f"  Intersected gene expression panel: {len(common_genes):,} common genes across {len(trial_names)} cohorts")
+    sys.stdout.flush()
 
     def _align(expr: pd.DataFrame, clin: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
         resp_col = "response" if "response" in clin.columns else "RESPONDER"
@@ -138,15 +149,32 @@ def _load_pooled_data(data_dir: Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Se
         return sig.loc[y.index], y.astype(int)
 
     sig_parts, expr_parts, y_parts = [], [], []
-    for name in trial_names:
+    for idx, name in enumerate(trial_names, start=1):
+        print(f"  [{idx}/{len(trial_names)}] Prepping pooled data for '{name}'...")
+        sys.stdout.flush()
         sig, y = _align(expr_dict[name], clin_dict[name])
         sig_parts.append(sig)
         expr_parts.append(expr_dict[name].loc[y.index, common_genes])
         y_parts.append(y)
+        n_pats = len(y)
+        n_resp = int(y.sum())
+        resp_pct = 100.0 * n_resp / n_pats if n_pats > 0 else 0.0
+        print(f"      -> {name}: N={n_pats} patients, {n_resp} responders ({resp_pct:.1f}%)")
+        sys.stdout.flush()
 
     X_expr = pd.concat(expr_parts).reset_index(drop=True)
     X_sigs = pd.concat(sig_parts).reset_index(drop=True)
     y_pooled = pd.concat(y_parts).reset_index(drop=True)
+
+    n_null_sigs = X_sigs.isna().sum().sum()
+    n_null_expr = X_expr.isna().sum().sum()
+    print(f"\n--- Pooled Feature Matrices Summary ---")
+    print(f"  Total pooled sample size : N={len(y_pooled)} patients")
+    print(f"  Total responders count   : {y_pooled.sum()}/{len(y_pooled)} ({100.0 * y_pooled.mean():.1f}%)")
+    print(f"  Curated signatures matrix: {X_sigs.shape[0]} samples x {X_sigs.shape[1]} columns | {n_null_sigs} NaNs")
+    print(f"  Full expression matrix   : {X_expr.shape[0]} samples x {X_expr.shape[1]} genes   | {n_null_expr} NaNs")
+    sys.stdout.flush()
+
     return X_expr, X_sigs, y_pooled
 
 
@@ -156,14 +184,25 @@ def _load_cohort_dfs(data_dir: Path) -> Dict[str, Tuple[pd.DataFrame, pd.Series]
     expr_dict, clin_dict, _, trial_names = load_all_active_cohorts(
         config_path, data_dir, merge_only=True
     )
+    print(f"\n--- Loading Individual Cohorts for LOCO Cross-Validation ---")
+    sys.stdout.flush()
+
     cohort_dfs: Dict[str, Tuple[pd.DataFrame, pd.Series]] = {}
-    for name in trial_names:
+    for idx, name in enumerate(trial_names, start=1):
+        print(f"  [{idx}/{len(trial_names)}] Building LOCO signatures for '{name}'...")
+        sys.stdout.flush()
         expr, clin = expr_dict[name], clin_dict[name]
         resp_col = "response" if "response" in clin.columns else "RESPONDER"
         mask = clin[resp_col].notna()
         sigs = zscore_df(extract_all_signatures(expr[mask]))
         y = clin[mask][resp_col].astype(int)
         cohort_dfs[name] = (sigs, y)
+        n_pats = len(y)
+        n_resp = int(y.sum())
+        resp_pct = 100.0 * n_resp / n_pats if n_pats > 0 else 0.0
+        print(f"      -> {name}: N={n_pats} patients, {n_resp} responders ({resp_pct:.1f}%) | 6 signatures z-scored")
+        sys.stdout.flush()
+
     return cohort_dfs
 
 

@@ -496,7 +496,7 @@ def _collect_cohort_genomic_rows(
     df_mut = mutation_data.get(cohort_name, pd.DataFrame())
     df_driver_mut = (
         _load_driver_mutation_features(df_mut) if not df_mut.empty
-        else pd.DataFrame(index=df_clin.index, columns=mutation_features).fillna(0).infer_objects(copy=False)
+        else pd.DataFrame(0, index=df_clin.index, columns=mutation_features, dtype=int)
     )
     return [
         _build_sample_genomic_row(

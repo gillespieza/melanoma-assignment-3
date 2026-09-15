@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Melanoma Immunotherapy Preprocessing Data Dictionary",
   "version": "1.0.0",
-  "created": "2026-08-09T11:28:30.076725+00:00",
+  "created": "2026-09-15T10:28:38.118060+00:00",
   "project": "HSE ED / Melanoma Response Predictor",
   "description": "Comprehensive data dictionary for harmonised clinical, genomic, transcriptomic, and treatment features across melanoma cohorts.",
   "columns": {
@@ -446273,6 +446273,13 @@
       "standard_unit": "text / numeric",
       "harmonised_definition": "Clinical metadata attribute Z_mut_BRAF."
     },
+    "Z_mut_BRAF_V600E": {
+      "display_name": "Z Mut Braf V600E",
+      "datatype": "STRING",
+      "category": "Clinical Feature",
+      "standard_unit": "text / numeric",
+      "harmonised_definition": "Clinical metadata attribute Z_mut_BRAF_V600E."
+    },
     "Z_mut_NF1": {
       "display_name": "Z Mut Nf1",
       "datatype": "STRING",
@@ -446311,6 +446318,17 @@
         1
       ],
       "harmonised_definition": "Binary indicator of non-silent somatic mutation in BRAF."
+    },
+    "mut_BRAF_V600E": {
+      "display_name": "BRAF_V600E Somatic Mutation Status",
+      "datatype": "BOOLEAN",
+      "category": "Driver Mutation",
+      "standard_unit": "binary flag",
+      "allowed_values": [
+        0,
+        1
+      ],
+      "harmonised_definition": "Binary indicator of non-silent somatic mutation in BRAF_V600E."
     },
     "mut_NF1.1": {
       "display_name": "NF1 Somatic Mutation Status",
