@@ -55,7 +55,7 @@ updated: 2026-09-14 15:15
 - [x] Resolution of scikit-learn 1.8/1.9 deprecations (`penalty`, `CalibratedClassifierCV`, feature name tracking).
 - [x] Pillar directory reorganisation and AST code smell refactoring ($\le 30$ line functions, $\le 100$ char line width).
 - [x] Parallelisation of 5-fold CV and LOCO heatmaps (`generate_combined_cv_loco_heatmap.py`).
-- [ ] Verify `reports/pillar-4-out-of-cohort-benchmarks/` Markdown reports against the parallelised LOCO heatmap metrics.
+- [ ] Verify `reports/pillar_4_out_of_cohort_benchmarks/` Markdown reports against the parallelised LOCO heatmap metrics.
 - [ ] Investigate suitability of adding **Campbell / MORRISON-1** and **GEM / Spanish Melanoma Group** datasets.
 
 ### Q1.1: Patient Stratification (`q1.1-patient-stratification/`)

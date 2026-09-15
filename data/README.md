@@ -1,7 +1,7 @@
 # Data Directory Structure & File Explanations
 
 > [!NOTE]
-> **NB**: Most raw data files are not included in git due to file size limitations. Run `python q1-response-predictor/scripts/pillar-1-cohort-preprocessing/download_data.py` on your own system to download and unpack the raw data files yourself.
+> **NB**: Most raw data files are not included in git due to file size limitations. Run `python q1-response-predictor/scripts/pillar_1_cohort_preprocessing/download_data.py` on your own system to download and unpack the raw data files yourself.
 
 This directory houses the raw data downloads and processed datasets for the Melanoma Immunotherapy Response Prediction models (incorporating **TCGA-SKCM**, **Liu 2019**, **Hugo 2016**, and **Riaz 2017** cohorts).
 

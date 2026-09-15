@@ -237,3 +237,6 @@ When fixing code smells or refactoring code in this repository, follow these gui
     - **AST Symbol & Dependency Verification**: Before deleting, splitting, or renaming helper functions, run a scratch AST check script (`ast.parse`) to verify all downstream references and callers are updated simultaneously so no `NameError` or dropped symbol exceptions occur.
     - **Compilation & Execution Verification**: Run `python -m py_compile <script>` after every refactoring pass to verify syntax before launching long-running pipeline tasks.
     - **Active Progress Stream Heartbeat**: Always output a brief status summary in chat before launching long background tasks or complex multi-tool sequences to prevent empty response timeouts and maintain stream heartbeats.
+20. **Naming Conventions — Strictly No Hyphens in Folder or File Names**:
+    - **Underscores Only**: NEVER use hyphens (`-`) in folder, package, module, subproject directory, or file names. ALWAYS use underscores (`_`) (snake_case).
+    - **Python Import Compatibility**: Hyphens in directory or file names make them invalid Python identifiers, breaking standard Python imports (`from package.sub_module import ...` raises `SyntaxError`) and requiring awkward dynamic import workarounds. All directories, scripts, test files, and assets must use lowercase alphanumeric characters and underscores only.
