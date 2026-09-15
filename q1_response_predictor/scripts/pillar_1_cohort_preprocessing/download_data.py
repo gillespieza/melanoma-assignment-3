@@ -128,6 +128,7 @@ _IGNORED_DATASET_FILES = frozenset({
     ".ds_store",
     ".dropbox",
     ".dropbox.attr",
+    ".dropbox.cache",
 })
 
 
@@ -136,7 +137,7 @@ def is_dataset_present(dataset: DatasetConfig) -> bool:
 
     A dataset is considered present when its target directory exists and
     contains at least one valid non-hidden data file (ignoring OS metadata
-    files such as desktop.ini or .DS_Store).
+    files and cloud sync locks such as desktop.ini, .DS_Store, or Dropbox attributes).
     """
     target_dir = RAW_DIR / dataset.raw_directory
 
@@ -146,7 +147,12 @@ def is_dataset_present(dataset: DatasetConfig) -> bool:
     for item in target_dir.iterdir():
         if item.name.startswith(".") and item.name != "_extracted":
             continue
-        if item.name.lower() in _IGNORED_DATASET_FILES:
+        lower_name = item.name.lower()
+        if lower_name in _IGNORED_DATASET_FILES:
+            continue
+        if lower_name.startswith("~$") or lower_name.endswith((".tmp", ".dropbox.attr")):
+            continue
+        if not item.is_file():
             continue
         return True
 
@@ -154,9 +160,10 @@ def is_dataset_present(dataset: DatasetConfig) -> bool:
 
 
 def _handle_remove_readonly(func: object, path: object, exc_info: object) -> None:
-    """Clear read-only attribute on file and retry removal (Windows fix)."""
+    """Clear read-only attribute on file and retry removal (Windows/cloud-sync fix)."""
     try:
         os.chmod(str(path), stat.S_IWRITE)
+        time.sleep(0.05)
         func(path)
         _ = exc_info
     except OSError:
@@ -173,6 +180,12 @@ def _attempt_remove_path(target_path: Path) -> None:
         except OSError:
             pass
         target_path.unlink()
+
+    if target_path.exists():
+        raise PermissionError(
+            f"Path {target_path} still exists after removal attempt "
+            "(file may be locked by Dropbox, OneDrive, or an active process)."
+        )
 
 
 def remove_path_with_retry(
@@ -192,10 +205,16 @@ def remove_path_with_retry(
         except OSError as exc:
             last_error = exc
             if attempt < retries:
-                time.sleep(delay_seconds * attempt)
+                wait_seconds = delay_seconds * attempt
+                print(
+                    f"  Removal attempt {attempt}/{retries} for {rel_path(target_path)} locked "
+                    f"(cloud sync/OS lock: {exc}). Retrying in {wait_seconds:.1f}s..."
+                )
+                time.sleep(wait_seconds)
 
     raise OSError(
-        f"Failed to remove {rel_path(target_path)} after {retries} attempts."
+        f"Failed to remove {rel_path(target_path)} after {retries} attempts "
+        "(locked by Dropbox/OneDrive or another process)."
     ) from last_error
 
 
@@ -296,7 +315,12 @@ def _validate_dataset_paths(dataset: DatasetConfig) -> None:
         ("study_id", dataset.study_id),
         ("raw_directory", dataset.raw_directory),
     ]:
-        if "/" in value or "\\" in value or ".." in value:
+        if (
+            not value.strip()
+            or "/" in value
+            or "\\" in value
+            or ".." in value
+        ):
             raise ValueError(f"Invalid path characters in dataset {field_name}: {value!r}")
 
 
@@ -337,16 +361,27 @@ def download_and_extract_dataset(dataset: DatasetConfig) -> None:
         f"\n{'=' * 60}\nProcessing dataset: {dataset.cohort_name}\n"
         f"Study ID: {dataset.study_id}\n{'=' * 60}"
     )
+    primary_error: Exception | None = None
     try:
         _download_and_extract_flow(dataset, target_dir, tar_path, extraction_root, extracted_dir)
     except Exception as exc:
+        primary_error = exc
         print(f"Error downloading/extracting {dataset.cohort_name}: {exc}")
         raise
     finally:
-        remove_path_with_retry(extraction_root)
+        try:
+            remove_path_with_retry(extraction_root)
+        except OSError as cleanup_error:
+            if primary_error is None:
+                raise
+            print(f"Warning: failed to clean extraction staging: {cleanup_error}")
         if tar_path.exists():
-            with contextlib.suppress(OSError):
-                tar_path.unlink(missing_ok=True)
+            try:
+                remove_path_with_retry(tar_path)
+            except OSError as cleanup_error:
+                if primary_error is None:
+                    raise
+                print(f"Warning: failed to clean downloaded archive: {cleanup_error}")
 
 
 def setup_directories() -> None:
