@@ -44,20 +44,20 @@ datasets:
     processing_strategy: "iatlas"
     treatment_label: "Anti-PD-1 (nivolumab)"
 
-  - cohort_name: "TCGA-SKCM"
-    study_id: "skcm_tcga_pan_can_atlas_2018"
-    raw_directory: "skcm_tcga_pan_can_atlas_2018"
-    processed_directory: "skcm_tcga_pan_can_atlas_2018"
-    expression_file: "data_mrna_seq_v2_rsem.txt"
-    clinical_file: "data_clinical_patient.txt"
-    clinical_sample_file: "data_clinical_sample.txt"
-    mutation_file: "data_mutations.txt"
-    baseline_only: false
-    mutations_by_patient: false
-    merge_enabled: false  # Superseded by skcm_tcga_gdc; retained for archival QC only
-    patient_prefix: "tcga_pancan_"
-    sample_prefix: "tcga_pancan_"
-    processing_strategy: "tcga"
+  # - cohort_name: "TCGA-SKCM"
+  #   study_id: "skcm_tcga_pan_can_atlas_2018"
+  #   raw_directory: "skcm_tcga_pan_can_atlas_2018"
+  #   processed_directory: "skcm_tcga_pan_can_atlas_2018"
+  #   expression_file: "data_mrna_seq_v2_rsem.txt"
+  #   clinical_file: "data_clinical_patient.txt"
+  #   clinical_sample_file: "data_clinical_sample.txt"
+  #   mutation_file: "data_mutations.txt"
+  #   baseline_only: false
+  #   mutations_by_patient: false
+  #   merge_enabled: false  # Superseded by skcm_tcga_gdc; retained for archival QC only
+  #   patient_prefix: "tcga_pancan_"
+  #   sample_prefix: "tcga_pancan_"
+  #   processing_strategy: "tcga"
 
   - cohort_name: "TCGA GDC 2025"
     study_id: "skcm_tcga_gdc"
@@ -69,6 +69,7 @@ datasets:
     mutation_file: "data_mutations.txt"
     baseline_only: false
     mutations_by_patient: false
+    merge_enabled: false  # Excluded from training; used as independent validation/reference only
     cohort_immunotherapy: true   # IT-treated subcohort (ipilimumab, vaccines, interferon +/- chemotherapy)
     patient_prefix: "tcga_gdc_"
     sample_prefix: "tcga_gdc_"
@@ -89,19 +90,3 @@ datasets:
     sample_prefix: "gide_"
     processing_strategy: "iatlas"
     treatment_label: "Anti-PD-1 +/- anti-CTLA-4 (pembrolizumab / nivolumab +/- ipilimumab)"
-
-  - cohort_name: "Van Allen 2015"
-    study_id: "skcm_dfci_2015"
-    raw_directory: "van_allen_2015"
-    processed_directory: "van_allen_2015"
-    expression_file: "data_mrna_seq_rpkm.txt"
-    clinical_file: "data_clinical_patient.txt"
-    clinical_sample_file: "data_clinical_sample.txt"
-    mutation_file: "data_mutations.txt"
-    baseline_only: false
-    mutations_by_patient: false
-    cohort_immunotherapy: true   # Pure ipilimumab (CTLA-4) trial — all patients on immunotherapy
-    patient_prefix: "van_allen_"
-    sample_prefix: "van_allen_"
-    processing_strategy: "tcga"  # Expression file uses Entrez_Gene_Id, not Hugo_Symbol
-    treatment_label: "Anti-CTLA-4 (ipilimumab)"

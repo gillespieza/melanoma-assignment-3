@@ -1325,9 +1325,19 @@ def _prepare_report_metadata(
     survival_results = {c: cohort_results[c]["survival"] for c in cohort_order}
     age_results = {c: cohort_results[c]["age"] for c in cohort_order}
     n_values = {c: survival_results[c]["n_total"] for c in cohort_order}
+    _CBIOPORTAL_STUDY_URL = "https://www.cbioportal.org/study/summary?id="
     treatment_map = {cfg.cohort_name: cfg.treatment_label for cfg in dataset_configs}
+    study_id_map = {cfg.cohort_name: cfg.study_id for cfg in dataset_configs}
     cohort_bullets = "\n".join([
-        f"- **{c}**: {treatment_map.get(c, 'Immunotherapy trial cohort')} ($N = {n_values[c]}$)."
+        (
+            f"- **[{c}]({_CBIOPORTAL_STUDY_URL}{study_id_map[c]})**: "
+            f"{treatment_map.get(c, 'Immunotherapy trial cohort')} "
+            f"($N = {n_values[c]}$)."
+            if c in study_id_map
+            else f"- **{c}**: "
+            f"{treatment_map.get(c, 'Immunotherapy trial cohort')} "
+            f"($N = {n_values[c]}$)."
+        )
         for c in cohort_order
     ])
     annotated_ages = [

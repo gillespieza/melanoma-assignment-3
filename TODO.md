@@ -35,6 +35,9 @@ updated: 2026-09-14 15:15
   - [ ] Finalise and verify `q1-response-predictor/scripts/exploratory_plots/generate_combined_cv_loco_heatmap.py` execution (per-cohort patient/responder breakdown logging, matrix NaN checks, OpenMP single-threaded worker flags).
   - [ ] Commit working tree changes with conventional commit message (`feat(q1-viz): add detailed cohort sample audit and OpenMP thread limits to CV/LOCO heatmap generator`).
   - [ ] Push local commits to `origin/additional-datasets`.
+- [ ] **Cohort Evaluation & Expansion Candidates**
+  - [ ] Investigate suitability of adding **Campbell / MORRISON-1** dataset (sample size, RNA-seq availability, anti-PD-1 response labels).
+  - [ ] Investigate suitability of adding **GEM / Spanish Melanoma Group** (Grupo Español Multidisciplinar de Melanoma) dataset (data access, clinical annotations, harmonisation feasibility).
 - [ ] **Full Q1 Pipeline Smoke Test**
   - [ ] Execute `q1-response-predictor/run_pipeline.py` end-to-end to verify 6-cohort data flow, 12-feature Random Forest model training, and report generation.
   - [ ] Inspect generated plots in `q1-response-predictor/plots/` for visual quality and compliance with Okabe-Ito palettes and KM numbers-at-risk standards.
@@ -53,6 +56,7 @@ updated: 2026-09-14 15:15
 - [x] Pillar directory reorganisation and AST code smell refactoring ($\le 30$ line functions, $\le 100$ char line width).
 - [x] Parallelisation of 5-fold CV and LOCO heatmaps (`generate_combined_cv_loco_heatmap.py`).
 - [ ] Verify `reports/pillar-4-out-of-cohort-benchmarks/` Markdown reports against the parallelised LOCO heatmap metrics.
+- [ ] Investigate suitability of adding **Campbell / MORRISON-1** and **GEM / Spanish Melanoma Group** datasets.
 
 ### Q1.1: Patient Stratification (`q1.1-patient-stratification/`)
 - [x] Two-Stage GMM clustering ($K=3$ continuous + Stage 2 `NF1` split) generating 4 biological phenotypes:
