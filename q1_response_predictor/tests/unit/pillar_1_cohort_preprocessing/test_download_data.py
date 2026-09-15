@@ -574,6 +574,25 @@ def test_download_and_extract_dataset_preserves_primary_error_on_cleanup_failure
         dd.download_and_extract_dataset(dummy_dataset_config)
 
 
+def test_download_and_extract_dataset_surfaces_cleanup_failure_without_primary_error(
+    dummy_dataset_config: DatasetConfig,
+    mock_raw_dir: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Ensure cleanup failures are reported when the download flow succeeds."""
+    monkeypatch.setattr(dd, "RAW_DIR", mock_raw_dir)
+    monkeypatch.setattr(dd, "is_dataset_present", lambda _d: False)
+    monkeypatch.setattr(dd, "_download_and_extract_flow", MagicMock())
+    monkeypatch.setattr(
+        dd,
+        "remove_path_with_retry",
+        MagicMock(side_effect=OSError("cleanup failure")),
+    )
+
+    with pytest.raises(OSError, match="Failed to clean"):
+        dd.download_and_extract_dataset(dummy_dataset_config)
+
+
 # ---------------------------------------------------------------------------
 # Tests for process loop and setup
 # ---------------------------------------------------------------------------

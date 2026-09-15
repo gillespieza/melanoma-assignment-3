@@ -54,6 +54,7 @@ import stat
 import sys
 import time
 from pathlib import Path
+from typing import Callable
 
 # ---------------------------------------------------------------------------
 # Bootstrap imports
@@ -172,13 +173,10 @@ def _has_required_dataset_files(
 
 def _handle_remove_readonly(func: object, path: object, exc_info: object) -> None:
     """Clear read-only attribute on file and retry removal (Windows/cloud-sync fix)."""
-    try:
-        os.chmod(str(path), stat.S_IWRITE)
-        time.sleep(0.05)
-        func(path)
-        _ = exc_info
-    except OSError:
-        pass
+    del exc_info
+    os.chmod(str(path), stat.S_IWRITE)
+    time.sleep(0.05)
+    func(path)
 
 
 def _attempt_remove_path(target_path: Path) -> None:
@@ -186,10 +184,7 @@ def _attempt_remove_path(target_path: Path) -> None:
     if target_path.is_dir():
         shutil.rmtree(target_path, onerror=_handle_remove_readonly)
     else:
-        try:
-            os.chmod(target_path, stat.S_IWRITE)
-        except OSError:
-            pass
+        os.chmod(target_path, stat.S_IWRITE)
         target_path.unlink()
 
     if target_path.exists():
@@ -199,34 +194,51 @@ def _attempt_remove_path(target_path: Path) -> None:
         )
 
 
-def remove_path_with_retry(
-    target_path: Path,
+def _run_with_retry(
+    operation: Callable[[], object],
+    operation_name: str,
+    failure_description: str,
     retries: int = MAX_REORGANISATION_RETRIES,
     delay_seconds: float = REORGANISATION_RETRY_DELAY_SECONDS,
 ) -> None:
-    """Remove a file or directory with read-only attribute clearing and retry handling."""
-    if not target_path.exists():
-        return
-
     last_error: OSError | None = None
     for attempt in range(1, retries + 1):
         try:
-            _attempt_remove_path(target_path)
+            operation()
             return
         except OSError as exc:
             last_error = exc
             if attempt < retries:
                 wait_seconds = delay_seconds * attempt
                 print(
-                    f"  Removal attempt {attempt}/{retries} for {rel_path(target_path)} locked "
-                    f"(cloud sync/OS lock: {exc}). Retrying in {wait_seconds:.1f}s..."
+                    f"  {operation_name} attempt {attempt}/{retries} failed "
+                    f"({failure_description}: {exc}). "
+                    f"Retrying in {wait_seconds:.1f}s..."
                 )
                 time.sleep(wait_seconds)
 
     raise OSError(
-        f"Failed to remove {rel_path(target_path)} after {retries} attempts "
-        "(locked by Dropbox/OneDrive or another process)."
+        f"Failed to {operation_name.lower()} after {retries} attempts "
+        f"({failure_description})."
     ) from last_error
+
+
+def remove_path_with_retry(
+    target_path: Path,
+    retries: int = MAX_REORGANISATION_RETRIES,
+    delay_seconds: float = REORGANISATION_RETRY_DELAY_SECONDS,
+) -> None:
+    """Remove a file or directory with read-only and retry handling."""
+    if not target_path.exists():
+        return
+
+    _run_with_retry(
+        operation=lambda: _attempt_remove_path(target_path),
+        operation_name=f"Remove {rel_path(target_path)}",
+        failure_description="cloud sync/OS lock",
+        retries=retries,
+        delay_seconds=delay_seconds,
+    )
 
 
 def remove_directory_with_retry(
@@ -252,20 +264,6 @@ def remove_existing_dataset_directory(target_dir: Path) -> None:
     remove_path_with_retry(target_dir)
 
 
-def _attempt_single_move(
-    source: Path,
-    destination: Path,
-    attempt: int,
-    retries: int,
-    delay_seconds: float,
-) -> None:
-    """Perform single move attempt with backoff logging."""
-    wait_seconds = delay_seconds * attempt
-    print(f"  Move attempt {attempt}/{retries} failed for {source.name}")
-    print(f"  Retrying in {wait_seconds:.1f} seconds...")
-    time.sleep(wait_seconds)
-
-
 def move_with_retry(
     source: Path,
     destination: Path,
@@ -273,19 +271,13 @@ def move_with_retry(
     delay_seconds: float = REORGANISATION_RETRY_DELAY_SECONDS,
 ) -> None:
     """Move a file or directory with retry handling."""
-    last_error: OSError | None = None
-    for attempt in range(1, retries + 1):
-        try:
-            shutil.move(source, destination)
-            return
-        except OSError as exc:
-            last_error = exc
-            if attempt < retries:
-                _attempt_single_move(source, destination, attempt, retries, delay_seconds)
-
-    raise OSError(
-        f"Failed to move {source} to {destination} after {retries} attempts."
-    ) from last_error
+    _run_with_retry(
+        operation=lambda: shutil.move(source, destination),
+        operation_name=f"Move {source.name}",
+        failure_description=f"destination {destination}",
+        retries=retries,
+        delay_seconds=delay_seconds,
+    )
 
 
 def _move_extracted_items(extracted_items: list[Path], target_dir: Path) -> None:
@@ -402,27 +394,28 @@ def download_and_extract_dataset(dataset: DatasetConfig) -> None:
         f"\n{'=' * 60}\nProcessing dataset: {dataset.cohort_name}\n"
         f"Study ID: {dataset.study_id}\n{'=' * 60}"
     )
-    primary_error: Exception | None = None
     try:
         _download_and_extract_flow(dataset, target_dir, tar_path, extraction_root, extracted_dir)
-    except Exception as exc:
-        primary_error = exc
-        print(f"Error downloading/extracting {dataset.cohort_name}: {exc}")
-        raise
     finally:
+        primary_error_active = sys.exc_info()[0] is not None
+        cleanup_errors: list[OSError] = []
         try:
             remove_path_with_retry(extraction_root)
         except OSError as cleanup_error:
-            if primary_error is None:
-                raise
-            print(f"Warning: failed to clean extraction staging: {cleanup_error}")
+            cleanup_errors.append(cleanup_error)
         if tar_path.exists():
             try:
                 remove_path_with_retry(tar_path)
             except OSError as cleanup_error:
-                if primary_error is None:
-                    raise
-                print(f"Warning: failed to clean downloaded archive: {cleanup_error}")
+                cleanup_errors.append(cleanup_error)
+        if cleanup_errors:
+            if primary_error_active:
+                for cleanup_error in cleanup_errors:
+                    print(f"Warning: failed to clean download artifact: {cleanup_error}")
+            else:
+                raise OSError(
+                    f"Failed to clean {len(cleanup_errors)} download artifact(s)."
+                ) from cleanup_errors[0]
 
 
 def setup_directories() -> None:
