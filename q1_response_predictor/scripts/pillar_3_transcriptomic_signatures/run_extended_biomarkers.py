@@ -167,7 +167,7 @@ def _load_trial_cohort_data(
     """
     result: Dict[str, Tuple[pd.DataFrame, pd.DataFrame]] = {}
     for cfg in configs:
-        if cfg.processed_directory == _TCGA_PROCESSED_DIR:
+        if not cfg.merge_enabled or cfg.processed_directory == _TCGA_PROCESSED_DIR:
             continue
         clin_path = DATA_DIR / "processed" / cfg.processed_directory / "clin_cleaned.csv"
         expr_path = DATA_DIR / "processed" / cfg.processed_directory / "expr_cleaned.csv"
