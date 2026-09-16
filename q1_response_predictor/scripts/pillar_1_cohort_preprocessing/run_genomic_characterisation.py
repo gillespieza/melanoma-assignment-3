@@ -10,10 +10,8 @@ and TCGA overall survival (OS) stratification by genomic features.
 # ---------------------------------------------------------------------------
 import contextlib
 from pathlib import Path
-import subprocess
 import sys
 from typing import Any, Dict, List, Tuple
-import warnings
 
 # ---------------------------------------------------------------------------
 # Third-Party Imports
@@ -21,12 +19,9 @@ import warnings
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from scipy.stats import mannwhitneyu, spearmanr
 import seaborn as sns
-from lifelines import KaplanMeierFitter
-from lifelines.statistics import logrank_test, multivariate_logrank_test
 
 # ---------------------------------------------------------------------------
 # Bootstrap & Path Resolution
@@ -54,21 +49,15 @@ if str(BASE_DIR) not in sys.path:
 # ---------------------------------------------------------------------------
 from src.biology_constants import (
     DRIVER_GENES,
-    NON_SILENT_VARIANT_CLASSIFICATIONS,
-    PATHWAY_GENES,
     RECIST_RESPONSE_MAP,
 )
 from src.config.constants import NEOANTIGEN_FEATURES
 from src.config.datasets import DatasetConfig, load_dataset_config
 from src.styles import (
-    COHORT_PALETTE,
-    DRIVER_PALETTE,
-    PHENOTYPE_PALETTE,
     RESPONSE_PALETTE,
     get_cohort_color,
     set_presentation_style,
 )
-from src.utils.dataframes import find_id_column
 from src.utils.execution import run_companion_scripts
 from src.utils.formatting import (
     generate_obsidian_frontmatter,
@@ -76,7 +65,7 @@ from src.utils.formatting import (
 )
 from src.utils.logging import TeeStream
 from src.utils.paths import DATA_DIR, get_subproject_log_dir, rel_path
-from src.utils.plotting import resolve_colors, save_fig
+from src.utils.plotting import save_fig
 
 set_presentation_style()
 
@@ -146,17 +135,6 @@ def _save_with_alias(fig: matplotlib.figure.Figure, primary_path: Path, alias_na
     """Saves figure to primary output path and a secondary legacy alias path."""
     save_fig(fig, primary_path)
     save_fig(fig, primary_path.parent / alias_name)
-
-
-def _map_genomic_subtype(row: pd.Series) -> str:
-    """Maps driver mutation binary flags to discrete genomic subtype labels."""
-    if row.get("mut_BRAF", 0) == 1:
-        return "BRAF Mutant"
-    if row.get("mut_NRAS", 0) == 1:
-        return "NRAS Mutant"
-    if row.get("mut_NF1", 0) == 1:
-        return "NF1 Mutant"
-    return "Triple Wild-Type"
 
 
 # ---------------------------------------------------------------------------
@@ -286,6 +264,10 @@ def _calculate_driver_frequencies(
         if name not in cohorts:
             continue
         df_c = cohorts[name]
+        required = {"mut_BRAF", "mut_NRAS", "mut_NF1"}
+        if df_c.empty or not required.issubset(df_c.columns):
+            print(f"  Excluding '{name}' from driver mutation frequency plot (empty or missing driver columns).")
+            continue
         # Exclude cohorts lacking somatic WES mutation profiling (e.g., Gide 2019)
         if df_c["mut_BRAF"].sum() == 0 and df_c["mut_NRAS"].sum() == 0 and df_c["mut_NF1"].sum() == 0:
             print(f"  Excluding '{name}' from driver mutation frequency plot (no WES/somatic mutation profiling available).")
@@ -296,7 +278,7 @@ def _calculate_driver_frequencies(
 
     df_freq = pd.DataFrame(mut_data).melt(
         id_vars="Cohort", var_name="Gene", value_name="Frequency"
-    )
+    ) if mut_data else pd.DataFrame(columns=["Cohort", "Gene", "Frequency"])
     return df_freq, cohort_labels
 
 
@@ -335,6 +317,7 @@ def _render_driver_frequency_barplot(
 
     out_mut_path = plot_dir / "genomic_driver_frequencies.png"
     _save_with_alias(fig, out_mut_path, "mutation_frequencies.png")
+    plt.close(fig)
     print(f"Saved genomic driver frequencies plot to {rel_path(out_mut_path)}")
 
 
@@ -342,6 +325,9 @@ def _plot_mutation_frequencies(cohorts: Dict[str, pd.DataFrame], plot_dir: Path)
     """Calculates and visualises driver mutation frequencies across cohorts."""
     print("\n1. Calculating driver mutation frequencies...")
     df_melt, cohort_labels = _calculate_driver_frequencies(cohorts)
+    if df_melt.empty:
+        print("  No driver mutation data available; skipping driver frequency plot.")
+        return
     cohort_colors = {cohort_labels[name]: get_cohort_color(name) for name in cohort_labels}
     _render_driver_frequency_barplot(df_melt, cohort_colors, plot_dir)
 
@@ -390,6 +376,9 @@ def _annotate_tmb_pvalues(ax: plt.Axes, df_trials: pd.DataFrame) -> None:
 
 def _render_tmb_boxplot(ax: plt.Axes, df_trials: pd.DataFrame) -> None:
     """Renders source-provided pre-treatment TMB by response."""
+    if df_trials.empty:
+        ax.set_visible(False)
+        return
     sns.boxplot(
         data=df_trials, x="Cohort", y=_COL_TMB, hue="Response",
         palette={
@@ -448,6 +437,9 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
     """Plots TMB distributions by response alongside Neoantigen Collinearity."""
     print("\n2. Generating TMB & Neoantigen Collinearity plots...")
     df_trials = _prepare_tmb_response_df(cohorts)
+    if df_trials.empty:
+        print("  No response-annotated TMB data available; skipping TMB plot.")
+        return
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
     _render_tmb_boxplot(axes[0], df_trials)
@@ -462,6 +454,7 @@ def _plot_tmb_distributions(cohorts: Dict[str, pd.DataFrame], plot_dir: Path) ->
 
     out_tmb_path = plot_dir / "tmb_distributions_by_cohort.png"
     _save_with_alias(fig, out_tmb_path, "tmb_distribution.png")
+    plt.close(fig)
     print(f"Saved TMB distributions and neoantigen collinearity plot to {rel_path(out_tmb_path)}")
 
 
@@ -505,6 +498,7 @@ def _render_correlation_heatmap(corr_df: pd.DataFrame, plot_dir: Path) -> None:
 
     out_corr_path = plot_dir / "biomarker_correlation_matrix.png"
     _save_with_alias(fig, out_corr_path, "biomarker_correlation_heatmap.png")
+    plt.close(fig)
     print(f"Saved biomarker correlation heatmap to {rel_path(out_corr_path)}")
 
 
@@ -522,91 +516,10 @@ def _plot_biomarker_correlations(cohorts: Dict[str, pd.DataFrame], plot_dir: Pat
 def _compute_single_driver_pcts(df: pd.DataFrame) -> Dict[str, float]:
     """Helper to compute driver gene percentage frequencies for one DataFrame."""
     n = len(df)
-    if n == 0:
-        return {"braf": 0.0, "nras": 0.0, "nf1": 0.0, "twt": 0.0}
-    b_pct = (df.get("mut_BRAF", pd.Series(0)).sum() / n) * 100.0
-    n_pct = (df.get("mut_NRAS", pd.Series(0)).sum() / n) * 100.0
-    f_pct = (df.get("mut_NF1", pd.Series(0)).sum() / n) * 100.0
-    twt_pct = (
-        (df.get("mut_BRAF", 0) == 0) & (df.get("mut_NRAS", 0) == 0) & (df.get("mut_NF1", 0) == 0)
-    ).mean() * 100.0
-    return {"braf": b_pct, "nras": n_pct, "nf1": f_pct, "twt": twt_pct}
-
-
-def _compute_driver_stats(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, float]:
-    """Computes driver gene mutation percentages for ICI trial cohorts."""
-    stats = {}
-    trial_names = _get_trial_cohort_names(cohorts)
-    for c in trial_names:
-        if c in cohorts:
-            p = _compute_single_driver_pcts(cohorts[c])
-            key = c.lower().replace(" ", "_")
-            stats[f"{key}_braf"] = p["braf"]
-            stats[f"{key}_nras"] = p["nras"]
-            stats[f"{key}_nf1"] = p["nf1"]
-            stats[f"{key}_twt"] = p["twt"]
-    return stats
-
-
-def _compute_neoantigen_correlations(
-    cohorts: Dict[str, pd.DataFrame]
-) -> Tuple[float, float, float, float]:
-    """Computes TMB vs neoantigen subtype Spearman rank correlations."""
-    trial_names = _get_trial_cohort_names(cohorts)
-    pooled = pd.concat(
-        [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
-    )
-    avail = [c for c in NEOANTIGEN_SUBTYPES if c in pooled.columns]
-    r_tot, r_snv, r_ind, r_cta = float("nan"), float("nan"), float("nan"), float("nan")
-
-    if avail and _COL_TMB in pooled.columns:
-        df_neo = pooled[[_COL_TMB] + avail].dropna().copy()
-        df_neo["TOTAL_NEOANTIGEN"] = df_neo[avail].sum(axis=1)
-        r_tot, _ = spearmanr(df_neo[_COL_TMB], df_neo["TOTAL_NEOANTIGEN"])
-        if "SNV_NEOANTIGEN" in df_neo.columns:
-            r_snv, _ = spearmanr(df_neo[_COL_TMB], df_neo["SNV_NEOANTIGEN"])
-        if "INDEL_NEOANTIGEN" in df_neo.columns:
-            r_ind, _ = spearmanr(df_neo[_COL_TMB], df_neo["INDEL_NEOANTIGEN"])
-        if "CTA_SELF_NEOANTIGEN" in df_neo.columns:
-            r_cta, _ = spearmanr(df_neo[_COL_TMB], df_neo["CTA_SELF_NEOANTIGEN"])
-
-    return r_tot, r_snv, r_ind, r_cta
-
-
-def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
-    """Computes all dynamic statistics required for Markdown report formatting."""
-    trial_names = _get_trial_cohort_names(cohorts)
-    n_trials = sum(len(cohorts[c]) for c in trial_names if c in cohorts)
-
-    drv_stats = _compute_driver_stats(cohorts)
-    r_tot, r_snv, r_ind, r_cta = _compute_neoantigen_correlations(cohorts)
-
-    pooled = pd.concat(
-        [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
-    )
-    if _COL_RESPONSE in pooled.columns:
-        valid_resp = pooled[_COL_RESPONSE].isin([_RESP_NON_RESPONDER, _RESP_RESPONDER])
-        n_oncoplot = len(pooled[valid_resp])
-    else:
-        n_oncoplot = 0
-
-    return {
-        "n_trials": n_trials, **drv_stats,
-        "r_tot": r_tot, "r_snv": r_snv, "r_ind": r_ind, "r_cta": r_cta,
-        "n_oncoplot": n_oncoplot, "n_sd": n_trials - n_oncoplot,
-    }
-
-
-
-
-
-
-# ---------------------------------------------------------------------------
-# Report Generation Helpers
-# ---------------------------------------------------------------------------
-def _compute_single_driver_pcts(df: pd.DataFrame) -> Dict[str, float]:
-    """Helper to compute driver gene percentage frequencies for one DataFrame."""
-    n = len(df)
+    if n == 0 or not {"mut_BRAF", "mut_NRAS", "mut_NF1"}.issubset(df.columns):
+        return {key: 0.0 for key in (
+            "braf_v600e", "braf_other_v600", "braf_non_v600", "nras", "nf1", "twt"
+        )}
     v600_series = df.get("mut_BRAF_V600", pd.Series(0, index=df.index))
     b_v600_pct = (v600_series.sum() / n) * 100.0
     b_other_pct = ((df["mut_BRAF"] & (1 - v600_series)).sum() / n) * 100.0
@@ -636,6 +549,8 @@ def _compute_driver_stats(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, float]:
         if name not in cohorts:
             continue
         df_c = cohorts[name]
+        if df_c.empty or not {"mut_BRAF", "mut_NRAS", "mut_NF1"}.issubset(df_c.columns):
+            continue
         if df_c["mut_BRAF"].sum() == 0 and df_c["mut_NRAS"].sum() == 0 and df_c["mut_NF1"].sum() == 0:
             continue
         key = name.lower().replace(" ", "_")
@@ -654,14 +569,17 @@ def _compute_neoantigen_correlations(
 ) -> Tuple[float, float, float, float]:
     """Computes TMB vs neoantigen subtype Spearman rank correlations."""
     trial_names = _get_trial_cohort_names(cohorts)
-    pooled = pd.concat(
-        [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
-    )
+    frames = [cohorts[c] for c in trial_names if c in cohorts and not cohorts[c].empty]
+    if not frames:
+        return (float("nan"),) * 4
+    pooled = pd.concat(frames, ignore_index=True)
     avail = [c for c in NEOANTIGEN_SUBTYPES if c in pooled.columns]
     r_tot, r_snv, r_ind, r_cta = float("nan"), float("nan"), float("nan"), float("nan")
 
     if avail and _COL_TMB in pooled.columns:
         df_neo = pooled[[_COL_TMB] + avail].dropna().copy()
+        if len(df_neo) < 2:
+            return (float("nan"),) * 4
         df_neo["TOTAL_NEOANTIGEN"] = df_neo[avail].sum(axis=1)
         r_tot, _ = spearmanr(df_neo[_COL_TMB], df_neo["TOTAL_NEOANTIGEN"])
         if "SNV_NEOANTIGEN" in df_neo.columns:
@@ -723,9 +641,8 @@ def _extract_report_subset_counts(
     n_tmb_cohorts = df_tmb_resp["Base_Cohort"].nunique() if not df_tmb_resp.empty else 0
     n_neo = len(_prepare_neoantigen_df(cohorts))
     n_biomarkers = len(_extract_pooled_biomarkers(cohorts))
-    pooled = pd.concat(
-        [cohorts[c] for c in trial_names if c in cohorts], ignore_index=True
-    )
+    frames = [cohorts[c] for c in trial_names if c in cohorts and not cohorts[c].empty]
+    pooled = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
     n_oncoplot = (
         len(pooled[pooled[_COL_RESPONSE].isin([_RESP_NON_RESPONDER, _RESP_RESPONDER])])
         if _COL_RESPONSE in pooled.columns else 0
@@ -742,6 +659,25 @@ def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, An
     treatment_labels = {cfg.cohort_name: cfg.treatment_label for cfg in dataset_configs}
     drv_stats = _compute_driver_stats(cohorts)
     r_tot, r_snv, r_ind, r_cta = _compute_neoantigen_correlations(cohorts)
+    tmb_df = _prepare_tmb_response_df(cohorts)
+    tmb_p_value = float("nan")
+    tmb_direction = "could not be compared with"
+    if not tmb_df.empty:
+        responder = tmb_df.loc[tmb_df[_COL_RESPONSE] == _RESP_RESPONDER, _COL_TMB]
+        non_responder = tmb_df.loc[tmb_df[_COL_RESPONSE] == _RESP_NON_RESPONDER, _COL_TMB]
+        if len(responder) and len(non_responder):
+            _, tmb_p_value = mannwhitneyu(responder, non_responder)
+            tmb_direction = (
+                "higher than"
+                if responder.median() > non_responder.median()
+                else "lower than"
+                if responder.median() < non_responder.median()
+                else "similar to"
+            )
+    corr_p_value = float("nan")
+    neo_df = _prepare_neoantigen_df(cohorts)
+    if len(neo_df) >= 2:
+        _, corr_p_value = spearmanr(neo_df[_COL_TMB], neo_df["TOTAL_NEOANTIGEN"])
     n_tmb_resp, n_tmb_cohorts, n_neo, n_biomarkers, n_oncoplot = (
         _extract_report_subset_counts(cohorts, trial_names)
     )
@@ -751,6 +687,16 @@ def _compute_report_statistics(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, An
         "n_tmb_resp": n_tmb_resp, "n_tmb_cohorts": n_tmb_cohorts,
         "n_neo": n_neo, "n_biomarkers": n_biomarkers, "drv_stats": drv_stats,
         "r_tot": r_tot, "r_snv": r_snv, "r_ind": r_ind, "r_cta": r_cta,
+        "tmb_p_value": tmb_p_value, "tmb_direction": tmb_direction, "corr_p_value": corr_p_value,
+        "corr_strength": (
+            "strong positive"
+            if not pd.isna(r_tot) and r_tot >= 0.7
+            else "moderate positive"
+            if not pd.isna(r_tot) and r_tot > 0.3
+            else "weak or negligible"
+            if pd.isna(r_tot) or abs(r_tot) <= 0.3
+            else "negative"
+        ),
         "n_oncoplot": n_oncoplot, "n_sd": n_trials - n_oncoplot,
     }
 
@@ -873,12 +819,12 @@ def _build_section_2_insight(s: Dict[str, Any]) -> str:
     """Builds Section 2 INSIGHT callout box."""
     return f"""> [!INSIGHT] Key Insights: TMB & Neoantigen Collinearity
 >
-> 1. **Responders Exhibit Higher Baseline TMB**: Across {s['n_tmb_cohorts']} active immunotherapy cohorts ($N = {s['n_tmb_resp']}$ response-annotated patients),
-> patients who achieved objective response to immunotherapy (CR/PR) exhibited higher
-> pre-treatment TMB levels than non-responders (PD).
-> 2. **Strong Linear Collinearity ($r_s = {s['r_tot']:.3f}$)**: Total nonsynonymous TMB and
-> predicted total neoantigen load ($N = {s['n_neo']}$) demonstrate a strong positive Spearman correlation
-> ($r_s = {s['r_tot']:.3f}$, $p < 0.0001$). Tumours harbouring higher mutational burden generate
+> 1. **Response-associated Baseline TMB**: Across {s['n_tmb_cohorts']} active immunotherapy cohorts ($N = {s['n_tmb_resp']}$ response-annotated patients),
+> patients who achieved objective response to immunotherapy (CR/PR) exhibited median
+> pre-treatment TMB {s["tmb_direction"]} non-responders (PD) (Mann-Whitney $p = {s["tmb_p_value"]:.4g}$).
+> 2. **TMB/Neoantigen Correlation ($r_s = {s['r_tot']:.3f}$)**: Total nonsynonymous TMB and
+> predicted total neoantigen load ($N = {s['n_neo']}$) demonstrate a {s["corr_strength"]} Spearman correlation
+> ($r_s = {s['r_tot']:.3f}$, $p = {s['corr_p_value']:.4g}$). Tumours harbouring higher mutational burden generate
 > proportionally more predicted neoantigens.
 > 3. **Redundancy for Machine Learning**: Because total TMB and neoantigen load measure the same
 > underlying mutational axis, predictive models should not include both features simultaneously
