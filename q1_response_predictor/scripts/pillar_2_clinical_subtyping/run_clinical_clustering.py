@@ -1580,7 +1580,7 @@ def _generate_clustering_report(
         "functional cytolytic machinery. PD-L1 is elevated as an adaptive resistance response "
         "to IFN-γ secreted by tumour-infiltrating lymphocytes (TILs) — precisely the mechanism "
         "anti-PD-1 agents are designed to reverse. **These patients are the primary ICI "
-        "responders.** BRAF V600E patients in this cluster retain their Immune Hot label: "
+        "responders.** `BRAF V600E` patients in this cluster retain their Immune Hot label: "
         "their immune microenvironment, not their mutation alone, drives ICI eligibility."
     )
     w("")
