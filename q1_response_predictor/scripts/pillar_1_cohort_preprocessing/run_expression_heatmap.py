@@ -41,7 +41,7 @@ set_presentation_style()
 # Module-level Constants
 DATA_DIR = find_project_root(Path(__file__).resolve()) / "data"
 PLOT_DIR = BASE_DIR / "plots" / "exploratory"
-REPORT_DIR = BASE_DIR / "reports" / "pillar-1-cohorts-and-preprocessing"
+REPORT_DIR = BASE_DIR / "reports" / "pillar_1_cohort_preprocessing"
 LOG_DIR = BASE_DIR / "logs"
 LOG_PATH = LOG_DIR / "run_expression_heatmap.log"
 N_TOP_HEATMAP_GENES: int = 50

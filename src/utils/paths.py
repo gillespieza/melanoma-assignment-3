@@ -7,7 +7,7 @@ Project structure::
     │   ├── raw/
     │   └── processed/
     ├── src/
-    ├── q1-response-predictor/          <- SUBPROJECT_ROOT
+    ├── q1_response_predictor/          <- SUBPROJECT_ROOT
     └── q5-patient-stratification/      <- SUBPROJECT_ROOT
 """
 
@@ -63,7 +63,7 @@ def find_subproject_root(start: Path) -> Path:
         start = start.parent
 
     known_subprojects = {
-        "q1-response-predictor",
+        "q1_response_predictor",
         "q2-viability-predictor",
         "q3-ode-model",
         "q5-patient-stratification",
@@ -92,7 +92,12 @@ DATA_DIR = PROJECT_ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 LOG_DIR = PROJECT_ROOT / "logs"
-PLOTS_DIR = PROJECT_ROOT / "q1-response-predictor" / "plots"
+_Q1_SUBPROJECT_ROOT = PROJECT_ROOT / "q1_response_predictor"
+PLOTS_DIR = (
+    _Q1_SUBPROJECT_ROOT / "plots"
+    if _Q1_SUBPROJECT_ROOT.is_dir()
+    else SUBPROJECT_ROOT / "plots"
+)
 REPORTS_DIR = PROJECT_ROOT / "reports"
 
 

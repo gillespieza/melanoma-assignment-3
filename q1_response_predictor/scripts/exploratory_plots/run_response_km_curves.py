@@ -122,7 +122,7 @@ def main() -> None:
     CONFIG_PATH = BASE_DIR / "config" / "datasets.yaml"
     from src.config.datasets import load_dataset_config
     all_configs = load_dataset_config(CONFIG_PATH)
-    dataset_configs = [c for c in all_configs if c.cohort_name != "TCGA-SKCM"]
+    dataset_configs = [c for c in all_configs if c.merge_enabled]
     cohort_order = [c.cohort_name for c in dataset_configs]
 
     cohort_data: dict[str, pd.DataFrame] = {}
@@ -132,7 +132,7 @@ def main() -> None:
             cohort_data[config.cohort_name] = pd.read_csv(clin_path, index_col="SAMPLE_ID")
 
     n_cohorts = len(cohort_order)
-    max_cols = 3
+    max_cols = 2
     n_cols = min(max_cols, n_cohorts)
     n_rows = (n_cohorts + n_cols - 1) // n_cols
 
@@ -154,20 +154,13 @@ def main() -> None:
     out_path = PLOT_DIR / "km_os_by_response.png"
     save_fig(fig, out_path)
 
-    sub_path = BASE_DIR / "plots" / "clinical" / "km_os_by_response.png"
-    if sub_path != out_path:
-        sub_path.parent.mkdir(parents=True, exist_ok=True)
-        save_fig(fig, sub_path)
-
     # Export transparent copies
     fig.patch.set_alpha(0.0)
     for ax in axes_flat:
         ax.patch.set_alpha(0.0)
 
     out_trans = PLOT_DIR / "km_os_by_response_transparent.png"
-    sub_trans = BASE_DIR / "plots" / "clinical" / "km_os_by_response_transparent.png"
     fig.savefig(out_trans, transparent=True, bbox_inches="tight", dpi=300)
-    fig.savefig(sub_trans, transparent=True, bbox_inches="tight", dpi=300)
 
     print(f"Saved response-stratified KM plots to {rel_path(out_path)} and {rel_path(out_trans)}")
 

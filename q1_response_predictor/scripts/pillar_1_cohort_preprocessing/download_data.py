@@ -14,7 +14,7 @@ Expected project structure:
     │   └── 📂 raw/                            <- shared raw data
     
     │
-    └── 📂 q1-response-predictor/              <- SUBPROJECT_ROOT
+    └── 📂 q1_response_predictor/                  <- SUBPROJECT_ROOT
         ├── 📂 config/
         │   └── datasets.yaml
         ├── 📂 logs/
@@ -60,11 +60,11 @@ from typing import Callable
 #
 # This script lives inside the subproject:
 #
-#     q1-response-predictor/scripts/download_data.py
+#     q1_response_predictor/scripts/download_data.py
 #
 # The source package is:
 #
-#     q1-response-predictor/src/
+#     q1_response_predictor/src/
 #
 # Therefore the subproject root must be added to sys.path before importing
 # src.* modules.

@@ -78,7 +78,7 @@ CONFIG_PATH = _SCRIPT_DIR.parent.parent / "config" / "datasets.yaml"
 PLOT_DIR = _SUBPROJECT_ROOT / "plots" / "clinical"
 LOG_DIR = _SUBPROJECT_ROOT / "logs"
 LOG_PATH = LOG_DIR / "run_clinical_analysis.log"
-REPORT_DIR = _SUBPROJECT_ROOT / "reports" / "pillar-1-cohorts-and-preprocessing"
+REPORT_DIR = _SUBPROJECT_ROOT / "reports" / "pillar_1_cohort_preprocessing"
 REPORT_PATH = REPORT_DIR / "cohort_characteristics_clinical.md"
 DEMO_GRID_PATH = PLOT_DIR / "clinical_demographics_2x2_grid.png"
 
@@ -263,19 +263,19 @@ def _match_agent_pattern(
     df_clin: pd.DataFrame,
     patterns: list[str],
 ) -> int:
-    """Counts matching occurrences of agent patterns in numeric columns or combined text."""
+    """Counts patients matching agent patterns in numeric columns or text."""
     num_cols = [
         c for c in df_clin.columns
         if any(p in c.upper() for p in patterns) and pd.api.types.is_numeric_dtype(df_clin[c])
     ]
-    if num_cols:
-        return int(df_clin[num_cols].max(axis=1).sum())
-
     text_patterns = [p for p in patterns if not p.startswith("TX_")]
     pattern_regex = r"\b(?:" + "|".join(text_patterns) + r")\b" if text_patterns else ""
+    matches = pd.Series(False, index=df_clin.index)
+    if num_cols:
+        matches |= df_clin[num_cols].fillna(0).ne(0).any(axis=1)
     if pattern_regex:
-        return int(combined_text.str.contains(pattern_regex, na=False, regex=True).sum())
-    return 0
+        matches |= combined_text.str.contains(pattern_regex, na=False, regex=True)
+    return int(matches.sum())
 
 
 def _search_treatment_agents(
@@ -649,7 +649,7 @@ def _plot_prior_ctla4_panel(ax: plt.Axes, ctla4: dict[str, Any]) -> None:
         autopct="%1.1f%%",
         pctdistance=0.75,
         startangle=140,
-        colors=[OKABE_ITO[6], OKABE_ITO[0]],
+        colors=[OKABE_ITO[5], OKABE_ITO[2]],
         wedgeprops=dict(width=0.5, edgecolor="w", linewidth=2),
         textprops=dict(fontsize=11, fontweight="bold"),
     )
@@ -978,11 +978,9 @@ def _compute_pooled_survival_summary(
     times, events = [], []
     for df in cohort_data.values():
         time_col, event_col = _resolve_os_columns(df)
-        if time_col and event_col:
-            sub = df[[time_col, event_col]].dropna()
-            sub_valid = sub[sub[time_col] > 0]
-            times.extend(sub_valid[time_col].tolist())
-            events.extend(sub_valid[event_col].tolist())
+        sub_valid = _clean_os(df, time_col, event_col)
+        times.extend(sub_valid[time_col].tolist())
+        events.extend(sub_valid[event_col].tolist())
 
     if not times:
         return float("nan"), float("nan")
@@ -1263,16 +1261,20 @@ def _build_report_section3_4(
         f"> - **Questions**: How does overall survival compare across independent immunotherapy trial cohorts?\n\n"
         f"![Overall Survival KM Curves](../../plots/clinical/{plot_path.name})\n\n"
         f"_**Figure 2: Unstratified Overall Survival KM Curves across All {n_cohorts} Immunotherapy Trial Cohorts.**_\n\n"
-        f"## 4. Overall Survival Stratified by Immunotherapy Response\n\n"
+        f"## 4. Overall Survival Stratified by Reported Immunotherapy Response\n\n"
         f"> [!INFO] Why We Are Doing This\n"
-        f"> - **What**: We stratify KM overall survival curves by RECIST response status ($N = {n_total}$).\n"
-        f"> - **Why**: Confirming that responders experience significantly longer OS validates RECIST response as a surrogate endpoint.\n"
-        f"> - **Questions**: Does RECIST response reliably distinguish durable long-term benefit?\n\n"
+        f"> - **What**: We stratify KM overall survival curves by the reported immunotherapy response classification ($N = {n_total}$).\n"
+        f"> - **Why**: We compare survival patterns between response-defined groups while preserving each cohort's original response terminology.\n"
+        f"> - **Questions**: Do reported response groups show different overall survival patterns across cohorts?\n\n"
         f"![Overall Survival by Response](../../plots/clinical/km_os_by_response.png)\n\n"
-        f"_**Figure 3: Overall Survival Stratified by RECIST Response Status.**_\n\n"
+        f"_**Figure 3: Overall Survival Stratified by Reported Immunotherapy Response Classification.**_\n\n"
         f"> [!INSIGHT] Key Insights: Survival Stratification by Response\n"
-        f"> 1. **Survival Benefit**: Responders (CR/PR) achieve significantly longer OS vs non-responders (PD) ({cohorts_list_str}; Log-rank $p < 0.0001$).\n"
-        f"> 2. **Surrogate Validation**: Objective RECIST response is a robust surrogate endpoint for overall survival."
+        f"> 1. **Response-stratified analysis**: Curves are shown for the available responder and "
+        f"non-responder classifications across {cohorts_list_str}.\n"
+        "> 2. **Terminology note**: Response definitions are cohort-specific; Hugo 2016 does not "
+        "use RECIST terminology, so these curves should not be interpreted as a pooled RECIST analysis.\n"
+        "> 3. **Interpretation**: Statistical significance and surrogate-endpoint claims must be "
+        "taken from the companion analysis results."
     )
 
 
@@ -1349,7 +1351,11 @@ def _prepare_report_metadata(
     n_total_agents = ici_breakdown["n_total"]
     top_agents_list = [
         f"**{agent}** ({cnt} [{cnt / n_total_agents * 100:.1f}%])"
-        for agent, cnt in list(ici_breakdown.get("agent_totals", {}).items())[:4]
+        for agent, cnt in sorted(
+            ici_breakdown.get("agent_totals", {}).items(),
+            key=lambda item: item[1],
+            reverse=True,
+        )[:4]
     ]
     top_agents_str = ", ".join(top_agents_list) if top_agents_list else "no agent data available"
     return n_values, cohort_bullets, age_annotation_str, top_agents_str
@@ -1454,7 +1460,13 @@ def _filter_ici_subcohort(df_clin: pd.DataFrame) -> pd.DataFrame:
     if _COL_ICI_TX not in df_clin.columns:
         return df_clin
     n_before = len(df_clin)
-    df_filtered = df_clin[df_clin[_COL_ICI_TX] == 1.0].copy()
+    ici_values = df_clin[_COL_ICI_TX]
+    if pd.api.types.is_bool_dtype(ici_values):
+        is_ici = ici_values.fillna(False)
+    else:
+        normalized = ici_values.astype("string").str.strip().str.upper()
+        is_ici = normalized.isin({"1", "1.0", "TRUE", "YES", "Y"})
+    df_filtered = df_clin[is_ici].copy()
     print(f"    Filtered to immunotherapy subcohort: {n_before} -> {len(df_filtered)} patients")
     return df_filtered
 
@@ -1521,7 +1533,9 @@ def _plot_single_km_subplot(
 
 def _setup_km_grid_figure(n_cohorts: int) -> tuple[plt.Figure, list[plt.Axes]]:
     """Configures grid subplot axes for Kaplan-Meier OS curves."""
-    max_cols = 3
+    if n_cohorts < 1:
+        raise ValueError("At least one cohort is required to create the KM grid.")
+    max_cols = 2
     n_cols = min(max_cols, n_cohorts)
     n_rows = (n_cohorts + n_cols - 1) // n_cols
 
@@ -1580,7 +1594,9 @@ def _load_analysis_datasets() -> tuple[
         )
 
     all_configs: tuple[DatasetConfig, ...] = load_dataset_config(CONFIG_PATH)
-    dataset_configs = tuple(config for config in all_configs if config.cohort_name != "TCGA-SKCM")
+    dataset_configs = tuple(config for config in all_configs if config.merge_enabled)
+    if not dataset_configs:
+        raise ValueError("No active ICI cohorts are configured for clinical analysis.")
     cohort_order = tuple(config.cohort_name for config in dataset_configs)
     print(f"Configured ICI cohorts: {', '.join(cohort_order)}")
 

@@ -15,8 +15,8 @@ Right Panel (Panel B):
 Uses get_model() for hyperparameter tuning & calibration consistency across all panels.
 
 Outputs:
-  - q1-response-predictor/plots/models/loco_dual_1x2_heatmap.png
-  - q1-response-predictor/plots/models/loco_dual_1x2_heatmap_transparent.png
+  - q1_response_predictor/plots/models/loco_dual_1x2_heatmap.png
+  - q1_response_predictor/plots/models/loco_dual_1x2_heatmap_transparent.png
 """
 
 import warnings

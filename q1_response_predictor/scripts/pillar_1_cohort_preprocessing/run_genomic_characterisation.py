@@ -34,12 +34,12 @@ from lifelines.statistics import logrank_test, multivariate_logrank_test
 _THIS_FILE = Path(__file__).resolve()
 
 for _candidate in [_THIS_FILE.parent] + list(_THIS_FILE.parent.parents):
-    if _candidate.name == "q1-response-predictor":
+    if _candidate.name == "q1_response_predictor":
         BASE_DIR = _candidate
         break
 else:
     raise FileNotFoundError(
-        f"Could not locate q1-response-predictor subproject root above {_THIS_FILE}"
+        f"Could not locate q1_response_predictor subproject root above {_THIS_FILE}"
     )
 
 PROJECT_ROOT = BASE_DIR.parent
@@ -88,7 +88,7 @@ PLOT_DIR = BASE_DIR / "plots" / "genomic"
 LOG_DIR = get_subproject_log_dir(_THIS_FILE)
 LOG_PATH = LOG_DIR / "run_genomic_characterisation.log"
 REPORT_PATH = (
-    BASE_DIR / "reports" / "pillar-1-cohorts-and-preprocessing"
+    BASE_DIR / "reports" / "pillar_1_cohort_preprocessing"
     / "cohort_characteristics_genomic.md"
 )
 

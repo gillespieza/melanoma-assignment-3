@@ -11,7 +11,7 @@ tags:
   - clinical-trials
   - transcriptomics
   - genomics
-  - q1-response-predictor
+  - q1_response_predictor
 created: 2026-09-15 12:28
 cssclasses:
   - row-alt
@@ -33,7 +33,7 @@ updated: 2026-09-15 12:28
 
 ## 1. Master Dataset Summary
 
-The Q1 pipeline dynamically configures datasets via [`config/datasets.yaml`](090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/config/datasets.yaml). Cohorts are stratified into **Active Immunotherapy Trial Cohorts** (used for model training and Leave-One-Cohort-Out [LOCO] cross-validation), **Independent Validation & Reference Cohorts** (held out from training to avoid data leakage), and **Prospective Expansion Candidates**.
+The Q1 pipeline dynamically configures datasets via [`config/datasets.yaml`](090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/config/datasets.yaml). Cohorts are stratified into **Active Immunotherapy Trial Cohorts** (used for model training and Leave-One-Cohort-Out [LOCO] cross-validation), **Independent Validation & Reference Cohorts** (held out from training to avoid data leakage), and **Prospective Expansion Candidates**.
 
 | Cohort Name | Study Identifier (`study_id`) | Primary Regimen / Treatment Target | Sample Size ($N$) | Data Modalities Available | Pipeline Role | cBioPortal Study Summary |
 |:---|:---|:---|:---:|:---|:---|:---:|
@@ -123,7 +123,7 @@ The Q1 pipeline dynamically configures datasets via [`config/datasets.yaml`](090
 
 ## 4. Harmonised Multi-Cohort Matrices (`data/processed/merged/`)
 
-Data harmonisation is executed by [`scripts/pillar_1_cohort_preprocessing/merge_datasets.py`](090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar_1_cohort_preprocessing/merge_datasets.py):
+Data harmonisation is executed by [`scripts/pillar_1_cohort_preprocessing/merge_datasets.py`](090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/scripts/pillar_1_cohort_preprocessing/merge_datasets.py):
 
 ```
 Raw Downloads (cBioPortal / GDC)
@@ -185,7 +185,7 @@ Maintains patient-level driver gene mutations and tumour characteristics:
 
 ## 6. Canonical Immune Biomarker Signatures Computed Across Cohorts
 
-All cohorts are evaluated across the 6 canonical immune signature modalities defined in `.agents/AGENTS.md` (computed via [`src/signatures.py`](090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py)):
+All cohorts are evaluated across the 6 canonical immune signature modalities defined in `.agents/AGENTS.md` (computed via [`src/signatures.py`](090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/src/signatures.py)):
 
 1. **`IFN_gamma`** (Interferon-gamma Signature, 6 genes): `IFNG`, `STAT1`, `IDO1`, `CXCL9`, `CXCL10`, `HLA-DRA`. Reflects active Th1-mediated cytotoxicity and cellular immune recruitment.
 2. **`TIS`** (Tumour Inflammation Score, 18 genes): Nanostring-derived clinical signature measuring suppressed adaptive immunity, antigen presenting machinery, and chemokine release.

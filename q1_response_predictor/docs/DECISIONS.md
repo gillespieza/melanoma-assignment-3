@@ -9,7 +9,7 @@ tags:
   - immunotherapy
   - melanoma
   - methodology
-  - q1-response-predictor
+  - q1_response_predictor
 created: 2026-09-15 12:58
 cssclasses:
   - row-alt
@@ -66,7 +66,7 @@ To train generalised models under Leave-One-Cohort-Out (LOCO) cross-validation, 
 
 **Adopt Option 3 (Bipolar / Extreme Contrast Consolidation)**.
 
-In [`src/biology_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/biology_constants.py#L9-L15) and [`q1-response-predictor/config/data_dictionary.json`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/config/data_dictionary.json#L57-L71), the canonical mapping is defined as:
+In [`src/biology_constants.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/src/biology_constants.py#L9-L15) and [`q1_response_predictor/config/data_dictionary.json`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/config/data_dictionary.json#L57-L71), the canonical mapping is defined as:
 
 ```python
 RECIST_RESPONSE_MAP: Dict[str, float] = {
@@ -78,7 +78,7 @@ RECIST_RESPONSE_MAP: Dict[str, float] = {
 }
 ```
 
-Downstream machine learning pipelines ([`q1_infer.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/q1_infer.py#L14), [`run_clinical_feature_selection.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar_2_clinical_subtyping/run_clinical_feature_selection.py#L376)) filter samples using:
+Downstream machine learning pipelines ([`q1_infer.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/q1_infer.py#L14), [`run_clinical_feature_selection.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/scripts/pillar_2_clinical_subtyping/run_clinical_feature_selection.py#L376)) filter samples using:
 
 ```python
 df_evaluable = df.loc[df["RESPONSE_BINARY"].notna()].copy()
@@ -154,13 +154,13 @@ Prior to this decision, both timepoints were admitted into the cleaned processed
 
 3. **Restrict at the model-training stage only (post-hoc filter)**:
    - _Description_: Keep all samples in the processed data but filter `SAMPLE_TREATMENT == "Pre"` inside individual training scripts.
-   - _Drawbacks_: Fragile — requires every downstream script (feature selection, clinical analysis, clustering, survival analysis) to independently apply the filter; any omission silently re-introduces leakage. Already partially implemented in [`run_transcriptomic_feature_selection.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar_4_out_of_cohort_benchmarks/run_transcriptomic_feature_selection.py#L326-L327) but absent from the primary LOCO pipeline and merge step, confirming this approach is inconsistently applied.
+   - _Drawbacks_: Fragile — requires every downstream script (feature selection, clinical analysis, clustering, survival analysis) to independently apply the filter; any omission silently re-introduces leakage. Already partially implemented in [`run_transcriptomic_feature_selection.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/scripts/pillar_4_out_of_cohort_benchmarks/run_transcriptomic_feature_selection.py#L326-L327) but absent from the primary LOCO pipeline and merge step, confirming this approach is inconsistently applied.
 
 ### Decision
 
 **Adopt Option 2 (`baseline_only: true` across all cohorts in `datasets.yaml`)**.
 
-Enforced at the earliest possible stage — the data-cleaning script [`clean_data.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar_1_cohort_preprocessing/clean_data.py) — so all downstream datasets (`clin_cleaned.csv`, `expr_cleaned.csv`, `mutations_cleaned.csv`, merged files, LOCO folds) are structurally guaranteed to contain only pre-treatment observations.
+Enforced at the earliest possible stage — the data-cleaning script [`clean_data.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/scripts/pillar_1_cohort_preprocessing/clean_data.py) — so all downstream datasets (`clin_cleaned.csv`, `expr_cleaned.csv`, `mutations_cleaned.csv`, merged files, LOCO folds) are structurally guaranteed to contain only pre-treatment observations.
 
 The filtering logic in `clean_data.py` uses the `SAMPLE_TREATMENT` metadata column where it exists, falling back to the `_PRE` sample ID suffix for cohorts without that column:
 
@@ -193,7 +193,7 @@ The `datasets.yaml` flag is set to `true` across all cohorts (Liu 2019, Hugo 201
 
 ### Implementation Details
 
-The fix was applied in two locations within [`clean_data.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/scripts/pillar_1_cohort_preprocessing/clean_data.py):
+The fix was applied in two locations within [`clean_data.py`](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/scripts/pillar_1_cohort_preprocessing/clean_data.py):
 
 - **Clinical filter** (`_harmonise_clinical_data`): checks `SAMPLE_TREATMENT` column first (robust for all cohorts); falls back to `_PRE` suffix matching when the column is absent.
 - **Expression filter** (`_process_raw_expression_matrix`): filters on `_PRE`-suffixed column names before transposing; includes a guard that skips filtering when no `_PRE` columns exist (safe for Liu 2019, Hugo 2016 non-longitudinal samples).

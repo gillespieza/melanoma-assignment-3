@@ -160,6 +160,6 @@ This section examines performance variation at the cohort level across active tr
 
 > [!formula]+ Related Heatmap Source Plots & Execution Architecture
 >
-> - [`generate_combined_cv_loco_heatmap.py`](q1-response-predictor/scripts/exploratory_plots/generate_combined_cv_loco_heatmap.py): Generates the 1x2 side-by-side CV vs LOCO comparison heatmap plot.
-> - [`generate_cv_vs_loco_report.py`](q1-response-predictor/scripts/pillar_4_out_of_cohort_benchmarks/generate_cv_vs_loco_report.py): Executes evaluation and dynamically generates this comparative analysis report from benchmark CSVs.
-> - [`train_multimodal_predictor.py`](q1-response-predictor/scripts/pillar_3_transcriptomic_signatures/train_multimodal_predictor.py): Trains multimodal response predictors across feature permutation tiers.
+> - [`generate_combined_cv_loco_heatmap.py`](q1_response_predictor/scripts/exploratory_plots/generate_combined_cv_loco_heatmap.py): Generates the 1x2 side-by-side CV vs LOCO comparison heatmap plot.
+> - [`generate_cv_vs_loco_report.py`](q1_response_predictor/scripts/pillar_4_out_of_cohort_benchmarks/generate_cv_vs_loco_report.py): Executes evaluation and dynamically generates this comparative analysis report from benchmark CSVs.
+> - [`train_multimodal_predictor.py`](q1_response_predictor/scripts/pillar_3_transcriptomic_signatures/train_multimodal_predictor.py): Trains multimodal response predictors across feature permutation tiers.

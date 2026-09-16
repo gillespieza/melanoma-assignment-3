@@ -15,7 +15,7 @@ obsidianUIMode: source
 updated: 2026-08-09 20:33
 ---
 
- **C-Index (Concordance Index)** breakdown for each model architecture evaluated under Leave-One-Cohort-Out (LOCO) cross-validation in `q1-response-predictor`:
+ **C-Index (Concordance Index)** breakdown for each model architecture evaluated under Leave-One-Cohort-Out (LOCO) cross-validation in `q1_response_predictor`:
 
 # Cross-Model Concordance Index (C-Index) Summary
 

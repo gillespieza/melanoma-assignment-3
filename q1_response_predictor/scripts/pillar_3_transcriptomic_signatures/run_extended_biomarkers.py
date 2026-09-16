@@ -32,12 +32,12 @@ from sklearn.metrics import roc_auc_score
 _THIS_FILE = Path(__file__).resolve()
 
 for _candidate in [_THIS_FILE.parent] + list(_THIS_FILE.parent.parents):
-    if _candidate.name == "q1-response-predictor":
+    if _candidate.name == "q1_response_predictor":
         BASE_DIR = _candidate
         break
 else:
     raise FileNotFoundError(
-        f"Could not locate q1-response-predictor subproject root above {_THIS_FILE}"
+        f"Could not locate q1_response_predictor subproject root above {_THIS_FILE}"
     )
 
 PROJECT_ROOT = BASE_DIR.parent

@@ -113,7 +113,7 @@ _SUPTITLE_Y: float = 0.98
 
 # Target Directories & Logging Paths
 EXPLORATORY_PLOT_DIR: Path = SUBPROJECT_ROOT / "plots" / "exploratory"
-REPORT_DIR: Path = SUBPROJECT_ROOT / "reports" / "pillar-1-cohorts-and-preprocessing"
+REPORT_DIR: Path = SUBPROJECT_ROOT / "reports" / "pillar_1_cohort_preprocessing"
 LOG_DIR: Path = get_subproject_log_dir(SCRIPT_DIR)
 LOG_PATH: Path = LOG_DIR / "run_dimensionality_reduction.log"
 

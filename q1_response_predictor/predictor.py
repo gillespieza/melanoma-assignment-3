@@ -8,8 +8,8 @@ anti-PD-1 response (CR/PR vs. PD) for a single melanoma patient given either:
 
 Usage Examples:
     CLI usage:
-        python q1-response-predictor/predictor.py --patient RIAZ_PT18 --cohort riaz_2017
-        python q1-response-predictor/predictor.py --signatures "IFN_gamma=1.2,TIS=0.8,CYT=1.5,CD8_Tcell=0.9,IMPRES=8.0,PD_L1=2.1"
+        python q1_response_predictor/predictor.py --patient RIAZ_PT18 --cohort riaz_2017
+        python q1_response_predictor/predictor.py --signatures "IFN_gamma=1.2,TIS=0.8,CYT=1.5,CD8_Tcell=0.9,IMPRES=8.0,PD_L1=2.1"
 
     Python API usage:
         from q1_response_predictor.predictor import SinglePatientPredictor

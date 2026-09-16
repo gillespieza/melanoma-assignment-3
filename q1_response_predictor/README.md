@@ -1,4 +1,4 @@
-# Melanoma Immunotherapy Response Predictor (`q1-response-predictor`)
+# Melanoma Immunotherapy Response Predictor (`q1_response_predictor`)
 
 A machine learning pipeline designed to predict binary anti-PD-1 immunotherapy response (**Complete Response / Partial Response** vs. **Progressive Disease**) in cutaneous melanoma patients.
 
@@ -22,7 +22,7 @@ The predictor requires **12 multimodal features**:
 
 #### 1. Predict for a specific patient in a preprocessed cohort:
 ```bash
-python q1-response-predictor/predictor.py --patient RIAZ_PT18 --cohort riaz_2017
+python q1_response_predictor/predictor.py --patient RIAZ_PT18 --cohort riaz_2017
 ```
 
 **Output**:
@@ -53,12 +53,12 @@ Extracted Immune Signatures (Z-scored):
 
 #### 2. Predict from custom pre-calculated multimodal feature scores:
 ```bash
-python q1-response-predictor/predictor.py --signatures "IFN_gamma=1.2,TIS=0.8,CYT=1.5,CD8_Tcell=0.9,IMPRES=8.0,PD_L1=2.1,Macrophage_STV_Score=0.4,M1_M2_Ratio=1.1,mut_BRAF=1,mut_NRAS=0,mut_NF1=0,TMB_NONSYNONYMOUS=15.0"
+python q1_response_predictor/predictor.py --signatures "IFN_gamma=1.2,TIS=0.8,CYT=1.5,CD8_Tcell=0.9,IMPRES=8.0,PD_L1=2.1,Macrophage_STV_Score=0.4,M1_M2_Ratio=1.1,mut_BRAF=1,mut_NRAS=0,mut_NF1=0,TMB_NONSYNONYMOUS=15.0"
 ```
 
 #### 3. Adjust probability classification threshold (default 0.50):
 ```bash
-python q1-response-predictor/predictor.py --patient HUGO_PT38 --cohort hugo_2016 --threshold 0.45
+python q1_response_predictor/predictor.py --patient HUGO_PT38 --cohort hugo_2016 --threshold 0.45
 ```
 
 
@@ -106,27 +106,27 @@ You can run the pipeline either end-to-end using the master `run_pipeline.py` CL
 
 ### 1. Master Pipeline Orchestration (`run_pipeline.py`)
 
-The master pipeline script (`q1-response-predictor/scripts/run_pipeline.py`) supports CLI options to orchestrate downloading, cleaning, merging, and evaluating models:
+The master pipeline script (`q1_response_predictor/scripts/run_pipeline.py`) supports CLI options to orchestrate downloading, cleaning, merging, and evaluating models:
 
 * **Run Full End-to-End Pipeline (Download → Clean → Merge → LOCO CV & Evaluation)**:
   ```bash
-  python q1-response-predictor/scripts/run_pipeline.py --all
+  python q1_response_predictor/scripts/run_pipeline.py --all
   ```
 
 * **Run Specific Preprocessing Steps Before Model Evaluation**:
   ```bash
   # Download, clean, and merge data, then train/evaluate models
-  python q1-response-predictor/scripts/run_pipeline.py --download --clean --merge
+  python q1_response_predictor/scripts/run_pipeline.py --download --clean --merge
   ```
 
 * **Run Preprocessing Only (Skip Model Training & Evaluation)**:
   ```bash
-  python q1-response-predictor/scripts/run_pipeline.py --download --clean --merge --skip-eval
+  python q1_response_predictor/scripts/run_pipeline.py --download --clean --merge --skip-eval
   ```
 
 * **Run LOCO Cross-Validation & Model Evaluation Only (Assumes Data Prepared)**:
   ```bash
-  python q1-response-predictor/scripts/run_pipeline.py
+  python q1_response_predictor/scripts/run_pipeline.py
   ```
 
 ---
@@ -137,26 +137,26 @@ Alternatively, individual pillar scripts can be run sequentially:
 
 1. **Download Raw Data**:
    ```bash
-   python q1-response-predictor/scripts/pillar_1_cohort_preprocessing/download_data.py
+   python q1_response_predictor/scripts/pillar_1_cohort_preprocessing/download_data.py
    ```
 2. **Clean & Harmonise Datasets**:
    ```bash
-   python q1-response-predictor/scripts/pillar_1_cohort_preprocessing/clean_data.py
+   python q1_response_predictor/scripts/pillar_1_cohort_preprocessing/clean_data.py
    ```
 3. **Merge Multi-Cohort Datasets**:
    ```bash
-   python q1-response-predictor/scripts/pillar_1_cohort_preprocessing/merge_datasets.py
+   python q1_response_predictor/scripts/pillar_1_cohort_preprocessing/merge_datasets.py
    ```
 4. **Execute LOCO Cross-Validation & Model Training**:
    ```bash
-   python q1-response-predictor/scripts/run_pipeline.py
+   python q1_response_predictor/scripts/run_pipeline.py
    ```
 
 
 ## 📂 Subproject Directory Hierarchy
 
 ```
-q1-response-predictor/
+q1_response_predictor/
 ├── predictor.py               # Single-patient SVM prediction CLI & API
 ├── config/                    # Pipeline dataset & constant configuration files
 ├── logs/                      # Subproject execution log outputs
@@ -172,7 +172,7 @@ q1-response-predictor/
 │   ├── feature_selection/     # Feature selection & TCGA survival heatmaps
 │   └── models/                # ROC-AUC, PR, and LOCO CV heatmaps
 ├── reports/                   # 4-Pillar Markdown analysis reports
-│   ├── pillar-1-cohorts-and-preprocessing/
+│   ├── pillar_1_cohort_preprocessing/
 │   ├── pillar_2_clinical_subtyping/
 │   ├── pillar_3_transcriptomic_signatures/
 │   └── pillar_4_out_of_cohort_benchmarks/

@@ -32,7 +32,7 @@ Build a binary immunotherapy response predictor (CR/PR vs. PD) for cutaneous mel
 | **TCGA-SKCM** | 443 | Mixed (non-ICI reference) | N/A (survival only) | Signature derivation / clinical subtyping |
 
 > [!NOTE]
-> **On sample-size variants**: N figures for Liu 2019, Hugo 2016, Riaz 2017, and TCGA-SKCM vary slightly across individual analyses in this pipeline (e.g. LOCO response modelling vs. TCGA-signature projection vs. survival stratification) due to analysis-specific completeness filters. See the **"Reconciling Sample Size (N) Variants Across All Cohorts & Reports"** section in [model_evaluation_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar_4_out_of_cohort_benchmarks/model_evaluation_report.md) for the full per-cohort, per-analysis breakdown.
+> **On sample-size variants**: N figures for Liu 2019, Hugo 2016, Riaz 2017, and TCGA-SKCM vary slightly across individual analyses in this pipeline (e.g. LOCO response modelling vs. TCGA-signature projection vs. survival stratification) due to analysis-specific completeness filters. See the **"Reconciling Sample Size (N) Variants Across All Cohorts & Reports"** section in [model_evaluation_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/reports/pillar_4_out_of_cohort_benchmarks/model_evaluation_report.md) for the full per-cohort, per-analysis breakdown.
 
 ---
 

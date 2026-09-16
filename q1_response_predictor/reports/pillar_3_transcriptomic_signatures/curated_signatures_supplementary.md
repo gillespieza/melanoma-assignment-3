@@ -20,8 +20,8 @@ updated: 2026-08-02 16:50
 
 This supplementary document provides the full, detailed biological rationale, gene compositions, implementation specifics, and mathematical calculations for the eight curated transcriptomic gene signatures evaluated in the Melanoma Immunotherapy Response Predictor pipeline.
 
-*Main Report Reference*: [curated_signatures_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/reports/pillar_3_transcriptomic_signatures/curated_signatures_report.md)  
-*Python Implementation*: [signatures.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py)
+*Main Report Reference*: [curated_signatures_report.md](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/reports/pillar_3_transcriptomic_signatures/curated_signatures_report.md)
+*Python Implementation*: [signatures.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/src/signatures.py)
 
 
 ## 0. Mathematical Collapsing Strategies & Preprocessing
@@ -34,7 +34,7 @@ This supplementary document provides the full, detailed biological rationale, ge
 >   2. *How do non-linear rank-based ratios (e.g. IMPRES) differ from arithmetic log-means?*
 >   3. *How is zero-leakage cohort-independent Z-score standardisation guaranteed across studies?*
 
-To transform high-dimensional, multicollinear gene expression matrices into compact, interpretable predictors, our codebase ([signatures.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py)) employs **four distinct mathematical collapsing strategies** based on the biological intent and literature definition of each signature modality.
+To transform high-dimensional, multicollinear gene expression matrices into compact, interpretable predictors, our codebase ([signatures.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/src/signatures.py)) employs **four distinct mathematical collapsing strategies** based on the biological intent and literature definition of each signature modality.
 
 ### 0.1. Overview of Collapsing Modalities
 
@@ -121,7 +121,7 @@ where $\mu_k$ and $\sigma_k$ represent the internal mean and standard deviation 
   `CCL5`, `CD2`, `CD3D`, `CD3E`, `CD27`, `CD274`, `CMKLR1`, `CXCL9`, `CXCR6`, `GZMB`, `GZMK`, `HLA-DRA`, `HLA-DQA1`, `HLA-E`, `IDO1`, `LAG3`, `NKG7`, `PDCD1LG2`, `PSMB10`, `STAT1`, `TIGIT`.
 
   > [!NOTE] Implementation Rationale
-  > The clinical NanoString TIS panel typically consists of 18 genes. Our implementation in [signatures.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1-response-predictor/src/signatures.py#L41-L53) expands this set to 21 genes by incorporating critical T-cell receptor components (`CD2`, `CD3D`, `CD3E`) and cytolytic enzymes (`GZMB`, `GZMK`), providing a broader capture of T-cell biology.
+  > The clinical NanoString TIS panel typically consists of 18 genes. Our implementation in [signatures.py](file:///c:/Users/Amanda/Dropbox/OBSIDIAN/42/090%20STUDY/091%20UCD/091.03%20ASSIGNMENTS/AI-ML-3/melanoma-assignment-3/q1_response_predictor/src/signatures.py#L41-L53) expands this set to 21 genes by incorporating critical T-cell receptor components (`CD2`, `CD3D`, `CD3E`) and cytolytic enzymes (`GZMB`, `GZMK`), providing a broader capture of T-cell biology.
 * **Mathematical Calculation**: Arithmetic mean of the $\log_2(\text{TPM} + 1)$ expression values of detected genes across the expanded panel.
 
 

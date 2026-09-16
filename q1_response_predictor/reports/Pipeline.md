@@ -192,7 +192,7 @@ The pipeline outputs processed data, figures, and reports to their respective di
 ### Reporting & Inference Outputs (`reports/` and `predictor.py`)
 *   **`predictor.py`**: Standalone single-patient SVM response predictor CLI & Python API.
 *   **`README.md`**: Consolidated sitemap and 4-pillar documentation guide for the reports suite.
-*   **`pillar-1-cohorts-and-preprocessing/`**:
+*   **`pillar_1_cohort_preprocessing/`**:
     *   `cohort_characteristics_clinical.md`: Baseline report detailing clinical patient demographics, treatment histories, response distributions, survival curves, and forest plots.
     *   `cohort_characteristics_genomic.md`: Baseline report detailing driver mutations, pathway mutations, TMB, neoantigens, immune signature correlations, Aneuploidy overall survival curves, and the merged CoMut oncoplot.
     *   `batch_correction_report.md`: Evaluation report of technical batch effects (uncorrected PCA vs Z-score scaling vs ComBat) and cross-validation data leakage prevention.
