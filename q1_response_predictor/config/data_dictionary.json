@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Melanoma Immunotherapy Preprocessing Data Dictionary",
   "version": "1.0.0",
-  "created": "2026-09-15T16:12:06.206767+00:00",
+  "created": "2026-09-16T12:31:09.147292+00:00",
   "project": "HSE ED / Melanoma Response Predictor",
   "description": "Comprehensive data dictionary for harmonised clinical, genomic, transcriptomic, and treatment features across melanoma cohorts.",
   "columns": {
@@ -169,16 +169,18 @@
       "display_name": "Tumour Mutational Burden (Nonsynonymous)",
       "datatype": "NUMBER",
       "category": "Genomic Burden",
-      "standard_unit": "mutations/exome",
-      "harmonised_definition": "Count of non-silent somatic mutations in protein-coding regions.",
+      "standard_unit": "mutations/Mb",
+      "harmonised_definition": "Source-provided density of non-silent somatic mutations in protein-coding regions, harmonised across cohorts using the iAtlas TMB field.",
+      "notes": "Values are retained from the source clinical metadata and are not recalculated from cohort MAF files. The supplied values are consistent with a fixed 30 Mb exome denominator; cross-cohort comparisons remain subject to source pipeline differences in callable territory, variant filtering, and mutation calling.",
       "cohort_overrides": {
         "van_allen_2015": {
           "raw_column": "MUTATION_COUNT",
-          "raw_unit": "WES non-synonymous mutation count"
+          "raw_unit": "WES non-synonymous mutation count (source-specific)",
+          "notes": "Source mutation count is not directly comparable with the harmonised mutations/Mb TMB field."
         },
         "skcm_tcga_gdc": {
           "raw_column": "TMB_NONSYNONYMOUS",
-          "raw_unit": "mutations/exome",
+          "raw_unit": "mutations/Mb",
           "notes": "Filtered from GDC MAF for non-silent variant classifications."
         }
       }
@@ -178293,6 +178295,13 @@
       "category": "Clinical Feature",
       "standard_unit": "text / numeric",
       "harmonised_definition": "Clinical metadata attribute CMYA5."
+    },
+    "CNA_PROP": {
+      "display_name": "Cna Prop",
+      "datatype": "STRING",
+      "category": "Clinical Feature",
+      "standard_unit": "text / numeric",
+      "harmonised_definition": "Clinical metadata attribute CNA_PROP."
     },
     "CNBD1": {
       "display_name": "Cnbd1",
@@ -418709,6 +418718,13 @@
       "standard_unit": "text / numeric",
       "harmonised_definition": "Clinical metadata attribute TOR4A."
     },
+    "TOTAL_NEOANTIGEN": {
+      "display_name": "Total Neoantigen",
+      "datatype": "STRING",
+      "category": "Clinical Feature",
+      "standard_unit": "text / numeric",
+      "harmonised_definition": "Clinical metadata attribute TOTAL_NEOANTIGEN."
+    },
     "TOX": {
       "display_name": "Tox",
       "datatype": "STRING",
@@ -446308,17 +446324,6 @@
       "standard_unit": "text / numeric",
       "harmonised_definition": "Clinical metadata attribute hsa-mir-423."
     },
-    "mut_BRAF.1": {
-      "display_name": "BRAF Somatic Mutation Status",
-      "datatype": "BOOLEAN",
-      "category": "Driver Mutation",
-      "standard_unit": "binary flag",
-      "allowed_values": [
-        0,
-        1
-      ],
-      "harmonised_definition": "Binary indicator of non-silent somatic mutation in BRAF."
-    },
     "mut_BRAF_V600E": {
       "display_name": "BRAF_V600E Somatic Mutation Status",
       "datatype": "BOOLEAN",
@@ -446329,28 +446334,6 @@
         1
       ],
       "harmonised_definition": "Binary indicator of non-silent somatic mutation in BRAF_V600E."
-    },
-    "mut_NF1.1": {
-      "display_name": "NF1 Somatic Mutation Status",
-      "datatype": "BOOLEAN",
-      "category": "Driver Mutation",
-      "standard_unit": "binary flag",
-      "allowed_values": [
-        0,
-        1
-      ],
-      "harmonised_definition": "Binary indicator of non-silent somatic mutation in NF1."
-    },
-    "mut_NRAS.1": {
-      "display_name": "NRAS Somatic Mutation Status",
-      "datatype": "BOOLEAN",
-      "category": "Driver Mutation",
-      "standard_unit": "binary flag",
-      "allowed_values": [
-        0,
-        1
-      ],
-      "harmonised_definition": "Binary indicator of non-silent somatic mutation in NRAS."
     },
     "neg_log10_p": {
       "display_name": "Neg Log10 P",

@@ -215,8 +215,12 @@ def _process_cohort_response(df_clin: pd.DataFrame, name: str) -> pd.DataFrame:
 
 
 def _prepare_cohort_data(data_dir: Path) -> Dict[str, pd.DataFrame]:
-    """Loads and preprocesses clinical trial and TCGA-SKCM cohort datasets."""
-    dataset_configs = load_dataset_config(CONFIG_PATH)
+    """Loads and preprocesses datasets enabled for merged cohort analyses."""
+    dataset_configs = [
+        config
+        for config in load_dataset_config(CONFIG_PATH)
+        if config.merge_enabled
+    ]
     cohort_dfs: Dict[str, pd.DataFrame] = {}
 
     for config in dataset_configs:
@@ -233,19 +237,27 @@ def _prepare_cohort_data(data_dir: Path) -> Dict[str, pd.DataFrame]:
 def _compute_single_cohort_driver_stats(
     df: pd.DataFrame, name: str
 ) -> Tuple[Dict[str, Any], str]:
-    """Computes driver gene mutation counts and label string for one cohort."""
+    """Computes mutually exclusive BRAF subtype and driver mutation counts."""
     n = len(df)
     v600_col = "mut_BRAF_V600" if "mut_BRAF_V600" in df.columns else None
+    v600e_col = "mut_BRAF_V600E" if "mut_BRAF_V600E" in df.columns else None
     b_v600_mut = int(df["mut_BRAF_V600"].sum()) if v600_col else 0
-    b_other_mut = int((df["mut_BRAF"] & (1 - df["mut_BRAF_V600"])).sum()) if v600_col else int(df["mut_BRAF"].sum())
+    b_v600e_mut = int(df["mut_BRAF_V600E"].sum()) if v600e_col else 0
+    b_other_v600_mut = max(b_v600_mut - b_v600e_mut, 0)
+    b_other_mut = (
+        int((df["mut_BRAF"] & (1 - df["mut_BRAF_V600"])).sum())
+        if v600_col
+        else int(df["mut_BRAF"].sum())
+    )
     n_mut = int(df["mut_NRAS"].sum())
     f_mut = int(df["mut_NF1"].sum())
     t_wt = int(len(df[(df["mut_BRAF"] == 0) & (df["mut_NRAS"] == 0) & (df["mut_NF1"] == 0)]))
     label_n = f"{name} (N={n})"
 
     print(
-        f"  {label_n}: `BRAF V600`: {b_v600_mut} ({b_v600_mut / n * 100:.1f}%), "
-        f"`BRAF Other`: {b_other_mut} ({b_other_mut / n * 100:.1f}%), "
+        f"  {label_n}: `BRAF V600E`: {b_v600e_mut} ({b_v600e_mut / n * 100:.1f}%), "
+        f"`BRAF other V600`: {b_other_v600_mut} ({b_other_v600_mut / n * 100:.1f}%), "
+        f"`BRAF non-V600`: {b_other_mut} ({b_other_mut / n * 100:.1f}%), "
         f"`NRAS`: {n_mut} ({n_mut / n * 100:.1f}%), "
         f"`NF1`: {f_mut} ({f_mut / n * 100:.1f}%), "
         f"Triple-WT: {t_wt} ({t_wt / n * 100:.1f}%)"
@@ -253,8 +265,9 @@ def _compute_single_cohort_driver_stats(
 
     record = {
         "Cohort": label_n,
-        "BRAF V600": (b_v600_mut / n) * 100,
-        "BRAF Other": (b_other_mut / n) * 100,
+        "BRAF V600E": (b_v600e_mut / n) * 100,
+        "BRAF other V600": (b_other_v600_mut / n) * 100,
+        "BRAF non-V600": (b_other_mut / n) * 100,
         "NRAS": (n_mut / n) * 100,
         "NF1": (f_mut / n) * 100,
         "Triple-WT": (t_wt / n) * 100,
@@ -376,7 +389,7 @@ def _annotate_tmb_pvalues(ax: plt.Axes, df_trials: pd.DataFrame) -> None:
 
 
 def _render_tmb_boxplot(ax: plt.Axes, df_trials: pd.DataFrame) -> None:
-    """Renders pre-treatment TMB boxplot stratified by response."""
+    """Renders source-provided pre-treatment TMB by response."""
     sns.boxplot(
         data=df_trials, x="Cohort", y=_COL_TMB, hue="Response",
         palette={
@@ -386,7 +399,7 @@ def _render_tmb_boxplot(ax: plt.Axes, df_trials: pd.DataFrame) -> None:
         ax=ax, fliersize=4,
     )
     ax.set_yscale("log")
-    ax.set_ylabel("TMB (mutations/Mb, log scale)", fontsize=12, fontweight="bold")
+    ax.set_ylabel("TMB (source-provided mutations/Mb, log scale)", fontsize=12, fontweight="bold")
     ax.set_xlabel("Immunotherapy Cohort", fontsize=12, fontweight="bold")
     ax.set_title(f"Pre-treatment TMB by Immunotherapy Response (N={len(df_trials)})", fontsize=13, fontweight="bold")
     ax.legend(loc="upper left")
@@ -602,7 +615,17 @@ def _compute_single_driver_pcts(df: pd.DataFrame) -> Dict[str, float]:
     twt_pct = (
         (df["mut_BRAF"] == 0) & (df["mut_NRAS"] == 0) & (df["mut_NF1"] == 0)
     ).mean() * 100.0
-    return {"braf_v600": b_v600_pct, "braf_other": b_other_pct, "nras": n_pct, "nf1": f_pct, "twt": twt_pct}
+    v600e_series = df.get("mut_BRAF_V600E", pd.Series(0, index=df.index))
+    v600e_pct = (v600e_series.sum() / n) * 100.0
+    other_v600_pct = max(b_v600_pct - v600e_pct, 0.0)
+    return {
+        "braf_v600e": v600e_pct,
+        "braf_other_v600": other_v600_pct,
+        "braf_non_v600": b_other_pct,
+        "nras": n_pct,
+        "nf1": f_pct,
+        "twt": twt_pct,
+    }
 
 
 def _compute_driver_stats(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, float]:
@@ -617,8 +640,9 @@ def _compute_driver_stats(cohorts: Dict[str, pd.DataFrame]) -> Dict[str, float]:
             continue
         key = name.lower().replace(" ", "_")
         p = _compute_single_driver_pcts(df_c)
-        stats[f"{key}_braf_v600"] = p["braf_v600"]
-        stats[f"{key}_braf_other"] = p["braf_other"]
+        stats[f"{key}_braf_v600e"] = p["braf_v600e"]
+        stats[f"{key}_braf_other_v600"] = p["braf_other_v600"]
+        stats[f"{key}_braf_non_v600"] = p["braf_non_v600"]
         stats[f"{key}_nras"] = p["nras"]
         stats[f"{key}_nf1"] = p["nf1"]
         stats[f"{key}_twt"] = p["twt"]
@@ -660,7 +684,7 @@ def _build_script_reference_callout(report_path: Path) -> str:
             (
                 "run_genomic_characterisation.py",
                 _scripts / "run_genomic_characterisation.py",
-                "Performs cross-cohort genomic analyses including driver mutation frequency comparison (`BRAF V600`, `BRAF Other`, `NRAS`, `NF1`, Triple-WT), TMB distribution benchmarking, neoantigen correlation analysis, and outputs `cohort_characteristics_genomic.md`.",
+                "Performs cross-cohort genomic analyses including driver mutation comparison (`BRAF V600E`, other `BRAF V600`, non-V600 BRAF, `NRAS`, `NF1`, Triple-WT), TMB distribution benchmarking, neoantigen correlation analysis, and outputs `cohort_characteristics_genomic.md`.",
             ),
             (
                 "clean_data.py",
@@ -736,7 +760,7 @@ def _build_section_1_info(s: Dict[str, Any]) -> str:
     return f"""> [!INFO] Why We Are Doing This
 >
 > - **What**: We compare somatic mutation frequencies of key cutaneous melanoma driver gene subtypes
-> (`BRAF V600`, `BRAF Other`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across active ICI trial cohorts.
+> (`BRAF V600E`, other `BRAF V600`, non-`V600 BRAF`, `NRAS`, `NF1`, and Triple-WT) and core immune pathways across active ICI trial cohorts.
 > - **Why**: To confirm that our clinical trial cohorts accurately reflect real-world melanoma
 > epidemiology and to evaluate whether pre-treatment mutations in antigen presentation
 > (`B2M`, `TAP1`, `TAP2`) or IFN-$\\gamma$ signalling (`JAK1`, `JAK2`, `STAT1`) drive primary
@@ -751,21 +775,22 @@ def _build_section_1_insight(s: Dict[str, Any]) -> str:
     bullets = []
     for c in s["cohort_order"]:
         key = c.lower().replace(" ", "_")
-        if f"{key}_braf_v600" not in drv:
+        if f"{key}_braf_v600e" not in drv:
             continue
-        bv = drv[f"{key}_braf_v600"]
-        bo = drv[f"{key}_braf_other"]
+        bv = drv[f"{key}_braf_v600e"]
+        bov = drv[f"{key}_braf_other_v600"]
+        bnv = drv[f"{key}_braf_non_v600"]
         n = drv[f"{key}_nras"]
         f = drv[f"{key}_nf1"]
         t = drv[f"{key}_twt"]
-        bullets.append(f"**{c}** (`BRAF V600`: **{bv:.1f}%**, `BRAF Other`: **{bo:.1f}%**, `NRAS`: **{n:.1f}%**, `NF1`: **{f:.1f}%**, Triple-WT: **{t:.1f}%**)")
+        bullets.append(f"**{c}** (`BRAF V600E`: **{bv:.1f}%**, other `BRAF V600`: **{bov:.1f}%**, non-V600 BRAF: **{bnv:.1f}%**, `NRAS`: **{n:.1f}%**, `NF1`: **{f:.1f}%**, Triple-WT: **{t:.1f}%**)")
     drv_str = "; ".join(bullets)
     return f"""> [!INSIGHT] Key Insights: Mutation Landscape
 >
 > 1. **Consistent Driver Mutation Profiles Across ICI Trial Cohorts**: Driver mutation frequencies
 > are broadly consistent across active trial cohorts with WES somatic mutation profiling ({drv_str}).
 > 2. **MAPK Driver Mutual Exclusivity**: Driver mutations act through independent growth
-> pathways: tumours with `BRAF V600` mutations almost never harbour co-occurring `NRAS` mutations,
+> pathways: tumours with activating `BRAF V600` mutations almost never harbour co-occurring `NRAS` mutations,
 > validating established melanoma oncogenic principles.
 > 3. **Immune Evasion Mutations Are Rare Before Therapy**: Pre-treatment non-synonymous mutations
 > in antigen presentation (`B2M`, `TAP1`, `TAP2`) and interferon signalling (`JAK1`, `JAK2`)
@@ -804,8 +829,9 @@ def _build_section_1_drivers(s: Dict[str, Any]) -> str:
 
 ![Driver Mutation Frequencies](../../plots/genomic/genomic_driver_frequencies.png)
 
-_**Figure 1: Driver Mutation Frequencies across ICI Trial Cohorts.** Frequencies of `BRAF V600`,
-`BRAF Other`, `NRAS`, `NF1`, and Triple-WT genotypes across {c_names}._ {fn_note}"""
+_**Figure 1: Driver Mutation Frequencies across ICI Trial Cohorts.** Frequencies of `BRAF V600E`,
+other `BRAF V600` substitutions, non-V600 BRAF mutations, `NRAS`, `NF1`, and Triple-WT genotypes
+across {c_names}._ {fn_note}"""
 
 
 def _build_section_1_body(s: Dict[str, Any]) -> str:
@@ -831,9 +857,11 @@ def _build_section_2_info(s: Dict[str, Any]) -> str:
     """Builds Section 2 INFO callout box."""
     return f"""> [!INFO] Why We Are Doing This
 >
-> - **What**: We analyse the distribution of Tumour Mutational Burden (TMB) across immunotherapy
+> - **What**: We analyse the distribution of source-provided Tumour Mutational Burden (TMB) across immunotherapy
 > response arms (Responders [CR/PR] vs. Non-responders [PD]; $N = {s['n_tmb_resp']}$ response-annotated patients across {s['n_tmb_cohorts']} cohorts)
 > and evaluate the correlation between TMB and predicted total neoantigen load ($N = {s['n_neo']}$).
+> - **Measurement**: TMB is retained from the harmonised iAtlas clinical metadata as nonsynonymous
+> mutations/Mb (consistent with a fixed 30 Mb denominator); it is not recalculated from the cohort MAF files.
 > - **Why**: Somatic mutations generate novel peptide antigens (neoantigens) that trigger T-cell
 > recognition. We test whether TMB correlates with treatment response and whether total TMB can
 > serve as a surrogate marker for predicted neoantigen burden.
@@ -866,7 +894,9 @@ def _build_section_2_md(s: Dict[str, Any]) -> str:
 {info_box}
 
 Tumour Mutational Burden (TMB) and predicted Neoantigen Load are key genomic measures of tumour
-immunogenicity. Below, we present the TMB distribution by response ($N = {s['n_tmb_resp']}$) alongside the correlation
+immunogenicity. TMB values are source-provided and are used for within-cohort response comparisons;
+differences in mutation calling, filtering, and callable exome territory may limit absolute
+cross-cohort comparability. Below, we present the TMB distribution by response ($N = {s['n_tmb_resp']}$) alongside the correlation
 scatter plot illustrating Neoantigen Collinearity with TMB in pooled trial cohorts ($N = {s['n_neo']}$).
 
 ![TMB Distributions and Neoantigen Collinearity](
@@ -1007,6 +1037,13 @@ def _build_section_5_md() -> str:
 
 > [!WARNING] Methodological Limitations & Analytical Scope
 >
+> - **TMB Harmonisation**: TMB is carried forward from source clinical metadata rather than
+> recalculated from MAF files. Values are expressed as nonsynonymous mutations/Mb and are
+> consistent with a fixed 30 Mb denominator, but cohort-specific mutation callers, filtering,
+> sequencing quality, and callable territory may affect absolute cross-cohort comparisons.
+> The primary interpretation is therefore within-cohort responder versus non-responder comparison.
+> - **Gide 2019 TMB**: Gide 2019 lacks public WES/MAF data; its zero-filled TMB values are
+> not interpreted as measured zero mutation burden and are excluded from response-stratified TMB analyses.
 > - **Pre-Treatment Sampling Scope**: Somatic mutation profiles reflect pre-treatment tumor
 > biopsies. Genetic alterations acquired during therapy or under drug selection pressure are
 > not captured in baseline sequencing.

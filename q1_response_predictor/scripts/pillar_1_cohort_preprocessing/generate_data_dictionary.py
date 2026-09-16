@@ -181,16 +181,26 @@ COLUMN_METADATA_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "display_name": "Tumour Mutational Burden (Nonsynonymous)",
         "datatype": "NUMBER",
         "category": "Genomic Burden",
-        "standard_unit": "mutations/exome",
-        "harmonised_definition": "Count of non-silent somatic mutations in protein-coding regions.",
+        "standard_unit": "mutations/Mb",
+        "harmonised_definition": (
+            "Source-provided density of non-silent somatic mutations in protein-coding "
+            "regions, harmonised across cohorts using the iAtlas TMB field."
+        ),
+        "notes": (
+            "Values are retained from the source clinical metadata and are not recalculated "
+            "from cohort MAF files. The supplied values are consistent with a fixed 30 Mb "
+            "exome denominator; cross-cohort comparisons remain subject to source pipeline "
+            "differences in callable territory, variant filtering, and mutation calling."
+        ),
         "cohort_overrides": {
             "van_allen_2015": {
                 "raw_column": "MUTATION_COUNT",
-                "raw_unit": "WES non-synonymous mutation count",
+                "raw_unit": "WES non-synonymous mutation count (source-specific)",
+                "notes": "Source mutation count is not directly comparable with the harmonised mutations/Mb TMB field.",
             },
             "skcm_tcga_gdc": {
                 "raw_column": "TMB_NONSYNONYMOUS",
-                "raw_unit": "mutations/exome",
+                "raw_unit": "mutations/Mb",
                 "notes": "Filtered from GDC MAF for non-silent variant classifications.",
             },
         },
